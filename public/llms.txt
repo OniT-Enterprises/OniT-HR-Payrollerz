@@ -1,0 +1,30 @@
+# Xefe
+
+> Xefe is an HR, payroll, and accounting platform built for Timor-Leste.
+> It handles Lei Trabalho (labor law) compliance, WIT withholding tax, INSS
+> social security, 13th-month salary (subsidio anual), bank payroll files
+> (BNU, BNCTL, Mandiri, ANZ), double-entry accounting, and invoicing.
+> Interfaces are available in Tetun, English, and Portuguese.
+> "Xefe" is Tetun for "boss".
+
+## Product
+
+- [Landing page](https://meza.naroman.tl/landing): product overview and Timor-Leste compliance details
+- [Features](https://meza.naroman.tl/features): full feature list across the nine modules
+- [Sign up](https://meza.naroman.tl/auth/signup): self-serve organization creation with a free trial
+
+## Family
+
+- Ekipa: the employee companion app (payslips, leave requests, crew clock-in) for Android
+- Kaixa: money tracking and simple POS app for small vendors (coming soon)
+- XefeBot: WhatsApp assistant for HR managers to query their company data
+
+## Legal
+
+- [Privacy Policy](https://meza.naroman.tl/privacy)
+- [Terms of Service](https://meza.naroman.tl/terms)
+
+## Contact
+
+- [WhatsApp support](https://wa.me/6707701234): support in Tetun and English
+- Email: suporte@onit.tl (OniT Enterprises, Dili, Timor-Leste)

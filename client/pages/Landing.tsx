@@ -216,7 +216,7 @@ export default function Landing() {
             </p>
 
             {/* Key differentiators */}
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-zinc-500 mb-10">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-zinc-400 mb-10">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span>{t("landing.hero.points.labor")}</span>
@@ -252,7 +252,7 @@ export default function Landing() {
             </div>
 
             {/* Trust Signals */}
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-zinc-500 text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-zinc-400 text-sm">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                 <span>{t("landing.hero.trust.trial")}</span>
@@ -286,7 +286,7 @@ export default function Landing() {
       <section className="py-16 lg:py-20 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-sm text-zinc-500 uppercase tracking-wider mb-2">{t("landing.segments.subtitle")}</p>
+            <p className="text-sm text-zinc-400 uppercase tracking-wider mb-2">{t("landing.segments.subtitle")}</p>
             <h2 className="text-2xl font-bold text-white">{t("landing.segments.title")}</h2>
           </div>
 
@@ -304,7 +304,7 @@ export default function Landing() {
                 <div key={i} className="text-center p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
                   <Icon className={`h-8 w-8 ${segment.color} mx-auto mb-3`} />
                   <h3 className="font-semibold text-white mb-1">{segment.label}</h3>
-                  <p className="text-xs text-zinc-500">{segment.desc}</p>
+                  <p className="text-xs text-zinc-400">{segment.desc}</p>
                 </div>
               );
             })}
@@ -319,7 +319,7 @@ export default function Landing() {
               { img: "pain-solution", border: "border-emerald-500/10", bg: "bg-emerald-500/5", titleKey: "landing.painPoints.solution.title", descKey: "landing.painPoints.solution.desc" },
             ].map((pain, i) => (
               <div key={i} className={`p-6 rounded-xl ${pain.bg} ${pain.border} border`}>
-                <img src={`/images/illustrations/${pain.img}.webp`} alt="" className="h-28 w-28 mb-4 -ml-2" />
+                <img src={`/images/illustrations/${pain.img}.webp`} alt="" className="h-28 w-28 object-contain mb-4 -ml-2" />
                 <h3 className="font-semibold text-white mb-2">{t(pain.titleKey)}</h3>
                 <p className="text-sm text-zinc-400">{t(pain.descKey)}</p>
               </div>
@@ -340,7 +340,7 @@ export default function Landing() {
             </div>
             <h2 className="text-3xl lg:text-4xl font-black mb-4">
               {t("landing.features.title")}
-              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+              <span className="block text-zinc-400 text-2xl lg:text-3xl mt-2">
                 {t("landing.features.titleAccent")}
               </span>
             </h2>
@@ -362,7 +362,7 @@ export default function Landing() {
                   </div>
                   <div className="flex items-baseline gap-3 mb-2">
                     <h3 className="text-xl font-bold text-white">{feature.title}</h3>
-                    <span className="text-sm text-zinc-500">{feature.subtitle}</span>
+                    <span className="text-sm text-zinc-400">{feature.subtitle}</span>
                   </div>
                   <p className="text-zinc-400 leading-relaxed">{feature.description}</p>
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
@@ -386,7 +386,7 @@ export default function Landing() {
               {banks.map((bank, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/5">
                   <span className="font-bold text-white text-lg">{bank.name}</span>
-                  <span className="text-[11px] text-zinc-500 text-center">{bank.full}</span>
+                  <span className="text-[11px] text-zinc-400 text-center">{bank.full}</span>
                   <span className="mt-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 text-[11px] font-medium border border-amber-500/20">
                     {bank.format}
                   </span>
@@ -433,7 +433,7 @@ export default function Landing() {
                 </div>
                 <div>
                   <span className="text-sm font-semibold text-white block">Mosan</span>
-                  <span className="text-[10px] text-zinc-500">Telemor</span>
+                  <span className="text-[10px] text-zinc-400">Telemor</span>
                 </div>
               </div>
               {/* Coming Soon */}
@@ -447,7 +447,7 @@ export default function Landing() {
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-xs text-zinc-500">
+            <p className="mt-4 text-xs text-zinc-400">
               {t("landing.mobilePay.note")}
             </p>
           </div>
@@ -464,7 +464,7 @@ export default function Landing() {
             </div>
             <h2 className="text-3xl lg:text-4xl font-black mb-4">
               {t("landing.modules.title")}
-              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+              <span className="block text-zinc-400 text-2xl lg:text-3xl mt-2">
                 {t("landing.modules.titleAccent")}
               </span>
             </h2>
@@ -494,7 +494,7 @@ export default function Landing() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-white mb-1">{module.name}</h3>
-                      <p className="text-xs text-zinc-500 leading-relaxed">{module.desc}</p>
+                      <p className="text-xs text-zinc-400 leading-relaxed">{module.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -532,7 +532,7 @@ export default function Landing() {
             </div>
             <h2 className="text-3xl lg:text-4xl font-black mb-2">
               {t("landing.ekipa.title")}
-              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+              <span className="block text-zinc-400 text-2xl lg:text-3xl mt-2">
                 {t("landing.ekipa.titleAccent")}
               </span>
             </h2>
@@ -565,7 +565,7 @@ export default function Landing() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
-                        <p className="text-xs text-zinc-500 leading-relaxed">{feature.desc}</p>
+                        <p className="text-xs text-zinc-400 leading-relaxed">{feature.desc}</p>
                       </div>
                     </div>
                   );
@@ -595,8 +595,8 @@ export default function Landing() {
                   <div className="rounded-[2rem] overflow-hidden bg-[#111]">
                     {/* Status bar */}
                     <div className="flex justify-between items-center px-6 pt-7 pb-2">
-                      <span className="text-[10px] text-zinc-500 font-medium">9:41</span>
-                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-500">
+                      <span className="text-[10px] text-zinc-400 font-medium">9:41</span>
+                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-400">
                         <span>LTE</span>
                         <span>100%</span>
                       </div>
@@ -622,19 +622,19 @@ export default function Landing() {
 
                     {/* Leave Balance Card */}
                     <div className="mx-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 mb-3">
-                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Leave balance</p>
+                      <p className="text-[10px] text-zinc-400 mb-2 font-medium">Leave balance</p>
                       <div className="flex gap-3">
                         <div className="flex-1">
                           <p className="text-lg font-bold text-emerald-400">12</p>
-                          <p className="text-[9px] text-zinc-500">Annual</p>
+                          <p className="text-[9px] text-zinc-400">Annual</p>
                         </div>
                         <div className="flex-1">
                           <p className="text-lg font-bold text-blue-400">8</p>
-                          <p className="text-[9px] text-zinc-500">Sick</p>
+                          <p className="text-[9px] text-zinc-400">Sick</p>
                         </div>
                         <div className="flex-1">
                           <p className="text-lg font-bold text-amber-400">2</p>
-                          <p className="text-[9px] text-zinc-500">Personal</p>
+                          <p className="text-[9px] text-zinc-400">Personal</p>
                         </div>
                       </div>
                     </div>
@@ -657,7 +657,7 @@ export default function Landing() {
 
                     {/* Latest payslip */}
                     <div className="px-4 pb-6">
-                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Latest payslip</p>
+                      <p className="text-[10px] text-zinc-400 mb-2 font-medium">Latest payslip</p>
                       <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
                         <div className="flex justify-between items-center">
                           <div>
@@ -775,7 +775,7 @@ export default function Landing() {
             </div>
             <h2 className="text-3xl lg:text-4xl font-black mb-2">
               {t("landing.kaixa.title")}
-              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+              <span className="block text-zinc-400 text-2xl lg:text-3xl mt-2">
                 {t("landing.kaixa.titleAccent")}
               </span>
             </h2>
@@ -799,8 +799,8 @@ export default function Landing() {
                   <div className="rounded-[2rem] overflow-hidden bg-[#111]">
                     {/* Status bar */}
                     <div className="flex justify-between items-center px-6 pt-7 pb-2">
-                      <span className="text-[10px] text-zinc-500 font-medium">9:41</span>
-                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-500">
+                      <span className="text-[10px] text-zinc-400 font-medium">9:41</span>
+                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-400">
                         <WifiOff className="h-2.5 w-2.5" />
                         <span>100%</span>
                       </div>
@@ -835,20 +835,20 @@ export default function Landing() {
                           <span className="text-emerald-400 font-bold text-sm">+</span>
                         </div>
                         <span className="text-[11px] text-emerald-300 font-semibold block">Tama</span>
-                        <span className="text-[9px] text-zinc-500">Money In</span>
+                        <span className="text-[9px] text-zinc-400">Money In</span>
                       </div>
                       <div className="py-3 rounded-xl bg-red-500/15 border border-red-500/20 text-center">
                         <div className="w-8 h-8 rounded-full bg-red-500/20 mx-auto mb-1.5 flex items-center justify-center">
                           <span className="text-red-400 font-bold text-sm">&minus;</span>
                         </div>
                         <span className="text-[11px] text-red-300 font-semibold block">Sai</span>
-                        <span className="text-[9px] text-zinc-500">Money Out</span>
+                        <span className="text-[9px] text-zinc-400">Money Out</span>
                       </div>
                     </div>
 
                     {/* Recent transactions */}
                     <div className="px-4 pb-6">
-                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Transasaun resente</p>
+                      <p className="text-[10px] text-zinc-400 mb-2 font-medium">Transasaun resente</p>
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center p-2 rounded-lg bg-white/[0.03]">
                           <span className="text-[10px] text-zinc-400">Kreditu telemovel</span>
@@ -891,7 +891,7 @@ export default function Landing() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
-                        <p className="text-xs text-zinc-500 leading-relaxed">{feature.desc}</p>
+                        <p className="text-xs text-zinc-400 leading-relaxed">{feature.desc}</p>
                       </div>
                     </div>
                   );
@@ -976,7 +976,7 @@ export default function Landing() {
                 <img src={`/images/illustrations/${persona.img}.webp`} alt={persona.name} className="h-20 w-20 rounded-full mx-auto mb-3 object-cover" />
                 <h4 className="font-semibold text-white">{persona.name}</h4>
                 <p className="text-xs text-orange-400/70 mb-2">{persona.role}</p>
-                <p className="text-xs text-zinc-500 leading-relaxed">{persona.desc}</p>
+                <p className="text-xs text-zinc-400 leading-relaxed">{persona.desc}</p>
               </div>
             ))}
           </div>
@@ -1056,7 +1056,7 @@ export default function Landing() {
               </div>
               <h2 className="text-3xl lg:text-4xl font-black mb-6">
                 WIT & INSS
-                <span className="block text-zinc-500">
+                <span className="block text-zinc-400">
                   {t("landing.tax.titleAccent")}
                 </span>
               </h2>
@@ -1111,7 +1111,7 @@ export default function Landing() {
             </div>
             <div className="relative">
               <div className="p-6 rounded-2xl bg-zinc-900 border border-white/10">
-                <div className="text-xs text-zinc-500 mb-4">
+                <div className="text-xs text-zinc-400 mb-4">
                   {t("landing.tax.example.title")}
                 </div>
                 <div className="space-y-3 font-mono text-sm">
@@ -1201,7 +1201,7 @@ export default function Landing() {
             })}
           </div>
 
-          <p className="mt-8 text-center text-sm text-zinc-500 italic max-w-2xl mx-auto">
+          <p className="mt-8 text-center text-sm text-zinc-400 italic max-w-2xl mx-auto">
             {t("landing.accounting.description")}
           </p>
         </div>
@@ -1218,7 +1218,7 @@ export default function Landing() {
               </div>
               <h2 className="text-3xl font-black mb-4">
                 {t("landing.localSupport.title")}
-                <span className="block text-zinc-500">{t("landing.localSupport.titleAccent")}</span>
+                <span className="block text-zinc-400">{t("landing.localSupport.titleAccent")}</span>
               </h2>
               <p className="text-zinc-400 mb-6">
                 {t("landing.localSupport.description")}
@@ -1244,7 +1244,7 @@ export default function Landing() {
                   </div>
                   <div>
                     <p className="font-semibold text-white">{t("landing.localSupport.cta.title")}</p>
-                    <p className="text-sm text-zinc-500">{t("landing.localSupport.cta.subtitle")}</p>
+                    <p className="text-sm text-zinc-400">{t("landing.localSupport.cta.subtitle")}</p>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -1252,14 +1252,14 @@ export default function Landing() {
                     <span className="text-xl">📱</span>
                     <div>
                       <p className="text-sm font-medium text-white">WhatsApp</p>
-                      <p className="text-xs text-zinc-500">+670 770 1234</p>
+                      <p className="text-xs text-zinc-400">+670 770 1234</p>
                     </div>
                   </a>
                   <a href="mailto:suporte@onit.tl" className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors">
                     <span className="text-xl">📧</span>
                     <div>
                       <p className="text-sm font-medium text-white">Email</p>
-                      <p className="text-xs text-zinc-500">suporte@onit.tl</p>
+                      <p className="text-xs text-zinc-400">suporte@onit.tl</p>
                     </div>
                   </a>
                 </div>
@@ -1312,7 +1312,7 @@ export default function Landing() {
                 {t("landing.footer.location")}
               </span>
             </div>
-            <div className="flex items-center gap-8 text-sm text-zinc-500">
+            <div className="flex items-center gap-8 text-sm text-zinc-400">
               <Link to="/privacy" className="hover:text-white transition-colors">
                 {t("landing.footer.links.privacy")}
               </Link>
