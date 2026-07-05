@@ -80,10 +80,24 @@ routes.tsx          # All route definitions (extracted from App.tsx)
 
 ## Common Commands
 ```bash
-npm run dev          # Dev server (Vite frontend)
+npm run dev          # Dev server (Vite frontend, port 8080 strict)
 npm run build        # Production build
 npm run typecheck    # TypeScript check
+npm test             # Unit tests (vitest)
+npm run emul:rules   # Firestore rules tests (emulator; needs Java 21 —
+                     #   JAVA_HOME=/opt/homebrew/opt/openjdk@21 on this machine)
 ```
+CI (`deploy.yml`) runs typecheck, lint, unit tests, AND the rules suite before
+deploying — rules auto-deploy on push, so never skip `emul:rules` after editing
+`firestore.rules`.
+
+## Firestore Data Layout (two generations)
+- **Tenant-scoped** (newer): `tenants/{tid}/settings|members|employees|...`
+- **Legacy top-level** collections keyed by a `tenantId` FIELD: `departments`,
+  `leave_requests`, `leave_balances`, `timesheets`, `reviews`, `candidates`, `jobs`, …
+  Rules for these must never reference `request.resource` in delete clauses
+  (deletes have no request.resource — see tests/rules/legacy-collection-deletes.test.ts).
+  Admin scripts that delete a tenant must also sweep these by `tenantId`.
 
 ## Ekipa Mobile App (Expo)
 
