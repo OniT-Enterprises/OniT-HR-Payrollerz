@@ -25,7 +25,7 @@
     "list": [
       {
         "id": "main",
-        "name": "Meza Assistant",
+        "name": "XefeBot",
         "tools": {
           "allow": [
             "meza-hr"

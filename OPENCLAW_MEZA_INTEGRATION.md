@@ -20,7 +20,7 @@ HR Manager (Web Dashboard)          HR Manager (WhatsApp)
        |  (Bearer gateway-token)            |
        v                                    |
   OpenClaw Gateway  <-----------------------+
-  (Meza Assistant agent, 29 tools, 5 commands)
+  (XefeBot agent, 29 tools, 5 commands)
        |
        |--- HTTP GET (X-API-Key) --->  Meza API
        |                                    |
@@ -143,7 +143,7 @@ Dockerized OpenClaw instance with the Meza HR plugin.
 
 #### Key Config (`openclaw.json`)
 
-- **Agent:** `main` ("Meza Assistant"), tools restricted to `meza-hr` plugin
+- **Agent:** `main` ("XefeBot"), tools restricted to `meza-hr` plugin
 - **HTTP API:** `gateway.http.endpoints.chatCompletions.enabled: true` — required for web chat
 - **WhatsApp:** allowlist-based DM policy
 - **Session memory:** enabled via internal hooks
@@ -251,7 +251,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
       - Header: x-openclaw-session-key: agent:main:{tid}:webchat-{uid}:{session}
       - Body: { model: "openclaw:main", messages, stream: false, user }
 4. OpenClaw Gateway:
-   a. Routes to "main" agent (Meza Assistant)
+   a. Routes to "main" agent (XefeBot)
    b. Claude processes using meza-hr plugin tools
    c. Tools call back to Meza API (X-API-Key auth)
    d. Returns OpenAI-compatible completion
@@ -269,7 +269,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
 ```
 1. User sends message to paired WhatsApp number
 2. OpenClaw Gateway receives via WhatsApp channel
-3. Routes to "main" agent (Meza Assistant)
+3. Routes to "main" agent (XefeBot)
 4. Claude processes with meza-hr plugin tools
 5. Reply sent back via WhatsApp
 ```

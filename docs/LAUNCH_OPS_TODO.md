@@ -67,9 +67,17 @@ monogram); all favicon/PWA icon sizes generated and the manifest's previously-mi
 icon files now exist. Remaining art task: a proper XefeBot mascot (current xefebot.webp
 is the old book character).
 
-### 7. WhatsApp bot identity
-`server/openclaw-meza` still presents as "Meza" to WhatsApp users. Rebrand to
-**XefeBot** = config/persona change in `openclaw.json` + `./deploy.sh`.
+### 7. ~~WhatsApp bot identity~~ — DONE July 5 2026
+Renamed to **XefeBot** in the live `openclaw.json` (backup at
+`openclaw.json.bak-20260705`), the workspace `IDENTITY.md`, the repo example
+config, and the integration doc; gateway restarted and healthy.
+
+**⚠️ Found while deploying: the WhatsApp pairing has been dead since July 2**
+(2,596 × 401 "Connection Failure" in the logs — the phone unlinked the device).
+Re-pair from a phone with the bot's WhatsApp account:
+`ssh hetzner`, then `docker exec -it openclaw-meza openclaw channels login`
+and scan the QR. This outage went unnoticed for 3 days — item 3 (uptime
+monitoring) would have caught it.
 
 ### 8. OpenAI key rotation (optional)
 The key in `.env.local` leaked into **local** builds only — verified the live CI-built
