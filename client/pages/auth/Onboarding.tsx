@@ -14,7 +14,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, User as UserIcon, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
-import { provisionOrganization, SlugTakenError } from "@/services/provisionOrg";
+import {
+  provisionOrganization,
+  ProvisioningTimeoutError,
+  SlugTakenError,
+} from "@/services/provisionOrg";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 
@@ -105,6 +109,8 @@ export default function Onboarding() {
       console.error("Onboarding error:", err);
       if (err instanceof SlugTakenError) {
         setError(t("auth.errors.companySlugTaken"));
+      } else if (err instanceof ProvisioningTimeoutError) {
+        setError(t("auth.errors.networkTimeout"));
       } else {
         setError(err instanceof Error ? err.message : t("auth.errors.signupFailed"));
       }

@@ -499,6 +499,7 @@ const messages = {
       "nameRequired": "Please enter your name",
       "companyNameRequired": "Please enter your company name",
       "companySlugTaken": "That company URL is already taken. Please choose a different one.",
+      "networkTimeout": "This is taking too long — check your internet connection and try again.",
       "signupFailed": "Failed to create account. Please try again.",
       "googleSignInFailed": "Google sign-in failed. Please try again.",
       "accountExists": "An account with this email already exists. Please log in instead.",

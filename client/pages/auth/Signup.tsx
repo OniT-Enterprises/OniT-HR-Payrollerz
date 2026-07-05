@@ -8,7 +8,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { provisionOrganization, SlugTakenError } from "@/services/provisionOrg";
+import {
+  provisionOrganization,
+  ProvisioningTimeoutError,
+  SlugTakenError,
+} from "@/services/provisionOrg";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -122,6 +126,8 @@ export default function Signup() {
       const errMessage = err instanceof Error ? err.message : t("auth.errors.signupFailed");
       if (err instanceof SlugTakenError) {
         setError(t("auth.errors.companySlugTaken"));
+      } else if (err instanceof ProvisioningTimeoutError) {
+        setError(t("auth.errors.networkTimeout"));
       } else if (errCode === "auth/email-already-in-use") {
         setError(t("auth.errors.accountExists"));
       } else if (errCode === "auth/weak-password") {

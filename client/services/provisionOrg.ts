@@ -13,6 +13,36 @@ export class SlugTakenError extends Error {
   }
 }
 
+/**
+ * Thrown when provisioning writes don't complete in time. Firestore queues
+ * writes indefinitely when offline (or when its IndexedDB cache is broken),
+ * which would otherwise leave the signup button spinning forever.
+ */
+export class ProvisioningTimeoutError extends Error {
+  constructor() {
+    super("Provisioning timed out");
+    this.name = "ProvisioningTimeoutError";
+  }
+}
+
+const PROVISION_TIMEOUT_MS = 30_000;
+
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new ProvisioningTimeoutError()), PROVISION_TIMEOUT_MS);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
 const OWNER_MODULES = [
   "hiring",
   "staff",
@@ -49,7 +79,13 @@ export interface ProvisionOrgParams {
  * entry — which would lock the user out of onboarding and point TenantContext
  * at a tenant they can't read.
  */
-export async function provisionOrganization({
+export async function provisionOrganization(
+  params: ProvisionOrgParams,
+): Promise<string> {
+  return withTimeout(provisionOrgWrites(params));
+}
+
+async function provisionOrgWrites({
   user,
   displayName,
   companyName,

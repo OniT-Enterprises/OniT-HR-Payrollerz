@@ -499,6 +499,7 @@ const messages = {
       "nameRequired": "Favor hatama ita-nia naran",
       "companyNameRequired": "Favor hatama naran kompanhia",
       "companySlugTaken": "Enderesu kompanhia ne'e uza tiha ona. Favór hili seluk.",
+      "networkTimeout": "Ne'e demora liu — favór verifika ita-nia ligasaun internet no koko fali.",
       "signupFailed": "La konsege kria konta. Favór koko fali.",
       "googleSignInFailed": "Tama ho Google la konsege. Favór koko fali.",
       "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
