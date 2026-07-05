@@ -334,6 +334,7 @@ const messages = {
     "simpleOverviewDesc": "Uza kartaun tolu ne'e ba tarefa importante liu ohin loron.",
     "finishSetup": "Kompleta setup",
     "resumeSetup": "Kontinua setup",
+    "startSetup": "Hahú setup",
     "setupProgress": "{{percent}}% kompletu"
   },
   "documentAlerts": {
@@ -521,8 +522,7 @@ const messages = {
       "continue": "Kontinua",
       "companyName": "Naran Kompanhia",
       "companyNamePlaceholder": "Acme Inc.",
-      "companyUrl": "URL Kompanhia",
-      "companyUrlPrefix": "app.onit.hr/",
+      "companyUrl": "ID Kompanhia",
       "companySlugPlaceholder": "acme-inc",
       "companyUrlHint": "Ida ne'e sei sai ita-nia identificador úniku ba organizasaun",
       "alreadyHaveAccount": "Iha ona konta?",

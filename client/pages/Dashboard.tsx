@@ -478,7 +478,10 @@ export default function Dashboard() {
   const activeEmployeeCount = employeeSummary?.active ?? 0;
 
   const daysUntilPayday = getDaysUntilPayday();
-  const compliance = hasPayroll ? getComplianceStatus() : null;
+  // A brand-new org with no staff and no payroll history has no WIT/INSS
+  // obligations yet — don't greet it with "overdue" compliance warnings.
+  const hasComplianceContext = activeEmployeeCount > 0 || payrollRuns.length > 0;
+  const compliance = hasPayroll && hasComplianceContext ? getComplianceStatus() : null;
   const nextPayDate = getNextPayDate();
   const nextPayDateKey = formatDateKey(nextPayDate);
   const firstName = user?.displayName?.split(" ")[0] || "";
@@ -601,7 +604,7 @@ export default function Dashboard() {
         <div>
           <p className="text-sm font-semibold mb-3">{t("dashboard.thingsToDo")}</p>
           <div className="space-y-2">
-            {hasPayroll && !payrollPrepared && (
+            {hasPayroll && !payrollPrepared && activeEmployeeCount > 0 && (
               <button onClick={() => navigate("/payroll/run")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-primary/30 transition-all text-left">
                 <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Play className="h-4 w-4 text-primary" />

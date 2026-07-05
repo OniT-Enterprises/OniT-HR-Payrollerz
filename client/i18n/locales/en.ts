@@ -334,6 +334,7 @@ const messages = {
     "simpleOverviewDesc": "Use these three cards for the most important tasks today.",
     "finishSetup": "Finish setup",
     "resumeSetup": "Resume setup",
+    "startSetup": "Start setup",
     "setupProgress": "{{percent}}% complete"
   },
   "documentAlerts": {
@@ -521,8 +522,7 @@ const messages = {
       "continue": "Continue",
       "companyName": "Company Name",
       "companyNamePlaceholder": "Acme Inc.",
-      "companyUrl": "Company URL",
-      "companyUrlPrefix": "app.onit.hr/",
+      "companyUrl": "Company ID",
       "companySlugPlaceholder": "acme-inc",
       "companyUrlHint": "This will be your unique organization identifier",
       "alreadyHaveAccount": "Already have an account?",

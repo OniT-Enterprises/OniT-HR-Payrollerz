@@ -189,9 +189,6 @@ export default function Onboarding() {
               <div className="space-y-2">
                 <Label htmlFor="companySlug">{t("auth.signup.companyUrl")}</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    {t("auth.signup.companyUrlPrefix")}
-                  </span>
                   <Input
                     id="companySlug"
                     type="text"

@@ -370,7 +370,7 @@ function SetupBanner({ setupPercent, onNavigate, t }: SetupBannerProps) {
         onClick={() => onNavigate("/setup")}
         className="self-start bg-sky-600 text-white hover:bg-sky-700 sm:self-auto"
       >
-        {t("dashboard.resumeSetup")}
+        {setupPercent > 0 ? t("dashboard.resumeSetup") : t("dashboard.startSetup")}
       </Button>
     </div>
   );
