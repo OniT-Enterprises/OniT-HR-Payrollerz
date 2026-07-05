@@ -38,7 +38,7 @@ import {
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
   const { user, userProfile, loading, authResolved, isSuperAdmin } = useAuth();
-  const { session, loading: tenantLoading, tenantResolved } = useTenant();
+  const { session, loading: tenantLoading, tenantResolved, availableTenants } = useTenant();
 
   // A cold load / fresh sign-in can have loading=false (cached) while Firebase
   // is still restoring the session — don't decide anything until auth resolves.
@@ -80,6 +80,13 @@ function HomeRoute() {
   if (!session) {
     if (isSuperAdmin) {
       return <Navigate to="/admin" replace />;
+    }
+    // The profile lists tenants the resolution hasn't seen (fresh signup /
+    // onboarding: it resolved before provisioning finished, and the profile
+    // change re-triggers the init effect only after this render). Wait for
+    // the re-run instead of bouncing a valid user to the marketing page.
+    if (availableTenants.length === 0) {
+      return <PageLoader />;
     }
     return <Navigate to="/landing" replace />;
   }

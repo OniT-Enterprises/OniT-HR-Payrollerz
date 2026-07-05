@@ -13,12 +13,14 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function Signup() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { refreshUserProfile, signInWithGoogle } = useAuth();
+  const { switchTenant } = useTenant();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export default function Signup() {
       await updateProfile(user, { displayName: displayName.trim() });
 
       // 3. Provision tenant + owner membership + user profile
-      await provisionOrganization({
+      const tenantId = await provisionOrganization({
         user,
         displayName: displayName.trim(),
         companyName,
@@ -103,7 +105,16 @@ export default function Signup() {
 
       await refreshUserProfile();
 
-      // 4. Navigate to dashboard
+      // 4. Load the new tenant session before navigating — HomeRoute decides
+      // from context state, and the tenant init effect may still hold the
+      // pre-provisioning "no tenants" resolution at that point.
+      try {
+        await switchTenant(tenantId);
+      } catch (switchErr) {
+        console.warn("Post-signup tenant load failed, deferring to re-init:", switchErr);
+      }
+
+      // 5. Navigate to dashboard
       navigate("/");
     } catch (err: unknown) {
       console.error("Signup error:", err);

@@ -13,6 +13,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, User as UserIcon, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { provisionOrganization, SlugTakenError } from "@/services/provisionOrg";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -26,6 +27,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { user, userProfile, authResolved, refreshUserProfile } = useAuth();
+  const { switchTenant } = useTenant();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,13 +85,21 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      await provisionOrganization({
+      const tenantId = await provisionOrganization({
         user,
         displayName: displayName.trim(),
         companyName,
         companySlug,
       });
       await refreshUserProfile();
+      // Load the new tenant session before navigating — HomeRoute decides
+      // from context state, and the tenant init effect may still hold the
+      // pre-provisioning "no tenants" resolution at that point.
+      try {
+        await switchTenant(tenantId);
+      } catch (switchErr) {
+        console.warn("Post-onboarding tenant load failed, deferring to re-init:", switchErr);
+      }
       navigate("/", { replace: true });
     } catch (err: unknown) {
       console.error("Onboarding error:", err);
