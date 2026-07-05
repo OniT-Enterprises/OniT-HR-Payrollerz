@@ -34,6 +34,7 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -94,6 +95,11 @@ export default function SetupWizard() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+  const invalidateSetupProgress = () =>
+    queryClient.invalidateQueries({
+      queryKey: ["tenants", tenantId, "setupProgress"],
+    });
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -349,6 +355,7 @@ export default function SetupWizard() {
     setSaving(true);
     try {
       await settingsService.completeSetup(tenantId);
+      invalidateSetupProgress();
       toast({
         title: t("setupWizard.setupComplete"),
         description: t("setupWizard.accountReady"),
@@ -387,6 +394,10 @@ export default function SetupWizard() {
     }
 
     if (success) {
+      // The TopBar/MainNavigation setup banner reads a cached setupProgress
+      // query (5-min staleTime); without this it says "0% complete" until a
+      // full reload, even right after finishing the wizard.
+      invalidateSetupProgress();
       setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
     }
   };

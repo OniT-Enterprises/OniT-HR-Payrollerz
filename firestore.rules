@@ -866,11 +866,15 @@ service cloud.firestore {
         (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /candidates/{candidateId} {
@@ -991,11 +995,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null &&
          canAccessTimeLeaveRecords(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         canAccessTimeLeaveRecords(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessTimeLeaveRecords(resource.data.tenantId));
     }
 
     match /timesheets/{docId} {
@@ -1013,7 +1021,7 @@ service cloud.firestore {
            isSelfEmployee(request.resource.data.tenantId, request.resource.data.employeeId))
         )
       );
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId && (
           canAccessTimeLeaveRecords(resource.data.tenantId) ||
@@ -1022,6 +1030,15 @@ service cloud.firestore {
             isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
             request.resource.data.employeeId == resource.data.employeeId
           )
+        )
+      );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         )
       );
     }
@@ -1099,11 +1116,15 @@ service cloud.firestore {
         ));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /trainings/{docId} {
@@ -1115,11 +1136,15 @@ service cloud.firestore {
         ));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /disciplinary/{docId} {
@@ -1214,11 +1239,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /benefitEnrollments/{docId} {
@@ -1232,11 +1261,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /recurringDeductions/{docId} {
@@ -1250,11 +1283,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /taxReports/{docId} {
@@ -1264,11 +1301,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     match /bankTransfers/{docId} {
@@ -1278,11 +1319,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     // Tax filings (TL WIT + INSS tracking)
@@ -1293,11 +1338,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     // Attendance tracking
@@ -1347,11 +1396,15 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && canAccessTimeLeaveRecords(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     // Accounting module collections
@@ -1389,11 +1442,15 @@ service cloud.firestore {
         (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId)
       );
+      // Deletes have no request.resource — a combined update/delete rule
+      // referencing it rejects every non-superadmin delete.
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
     }
 
     // ============================================

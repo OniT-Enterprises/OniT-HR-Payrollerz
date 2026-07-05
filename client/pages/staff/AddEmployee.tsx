@@ -155,7 +155,7 @@ export default function AddEmployee() {
       startDate: "",
       employmentType: "Full-time",
       salary: "",
-      leaveDays: "25",
+      leaveDays: "12",
       benefits: "standard",
       payFrequency: "monthly",
       isResident: true,
@@ -273,7 +273,7 @@ export default function AddEmployee() {
           startDate: employee.jobDetails.hireDate,
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
           salary: getMonthlySalary(employee.compensation).toString(),
-          leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
+          leaveDays: employee.compensation.annualLeaveDays?.toString() || "12",
           benefits: ((employee.compensation.benefitsPackage || "standard").toLowerCase()) as "basic" | "standard" | "premium" | "executive",
           payFrequency: employee.compensation.payFrequency || "monthly",
           isResident: employee.compensation.isResident ?? true,
@@ -507,7 +507,7 @@ export default function AddEmployee() {
         },
         compensation: {
           monthlySalary: parseInt(data.salary || "0", 10) || 0,
-          annualLeaveDays: parseInt(data.leaveDays, 10) || 25,
+          annualLeaveDays: parseInt(data.leaveDays, 10) || 12,
           benefitsPackage: data.benefits || "standard",
           payFrequency: data.payFrequency,
           isResident: data.isResident,
@@ -617,7 +617,7 @@ export default function AddEmployee() {
   // CSV Import handlers
   const downloadTemplate = () => {
     const headers = ["firstName", "lastName", "email", "phone", "department", "jobTitle", "startDate", "employmentType", "salary", "leaveDays"];
-    const sample = ["John", "Doe", "john@company.com", "+670123456", "Engineering", "Developer", "2024-02-01", "Full-time", "1500", "25"];
+    const sample = ["John", "Doe", "john@company.com", "+670123456", "Engineering", "Developer", "2024-02-01", "Full-time", "1500", "12"];
     const csv = [headers, sample].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
