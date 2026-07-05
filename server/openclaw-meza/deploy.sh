@@ -65,6 +65,7 @@ info "Syncing files to server..."
 eval $RSYNC_CMD \
   --exclude='.env' \
   --exclude='openclaw.json' \
+  --exclude='openclaw.json.bak*' \
   --exclude='node_modules' \
   --exclude='.git' \
   "$SCRIPT_DIR/" "root@$SERVER:$REMOTE_DIR/"

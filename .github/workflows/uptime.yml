@@ -1,0 +1,42 @@
+name: Uptime check
+
+# Free replacement for external uptime monitoring (LAUNCH_OPS_TODO item 3).
+# GitHub emails the workflow author on scheduled-run failures, so a down site
+# or dead API alerts within ~30 minutes instead of going unnoticed for days.
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Site serves 200
+        run: |
+          code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 30 --retry 2 https://meza.naroman.tl/)
+          echo "status: $code"
+          test "$code" = "200"
+
+      - name: API healthy
+        run: |
+          body=$(curl -sL --max-time 30 --retry 2 https://meza.naroman.tl/api/health)
+          echo "$body"
+          echo "$body" | grep -q '"success":true'
+
+      - name: WhatsApp bot channel
+        # The pairing died on Jul 2 2026 and needs a phone-side QR re-scan;
+        # flip continue-on-error to false once re-paired so this alerts too.
+        continue-on-error: true
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/uptime_key
+          chmod 600 ~/.ssh/uptime_key
+          fails=$(ssh -i ~/.ssh/uptime_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
+            'docker logs openclaw-meza --since 30m 2>&1 | grep -c "Connection Failure" || true')
+          echo "WhatsApp connection failures in last 30m: $fails"
+          test "$fails" -lt 5

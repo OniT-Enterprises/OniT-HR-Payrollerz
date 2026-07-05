@@ -36,11 +36,13 @@ is configured. Production errors are currently invisible.
 - `gh secret set VITE_SENTRY_DSN --body "<the dsn>"` (it flows into the CI build)
 - Next push to main activates it
 
-### 3. Uptime monitoring — ~5 min
-Nothing watches the site or API. Use UptimeRobot / healthchecks.io (free):
-
-- `https://meza.naroman.tl/` (expect 200)
-- `https://meza.naroman.tl/api/health` (expect 200, JSON `success: true`)
+### 3. ~~Uptime monitoring~~ — DONE July 5 2026 (GitHub Actions)
+`.github/workflows/uptime.yml` probes every 30 min: site 200, API health JSON,
+and the WhatsApp bot channel (via SSH, log-based). GitHub emails the workflow
+author when a scheduled run fails. The WhatsApp step is `continue-on-error`
+until the pairing is re-scanned — flip it to strict after re-pairing.
+(An external monitor like UptimeRobot is still a nice-to-have for
+independence from GitHub, but the gap is closed.)
 
 ## Medium priority
 
