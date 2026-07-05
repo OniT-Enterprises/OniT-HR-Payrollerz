@@ -33,6 +33,22 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cache Firestore emulator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
+      # Rules deploy automatically on push — never ship them untested
+      - name: Firestore rules tests
+        run: npm run emul:rules
+
       - name: Build
         run: npm run build
         env:
