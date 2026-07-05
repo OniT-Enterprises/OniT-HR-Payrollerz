@@ -22,13 +22,11 @@ console before they work:
 - Behaviour once enabled: existing/invited users sign straight in; a brand-new Google
   user (no profile) is routed to `/auth/onboarding` to create their company
 
-### 1. Firestore backups + point-in-time recovery — ~5 min, biggest risk reducer
-The only remaining single-point-of-failure: there is (as far as we could verify) no
-backup schedule. For a payroll product, data loss is the worst-case scenario.
-
-- Firebase Console → Firestore → **Disaster recovery** → enable **Point-in-time recovery**
-- Add a **daily backup schedule** (7–14 day retention)
-- Or via gcloud: `gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=14d`
+### 1. ~~Firestore backups + point-in-time recovery~~ — DONE July 5 2026
+Enabled via gcloud on the `(default)` database: **point-in-time recovery** (7-day
+version retention), **delete protection**, and a **daily backup schedule** with 14-day
+retention (schedule id `688b3702-fa98-4867-bebd-91192429b9f6`). Verify anytime with:
+`gcloud firestore backups schedules list --database='(default)' --project=onit-hr-payroll`
 
 ### 2. Sentry error tracking — ~10 min
 The app has full Sentry wiring (`client/main.tsx`) but ships disabled because no DSN
