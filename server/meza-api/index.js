@@ -1123,6 +1123,34 @@ router.get('/journal-entries', async (req, res) => {
 });
 
 /**
+ * GET /api/tenants/:tenantId/journal-entries/by-source
+ * Query: source, sourceId
+ * Returns { entry } — the live (non-void) entry for that external source
+ * record, or { entry: null }. Used by the Rezerva sync to propagate
+ * edits/deletes (void + repost by sourceId).
+ */
+router.get('/journal-entries/by-source', async (req, res) => {
+  try {
+    const { source, sourceId } = req.query;
+    if (!source || !sourceId) {
+      return res.status(400).json({ success: false, message: 'source and sourceId are required' });
+    }
+
+    const snapshot = await tenantCol(req.tenantId, 'journalEntries')
+      .where('source', '==', source)
+      .where('sourceId', '==', sourceId)
+      .limit(5)
+      .get();
+
+    const live = snapshot.docs.find(d => d.data().status !== 'void');
+    res.json({ success: true, entry: live ? mapDoc(live) : null });
+  } catch (error) {
+    console.error('[journal-entries/by-source]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * POST /api/tenants/:tenantId/journal-entries
  * Creates a journal entry and corresponding GL entries atomically.
  *
@@ -1174,20 +1202,21 @@ router.post('/journal-entries', async (req, res) => {
 
     // Idempotency: entries pushed from external systems (source + sourceId, e.g.
     // Rezerva sync/backfill) must not double-post the ledger on retry. Return the
-    // existing entry instead of creating a duplicate.
+    // existing entry instead of creating a duplicate. Voided entries don't count —
+    // a void + repost (source-record edit) must be able to create a fresh entry.
     if (source && source !== 'manual' && sourceId) {
       const dupSnap = await db.collection(`tenants/${tid}/journalEntries`)
         .where('source', '==', source)
         .where('sourceId', '==', sourceId)
-        .limit(1)
+        .limit(5)
         .get();
-      if (!dupSnap.empty) {
-        const existing = dupSnap.docs[0];
-        const existingData = existing.data();
+      const live = dupSnap.docs.find(d => d.data().status !== 'void');
+      if (live) {
+        const existingData = live.data();
         console.log(`[journal-entries] Dedup hit for ${source}/${sourceId} → ${existingData.entryNumber}`);
         return res.status(200).json({
           success: true,
-          id: existing.id,
+          id: live.id,
           entryNumber: existingData.entryNumber,
           status: existingData.status,
           deduped: true,
