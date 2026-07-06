@@ -1172,6 +1172,29 @@ router.post('/journal-entries', async (req, res) => {
     const month = parseInt(entryDate.slice(5, 7), 10);
     const tid = req.tenantId;
 
+    // Idempotency: entries pushed from external systems (source + sourceId, e.g.
+    // Rezerva sync/backfill) must not double-post the ledger on retry. Return the
+    // existing entry instead of creating a duplicate.
+    if (source && source !== 'manual' && sourceId) {
+      const dupSnap = await db.collection(`tenants/${tid}/journalEntries`)
+        .where('source', '==', source)
+        .where('sourceId', '==', sourceId)
+        .limit(1)
+        .get();
+      if (!dupSnap.empty) {
+        const existing = dupSnap.docs[0];
+        const existingData = existing.data();
+        console.log(`[journal-entries] Dedup hit for ${source}/${sourceId} → ${existingData.entryNumber}`);
+        return res.status(200).json({
+          success: true,
+          id: existing.id,
+          entryNumber: existingData.entryNumber,
+          status: existingData.status,
+          deduped: true,
+        });
+      }
+    }
+
     // Atomic transaction: generate entry number + write journal + write GL
     const result = await db.runTransaction(async (transaction) => {
       // --- Generate next entry number ---
@@ -3023,6 +3046,119 @@ router.post('/employees', async (req, res) => {
     });
   } catch (error) {
     console.error('[employees/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/employees/sync
+ * Upsert an employee from an external system (e.g. Rezerva PMS staff).
+ * Matches on externalRef.system + externalRef.id. On update only ops fields
+ * (name, contact, position, department, status) are touched — compensation,
+ * documents and other HR fields stay owned by Meza.
+ * Body: { externalRef: { system, hotelId?, id }, firstName, lastName,
+ *         email?, phone?, jobTitle?, department?, startDate?, isActive? }
+ */
+router.post('/employees/sync', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      externalRef, firstName, lastName,
+      email = '', phone = '', jobTitle = '', department = '',
+      startDate = '', isActive = true,
+    } = req.body || {};
+
+    if (!externalRef?.system || !externalRef?.id) {
+      return res.status(400).json({ success: false, message: 'externalRef.system and externalRef.id are required' });
+    }
+    if (!firstName || !lastName) {
+      return res.status(400).json({ success: false, message: 'firstName and lastName are required' });
+    }
+    if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      return res.status(400).json({ success: false, message: 'startDate must be YYYY-MM-DD' });
+    }
+
+    const status = isActive === false ? 'inactive' : 'active';
+
+    const existingSnap = await tenantCol(tid, 'employees')
+      .where('externalRef.system', '==', externalRef.system)
+      .where('externalRef.id', '==', externalRef.id)
+      .limit(1)
+      .get();
+
+    if (!existingSnap.empty) {
+      const docRef = existingSnap.docs[0].ref;
+      const patch = {
+        status,
+        'personalInfo.firstName': firstName,
+        'personalInfo.lastName': lastName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      if (email) patch['personalInfo.email'] = email;
+      if (phone) patch['personalInfo.phone'] = phone;
+      if (jobTitle) patch['jobDetails.position'] = jobTitle;
+      if (department) patch['jobDetails.department'] = department;
+      await docRef.update(patch);
+
+      await writeAuditLog(tid, {
+        userId: 'rezerva-sync', userEmail: 'rezerva-sync',
+        action: 'employee.sync', module: 'employees',
+        description: `Synced employee ${firstName} ${lastName} from ${externalRef.system} (${status})`,
+        entityId: docRef.id, entityType: 'employee',
+      });
+
+      return res.json({ success: true, id: docRef.id, action: 'updated' });
+    }
+
+    const employeeId = `${String(externalRef.system).slice(0, 3).toUpperCase()}-${String(externalRef.id).slice(-6).toUpperCase()}`;
+    const employee = {
+      status,
+      externalRef: {
+        system: externalRef.system,
+        hotelId: externalRef.hotelId || '',
+        id: externalRef.id,
+      },
+      personalInfo: {
+        firstName, lastName, email, phone,
+        phoneApp: '', appEligible: true,
+        address: '', dateOfBirth: '',
+        socialSecurityNumber: '',
+        emergencyContactName: '', emergencyContactPhone: '',
+      },
+      jobDetails: {
+        employeeId,
+        department: department || 'Operations',
+        position: jobTitle || 'Staff',
+        hireDate: startDate || '',
+        employmentType: 'full-time', workLocation: '', manager: '',
+      },
+      compensation: {
+        monthlySalary: 0,
+        annualLeaveDays: 12,
+        benefitsPackage: '',
+      },
+      documents: {
+        employeeIdCard: { number: '', expiryDate: '', required: true },
+        socialSecurityNumber: { number: '', expiryDate: '', required: true },
+        electoralCard: { number: '', expiryDate: '', required: false },
+      },
+      createdBy: 'rezerva-sync',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'employees').add(employee);
+
+    await writeAuditLog(tid, {
+      userId: 'rezerva-sync', userEmail: 'rezerva-sync',
+      action: 'employee.create', module: 'employees',
+      description: `Created employee ${firstName} ${lastName} via ${externalRef.system} sync`,
+      entityId: docRef.id, entityType: 'employee',
+    });
+
+    res.status(201).json({ success: true, id: docRef.id, action: 'created', employeeId });
+  } catch (error) {
+    console.error('[employees/sync]', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
