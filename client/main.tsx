@@ -23,6 +23,20 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
+// After a deploy the old hashed chunks are gone; Vite fires this event when a
+// dynamic import (or one of its preloaded deps) fails to fetch. Reload once
+// (shared once-per-minute guard with lazyWithRetry in routes.tsx) to pick up
+// the fresh index.html instead of stranding the user on a dead page.
+window.addEventListener("vite:preloadError", (event) => {
+  const KEY = "meza-chunk-reload-at";
+  const last = Number(sessionStorage.getItem(KEY) || 0);
+  if (Date.now() - last > 60_000) {
+    sessionStorage.setItem(KEY, String(Date.now()));
+    event.preventDefault(); // suppress the throw; we're reloading
+    window.location.reload();
+  }
+});
+
 // Get the root element
 const container = document.getElementById("root");
 if (!container) {

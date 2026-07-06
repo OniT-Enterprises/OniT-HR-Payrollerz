@@ -60,7 +60,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
+  // A failed dynamic import means the deployed chunks changed under us —
+  // resetting React state can't fix that; only a full reload fetches the
+  // fresh index.html and chunk manifest.
+  isChunkLoadError = (error: Error | null): boolean =>
+    !!error &&
+    (/failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|chunkloaderror/i.test(
+      error.message || "",
+    ) || error.name === "ChunkLoadError");
+
   reset = () => {
+    if (this.isChunkLoadError(this.state.error)) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
   };
 

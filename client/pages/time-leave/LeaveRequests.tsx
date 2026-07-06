@@ -665,6 +665,7 @@ export default function LeaveRequests() {
                             formData.leaveType as keyof LeaveBalance
                           ];
                         if (
+                          balance &&
                           typeof balance === "object" &&
                           "remaining" in balance
                         ) {
@@ -822,7 +823,7 @@ export default function LeaveRequests() {
                 { key: "paternity" as const, icon: <Baby className="h-4 w-4" />, barColor: "bg-blue-500", bgTint: "bg-blue-500/10", iconColor: "text-blue-600 dark:text-blue-400" },
               ].map(({ key, icon, barColor, bgTint, iconColor }) => {
                 const bal = myBalance[key];
-                if (typeof bal !== "object" || !("remaining" in bal)) return null;
+                if (!bal || typeof bal !== "object" || !("remaining" in bal)) return null;
                 const entitled = bal.remaining + bal.used + bal.pending;
                 const usedPct = entitled > 0 ? ((bal.used + bal.pending) / entitled) * 100 : 0;
                 return (

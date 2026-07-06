@@ -194,11 +194,17 @@ function mapEmployee(doc: DocumentSnapshot): Employee {
   const validated = firestoreEmployeeSchema.safeParse(data);
 
   if (!validated.success) {
-    // Log validation issues but continue with best-effort parsing
+    // Log validation issues but continue with best-effort parsing. One bad
+    // employee doc must not throw — that would take down every page that
+    // loads the employee list for the whole tenant.
     console.warn(`Employee validation warning (${doc.id}):`, validated.error.flatten().fieldErrors);
   }
 
-  const parsed = validated.success ? validated.data : firestoreEmployeeSchema.parse(data);
+  // Schema defaults make parse({}) always succeed; spreading the raw doc on
+  // top preserves whatever real values exist (pre-zod behavior).
+  const parsed = validated.success
+    ? validated.data
+    : { ...firestoreEmployeeSchema.parse({}), ...data };
 
   return {
     id: doc.id,
