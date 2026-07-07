@@ -13,7 +13,7 @@ import {
   determineStatus,
   calculateHoursBreakdown,
   MAX_REASONABLE_ENTRY_HOURS,
-} from '../../client/services/attendanceService';
+} from '../../client/lib/attendanceCalculations';
 
 describe('calculateHoursBetween', () => {
   it('computes a normal span', () => {

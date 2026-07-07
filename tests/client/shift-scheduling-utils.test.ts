@@ -4,7 +4,7 @@
  * - getWeekStartTL / addDaysISO (timezone-independent week math)
  */
 import { describe, it, expect } from 'vitest';
-import { calcShiftHours } from '../../client/services/shiftService';
+import { calcShiftHours } from '../../client/lib/shiftCalculations';
 import { getWeekStartTL, addDaysISO } from '../../client/lib/dateUtils';
 
 describe('calcShiftHours', () => {

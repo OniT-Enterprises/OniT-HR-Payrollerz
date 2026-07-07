@@ -21,6 +21,13 @@ import {
 import { db } from '@/lib/firebase';
 import { addDaysISO } from '@/lib/dateUtils';
 
+// Pure calculations/slot config live in a Firebase-free module so they can be
+// unit-tested without loading the Firestore client. Re-exported here so existing
+// importers of `@/services/shiftService` keep working unchanged.
+import { DEFAULT_SHIFT_SLOTS, type ShiftSlot } from '@/lib/shiftCalculations';
+export { calcShiftHours, DEFAULT_SHIFT_SLOTS } from '@/lib/shiftCalculations';
+export type { ShiftSlot } from '@/lib/shiftCalculations';
+
 // ============================================
 // TYPES
 // ============================================
@@ -46,35 +53,6 @@ export interface ShiftRecord {
   createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-export interface ShiftSlot {
-  id: string;
-  label: string;
-  enabled: boolean;
-  startTime: string; // HH:MM
-  endTime: string; // HH:MM
-  color: string; // dot color class
-}
-
-export const DEFAULT_SHIFT_SLOTS: ShiftSlot[] = [
-  { id: 'morning', label: 'Morning', enabled: true, startTime: '06:00', endTime: '14:00', color: 'bg-orange-500' },
-  { id: 'afternoon', label: 'Afternoon', enabled: true, startTime: '14:00', endTime: '22:00', color: 'bg-red-500' },
-  { id: 'night', label: 'Night', enabled: false, startTime: '22:00', endTime: '06:00', color: 'bg-purple-500' },
-];
-
-/**
- * Hours between two HH:MM strings. Spans past midnight (e.g. 22:00–06:00)
- * are treated as overnight shifts, never negative.
- */
-export function calcShiftHours(startTime: string, endTime: string): number {
-  if (!startTime || !endTime) return 0;
-  const [sh, sm] = startTime.split(':').map(Number);
-  const [eh, em] = endTime.split(':').map(Number);
-  if ([sh, sm, eh, em].some(Number.isNaN)) return 0;
-  let diff = eh * 60 + em - (sh * 60 + sm);
-  if (diff <= 0) diff += 24 * 60;
-  return Math.round((diff / 60) * 100) / 100;
 }
 
 // ============================================
