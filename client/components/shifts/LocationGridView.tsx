@@ -3,14 +3,20 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { toDateStringTL } from "@/lib/dateUtils";
+import {
+  getTodayTL,
+  getWeekStartTL,
+  addDaysISO,
+  parseDateISO,
+} from "@/lib/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import type { ShiftRecord } from "@/services/shiftService";
+import { useI18n } from "@/i18n/I18nProvider";
+import { calcShiftHours, type ShiftRecord, type ShiftSlot } from "@/services/shiftService";
+import type { WorkLocation } from "@/types/settings";
 
 import LocationSelector, { type LocationItem } from "./LocationSelector";
 import ShiftTimeConfig from "./ShiftTimeConfig";
-import { type ShiftSlot, defaultShiftSlots } from "./shiftTypes";
 import StaffAssignPopover from "./StaffAssignPopover";
 
 interface Employee {
@@ -24,34 +30,33 @@ interface LocationGridViewProps {
   employees: Employee[];
   shifts: ShiftRecord[];
   selectedWeek: string;
-  locations: string[];
-  getLocationLabel: (loc: string) => string;
+  locations: WorkLocation[];
+  slots: ShiftSlot[];
+  onSlotsChange: (slots: ShiftSlot[]) => void;
   onCreateShift: (data: Omit<ShiftRecord, "id" | "tenantId" | "createdAt" | "updatedAt">) => Promise<string>;
   onDeleteShift: (shiftId: string) => Promise<void>;
+  onSelectWeek: (week: string) => void;
   goToPreviousWeek: () => void;
   goToNextWeek: () => void;
-  goToCurrentWeek: () => void;
 }
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** Classify a location string into a type for the icon */
-function classifyLocation(name: string): LocationItem["type"] {
-  const lower = name.toLowerCase();
-  if (lower.includes("warehouse")) return "warehouse";
-  if (lower.includes("remote")) return "remote";
-  if (lower.includes("client") || lower.includes("site")) return "site";
-  return "office";
+/** Pick an icon type for a work location */
+function classifyLocation(loc: WorkLocation): LocationItem["type"] {
+  const lower = loc.name.toLowerCase();
+  if (lower.includes("warehouse") || lower.includes("armazém") || lower.includes("armazen")) return "warehouse";
+  if (lower.includes("remote") || lower.includes("remotu")) return "remote";
+  if (loc.isHeadquarters) return "office";
+  return "site";
 }
 
-/** Calculate hours between two HH:MM strings (handles overnight) */
-function calcHours(start: string, end: string): number {
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  let diff = (eh * 60 + em) - (sh * 60 + sm);
-  if (diff <= 0) diff += 24 * 60;
-  return Math.round((diff / 60) * 100) / 100;
+/** Is HH:MM `time` within [start, end), wrapping past midnight when start > end */
+function timeInSlot(time: string, start: string, end: string): boolean {
+  if (start === end) return time === start;
+  if (start < end) return time >= start && time < end;
+  return time >= start || time < end; // overnight slot, e.g. 22:00–06:00
 }
 
 export default function LocationGridView({
@@ -59,49 +64,69 @@ export default function LocationGridView({
   shifts,
   selectedWeek,
   locations,
-  getLocationLabel,
+  slots,
+  onSlotsChange,
   onCreateShift,
   onDeleteShift,
+  onSelectWeek,
   goToPreviousWeek,
   goToNextWeek,
-  goToCurrentWeek,
 }: LocationGridViewProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useI18n();
 
-  const [selectedLocation, setSelectedLocation] = useState(locations[0] || "");
-  const [shiftSlots, setShiftSlots] = useState<ShiftSlot[]>(defaultShiftSlots);
-  const [weekTab, setWeekTab] = useState<"this" | "next">("this");
+  const [pickedLocation, setPickedLocation] = useState("");
+
+  // Fall back to the first location while none is picked (or the picked one was removed)
+  const selectedLocation = locations.some((l) => l.name === pickedLocation)
+    ? pickedLocation
+    : locations[0]?.name ?? "";
+
+  const slotLabel = useCallback(
+    (slot: ShiftSlot) => {
+      const key = `timeLeave.shiftScheduling.locationView.slots.${slot.id}`;
+      const translated = t(key);
+      return translated === key ? slot.label : translated;
+    },
+    [t]
+  );
 
   const locationItems: LocationItem[] = useMemo(
     () =>
       locations.map((loc) => ({
-        name: loc,
-        label: getLocationLabel(loc),
+        name: loc.name,
+        label: loc.name,
+        sublabel: loc.isHeadquarters
+          ? t("timeLeave.shiftScheduling.locationView.headquarters")
+          : loc.city || undefined,
         type: classifyLocation(loc),
       })),
-    [locations, getLocationLabel]
+    [locations, t]
   );
 
-  const activeSlots = useMemo(() => shiftSlots.filter((s) => s.enabled), [shiftSlots]);
+  const activeSlots = useMemo(() => slots.filter((s) => s.enabled), [slots]);
 
-  // Week dates array — use plain JS for day/month names to avoid formatDateTL defaults
   const weekDates = useMemo(() => {
-    const start = new Date(selectedWeek);
-    const todayStr = toDateStringTL(new Date());
+    const todayStr = getTodayTL();
     return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const dateStr = toDateStringTL(d);
+      const dateStr = addDaysISO(selectedWeek, i);
+      const d = parseDateISO(dateStr);
       return {
         dateStr,
-        dayName: DAY_NAMES[d.getDay()],
-        dayNum: d.getDate(),
-        monthName: MONTH_NAMES[d.getMonth()],
+        dayName: DAY_NAMES[d.getUTCDay()],
+        dayNum: d.getUTCDate(),
+        monthName: MONTH_NAMES[d.getUTCMonth()],
         isToday: dateStr === todayStr,
       };
     });
   }, [selectedWeek]);
+
+  // Which quick-tab (if any) matches the selected week
+  const thisWeekStart = getWeekStartTL();
+  const nextWeekStart = addDaysISO(thisWeekStart, 7);
+  const weekTab: "this" | "next" | null =
+    selectedWeek === thisWeekStart ? "this" : selectedWeek === nextWeekStart ? "next" : null;
 
   const locationShifts = useMemo(
     () => shifts.filter((s) => s.location === selectedLocation),
@@ -110,7 +135,14 @@ export default function LocationGridView({
 
   const getSlotForShift = useCallback(
     (shift: ShiftRecord): ShiftSlot | undefined => {
-      return activeSlots.find((slot) => slot.startTime === shift.startTime);
+      if (shift.slotId) {
+        const byId = activeSlots.find((slot) => slot.id === shift.slotId);
+        if (byId) return byId;
+      }
+      // Legacy shifts and dialog-created shifts: match by time range
+      return activeSlots.find((slot) =>
+        timeInSlot(shift.startTime, slot.startTime, slot.endTime)
+      );
     },
     [activeSlots]
   );
@@ -148,60 +180,69 @@ export default function LocationGridView({
           date: dateStr,
           startTime: slot.startTime,
           endTime: slot.endTime,
-          hours: calcHours(slot.startTime, slot.endTime),
+          hours: calcShiftHours(slot.startTime, slot.endTime),
           status: "draft",
           location: selectedLocation,
+          slotId: slot.id,
           notes: "",
           createdBy: user?.email || "unknown",
         });
-        toast({ title: "Shift assigned", description: `${emp.name} added to ${slot.label} shift` });
+        toast({
+          title: t("timeLeave.shiftScheduling.locationView.assignedTitle"),
+          description: t("timeLeave.shiftScheduling.locationView.assignedDesc", {
+            name: emp.name,
+            slot: slotLabel(slot),
+          }),
+        });
       } catch {
-        toast({ title: "Error", description: "Failed to assign shift", variant: "destructive" });
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+          description: t("timeLeave.shiftScheduling.locationView.assignError"),
+          variant: "destructive",
+        });
       }
     },
-    [onCreateShift, selectedLocation, user, toast]
+    [onCreateShift, selectedLocation, user, toast, t, slotLabel]
   );
 
   const handleUnassign = useCallback(
     async (shiftId: string) => {
       try {
         await onDeleteShift(shiftId);
-        toast({ title: "Shift removed", description: "Employee unassigned" });
+        toast({
+          title: t("timeLeave.shiftScheduling.locationView.removedTitle"),
+          description: t("timeLeave.shiftScheduling.locationView.removedDesc"),
+        });
       } catch {
-        toast({ title: "Error", description: "Failed to remove shift", variant: "destructive" });
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+          description: t("timeLeave.shiftScheduling.locationView.removeError"),
+          variant: "destructive",
+        });
       }
     },
-    [onDeleteShift, toast]
+    [onDeleteShift, toast, t]
   );
-
-  const handleWeekTab = (tab: "this" | "next") => {
-    setWeekTab(tab);
-    if (tab === "this") {
-      goToCurrentWeek();
-    } else {
-      goToNextWeek();
-    }
-  };
 
   return (
     <div className="space-y-4">
-      {/* Top section: Location selector + Shift time config — stack on smaller screens */}
+      {/* Top section: Location selector + Shift time config */}
       <div className="flex flex-col gap-4">
         <div className="min-w-0">
           <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Location
+            {t("timeLeave.shiftScheduling.controls.location")}
           </div>
           <LocationSelector
             locations={locationItems}
             selected={selectedLocation}
-            onSelect={setSelectedLocation}
+            onSelect={setPickedLocation}
           />
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Shift Slots
+            {t("timeLeave.shiftScheduling.locationView.shiftSlots")}
           </div>
-          <ShiftTimeConfig slots={shiftSlots} onChange={setShiftSlots} />
+          <ShiftTimeConfig slots={slots} onChange={onSlotsChange} />
         </div>
       </div>
 
@@ -209,7 +250,7 @@ export default function LocationGridView({
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
           <button
-            onClick={() => handleWeekTab("this")}
+            onClick={() => onSelectWeek(thisWeekStart)}
             className={cn(
               "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
               weekTab === "this"
@@ -217,10 +258,10 @@ export default function LocationGridView({
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            This Week
+            {t("timeLeave.shiftScheduling.locationView.thisWeek")}
           </button>
           <button
-            onClick={() => handleWeekTab("next")}
+            onClick={() => onSelectWeek(nextWeekStart)}
             className={cn(
               "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
               weekTab === "next"
@@ -228,7 +269,7 @@ export default function LocationGridView({
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            Next Week
+            {t("timeLeave.shiftScheduling.locationView.nextWeek")}
           </button>
         </div>
 
@@ -244,13 +285,20 @@ export default function LocationGridView({
           </Button>
         </div>
 
-        <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
-          Today
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs h-8"
+          onClick={() => onSelectWeek(thisWeekStart)}
+        >
+          {t("timeLeave.attendance.actions.today")}
         </Button>
 
         <span className="text-xs text-muted-foreground ml-auto">
-          {locationShifts.length} shift{locationShifts.length !== 1 ? "s" : ""} at{" "}
-          {getLocationLabel(selectedLocation)}
+          {t("timeLeave.shiftScheduling.locationView.shiftsAt", {
+            count: locationShifts.length,
+            location: selectedLocation,
+          })}
         </span>
       </div>
 
@@ -258,9 +306,11 @@ export default function LocationGridView({
       {activeSlots.length === 0 ? (
         <div className="py-16 text-center border rounded-xl bg-card">
           <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No shift slots enabled</p>
+          <p className="text-sm text-muted-foreground">
+            {t("timeLeave.shiftScheduling.locationView.noSlots")}
+          </p>
           <p className="text-xs text-muted-foreground/60 mt-1">
-            Toggle at least one shift slot above to see the grid
+            {t("timeLeave.shiftScheduling.locationView.noSlotsHint")}
           </p>
         </div>
       ) : (
@@ -269,7 +319,7 @@ export default function LocationGridView({
             <thead>
               <tr className="bg-muted/50">
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border/30 w-24">
-                  Day
+                  {t("timeLeave.shiftScheduling.locationView.day")}
                 </th>
                 {activeSlots.map((slot) => (
                   <th
@@ -279,7 +329,7 @@ export default function LocationGridView({
                     <div className="flex items-center justify-center gap-2">
                       <div className={cn("w-2 h-2 rounded-full", slot.color)} />
                       <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        {slot.label}
+                        {slotLabel(slot)}
                       </span>
                     </div>
                     <div className="text-[10px] text-muted-foreground/60 mt-0.5">
@@ -341,7 +391,7 @@ export default function LocationGridView({
                                     shift.status === "confirmed" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                   )}
                                 >
-                                  {shift.employeeName?.split(" ")[0] || "Staff"}
+                                  {shift.employeeName?.split(" ")[0] || "—"}
                                 </Badge>
                               ))}
                             </div>
@@ -353,7 +403,8 @@ export default function LocationGridView({
                             assignedShiftMap={shiftMap}
                             date={day.dateStr}
                             slot={slot}
-                            location={getLocationLabel(selectedLocation)}
+                            slotLabel={slotLabel(slot)}
+                            location={selectedLocation}
                             onAssign={(empId, emp) => handleAssign(empId, emp, day.dateStr, slot)}
                             onUnassign={handleUnassign}
                           />
@@ -372,15 +423,15 @@ export default function LocationGridView({
       <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
-          Draft
+          {t("timeLeave.shiftScheduling.status.draft")}
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-blue-500" />
-          Published
+          {t("timeLeave.shiftScheduling.status.published")}
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          Confirmed
+          {t("timeLeave.shiftScheduling.status.confirmed")}
         </div>
       </div>
     </div>

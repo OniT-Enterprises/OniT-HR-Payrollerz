@@ -24,27 +24,50 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Plus,
   Download,
   Clock,
   ChevronLeft,
   ChevronRight,
-  Building,
-  User,
+  PencilLine,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
-import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
+import {
+  useAttendanceByDate,
+  useMarkAttendance,
+  useAdjustAttendance,
+  useDeleteAttendance,
+} from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
-import { formatDateTL, toDateStringTL } from "@/lib/dateUtils";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatDateTL, toDateStringTL, addDaysISO } from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
+import {
+  computeEntryHours,
+  MAX_REASONABLE_ENTRY_HOURS,
+} from "@/services/attendanceService";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function TimeTracking() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("entries");
   const [selectedDate, setSelectedDate] = useState(() => toDateStringTL(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState("all");
@@ -58,6 +81,8 @@ export default function TimeTracking() {
   const { data: departments = [] } = useDepartments(tenantId);
   const { data: attendanceRecords = [], isLoading: attendanceLoading } = useAttendanceByDate(selectedDate);
   const markAttendanceMutation = useMarkAttendance();
+  const adjustAttendanceMutation = useAdjustAttendance();
+  const deleteAttendanceMutation = useDeleteAttendance();
   const loading = empLoading || attendanceLoading;
 
   // Map real employees for dropdowns
@@ -84,6 +109,7 @@ export default function TimeTracking() {
     status: r.status,
     source: r.source,
     lateMinutes: r.lateMinutes,
+    isAdjusted: r.isAdjusted,
     notes: r.notes || '',
   })), [attendanceRecords]);
 
@@ -180,17 +206,9 @@ export default function TimeTracking() {
     </span>
   );
 
-  const goToPreviousDay = () => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
-  };
-
-  const goToNextDay = () => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
-  };
+  // Pure ISO-string math — identical in every viewer timezone
+  const goToPreviousDay = () => setSelectedDate(addDaysISO(selectedDate, -1));
+  const goToNextDay = () => setSelectedDate(addDaysISO(selectedDate, 1));
 
   const todayStr = toDateStringTL(new Date());
   const isToday = selectedDate === todayStr;
@@ -234,6 +252,19 @@ export default function TimeTracking() {
       return;
     }
 
+    // Catch reversed clock-out typos before they become a 20-hour payroll day
+    const preview = computeEntryHours(formData.clockIn, formData.clockOut);
+    if (formData.clockIn && formData.clockOut && preview.totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      toast({
+        title: t("timeLeave.timeTracking.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.dialog.tooLong", {
+          hours: preview.totalHours.toFixed(1),
+        }),
+        variant: "destructive",
+      });
+      return;
+    }
+
     const emp = realEmployees.find(e => e.id === formData.employee);
     try {
       await markAttendanceMutation.mutateAsync({
@@ -262,44 +293,92 @@ export default function TimeTracking() {
     }
   };
 
-  const handleExportCSV = () => {
-    // Build CSV from real data
-    const csvHeaders = [
-      t("timeLeave.timeTracking.csv.employeeName"),
-      t("timeLeave.timeTracking.csv.date"),
-      t("timeLeave.timeTracking.csv.clockIn"),
-      t("timeLeave.timeTracking.csv.clockOut"),
-      t("timeLeave.timeTracking.table.totalHours"),
-      t("timeLeave.attendance.table.status"),
-      t("timeLeave.timeTracking.table.source"),
-    ];
+  // ── Edit / delete an existing entry (audit-logged adjustment) ──
+  const [editEntry, setEditEntry] = useState<{
+    id: string;
+    employeeName: string;
+    date: string;
+    clockIn: string;
+    clockOut: string;
+    reason: string;
+  } | null>(null);
 
-    const csvRows = timeEntries.map((entry) => [
-      entry.employeeName,
-      entry.date,
-      entry.clockIn,
-      entry.clockOut,
-      entry.totalHours.toString(),
-      getStatusLabel(entry.status),
-      getSourceLabel(entry.source),
-    ]);
-
-    const csvContent = [csvHeaders, ...csvRows]
-      .map(row => row.map(cell => `"${cell}"`).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `attendance-${selectedDate}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: t("timeLeave.timeTracking.toast.exportTitle"),
-      description: t("timeLeave.timeTracking.toast.exportDesc"),
+  const openEditDialog = (entry: (typeof timeEntries)[number]) => {
+    setEditEntry({
+      id: entry.id,
+      employeeName: entry.employeeName,
+      date: entry.date,
+      clockIn: entry.clockIn === '--:--' ? '' : entry.clockIn,
+      clockOut: entry.clockOut === '--:--' ? '' : entry.clockOut,
+      reason: '',
     });
+  };
+
+  const handleAdjustSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEntry) return;
+
+    if (!editEntry.reason.trim()) {
+      toast({
+        title: t("timeLeave.timeTracking.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.edit.reasonRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const preview = computeEntryHours(editEntry.clockIn, editEntry.clockOut);
+    if (editEntry.clockIn && editEntry.clockOut && preview.totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      toast({
+        title: t("timeLeave.timeTracking.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.dialog.tooLong", {
+          hours: preview.totalHours.toFixed(1),
+        }),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await adjustAttendanceMutation.mutateAsync({
+        recordId: editEntry.id,
+        adjustments: {
+          clockIn: editEntry.clockIn || undefined,
+          clockOut: editEntry.clockOut || undefined,
+          reason: editEntry.reason.trim(),
+          adjustedBy: user?.email || 'unknown',
+        },
+      });
+      toast({
+        title: t("timeLeave.timeTracking.toast.successTitle"),
+        description: t("timeLeave.timeTracking.edit.adjustSuccess"),
+      });
+      setEditEntry(null);
+    } catch {
+      toast({
+        title: t("timeLeave.timeTracking.toast.errorTitle"),
+        description: t("timeLeave.timeTracking.toast.errorDesc"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!editEntry) return;
+    try {
+      await deleteAttendanceMutation.mutateAsync(editEntry.id);
+      toast({
+        title: t("timeLeave.timeTracking.toast.successTitle"),
+        description: t("timeLeave.timeTracking.edit.deleteSuccess"),
+      });
+      setEditEntry(null);
+    } catch {
+      toast({
+        title: t("timeLeave.timeTracking.toast.errorTitle"),
+        description: t("timeLeave.timeTracking.toast.errorDesc"),
+        variant: "destructive",
+      });
+    }
   };
 
   // Apply client-side filters
@@ -314,6 +393,42 @@ export default function TimeTracking() {
     return entries;
   }, [timeEntries, selectedEmployee, selectedDepartment]);
 
+  const handleExportCSV = () => {
+    if (filteredEntries.length === 0) {
+      toast({
+        title: t("timeLeave.timeTracking.toast.exportEmptyTitle"),
+        description: t("timeLeave.timeTracking.entries.emptyDescription", { date: selectedDateLabel }),
+      });
+      return;
+    }
+
+    // Export exactly what the table shows (respects active filters)
+    const rows = filteredEntries.map((entry) => ({
+      ...entry,
+      statusLabel: getStatusLabel(entry.status),
+      sourceLabel: getSourceLabel(entry.source),
+    }));
+
+    exportToCSV(rows, `attendance_${selectedDate}`, [
+      { key: "employeeName", label: t("timeLeave.timeTracking.csv.employeeName") },
+      { key: "department", label: t("timeLeave.attendance.table.department") },
+      { key: "date", label: t("timeLeave.timeTracking.csv.date") },
+      { key: "clockIn", label: t("timeLeave.timeTracking.csv.clockIn") },
+      { key: "clockOut", label: t("timeLeave.timeTracking.csv.clockOut") },
+      { key: "totalHours", label: t("timeLeave.timeTracking.table.totalHours") },
+      { key: "overtimeHours", label: t("timeLeave.attendance.table.overtime") },
+      { key: "lateMinutes", label: t("timeLeave.attendance.table.late") },
+      { key: "statusLabel", label: t("timeLeave.attendance.table.status") },
+      { key: "sourceLabel", label: t("timeLeave.timeTracking.table.source") },
+      { key: "notes", label: t("timeLeave.timeTracking.dialog.notes") },
+    ]);
+
+    toast({
+      title: t("timeLeave.timeTracking.toast.exportTitle"),
+      description: t("timeLeave.timeTracking.toast.exportDesc"),
+    });
+  };
+
   // Pagination (clamp page when filtered results shrink)
   const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
   const effectivePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
@@ -327,7 +442,7 @@ export default function TimeTracking() {
   const departmentSummary = useMemo(() => {
     const deptMap = new Map<string, { present: number; late: number; absent: number; totalHours: number }>();
     for (const entry of timeEntries) {
-      const dept = entry.department || 'Unassigned';
+      const dept = entry.department || t("timeLeave.timeTracking.reports.unassigned");
       const current = deptMap.get(dept) || { present: 0, late: 0, absent: 0, totalHours: 0 };
       if (entry.status === 'present') current.present++;
       if (entry.status === 'late') current.late++;
@@ -336,7 +451,7 @@ export default function TimeTracking() {
       deptMap.set(dept, current);
     }
     return Array.from(deptMap.entries()).map(([name, stats]) => ({ name, ...stats }));
-  }, [timeEntries]);
+  }, [timeEntries, t]);
 
   if (loading) {
     return (
@@ -419,7 +534,7 @@ export default function TimeTracking() {
                   </span>
                 )}
                 <span className="font-medium text-foreground">
-                  {t("timeLeave.timeTracking.stats.totalHours")}: {totalHoursToday.toFixed(0)}h
+                  {t("timeLeave.timeTracking.stats.totalHours")}: {totalHoursToday.toFixed(1)}h
                 </span>
               </div>
             )}
@@ -451,10 +566,6 @@ export default function TimeTracking() {
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-9 lg:ml-auto" onClick={handleExportCSV}>
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-              {t("timeLeave.timeTracking.entries.export")}
-            </Button>
           </div>
         </MoreDetailsSection>
 
@@ -512,6 +623,34 @@ export default function TimeTracking() {
                   />
                 </div>
               </div>
+              {formData.clockIn && formData.clockOut && (() => {
+                const preview = computeEntryHours(formData.clockIn, formData.clockOut);
+                const tooLong = preview.totalHours > MAX_REASONABLE_ENTRY_HOURS;
+                return (
+                  <div className={cn(
+                    "text-sm p-2 rounded",
+                    tooLong
+                      ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {tooLong
+                      ? t("timeLeave.timeTracking.dialog.tooLong", { hours: preview.totalHours.toFixed(1) })
+                      : preview.breakMinutes > 0
+                        ? t("timeLeave.timeTracking.dialog.preview", {
+                            hours: preview.totalHours.toFixed(1),
+                            break: preview.breakMinutes,
+                          })
+                        : t("timeLeave.timeTracking.dialog.previewNoBreak", {
+                            hours: preview.totalHours.toFixed(1),
+                          })}
+                    {preview.isOvernight && !tooLong && (
+                      <span className="ml-1">
+                        · {t("timeLeave.timeTracking.dialog.previewOvernight")}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <MoreDetailsSection>
                 <div>
                   <Label htmlFor="notes">{t("timeLeave.timeTracking.dialog.notes")}</Label>
@@ -536,6 +675,111 @@ export default function TimeTracking() {
           </DialogContent>
         </Dialog>
 
+        {/* Edit Entry Dialog — audit-logged adjustment */}
+        <Dialog open={!!editEntry} onOpenChange={(open) => { if (!open) setEditEntry(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("timeLeave.timeTracking.edit.title")}</DialogTitle>
+              <DialogDescription>
+                {editEntry && t("timeLeave.timeTracking.edit.description", {
+                  name: editEntry.employeeName,
+                  date: editEntry.date,
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            {editEntry && (
+              <form onSubmit={handleAdjustSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label htmlFor="edit-clock-in">{t("timeLeave.timeTracking.dialog.clockIn")}</Label>
+                    <TimePicker
+                      id="edit-clock-in"
+                      value={editEntry.clockIn}
+                      onChange={(v) => setEditEntry((prev) => prev && { ...prev, clockIn: v })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-clock-out">{t("timeLeave.timeTracking.dialog.clockOut")}</Label>
+                    <TimePicker
+                      id="edit-clock-out"
+                      value={editEntry.clockOut}
+                      onChange={(v) => setEditEntry((prev) => prev && { ...prev, clockOut: v })}
+                    />
+                  </div>
+                </div>
+                {editEntry.clockIn && editEntry.clockOut && (() => {
+                  const preview = computeEntryHours(editEntry.clockIn, editEntry.clockOut);
+                  const tooLong = preview.totalHours > MAX_REASONABLE_ENTRY_HOURS;
+                  return (
+                    <div className={cn(
+                      "text-sm p-2 rounded",
+                      tooLong
+                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                      {tooLong
+                        ? t("timeLeave.timeTracking.dialog.tooLong", { hours: preview.totalHours.toFixed(1) })
+                        : preview.breakMinutes > 0
+                          ? t("timeLeave.timeTracking.dialog.preview", {
+                              hours: preview.totalHours.toFixed(1),
+                              break: preview.breakMinutes,
+                            })
+                          : t("timeLeave.timeTracking.dialog.previewNoBreak", {
+                              hours: preview.totalHours.toFixed(1),
+                            })}
+                    </div>
+                  );
+                })()}
+                <div>
+                  <Label htmlFor="edit-reason">{t("timeLeave.timeTracking.edit.reason")}</Label>
+                  <Textarea
+                    id="edit-reason"
+                    value={editEntry.reason}
+                    onChange={(e) => setEditEntry((prev) => prev && { ...prev, reason: e.target.value })}
+                    placeholder={t("timeLeave.timeTracking.edit.reasonPlaceholder")}
+                    rows={2}
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive" size="icon" className="shrink-0">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("timeLeave.timeTracking.edit.deleteTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t("timeLeave.timeTracking.edit.deleteDesc", {
+                            name: editEntry.employeeName,
+                            date: editEntry.date,
+                          })}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("timeLeave.timeTracking.dialog.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteEntry}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          {t("timeLeave.timeTracking.edit.deleteConfirm")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button type="button" variant="outline" onClick={() => setEditEntry(null)} className="flex-1">
+                    {t("timeLeave.timeTracking.dialog.cancel")}
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={adjustAttendanceMutation.isPending}>
+                    {adjustAttendanceMutation.isPending ? t("common.saving") : t("timeLeave.timeTracking.edit.save")}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center justify-between mb-6">
@@ -543,28 +787,10 @@ export default function TimeTracking() {
               <TabsTrigger value="entries">{t("timeLeave.timeTracking.tabs.entries")}</TabsTrigger>
               <TabsTrigger value="daily">{t("timeLeave.timeTracking.tabs.daily")}</TabsTrigger>
             </TabsList>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="h-3.5 w-3.5 mr-1.5" />
-                {t("timeLeave.timeTracking.reports.exportTimesheet")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportClientBilling") })}
-              >
-                <Building className="h-3.5 w-3.5 mr-1.5" />
-                {t("timeLeave.timeTracking.reports.clientBilling")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportPerformance") })}
-              >
-                <User className="h-3.5 w-3.5 mr-1.5" />
-                {t("timeLeave.timeTracking.reports.guardPerformance")}
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              {t("timeLeave.timeTracking.entries.export")}
+            </Button>
           </div>
 
           {/* ── ENTRIES TAB ── */}
@@ -591,7 +817,7 @@ export default function TimeTracking() {
             ) : (
               <div className="space-y-1.5">
                 {/* Column headers */}
-                <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_80px_80px_80px_100px] gap-3 px-5 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_80px_80px_80px_100px_28px] gap-3 px-5 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   <span>{t("timeLeave.attendance.table.employee")}</span>
                   <span>{t("timeLeave.attendance.table.clockIn")}</span>
                   <span>{t("timeLeave.attendance.table.clockOut")}</span>
@@ -599,22 +825,41 @@ export default function TimeTracking() {
                   <span className="text-right">{t("timeLeave.attendance.table.overtime")}</span>
                   <span className="text-center">{t("timeLeave.timeTracking.table.source")}</span>
                   <span className="text-right">{t("timeLeave.attendance.table.status")}</span>
+                  <span />
                 </div>
 
                 {paginatedEntries.map((entry) => (
                   <div
                     key={entry.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openEditDialog(entry)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditDialog(entry); } }}
                     className={cn(
-                      "group rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors",
+                      "group rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors cursor-pointer",
                     )}
                   >
                     {/* Desktop */}
-                    <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_80px_80px_80px_100px] gap-3 items-center px-5 py-3">
+                    <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_80px_80px_80px_100px_28px] gap-3 items-center px-5 py-3">
                       <div>
-                        <p className="font-medium text-sm text-foreground">{entry.employeeName}</p>
+                        <p className="font-medium text-sm text-foreground">
+                          {entry.employeeName}
+                          {entry.isAdjusted && (
+                            <span className="ml-2 text-[10px] font-normal italic text-muted-foreground">
+                              {t("timeLeave.timeTracking.edit.adjusted")}
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-muted-foreground">{entry.department}</p>
                       </div>
-                      <span className="font-mono text-sm text-foreground">{entry.clockIn}</span>
+                      <div>
+                        <span className="font-mono text-sm text-foreground">{entry.clockIn}</span>
+                        {entry.lateMinutes > 0 && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                            +{entry.lateMinutes}m {t("timeLeave.attendance.table.late")}
+                          </p>
+                        )}
+                      </div>
                       <span className="font-mono text-sm text-foreground">{entry.clockOut}</span>
                       <span className="font-mono text-sm text-right text-foreground">{entry.totalHours.toFixed(1)}h</span>
                       <span className="font-mono text-sm text-right">
@@ -626,13 +871,21 @@ export default function TimeTracking() {
                       </span>
                       <div className="flex justify-center">{getSourceBadge(entry.source)}</div>
                       <div className="flex justify-end">{getStatusBadge(entry.status)}</div>
+                      <PencilLine className="h-3.5 w-3.5 text-muted-foreground/0 group-hover:text-muted-foreground/70 transition-colors" />
                     </div>
 
                     {/* Mobile */}
                     <div className="md:hidden px-4 py-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-sm text-foreground">{entry.employeeName}</p>
+                          <p className="font-medium text-sm text-foreground">
+                            {entry.employeeName}
+                            {entry.isAdjusted && (
+                              <span className="ml-2 text-[10px] font-normal italic text-muted-foreground">
+                                {t("timeLeave.timeTracking.edit.adjusted")}
+                              </span>
+                            )}
+                          </p>
                           <p className="text-xs text-muted-foreground">{entry.department}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -711,7 +964,7 @@ export default function TimeTracking() {
               </div>
             ) : (
               <div className="space-y-2">
-                {timeEntries.slice(0, 10).map((entry) => (
+                {timeEntries.map((entry) => (
                   <div
                     key={entry.id}
                     className={cn(

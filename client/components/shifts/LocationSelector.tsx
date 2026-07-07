@@ -5,6 +5,8 @@ import { Building2, Warehouse, Monitor, MapPin } from "lucide-react";
 export interface LocationItem {
   name: string;
   label: string;
+  /** Secondary line under the name (city, or "Headquarters") */
+  sublabel?: string;
   type: "office" | "warehouse" | "remote" | "site";
 }
 
@@ -63,9 +65,9 @@ export default function LocationSelector({
               >
                 {loc.label}
               </div>
-              <div className="text-[10px] text-muted-foreground capitalize">
-                {loc.type}
-              </div>
+              {loc.sublabel && (
+                <div className="text-[10px] text-muted-foreground">{loc.sublabel}</div>
+              )}
             </div>
           </button>
         );

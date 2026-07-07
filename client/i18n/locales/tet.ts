@@ -2104,43 +2104,20 @@ const messages = {
       "title": "Kontrola Tempu",
       "subtitle": "Monitoriza prezensa, turnu no oras",
       "stats": {
-        "guardsOnDuty": "Iha servisu",
-        "currentlyActive": "Ativu agora",
-        "sitesCovered": "Postu kobertu",
-        "activeLocations": "Lokal ativu",
-        "pendingApprovals": "Aprovasaun pendente",
-        "awaitingReview": "Hein ba revisa",
-        "totalHours": "Total oras",
-        "thisWeek": "Semana ida nee"
+        "totalHours": "Total oras"
       },
       "tabs": {
         "daily": "Resumo loron",
-        "entries": "Registu tempu",
-        "reports": "Relatoriu no exportasaun"
-      },
-      "recent": {
-        "title": "Log atividade foun",
-        "description": "Registu tempu no atividade loron-loron",
-        "incident": "Incidente relata"
+        "entries": "Registu tempu"
       },
       "filters": {
         "title": "Filtru",
-        "startDate": "Data hahu",
-        "endDate": "Data remata",
-        "guard": "Empregadu",
         "allGuards": "Empregadu hotu",
-        "allDepartments": "Departamentu hotu",
-        "site": "Lokal",
-        "allSites": "Lokal hotu",
-        "client": "Cliente",
-        "allClients": "Cliente hotu",
-        "apply": "Filtra"
+        "allDepartments": "Departamentu hotu"
       },
       "entries": {
-        "title": "Registu tempu",
-        "showing": "Hatudu {{shown}} husi {{total}} registu",
         "export": "Exporta CSV",
-        "logActivity": "Rejista atividade",
+        "logActivity": "Rejista tempu",
         "emptyTitle": "Laiha entrada tempu",
         "emptyDescription": "Laiha registu prezensa ba {{date}}"
       },
@@ -2150,48 +2127,39 @@ const messages = {
         "guard": "Empregadu *",
         "guardPlaceholder": "Hili empregadu",
         "date": "Data *",
-        "shiftType": "Tipu turnu *",
-        "site": "Lokal *",
-        "sitePlaceholder": "Hili lokal",
-        "clockIn": "Tama *",
-        "clockOut": "Sai *",
-        "break": "Pausa (minutu)",
-        "totalHours": "Total oras",
-        "activities": "Atividade halo *",
-        "equipment": "Ekipamentu verifika",
-        "incidents": "Incidente/Observasaun",
-        "incidentsPlaceholder": "Deskreve incidente ka observasaun...",
+        "clockIn": "Tama",
+        "clockOut": "Sai",
         "notes": "Nota adicional",
         "notesPlaceholder": "Nota adicional kona ba turnu...",
+        "preview": "Total: {{hours}}h (hasai pausa minutu {{break}})",
+        "previewNoBreak": "Total: {{hours}}h",
+        "previewOvernight": "turnu kalan liu meia-noite",
+        "tooLong": "Oras hirak ne'e halo total {{hours}}h — verifika tempu tama no sai.",
         "cancel": "Kansela",
         "submit": "Submete registu"
       },
+      "edit": {
+        "title": "Hadia registu tempu",
+        "description": "{{name}} · {{date}} — mudansa sei rejista iha audit log",
+        "reason": "Razaun ba mudansa *",
+        "reasonPlaceholder": "Ez. Haluha atu rejista sai",
+        "reasonRequired": "Favor fo razaun ba mudansa.",
+        "adjusted": "hadia ona",
+        "save": "Salva mudansa",
+        "adjustSuccess": "Registu atualiza ona.",
+        "deleteTitle": "Apaga registu ida ne'e?",
+        "deleteDesc": "Ida ne'e sei hamoos registu prezensa ba {{name}} iha {{date}}. La bele halo fali.",
+        "deleteConfirm": "Apaga",
+        "deleteSuccess": "Registu apaga ona."
+      },
       "table": {
-        "guard": "Empregadu",
-        "dateShift": "Data/Turnu",
-        "site": "Lokal",
-        "hours": "Oras",
         "totalHours": "Oras",
-        "activities": "Atividade",
-        "incidents": "Incidente",
-        "source": "Orijen",
-        "status": "Status",
-        "incidentYes": "Sin",
-        "incidentNone": "Laiha"
+        "source": "Orijen"
       },
       "reports": {
-        "exportTitle": "Opsaun exporta",
-        "exportDescription": "Halo relatoriu ba folha, faturasaun no konformidade",
-        "exportTimesheet": "Exporta CSV ponto",
-        "clientBilling": "Halo relatoriu faturasaun",
-        "incidentSummary": "Exporta resumo incidente",
-        "guardPerformance": "Relatoriu desempenho empregadu",
-        "coverageTitle": "Resumo kobertura",
-        "coverageDescription": "Pessoal iha lokal hotu",
-        "coverageSites": "{{count}} lokal",
+        "coverageTitle": "Kobertura departamentu",
         "coverageGuards": "{{count}} empregadu",
-        "coverageStatus": "Ativu",
-        "noDepartmentData": "Laiha dadus departamentu ba data ida ne'e"
+        "unassigned": "La iha departamentu"
       },
       "sources": {
         "manual": "Manual",
@@ -2200,84 +2168,22 @@ const messages = {
         "qrCode": "Kodigu QR",
         "facial": "Oin"
       },
-      "activities": {
-        "perimeterPatrol": "Patrulha perimeter",
-        "accessControl": "Kontrolu asesu",
-        "visitorScreening": "Triagem vizitante",
-        "incidentResponse": "Resposta incidente",
-        "equipmentCheck": "Verifika ekipamentu",
-        "reportWriting": "Halo relatoriu",
-        "cameraMonitoring": "Monitoriza kamera",
-        "alarmResponse": "Resposta alarme",
-        "emergencyEvacuation": "Evakuasaun emergencia",
-        "trafficControl": "Kontrolu trafiku",
-        "lostFound": "Sasan lakon",
-        "maintenanceCoordination": "Koordinasaun manutensaun",
-        "buildingMonitoring": "Monitoriza edificio",
-        "gateSecurity": "Seguransa portao",
-        "vehicleInspection": "Inspezaun kareta",
-        "patrol": "Patrulha"
-      },
-      "equipment": {
-        "radio": "Radio",
-        "flashlight": "Lanterna",
-        "keys": "Xave",
-        "accessCards": "Karta asesu",
-        "firstAid": "Kit primeiros socorros",
-        "fireExtinguisher": "Extintor",
-        "aed": "DEA",
-        "cameraSystem": "Sistema kamera seguransa",
-        "metalDetector": "Detetor metal",
-        "patrolVehicle": "Kareta patrulha"
-      },
-      "shiftTypes": {
-        "day": "Loron",
-        "night": "Kalan",
-        "swing": "Turnu klaran",
-        "overtime": "Oras extra",
-        "dayWithTime": "Turnu loron (8:00-16:00)",
-        "swingWithTime": "Turnu klaran (16:00-00:00)",
-        "nightWithTime": "Turnu kalan (21:00-06:00)"
-      },
-      "status": {
-        "approved": "Aprova",
-        "pending": "Pendente",
-        "rejected": "Rejeita"
-      },
-      "risk": {
-        "high": "Risku aas",
-        "medium": "Risku klaran",
-        "low": "Risku kiik"
-      },
       "toast": {
         "validationTitle": "Erru validasaun",
         "validationDesc": "Favor preenche kampu obrigatoriu.",
         "successTitle": "Susesu",
-        "successDesc": "Registu tempu salva. Hein aprovasaun.",
+        "successDesc": "Registu tempu salva ona.",
         "errorTitle": "Erru",
         "errorDesc": "Falha rejista. Koko fali.",
-        "filterTitle": "Filtru aplika",
-        "filterDesc": "Filtra registu husi {{startDate}} ate {{endDate}}",
-        "exportTitle": "Exporta hahuu",
-        "exportDesc": "CSV sei download lalais.",
-        "reportTitle": "Relatoriu sai",
-        "reportClientBilling": "Relatoriu faturasaun sai ho susesu.",
-        "reportIncident": "Resumo incidente sai ho susesu.",
-        "reportPerformance": "Relatoriu desempenho sai ho susesu."
+        "exportTitle": "Exportasaun kompletu",
+        "exportDesc": "CSV prezensa download ona.",
+        "exportEmptyTitle": "La iha buat atu exporta"
       },
       "csv": {
-        "badgeNumber": "Numero cracha",
         "employeeName": "Naran empregadu",
         "date": "Data",
-        "shiftType": "Tipu turnu",
-        "site": "Lokal",
-        "client": "Cliente",
         "clockIn": "Tama",
-        "clockOut": "Sai",
-        "totalHours": "Total oras",
-        "activities": "Atividade",
-        "incidents": "Incidente",
-        "status": "Status"
+        "clockOut": "Sai"
       }
     },
     "leaveRequests": {
@@ -2524,20 +2430,13 @@ const messages = {
         "published": "Publika"
       },
       "actions": {
-        "publishSchedule": "Publika eskala ({{count}} rascunho)",
-        "exportPdf": "Exporta PDF",
+        "publishSchedule": "Publika rascunho {{count}}",
+        "export": "Exporta CSV",
         "copyWeek": "Kopia semana",
-        "applyTemplate": "Aplika modelu",
-        "apply": "Aplika",
         "cancel": "Kansela",
         "createShift": "Kria Turnu",
         "delete": "Apaga",
         "update": "Atualiza"
-      },
-      "template": {
-        "title": "Aplika Modelu Turnu",
-        "description": "Hili modelu atu aplika ba semana agora",
-        "shiftCount": "{{count}} turnu"
       },
       "calendar": {
         "title": "Eskala Semanal",
@@ -2545,6 +2444,47 @@ const messages = {
         "weekView": "Semana",
         "dayView": "Loron",
         "daySummary": "{{count}} turnu • {{hours}}h"
+      },
+      "grid": {
+        "staff": "Empregadu",
+        "status": "Estatutu",
+        "empty": "La iha turnu eskalada semana ida ne'e",
+        "emptyHint": "Klik \"Empregadu hotu\" atu haree ema hotu, ka klik selula mamuk atu kria turnu",
+        "allStaff": "Empregadu hotu",
+        "scheduledOnly": "Eskalada de'it",
+        "dragHint": "Arrasta turnu atu muda · Klik selula mamuk atu kria"
+      },
+      "locationView": {
+        "shiftSlots": "Oras Turnu",
+        "thisWeek": "Semana ida ne'e",
+        "nextWeek": "Semana oin mai",
+        "day": "Loron",
+        "to": "to'o",
+        "shiftsAt": "{{count}} turnu iha {{location}}",
+        "noSlots": "La iha turnu ativu",
+        "noSlotsHint": "Ativa pelu menus turnu ida iha leten atu haree tabela",
+        "headquarters": "Sede",
+        "slots": {
+          "morning": "Dadeer",
+          "afternoon": "Lokraik",
+          "night": "Kalan"
+        },
+        "addStaff": "+/- Empregadu",
+        "slotShift": "Turnu {{slot}}",
+        "filterStaff": "Filtra empregadu...",
+        "noEmployees": "La hetan empregadu",
+        "assignedTitle": "Turnu atribui ona",
+        "assignedDesc": "{{name}} aumenta ba turnu {{slot}}",
+        "removedTitle": "Turnu hasai ona",
+        "removedDesc": "Empregadu hasai husi turnu",
+        "assignError": "La konsege atribui turnu. Favor koko fali.",
+        "removeError": "La konsege hasai turnu. Favor koko fali."
+      },
+      "noLocations": {
+        "title": "Seidauk iha lokal servisu",
+        "desc": "Aumenta ita-nia eskritóriu no lokal servisu iha Konfigurasaun → Estrutura atu eskala turnu tuir lokal.",
+        "cta": "Loke Konfigurasaun",
+        "dialogHint": "Sujestaun: aumenta lokal servisu iha Konfigurasaun → Estrutura atu atribui turnu ba lokal."
       },
       "create": {
         "title": "Kria Turnu",
@@ -2613,15 +2553,11 @@ const messages = {
         "totalHours": "Total oras:",
         "totalHoursValue": "{{hours}}h",
         "publishedRate": "Taxa publika:",
-        "confirmedRate": "Taxa konfirma:",
-        "coverageScore": "Pontuasaun cobertura:",
-        "coverageGood": "✅ Diak",
-        "coverageAttention": "⚠️ Presiza Atensaun"
+        "confirmedRate": "Taxa konfirma:"
       },
       "recommendations": {
         "title": "Rekomendasaun pessoal",
-        "underStaffedTitle": "{{department}} la toos",
-        "underStaffedDesc": "Hanesan ba {{count}} turnu tan semana ida ne'e atu tuir requisitu minimu.",
+        "noIssues": "La iha problema eskala semana ida ne'e.",
         "overworkedTitle": "{{name}} liu oras maximu",
         "overworkedDesc": "Planeadu {{hours}}h, liu maximu {{max}}h ho {{excess}}h."
       },
@@ -2640,67 +2576,17 @@ const messages = {
         "scheduleLoadedDesc": "Turnu karrega ba semana {{week}}",
         "schedulePublishedTitle": "Eskala publika",
         "schedulePublishedDesc": "Publika {{count}} turnu ba semana ida ne'e.",
-        "exportTitle": "Exportasaun hahuu",
-        "exportDesc": "PDF eskala sei download iha tempu badak.",
-        "copyTitle": "Semana kopiadu",
-        "copyDesc": "{{count}} turnu kopiadu ba clipboard. Hili semana destino atu kola.",
-        "templateTitle": "Modelu aplika",
-        "templateDesc": "Modelu \"{{name}}\" aplika ba semana agora."
-      },
-      "data": {
-        "departments": {
-          "operations": "Operasaun",
-          "customerService": "Servisu Kliente",
-          "sales": "Vendas"
-        },
-        "positions": {
-          "operationsManager": "Xefe Operasaun",
-          "teamLead": "Xefe Equipa",
-          "specialist": "Especialista",
-          "customerServiceManager": "Xefe Servisu Kliente",
-          "seniorRepresentative": "Representante Senior",
-          "representative": "Representante",
-          "salesManager": "Xefe Vendas",
-          "seniorSalesRep": "Representante Vendas Senior",
-          "salesAssociate": "Asistente Vendas"
-        },
-        "skills": {
-          "leadership": "Lideransa",
-          "operations": "Operasaun",
-          "communication": "Komunikasaun",
-          "technicalSkills": "Habilidade tekniku",
-          "customerService": "Servisu kliente",
-          "sales": "Vendas",
-          "projectManagement": "Xestaun projetu",
-          "negotiation": "Negosiasaun",
-          "problemSolving": "Resolusaun problema",
-          "analysis": "Analize",
-          "customerRelations": "Relasaun kliente"
-        },
-        "locations": {
-          "mainOfficeFloor1": "Eskritoriu Principal - Andar 1",
-          "mainOfficeFloor2": "Eskritoriu Principal - Andar 2",
-          "customerServiceCenter": "Sentru Servisu Kliente",
-          "warehouseA": "Armazem A",
-          "warehouseB": "Armazem B",
-          "remoteWork": "Trabalhu Remotu",
-          "clientSiteA": "Lokal Kliente A",
-          "clientSiteB": "Lokal Kliente B"
-        },
-        "notes": {
-          "teamMeeting": "Reuniaun equipa iha 10 AM",
-          "trainingNewReps": "Formasaun representante foun",
-          "clientPresentation": "Apresentasaun ba kliente iha 2 PM",
-          "inventoryCheck": "Verifikasaun inventariu",
-          "clientMeeting": "Reuniaun ho kliente",
-          "eveningShift": "Kobertura turnu kalan",
-          "dataAnalysis": "Projetu analize dadus"
-        },
-        "templates": {
-          "standardOperationsWeek": "Semana Padraun Operasaun"
-        }
+        "movedDesc": "Turnu muda ba {{name}} iha {{date}}",
+        "exportedTitle": "Exportasaun kompletu",
+        "exportedDesc": "Turnu {{count}} exporta ba CSV.",
+        "exportEmptyTitle": "La iha buat atu exporta",
+        "exportEmptyDesc": "La iha turnu semana ida ne'e.",
+        "copiedTitle": "Semana kopia ona",
+        "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho.",
+        "copyEmptyTitle": "La iha buat atu kopia",
+        "copyEmptyDesc": "La iha turnu semana ida ne'e."
       }
-    }
+    },
   },
   "payroll": {
     "dashboard": {

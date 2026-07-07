@@ -2104,180 +2104,86 @@ const messages = {
       "title": "Registo de Tempo",
       "subtitle": "Monitorizar assiduidade, turnos e horas",
       "stats": {
-        "guardsOnDuty": "Em Serviço",
-        "currentlyActive": "Atualmente ativos",
-        "sitesCovered": "Locais Cobertos",
-        "activeLocations": "Locais ativos",
-        "pendingApprovals": "Aprovações Pendentes",
-        "awaitingReview": "A aguardar revisão",
-        "totalHours": "Total de Horas",
-        "thisWeek": "Esta semana"
+        "totalHours": "Total de Horas"
       },
       "tabs": {
-        "daily": "Visão Diária",
-        "entries": "Registos de Tempo",
-        "reports": "Relatórios e Exportação"
-      },
-      "recent": {
-        "title": "Registos de Atividade Recentes",
-        "description": "Últimos registos de tempo e atividades diárias",
-        "incident": "Incidente reportado"
+        "daily": "Resumo Diário",
+        "entries": "Registos de Tempo"
       },
       "filters": {
         "title": "Filtros",
-        "startDate": "Data de Início",
-        "endDate": "Data de Fim",
-        "guard": "Funcionário",
         "allGuards": "Todos os funcionários",
-        "allDepartments": "Todos os departamentos",
-        "site": "Local",
-        "allSites": "Todos os locais",
-        "client": "Cliente",
-        "allClients": "Todos os clientes",
-        "apply": "Filtrar"
+        "allDepartments": "Todos os departamentos"
       },
       "entries": {
-        "title": "Registos de Tempo",
-        "showing": "A mostrar {{shown}} de {{total}} registos",
         "export": "Exportar CSV",
-        "logActivity": "Registar Atividade",
-        "emptyTitle": "Sem entradas de tempo",
-        "emptyDescription": "Não foram encontrados registos de assiduidade para {{date}}"
+        "logActivity": "Registar Tempo",
+        "emptyTitle": "Sem registos de tempo",
+        "emptyDescription": "Sem registos de assiduidade para {{date}}"
       },
       "dialog": {
         "title": "Registar Tempo",
-        "description": "Registar horários de entrada/saída e notas do turno",
+        "description": "Registe as horas de entrada/saída e notas do turno",
         "guard": "Funcionário *",
         "guardPlaceholder": "Selecionar funcionário",
         "date": "Data *",
-        "shiftType": "Tipo de Turno *",
-        "site": "Atribuição de Local *",
-        "sitePlaceholder": "Selecionar local",
-        "clockIn": "Entrada *",
-        "clockOut": "Saída *",
-        "break": "Pausa (minutos)",
-        "totalHours": "Total de Horas",
-        "activities": "Atividades Realizadas *",
-        "equipment": "Equipamento Verificado",
-        "incidents": "Incidentes/Observações",
-        "incidentsPlaceholder": "Descreva quaisquer incidentes ou observações...",
-        "notes": "Notas Adicionais",
-        "notesPlaceholder": "Quaisquer notas adicionais sobre o turno...",
+        "clockIn": "Entrada",
+        "clockOut": "Saída",
+        "notes": "Notas",
+        "notesPlaceholder": "Notas adicionais sobre o turno...",
+        "preview": "Total: {{hours}}h (pausa de {{break}} min deduzida)",
+        "previewNoBreak": "Total: {{hours}}h",
+        "previewOvernight": "registo noturno",
+        "tooLong": "Estas horas somam {{hours}}h — verifique a entrada e a saída.",
         "cancel": "Cancelar",
-        "submit": "Submeter Registo"
+        "submit": "Guardar Registo"
+      },
+      "edit": {
+        "title": "Editar Registo de Tempo",
+        "description": "{{name}} · {{date}} — as alterações ficam em auditoria",
+        "reason": "Motivo do ajuste *",
+        "reasonPlaceholder": "Ex.: Esqueceu-se de registar a saída",
+        "reasonRequired": "Indique o motivo do ajuste.",
+        "adjusted": "ajustado",
+        "save": "Guardar Alterações",
+        "adjustSuccess": "Registo atualizado.",
+        "deleteTitle": "Eliminar este registo?",
+        "deleteDesc": "Isto remove o registo de assiduidade de {{name}} em {{date}}. Não pode ser anulado.",
+        "deleteConfirm": "Eliminar",
+        "deleteSuccess": "Registo eliminado."
       },
       "table": {
-        "guard": "Funcionário",
-        "dateShift": "Data/Turno",
-        "site": "Local",
-        "hours": "Horas",
         "totalHours": "Horas",
-        "activities": "Atividades",
-        "incidents": "Incidentes",
-        "source": "Origem",
-        "status": "Estado",
-        "incidentYes": "Sim",
-        "incidentNone": "Nenhum"
+        "source": "Origem"
       },
       "reports": {
-        "exportTitle": "Opções de Exportação",
-        "exportDescription": "Gerar relatórios para folha de pagamento, faturação e conformidade",
-        "exportTimesheet": "Exportar Folha de Presença CSV",
-        "clientBilling": "Gerar Relatório de Faturação ao Cliente",
-        "incidentSummary": "Exportar Resumo de Incidentes",
-        "guardPerformance": "Relatório de Desempenho dos Funcionários",
-        "coverageTitle": "Resumo de Cobertura de Locais",
-        "coverageDescription": "Pessoal atual em todos os locais",
-        "coverageSites": "{{count}} locais",
+        "coverageTitle": "Cobertura por Departamento",
         "coverageGuards": "{{count}} funcionários",
-        "coverageStatus": "Ativo",
-        "noDepartmentData": "Não existem dados de departamento para esta data"
+        "unassigned": "Sem departamento"
       },
       "sources": {
         "manual": "Manual",
         "fingerprint": "Impressão digital",
-        "mobileApp": "Aplicação móvel",
+        "mobileApp": "App móvel",
         "qrCode": "Código QR",
         "facial": "Facial"
-      },
-      "activities": {
-        "perimeterPatrol": "Patrulha de perímetro",
-        "accessControl": "Controlo de acesso",
-        "visitorScreening": "Triagem de visitantes",
-        "incidentResponse": "Resposta a incidentes",
-        "equipmentCheck": "Verificação de equipamento",
-        "reportWriting": "Redação de relatórios",
-        "cameraMonitoring": "Monitorização de câmaras",
-        "alarmResponse": "Resposta a alarmes",
-        "emergencyEvacuation": "Evacuação de emergência",
-        "trafficControl": "Controlo de tráfego",
-        "lostFound": "Perdidos e achados",
-        "maintenanceCoordination": "Coordenação de manutenção",
-        "buildingMonitoring": "Monitorização do edifício",
-        "gateSecurity": "Segurança do portão",
-        "vehicleInspection": "Inspeção de veículos",
-        "patrol": "Patrulha"
-      },
-      "equipment": {
-        "radio": "Rádio",
-        "flashlight": "Lanterna",
-        "keys": "Chaves",
-        "accessCards": "Cartões de acesso",
-        "firstAid": "Kit de primeiros socorros",
-        "fireExtinguisher": "Extintor",
-        "aed": "DEA",
-        "cameraSystem": "Sistema de câmaras de segurança",
-        "metalDetector": "Detetor de metais",
-        "patrolVehicle": "Veículo de patrulha"
-      },
-      "shiftTypes": {
-        "day": "Dia",
-        "night": "Noite",
-        "swing": "Rotativo",
-        "overtime": "Horas Extra",
-        "dayWithTime": "Turno Diurno (8:00-16:00)",
-        "swingWithTime": "Turno Rotativo (16:00-00:00)",
-        "nightWithTime": "Turno Noturno (21:00-06:00)"
-      },
-      "status": {
-        "approved": "Aprovado",
-        "pending": "Pendente",
-        "rejected": "Rejeitado"
-      },
-      "risk": {
-        "high": "Alto Risco",
-        "medium": "Risco Médio",
-        "low": "Baixo Risco"
       },
       "toast": {
         "validationTitle": "Erro de Validação",
         "validationDesc": "Por favor preencha todos os campos obrigatórios.",
         "successTitle": "Sucesso",
-        "successDesc": "Registo de tempo efetuado com sucesso. A aguardar aprovação do supervisor.",
+        "successDesc": "Registo de tempo guardado.",
         "errorTitle": "Erro",
-        "errorDesc": "Falha ao registar tempo. Por favor tente novamente.",
-        "filterTitle": "Filtro Aplicado",
-        "filterDesc": "A filtrar registos de {{startDate}} a {{endDate}}",
-        "exportTitle": "Exportação Iniciada",
-        "exportDesc": "O CSV da folha de presença será descarregado em breve.",
-        "reportTitle": "Relatório Gerado",
-        "reportClientBilling": "Relatório de faturação ao cliente criado com sucesso.",
-        "reportIncident": "Relatório de resumo de incidentes criado com sucesso.",
-        "reportPerformance": "Relatório de desempenho dos funcionários criado com sucesso."
+        "errorDesc": "Falha ao guardar o registo. Tente novamente.",
+        "exportTitle": "Exportação concluída",
+        "exportDesc": "CSV de assiduidade descarregado.",
+        "exportEmptyTitle": "Nada para exportar"
       },
       "csv": {
-        "badgeNumber": "Número do Crachá",
         "employeeName": "Nome do Funcionário",
         "date": "Data",
-        "shiftType": "Tipo de Turno",
-        "site": "Local",
-        "client": "Cliente",
         "clockIn": "Entrada",
-        "clockOut": "Saída",
-        "totalHours": "Total de Horas",
-        "activities": "Atividades",
-        "incidents": "Incidentes",
-        "status": "Estado"
+        "clockOut": "Saída"
       }
     },
     "leaveRequests": {
@@ -2524,20 +2430,13 @@ const messages = {
         "published": "Publicado"
       },
       "actions": {
-        "publishSchedule": "Publicar Escala ({{count}} rascunhos)",
-        "exportPdf": "Exportar PDF",
+        "publishSchedule": "Publicar {{count}} rascunhos",
+        "export": "Exportar CSV",
         "copyWeek": "Copiar Semana",
-        "applyTemplate": "Aplicar Modelo",
-        "apply": "Aplicar",
         "cancel": "Cancelar",
         "createShift": "Criar Turno",
         "delete": "Eliminar",
         "update": "Atualizar"
-      },
-      "template": {
-        "title": "Aplicar Modelo de Turno",
-        "description": "Escolha um modelo para aplicar à semana atual",
-        "shiftCount": "{{count}} turnos"
       },
       "calendar": {
         "title": "Escala Semanal",
@@ -2545,6 +2444,47 @@ const messages = {
         "weekView": "Semana",
         "dayView": "Dia",
         "daySummary": "{{count}} turnos • {{hours}}h"
+      },
+      "grid": {
+        "staff": "Funcionários",
+        "status": "Estado",
+        "empty": "Nenhum turno agendado esta semana",
+        "emptyHint": "Clique em \"Todos os funcionários\" para ver toda a gente, ou clique numa célula vazia para criar um turno",
+        "allStaff": "Todos os funcionários",
+        "scheduledOnly": "Apenas escalados",
+        "dragHint": "Arraste turnos para reatribuir · Clique numa célula vazia para criar"
+      },
+      "locationView": {
+        "shiftSlots": "Horários de Turno",
+        "thisWeek": "Esta Semana",
+        "nextWeek": "Próxima Semana",
+        "day": "Dia",
+        "to": "até",
+        "shiftsAt": "{{count}} turnos em {{location}}",
+        "noSlots": "Nenhum horário de turno ativo",
+        "noSlotsHint": "Ative pelo menos um horário de turno acima para ver a grelha",
+        "headquarters": "Sede",
+        "slots": {
+          "morning": "Manhã",
+          "afternoon": "Tarde",
+          "night": "Noite"
+        },
+        "addStaff": "+/- Pessoal",
+        "slotShift": "Turno da {{slot}}",
+        "filterStaff": "Filtrar pessoal...",
+        "noEmployees": "Nenhum funcionário encontrado",
+        "assignedTitle": "Turno atribuído",
+        "assignedDesc": "{{name}} adicionado ao turno da {{slot}}",
+        "removedTitle": "Turno removido",
+        "removedDesc": "Funcionário desatribuído",
+        "assignError": "Não foi possível atribuir o turno. Tente novamente.",
+        "removeError": "Não foi possível remover o turno. Tente novamente."
+      },
+      "noLocations": {
+        "title": "Nenhum local de trabalho configurado",
+        "desc": "Adicione os seus escritórios e locais de trabalho em Definições → Estrutura para escalar turnos por local.",
+        "cta": "Abrir Definições",
+        "dialogHint": "Dica: adicione locais de trabalho em Definições → Estrutura para atribuir turnos a um local."
       },
       "create": {
         "title": "Criar Turno",
@@ -2613,15 +2553,11 @@ const messages = {
         "totalHours": "Total de Horas:",
         "totalHoursValue": "{{hours}}h",
         "publishedRate": "Taxa de Publicação:",
-        "confirmedRate": "Taxa de Confirmação:",
-        "coverageScore": "Pontuação de Cobertura:",
-        "coverageGood": "✅ Bom",
-        "coverageAttention": "⚠️ Requer Atenção"
+        "confirmedRate": "Taxa de Confirmação:"
       },
       "recommendations": {
         "title": "Recomendações de Pessoal",
-        "underStaffedTitle": "{{department}} Sub-Dimensionado",
-        "underStaffedDesc": "Considere adicionar mais {{count}} turnos esta semana para cumprir requisitos mínimos de pessoal.",
+        "noIssues": "Sem problemas de escalonamento esta semana.",
         "overworkedTitle": "{{name}} Excede Máximo de Horas",
         "overworkedDesc": "Escalado para {{hours}}h, excede o máximo de {{max}}h em {{excess}}h."
       },
@@ -2640,65 +2576,15 @@ const messages = {
         "scheduleLoadedDesc": "Carregados turnos para a semana de {{week}}",
         "schedulePublishedTitle": "Escala Publicada",
         "schedulePublishedDesc": "Publicados {{count}} turnos para a semana.",
-        "exportTitle": "Exportação Iniciada",
-        "exportDesc": "O PDF da escala será descarregado em breve.",
-        "copyTitle": "Semana Copiada",
-        "copyDesc": "{{count}} turnos copiados. Selecione uma semana alvo para colar.",
-        "templateTitle": "Modelo Aplicado",
-        "templateDesc": "Aplicado modelo \"{{name}}\" à semana atual."
-      },
-      "data": {
-        "departments": {
-          "operations": "Operações",
-          "customerService": "Serviço ao Cliente",
-          "sales": "Vendas"
-        },
-        "positions": {
-          "operationsManager": "Gestor de Operações",
-          "teamLead": "Líder de Equipa",
-          "specialist": "Especialista",
-          "customerServiceManager": "Gestor de Serviço ao Cliente",
-          "seniorRepresentative": "Representante Sénior",
-          "representative": "Representante",
-          "salesManager": "Gestor de Vendas",
-          "seniorSalesRep": "Representante de Vendas Sénior",
-          "salesAssociate": "Associado de Vendas"
-        },
-        "skills": {
-          "leadership": "Liderança",
-          "operations": "Operações",
-          "communication": "Comunicação",
-          "technicalSkills": "Competências Técnicas",
-          "customerService": "Serviço ao Cliente",
-          "sales": "Vendas",
-          "projectManagement": "Gestão de Projetos",
-          "negotiation": "Negociação",
-          "problemSolving": "Resolução de Problemas",
-          "analysis": "Análise",
-          "customerRelations": "Relações com Clientes"
-        },
-        "locations": {
-          "mainOfficeFloor1": "Escritório Principal - Piso 1",
-          "mainOfficeFloor2": "Escritório Principal - Piso 2",
-          "customerServiceCenter": "Centro de Serviço ao Cliente",
-          "warehouseA": "Armazém A",
-          "warehouseB": "Armazém B",
-          "remoteWork": "Trabalho Remoto",
-          "clientSiteA": "Local do Cliente A",
-          "clientSiteB": "Local do Cliente B"
-        },
-        "notes": {
-          "teamMeeting": "Reunião de equipa às 10h",
-          "trainingNewReps": "Formação de novos representantes",
-          "clientPresentation": "Apresentação ao cliente às 14h",
-          "inventoryCheck": "Verificação de inventário",
-          "clientMeeting": "Reunião com cliente",
-          "eveningShift": "Cobertura do turno noturno",
-          "dataAnalysis": "Projeto de análise de dados"
-        },
-        "templates": {
-          "standardOperationsWeek": "Semana de Operações Padrão"
-        }
+        "movedDesc": "Turno movido para {{name}} em {{date}}",
+        "exportedTitle": "Exportação concluída",
+        "exportedDesc": "{{count}} turnos exportados para CSV.",
+        "exportEmptyTitle": "Nada para exportar",
+        "exportEmptyDesc": "Não há turnos esta semana.",
+        "copiedTitle": "Semana copiada",
+        "copiedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos.",
+        "copyEmptyTitle": "Nada para copiar",
+        "copyEmptyDesc": "Não há turnos esta semana."
       }
     }
   },

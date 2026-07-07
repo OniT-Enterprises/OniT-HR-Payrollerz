@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -52,8 +52,8 @@ import {
   Trash2,
   Copy,
   AlertTriangle,
+  CheckCircle2,
   Users,
-  FileText,
   Save,
   Send,
   ChevronLeft,
@@ -64,20 +64,41 @@ import {
 } from "lucide-react";
 import LocationGridView from "@/components/shifts/LocationGridView";
 import { SEO, seoConfig } from "@/components/SEO";
-import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
+import {
+  formatDateTL,
+  getTodayTL,
+  getWeekStartTL,
+  addDaysISO,
+  parseDateISO,
+} from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useSettings } from "@/hooks/useSettings";
 import {
   useShiftsByRange,
   useCreateShift,
   useUpdateShift,
   useDeleteShift,
   usePublishDraftShifts,
-  useShiftTemplates,
+  useShiftSlots,
+  useSaveShiftSlots,
+  useCopyWeekShifts,
 } from "@/hooks/useShifts";
-import type { ShiftRecord, ShiftTemplate } from "@/services/shiftService";
+import {
+  calcShiftHours,
+  DEFAULT_SHIFT_SLOTS,
+  type ShiftRecord,
+  type ShiftSlot,
+} from "@/services/shiftService";
+
+// Timor-Leste Labour Law standard maximum working hours per week
+const TL_MAX_WEEKLY_HOURS = 44;
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // UI-mapped employee type
 interface MappedEmployee {
@@ -98,21 +119,19 @@ interface MappedDepartment {
   name: string;
   manager: string;
   color: string;
-  minStaffing: number;
 }
 
 export default function ShiftScheduling() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("schedule");
-  const [selectedWeek, setSelectedWeek] = useState(getWeekString(new Date()));
+  const [selectedWeek, setSelectedWeek] = useState(() => getWeekStartTL());
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
-  const [_viewMode, _setViewMode] = useState<"week" | "day">("week");
   const [scheduleViewMode, setScheduleViewMode] = useState<"employee" | "location">("location");
   const [draggedShift, setDraggedShift] = useState<ShiftRecord | null>(null);
   const [dropTarget, setDropTarget] = useState<{ employeeId: string; date: string } | null>(null);
@@ -134,22 +153,52 @@ export default function ShiftScheduling() {
   const { user } = useAuth();
   const { data: realEmployees = [], isLoading: empLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: realDepartments = [], isLoading: deptLoading } = useDepartments(tenantId);
+  const { data: settings, isLoading: settingsLoading } = useSettings();
 
-  const weekEndDate = useMemo(() => {
-    const start = new Date(selectedWeek);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return toDateStringTL(end);
-  }, [selectedWeek]);
+  const weekEndDate = useMemo(() => addDaysISO(selectedWeek, 6), [selectedWeek]);
 
   const { data: shifts = [], isLoading: shiftsLoading } = useShiftsByRange(selectedWeek, weekEndDate);
-  const { data: shiftTemplates = [] } = useShiftTemplates();
   const createShiftMutation = useCreateShift();
   const updateShiftMutation = useUpdateShift();
   const deleteShiftMutation = useDeleteShift();
   const publishMutation = usePublishDraftShifts();
+  const copyWeekMutation = useCopyWeekShifts();
 
-  const loading = empLoading || deptLoading || shiftsLoading;
+  // Tenant shift slot config (Morning/Afternoon/Night), persisted with a debounce
+  const { data: savedSlots } = useShiftSlots();
+  const saveSlotsMutation = useSaveShiftSlots();
+  const [slotDraft, setSlotDraft] = useState<ShiftSlot[] | null>(null);
+  const shiftSlots = slotDraft ?? savedSlots ?? DEFAULT_SHIFT_SLOTS;
+  const slotSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSlotsChange = useCallback((slots: ShiftSlot[]) => {
+    setSlotDraft(slots);
+    if (slotSaveTimer.current) clearTimeout(slotSaveTimer.current);
+    slotSaveTimer.current = setTimeout(() => {
+      slotSaveTimer.current = null;
+      saveSlotsMutation.mutate(slots);
+    }, 800);
+  }, [saveSlotsMutation]);
+  // Flush a pending slot save if the user leaves the page quickly
+  const slotDraftRef = useRef<ShiftSlot[] | null>(null);
+  slotDraftRef.current = slotDraft;
+  useEffect(() => () => {
+    if (slotSaveTimer.current && slotDraftRef.current) {
+      clearTimeout(slotSaveTimer.current);
+      saveSlotsMutation.mutate(slotDraftRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Tenant work locations (Settings → Company Structure)
+  const workLocations = useMemo(() => {
+    const all = settings?.companyStructure?.workLocations ?? [];
+    return all
+      .filter((l) => l.isActive)
+      .sort((a, b) => Number(b.isHeadquarters) - Number(a.isHeadquarters));
+  }, [settings]);
+  const locations = useMemo(() => workLocations.map((l) => l.name), [workLocations]);
+
+  const loading = empLoading || deptLoading || shiftsLoading || settingsLoading;
 
   // Map real employees for UI
   const employees: MappedEmployee[] = useMemo(() => realEmployees
@@ -160,7 +209,7 @@ export default function ShiftScheduling() {
       phone: e.personalInfo.phone,
       department: e.jobDetails.department,
       position: e.jobDetails.position,
-      maxHoursPerWeek: 44, // TL standard
+      maxHoursPerWeek: TL_MAX_WEEKLY_HOURS,
       hourlyRate: e.compensation.monthlySalary > 0 ? Math.round(e.compensation.monthlySalary / 176) : 0,
       isActive: true,
     })), [realEmployees]);
@@ -171,66 +220,7 @@ export default function ShiftScheduling() {
     name: d.name,
     manager: d.manager || '',
     color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'][i % 6],
-    minStaffing: 3,
   })), [realDepartments]);
-
-  const departmentLabels: Record<string, string> = {
-    Operations: t("timeLeave.shiftScheduling.data.departments.operations"),
-    "Customer Service": t("timeLeave.shiftScheduling.data.departments.customerService"),
-    Sales: t("timeLeave.shiftScheduling.data.departments.sales"),
-  };
-
-  const positionLabels: Record<string, string> = {
-    "Operations Manager": t("timeLeave.shiftScheduling.data.positions.operationsManager"),
-    "Team Lead": t("timeLeave.shiftScheduling.data.positions.teamLead"),
-    Specialist: t("timeLeave.shiftScheduling.data.positions.specialist"),
-    "Customer Service Manager":
-      t("timeLeave.shiftScheduling.data.positions.customerServiceManager"),
-    "Senior Representative": t("timeLeave.shiftScheduling.data.positions.seniorRepresentative"),
-    Representative: t("timeLeave.shiftScheduling.data.positions.representative"),
-    "Sales Manager": t("timeLeave.shiftScheduling.data.positions.salesManager"),
-    "Senior Sales Rep": t("timeLeave.shiftScheduling.data.positions.seniorSalesRep"),
-    "Sales Associate": t("timeLeave.shiftScheduling.data.positions.salesAssociate"),
-  };
-
-  const locationLabels: Record<string, string> = {
-    "Main Office - Floor 1": t("timeLeave.shiftScheduling.data.locations.mainOfficeFloor1"),
-    "Main Office - Floor 2": t("timeLeave.shiftScheduling.data.locations.mainOfficeFloor2"),
-    "Customer Service Center": t("timeLeave.shiftScheduling.data.locations.customerServiceCenter"),
-    "Warehouse A": t("timeLeave.shiftScheduling.data.locations.warehouseA"),
-    "Warehouse B": t("timeLeave.shiftScheduling.data.locations.warehouseB"),
-    "Remote Work": t("timeLeave.shiftScheduling.data.locations.remoteWork"),
-    "Client Site A": t("timeLeave.shiftScheduling.data.locations.clientSiteA"),
-    "Client Site B": t("timeLeave.shiftScheduling.data.locations.clientSiteB"),
-  };
-
-  const templateLabels: Record<string, string> = {
-    "Standard Operations Week": t("timeLeave.shiftScheduling.data.templates.standardOperationsWeek"),
-  };
-
-  const getDepartmentLabel = (department: string) =>
-    departmentLabels[department] || department;
-  const getPositionLabel = (position: string) => positionLabels[position] || position;
-  const getLocationLabel = (location: string) => locationLabels[location] || location;
-  const getTemplateLabel = (name: string) => templateLabels[name] || name;
-
-  // Helper function to get week string
-  function getWeekString(date: Date) {
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay()); // Start on Sunday
-    return toDateStringTL(startOfWeek);
-  }
-
-  const locations = [
-    "Main Office - Floor 1",
-    "Main Office - Floor 2",
-    "Customer Service Center",
-    "Warehouse A",
-    "Warehouse B",
-    "Remote Work",
-    "Client Site A",
-    "Client Site B",
-  ];
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -262,14 +252,6 @@ export default function ShiftScheduling() {
     });
   };
 
-  const calculateHours = (startTime: string, endTime: string) => {
-    if (!startTime || !endTime) return 0;
-    const start = new Date(`2000-01-01 ${startTime}`);
-    const end = new Date(`2000-01-01 ${endTime}`);
-    const diff = end.getTime() - start.getTime();
-    return Math.round((diff / (1000 * 60 * 60)) * 100) / 100;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -279,7 +261,7 @@ export default function ShiftScheduling() {
       !formData.startTime ||
       !formData.endTime ||
       !formData.department ||
-      !formData.location
+      (locations.length > 0 && !formData.location)
     ) {
       toast({
         title: t("timeLeave.shiftScheduling.toast.validationTitle"),
@@ -290,7 +272,7 @@ export default function ShiftScheduling() {
     }
 
     const employee = employees.find((emp) => emp.id === formData.employee);
-    const hours = calculateHours(formData.startTime, formData.endTime);
+    const hours = calcShiftHours(formData.startTime, formData.endTime);
 
     try {
       await createShiftMutation.mutateAsync({
@@ -343,7 +325,7 @@ export default function ShiftScheduling() {
     if (!selectedShift?.id) return;
 
     const employee = employees.find((emp) => emp.id === formData.employee);
-    const hours = calculateHours(formData.startTime, formData.endTime);
+    const hours = calcShiftHours(formData.startTime, formData.endTime);
 
     try {
       await updateShiftMutation.mutateAsync({
@@ -412,31 +394,66 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleExportPDF = () => {
-    toast({
-      title: t("timeLeave.shiftScheduling.toast.exportTitle"),
-      description: t("timeLeave.shiftScheduling.toast.exportDesc"),
-    });
-  };
-
-  const handleCopyWeek = () => {
+  const handleExportCSV = () => {
     const weekShifts = getWeekShifts();
+    if (weekShifts.length === 0) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.exportEmptyTitle"),
+        description: t("timeLeave.shiftScheduling.toast.exportEmptyDesc"),
+      });
+      return;
+    }
+    exportToCSV(
+      weekShifts as unknown as Record<string, unknown>[],
+      `shifts_week_${selectedWeek}`,
+      [
+        { key: "date", label: t("timeLeave.shiftScheduling.create.date").replace(" *", "") },
+        { key: "employeeName", label: t("timeLeave.shiftScheduling.create.employee").replace(" *", "") },
+        { key: "department", label: t("timeLeave.shiftScheduling.create.department").replace(" *", "") },
+        { key: "position", label: t("timeLeave.shiftScheduling.create.position").replace(" *", "") },
+        { key: "startTime", label: t("timeLeave.shiftScheduling.create.startTime").replace(" *", "") },
+        { key: "endTime", label: t("timeLeave.shiftScheduling.create.endTime").replace(" *", "") },
+        { key: "hours", label: t("timeLeave.shiftScheduling.analytics.totalHours").replace(":", "") },
+        { key: "location", label: t("timeLeave.shiftScheduling.create.location").replace(" *", "") },
+        { key: "status", label: t("timeLeave.shiftScheduling.grid.status") },
+        { key: "notes", label: t("timeLeave.shiftScheduling.create.notes") },
+      ],
+    );
     toast({
-      title: t("timeLeave.shiftScheduling.toast.copyTitle"),
-      description: t("timeLeave.shiftScheduling.toast.copyDesc", {
+      title: t("timeLeave.shiftScheduling.toast.exportedTitle"),
+      description: t("timeLeave.shiftScheduling.toast.exportedDesc", {
         count: weekShifts.length,
       }),
     });
   };
 
-  const handleApplyTemplate = (template: ShiftTemplate) => {
-    toast({
-      title: t("timeLeave.shiftScheduling.toast.templateTitle"),
-      description: t("timeLeave.shiftScheduling.toast.templateDesc", {
-        name: getTemplateLabel(template.name),
-      }),
-    });
-    setShowTemplateDialog(false);
+  const handleCopyWeek = async () => {
+    try {
+      const count = await copyWeekMutation.mutateAsync({
+        startDate: selectedWeek,
+        endDate: weekEndDate,
+        createdBy: user?.email || "unknown",
+      });
+      if (count === 0) {
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.copyEmptyTitle"),
+          description: t("timeLeave.shiftScheduling.toast.copyEmptyDesc"),
+        });
+        return;
+      }
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.copiedTitle"),
+        description: t("timeLeave.shiftScheduling.toast.copiedDesc", { count }),
+      });
+      // Jump to next week so the copied drafts are visible
+      setSelectedWeek(addDaysISO(selectedWeek, 7));
+    } catch {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
+        variant: "destructive",
+      });
+    }
   };
 
   const getWeekShifts = () => {
@@ -490,45 +507,26 @@ export default function ShiftScheduling() {
       .reduce((sum, shift) => sum + shift.hours, 0);
   };
 
-  // Date helper for the grid
-  const getDateForOffset = (dayOffset: number): string => {
-    const weekStart = new Date(selectedWeek);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayOffset);
-    return toDateStringTL(targetDate);
-  };
+  // Date helper for the grid — pure ISO-string math, identical in every viewer timezone
+  const getDateForOffset = (dayOffset: number): string =>
+    addDaysISO(selectedWeek, dayOffset);
 
   const getDayHeaderInfo = (dayOffset: number) => {
-    const weekStart = new Date(selectedWeek);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayOffset);
-    const dateStr = toDateStringTL(targetDate);
-    const today = toDateStringTL(new Date());
+    const dateStr = getDateForOffset(dayOffset);
+    const targetDate = parseDateISO(dateStr);
     return {
       dateStr,
-      dayName: formatDateTL(targetDate, { weekday: "short" }),
-      dayNum: targetDate.getDate(),
-      monthName: formatDateTL(targetDate, { month: "short" }),
-      isToday: dateStr === today,
+      dayName: DAY_NAMES[targetDate.getUTCDay()],
+      dayNum: targetDate.getUTCDate(),
+      monthName: MONTH_NAMES[targetDate.getUTCMonth()],
+      isToday: dateStr === getTodayTL(),
     };
   };
 
   // Week navigation
-  const goToPreviousWeek = () => {
-    const start = new Date(selectedWeek);
-    start.setDate(start.getDate() - 7);
-    setSelectedWeek(toDateStringTL(start));
-  };
-
-  const goToNextWeek = () => {
-    const start = new Date(selectedWeek);
-    start.setDate(start.getDate() + 7);
-    setSelectedWeek(toDateStringTL(start));
-  };
-
-  const goToCurrentWeek = () => {
-    setSelectedWeek(getWeekString(new Date()));
-  };
+  const goToPreviousWeek = () => setSelectedWeek(addDaysISO(selectedWeek, -7));
+  const goToNextWeek = () => setSelectedWeek(addDaysISO(selectedWeek, 7));
+  const goToCurrentWeek = () => setSelectedWeek(getWeekStartTL());
 
   // Drag and drop handlers
   const handleShiftDrop = useCallback(async (targetEmployeeId: string, targetDate: string) => {
@@ -554,7 +552,10 @@ export default function ShiftScheduling() {
       });
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
-        description: `Shift moved to ${employee?.name || 'employee'} on ${formatDateTL(new Date(targetDate + 'T12:00:00'), { weekday: 'short', month: 'short', day: 'numeric' })}`,
+        description: t("timeLeave.shiftScheduling.toast.movedDesc", {
+          name: employee?.name || "—",
+          date: formatDateTL(parseDateISO(targetDate), { weekday: "short", month: "short", day: "numeric" }),
+        }),
       });
     } catch {
       toast({
@@ -604,58 +605,33 @@ export default function ShiftScheduling() {
               <Button
                 size="sm"
                 onClick={handlePublishSchedule}
-                className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-white shadow-sm"
+                className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm"
               >
                 <Send className="h-3.5 w-3.5" />
-                Publish {stats.draftCount} draft{stats.draftCount !== 1 ? 's' : ''}
+                {t("timeLeave.shiftScheduling.actions.publishSchedule", { count: stats.draftCount })}
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1.5">
               <Download className="h-3.5 w-3.5" />
-              Export
+              {t("timeLeave.shiftScheduling.actions.export")}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleCopyWeek} className="gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyWeek}
+              disabled={copyWeekMutation.isPending}
+              className="gap-1.5"
+            >
               <Copy className="h-3.5 w-3.5" />
-              Copy Week
+              {t("timeLeave.shiftScheduling.actions.copyWeek")}
             </Button>
-            <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <FileText className="h-3.5 w-3.5" />
-                  Template
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t("timeLeave.shiftScheduling.template.title")}</DialogTitle>
-                  <DialogDescription>
-                    {t("timeLeave.shiftScheduling.template.description")}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-3">
-                  {shiftTemplates.map((template) => (
-                    <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardContent className="pt-4" onClick={() => handleApplyTemplate(template)}>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{getTemplateLabel(template.name)}</h4>
-                            <p className="text-sm text-muted-foreground">{getDepartmentLabel(template.department)}</p>
-                            <p className="text-xs text-muted-foreground/70">
-                              {t("timeLeave.shiftScheduling.template.shiftCount", { count: template.shifts.length })}
-                            </p>
-                          </div>
-                          <Button size="sm">{t("timeLeave.shiftScheduling.actions.apply")}</Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground hidden sm:inline tabular-nums">
-              {weekShifts.length} shift{weekShifts.length !== 1 ? 's' : ''} &middot; {stats.totalHours}h
+              {t("timeLeave.shiftScheduling.calendar.daySummary", {
+                count: weekShifts.length,
+                hours: stats.totalHours,
+              })}
             </span>
             <Button
               variant="ghost"
@@ -664,7 +640,9 @@ export default function ShiftScheduling() {
               className={cn("gap-1.5 text-xs h-8", showAllEmployees && "bg-muted")}
             >
               <Users className="h-3.5 w-3.5" />
-              {showAllEmployees ? 'Scheduled only' : 'All staff'}
+              {showAllEmployees
+                ? t("timeLeave.shiftScheduling.grid.scheduledOnly")
+                : t("timeLeave.shiftScheduling.grid.allStaff")}
             </Button>
           </div>
         </div>
@@ -675,7 +653,7 @@ export default function ShiftScheduling() {
             <thead>
               <tr className="bg-muted/50">
                 <th className="sticky left-0 z-20 bg-muted/50 backdrop-blur-sm text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border/30 w-[200px] min-w-[200px]">
-                  Staff
+                  {t("timeLeave.shiftScheduling.grid.staff")}
                 </th>
                 {[0, 1, 2, 3, 4, 5, 6].map(day => {
                   const info = getDayHeaderInfo(day);
@@ -713,9 +691,11 @@ export default function ShiftScheduling() {
                 <tr>
                   <td colSpan={8} className="p-16 text-center">
                     <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No shifts scheduled this week</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("timeLeave.shiftScheduling.grid.empty")}
+                    </p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
-                      Click &ldquo;All staff&rdquo; to see everyone, or create a shift
+                      {t("timeLeave.shiftScheduling.grid.emptyHint")}
                     </p>
                   </td>
                 </tr>
@@ -738,7 +718,7 @@ export default function ShiftScheduling() {
                           />
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-semibold text-foreground truncate leading-tight">{emp.name}</div>
-                            <div className="text-[11px] text-muted-foreground truncate">{getPositionLabel(emp.position)}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">{emp.position}</div>
                             {empHours > 0 && (
                               <div className={cn(
                                 "text-[10px] font-medium mt-0.5",
@@ -827,7 +807,7 @@ export default function ShiftScheduling() {
                                   </div>
                                   {shift.location && (
                                     <div className="text-muted-foreground truncate mt-0.5 pl-[22px] text-[10px]">
-                                      {getLocationLabel(shift.location)?.split(' - ')[0] || shift.location}
+                                      {shift.location}
                                     </div>
                                   )}
                                 </div>
@@ -857,22 +837,22 @@ export default function ShiftScheduling() {
         <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1 flex-wrap">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-gray-400" />
-            Draft
+            {t("timeLeave.shiftScheduling.status.draft")}
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-blue-500" />
-            Published
+            {t("timeLeave.shiftScheduling.status.published")}
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            Confirmed
+            {t("timeLeave.shiftScheduling.status.confirmed")}
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            Cancelled
+            {t("timeLeave.shiftScheduling.status.cancelled")}
           </div>
           <span className="text-muted-foreground/50 ml-auto">
-            Drag shifts to reassign &middot; Click empty cell to create
+            {t("timeLeave.shiftScheduling.grid.dragHint")}
           </span>
         </div>
       </div>
@@ -930,11 +910,11 @@ export default function ShiftScheduling() {
                             borderColor: getDepartmentColor(employee.department),
                           }}
                         >
-                          {getDepartmentLabel(employee.department)}
+                          {employee.department}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
-                        {getPositionLabel(employee.position)}
+                        {employee.position}
                       </p>
                     </div>
 
@@ -975,7 +955,20 @@ export default function ShiftScheduling() {
     </div>
   );
 
-  const renderAnalyticsView = () => (
+  const renderAnalyticsView = () => {
+    const weekShifts = getWeekShifts();
+    const totalCost = weekShifts.reduce((sum, shift) => {
+      const employee = employees.find((e) => e.id === shift.employeeId);
+      return sum + shift.hours * (employee?.hourlyRate || 0);
+    }, 0);
+    const overworkedEmployees = employees
+      .map((employee) => ({
+        employee,
+        weeklyHours: getEmployeeWeeklyHours(employee.id),
+      }))
+      .filter(({ employee, weeklyHours }) => weeklyHours > employee.maxHoursPerWeek);
+
+    return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="border-border/50">
@@ -987,10 +980,9 @@ export default function ShiftScheduling() {
           <CardContent>
             <div className="space-y-3">
               {departments.map((dept) => {
-                const deptShifts = getWeekShifts().filter(
+                const coverage = weekShifts.filter(
                   (s) => s.department === dept.name,
-                );
-                const coverage = deptShifts.length;
+                ).length;
                 return (
                   <div
                     key={dept.id}
@@ -1002,7 +994,7 @@ export default function ShiftScheduling() {
                         style={{ backgroundColor: dept.color }}
                       />
                       <span className="font-medium">
-                        {getDepartmentLabel(dept.name)}
+                        {dept.name}
                       </span>
                     </div>
                     <Badge variant="outline">
@@ -1030,15 +1022,7 @@ export default function ShiftScheduling() {
                   {t("timeLeave.shiftScheduling.analytics.weeklyTotal")}
                 </span>
                 <span className="font-bold text-lg">
-                  $
-                  {getWeekShifts()
-                    .reduce((sum, shift) => {
-                      const employee = employees.find(
-                        (e) => e.id === shift.employeeId,
-                      );
-                      return sum + shift.hours * (employee?.hourlyRate || 0);
-                    }, 0)
-                    .toLocaleString()}
+                  ${totalCost.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1046,15 +1030,7 @@ export default function ShiftScheduling() {
                   {t("timeLeave.shiftScheduling.analytics.avgPerHour")}
                 </span>
                 <span className="font-medium">
-                  $
-                  {getWeekShifts().length > 0 ? Math.round(
-                    getWeekShifts().reduce((sum, shift) => {
-                      const employee = employees.find(
-                        (e) => e.id === shift.employeeId,
-                      );
-                      return sum + (employee?.hourlyRate || 0);
-                    }, 0) / getWeekShifts().length,
-                  ) : 0}
+                  ${stats.totalHours > 0 ? Math.round(totalCost / stats.totalHours) : 0}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1097,20 +1073,6 @@ export default function ShiftScheduling() {
                   %
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.coverageScore")}
-                </span>
-                <span className="font-medium">
-                  {departments.every(
-                    (dept) =>
-                      getWeekShifts().filter((s) => s.department === dept.name)
-                        .length >= dept.minStaffing,
-                  )
-                    ? t("timeLeave.shiftScheduling.analytics.coverageGood")
-                    : t("timeLeave.shiftScheduling.analytics.coverageAttention")}
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -1124,86 +1086,47 @@ export default function ShiftScheduling() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {departments
-              .map((dept) => {
-                const deptShifts = getWeekShifts().filter(
-                  (s) => s.department === dept.name,
-                );
-                const isUnderStaffed = deptShifts.length < dept.minStaffing * 5; // 5 days minimum
-
-                if (isUnderStaffed) {
-                  return (
-                    <div
-                      key={dept.id}
-                      className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800"
-                    >
-                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                          {t(
-                            "timeLeave.shiftScheduling.recommendations.underStaffedTitle",
-                            {
-                              department: getDepartmentLabel(dept.name),
-                            },
-                          )}
-                        </p>
-                        <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                          {t(
-                            "timeLeave.shiftScheduling.recommendations.underStaffedDesc",
-                            {
-                              count: dept.minStaffing * 5 - deptShifts.length,
-                            },
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })
-              .filter(Boolean)}
-
-            {employees
-              .map((employee) => {
-                const weeklyHours = getEmployeeWeeklyHours(employee.id);
-                const isOverworked = weeklyHours > employee.maxHoursPerWeek;
-
-                if (isOverworked) {
-                  return (
-                    <div
-                      key={employee.id}
-                      className="flex items-start gap-3 p-3 bg-red-50 rounded-lg"
-                    >
-                      <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-red-800">
-                          {t(
-                            "timeLeave.shiftScheduling.recommendations.overworkedTitle",
-                            { name: employee.name },
-                          )}
-                        </p>
-                        <p className="text-sm text-red-600">
-                          {t(
-                            "timeLeave.shiftScheduling.recommendations.overworkedDesc",
-                            {
-                              hours: weeklyHours,
-                              max: employee.maxHoursPerWeek,
-                              excess: weeklyHours - employee.maxHoursPerWeek,
-                            },
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })
-              .filter(Boolean)}
+            {overworkedEmployees.length === 0 ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                  {t("timeLeave.shiftScheduling.recommendations.noIssues")}
+                </p>
+              </div>
+            ) : (
+              overworkedEmployees.map(({ employee, weeklyHours }) => (
+                <div
+                  key={employee.id}
+                  className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800"
+                >
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-red-800 dark:text-red-200">
+                      {t(
+                        "timeLeave.shiftScheduling.recommendations.overworkedTitle",
+                        { name: employee.name },
+                      )}
+                    </p>
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      {t(
+                        "timeLeave.shiftScheduling.recommendations.overworkedDesc",
+                        {
+                          hours: weeklyHours,
+                          max: employee.maxHoursPerWeek,
+                          excess: weeklyHours - employee.maxHoursPerWeek,
+                        },
+                      )}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -1302,7 +1225,9 @@ export default function ShiftScheduling() {
                     <Input
                       type="date"
                       value={selectedWeek}
-                      onChange={(e) => setSelectedWeek(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value) setSelectedWeek(getWeekStartTL(e.target.value));
+                      }}
                       className="h-8 w-[140px] text-sm border-0 bg-transparent text-center font-medium"
                     />
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
@@ -1312,6 +1237,28 @@ export default function ShiftScheduling() {
                   <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
                     {t("timeLeave.attendance.actions.today")}
                   </Button>
+
+                  {/* View mode toggle: by location vs by employee */}
+                  <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "location" && "bg-card shadow-sm text-foreground")}
+                      onClick={() => setScheduleViewMode("location")}
+                    >
+                      <MapPin className="h-3.5 w-3.5" />
+                      {t("timeLeave.shiftScheduling.controls.location")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "employee" && "bg-card shadow-sm text-foreground")}
+                      onClick={() => setScheduleViewMode("employee")}
+                    >
+                      <LayoutGrid className="h-3.5 w-3.5" />
+                      {t("timeLeave.shiftScheduling.tabs.employees")}
+                    </Button>
+                  </div>
 
                   <div className="ml-auto">
                     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -1329,7 +1276,7 @@ export default function ShiftScheduling() {
                               <SelectContent>
                                 {employees.map((employee) => (
                                   <SelectItem key={employee.id} value={employee.id}>
-                                    {employee.name} - {getPositionLabel(employee.position)}
+                                    {employee.name} - {employee.position}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1341,7 +1288,7 @@ export default function ShiftScheduling() {
                               <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.departmentPlaceholder")} /></SelectTrigger>
                               <SelectContent>
                                 {departments.map((dept) => (
-                                  <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                                  <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -1362,20 +1309,26 @@ export default function ShiftScheduling() {
                           </div>
                           {formData.startTime && formData.endTime && (
                             <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                              {t("timeLeave.shiftScheduling.create.totalHours", { hours: calculateHours(formData.startTime, formData.endTime) })}
+                              {t("timeLeave.shiftScheduling.create.totalHours", { hours: calcShiftHours(formData.startTime, formData.endTime) })}
                             </div>
                           )}
-                          <div>
-                            <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
-                            <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
-                              <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
-                              <SelectContent>
-                                {locations.map((location) => (
-                                  <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          {locations.length > 0 ? (
+                            <div>
+                              <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
+                              <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
+                                <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
+                                <SelectContent>
+                                  {locations.map((location) => (
+                                    <SelectItem key={location} value={location}>{location}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              {t("timeLeave.shiftScheduling.noLocations.dialogHint")}
+                            </p>
+                          )}
                           <MoreDetailsSection>
                             <div className="space-y-4">
                               <div>
@@ -1411,7 +1364,7 @@ export default function ShiftScheduling() {
                       <SelectContent>
                         <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                          <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1422,31 +1375,10 @@ export default function ShiftScheduling() {
                       <SelectContent>
                         <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
                         {locations.map((location) => (
-                          <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
+                          <SelectItem key={location} value={location}>{location}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-
-                    <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "employee" && "bg-card shadow-sm text-foreground")}
-                        onClick={() => setScheduleViewMode("employee")}
-                      >
-                        <LayoutGrid className="h-3.5 w-3.5" />
-                        {t("timeLeave.shiftScheduling.tabs.employees")}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "location" && "bg-card shadow-sm text-foreground")}
-                        onClick={() => setScheduleViewMode("location")}
-                      >
-                        <MapPin className="h-3.5 w-3.5" />
-                        {t("timeLeave.shiftScheduling.controls.location")}
-                      </Button>
-                    </div>
                   </div>
                 </MoreDetailsSection>
               </div>
@@ -1455,18 +1387,36 @@ export default function ShiftScheduling() {
             <TabsContent value="schedule" className="mt-0">
               {scheduleViewMode === "employee" ? (
                 renderScheduleView()
+              ) : workLocations.length === 0 ? (
+                <div className="py-16 text-center border rounded-xl bg-card">
+                  <MapPin className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-foreground">
+                    {t("timeLeave.shiftScheduling.noLocations.title")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                    {t("timeLeave.shiftScheduling.noLocations.desc")}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => navigate("/settings?tab=structure")}
+                  >
+                    {t("timeLeave.shiftScheduling.noLocations.cta")}
+                  </Button>
+                </div>
               ) : (
                 <LocationGridView
                   employees={employees}
                   shifts={shifts}
                   selectedWeek={selectedWeek}
-                  locations={locations}
-                  getLocationLabel={getLocationLabel}
+                  locations={workLocations}
+                  slots={shiftSlots}
+                  onSlotsChange={handleSlotsChange}
                   onCreateShift={(data) => createShiftMutation.mutateAsync(data)}
                   onDeleteShift={(id) => deleteShiftMutation.mutateAsync(id)}
+                  onSelectWeek={setSelectedWeek}
                   goToPreviousWeek={goToPreviousWeek}
                   goToNextWeek={goToNextWeek}
-                  goToCurrentWeek={goToCurrentWeek}
                 />
               )}
             </TabsContent>
@@ -1510,7 +1460,7 @@ export default function ShiftScheduling() {
                     <SelectContent>
                       {employees.map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} - {getPositionLabel(employee.position)}
+                          {employee.name} - {employee.position}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1552,32 +1502,38 @@ export default function ShiftScheduling() {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="edit-location">
-                    {t("timeLeave.shiftScheduling.edit.location")}
-                  </Label>
-                  <Select
-                    value={formData.location}
-                    onValueChange={(value) =>
-                      handleInputChange("location", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.edit.locationPlaceholder",
+                {locations.length > 0 && (
+                  <div>
+                    <Label htmlFor="edit-location">
+                      {t("timeLeave.shiftScheduling.edit.location")}
+                    </Label>
+                    <Select
+                      value={formData.location}
+                      onValueChange={(value) =>
+                        handleInputChange("location", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={t(
+                            "timeLeave.shiftScheduling.edit.locationPlaceholder",
+                          )}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Keep a stale location selectable so editing doesn't silently drop it */}
+                        {formData.location && !locations.includes(formData.location) && (
+                          <SelectItem value={formData.location}>{formData.location}</SelectItem>
                         )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {getLocationLabel(location)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        {locations.map((location) => (
+                          <SelectItem key={location} value={location}>
+                            {location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <MoreDetailsSection>
                   <div className="space-y-4">
                     <div>

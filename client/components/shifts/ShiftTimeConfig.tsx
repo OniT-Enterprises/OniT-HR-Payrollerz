@@ -2,7 +2,8 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import type { ShiftSlot } from "./shiftTypes";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { ShiftSlot } from "@/services/shiftService";
 
 interface ShiftTimeConfigProps {
   slots: ShiftSlot[];
@@ -10,8 +11,16 @@ interface ShiftTimeConfigProps {
 }
 
 export default function ShiftTimeConfig({ slots, onChange }: ShiftTimeConfigProps) {
+  const { t } = useI18n();
+
   const updateSlot = (id: string, patch: Partial<ShiftSlot>) => {
     onChange(slots.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const slotLabel = (slot: ShiftSlot) => {
+    const key = `timeLeave.shiftScheduling.locationView.slots.${slot.id}`;
+    const translated = t(key);
+    return translated === key ? slot.label : translated;
   };
 
   return (
@@ -32,7 +41,7 @@ export default function ShiftTimeConfig({ slots, onChange }: ShiftTimeConfigProp
             className="scale-90"
           />
           <div className={cn("w-2 h-2 rounded-full flex-shrink-0", slot.color)} />
-          <span className="text-sm font-medium w-20 flex-shrink-0">{slot.label}</span>
+          <span className="text-sm font-medium w-20 flex-shrink-0">{slotLabel(slot)}</span>
           <Input
             type="time"
             value={slot.startTime}
@@ -40,7 +49,9 @@ export default function ShiftTimeConfig({ slots, onChange }: ShiftTimeConfigProp
             disabled={!slot.enabled}
             className="h-8 w-[100px] text-xs"
           />
-          <span className="text-xs text-muted-foreground">to</span>
+          <span className="text-xs text-muted-foreground">
+            {t("timeLeave.shiftScheduling.locationView.to")}
+          </span>
           <Input
             type="time"
             value={slot.endTime}

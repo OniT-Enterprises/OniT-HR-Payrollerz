@@ -11,6 +11,7 @@ export interface Shift {
   location?: string;
   department?: string;
   shiftType?: string; // morning, afternoon, night
+  slotId?: string; // configured shift slot the shift was created from (morning/afternoon/night)
   status: ShiftStatus;
   notes?: string;
 }

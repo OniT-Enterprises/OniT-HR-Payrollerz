@@ -144,14 +144,28 @@ export interface AttendanceEmployeeSummary {
 // HELPER FUNCTIONS
 // ============================================
 
+/** Default expected work times when the employee has no scheduled shift that day */
+export const DEFAULT_EXPECTED_START = '08:00';
+export const DEFAULT_EXPECTED_END = '17:00';
+
+/** Minutes of lateness tolerated before an entry is marked "late" */
+export const LATE_GRACE_MINUTES = 15;
+
+/** A single entry computing to more hours than this is almost certainly a typo */
+export const MAX_REASONABLE_ENTRY_HOURS = 16;
+
+/** Unpaid break assumed when none is recorded (only for entries of 6h+ raw) */
+export const DEFAULT_BREAK_MINUTES = 60;
+
 /**
- * Calculate hours between two time strings
+ * Calculate hours between two time strings (end before start = overnight)
  */
-function calculateHoursBetween(start: string, end: string): number {
+export function calculateHoursBetween(start: string, end: string): number {
   if (!start || !end) return 0;
 
   const [startHour, startMin] = start.split(':').map(Number);
   const [endHour, endMin] = end.split(':').map(Number);
+  if ([startHour, startMin, endHour, endMin].some(Number.isNaN)) return 0;
 
   const startMinutes = startHour * 60 + startMin;
   let endMinutes = endHour * 60 + endMin;
@@ -165,9 +179,31 @@ function calculateHoursBetween(start: string, end: string): number {
 }
 
 /**
+ * Net hours for an entry: raw span minus break. When no break is recorded,
+ * a default break is deducted only for entries long enough to include one.
+ * Shared by the service and the entry dialogs (for live preview/validation).
+ */
+export function computeEntryHours(
+  clockIn: string,
+  clockOut: string,
+  breakMinutes?: number,
+): { rawHours: number; breakMinutes: number; totalHours: number; isOvernight: boolean } {
+  const rawHours = calculateHoursBetween(clockIn, clockOut);
+  const effectiveBreak =
+    breakMinutes !== undefined
+      ? breakMinutes
+      : rawHours >= 6
+        ? DEFAULT_BREAK_MINUTES
+        : 0;
+  const totalHours = Math.max(0, rawHours - effectiveBreak / 60);
+  const isOvernight = Boolean(clockIn && clockOut && clockOut < clockIn);
+  return { rawHours, breakMinutes: effectiveBreak, totalHours, isOvernight };
+}
+
+/**
  * Calculate late minutes based on expected start time
  */
-function calculateLateMinutes(clockIn: string, expectedStart: string = '08:00'): number {
+export function calculateLateMinutes(clockIn: string, expectedStart: string = DEFAULT_EXPECTED_START): number {
   if (!clockIn) return 0;
 
   const [clockHour, clockMin] = clockIn.split(':').map(Number);
@@ -182,7 +218,7 @@ function calculateLateMinutes(clockIn: string, expectedStart: string = '08:00'):
 /**
  * Calculate early departure minutes based on expected end time
  */
-function calculateEarlyDeparture(clockOut: string, expectedEnd: string = '17:00'): number {
+export function calculateEarlyDeparture(clockOut: string, expectedEnd: string = DEFAULT_EXPECTED_END): number {
   if (!clockOut) return 0;
 
   const [clockHour, clockMin] = clockOut.split(':').map(Number);
@@ -195,24 +231,27 @@ function calculateEarlyDeparture(clockOut: string, expectedEnd: string = '17:00'
 }
 
 /**
- * Determine attendance status
+ * Determine attendance status.
+ * An entry with clock-in but no clock-out is a shift in progress — present
+ * (or late), never half_day: hours can only be judged once clocked out.
  */
-function determineStatus(
+export function determineStatus(
   clockIn: string | undefined,
   clockOut: string | undefined,
   lateMinutes: number,
   totalHours: number
 ): AttendanceStatus {
   if (!clockIn && !clockOut) return 'absent';
+  if (clockIn && !clockOut) return lateMinutes > LATE_GRACE_MINUTES ? 'late' : 'present';
   if (totalHours < 4) return 'half_day';
-  if (lateMinutes > 15) return 'late'; // More than 15 min late
+  if (lateMinutes > LATE_GRACE_MINUTES) return 'late';
   return 'present';
 }
 
 /**
  * Calculate regular and overtime hours
  */
-function calculateHoursBreakdown(totalHours: number): { regular: number; overtime: number } {
+export function calculateHoursBreakdown(totalHours: number): { regular: number; overtime: number } {
   const standardDailyHours = TL_WORKING_HOURS.standardDailyHours;
 
   if (totalHours <= standardDailyHours) {
@@ -236,6 +275,36 @@ class AttendanceService {
 
   private get importsRef() {
     return collection(db, 'attendanceImports');
+  }
+
+  /**
+   * Expected work times for an employee on a date: their scheduled shift if
+   * one exists, otherwise the tenant-wide defaults. Keeps afternoon/night
+   * shift workers from being flagged "late" against a 08:00 day-shift start.
+   */
+  private async getExpectedTimes(
+    tenantId: string,
+    employeeId: string,
+    date: string,
+  ): Promise<{ start: string; end: string }> {
+    try {
+      const q = query(
+        collection(db, `tenants/${tenantId}/shifts`),
+        where('employeeId', '==', employeeId),
+        where('date', '==', date),
+        limit(1),
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const shift = snap.docs[0].data();
+        if (shift.startTime && shift.endTime && shift.status !== 'cancelled') {
+          return { start: shift.startTime, end: shift.endTime };
+        }
+      }
+    } catch {
+      // Shift lookup is best-effort — fall back to defaults
+    }
+    return { start: DEFAULT_EXPECTED_START, end: DEFAULT_EXPECTED_END };
   }
 
   /**
@@ -372,15 +441,24 @@ class AttendanceService {
     const existing = await this.getExistingRecord(tenantId, data.employeeId, data.date);
 
     // Calculate hours
-    const breakMinutes = data.breakStart && data.breakEnd
+    const explicitBreak = data.breakStart && data.breakEnd
       ? calculateHoursBetween(data.breakStart, data.breakEnd) * 60
-      : 60; // Default 1 hour break
+      : undefined;
+    const { breakMinutes, totalHours } = computeEntryHours(
+      data.clockIn || '',
+      data.clockOut || '',
+      explicitBreak,
+    );
 
-    const rawHours = calculateHoursBetween(data.clockIn || '', data.clockOut || '');
-    const totalHours = Math.max(0, rawHours - (breakMinutes / 60));
+    if (totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      throw new Error(
+        `Entry computes to ${totalHours.toFixed(1)}h — check clock-in/clock-out times`,
+      );
+    }
 
-    const lateMinutes = calculateLateMinutes(data.clockIn || '');
-    const earlyDepartureMinutes = calculateEarlyDeparture(data.clockOut || '');
+    const expected = await this.getExpectedTimes(tenantId, data.employeeId, data.date);
+    const lateMinutes = calculateLateMinutes(data.clockIn || '', expected.start);
+    const earlyDepartureMinutes = calculateEarlyDeparture(data.clockOut || '', expected.end);
 
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
     const status = determineStatus(data.clockIn, data.clockOut, lateMinutes, totalHours);
@@ -480,10 +558,23 @@ class AttendanceService {
     const newClockIn = adjustments.clockIn || current.clockIn;
     const newClockOut = adjustments.clockOut || current.clockOut;
 
-    const rawHours = calculateHoursBetween(newClockIn || '', newClockOut || '');
-    const totalHours = Math.max(0, rawHours - (current.breakMinutes / 60));
+    const hadExplicitBreak = Boolean(current.breakStart && current.breakEnd);
+    const { breakMinutes, totalHours } = computeEntryHours(
+      newClockIn || '',
+      newClockOut || '',
+      hadExplicitBreak ? current.breakMinutes : undefined,
+    );
+
+    if (totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      throw new Error(
+        `Entry computes to ${totalHours.toFixed(1)}h — check clock-in/clock-out times`,
+      );
+    }
+
+    const expected = await this.getExpectedTimes(tenantId, current.employeeId, current.date);
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
-    const lateMinutes = calculateLateMinutes(newClockIn || '');
+    const lateMinutes = calculateLateMinutes(newClockIn || '', expected.start);
+    const earlyDepartureMinutes = calculateEarlyDeparture(newClockOut || '', expected.end);
 
     await updateDoc(docRef, {
       clockIn: newClockIn,
@@ -491,13 +582,15 @@ class AttendanceService {
       regularHours: regular,
       overtimeHours: overtime,
       totalHours,
+      breakMinutes,
       lateMinutes,
+      earlyDepartureMinutes,
       status: adjustments.status || determineStatus(newClockIn, newClockOut, lateMinutes, totalHours),
       isAdjusted: true,
       adjustedBy: adjustments.adjustedBy,
       adjustmentReason: adjustments.reason,
-      originalClockIn: current.clockIn,
-      originalClockOut: current.clockOut,
+      originalClockIn: current.clockIn ?? null,
+      originalClockOut: current.clockOut ?? null,
       updatedAt: serverTimestamp(),
     });
 
@@ -563,6 +656,25 @@ class AttendanceService {
       existingSnapshot.docs.map(d => `${d.data().employeeId}:${d.data().date}`)
     );
 
+    // Prefetch scheduled shifts for the range so lateness is judged against
+    // each employee's actual shift, not the default day-shift start
+    const expectedByKey = new Map<string, { start: string; end: string }>();
+    try {
+      const shiftsSnapshot = await getDocs(query(
+        collection(db, `tenants/${tenantId}/shifts`),
+        where('date', '>=', minDate),
+        where('date', '<=', maxDate),
+      ));
+      for (const d of shiftsSnapshot.docs) {
+        const s = d.data();
+        if (s.employeeId && s.startTime && s.endTime && s.status !== 'cancelled') {
+          expectedByKey.set(`${s.employeeId}:${s.date}`, { start: s.startTime, end: s.endTime });
+        }
+      }
+    } catch {
+      // Best-effort — records fall back to default expected times
+    }
+
     // Create import batch record
     const importRef = doc(this.importsRef);
     const batchId = importRef.id;
@@ -576,10 +688,11 @@ class AttendanceService {
         }
 
         // Calculate hours
-        const rawHours = calculateHoursBetween(record.clockIn || '', record.clockOut || '');
-        const totalHours = Math.max(0, rawHours - 1); // Assume 1 hour break
+        const { breakMinutes, totalHours } = computeEntryHours(record.clockIn || '', record.clockOut || '');
         const { regular, overtime } = calculateHoursBreakdown(totalHours);
-        const lateMinutes = calculateLateMinutes(record.clockIn || '');
+        const expected = expectedByKey.get(`${record.employeeId}:${record.date}`)
+          ?? { start: DEFAULT_EXPECTED_START, end: DEFAULT_EXPECTED_END };
+        const lateMinutes = calculateLateMinutes(record.clockIn || '', expected.start);
         const status = determineStatus(record.clockIn, record.clockOut, lateMinutes, totalHours);
 
         const attendanceRef = doc(this.collectionRef);
@@ -589,8 +702,8 @@ class AttendanceService {
           regularHours: regular,
           overtimeHours: overtime,
           lateMinutes,
-          earlyDepartureMinutes: calculateEarlyDeparture(record.clockOut || ''),
-          breakMinutes: 60,
+          earlyDepartureMinutes: calculateEarlyDeparture(record.clockOut || '', expected.end),
+          breakMinutes,
           totalHours,
           status,
           source: 'fingerprint',

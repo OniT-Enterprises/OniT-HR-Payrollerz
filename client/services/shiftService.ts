@@ -6,8 +6,10 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -17,6 +19,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { addDaysISO } from '@/lib/dateUtils';
 
 // ============================================
 // TYPES
@@ -37,28 +40,41 @@ export interface ShiftRecord {
   hours: number;
   status: ShiftStatus;
   location: string;
+  /** Which configured shift slot this shift was created from (e.g. "morning") */
+  slotId?: string;
   notes: string;
   createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export interface ShiftTemplate {
-  id?: string;
-  tenantId: string;
-  name: string;
-  department: string;
-  shifts: {
-    department: string;
-    position: string;
-    startTime: string;
-    endTime: string;
-    hours: number;
-    location: string;
-    notes: string;
-  }[];
-  createdAt?: Date;
-  updatedAt?: Date;
+export interface ShiftSlot {
+  id: string;
+  label: string;
+  enabled: boolean;
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  color: string; // dot color class
+}
+
+export const DEFAULT_SHIFT_SLOTS: ShiftSlot[] = [
+  { id: 'morning', label: 'Morning', enabled: true, startTime: '06:00', endTime: '14:00', color: 'bg-orange-500' },
+  { id: 'afternoon', label: 'Afternoon', enabled: true, startTime: '14:00', endTime: '22:00', color: 'bg-red-500' },
+  { id: 'night', label: 'Night', enabled: false, startTime: '22:00', endTime: '06:00', color: 'bg-purple-500' },
+];
+
+/**
+ * Hours between two HH:MM strings. Spans past midnight (e.g. 22:00–06:00)
+ * are treated as overnight shifts, never negative.
+ */
+export function calcShiftHours(startTime: string, endTime: string): number {
+  if (!startTime || !endTime) return 0;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  if ([sh, sm, eh, em].some(Number.isNaN)) return 0;
+  let diff = eh * 60 + em - (sh * 60 + sm);
+  if (diff <= 0) diff += 24 * 60;
+  return Math.round((diff / 60) * 100) / 100;
 }
 
 // ============================================
@@ -70,8 +86,8 @@ class ShiftService {
     return collection(db, `tenants/${tenantId}/shifts`);
   }
 
-  private templatesRef(tenantId: string) {
-    return collection(db, `tenants/${tenantId}/shiftTemplates`);
+  private slotConfigRef(tenantId: string) {
+    return doc(db, `tenants/${tenantId}/settings/shift_config`);
   }
 
   /**
@@ -160,55 +176,68 @@ class ShiftService {
   }
 
   /**
-   * Get shift templates
+   * Copy all shifts in a week to the following week as drafts.
+   * Returns the number of shifts created.
    */
-  async getTemplates(tenantId: string): Promise<ShiftTemplate[]> {
-    const q = query(this.templatesRef(tenantId), orderBy('name', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
-      updatedAt: d.data().updatedAt?.toDate?.() ?? new Date(),
-    })) as ShiftTemplate[];
-  }
-
-  /**
-   * Apply a template — creates shifts for each template entry on the given dates
-   */
-  async applyTemplate(
+  async copyWeekToNext(
     tenantId: string,
-    template: ShiftTemplate,
     startDate: string,
+    endDate: string,
     createdBy: string,
   ): Promise<number> {
-    const batch = writeBatch(db);
-    let count = 0;
+    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate);
+    const toCopy = shifts.filter((s) => s.status !== 'cancelled');
+    if (toCopy.length === 0) return 0;
 
-    for (const shiftDef of template.shifts) {
+    const batch = writeBatch(db);
+    for (const shift of toCopy) {
       const ref = doc(this.shiftsRef(tenantId));
       batch.set(ref, {
         tenantId,
-        employeeId: '',
-        employeeName: '',
-        department: shiftDef.department,
-        position: shiftDef.position,
-        date: startDate,
-        startTime: shiftDef.startTime,
-        endTime: shiftDef.endTime,
-        hours: shiftDef.hours,
+        employeeId: shift.employeeId,
+        employeeName: shift.employeeName,
+        department: shift.department,
+        position: shift.position,
+        date: addDaysISO(shift.date, 7),
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        hours: shift.hours,
         status: 'draft',
-        location: shiftDef.location,
-        notes: shiftDef.notes,
+        location: shift.location,
+        ...(shift.slotId ? { slotId: shift.slotId } : {}),
+        notes: shift.notes,
         createdBy,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      count++;
     }
-
     await batch.commit();
-    return count;
+    return toCopy.length;
+  }
+
+  /**
+   * Get the tenant's shift slot configuration (Morning/Afternoon/Night times).
+   * Falls back to TL defaults when nothing has been saved yet.
+   */
+  async getShiftSlots(tenantId: string): Promise<ShiftSlot[]> {
+    const snap = await getDoc(this.slotConfigRef(tenantId));
+    const saved = snap.exists() ? (snap.data().slots as ShiftSlot[] | undefined) : undefined;
+    if (!saved || saved.length === 0) return DEFAULT_SHIFT_SLOTS;
+    // Merge over defaults so new default slots appear for older configs
+    return DEFAULT_SHIFT_SLOTS.map(
+      (def) => saved.find((s) => s.id === def.id) ?? def,
+    );
+  }
+
+  /**
+   * Persist the tenant's shift slot configuration
+   */
+  async saveShiftSlots(tenantId: string, slots: ShiftSlot[]): Promise<void> {
+    await setDoc(
+      this.slotConfigRef(tenantId),
+      { slots, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
   }
 }
 

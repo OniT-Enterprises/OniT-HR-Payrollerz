@@ -2104,43 +2104,20 @@ const messages = {
       "title": "Time Tracking",
       "subtitle": "Monitor attendance, shifts, and hours",
       "stats": {
-        "guardsOnDuty": "On Duty",
-        "currentlyActive": "Currently active",
-        "sitesCovered": "Sites Covered",
-        "activeLocations": "Active locations",
-        "pendingApprovals": "Pending Approvals",
-        "awaitingReview": "Awaiting review",
-        "totalHours": "Total Hours",
-        "thisWeek": "This week"
+        "totalHours": "Total Hours"
       },
       "tabs": {
         "daily": "Daily Overview",
-        "entries": "Time Entries",
-        "reports": "Reports & Export"
-      },
-      "recent": {
-        "title": "Recent Activity Logs",
-        "description": "Latest time entries and daily activities",
-        "incident": "Incident reported"
+        "entries": "Time Entries"
       },
       "filters": {
         "title": "Filters",
-        "startDate": "Start Date",
-        "endDate": "End Date",
-        "guard": "Employee",
         "allGuards": "All employees",
-        "allDepartments": "All departments",
-        "site": "Site",
-        "allSites": "All sites",
-        "client": "Client",
-        "allClients": "All clients",
-        "apply": "Filter"
+        "allDepartments": "All departments"
       },
       "entries": {
-        "title": "Time Entries",
-        "showing": "Showing {{shown}} of {{total}} entries",
         "export": "Export CSV",
-        "logActivity": "Log Activity",
+        "logActivity": "Log Time Entry",
         "emptyTitle": "No time entries",
         "emptyDescription": "No attendance records found for {{date}}"
       },
@@ -2150,48 +2127,39 @@ const messages = {
         "guard": "Employee *",
         "guardPlaceholder": "Select employee",
         "date": "Date *",
-        "shiftType": "Shift Type *",
-        "site": "Site Assignment *",
-        "sitePlaceholder": "Select site",
-        "clockIn": "Clock In *",
-        "clockOut": "Clock Out *",
-        "break": "Break (minutes)",
-        "totalHours": "Total Hours",
-        "activities": "Activities Performed *",
-        "equipment": "Equipment Checked",
-        "incidents": "Incidents/Observations",
-        "incidentsPlaceholder": "Describe any incidents or observations...",
-        "notes": "Additional Notes",
+        "clockIn": "Clock In",
+        "clockOut": "Clock Out",
+        "notes": "Notes",
         "notesPlaceholder": "Any additional notes about the shift...",
+        "preview": "Total: {{hours}}h ({{break}} min break deducted)",
+        "previewNoBreak": "Total: {{hours}}h",
+        "previewOvernight": "overnight entry",
+        "tooLong": "These times compute to {{hours}}h — check clock-in and clock-out.",
         "cancel": "Cancel",
         "submit": "Submit Entry"
       },
+      "edit": {
+        "title": "Edit Time Entry",
+        "description": "{{name}} · {{date}} — changes are audit-logged",
+        "reason": "Reason for adjustment *",
+        "reasonPlaceholder": "e.g. Forgot to clock out",
+        "reasonRequired": "Please give a reason for the adjustment.",
+        "adjusted": "adjusted",
+        "save": "Save Changes",
+        "adjustSuccess": "Entry updated.",
+        "deleteTitle": "Delete this entry?",
+        "deleteDesc": "This removes the attendance record for {{name}} on {{date}}. This cannot be undone.",
+        "deleteConfirm": "Delete",
+        "deleteSuccess": "Entry deleted."
+      },
       "table": {
-        "guard": "Employee",
-        "dateShift": "Date/Shift",
-        "site": "Site",
-        "hours": "Hours",
         "totalHours": "Hours",
-        "activities": "Activities",
-        "incidents": "Incidents",
-        "source": "Source",
-        "status": "Status",
-        "incidentYes": "Yes",
-        "incidentNone": "None"
+        "source": "Source"
       },
       "reports": {
-        "exportTitle": "Export Options",
-        "exportDescription": "Generate reports for payroll, billing, and compliance",
-        "exportTimesheet": "Export Timesheet CSV",
-        "clientBilling": "Generate Client Billing Report",
-        "incidentSummary": "Export Incident Summary",
-        "guardPerformance": "Employee Performance Report",
-        "coverageTitle": "Site Coverage Summary",
-        "coverageDescription": "Current staffing across all locations",
-        "coverageSites": "{{count}} sites",
+        "coverageTitle": "Department Coverage",
         "coverageGuards": "{{count}} employees",
-        "coverageStatus": "Active",
-        "noDepartmentData": "No department data for this date"
+        "unassigned": "No department"
       },
       "sources": {
         "manual": "Manual",
@@ -2200,84 +2168,22 @@ const messages = {
         "qrCode": "QR code",
         "facial": "Facial"
       },
-      "activities": {
-        "perimeterPatrol": "Perimeter patrol",
-        "accessControl": "Access control",
-        "visitorScreening": "Visitor screening",
-        "incidentResponse": "Incident response",
-        "equipmentCheck": "Equipment check",
-        "reportWriting": "Report writing",
-        "cameraMonitoring": "Camera monitoring",
-        "alarmResponse": "Alarm response",
-        "emergencyEvacuation": "Emergency evacuation",
-        "trafficControl": "Traffic control",
-        "lostFound": "Lost & found",
-        "maintenanceCoordination": "Building maintenance coordination",
-        "buildingMonitoring": "Building monitoring",
-        "gateSecurity": "Gate security",
-        "vehicleInspection": "Vehicle inspection",
-        "patrol": "Patrol"
-      },
-      "equipment": {
-        "radio": "Radio",
-        "flashlight": "Flashlight",
-        "keys": "Keys",
-        "accessCards": "Access cards",
-        "firstAid": "First aid kit",
-        "fireExtinguisher": "Fire extinguisher",
-        "aed": "AED",
-        "cameraSystem": "Security camera system",
-        "metalDetector": "Metal detector",
-        "patrolVehicle": "Patrol vehicle"
-      },
-      "shiftTypes": {
-        "day": "Day",
-        "night": "Night",
-        "swing": "Swing",
-        "overtime": "Overtime",
-        "dayWithTime": "Day Shift (8:00-16:00)",
-        "swingWithTime": "Swing Shift (16:00-00:00)",
-        "nightWithTime": "Night Shift (21:00-06:00)"
-      },
-      "status": {
-        "approved": "Approved",
-        "pending": "Pending",
-        "rejected": "Rejected"
-      },
-      "risk": {
-        "high": "High Risk",
-        "medium": "Medium Risk",
-        "low": "Low Risk"
-      },
       "toast": {
         "validationTitle": "Validation Error",
         "validationDesc": "Please fill in all required fields.",
         "successTitle": "Success",
-        "successDesc": "Time entry logged successfully. Awaiting supervisor approval.",
+        "successDesc": "Time entry saved.",
         "errorTitle": "Error",
-        "errorDesc": "Failed to log time entry. Please try again.",
-        "filterTitle": "Filter Applied",
-        "filterDesc": "Filtering entries from {{startDate}} to {{endDate}}",
-        "exportTitle": "Export Started",
-        "exportDesc": "Timesheet CSV will be downloaded shortly.",
-        "reportTitle": "Report Generated",
-        "reportClientBilling": "Client billing report created successfully.",
-        "reportIncident": "Incident summary report created successfully.",
-        "reportPerformance": "Employee performance report created successfully."
+        "errorDesc": "Failed to save time entry. Please try again.",
+        "exportTitle": "Export complete",
+        "exportDesc": "Attendance CSV downloaded.",
+        "exportEmptyTitle": "Nothing to export"
       },
       "csv": {
-        "badgeNumber": "Badge Number",
         "employeeName": "Employee Name",
         "date": "Date",
-        "shiftType": "Shift Type",
-        "site": "Site",
-        "client": "Client",
         "clockIn": "Clock In",
-        "clockOut": "Clock Out",
-        "totalHours": "Total Hours",
-        "activities": "Activities",
-        "incidents": "Incidents",
-        "status": "Status"
+        "clockOut": "Clock Out"
       }
     },
     "leaveRequests": {
@@ -2524,20 +2430,13 @@ const messages = {
         "published": "Published"
       },
       "actions": {
-        "publishSchedule": "Publish Schedule ({{count}} drafts)",
-        "exportPdf": "Export PDF",
+        "publishSchedule": "Publish {{count}} drafts",
+        "export": "Export CSV",
         "copyWeek": "Copy Week",
-        "applyTemplate": "Apply Template",
-        "apply": "Apply",
         "cancel": "Cancel",
         "createShift": "Create Shift",
         "delete": "Delete",
         "update": "Update"
-      },
-      "template": {
-        "title": "Apply Shift Template",
-        "description": "Choose a template to apply to the current week",
-        "shiftCount": "{{count}} shifts"
       },
       "calendar": {
         "title": "Weekly Schedule",
@@ -2545,6 +2444,47 @@ const messages = {
         "weekView": "Week",
         "dayView": "Day",
         "daySummary": "{{count}} shifts • {{hours}}h"
+      },
+      "grid": {
+        "staff": "Staff",
+        "status": "Status",
+        "empty": "No shifts scheduled this week",
+        "emptyHint": "Click \"All staff\" to see everyone, or click an empty cell to create a shift",
+        "allStaff": "All staff",
+        "scheduledOnly": "Scheduled only",
+        "dragHint": "Drag shifts to reassign · Click an empty cell to create"
+      },
+      "locationView": {
+        "shiftSlots": "Shift Slots",
+        "thisWeek": "This Week",
+        "nextWeek": "Next Week",
+        "day": "Day",
+        "to": "to",
+        "shiftsAt": "{{count}} shifts at {{location}}",
+        "noSlots": "No shift slots enabled",
+        "noSlotsHint": "Toggle at least one shift slot above to see the grid",
+        "headquarters": "Headquarters",
+        "slots": {
+          "morning": "Morning",
+          "afternoon": "Afternoon",
+          "night": "Night"
+        },
+        "addStaff": "+/- Staff",
+        "slotShift": "{{slot}} Shift",
+        "filterStaff": "Filter staff...",
+        "noEmployees": "No employees found",
+        "assignedTitle": "Shift assigned",
+        "assignedDesc": "{{name}} added to the {{slot}} shift",
+        "removedTitle": "Shift removed",
+        "removedDesc": "Employee unassigned",
+        "assignError": "Failed to assign shift. Please try again.",
+        "removeError": "Failed to remove shift. Please try again."
+      },
+      "noLocations": {
+        "title": "No work locations set up",
+        "desc": "Add your offices and work sites in Settings → Company Structure to schedule shifts by location.",
+        "cta": "Open Settings",
+        "dialogHint": "Tip: add work locations in Settings → Company Structure to assign shifts to a location."
       },
       "create": {
         "title": "Create Shift",
@@ -2613,15 +2553,11 @@ const messages = {
         "totalHours": "Total Hours:",
         "totalHoursValue": "{{hours}}h",
         "publishedRate": "Published Rate:",
-        "confirmedRate": "Confirmed Rate:",
-        "coverageScore": "Coverage Score:",
-        "coverageGood": "✅ Good",
-        "coverageAttention": "⚠️ Needs Attention"
+        "confirmedRate": "Confirmed Rate:"
       },
       "recommendations": {
         "title": "Staffing Recommendations",
-        "underStaffedTitle": "{{department}} Under-Staffed",
-        "underStaffedDesc": "Consider adding {{count}} more shifts this week to meet minimum staffing requirements.",
+        "noIssues": "No staffing issues this week.",
         "overworkedTitle": "{{name}} Over Maximum Hours",
         "overworkedDesc": "Scheduled for {{hours}}h, exceeds maximum of {{max}}h by {{excess}}h."
       },
@@ -2640,65 +2576,15 @@ const messages = {
         "scheduleLoadedDesc": "Loaded shifts for week of {{week}}",
         "schedulePublishedTitle": "Schedule Published",
         "schedulePublishedDesc": "Published {{count}} shifts for the week.",
-        "exportTitle": "Export Started",
-        "exportDesc": "PDF roster will be downloaded shortly.",
-        "copyTitle": "Week Copied",
-        "copyDesc": "{{count}} shifts copied to clipboard. Select a target week to paste.",
-        "templateTitle": "Template Applied",
-        "templateDesc": "Applied \"{{name}}\" template to current week."
-      },
-      "data": {
-        "departments": {
-          "operations": "Operations",
-          "customerService": "Customer Service",
-          "sales": "Sales"
-        },
-        "positions": {
-          "operationsManager": "Operations Manager",
-          "teamLead": "Team Lead",
-          "specialist": "Specialist",
-          "customerServiceManager": "Customer Service Manager",
-          "seniorRepresentative": "Senior Representative",
-          "representative": "Representative",
-          "salesManager": "Sales Manager",
-          "seniorSalesRep": "Senior Sales Rep",
-          "salesAssociate": "Sales Associate"
-        },
-        "skills": {
-          "leadership": "Leadership",
-          "operations": "Operations",
-          "communication": "Communication",
-          "technicalSkills": "Technical Skills",
-          "customerService": "Customer Service",
-          "sales": "Sales",
-          "projectManagement": "Project Management",
-          "negotiation": "Negotiation",
-          "problemSolving": "Problem Solving",
-          "analysis": "Analysis",
-          "customerRelations": "Customer Relations"
-        },
-        "locations": {
-          "mainOfficeFloor1": "Main Office - Floor 1",
-          "mainOfficeFloor2": "Main Office - Floor 2",
-          "customerServiceCenter": "Customer Service Center",
-          "warehouseA": "Warehouse A",
-          "warehouseB": "Warehouse B",
-          "remoteWork": "Remote Work",
-          "clientSiteA": "Client Site A",
-          "clientSiteB": "Client Site B"
-        },
-        "notes": {
-          "teamMeeting": "Team meeting at 10 AM",
-          "trainingNewReps": "Training new representatives",
-          "clientPresentation": "Client presentation at 2 PM",
-          "inventoryCheck": "Inventory check",
-          "clientMeeting": "Client meeting",
-          "eveningShift": "Evening shift coverage",
-          "dataAnalysis": "Data analysis project"
-        },
-        "templates": {
-          "standardOperationsWeek": "Standard Operations Week"
-        }
+        "movedDesc": "Shift moved to {{name}} on {{date}}",
+        "exportedTitle": "Export complete",
+        "exportedDesc": "{{count}} shifts exported to CSV.",
+        "exportEmptyTitle": "Nothing to export",
+        "exportEmptyDesc": "There are no shifts this week.",
+        "copiedTitle": "Week copied",
+        "copiedDesc": "{{count}} shifts copied to next week as drafts.",
+        "copyEmptyTitle": "Nothing to copy",
+        "copyEmptyDesc": "There are no shifts this week."
       }
     }
   },

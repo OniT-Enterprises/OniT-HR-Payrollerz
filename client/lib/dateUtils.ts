@@ -104,4 +104,27 @@ export function toDateStringTL(date: Date | string): string {
   return formatDateISO(date);
 }
 
+/**
+ * Add days to an ISO date string and return an ISO date string.
+ * Pure string→string so results never depend on the viewer's timezone.
+ */
+export function addDaysISO(dateStr: string, days: number): string {
+  return formatDateISO(addDays(dateStr, days));
+}
+
+/**
+ * Get the start of the week (Monday) containing the given ISO date,
+ * as an ISO date string. Defaults to today in TL time.
+ *
+ * Uses parseDateISO's noon-UTC anchor so the weekday is computed from the
+ * calendar date itself — the result is identical in every viewer timezone.
+ */
+export function getWeekStartTL(dateStr?: string): string {
+  const base = dateStr || getTodayTL();
+  const d = parseDateISO(base);
+  const daysSinceMonday = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
+  return formatDateISO(d);
+}
+
 

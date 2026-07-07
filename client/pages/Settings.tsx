@@ -3,7 +3,7 @@
  * Loads TenantSettings, renders tab components
  */
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -42,7 +42,12 @@ export default function Settings() {
   const loading = settingsLoading;
 
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("company");
+  const [searchParams] = useSearchParams();
+  const VALID_TABS = ["company", "structure", "payment", "integrations"];
+  const requestedTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(
+    requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : "company",
+  );
   const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] = [];
 
   // onReload for child tabs — invalidate queries so React Query refetches

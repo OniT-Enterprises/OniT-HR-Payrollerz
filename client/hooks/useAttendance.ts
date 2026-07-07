@@ -7,6 +7,7 @@ import { useTenantId } from '@/contexts/TenantContext';
 import {
   attendanceService,
   type AttendanceSource,
+  type AttendanceStatus,
   type AttendanceEmployeeSummary,
 } from '@/services/attendanceService';
 
@@ -64,6 +65,43 @@ export function useMarkAttendance() {
       source: AttendanceSource;
       notes?: string;
     }) => attendanceService.markAttendance(tenantId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all(tenantId) });
+    },
+  });
+}
+
+/**
+ * Adjust an existing attendance record (audit-logged)
+ */
+export function useAdjustAttendance() {
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ recordId, adjustments }: {
+      recordId: string;
+      adjustments: {
+        clockIn?: string;
+        clockOut?: string;
+        status?: AttendanceStatus;
+        reason: string;
+        adjustedBy: string;
+      };
+    }) => attendanceService.adjustAttendance(tenantId, recordId, adjustments),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all(tenantId) });
+    },
+  });
+}
+
+/**
+ * Delete an attendance record
+ */
+export function useDeleteAttendance() {
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (recordId: string) => attendanceService.deleteAttendance(tenantId, recordId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: attendanceKeys.all(tenantId) });
     },

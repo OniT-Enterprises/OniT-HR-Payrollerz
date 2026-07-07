@@ -2108,43 +2108,20 @@ export const translations = {
         "title": "Time Tracking",
         "subtitle": "Monitor attendance, shifts, and hours",
         "stats": {
-          "guardsOnDuty": "On Duty",
-          "currentlyActive": "Currently active",
-          "sitesCovered": "Sites Covered",
-          "activeLocations": "Active locations",
-          "pendingApprovals": "Pending Approvals",
-          "awaitingReview": "Awaiting review",
-          "totalHours": "Total Hours",
-          "thisWeek": "This week"
+          "totalHours": "Total Hours"
         },
         "tabs": {
           "daily": "Daily Overview",
-          "entries": "Time Entries",
-          "reports": "Reports & Export"
-        },
-        "recent": {
-          "title": "Recent Activity Logs",
-          "description": "Latest time entries and daily activities",
-          "incident": "Incident reported"
+          "entries": "Time Entries"
         },
         "filters": {
           "title": "Filters",
-          "startDate": "Start Date",
-          "endDate": "End Date",
-          "guard": "Employee",
           "allGuards": "All employees",
-          "allDepartments": "All departments",
-          "site": "Site",
-          "allSites": "All sites",
-          "client": "Client",
-          "allClients": "All clients",
-          "apply": "Filter"
+          "allDepartments": "All departments"
         },
         "entries": {
-          "title": "Time Entries",
-          "showing": "Showing {{shown}} of {{total}} entries",
           "export": "Export CSV",
-          "logActivity": "Log Activity",
+          "logActivity": "Log Time Entry",
           "emptyTitle": "No time entries",
           "emptyDescription": "No attendance records found for {{date}}"
         },
@@ -2154,48 +2131,39 @@ export const translations = {
           "guard": "Employee *",
           "guardPlaceholder": "Select employee",
           "date": "Date *",
-          "shiftType": "Shift Type *",
-          "site": "Site Assignment *",
-          "sitePlaceholder": "Select site",
-          "clockIn": "Clock In *",
-          "clockOut": "Clock Out *",
-          "break": "Break (minutes)",
-          "totalHours": "Total Hours",
-          "activities": "Activities Performed *",
-          "equipment": "Equipment Checked",
-          "incidents": "Incidents/Observations",
-          "incidentsPlaceholder": "Describe any incidents or observations...",
-          "notes": "Additional Notes",
+          "clockIn": "Clock In",
+          "clockOut": "Clock Out",
+          "notes": "Notes",
           "notesPlaceholder": "Any additional notes about the shift...",
+          "preview": "Total: {{hours}}h ({{break}} min break deducted)",
+          "previewNoBreak": "Total: {{hours}}h",
+          "previewOvernight": "overnight entry",
+          "tooLong": "These times compute to {{hours}}h — check clock-in and clock-out.",
           "cancel": "Cancel",
           "submit": "Submit Entry"
         },
+        "edit": {
+          "title": "Edit Time Entry",
+          "description": "{{name}} · {{date}} — changes are audit-logged",
+          "reason": "Reason for adjustment *",
+          "reasonPlaceholder": "e.g. Forgot to clock out",
+          "reasonRequired": "Please give a reason for the adjustment.",
+          "adjusted": "adjusted",
+          "save": "Save Changes",
+          "adjustSuccess": "Entry updated.",
+          "deleteTitle": "Delete this entry?",
+          "deleteDesc": "This removes the attendance record for {{name}} on {{date}}. This cannot be undone.",
+          "deleteConfirm": "Delete",
+          "deleteSuccess": "Entry deleted."
+        },
         "table": {
-          "guard": "Employee",
-          "dateShift": "Date/Shift",
-          "site": "Site",
-          "hours": "Hours",
           "totalHours": "Hours",
-          "activities": "Activities",
-          "incidents": "Incidents",
-          "source": "Source",
-          "status": "Status",
-          "incidentYes": "Yes",
-          "incidentNone": "None"
+          "source": "Source"
         },
         "reports": {
-          "exportTitle": "Export Options",
-          "exportDescription": "Generate reports for payroll, billing, and compliance",
-          "exportTimesheet": "Export Timesheet CSV",
-          "clientBilling": "Generate Client Billing Report",
-          "incidentSummary": "Export Incident Summary",
-          "guardPerformance": "Employee Performance Report",
-          "coverageTitle": "Site Coverage Summary",
-          "coverageDescription": "Current staffing across all locations",
-          "coverageSites": "{{count}} sites",
+          "coverageTitle": "Department Coverage",
           "coverageGuards": "{{count}} employees",
-          "coverageStatus": "Active",
-          "noDepartmentData": "No department data for this date"
+          "unassigned": "No department"
         },
         "sources": {
           "manual": "Manual",
@@ -2204,84 +2172,22 @@ export const translations = {
           "qrCode": "QR code",
           "facial": "Facial"
         },
-        "activities": {
-          "perimeterPatrol": "Perimeter patrol",
-          "accessControl": "Access control",
-          "visitorScreening": "Visitor screening",
-          "incidentResponse": "Incident response",
-          "equipmentCheck": "Equipment check",
-          "reportWriting": "Report writing",
-          "cameraMonitoring": "Camera monitoring",
-          "alarmResponse": "Alarm response",
-          "emergencyEvacuation": "Emergency evacuation",
-          "trafficControl": "Traffic control",
-          "lostFound": "Lost & found",
-          "maintenanceCoordination": "Building maintenance coordination",
-          "buildingMonitoring": "Building monitoring",
-          "gateSecurity": "Gate security",
-          "vehicleInspection": "Vehicle inspection",
-          "patrol": "Patrol"
-        },
-        "equipment": {
-          "radio": "Radio",
-          "flashlight": "Flashlight",
-          "keys": "Keys",
-          "accessCards": "Access cards",
-          "firstAid": "First aid kit",
-          "fireExtinguisher": "Fire extinguisher",
-          "aed": "AED",
-          "cameraSystem": "Security camera system",
-          "metalDetector": "Metal detector",
-          "patrolVehicle": "Patrol vehicle"
-        },
-        "shiftTypes": {
-          "day": "Day",
-          "night": "Night",
-          "swing": "Swing",
-          "overtime": "Overtime",
-          "dayWithTime": "Day Shift (8:00-16:00)",
-          "swingWithTime": "Swing Shift (16:00-00:00)",
-          "nightWithTime": "Night Shift (21:00-06:00)"
-        },
-        "status": {
-          "approved": "Approved",
-          "pending": "Pending",
-          "rejected": "Rejected"
-        },
-        "risk": {
-          "high": "High Risk",
-          "medium": "Medium Risk",
-          "low": "Low Risk"
-        },
         "toast": {
           "validationTitle": "Validation Error",
           "validationDesc": "Please fill in all required fields.",
           "successTitle": "Success",
-          "successDesc": "Time entry logged successfully. Awaiting supervisor approval.",
+          "successDesc": "Time entry saved.",
           "errorTitle": "Error",
-          "errorDesc": "Failed to log time entry. Please try again.",
-          "filterTitle": "Filter Applied",
-          "filterDesc": "Filtering entries from {{startDate}} to {{endDate}}",
-          "exportTitle": "Export Started",
-          "exportDesc": "Timesheet CSV will be downloaded shortly.",
-          "reportTitle": "Report Generated",
-          "reportClientBilling": "Client billing report created successfully.",
-          "reportIncident": "Incident summary report created successfully.",
-          "reportPerformance": "Employee performance report created successfully."
+          "errorDesc": "Failed to save time entry. Please try again.",
+          "exportTitle": "Export complete",
+          "exportDesc": "Attendance CSV downloaded.",
+          "exportEmptyTitle": "Nothing to export"
         },
         "csv": {
-          "badgeNumber": "Badge Number",
           "employeeName": "Employee Name",
           "date": "Date",
-          "shiftType": "Shift Type",
-          "site": "Site",
-          "client": "Client",
           "clockIn": "Clock In",
-          "clockOut": "Clock Out",
-          "totalHours": "Total Hours",
-          "activities": "Activities",
-          "incidents": "Incidents",
-          "status": "Status"
+          "clockOut": "Clock Out"
         }
       },
       "leaveRequests": {
@@ -2528,20 +2434,13 @@ export const translations = {
           "published": "Published"
         },
         "actions": {
-          "publishSchedule": "Publish Schedule ({{count}} drafts)",
-          "exportPdf": "Export PDF",
+          "publishSchedule": "Publish {{count}} drafts",
+          "export": "Export CSV",
           "copyWeek": "Copy Week",
-          "applyTemplate": "Apply Template",
-          "apply": "Apply",
           "cancel": "Cancel",
           "createShift": "Create Shift",
           "delete": "Delete",
           "update": "Update"
-        },
-        "template": {
-          "title": "Apply Shift Template",
-          "description": "Choose a template to apply to the current week",
-          "shiftCount": "{{count}} shifts"
         },
         "calendar": {
           "title": "Weekly Schedule",
@@ -2549,6 +2448,47 @@ export const translations = {
           "weekView": "Week",
           "dayView": "Day",
           "daySummary": "{{count}} shifts • {{hours}}h"
+        },
+        "grid": {
+          "staff": "Staff",
+          "status": "Status",
+          "empty": "No shifts scheduled this week",
+          "emptyHint": "Click \"All staff\" to see everyone, or click an empty cell to create a shift",
+          "allStaff": "All staff",
+          "scheduledOnly": "Scheduled only",
+          "dragHint": "Drag shifts to reassign · Click an empty cell to create"
+        },
+        "locationView": {
+          "shiftSlots": "Shift Slots",
+          "thisWeek": "This Week",
+          "nextWeek": "Next Week",
+          "day": "Day",
+          "to": "to",
+          "shiftsAt": "{{count}} shifts at {{location}}",
+          "noSlots": "No shift slots enabled",
+          "noSlotsHint": "Toggle at least one shift slot above to see the grid",
+          "headquarters": "Headquarters",
+          "slots": {
+            "morning": "Morning",
+            "afternoon": "Afternoon",
+            "night": "Night"
+          },
+          "addStaff": "+/- Staff",
+          "slotShift": "{{slot}} Shift",
+          "filterStaff": "Filter staff...",
+          "noEmployees": "No employees found",
+          "assignedTitle": "Shift assigned",
+          "assignedDesc": "{{name}} added to the {{slot}} shift",
+          "removedTitle": "Shift removed",
+          "removedDesc": "Employee unassigned",
+          "assignError": "Failed to assign shift. Please try again.",
+          "removeError": "Failed to remove shift. Please try again."
+        },
+        "noLocations": {
+          "title": "No work locations set up",
+          "desc": "Add your offices and work sites in Settings → Company Structure to schedule shifts by location.",
+          "cta": "Open Settings",
+          "dialogHint": "Tip: add work locations in Settings → Company Structure to assign shifts to a location."
         },
         "create": {
           "title": "Create Shift",
@@ -2617,15 +2557,11 @@ export const translations = {
           "totalHours": "Total Hours:",
           "totalHoursValue": "{{hours}}h",
           "publishedRate": "Published Rate:",
-          "confirmedRate": "Confirmed Rate:",
-          "coverageScore": "Coverage Score:",
-          "coverageGood": "✅ Good",
-          "coverageAttention": "⚠️ Needs Attention"
+          "confirmedRate": "Confirmed Rate:"
         },
         "recommendations": {
           "title": "Staffing Recommendations",
-          "underStaffedTitle": "{{department}} Under-Staffed",
-          "underStaffedDesc": "Consider adding {{count}} more shifts this week to meet minimum staffing requirements.",
+          "noIssues": "No staffing issues this week.",
           "overworkedTitle": "{{name}} Over Maximum Hours",
           "overworkedDesc": "Scheduled for {{hours}}h, exceeds maximum of {{max}}h by {{excess}}h."
         },
@@ -2644,65 +2580,15 @@ export const translations = {
           "scheduleLoadedDesc": "Loaded shifts for week of {{week}}",
           "schedulePublishedTitle": "Schedule Published",
           "schedulePublishedDesc": "Published {{count}} shifts for the week.",
-          "exportTitle": "Export Started",
-          "exportDesc": "PDF roster will be downloaded shortly.",
-          "copyTitle": "Week Copied",
-          "copyDesc": "{{count}} shifts copied to clipboard. Select a target week to paste.",
-          "templateTitle": "Template Applied",
-          "templateDesc": "Applied \"{{name}}\" template to current week."
-        },
-        "data": {
-          "departments": {
-            "operations": "Operations",
-            "customerService": "Customer Service",
-            "sales": "Sales"
-          },
-          "positions": {
-            "operationsManager": "Operations Manager",
-            "teamLead": "Team Lead",
-            "specialist": "Specialist",
-            "customerServiceManager": "Customer Service Manager",
-            "seniorRepresentative": "Senior Representative",
-            "representative": "Representative",
-            "salesManager": "Sales Manager",
-            "seniorSalesRep": "Senior Sales Rep",
-            "salesAssociate": "Sales Associate"
-          },
-          "skills": {
-            "leadership": "Leadership",
-            "operations": "Operations",
-            "communication": "Communication",
-            "technicalSkills": "Technical Skills",
-            "customerService": "Customer Service",
-            "sales": "Sales",
-            "projectManagement": "Project Management",
-            "negotiation": "Negotiation",
-            "problemSolving": "Problem Solving",
-            "analysis": "Analysis",
-            "customerRelations": "Customer Relations"
-          },
-          "locations": {
-            "mainOfficeFloor1": "Main Office - Floor 1",
-            "mainOfficeFloor2": "Main Office - Floor 2",
-            "customerServiceCenter": "Customer Service Center",
-            "warehouseA": "Warehouse A",
-            "warehouseB": "Warehouse B",
-            "remoteWork": "Remote Work",
-            "clientSiteA": "Client Site A",
-            "clientSiteB": "Client Site B"
-          },
-          "notes": {
-            "teamMeeting": "Team meeting at 10 AM",
-            "trainingNewReps": "Training new representatives",
-            "clientPresentation": "Client presentation at 2 PM",
-            "inventoryCheck": "Inventory check",
-            "clientMeeting": "Client meeting",
-            "eveningShift": "Evening shift coverage",
-            "dataAnalysis": "Data analysis project"
-          },
-          "templates": {
-            "standardOperationsWeek": "Standard Operations Week"
-          }
+          "movedDesc": "Shift moved to {{name}} on {{date}}",
+          "exportedTitle": "Export complete",
+          "exportedDesc": "{{count}} shifts exported to CSV.",
+          "exportEmptyTitle": "Nothing to export",
+          "exportEmptyDesc": "There are no shifts this week.",
+          "copiedTitle": "Week copied",
+          "copiedDesc": "{{count}} shifts copied to next week as drafts.",
+          "copyEmptyTitle": "Nothing to copy",
+          "copyEmptyDesc": "There are no shifts this week."
         }
       }
     },
@@ -8174,43 +8060,20 @@ export const translations = {
         "title": "Kontrola Tempu",
         "subtitle": "Monitoriza prezensa, turnu no oras",
         "stats": {
-          "guardsOnDuty": "Iha servisu",
-          "currentlyActive": "Ativu agora",
-          "sitesCovered": "Postu kobertu",
-          "activeLocations": "Lokal ativu",
-          "pendingApprovals": "Aprovasaun pendente",
-          "awaitingReview": "Hein ba revisa",
-          "totalHours": "Total oras",
-          "thisWeek": "Semana ida nee"
+          "totalHours": "Total oras"
         },
         "tabs": {
           "daily": "Resumo loron",
-          "entries": "Registu tempu",
-          "reports": "Relatoriu no exportasaun"
-        },
-        "recent": {
-          "title": "Log atividade foun",
-          "description": "Registu tempu no atividade loron-loron",
-          "incident": "Incidente relata"
+          "entries": "Registu tempu"
         },
         "filters": {
           "title": "Filtru",
-          "startDate": "Data hahu",
-          "endDate": "Data remata",
-          "guard": "Empregadu",
           "allGuards": "Empregadu hotu",
-          "allDepartments": "Departamentu hotu",
-          "site": "Lokal",
-          "allSites": "Lokal hotu",
-          "client": "Cliente",
-          "allClients": "Cliente hotu",
-          "apply": "Filtra"
+          "allDepartments": "Departamentu hotu"
         },
         "entries": {
-          "title": "Registu tempu",
-          "showing": "Hatudu {{shown}} husi {{total}} registu",
           "export": "Exporta CSV",
-          "logActivity": "Rejista atividade",
+          "logActivity": "Rejista tempu",
           "emptyTitle": "Laiha entrada tempu",
           "emptyDescription": "Laiha registu prezensa ba {{date}}"
         },
@@ -8220,48 +8083,39 @@ export const translations = {
           "guard": "Empregadu *",
           "guardPlaceholder": "Hili empregadu",
           "date": "Data *",
-          "shiftType": "Tipu turnu *",
-          "site": "Lokal *",
-          "sitePlaceholder": "Hili lokal",
-          "clockIn": "Tama *",
-          "clockOut": "Sai *",
-          "break": "Pausa (minutu)",
-          "totalHours": "Total oras",
-          "activities": "Atividade halo *",
-          "equipment": "Ekipamentu verifika",
-          "incidents": "Incidente/Observasaun",
-          "incidentsPlaceholder": "Deskreve incidente ka observasaun...",
+          "clockIn": "Tama",
+          "clockOut": "Sai",
           "notes": "Nota adicional",
           "notesPlaceholder": "Nota adicional kona ba turnu...",
+          "preview": "Total: {{hours}}h (hasai pausa minutu {{break}})",
+          "previewNoBreak": "Total: {{hours}}h",
+          "previewOvernight": "turnu kalan liu meia-noite",
+          "tooLong": "Oras hirak ne'e halo total {{hours}}h — verifika tempu tama no sai.",
           "cancel": "Kansela",
           "submit": "Submete registu"
         },
+        "edit": {
+          "title": "Hadia registu tempu",
+          "description": "{{name}} · {{date}} — mudansa sei rejista iha audit log",
+          "reason": "Razaun ba mudansa *",
+          "reasonPlaceholder": "Ez. Haluha atu rejista sai",
+          "reasonRequired": "Favor fo razaun ba mudansa.",
+          "adjusted": "hadia ona",
+          "save": "Salva mudansa",
+          "adjustSuccess": "Registu atualiza ona.",
+          "deleteTitle": "Apaga registu ida ne'e?",
+          "deleteDesc": "Ida ne'e sei hamoos registu prezensa ba {{name}} iha {{date}}. La bele halo fali.",
+          "deleteConfirm": "Apaga",
+          "deleteSuccess": "Registu apaga ona."
+        },
         "table": {
-          "guard": "Empregadu",
-          "dateShift": "Data/Turnu",
-          "site": "Lokal",
-          "hours": "Oras",
           "totalHours": "Oras",
-          "activities": "Atividade",
-          "incidents": "Incidente",
-          "source": "Orijen",
-          "status": "Status",
-          "incidentYes": "Sin",
-          "incidentNone": "Laiha"
+          "source": "Orijen"
         },
         "reports": {
-          "exportTitle": "Opsaun exporta",
-          "exportDescription": "Halo relatoriu ba folha, faturasaun no konformidade",
-          "exportTimesheet": "Exporta CSV ponto",
-          "clientBilling": "Halo relatoriu faturasaun",
-          "incidentSummary": "Exporta resumo incidente",
-          "guardPerformance": "Relatoriu desempenho empregadu",
-          "coverageTitle": "Resumo kobertura",
-          "coverageDescription": "Pessoal iha lokal hotu",
-          "coverageSites": "{{count}} lokal",
+          "coverageTitle": "Kobertura departamentu",
           "coverageGuards": "{{count}} empregadu",
-          "coverageStatus": "Ativu",
-          "noDepartmentData": "Laiha dadus departamentu ba data ida ne'e"
+          "unassigned": "La iha departamentu"
         },
         "sources": {
           "manual": "Manual",
@@ -8270,84 +8124,22 @@ export const translations = {
           "qrCode": "Kodigu QR",
           "facial": "Oin"
         },
-        "activities": {
-          "perimeterPatrol": "Patrulha perimeter",
-          "accessControl": "Kontrolu asesu",
-          "visitorScreening": "Triagem vizitante",
-          "incidentResponse": "Resposta incidente",
-          "equipmentCheck": "Verifika ekipamentu",
-          "reportWriting": "Halo relatoriu",
-          "cameraMonitoring": "Monitoriza kamera",
-          "alarmResponse": "Resposta alarme",
-          "emergencyEvacuation": "Evakuasaun emergencia",
-          "trafficControl": "Kontrolu trafiku",
-          "lostFound": "Sasan lakon",
-          "maintenanceCoordination": "Koordinasaun manutensaun",
-          "buildingMonitoring": "Monitoriza edificio",
-          "gateSecurity": "Seguransa portao",
-          "vehicleInspection": "Inspezaun kareta",
-          "patrol": "Patrulha"
-        },
-        "equipment": {
-          "radio": "Radio",
-          "flashlight": "Lanterna",
-          "keys": "Xave",
-          "accessCards": "Karta asesu",
-          "firstAid": "Kit primeiros socorros",
-          "fireExtinguisher": "Extintor",
-          "aed": "DEA",
-          "cameraSystem": "Sistema kamera seguransa",
-          "metalDetector": "Detetor metal",
-          "patrolVehicle": "Kareta patrulha"
-        },
-        "shiftTypes": {
-          "day": "Loron",
-          "night": "Kalan",
-          "swing": "Turnu klaran",
-          "overtime": "Oras extra",
-          "dayWithTime": "Turnu loron (8:00-16:00)",
-          "swingWithTime": "Turnu klaran (16:00-00:00)",
-          "nightWithTime": "Turnu kalan (21:00-06:00)"
-        },
-        "status": {
-          "approved": "Aprova",
-          "pending": "Pendente",
-          "rejected": "Rejeita"
-        },
-        "risk": {
-          "high": "Risku aas",
-          "medium": "Risku klaran",
-          "low": "Risku kiik"
-        },
         "toast": {
           "validationTitle": "Erru validasaun",
           "validationDesc": "Favor preenche kampu obrigatoriu.",
           "successTitle": "Susesu",
-          "successDesc": "Registu tempu salva. Hein aprovasaun.",
+          "successDesc": "Registu tempu salva ona.",
           "errorTitle": "Erru",
           "errorDesc": "Falha rejista. Koko fali.",
-          "filterTitle": "Filtru aplika",
-          "filterDesc": "Filtra registu husi {{startDate}} ate {{endDate}}",
-          "exportTitle": "Exporta hahuu",
-          "exportDesc": "CSV sei download lalais.",
-          "reportTitle": "Relatoriu sai",
-          "reportClientBilling": "Relatoriu faturasaun sai ho susesu.",
-          "reportIncident": "Resumo incidente sai ho susesu.",
-          "reportPerformance": "Relatoriu desempenho sai ho susesu."
+          "exportTitle": "Exportasaun kompletu",
+          "exportDesc": "CSV prezensa download ona.",
+          "exportEmptyTitle": "La iha buat atu exporta"
         },
         "csv": {
-          "badgeNumber": "Numero cracha",
           "employeeName": "Naran empregadu",
           "date": "Data",
-          "shiftType": "Tipu turnu",
-          "site": "Lokal",
-          "client": "Cliente",
           "clockIn": "Tama",
-          "clockOut": "Sai",
-          "totalHours": "Total oras",
-          "activities": "Atividade",
-          "incidents": "Incidente",
-          "status": "Status"
+          "clockOut": "Sai"
         }
       },
       "leaveRequests": {
@@ -8594,20 +8386,13 @@ export const translations = {
           "published": "Publika"
         },
         "actions": {
-          "publishSchedule": "Publika eskala ({{count}} rascunho)",
-          "exportPdf": "Exporta PDF",
+          "publishSchedule": "Publika rascunho {{count}}",
+          "export": "Exporta CSV",
           "copyWeek": "Kopia semana",
-          "applyTemplate": "Aplika modelu",
-          "apply": "Aplika",
           "cancel": "Kansela",
           "createShift": "Kria Turnu",
           "delete": "Apaga",
           "update": "Atualiza"
-        },
-        "template": {
-          "title": "Aplika Modelu Turnu",
-          "description": "Hili modelu atu aplika ba semana agora",
-          "shiftCount": "{{count}} turnu"
         },
         "calendar": {
           "title": "Eskala Semanal",
@@ -8615,6 +8400,47 @@ export const translations = {
           "weekView": "Semana",
           "dayView": "Loron",
           "daySummary": "{{count}} turnu • {{hours}}h"
+        },
+        "grid": {
+          "staff": "Empregadu",
+          "status": "Estatutu",
+          "empty": "La iha turnu eskalada semana ida ne'e",
+          "emptyHint": "Klik \"Empregadu hotu\" atu haree ema hotu, ka klik selula mamuk atu kria turnu",
+          "allStaff": "Empregadu hotu",
+          "scheduledOnly": "Eskalada de'it",
+          "dragHint": "Arrasta turnu atu muda · Klik selula mamuk atu kria"
+        },
+        "locationView": {
+          "shiftSlots": "Oras Turnu",
+          "thisWeek": "Semana ida ne'e",
+          "nextWeek": "Semana oin mai",
+          "day": "Loron",
+          "to": "to'o",
+          "shiftsAt": "{{count}} turnu iha {{location}}",
+          "noSlots": "La iha turnu ativu",
+          "noSlotsHint": "Ativa pelu menus turnu ida iha leten atu haree tabela",
+          "headquarters": "Sede",
+          "slots": {
+            "morning": "Dadeer",
+            "afternoon": "Lokraik",
+            "night": "Kalan"
+          },
+          "addStaff": "+/- Empregadu",
+          "slotShift": "Turnu {{slot}}",
+          "filterStaff": "Filtra empregadu...",
+          "noEmployees": "La hetan empregadu",
+          "assignedTitle": "Turnu atribui ona",
+          "assignedDesc": "{{name}} aumenta ba turnu {{slot}}",
+          "removedTitle": "Turnu hasai ona",
+          "removedDesc": "Empregadu hasai husi turnu",
+          "assignError": "La konsege atribui turnu. Favor koko fali.",
+          "removeError": "La konsege hasai turnu. Favor koko fali."
+        },
+        "noLocations": {
+          "title": "Seidauk iha lokal servisu",
+          "desc": "Aumenta ita-nia eskritóriu no lokal servisu iha Konfigurasaun → Estrutura atu eskala turnu tuir lokal.",
+          "cta": "Loke Konfigurasaun",
+          "dialogHint": "Sujestaun: aumenta lokal servisu iha Konfigurasaun → Estrutura atu atribui turnu ba lokal."
         },
         "create": {
           "title": "Kria Turnu",
@@ -8683,15 +8509,11 @@ export const translations = {
           "totalHours": "Total oras:",
           "totalHoursValue": "{{hours}}h",
           "publishedRate": "Taxa publika:",
-          "confirmedRate": "Taxa konfirma:",
-          "coverageScore": "Pontuasaun cobertura:",
-          "coverageGood": "✅ Diak",
-          "coverageAttention": "⚠️ Presiza Atensaun"
+          "confirmedRate": "Taxa konfirma:"
         },
         "recommendations": {
           "title": "Rekomendasaun pessoal",
-          "underStaffedTitle": "{{department}} la toos",
-          "underStaffedDesc": "Hanesan ba {{count}} turnu tan semana ida ne'e atu tuir requisitu minimu.",
+          "noIssues": "La iha problema eskala semana ida ne'e.",
           "overworkedTitle": "{{name}} liu oras maximu",
           "overworkedDesc": "Planeadu {{hours}}h, liu maximu {{max}}h ho {{excess}}h."
         },
@@ -8710,65 +8532,15 @@ export const translations = {
           "scheduleLoadedDesc": "Turnu karrega ba semana {{week}}",
           "schedulePublishedTitle": "Eskala publika",
           "schedulePublishedDesc": "Publika {{count}} turnu ba semana ida ne'e.",
-          "exportTitle": "Exportasaun hahuu",
-          "exportDesc": "PDF eskala sei download iha tempu badak.",
-          "copyTitle": "Semana kopiadu",
-          "copyDesc": "{{count}} turnu kopiadu ba clipboard. Hili semana destino atu kola.",
-          "templateTitle": "Modelu aplika",
-          "templateDesc": "Modelu \"{{name}}\" aplika ba semana agora."
-        },
-        "data": {
-          "departments": {
-            "operations": "Operasaun",
-            "customerService": "Servisu Kliente",
-            "sales": "Vendas"
-          },
-          "positions": {
-            "operationsManager": "Xefe Operasaun",
-            "teamLead": "Xefe Equipa",
-            "specialist": "Especialista",
-            "customerServiceManager": "Xefe Servisu Kliente",
-            "seniorRepresentative": "Representante Senior",
-            "representative": "Representante",
-            "salesManager": "Xefe Vendas",
-            "seniorSalesRep": "Representante Vendas Senior",
-            "salesAssociate": "Asistente Vendas"
-          },
-          "skills": {
-            "leadership": "Lideransa",
-            "operations": "Operasaun",
-            "communication": "Komunikasaun",
-            "technicalSkills": "Habilidade tekniku",
-            "customerService": "Servisu kliente",
-            "sales": "Vendas",
-            "projectManagement": "Xestaun projetu",
-            "negotiation": "Negosiasaun",
-            "problemSolving": "Resolusaun problema",
-            "analysis": "Analize",
-            "customerRelations": "Relasaun kliente"
-          },
-          "locations": {
-            "mainOfficeFloor1": "Eskritoriu Principal - Andar 1",
-            "mainOfficeFloor2": "Eskritoriu Principal - Andar 2",
-            "customerServiceCenter": "Sentru Servisu Kliente",
-            "warehouseA": "Armazem A",
-            "warehouseB": "Armazem B",
-            "remoteWork": "Trabalhu Remotu",
-            "clientSiteA": "Lokal Kliente A",
-            "clientSiteB": "Lokal Kliente B"
-          },
-          "notes": {
-            "teamMeeting": "Reuniaun equipa iha 10 AM",
-            "trainingNewReps": "Formasaun representante foun",
-            "clientPresentation": "Apresentasaun ba kliente iha 2 PM",
-            "inventoryCheck": "Verifikasaun inventariu",
-            "clientMeeting": "Reuniaun ho kliente",
-            "eveningShift": "Kobertura turnu kalan",
-            "dataAnalysis": "Projetu analize dadus"
-          },
-          "templates": {
-            "standardOperationsWeek": "Semana Padraun Operasaun"
-          }
+          "movedDesc": "Turnu muda ba {{name}} iha {{date}}",
+          "exportedTitle": "Exportasaun kompletu",
+          "exportedDesc": "Turnu {{count}} exporta ba CSV.",
+          "exportEmptyTitle": "La iha buat atu exporta",
+          "exportEmptyDesc": "La iha turnu semana ida ne'e.",
+          "copiedTitle": "Semana kopia ona",
+          "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho.",
+          "copyEmptyTitle": "La iha buat atu kopia",
+          "copyEmptyDesc": "La iha turnu semana ida ne'e."
         }
       }
     },
@@ -14240,180 +14012,86 @@ export const translations = {
         "title": "Registo de Tempo",
         "subtitle": "Monitorizar assiduidade, turnos e horas",
         "stats": {
-          "guardsOnDuty": "Em Serviço",
-          "currentlyActive": "Atualmente ativos",
-          "sitesCovered": "Locais Cobertos",
-          "activeLocations": "Locais ativos",
-          "pendingApprovals": "Aprovações Pendentes",
-          "awaitingReview": "A aguardar revisão",
-          "totalHours": "Total de Horas",
-          "thisWeek": "Esta semana"
+          "totalHours": "Total de Horas"
         },
         "tabs": {
-          "daily": "Visão Diária",
-          "entries": "Registos de Tempo",
-          "reports": "Relatórios e Exportação"
-        },
-        "recent": {
-          "title": "Registos de Atividade Recentes",
-          "description": "Últimos registos de tempo e atividades diárias",
-          "incident": "Incidente reportado"
+          "daily": "Resumo Diário",
+          "entries": "Registos de Tempo"
         },
         "filters": {
           "title": "Filtros",
-          "startDate": "Data de Início",
-          "endDate": "Data de Fim",
-          "guard": "Funcionário",
           "allGuards": "Todos os funcionários",
-          "allDepartments": "Todos os departamentos",
-          "site": "Local",
-          "allSites": "Todos os locais",
-          "client": "Cliente",
-          "allClients": "Todos os clientes",
-          "apply": "Filtrar"
+          "allDepartments": "Todos os departamentos"
         },
         "entries": {
-          "title": "Registos de Tempo",
-          "showing": "A mostrar {{shown}} de {{total}} registos",
           "export": "Exportar CSV",
-          "logActivity": "Registar Atividade",
-          "emptyTitle": "Sem entradas de tempo",
-          "emptyDescription": "Não foram encontrados registos de assiduidade para {{date}}"
+          "logActivity": "Registar Tempo",
+          "emptyTitle": "Sem registos de tempo",
+          "emptyDescription": "Sem registos de assiduidade para {{date}}"
         },
         "dialog": {
           "title": "Registar Tempo",
-          "description": "Registar horários de entrada/saída e notas do turno",
+          "description": "Registe as horas de entrada/saída e notas do turno",
           "guard": "Funcionário *",
           "guardPlaceholder": "Selecionar funcionário",
           "date": "Data *",
-          "shiftType": "Tipo de Turno *",
-          "site": "Atribuição de Local *",
-          "sitePlaceholder": "Selecionar local",
-          "clockIn": "Entrada *",
-          "clockOut": "Saída *",
-          "break": "Pausa (minutos)",
-          "totalHours": "Total de Horas",
-          "activities": "Atividades Realizadas *",
-          "equipment": "Equipamento Verificado",
-          "incidents": "Incidentes/Observações",
-          "incidentsPlaceholder": "Descreva quaisquer incidentes ou observações...",
-          "notes": "Notas Adicionais",
-          "notesPlaceholder": "Quaisquer notas adicionais sobre o turno...",
+          "clockIn": "Entrada",
+          "clockOut": "Saída",
+          "notes": "Notas",
+          "notesPlaceholder": "Notas adicionais sobre o turno...",
+          "preview": "Total: {{hours}}h (pausa de {{break}} min deduzida)",
+          "previewNoBreak": "Total: {{hours}}h",
+          "previewOvernight": "registo noturno",
+          "tooLong": "Estas horas somam {{hours}}h — verifique a entrada e a saída.",
           "cancel": "Cancelar",
-          "submit": "Submeter Registo"
+          "submit": "Guardar Registo"
+        },
+        "edit": {
+          "title": "Editar Registo de Tempo",
+          "description": "{{name}} · {{date}} — as alterações ficam em auditoria",
+          "reason": "Motivo do ajuste *",
+          "reasonPlaceholder": "Ex.: Esqueceu-se de registar a saída",
+          "reasonRequired": "Indique o motivo do ajuste.",
+          "adjusted": "ajustado",
+          "save": "Guardar Alterações",
+          "adjustSuccess": "Registo atualizado.",
+          "deleteTitle": "Eliminar este registo?",
+          "deleteDesc": "Isto remove o registo de assiduidade de {{name}} em {{date}}. Não pode ser anulado.",
+          "deleteConfirm": "Eliminar",
+          "deleteSuccess": "Registo eliminado."
         },
         "table": {
-          "guard": "Funcionário",
-          "dateShift": "Data/Turno",
-          "site": "Local",
-          "hours": "Horas",
           "totalHours": "Horas",
-          "activities": "Atividades",
-          "incidents": "Incidentes",
-          "source": "Origem",
-          "status": "Estado",
-          "incidentYes": "Sim",
-          "incidentNone": "Nenhum"
+          "source": "Origem"
         },
         "reports": {
-          "exportTitle": "Opções de Exportação",
-          "exportDescription": "Gerar relatórios para folha de pagamento, faturação e conformidade",
-          "exportTimesheet": "Exportar Folha de Presença CSV",
-          "clientBilling": "Gerar Relatório de Faturação ao Cliente",
-          "incidentSummary": "Exportar Resumo de Incidentes",
-          "guardPerformance": "Relatório de Desempenho dos Funcionários",
-          "coverageTitle": "Resumo de Cobertura de Locais",
-          "coverageDescription": "Pessoal atual em todos os locais",
-          "coverageSites": "{{count}} locais",
+          "coverageTitle": "Cobertura por Departamento",
           "coverageGuards": "{{count}} funcionários",
-          "coverageStatus": "Ativo",
-          "noDepartmentData": "Não existem dados de departamento para esta data"
+          "unassigned": "Sem departamento"
         },
         "sources": {
           "manual": "Manual",
           "fingerprint": "Impressão digital",
-          "mobileApp": "Aplicação móvel",
+          "mobileApp": "App móvel",
           "qrCode": "Código QR",
           "facial": "Facial"
-        },
-        "activities": {
-          "perimeterPatrol": "Patrulha de perímetro",
-          "accessControl": "Controlo de acesso",
-          "visitorScreening": "Triagem de visitantes",
-          "incidentResponse": "Resposta a incidentes",
-          "equipmentCheck": "Verificação de equipamento",
-          "reportWriting": "Redação de relatórios",
-          "cameraMonitoring": "Monitorização de câmaras",
-          "alarmResponse": "Resposta a alarmes",
-          "emergencyEvacuation": "Evacuação de emergência",
-          "trafficControl": "Controlo de tráfego",
-          "lostFound": "Perdidos e achados",
-          "maintenanceCoordination": "Coordenação de manutenção",
-          "buildingMonitoring": "Monitorização do edifício",
-          "gateSecurity": "Segurança do portão",
-          "vehicleInspection": "Inspeção de veículos",
-          "patrol": "Patrulha"
-        },
-        "equipment": {
-          "radio": "Rádio",
-          "flashlight": "Lanterna",
-          "keys": "Chaves",
-          "accessCards": "Cartões de acesso",
-          "firstAid": "Kit de primeiros socorros",
-          "fireExtinguisher": "Extintor",
-          "aed": "DEA",
-          "cameraSystem": "Sistema de câmaras de segurança",
-          "metalDetector": "Detetor de metais",
-          "patrolVehicle": "Veículo de patrulha"
-        },
-        "shiftTypes": {
-          "day": "Dia",
-          "night": "Noite",
-          "swing": "Rotativo",
-          "overtime": "Horas Extra",
-          "dayWithTime": "Turno Diurno (8:00-16:00)",
-          "swingWithTime": "Turno Rotativo (16:00-00:00)",
-          "nightWithTime": "Turno Noturno (21:00-06:00)"
-        },
-        "status": {
-          "approved": "Aprovado",
-          "pending": "Pendente",
-          "rejected": "Rejeitado"
-        },
-        "risk": {
-          "high": "Alto Risco",
-          "medium": "Risco Médio",
-          "low": "Baixo Risco"
         },
         "toast": {
           "validationTitle": "Erro de Validação",
           "validationDesc": "Por favor preencha todos os campos obrigatórios.",
           "successTitle": "Sucesso",
-          "successDesc": "Registo de tempo efetuado com sucesso. A aguardar aprovação do supervisor.",
+          "successDesc": "Registo de tempo guardado.",
           "errorTitle": "Erro",
-          "errorDesc": "Falha ao registar tempo. Por favor tente novamente.",
-          "filterTitle": "Filtro Aplicado",
-          "filterDesc": "A filtrar registos de {{startDate}} a {{endDate}}",
-          "exportTitle": "Exportação Iniciada",
-          "exportDesc": "O CSV da folha de presença será descarregado em breve.",
-          "reportTitle": "Relatório Gerado",
-          "reportClientBilling": "Relatório de faturação ao cliente criado com sucesso.",
-          "reportIncident": "Relatório de resumo de incidentes criado com sucesso.",
-          "reportPerformance": "Relatório de desempenho dos funcionários criado com sucesso."
+          "errorDesc": "Falha ao guardar o registo. Tente novamente.",
+          "exportTitle": "Exportação concluída",
+          "exportDesc": "CSV de assiduidade descarregado.",
+          "exportEmptyTitle": "Nada para exportar"
         },
         "csv": {
-          "badgeNumber": "Número do Crachá",
           "employeeName": "Nome do Funcionário",
           "date": "Data",
-          "shiftType": "Tipo de Turno",
-          "site": "Local",
-          "client": "Cliente",
           "clockIn": "Entrada",
-          "clockOut": "Saída",
-          "totalHours": "Total de Horas",
-          "activities": "Atividades",
-          "incidents": "Incidentes",
-          "status": "Estado"
+          "clockOut": "Saída"
         }
       },
       "leaveRequests": {
@@ -14660,20 +14338,13 @@ export const translations = {
           "published": "Publicado"
         },
         "actions": {
-          "publishSchedule": "Publicar Escala ({{count}} rascunhos)",
-          "exportPdf": "Exportar PDF",
+          "publishSchedule": "Publicar {{count}} rascunhos",
+          "export": "Exportar CSV",
           "copyWeek": "Copiar Semana",
-          "applyTemplate": "Aplicar Modelo",
-          "apply": "Aplicar",
           "cancel": "Cancelar",
           "createShift": "Criar Turno",
           "delete": "Eliminar",
           "update": "Atualizar"
-        },
-        "template": {
-          "title": "Aplicar Modelo de Turno",
-          "description": "Escolha um modelo para aplicar à semana atual",
-          "shiftCount": "{{count}} turnos"
         },
         "calendar": {
           "title": "Escala Semanal",
@@ -14681,6 +14352,47 @@ export const translations = {
           "weekView": "Semana",
           "dayView": "Dia",
           "daySummary": "{{count}} turnos • {{hours}}h"
+        },
+        "grid": {
+          "staff": "Funcionários",
+          "status": "Estado",
+          "empty": "Nenhum turno agendado esta semana",
+          "emptyHint": "Clique em \"Todos os funcionários\" para ver toda a gente, ou clique numa célula vazia para criar um turno",
+          "allStaff": "Todos os funcionários",
+          "scheduledOnly": "Apenas escalados",
+          "dragHint": "Arraste turnos para reatribuir · Clique numa célula vazia para criar"
+        },
+        "locationView": {
+          "shiftSlots": "Horários de Turno",
+          "thisWeek": "Esta Semana",
+          "nextWeek": "Próxima Semana",
+          "day": "Dia",
+          "to": "até",
+          "shiftsAt": "{{count}} turnos em {{location}}",
+          "noSlots": "Nenhum horário de turno ativo",
+          "noSlotsHint": "Ative pelo menos um horário de turno acima para ver a grelha",
+          "headquarters": "Sede",
+          "slots": {
+            "morning": "Manhã",
+            "afternoon": "Tarde",
+            "night": "Noite"
+          },
+          "addStaff": "+/- Pessoal",
+          "slotShift": "Turno da {{slot}}",
+          "filterStaff": "Filtrar pessoal...",
+          "noEmployees": "Nenhum funcionário encontrado",
+          "assignedTitle": "Turno atribuído",
+          "assignedDesc": "{{name}} adicionado ao turno da {{slot}}",
+          "removedTitle": "Turno removido",
+          "removedDesc": "Funcionário desatribuído",
+          "assignError": "Não foi possível atribuir o turno. Tente novamente.",
+          "removeError": "Não foi possível remover o turno. Tente novamente."
+        },
+        "noLocations": {
+          "title": "Nenhum local de trabalho configurado",
+          "desc": "Adicione os seus escritórios e locais de trabalho em Definições → Estrutura para escalar turnos por local.",
+          "cta": "Abrir Definições",
+          "dialogHint": "Dica: adicione locais de trabalho em Definições → Estrutura para atribuir turnos a um local."
         },
         "create": {
           "title": "Criar Turno",
@@ -14749,15 +14461,11 @@ export const translations = {
           "totalHours": "Total de Horas:",
           "totalHoursValue": "{{hours}}h",
           "publishedRate": "Taxa de Publicação:",
-          "confirmedRate": "Taxa de Confirmação:",
-          "coverageScore": "Pontuação de Cobertura:",
-          "coverageGood": "✅ Bom",
-          "coverageAttention": "⚠️ Requer Atenção"
+          "confirmedRate": "Taxa de Confirmação:"
         },
         "recommendations": {
           "title": "Recomendações de Pessoal",
-          "underStaffedTitle": "{{department}} Sub-Dimensionado",
-          "underStaffedDesc": "Considere adicionar mais {{count}} turnos esta semana para cumprir requisitos mínimos de pessoal.",
+          "noIssues": "Sem problemas de escalonamento esta semana.",
           "overworkedTitle": "{{name}} Excede Máximo de Horas",
           "overworkedDesc": "Escalado para {{hours}}h, excede o máximo de {{max}}h em {{excess}}h."
         },
@@ -14776,65 +14484,15 @@ export const translations = {
           "scheduleLoadedDesc": "Carregados turnos para a semana de {{week}}",
           "schedulePublishedTitle": "Escala Publicada",
           "schedulePublishedDesc": "Publicados {{count}} turnos para a semana.",
-          "exportTitle": "Exportação Iniciada",
-          "exportDesc": "O PDF da escala será descarregado em breve.",
-          "copyTitle": "Semana Copiada",
-          "copyDesc": "{{count}} turnos copiados. Selecione uma semana alvo para colar.",
-          "templateTitle": "Modelo Aplicado",
-          "templateDesc": "Aplicado modelo \"{{name}}\" à semana atual."
-        },
-        "data": {
-          "departments": {
-            "operations": "Operações",
-            "customerService": "Serviço ao Cliente",
-            "sales": "Vendas"
-          },
-          "positions": {
-            "operationsManager": "Gestor de Operações",
-            "teamLead": "Líder de Equipa",
-            "specialist": "Especialista",
-            "customerServiceManager": "Gestor de Serviço ao Cliente",
-            "seniorRepresentative": "Representante Sénior",
-            "representative": "Representante",
-            "salesManager": "Gestor de Vendas",
-            "seniorSalesRep": "Representante de Vendas Sénior",
-            "salesAssociate": "Associado de Vendas"
-          },
-          "skills": {
-            "leadership": "Liderança",
-            "operations": "Operações",
-            "communication": "Comunicação",
-            "technicalSkills": "Competências Técnicas",
-            "customerService": "Serviço ao Cliente",
-            "sales": "Vendas",
-            "projectManagement": "Gestão de Projetos",
-            "negotiation": "Negociação",
-            "problemSolving": "Resolução de Problemas",
-            "analysis": "Análise",
-            "customerRelations": "Relações com Clientes"
-          },
-          "locations": {
-            "mainOfficeFloor1": "Escritório Principal - Piso 1",
-            "mainOfficeFloor2": "Escritório Principal - Piso 2",
-            "customerServiceCenter": "Centro de Serviço ao Cliente",
-            "warehouseA": "Armazém A",
-            "warehouseB": "Armazém B",
-            "remoteWork": "Trabalho Remoto",
-            "clientSiteA": "Local do Cliente A",
-            "clientSiteB": "Local do Cliente B"
-          },
-          "notes": {
-            "teamMeeting": "Reunião de equipa às 10h",
-            "trainingNewReps": "Formação de novos representantes",
-            "clientPresentation": "Apresentação ao cliente às 14h",
-            "inventoryCheck": "Verificação de inventário",
-            "clientMeeting": "Reunião com cliente",
-            "eveningShift": "Cobertura do turno noturno",
-            "dataAnalysis": "Projeto de análise de dados"
-          },
-          "templates": {
-            "standardOperationsWeek": "Semana de Operações Padrão"
-          }
+          "movedDesc": "Turno movido para {{name}} em {{date}}",
+          "exportedTitle": "Exportação concluída",
+          "exportedDesc": "{{count}} turnos exportados para CSV.",
+          "exportEmptyTitle": "Nada para exportar",
+          "exportEmptyDesc": "Não há turnos esta semana.",
+          "copiedTitle": "Semana copiada",
+          "copiedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos.",
+          "copyEmptyTitle": "Nada para copiar",
+          "copyEmptyDesc": "Não há turnos esta semana."
         }
       }
     },

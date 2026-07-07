@@ -51,6 +51,8 @@ import {
 import { type Employee } from "@/services/employeeService";
 import {
   attendanceService,
+  computeEntryHours,
+  MAX_REASONABLE_ENTRY_HOURS,
   type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -249,6 +251,19 @@ export default function Attendance() {
       toast({
         title: t("timeLeave.attendance.toast.validationTitle"),
         description: t("timeLeave.attendance.toast.validationDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Catch reversed clock-out typos before they become a 20-hour payroll day
+    const preview = computeEntryHours(formData.clockIn, formData.clockOut);
+    if (formData.clockOut && preview.totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      toast({
+        title: t("timeLeave.attendance.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.dialog.tooLong", {
+          hours: preview.totalHours.toFixed(1),
+        }),
         variant: "destructive",
       });
       return;

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserPlus, Loader2 } from "lucide-react";
-import type { ShiftSlot } from "./shiftTypes";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { ShiftSlot } from "@/services/shiftService";
 
 interface Employee {
   id: string;
@@ -18,6 +19,7 @@ interface StaffAssignPopoverProps {
   assignedEmployeeIds: string[];
   date: string;
   slot: ShiftSlot;
+  slotLabel: string;
   location: string;
   onAssign: (employeeId: string, employee: Employee) => Promise<void>;
   onUnassign: (shiftId: string) => Promise<void>;
@@ -30,11 +32,13 @@ export default function StaffAssignPopover({
   assignedEmployeeIds,
   date,
   slot,
+  slotLabel,
   location,
   onAssign,
   onUnassign,
   assignedShiftMap,
 }: StaffAssignPopoverProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
@@ -66,12 +70,14 @@ export default function StaffAssignPopover({
           className="h-7 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
         >
           <UserPlus className="h-3 w-3" />
-          +/- Staff
+          {t("timeLeave.shiftScheduling.locationView.addStaff")}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <div className="p-2 border-b">
-          <div className="text-xs font-semibold text-foreground">{slot.label} Shift</div>
+          <div className="text-xs font-semibold text-foreground">
+            {t("timeLeave.shiftScheduling.locationView.slotShift", { slot: slotLabel })}
+          </div>
           <div className="text-[10px] text-muted-foreground">
             {date} &middot; {slot.startTime}–{slot.endTime} &middot; {location}
           </div>
@@ -79,7 +85,7 @@ export default function StaffAssignPopover({
         <div className="p-2 border-b">
           <input
             type="text"
-            placeholder="Filter staff..."
+            placeholder={t("timeLeave.shiftScheduling.locationView.filterStaff")}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="w-full text-xs px-2 py-1.5 rounded-md border border-border/50 bg-background focus:outline-none focus:ring-1 focus:ring-ring"
@@ -88,7 +94,7 @@ export default function StaffAssignPopover({
         <div className="max-h-48 overflow-y-auto p-1">
           {filtered.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground">
-              No employees found
+              {t("timeLeave.shiftScheduling.locationView.noEmployees")}
             </div>
           ) : (
             filtered.map((emp) => {
