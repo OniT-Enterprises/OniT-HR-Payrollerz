@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+
       - name: Typecheck
         run: npx tsc --noEmit
 
@@ -48,6 +51,9 @@ jobs:
       # Rules deploy automatically on push — never ship them untested
       - name: Firestore rules tests
         run: npm run emul:rules
+
+      - name: Build Cloud Functions
+        run: npm --prefix functions run build
 
       - name: Build
         run: npm run build

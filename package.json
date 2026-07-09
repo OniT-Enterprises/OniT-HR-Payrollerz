@@ -26,6 +26,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest --run -c tests/vitest.config.ts",
+    "test:all": "npm test && npm run emul:rules && npm --prefix functions run build",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "emul:rules": "firebase emulators:exec --config firebase.dev.json --only firestore 'vitest run -c tests/vitest.rules.config.ts'",
