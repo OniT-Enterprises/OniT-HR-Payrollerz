@@ -70,14 +70,14 @@ export default function DocumentAlerts() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["tenants", tenantId, "documentAlerts"] });
       toast({
-        title: "Document alerts refreshed",
-        description: "Latest document expiry data loaded.",
+        title: t("documentAlerts.toast.refreshTitle"),
+        description: t("documentAlerts.toast.refreshDesc"),
       });
     },
     onError: () => {
       toast({
-        title: "Refresh failed",
-        description: "Failed to refresh document alerts.",
+        title: t("documentAlerts.toast.refreshFailedTitle"),
+        description: t("documentAlerts.toast.refreshFailedDesc"),
         variant: "destructive",
       });
     },
@@ -369,7 +369,7 @@ export default function DocumentAlerts() {
                   disabled={refreshMutation.isPending}
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
-                  Refresh
+                  {t("documentAlerts.actions.refresh")}
                 </Button>
                 <Button variant="outline" onClick={handleExportCSV}>
                   <Download className="h-4 w-4 mr-2" />

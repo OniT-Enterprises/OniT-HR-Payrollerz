@@ -164,7 +164,8 @@ export default function TenantList() {
   };
 
   const getStatusLabel = (status: TenantStatus) => t(`admin.tenantList.status.${status}`);
-  const getPlanLabel = (plan: TenantPlan) => planLabels[plan] || "Custom";
+  const getPlanLabel = (plan: TenantPlan) =>
+    planLabels[plan] ? t(`admin.tenantList.plan.${plan}`) : "Custom";
   const formatMonthlySubscription = (amount?: number): string => {
     if (typeof amount !== "number" || Number.isNaN(amount)) {
       return "-";
@@ -347,7 +348,7 @@ export default function TenantList() {
                             <div>
                               <p className="font-medium">{tenant.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {tenant.legalName || "Legal name not set"}
+                                {tenant.legalName || t("admin.tenantList.legalNameNotSet")}
                               </p>
                               <p className="text-sm text-muted-foreground">{tenant.slug}</p>
                             </div>
@@ -368,7 +369,7 @@ export default function TenantList() {
                             {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            PaidUntil: {formatDate(tenant.subscriptionPaidUntil)}
+                            {t("admin.tenantList.table.paidUntil")}: {formatDate(tenant.subscriptionPaidUntil)}
                           </Badge>
                         </div>
                         <div className="mt-4">
@@ -439,8 +440,8 @@ export default function TenantList() {
                       <TableHead>{t("admin.tenantList.table.status")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.plan")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.created")}</TableHead>
-                      <TableHead>PaidUntil</TableHead>
-                      <TableHead>MonthlySubscription</TableHead>
+                      <TableHead>{t("admin.tenantList.table.paidUntil")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.monthlySubscription")}</TableHead>
                       <TableHead className="text-right">{t("admin.tenantList.table.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -455,7 +456,7 @@ export default function TenantList() {
                             <div>
                               <p className="font-medium">{tenant.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {tenant.legalName || "Legal name not set"}
+                                {tenant.legalName || t("admin.tenantList.legalNameNotSet")}
                               </p>
                               <p className="text-sm text-muted-foreground">{tenant.slug}</p>
                             </div>

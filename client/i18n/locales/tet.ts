@@ -381,9 +381,14 @@ const messages = {
       "adjustFilters": "Koko muda filtru sira."
     },
     "actions": {
-      "export": "Exporta CSV"
+      "export": "Exporta CSV",
+      "refresh": "Atualiza"
     },
     "toast": {
+      "refreshTitle": "Alerta dokumentu atualiza ona",
+      "refreshDesc": "Karrega ona dadus foun kona-ba dokumentu espira.",
+      "refreshFailedTitle": "Falha atualiza",
+      "refreshFailedDesc": "Falha atu atualiza alerta dokumentu sira.",
       "noDataTitle": "Laiha dadus",
       "noDataDesc": "Laiha alerta atu exporta.",
       "exportTitle": "Exporta remata",
@@ -3472,11 +3477,14 @@ const messages = {
       "noTenants": "Laiha tenante hetan",
       "clearSearch": "Hamós buka",
       "createFirstTenant": "Kria ita-nia tenante primeiru",
+      "legalNameNotSet": "Naran legál seidauk define",
       "table": {
         "tenant": "Tenante",
         "status": "Estatutu",
         "plan": "Planu",
         "created": "Kria",
+        "paidUntil": "Selu to'o",
+        "monthlySubscription": "Subskrisaun mensál",
         "actions": "Asaun"
       },
       "actions": {

@@ -42,6 +42,20 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+const statusLabels: Record<string, string> = {
+  active: "Active",
+  suspended: "Suspended",
+  pending: "Pending",
+  cancelled: "Cancelled",
+};
+
+const planLabels: Record<string, string> = {
+  free: "Free",
+  starter: "Starter",
+  professional: "Professional",
+  enterprise: "Enterprise",
+};
+
 function formatDateValue(value: OptionalTimestamp): string {
   if (!value) return "-";
   if (typeof value === "object" && "toDate" in value) {
@@ -199,8 +213,8 @@ export default function TenantDetail() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
-                    <Badge variant="outline">{tenant.status}</Badge>
-                    <Badge variant="outline">{tenant.plan}</Badge>
+                    <Badge variant="outline">{statusLabels[tenant.status] ?? tenant.status}</Badge>
+                    <Badge variant="outline">{planLabels[tenant.plan] ?? tenant.plan}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Tenant ID: {tenant.id}</p>
                 </div>
@@ -376,15 +390,11 @@ export default function TenantDetail() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Subscription Plan</p>
-                    <p className="font-medium">{tenant.plan}</p>
+                    <p className="font-medium">{planLabels[tenant.plan] ?? tenant.plan}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">PaidUntil</p>
+                    <p className="text-sm text-muted-foreground">Paid Until</p>
                     <p className="font-medium">{formatDateValue(tenant.subscriptionPaidUntil)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Machine ID</p>
-                    <p className="font-medium">{tenant.id}</p>
                   </div>
                 </CardContent>
               </Card>

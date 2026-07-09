@@ -381,9 +381,14 @@ const messages = {
       "adjustFilters": "Tente ajustar os filtros."
     },
     "actions": {
-      "export": "Exportar CSV"
+      "export": "Exportar CSV",
+      "refresh": "Atualizar"
     },
     "toast": {
+      "refreshTitle": "Alertas de documentos atualizados",
+      "refreshDesc": "Dados mais recentes de expiração carregados.",
+      "refreshFailedTitle": "Falha ao atualizar",
+      "refreshFailedDesc": "Não foi possível atualizar os alertas de documentos.",
       "noDataTitle": "Sem dados",
       "noDataDesc": "Não existem alertas para exportar.",
       "exportTitle": "Exportação concluída",
@@ -4699,11 +4704,14 @@ const messages = {
       "noTenants": "Nenhum inquilino encontrado",
       "clearSearch": "Limpar pesquisa",
       "createFirstTenant": "Criar o primeiro inquilino",
+      "legalNameNotSet": "Nome legal não definido",
       "table": {
         "tenant": "Inquilino",
         "status": "Estado",
         "plan": "Plano",
         "created": "Criado",
+        "paidUntil": "Pago até",
+        "monthlySubscription": "Subscrição mensal",
         "actions": "Ações"
       },
       "actions": {

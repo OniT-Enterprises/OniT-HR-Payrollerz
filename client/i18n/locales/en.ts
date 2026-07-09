@@ -381,9 +381,14 @@ const messages = {
       "adjustFilters": "Try adjusting your filters."
     },
     "actions": {
-      "export": "Export CSV"
+      "export": "Export CSV",
+      "refresh": "Refresh"
     },
     "toast": {
+      "refreshTitle": "Document alerts refreshed",
+      "refreshDesc": "Latest document expiry data loaded.",
+      "refreshFailedTitle": "Refresh failed",
+      "refreshFailedDesc": "Failed to refresh document alerts.",
       "noDataTitle": "No data",
       "noDataDesc": "No alerts to export.",
       "exportTitle": "Export complete",
@@ -4699,11 +4704,14 @@ const messages = {
       "noTenants": "No tenants found",
       "clearSearch": "Clear search",
       "createFirstTenant": "Create your first tenant",
+      "legalNameNotSet": "Legal name not set",
       "table": {
         "tenant": "Tenant",
         "status": "Status",
         "plan": "Plan",
         "created": "Created",
+        "paidUntil": "Paid until",
+        "monthlySubscription": "Monthly subscription",
         "actions": "Actions"
       },
       "actions": {
