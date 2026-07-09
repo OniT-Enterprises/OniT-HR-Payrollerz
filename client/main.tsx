@@ -2,11 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
-import {
-  createOptimizedQueryClient,
-  hydrateQueryClient,
-  setupQueryPersistence,
-} from "@/lib/queryCache";
+import { createOptimizedQueryClient } from "@/lib/queryCache";
 import { prefetchCommonRoutesOnIdle } from "@/lib/prefetch";
 
 
@@ -51,13 +47,11 @@ if (!root) {
   containerWithRoot._reactRoot = root;
 }
 
-// Create QueryClient and render immediately — don't block on IDB hydration
+// Create QueryClient and render immediately. AuthProvider hydrates the small,
+// user-scoped safe cache only after Firebase identity is resolved.
 const queryClient = createOptimizedQueryClient();
-setupQueryPersistence(queryClient);
 
-// Render first, hydrate cache in background (data arrives shortly after)
 root.render(<App queryClient={queryClient} />);
-hydrateQueryClient(queryClient);
 
 // Prefetch common routes after browser is idle
 prefetchCommonRoutesOnIdle();

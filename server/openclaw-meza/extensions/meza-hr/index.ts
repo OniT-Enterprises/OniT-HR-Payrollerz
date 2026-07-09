@@ -32,7 +32,13 @@ export default function register(api: OpenclawPluginApi) {
   }) {
     const requestId = createRequestId();
     const method = options?.method || 'GET';
-    const tid = options?.tenantId || tenantId;
+    // The OpenClaw service credential is scoped to one configured tenant.
+    // Never let a model-provided tool argument move an API call to another
+    // tenant; web chat is separately restricted to this same tenant by Meza.
+    if (options?.tenantId && options.tenantId !== tenantId) {
+      throw new Error(`[${requestId}] Tenant override is not allowed`);
+    }
+    const tid = tenantId;
     const url = `${apiBaseUrl}/api/tenants/${tid}${endpoint}`;
 
     let response: Response;

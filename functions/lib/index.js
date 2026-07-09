@@ -26,5 +26,6 @@ __exportStar(require("./admin"), exports);
 __exportStar(require("./documentAlerts"), exports);
 __exportStar(require("./money"), exports);
 __exportStar(require("./chat"), exports);
+__exportStar(require("./audit"), exports);
 // You can add more function modules here as they're created
 //# sourceMappingURL=index.js.map

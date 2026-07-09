@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import {
   connectFirestoreEmulator,
   initializeFirestore,
+  memoryLocalCache,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
@@ -51,10 +52,14 @@ const firestoreEmulatorPort = Number(import.meta.env.VITE_FIREBASE_FIRESTORE_EMU
 const storageEmulatorPort = Number(import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR_PORT || 9199);
 const functionsEmulatorPort = Number(import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5001);
 
-// Initialize Firestore with persistent cache for offline reads and faster repeat loads
-// Safari 15+ (2021) has stable IndexedDB; Firebase SDK v11 handles edge cases
+// HR and payroll data must not remain in IndexedDB after a shared-device
+// logout. Offline persistence is opt-in for deployments with a managed-device
+// retention policy; the secure default keeps Firestore data in memory.
+const usePersistentFirestoreCache = import.meta.env.VITE_ENABLE_OFFLINE_FIRESTORE_CACHE === "true";
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: usePersistentFirestoreCache
+    ? persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    : memoryLocalCache(),
   // Forms routinely spread optional fields (notes?: string) into writes.
   // Without this, a single undefined makes addDoc/updateDoc throw — e.g.
   // "Mark Attendance" failed whenever the optional break fields were empty.
@@ -107,4 +112,3 @@ if (recaptchaKey) {
     isTokenAutoRefreshEnabled: true,
   });
 }
-

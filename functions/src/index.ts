@@ -12,5 +12,6 @@ export * from "./admin";
 export * from "./documentAlerts";
 export * from "./money";
 export * from "./chat";
+export * from "./audit";
 
 // You can add more function modules here as they're created

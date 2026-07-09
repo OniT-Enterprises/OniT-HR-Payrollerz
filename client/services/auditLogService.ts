@@ -8,7 +8,6 @@
 import {
   collection,
   doc,
-  addDoc,
   getDocs,
   getDoc,
   query,
@@ -16,12 +15,11 @@ import {
   orderBy,
   limit,
   startAfter,
-  serverTimestamp,
   Timestamp,
   QueryConstraint,
   DocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, getFunctionsLazy } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 
 // ============================================
@@ -160,52 +158,6 @@ export interface PaginatedAuditLogs {
 // ============================================
 
 /**
- * Get module from action
- */
-function getModuleFromAction(action: AuditAction): AuditModule {
-  const prefix = action.split(".")[0];
-  const moduleMap: Record<string, AuditModule> = {
-    employee: "employee",
-    accounting: "accounting",
-    payroll: "payroll",
-    tax: "tax",
-    document: "document",
-    settings: "settings",
-    user: "user",
-    admin: "admin",
-    archive: "archive",
-  };
-  return moduleMap[prefix] || "admin";
-}
-
-/**
- * Get severity from action
- */
-function getSeverityFromAction(action: AuditAction): AuditSeverity {
-  const criticalActions: AuditAction[] = [
-    "employee.delete",
-    "employee.terminate",
-    "accounting.journal_void",
-    "payroll.approve",
-    "admin.user_delete",
-    "archive.delete_permanent",
-  ];
-
-  const warningActions: AuditAction[] = [
-    "employee.update",
-    "settings.update",
-    "settings.company_update",
-    "user.password_change",
-    "user.permission_change",
-    "tax.wit_filed",
-  ];
-
-  if (criticalActions.includes(action)) return "critical";
-  if (warningActions.includes(action)) return "warning";
-  return "info";
-}
-
-/**
  * Generate description from action and context
  */
 function generateDescription(
@@ -285,16 +237,19 @@ export const auditLogService = {
     severity?: AuditSeverity;
   }): Promise<string> {
     try {
-      const entry: Omit<AuditLogEntry, "id"> = {
-        userId: params.userId,
-        userEmail: params.userEmail,
-        userName: params.userName,
+      const [{ httpsCallable }, functions] = await Promise.all([
+        import("firebase/functions"),
+        getFunctionsLazy(),
+      ]);
+      const recordAuditEvent = httpsCallable<
+        Omit<AuditLogEntry, "id" | "timestamp" | "userId" | "userEmail" | "userName" | "module" | "severity">,
+        { id: string }
+      >(functions, "recordTenantAuditEvent");
+      const result = await recordAuditEvent({
         action: params.action,
-        module: getModuleFromAction(params.action),
         description:
           params.description ||
           generateDescription(params.action, params.entityType, params.entityName),
-        timestamp: serverTimestamp() as Timestamp,
         tenantId: params.tenantId,
         entityId: params.entityId,
         entityType: params.entityType,
@@ -302,13 +257,8 @@ export const auditLogService = {
         newValue: params.newValue,
         changes: params.changes,
         metadata: params.metadata,
-        severity: params.severity || getSeverityFromAction(params.action),
-      };
-
-      // Use tenant-scoped path
-      const collectionPath = paths.auditLogs(params.tenantId);
-      const docRef = await addDoc(collection(db, collectionPath), entry);
-      return docRef.id;
+      });
+      return result.data.id;
     } catch (error) {
       console.error("Failed to log audit entry:", error);
       throw error;

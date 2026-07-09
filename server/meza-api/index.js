@@ -90,6 +90,11 @@ app.use(limiter);
 
 const API_KEY = process.env.API_KEY;
 const ALLOWED_TENANT_ID = process.env.ALLOWED_TENANT_ID;
+// OpenClaw tools authenticate to this API with a service API key. That key is
+// intentionally scoped to one tenant, so web chat must use the same tenant.
+// Do not make this a comma-separated allow-list: the gateway cannot prove a
+// web user's membership after it receives a tool call.
+const OPENCLAW_WEB_TENANT_ID = process.env.OPENCLAW_WEB_TENANT_ID;
 
 // Constant-time comparison so response timing can't be used to guess the key
 function safeKeyCompare(provided, expected) {
@@ -141,11 +146,79 @@ async function authenticateFirebaseToken(req, res, next) {
       uid: decoded.uid,
       email: decoded.email || '',
       name: decoded.name || '',
+      superadmin: decoded.superadmin === true,
     };
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid or expired Firebase token' });
   }
+}
+
+// Firebase ID-token verification establishes identity, not tenant access.
+// Keep this middleware in front of every web-facing AI route because the
+// OpenClaw tool gateway itself uses an Admin SDK service credential.
+async function requireFirebaseTenantAccess(req, res, next) {
+  const { tenantId } = req.params;
+
+  if (!firebaseInitialized) {
+    return res.status(503).json({ success: false, message: 'Firebase not initialized' });
+  }
+
+  try {
+    let isSuperAdmin = req.user.superadmin === true;
+    if (!isSuperAdmin) {
+      const profile = await db.collection('users').doc(req.user.uid).get();
+      isSuperAdmin = profile.exists && profile.data()?.isSuperAdmin === true;
+    }
+
+    if (isSuperAdmin) {
+      req.tenantAccess = {
+        isSuperAdmin: true,
+        role: 'superadmin',
+        modules: [],
+        canWrite: true,
+      };
+      return next();
+    }
+
+    const membership = await db.doc(`tenants/${tenantId}/members/${req.user.uid}`).get();
+    if (!membership.exists) {
+      return res.status(403).json({ success: false, message: 'You are not a member of this tenant' });
+    }
+
+    const member = membership.data() || {};
+    const role = typeof member.role === 'string' ? member.role : 'viewer';
+    req.tenantAccess = {
+      isSuperAdmin: false,
+      role,
+      modules: Array.isArray(member.modules) ? member.modules : [],
+      canWrite: role === 'owner' || role === 'hr-admin',
+    };
+    return next();
+  } catch (error) {
+    console.error('[web-ai-auth] Tenant authorization failed:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to verify tenant access' });
+  }
+}
+
+// OpenClaw cannot receive a per-request, user-scoped credential when it calls
+// its tools. Restrict web chat to the tenant configured in that gateway rather
+// than trusting a model-supplied tenantId. This fails closed until deployment
+// config explicitly names the matching tenant.
+function requireOpenClawWebTenant(req, res, next) {
+  if (!OPENCLAW_WEB_TENANT_ID) {
+    return res.status(503).json({
+      success: false,
+      message: 'Web AI is not configured for a tenant. Set OPENCLAW_WEB_TENANT_ID.',
+    });
+  }
+  if (req.params.tenantId !== OPENCLAW_WEB_TENANT_ID) {
+    return res.status(403).json({
+      success: false,
+      message: 'Web AI is not enabled for this tenant',
+    });
+  }
+  return next();
 }
 
 // Chat-specific rate limiter (AI calls are expensive)
@@ -4394,12 +4467,13 @@ function buildChatSystemPrefix(user, options = {}) {
   let prefix = `[SYSTEM — IN-APP CHAT CONTEXT]
 This is the Meza HR/Payroll management app (in-app chat widget), NOT WhatsApp.
 User: ${userName}${user.name && user.email ? ` (${user.email})` : ''}.
+Role: ${options.role || 'viewer'}.
 Current tenantId: ${tenantId}. Operate only on this tenant.
 WRITE_CONFIRMATION_STATE: ${allowWrites ? 'confirmed' : 'not-confirmed'}.
 
 CAPABILITIES:
 - Read: employees, departments, payroll, leave, attendance, interviews, jobs, invoices, bills, expenses, journals, trial balance, P&L, balance sheet.
-- Write (after confirmation): create employees, update employees (status/salary/department/position), create leave requests, approve/reject leave, record attendance, create invoices, create bills, create expenses, create departments, post announcements, post jobs, close jobs, update candidates, schedule/update interviews, calculate/run/approve/reject/mark-paid payroll, create/post/void journal entries, manage fiscal periods.
+- Write (after confirmation and only for tenant owners/HR admins): create employees, update employees (status/salary/department/position), create leave requests, approve/reject leave, record attendance, create invoices, create bills, create expenses, create departments, post announcements, post jobs, close jobs, update candidates, schedule/update interviews, calculate/run/approve/reject/mark-paid payroll, create/post/void journal entries, manage fiscal periods.
 - Keep responses concise — this is a small chat panel.
 
 TENANT CONTEXT:
@@ -4470,7 +4544,7 @@ async function clearPendingChatAction(tenantId, userId, sessionKey) {
 }
 
 // POST /api/tenants/:tenantId/chat — AI chat relay to OpenClaw gateway
-app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, async (req, res) => {
+app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, requireOpenClawWebTenant, async (req, res) => {
   const requestId = genId();
   const { tenantId } = req.params;
 
@@ -4525,6 +4599,14 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
     }
 
     if (intent === 'confirm') {
+      if (!req.tenantAccess.canWrite) {
+        await clearPendingChatAction(tenantId, req.user.uid, safeSessionKey);
+        return res.status(403).json({
+          success: false,
+          message: 'Only tenant owners or HR admins can confirm AI changes',
+          requestId,
+        });
+      }
       const pending = await getPendingChatAction(tenantId, req.user.uid, safeSessionKey);
       if (!pending || !pending.message) {
         return res.json({
@@ -4538,6 +4620,13 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
       effectiveMessage = pending.message;
       await clearPendingChatAction(tenantId, req.user.uid, safeSessionKey);
     } else if (intent === 'write') {
+      if (!req.tenantAccess.canWrite) {
+        return res.status(403).json({
+          success: false,
+          message: 'Only tenant owners or HR admins can request AI changes',
+          requestId,
+        });
+      }
       // Write intent detected — save pending action and ask for confirmation
       await setPendingChatAction(tenantId, req.user.uid, safeSessionKey, trimmedMessage, intent);
       return res.json({
@@ -4548,7 +4637,12 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
       });
     }
 
-    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites, currentRoute });
+    const systemPrefix = buildChatSystemPrefix(req.user, {
+      tenantId,
+      allowWrites,
+      currentRoute,
+      role: req.tenantAccess.role,
+    });
     const prefixedMessage = systemPrefix + effectiveMessage;
     const chatSessionKey = `agent:main:${tenantId}:webchat-${req.user.uid}:${safeSessionKey}`;
 
@@ -4667,7 +4761,7 @@ function humanizeToolName(toolName) {
 // POST /api/tenants/:tenantId/chat-stream — SSE streaming chat relay
 // ============================================================================
 
-app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebaseToken, async (req, res) => {
+app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, requireOpenClawWebTenant, async (req, res) => {
   const requestId = genId();
   const { tenantId } = req.params;
 
@@ -4741,6 +4835,11 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
     }
 
     if (intent === 'confirm') {
+      if (!req.tenantAccess.canWrite) {
+        await clearPendingChatAction(tenantId, req.user.uid, safeSessionKey);
+        sendEvent({ type: 'error', content: 'Only tenant owners or HR admins can confirm AI changes' });
+        return res.end();
+      }
       const pending = await getPendingChatAction(tenantId, req.user.uid, safeSessionKey);
       if (!pending || !pending.message) {
         sendEvent({ type: 'complete', content: 'I do not have any pending change to confirm right now.' });
@@ -4751,6 +4850,10 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
       await clearPendingChatAction(tenantId, req.user.uid, safeSessionKey);
       sendEvent({ type: 'step', content: 'Confirmation received — executing action', status: 'done' });
     } else if (intent === 'write') {
+      if (!req.tenantAccess.canWrite) {
+        sendEvent({ type: 'error', content: 'Only tenant owners or HR admins can request AI changes' });
+        return res.end();
+      }
       await setPendingChatAction(tenantId, req.user.uid, safeSessionKey, trimmedMessage, intent);
       sendEvent({
         type: 'complete',
@@ -4762,7 +4865,12 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
     // Step 2: Calling AI
     sendEvent({ type: 'status', content: 'Working on it...' });
 
-    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites, currentRoute });
+    const systemPrefix = buildChatSystemPrefix(req.user, {
+      tenantId,
+      allowWrites,
+      currentRoute,
+      role: req.tenantAccess.role,
+    });
     const prefixedMessage = systemPrefix + effectiveMessage;
     const chatSessionKey = `agent:main:${tenantId}:webchat-${req.user.uid}:${safeSessionKey}`;
 
@@ -4832,7 +4940,7 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
 // features (polish job description, customise handbook, etc.) where the
 // frontend wants a clean string back rather than an agent turn.
 
-app.post('/api/tenants/:tenantId/ai/compose', chatLimiter, authenticateFirebaseToken, async (req, res) => {
+app.post('/api/tenants/:tenantId/ai/compose', chatLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, requireOpenClawWebTenant, async (req, res) => {
   const requestId = genId();
   const { tenantId } = req.params;
 

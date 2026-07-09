@@ -10,7 +10,8 @@
 
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
-import { get, set, del } from 'idb-keyval';
+import { get, set, del, keys } from 'idb-keyval';
+import { isSafeQueryCacheKey } from '@/lib/queryCachePolicy';
 
 declare const __BUILD_TIMESTAMP__: string;
 
@@ -22,52 +23,11 @@ declare const __BUILD_TIMESTAMP__: string;
  */
 export const SEARCH_FETCH_LIMIT = 300;
 
-const CACHE_KEY = 'onit-query-cache';
+const CACHE_KEY_PREFIX = 'onit-query-cache:';
+const LEGACY_CACHE_KEY = 'onit-query-cache';
 // Cache version tied to build — each deploy auto-invalidates stale data
 const CACHE_VERSION = __BUILD_TIMESTAMP__ || '5';
 const MAX_AGE = 1000 * 60 * 30; // 30 minutes
-
-/**
- * ALLOW-LIST: Only these query key patterns are safe to persist.
- * Everything else is excluded by default.
- *
- * This is safer than a deny-list because:
- * 1. New queries default to NOT being cached (secure by default)
- * 2. Developers must explicitly opt-in to persistence
- * 3. No risk of missing a sensitive pattern like "bonus" or "commission"
- */
-const SAFE_TO_PERSIST_PATTERNS = [
-  // Static configuration data
-  'settings',
-  'departments',
-  'positions',
-  'locations',
-  'work-locations',
-  // UI preferences
-  'preferences',
-  'theme',
-  'language',
-  // Public/static lists
-  'countries',
-  'currencies',
-  'timezones',
-  // Feature flags
-  'features',
-  'flags',
-  // Core business data (cached for instant page loads)
-  'employees',
-  'payrollRuns',
-  'invoices',
-  'bills',
-  'customers',
-  'vendors',
-  'expenses',
-  'leaveRequests',
-  'attendance',
-  'announcements',
-  'grievances',
-  'setupProgress',
-];
 
 interface CacheEntry {
   data: unknown;
@@ -80,32 +40,27 @@ interface CacheStore {
   entries: Record<string, CacheEntry>;
 }
 
-/**
- * Check if a query key is explicitly safe to persist
- * Returns true ONLY if the key matches an allowed pattern
- */
-function isSafeToPersist(queryKey: string): boolean {
-  const lowerKey = queryKey.toLowerCase();
-  return SAFE_TO_PERSIST_PATTERNS.some((pattern) => lowerKey.includes(pattern));
+function cacheKeyForUser(userId: string): string {
+  return `${CACHE_KEY_PREFIX}${userId}`;
 }
 
 /**
  * Save specific query data to IndexedDB
  * SECURITY: Only persists data that matches the allow-list
  */
-async function persistQueryData(queryKey: string, data: unknown): Promise<void> {
-  if (!isSafeToPersist(queryKey)) {
+async function persistQueryData(userId: string, queryKey: string, data: unknown): Promise<void> {
+  if (!isSafeQueryCacheKey(queryKey)) {
     return;
   }
 
   try {
-    const store = await loadCacheStore();
+    const store = await loadCacheStore(userId);
     store.entries[queryKey] = {
       data,
       timestamp: Date.now(),
       queryKey,
     };
-    await set(CACHE_KEY, store);
+    await set(cacheKeyForUser(userId), store);
   } catch {
     // Storage error - silently ignore
   }
@@ -115,34 +70,58 @@ async function persistQueryData(queryKey: string, data: unknown): Promise<void> 
  * Load cache store from IndexedDB
  * Cleans up expired entries and any that no longer match the allow-list
  */
-async function loadCacheStore(): Promise<CacheStore> {
+async function loadCacheStore(userId: string): Promise<CacheStore> {
   try {
-    const store = await get<CacheStore>(CACHE_KEY);
+    const cacheKey = cacheKeyForUser(userId);
+    const store = await get<CacheStore>(cacheKey);
     if (store && store.version === CACHE_VERSION) {
       const now = Date.now();
       let needsUpdate = false;
       Object.keys(store.entries).forEach((key) => {
         if (
           now - store.entries[key].timestamp > MAX_AGE ||
-          !isSafeToPersist(key)
+          !isSafeQueryCacheKey(key)
         ) {
           delete store.entries[key];
           needsUpdate = true;
         }
       });
       if (needsUpdate) {
-        await set(CACHE_KEY, store);
+        await set(cacheKey, store);
       }
       return store;
     }
     // Version mismatch — clear old data
     if (store) {
-      await del(CACHE_KEY);
+      await del(cacheKey);
     }
   } catch {
     // Corrupted cache - ignore
   }
   return { version: CACHE_VERSION, entries: {} };
+}
+
+/**
+ * Remove persisted query data from this browser. A shared workstation must
+ * not retain another account's HR or finance data after logout.
+ */
+export async function clearPersistedQueryCache(userId?: string): Promise<void> {
+  try {
+    if (userId) {
+      await del(cacheKeyForUser(userId));
+    } else {
+      const cacheKeys = await keys();
+      await Promise.all(
+        cacheKeys
+          .filter((key): key is string => typeof key === 'string' && key.startsWith(CACHE_KEY_PREFIX))
+          .map((key) => del(key)),
+      );
+    }
+    // Clean data written by pre-user-scoping releases too.
+    await del(LEGACY_CACHE_KEY);
+  } catch {
+    // Storage unavailable/corrupted — there is no application-level recovery needed.
+  }
 }
 
 /**
@@ -183,8 +162,8 @@ export function createOptimizedQueryClient(): QueryClient {
  * Hydrate QueryClient with persisted cache on app load.
  * Async — call at startup but the app renders immediately; cache arrives shortly after.
  */
-export async function hydrateQueryClient(queryClient: QueryClient): Promise<void> {
-  const store = await loadCacheStore();
+export async function hydrateQueryClient(queryClient: QueryClient, userId: string): Promise<void> {
+  const store = await loadCacheStore(userId);
 
   Object.values(store.entries).forEach((entry) => {
     try {
@@ -201,14 +180,14 @@ export async function hydrateQueryClient(queryClient: QueryClient): Promise<void
  * Saves data whenever a query succeeds
  * SECURITY: Only allow-listed queries are persisted (secure by default)
  */
-export function setupQueryPersistence(queryClient: QueryClient): () => void {
+export function setupQueryPersistence(queryClient: QueryClient, userId: string): () => void {
   const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'updated' && event.action.type === 'success') {
       const { queryKey, state } = event.query;
       const keyString = JSON.stringify(queryKey);
 
       // persistQueryData will only save if key matches allow-list (fire-and-forget)
-      persistQueryData(keyString, state.data);
+      persistQueryData(userId, keyString, state.data);
     }
   });
 

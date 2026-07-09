@@ -12,8 +12,10 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
+import { useQueryClient } from "@tanstack/react-query";
 import { db, auth } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
+import { clearPersistedQueryCache } from "@/lib/queryCache";
 import {
   TenantConfig,
   TenantMember,
@@ -147,6 +149,7 @@ function writeTenantCache(session: TenantSession | null, availableTenants: Array
 
 export function TenantProvider({ children }: TenantProviderProps) {
   const { user, isSuperAdmin, userProfile, authResolved } = useAuth();
+  const queryClient = useQueryClient();
 
   // Restore cached state for instant returning-user loads
   const cachedTenant = readTenantCache();
@@ -360,6 +363,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
 
     try {
+      queryClient.clear();
+      await clearPersistedQueryCache(user.uid);
       setLoading(true);
       setError(null);
 
@@ -396,13 +401,15 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [user, isSuperAdmin, loadTenantSession]);
+  }, [user, isSuperAdmin, loadTenantSession, queryClient]);
 
   // Stop impersonation
   const stopImpersonation = useCallback(async () => {
     if (!user) return;
 
     try {
+      queryClient.clear();
+      await clearPersistedQueryCache(user.uid);
       setLoading(true);
 
       const endedTenantId = impersonatedTenantId;
@@ -452,7 +459,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [user, loadAvailableTenants, loadTenantSession, impersonatedTenantId, impersonatedTenantName]);
+  }, [user, loadAvailableTenants, loadTenantSession, impersonatedTenantId, impersonatedTenantName, queryClient]);
 
   // Switch to a different tenant
   // Guard against re-entrancy: stopImpersonation loads tenants which could
@@ -480,6 +487,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
       setLoading(true);
       setError(null);
+      queryClient.clear();
+      await clearPersistedQueryCache(user.uid);
 
       const newSession = await loadTenantSession(tid, user);
       if (newSession) {
@@ -498,7 +507,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       switchingRef.current = false;
       setLoading(false);
     }
-  }, [user, isImpersonating, loadTenantSession, availableTenants]);
+  }, [user, isImpersonating, loadTenantSession, availableTenants, queryClient]);
 
   // Refresh current session
   const refreshSession = useCallback(async () => {

@@ -191,8 +191,8 @@ service cloud.firestore {
       // Only superadmins can read audit logs
       allow read: if isSuperAdmin();
 
-      // Only superadmins can create audit entries
-      allow create: if isSuperAdmin();
+      // Cloud Functions write audit entries with a trusted actor identity.
+      allow create: if false;
 
       // Audit logs are immutable
       allow update, delete: if false;
@@ -224,11 +224,8 @@ service cloud.firestore {
          resource.data.tenantId != null &&
          isTenantAdmin(resource.data.tenantId));
 
-      // Limit creates to superadmins or tenant admins
-      allow create: if isSuperAdmin() ||
-        (isAuthenticated() &&
-         request.resource.data.tenantId != null &&
-         isTenantAdmin(request.resource.data.tenantId));
+      // Legacy collection: no direct client audit writes.
+      allow create: if false;
 
       // Audit logs are immutable - no updates or deletes
       allow update, delete: if false;
@@ -541,8 +538,9 @@ service cloud.firestore {
       // ============================================
       match /auditLogs/{logId} {
         allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
-        // Audit logs are immutable in-client
+        // Cloud Functions write audit entries with a trusted actor identity.
+        allow create: if false;
+        // Audit logs are immutable.
         allow update, delete: if false;
       }
 

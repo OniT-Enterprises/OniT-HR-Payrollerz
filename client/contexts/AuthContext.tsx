@@ -1,8 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { User, getIdTokenResult } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useQueryClient } from "@tanstack/react-query";
 import { auth, db } from "@/lib/firebase";
 import { authService } from "@/services/authService";
+import {
+  clearPersistedQueryCache,
+  hydrateQueryClient,
+  setupQueryPersistence,
+} from "@/lib/queryCache";
 import { UserProfile } from "@/types/user";
 import { paths } from "@/lib/paths";
 
@@ -78,6 +84,7 @@ function writeAuthCache(data: Omit<AuthCache, 'timestamp'>): void {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const queryClient = useQueryClient();
   // Restore cached state for instant returning-user loads
   const cached = readAuthCache();
 
@@ -86,6 +93,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(cached ? false : true);
   const [authResolved, setAuthResolved] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(cached?.isSuperAdmin ?? false);
+
+  // Never hydrate browser-persisted data until Firebase has authenticated a
+  // specific user. This blocks old account data from appearing during a
+  // shared-device sign-in and scopes every persisted entry by UID.
+  useEffect(() => {
+    if (!authResolved) return;
+
+    let active = true;
+    queryClient.clear();
+
+    if (!user) {
+      void clearPersistedQueryCache();
+      return () => {
+        active = false;
+      };
+    }
+
+    const unsubscribe = setupQueryPersistence(queryClient, user.uid);
+    void hydrateQueryClient(queryClient, user.uid).then(() => {
+      if (!active) {
+        queryClient.clear();
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [authResolved, queryClient, user]);
 
   // Fetch user profile from Firestore (does NOT auto-create)
   const fetchUserProfile = useCallback(async (firebaseUser: User): Promise<UserProfile | null> => {
@@ -227,6 +263,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signOut = async () => {
     localStorage.removeItem(AUTH_CACHE_KEY);
+    queryClient.clear();
+    await clearPersistedQueryCache();
     await authService.signOut();
   };
 

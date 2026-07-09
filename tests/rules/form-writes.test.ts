@@ -11,6 +11,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
   assertSucceeds,
+  assertFails,
 } from '@firebase/rules-unit-testing';
 import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 
@@ -110,6 +111,16 @@ describe('Form writes accepted by rules (tenant owner)', () => {
   it('write settings/config', async () => {
     await assertSucceeds(
       setDoc(doc(db(), `tenants/${TID}/settings/config`), { companyDetails: { legalName: 'X' } }),
+    );
+  });
+
+  it('blocks direct tenant audit-log creation', async () => {
+    await assertFails(
+      addDoc(collection(db(), `tenants/${TID}/auditLogs`), {
+        action: 'employee.update',
+        userId: UID,
+        timestamp: new Date(),
+      }),
     );
   });
 });
