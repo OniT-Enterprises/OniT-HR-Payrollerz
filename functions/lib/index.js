@@ -28,5 +28,6 @@ __exportStar(require("./money"), exports);
 __exportStar(require("./chat"), exports);
 __exportStar(require("./audit"), exports);
 __exportStar(require("./billing"), exports);
+__exportStar(require("./email"), exports);
 // You can add more function modules here as they're created
 //# sourceMappingURL=index.js.map
