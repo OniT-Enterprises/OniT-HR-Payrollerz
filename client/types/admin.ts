@@ -36,16 +36,8 @@ export interface PackagePlanDefinition {
   };
 }
 
-export interface EmployeePricingTier {
-  id: string;
-  minEmployees: number;
-  maxEmployees: number | null;
-  pricePerEmployee: number;
-}
-
 export interface PackagesConfig {
   modulePrices: ModulePrice[];
-  employeePricingTiers: EmployeePricingTier[];
   personPrices: PackagePersonPrices;
   planDefinitions: PackagePlanDefinition[];
   updatedAt?: FirestoreTimestamp;

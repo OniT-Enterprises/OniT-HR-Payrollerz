@@ -23,7 +23,6 @@ import { db, getFunctionsLazy } from "@/lib/firebase";
 import { calculatePackageEstimate, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { paths } from "@/lib/paths";
 import {
-  ModulePrice,
   PackagesConfig,
   SuperAdminRequest,
 } from "@/types/admin";
@@ -157,25 +156,15 @@ function normalizePackagesConfig(raw: Record<string, unknown> | undefined): Pack
   };
 }
 
-function getBillableModulesForTenant(tenant: TenantConfig): ModulePrice["id"][] {
-  const billableModules: ModulePrice["id"][] = [];
-
-  if (tenant.features?.people !== false) billableModules.push("people");
-  if (tenant.features?.timeleave !== false) billableModules.push("timeleave");
-  if (tenant.features?.payroll !== false) billableModules.push("payroll");
-  if (tenant.features?.accounting !== false) billableModules.push("accounting");
-  if (tenant.features?.reports !== false) billableModules.push("reports");
-
-  return billableModules;
-}
-
 function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: PackagesConfig): number {
   const tenantRecord = tenant as TenantConfig & { currentAdminCount?: number };
+  // Bill by the tenant's plan bundle (its included modules) + per-head charges,
+  // so the admin figure matches the public price for the same plan + headcount.
+  // Free plans resolve to $0 inside the estimator.
   const estimate = calculatePackageEstimate(packagesConfig, {
     planId: tenant.plan,
     staffCount: tenant.currentEmployeeCount ?? 0,
     adminCount: tenantRecord.currentAdminCount ?? 1,
-    selectedModules: getBillableModulesForTenant(tenant),
   });
 
   return estimate.monthlyTotal;
@@ -357,14 +346,6 @@ class AdminService {
         includedModules: Array.from(new Set(plan.includedModules)),
         highlights: plan.highlights.filter((highlight) => highlight.trim().length > 0),
       })),
-      employeePricingTiers: config.employeePricingTiers
-        .map((tier) => ({
-          ...tier,
-          minEmployees: Math.max(0, tier.minEmployees),
-          maxEmployees: tier.maxEmployees === null ? null : Math.max(0, tier.maxEmployees),
-          pricePerEmployee: Math.max(0, tier.pricePerEmployee),
-        }))
-        .sort((left, right) => left.minEmployees - right.minEmployees),
       updatedBy: actorUid,
       updatedByEmail: actorEmail,
     };
@@ -1011,14 +992,21 @@ class AdminService {
   }
 
   async logAdminAction(entry: AdminAuditEntry): Promise<void> {
-    if (!db) return;
-
     try {
-      const logRef = collection(db, paths.adminAuditLog());
-      const docRef = doc(logRef);
-      await setDoc(docRef, {
-        ...entry,
-        id: docRef.id,
+      const [{ httpsCallable }, functions] = await Promise.all([
+        import("firebase/functions"),
+        getFunctionsLazy(),
+      ]);
+      const recordAdminAuditEvent = httpsCallable<
+        Pick<AdminAuditEntry, "action" | "targetType" | "targetId" | "targetName" | "details">,
+        { id: string }
+      >(functions, "recordAdminAuditEvent");
+      await recordAdminAuditEvent({
+        action: entry.action,
+        targetType: entry.targetType,
+        targetId: entry.targetId,
+        targetName: entry.targetName,
+        details: entry.details,
       });
     } catch (error) {
       console.error("Error logging admin action:", error);

@@ -270,10 +270,16 @@ export default function PackagesPage() {
                     <div className="flex items-center justify-between gap-3">
                       <p className="font-semibold">{estimate.plan.label}</p>
                       <Badge variant={estimate.plan.staffAppIncluded ? "default" : "outline"}>
-                        {estimate.plan.staffAppIncluded ? "Staff app" : `${estimate.plan.maxAdmins ?? "No"} admins`}
+                        {estimate.plan.staffAppIncluded
+                          ? "Staff app"
+                          : estimate.plan.maxAdmins === null
+                            ? "Unlimited admins"
+                            : `${estimate.plan.maxAdmins} admin${estimate.plan.maxAdmins === 1 ? "" : "s"}`}
                       </Badge>
                     </div>
-                    <p className="mt-4 text-2xl font-bold">{formatMoney(estimate.monthlyTotal)}</p>
+                    <p className="mt-4 text-2xl font-bold">
+                      {estimate.monthlyTotal === 0 ? "Free" : formatMoney(estimate.monthlyTotal)}
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       {formatMoney(estimate.moduleTotal)} modules + {formatMoney(estimate.staffTotal + estimate.adminTotal)} people
                     </p>

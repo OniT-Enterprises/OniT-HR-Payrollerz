@@ -33,13 +33,6 @@ const DEFAULT_MODULE_PRICES: ModulePrice[] = [
 
 export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
   modulePrices: DEFAULT_MODULE_PRICES,
-  employeePricingTiers: [
-    { id: "tier-1-10", minEmployees: 1, maxEmployees: 10, pricePerEmployee: 4 },
-    { id: "tier-11-20", minEmployees: 11, maxEmployees: 20, pricePerEmployee: 3.5 },
-    { id: "tier-21-30", minEmployees: 21, maxEmployees: 30, pricePerEmployee: 3 },
-    { id: "tier-31-50", minEmployees: 31, maxEmployees: 50, pricePerEmployee: 2.5 },
-    { id: "tier-51-plus", minEmployees: 51, maxEmployees: null, pricePerEmployee: 2 },
-  ],
   personPrices: {
     staffMonthlyPrice: 2,
     adminMonthlyPrice: 12,
@@ -94,7 +87,6 @@ export function normalizeBillingPackagesConfig(raw: unknown): PackagesConfig {
     ...DEFAULT_PACKAGES_CONFIG,
     ...input,
     modulePrices: normalizeModulePrices(input.modulePrices),
-    employeePricingTiers: input.employeePricingTiers ?? DEFAULT_PACKAGES_CONFIG.employeePricingTiers,
     personPrices: {
       ...DEFAULT_PACKAGES_CONFIG.personPrices,
       ...(input.personPrices ?? {}),
@@ -102,6 +94,10 @@ export function normalizeBillingPackagesConfig(raw: unknown): PackagesConfig {
     planDefinitions: normalizePlanDefinitions(input.planDefinitions),
   };
 }
+
+// The "free" plan is always $0 — it is the no-cost tier regardless of which
+// modules it nominally includes or how many people the org has.
+export const FREE_PLAN_ID: TenantPlan = "free";
 
 export function getPackagePlan(config: PackagesConfig, planId: TenantPlan): PackagePlanDefinition {
   return config.planDefinitions.find((plan) => plan.id === planId)
@@ -116,6 +112,12 @@ export function calculatePackageEstimate(
   const config = normalizeBillingPackagesConfig(configInput);
   const plan = getPackagePlan(config, input.planId);
   const selectedModules = input.selectedModules ?? plan.includedModules;
+
+  // Free tier is always $0, no matter its modules or headcount.
+  if (plan.id === FREE_PLAN_ID) {
+    return { plan, monthlyTotal: 0, moduleTotal: 0, staffTotal: 0, adminTotal: 0, selectedModules };
+  }
+
   const moduleTotal = selectedModules.reduce((total, moduleId) => {
     const override = plan.modulePriceOverrides?.[moduleId];
     const modulePrice = config.modulePrices.find((item) => item.id === moduleId)?.monthlyPrice ?? 0;

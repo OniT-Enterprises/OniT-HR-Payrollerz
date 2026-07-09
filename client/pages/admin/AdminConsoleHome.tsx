@@ -184,8 +184,8 @@ export default function AdminConsoleHome() {
                     <TableRow>
                       <TableHead>Organization</TableHead>
                       <TableHead>Plan</TableHead>
-                      <TableHead>PaidUntil</TableHead>
-                      <TableHead>MonthlySubscription</TableHead>
+                      <TableHead>Paid Until</TableHead>
+                      <TableHead>Monthly Subscription</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -249,25 +249,11 @@ export default function AdminConsoleHome() {
                       </div>
                     ))}
                   </div>
-                  <div className="rounded-xl border border-border/50">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Employees</TableHead>
-                          <TableHead>Price / employee</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(packagesConfig?.employeePricingTiers || []).slice(0, 4).map((tier) => (
-                          <TableRow key={tier.id}>
-                            <TableCell>
-                              {tier.minEmployees} - {tier.maxEmployees ?? "up"}
-                            </TableCell>
-                            <TableCell>${tier.pricePerEmployee.toFixed(2)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="rounded-lg border border-border/50 p-3 text-sm text-muted-foreground">
+                    Plans are billed as their included modules plus $
+                    {(packagesConfig?.personPrices.staffMonthlyPrice ?? 0).toFixed(2)}/staff and $
+                    {(packagesConfig?.personPrices.adminMonthlyPrice ?? 0).toFixed(2)}/admin per month.
+                    The Free plan is always $0.
                   </div>
                 </div>
               )}

@@ -47,8 +47,12 @@ export function PackagePicker() {
                   {plan.staffAppIncluded && <Badge className="bg-emerald-500/20 text-emerald-100">Staff app</Badge>}
                 </div>
 
-                <p className="mt-6 text-3xl font-bold text-white">{formatMoney(estimate.monthlyTotal)}</p>
-                <p className="mt-1 text-xs text-zinc-500">Estimated monthly total</p>
+                <p className="mt-6 text-3xl font-bold text-white">
+                  {estimate.monthlyTotal === 0 ? "Free" : formatMoney(estimate.monthlyTotal)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {estimate.monthlyTotal === 0 ? "No monthly cost" : "Estimated monthly total"}
+                </p>
 
                 <div className="mt-5 space-y-2">
                   {plan.highlights.map((highlight) => (
