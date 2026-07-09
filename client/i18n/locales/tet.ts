@@ -559,6 +559,8 @@ const messages = {
     "nav": {
       "features": "Fitur",
       "laborLaw": "Lei Laboral",
+      "apps": "Aplikasaun",
+      "pricing": "Presu",
       "getStarted": "Hahu"
     },
     "hero": {
@@ -581,7 +583,7 @@ const messages = {
       },
       "ctaPrimary": "Hahu Agora",
       "trust": {
-        "trial": "Teste gratis 14 loron",
+        "trial": "Planu gratuitu — la presiza kartaun",
         "usd": "Suporte moeda USD",
         "transfers": "Transferensia banku lokal"
       }
@@ -754,7 +756,7 @@ const messages = {
       "title": "Prontu atu hahu?",
       "titleAccent": "Hahu ohin",
       "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Xefe ba RH no Folha.",
-      "primary": "Hahu teste gratis"
+      "primary": "Komesa gratuitu"
     },
     "footer": {
       "brand": "Xefe",
@@ -852,9 +854,14 @@ const messages = {
       },
       "compliance": {
         "name": "Konformidade",
-        "desc": "Trabalhadór estranjeiru, alerta dokumentu, relatoriu SEFOPE"
+        "desc": "Trabalhadór estranjeiru, autorizasaun servisu, alerta dokumentu"
       },
       "viewAll": "Haree Fitur 65+ Hotu"
+    },
+    "apps": {
+      "badge": "Aplikasaun Móbil",
+      "title": "Xefe iha ita-nia bolsu",
+      "description": "Ekipa ba ita-nia staf, Kaixa ba osan loron-loron — serbisu offline, Tetun uluk, halo ba servisu iha terrenu."
     },
     "kaixa": {
       "badge": "App Movel",

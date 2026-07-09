@@ -559,6 +559,8 @@ const messages = {
     "nav": {
       "features": "Funcionalidades",
       "laborLaw": "Lei do Trabalho",
+      "apps": "Apps",
+      "pricing": "Preços",
       "getStarted": "Começar"
     },
     "hero": {
@@ -581,7 +583,7 @@ const messages = {
       },
       "ctaPrimary": "Começar Agora",
       "trust": {
-        "trial": "14 dias de teste grátis",
+        "trial": "Plano grátis — sem cartão",
         "usd": "Suporte a moeda USD",
         "transfers": "Transferências bancárias locais"
       }
@@ -754,7 +756,7 @@ const messages = {
       "title": "Pronto para Começar?",
       "titleAccent": "Comece Hoje",
       "description": "Junte-se às empresas de Timor-Leste que já usam o Xefe para RH e Folha de Pagamento conformes e sem esforço.",
-      "primary": "Iniciar Teste Grátis"
+      "primary": "Começar Grátis"
     },
     "footer": {
       "brand": "Xefe",
@@ -852,9 +854,14 @@ const messages = {
       },
       "compliance": {
         "name": "Conformidade",
-        "desc": "Trabalhadores estrangeiros, alertas de documentos, relatórios SEPFOPE"
+        "desc": "Trabalhadores estrangeiros, autorizações de trabalho, alertas de documentos"
       },
       "viewAll": "Ver Todas as 65+ Funcionalidades"
+    },
+    "apps": {
+      "badge": "Apps Móveis",
+      "title": "Xefe no seu bolso",
+      "description": "Ekipa para a sua equipa, Kaixa para o caixa do dia-a-dia — funcionam offline, em Tétum, feitos para o terreno."
     },
     "kaixa": {
       "badge": "Aplicação Móvel",

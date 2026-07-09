@@ -559,6 +559,8 @@ const messages = {
     "nav": {
       "features": "Features",
       "laborLaw": "Labor Law",
+      "apps": "Apps",
+      "pricing": "Pricing",
       "getStarted": "Get Started"
     },
     "hero": {
@@ -581,7 +583,7 @@ const messages = {
       },
       "ctaPrimary": "Start Now",
       "trust": {
-        "trial": "14-day free trial",
+        "trial": "Free plan — no card needed",
         "usd": "USD currency support",
         "transfers": "Local bank transfers"
       }
@@ -754,7 +756,7 @@ const messages = {
       "title": "Ready to Start?",
       "titleAccent": "Start Today",
       "description": "Join Timor-Leste businesses already using Xefe for compliant, effortless HR & Payroll.",
-      "primary": "Start Free Trial"
+      "primary": "Start Free"
     },
     "footer": {
       "brand": "Xefe",
@@ -852,9 +854,14 @@ const messages = {
       },
       "compliance": {
         "name": "Compliance",
-        "desc": "Foreign workers, document alerts, SEPFOPE reporting"
+        "desc": "Foreign workers, work permits, document alerts"
       },
       "viewAll": "View All 65+ Features"
+    },
+    "apps": {
+      "badge": "Mobile Apps",
+      "title": "Xefe in your pocket",
+      "description": "Ekipa for your staff, Kaixa for daily cash — offline-first, Tetun-first, made for the field."
     },
     "kaixa": {
       "badge": "Mobile App",
