@@ -102,6 +102,7 @@ import Dashboard from "@/pages/Dashboard";
 // Lazy loaded routes - code split by section
 const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
+const Billing = lazyWithRetry(() => import("@/pages/Billing"));
 const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
 const AuthOnboarding = lazyWithRetry(() => import("@/pages/auth/Onboarding"));
 const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
@@ -246,6 +247,14 @@ export const authRoutes = (
       element={
         <FeatureRoute fallbackPath="/">
           <Settings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/billing"
+      element={
+        <FeatureRoute fallbackPath="/">
+          <Billing />
         </FeatureRoute>
       }
     />

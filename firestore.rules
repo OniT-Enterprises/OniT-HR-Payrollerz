@@ -204,6 +204,12 @@ service cloud.firestore {
     match /platform/{docId} {
       allow read, write: if isSuperAdmin();
     }
+    match /platform/packagesConfig {
+      // Pricing is not sensitive — any authenticated user may read it to render
+      // the in-app billing page. Only superadmins edit the price matrix.
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
 
     // ============================================
     // SUPERADMIN APPROVAL REQUESTS

@@ -13,5 +13,6 @@ export * from "./documentAlerts";
 export * from "./money";
 export * from "./chat";
 export * from "./audit";
+export * from "./billing";
 
 // You can add more function modules here as they're created

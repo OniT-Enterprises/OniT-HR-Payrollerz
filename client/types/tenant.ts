@@ -31,6 +31,7 @@ export interface TenantConfig {
   // Billing information
   billingEmail?: string;
   stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
   subscriptionPaidUntil?: FirestoreTimestamp;
   monthlySubscriptionAmount?: number;
 
