@@ -69,9 +69,11 @@ import {
 /* ─── Types ─── */
 
 interface NavItem {
+  id?: string;
   label: string;
   labelKey?: string;     // i18n key — sidebar uses t(labelKey) when available
   path: string;
+  matchPaths?: string[];
   icon: ComponentType<{ className?: string }>;
   requiredModule?: ModulePermission;
   requiredAnyModules?: ModulePermission[];

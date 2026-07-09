@@ -105,6 +105,20 @@ export function useReactivateTenant() {
   });
 }
 
+export function useDeleteTenant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, actorUid, actorEmail }: {
+      tenantId: string; actorUid: string; actorEmail: string;
+    }) => adminService.deleteTenant(tenantId, actorUid, actorEmail),
+    onSuccess: (_, { tenantId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.removeQueries({ queryKey: adminKeys.tenant(tenantId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
+  });
+}
+
 // ─── User hooks ──────────────────────────────────────────────────
 
 export function useAllUsers(maxResults?: number) {

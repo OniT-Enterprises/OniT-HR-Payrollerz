@@ -6,6 +6,7 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getCountFromServer,
   getDoc,
@@ -19,6 +20,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db, getFunctionsLazy } from "@/lib/firebase";
+import { calculatePackageEstimate, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { paths } from "@/lib/paths";
 import {
   EmployeePricingTier,
@@ -164,67 +166,21 @@ function toSortTime(value: unknown): number {
 }
 
 function normalizePackagesConfig(raw: Record<string, unknown> | undefined): PackagesConfig {
-  const rawModulePrices = Array.isArray(raw?.modulePrices) ? raw.modulePrices : [];
-  const rawEmployeePricingTiers = Array.isArray(raw?.employeePricingTiers)
-    ? raw.employeePricingTiers
-    : [];
-
-  const modulePrices = DEFAULT_MODULE_PRICES.map((defaultModule) => {
-    const match = rawModulePrices.find(
-      (item) => typeof item === "object" && item !== null && (item as ModulePrice).id === defaultModule.id,
-    ) as Partial<ModulePrice> | undefined;
-
-    return {
-      ...defaultModule,
-      ...match,
-      monthlyPrice: getNumberCandidate(match?.monthlyPrice) ?? defaultModule.monthlyPrice,
-    };
-  });
-
-  const employeePricingTiers = (
-    rawEmployeePricingTiers.length > 0 ? rawEmployeePricingTiers : DEFAULT_EMPLOYEE_TIERS
-  )
-    .map((tier, index) => {
-      const typedTier = (tier ?? {}) as Partial<EmployeePricingTier>;
-      return {
-        id: typedTier.id || `tier-${index + 1}`,
-        minEmployees: Math.max(0, getNumberCandidate(typedTier.minEmployees) ?? 0),
-        maxEmployees:
-          typedTier.maxEmployees === null
-            ? null
-            : Math.max(0, getNumberCandidate(typedTier.maxEmployees) ?? 0) || null,
-        pricePerEmployee: Math.max(0, getNumberCandidate(typedTier.pricePerEmployee) ?? 0),
-      };
-    })
-    .sort((left, right) => left.minEmployees - right.minEmployees);
-
+  const normalized = normalizeBillingPackagesConfig(raw);
   return {
-    modulePrices,
-    employeePricingTiers,
+    ...normalized,
     updatedAt: getTimestampCandidate(raw?.updatedAt),
     updatedBy: typeof raw?.updatedBy === "string" ? raw.updatedBy : undefined,
     updatedByEmail: typeof raw?.updatedByEmail === "string" ? raw.updatedByEmail : undefined,
   };
 }
 
-function resolveEmployeeTierPrice(config: PackagesConfig, employeeCount: number): number {
-  if (employeeCount <= 0) return 0;
-
-  const tier = config.employeePricingTiers.find((candidate) => {
-    const withinMin = employeeCount >= candidate.minEmployees;
-    const withinMax = candidate.maxEmployees === null || employeeCount <= candidate.maxEmployees;
-    return withinMin && withinMax;
-  });
-
-  return tier?.pricePerEmployee ?? 0;
-}
-
 function getBillableModulesForTenant(tenant: TenantConfig): ModulePrice["id"][] {
-  const billableModules: ModulePrice["id"][] = ["people"];
+  const billableModules: ModulePrice["id"][] = [];
 
+  if (tenant.features?.people !== false) billableModules.push("people");
   if (tenant.features?.timeleave !== false) billableModules.push("timeleave");
   if (tenant.features?.payroll !== false) billableModules.push("payroll");
-  if (tenant.features?.money !== false) billableModules.push("money");
   if (tenant.features?.accounting !== false) billableModules.push("accounting");
   if (tenant.features?.reports !== false) billableModules.push("reports");
 
@@ -232,16 +188,15 @@ function getBillableModulesForTenant(tenant: TenantConfig): ModulePrice["id"][] 
 }
 
 function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: PackagesConfig): number {
-  const moduleTotal = getBillableModulesForTenant(tenant).reduce((sum, moduleId) => {
-    const modulePrice = packagesConfig.modulePrices.find((item) => item.id === moduleId)?.monthlyPrice ?? 0;
-    return sum + modulePrice;
-  }, 0);
+  const tenantRecord = tenant as TenantConfig & { currentAdminCount?: number };
+  const estimate = calculatePackageEstimate(packagesConfig, {
+    planId: tenant.plan,
+    staffCount: tenant.currentEmployeeCount ?? 0,
+    adminCount: tenantRecord.currentAdminCount ?? 1,
+    selectedModules: getBillableModulesForTenant(tenant),
+  });
 
-  const employeeCount = Math.max(0, tenant.currentEmployeeCount ?? 0);
-  const employeeRate = resolveEmployeeTierPrice(packagesConfig, employeeCount);
-  const total = moduleTotal + employeeCount * employeeRate;
-
-  return Math.round(total * 100) / 100;
+  return estimate.monthlyTotal;
 }
 
 function normalizeTenantConfig(tenantId: string, data: Record<string, unknown>): TenantConfig {
@@ -279,6 +234,7 @@ function normalizeTenantConfig(tenantId: string, data: Record<string, unknown>):
     ownerEmail: typeof data.ownerEmail === "string" ? data.ownerEmail : undefined,
     billingEmail: typeof data.billingEmail === "string" ? data.billingEmail : undefined,
     currentEmployeeCount: Math.max(0, getNumberCandidate(data.currentEmployeeCount) ?? 0),
+    currentAdminCount: Math.max(0, getNumberCandidate(data.currentAdminCount) ?? 1),
     ...(limits ? { limits } : {}),
   } as TenantConfig;
 }
@@ -409,6 +365,16 @@ class AdminService {
         ...modulePrice,
         monthlyPrice: Math.max(0, modulePrice.monthlyPrice),
       })),
+      personPrices: {
+        staffMonthlyPrice: Math.max(0, config.personPrices.staffMonthlyPrice),
+        adminMonthlyPrice: Math.max(0, config.personPrices.adminMonthlyPrice),
+      },
+      planDefinitions: config.planDefinitions.map((plan) => ({
+        ...plan,
+        maxAdmins: plan.maxAdmins === null ? null : Math.max(0, plan.maxAdmins),
+        includedModules: Array.from(new Set(plan.includedModules)),
+        highlights: plan.highlights.filter((highlight) => highlight.trim().length > 0),
+      })),
       employeePricingTiers: config.employeePricingTiers
         .map((tier) => ({
           ...tier,
@@ -511,6 +477,7 @@ class AdminService {
       >(await getFunctionsLazy(), "provisionTenant");
 
       const features: TenantConfig["features"] = {
+        people: true,
         hiring: true,
         timeleave: true,
         performance: true,
@@ -717,6 +684,35 @@ class AdminService {
       });
     } catch (error) {
       console.error("Error reactivating tenant:", error);
+      throw error;
+    }
+  }
+
+  async deleteTenant(tenantId: string, actorUid: string, actorEmail: string): Promise<void> {
+    if (!db) throw new Error("Database not available");
+
+    try {
+      const tenantRef = doc(db, paths.tenant(tenantId));
+      const tenantSnap = await getDoc(tenantRef);
+
+      if (!tenantSnap.exists()) {
+        throw new Error("Tenant not found");
+      }
+
+      const tenantName = tenantSnap.data()?.name;
+      await deleteDoc(tenantRef);
+
+      await this.logAdminAction({
+        action: "tenant_deleted",
+        actorUid,
+        actorEmail,
+        targetType: "tenant",
+        targetId: tenantId,
+        targetName: tenantName,
+        timestamp: Timestamp.now(),
+      });
+    } catch (error) {
+      console.error("Error deleting tenant:", error);
       throw error;
     }
   }

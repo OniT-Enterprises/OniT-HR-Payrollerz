@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -283,11 +282,12 @@ export const settingsService = {
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         companyDetails: omitUndefinedValues(companyDetails),
         'setupProgress.companyDetails': true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
 
       // Log to audit trail if context provided
       if (audit) {
@@ -316,11 +316,12 @@ export const settingsService = {
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         companyStructure: omitUndefinedValues(companyStructure),
         'setupProgress.companyStructure': true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
     } catch (error) {
       console.error('Error updating company structure:', error);
       throw error;
@@ -336,11 +337,12 @@ export const settingsService = {
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         paymentStructure: omitUndefinedValues(paymentStructure),
         'setupProgress.paymentStructure': true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
     } catch (error) {
       console.error('Error updating payment structure:', error);
       throw error;
@@ -356,11 +358,12 @@ export const settingsService = {
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         timeOffPolicies: omitUndefinedValues(timeOffPolicies),
         'setupProgress.timeOffPolicies': true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
     } catch (error) {
       console.error('Error updating time-off policies:', error);
       throw error;
@@ -377,11 +380,12 @@ export const settingsService = {
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         payrollConfig: omitUndefinedValues(payrollConfig),
         'setupProgress.payrollConfig': true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
 
       // Log to audit trail if context provided
       if (audit) {
@@ -407,10 +411,11 @@ export const settingsService = {
   async completeSetup(tenantId: string): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
-      await updateDoc(docRef, {
+      await setDoc(docRef, {
+        tenantId,
         setupComplete: true,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
     } catch (error) {
       console.error('Error completing setup:', error);
       throw error;

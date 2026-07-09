@@ -26,12 +26,12 @@ class FileUploadService {
    * @param path - Storage path (e.g., 'employees/123/workContract')
    * @returns Promise with download URL
    */
-  async uploadFile(file: File, path: string): Promise<string> {
+  async uploadFile(file: File, path: string, metadata?: { contentType?: string }): Promise<string> {
     try {
       const storage = await getStorageLazy();
       const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
       const storageRef = ref(storage, path);
-      const snapshot = await this.withTimeout(uploadBytes(storageRef, file), "File upload");
+      const snapshot = await this.withTimeout(uploadBytes(storageRef, file, metadata), "File upload");
       const downloadURL = await this.withTimeout(getDownloadURL(snapshot.ref), "Storage URL lookup");
       return downloadURL;
     } catch (error) {
@@ -135,7 +135,9 @@ class FileUploadService {
     const fileName = `company-logo_${timestamp}.${safeExtension}`;
     const path = `tenants/${tenantId}/branding/company-logo/${fileName}`;
 
-    return this.uploadFile(file, path);
+    return this.uploadFile(file, path, {
+      contentType: file.type || this.getImageContentType(safeExtension),
+    });
   }
 
   /**
@@ -161,8 +163,9 @@ class FileUploadService {
    */
   validateImageFile(file: File): { valid: boolean; error?: string } {
     const maxSize = 5 * 1024 * 1024; // 5MB
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
 
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith("image/") && !this.getImageContentType(extension)) {
       return { valid: false, error: "Please upload an image file (PNG, JPG, WebP, or SVG)" };
     }
 
@@ -196,6 +199,22 @@ class FileUploadService {
     }
 
     return { valid: true };
+  }
+
+  private getImageContentType(extension: string): string | undefined {
+    switch (extension) {
+      case "jpg":
+      case "jpeg":
+        return "image/jpeg";
+      case "png":
+        return "image/png";
+      case "webp":
+        return "image/webp";
+      case "svg":
+        return "image/svg+xml";
+      default:
+        return undefined;
+    }
   }
 
 }

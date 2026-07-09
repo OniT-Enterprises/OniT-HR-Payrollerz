@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { SEO, seoConfig } from "@/components/SEO";
+import { PackagePicker } from "@/components/pricing/PackagePicker";
 import {
   Users,
   Calculator,
@@ -153,6 +154,9 @@ export default function Landing() {
               </Link>
               <a href="#labor-law" className="text-sm text-zinc-400 hover:text-white transition-colors">
                 {t("landing.nav.laborLaw")}
+              </a>
+              <a href="#pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
+                Pricing
               </a>
             </div>
 
@@ -516,6 +520,8 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      <PackagePicker />
 
       {/* ═══════════════════════════════════════════════════════════
           Ekipa — Employee Mobile Companion

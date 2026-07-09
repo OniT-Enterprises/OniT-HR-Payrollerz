@@ -22,6 +22,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Building2,
   Plus,
   Search,
@@ -34,8 +44,9 @@ import {
   Sparkles,
   Calendar,
   Database,
+  Trash2,
 } from "lucide-react";
-import { useAllTenants, useSuspendTenant, useReactivateTenant } from "@/hooks/useAdmin";
+import { useAllTenants, useSuspendTenant, useReactivateTenant, useDeleteTenant } from "@/hooks/useAdmin";
 import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
 import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,7 +83,9 @@ export default function TenantList() {
   const { data: tenants = [], isLoading: loading } = useAllTenants();
   const suspendMutation = useSuspendTenant();
   const reactivateMutation = useReactivateTenant();
+  const deleteMutation = useDeleteTenant();
   const [searchQuery, setSearchQuery] = useState("");
+  const [tenantToDelete, setTenantToDelete] = useState<TenantConfig | null>(null);
 
   const handleImpersonate = async (tenant: TenantConfig) => {
     try {
@@ -112,6 +125,22 @@ export default function TenantList() {
       toast.success(t("admin.tenantList.toastReactivated", { name: tenant.name }));
     } catch (_error) {
       toast.error(t("admin.tenantList.toastReactivateFailed"));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!tenantToDelete || !user || !userProfile?.isSuperAdmin) return;
+
+    try {
+      await deleteMutation.mutateAsync({
+        tenantId: tenantToDelete.id,
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
+      toast.success(`${tenantToDelete.name} has been deleted`);
+      setTenantToDelete(null);
+    } catch (_error) {
+      toast.error("Failed to delete tenant");
     }
   };
 
@@ -382,6 +411,19 @@ export default function TenantList() {
                                   {t("admin.tenantList.actions.reactivate")}
                                 </DropdownMenuItem>
                               )}
+                              {userProfile?.isSuperAdmin && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setTenantToDelete(tenant)}
+                                    className="text-red-600"
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -485,6 +527,19 @@ export default function TenantList() {
                                   {t("admin.tenantList.actions.reactivate")}
                                 </DropdownMenuItem>
                               )}
+                              {userProfile?.isSuperAdmin && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => setTenantToDelete(tenant)}
+                                    className="text-red-600"
+                                    disabled={deleteMutation.isPending}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -497,6 +552,31 @@ export default function TenantList() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={Boolean(tenantToDelete)} onOpenChange={(open) => !open && setTenantToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {tenantToDelete?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the tenant record for {tenantToDelete?.name}. Only superadmins can perform this action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+              disabled={deleteMutation.isPending || !userProfile?.isSuperAdmin}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

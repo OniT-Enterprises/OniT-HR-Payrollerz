@@ -1,4 +1,5 @@
 import { FirestoreTimestamp } from "./firebase";
+import { TenantPlan } from "./tenant";
 
 export type BillableModuleId =
   | "people"
@@ -14,6 +15,27 @@ export interface ModulePrice {
   monthlyPrice: number;
 }
 
+export interface PackagePersonPrices {
+  staffMonthlyPrice: number;
+  adminMonthlyPrice: number;
+}
+
+export interface PackagePlanDefinition {
+  id: TenantPlan;
+  label: string;
+  description: string;
+  includedModules: BillableModuleId[];
+  modulePriceOverrides?: Partial<Record<BillableModuleId, number>>;
+  maxAdmins: number | null;
+  staffAppIncluded: boolean;
+  trainingVideoUrl?: string;
+  highlights: string[];
+  complianceNotes: {
+    sickDays: boolean;
+    maternityLeave: boolean;
+  };
+}
+
 export interface EmployeePricingTier {
   id: string;
   minEmployees: number;
@@ -24,6 +46,8 @@ export interface EmployeePricingTier {
 export interface PackagesConfig {
   modulePrices: ModulePrice[];
   employeePricingTiers: EmployeePricingTier[];
+  personPrices: PackagePersonPrices;
+  planDefinitions: PackagePlanDefinition[];
   updatedAt?: FirestoreTimestamp;
   updatedBy?: string;
   updatedByEmail?: string;

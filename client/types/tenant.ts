@@ -22,6 +22,7 @@ export interface TenantConfig {
   phone?: string;
   ownerEmail?: string;
   currentEmployeeCount?: number;
+  currentAdminCount?: number;
 
   // SaaS management fields
   status: TenantStatus;
@@ -46,6 +47,7 @@ export interface TenantConfig {
     secondaryColor?: string;
   };
   features?: {
+    people?: boolean;
     hiring?: boolean;
     timeleave?: boolean;
     performance?: boolean;
@@ -54,6 +56,7 @@ export interface TenantConfig {
     accounting?: boolean;
     reports?: boolean;
     ngoReporting?: boolean;
+    staffApp?: boolean;
   };
   payrollPolicy?: {
     overtimeThreshold?: number; // hours per week
