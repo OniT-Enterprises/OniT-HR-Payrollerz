@@ -76,7 +76,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { payrollService } from "@/services/payrollService";
+import { payrollService, SubscriptionRequiredError } from "@/services/payrollService";
 import { accountingService } from "@/services/accountingService";
 import {
   formatCurrency,
@@ -403,6 +403,16 @@ export default function PayrollHistory() {
       setNextStepsRun(approveRun);
       setApproveRun(null);
     } catch (error: unknown) {
+      // Free accounts can build a run but not finalize it — send them to billing.
+      if (error instanceof SubscriptionRequiredError) {
+        setShowApproveDialog(false);
+        toast({
+          title: "Subscribe to finalize payroll",
+          description: "Running real payroll needs an active subscription. Everything else stays free.",
+        });
+        navigate("/billing");
+        return;
+      }
       const message = error instanceof Error ? error.message : t("payrollHistory.toastApprovalFailedDesc");
       toast({
         title: t("payrollHistory.toastApprovalFailed"),

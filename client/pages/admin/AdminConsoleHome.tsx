@@ -49,7 +49,7 @@ export default function AdminConsoleHome() {
   const pendingRequests = requests.filter((request) => request.status !== "approved" && request.status !== "rejected");
   const topTenants = tenants.slice(0, 5);
   const recentAudit = auditEntries.slice(0, 5);
-  const planDefinitions = packagesConfig?.planDefinitions ?? [];
+  const pricePerEmployee = packagesConfig?.pricePerEmployee ?? 0;
 
   return (
     <AdminLayout>
@@ -241,26 +241,13 @@ export default function AdminConsoleHome() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {planDefinitions.map((plan) => (
-                      <div key={plan.id} className="rounded-lg border border-border/50 p-3">
-                        <p className="text-sm text-muted-foreground">{plan.label}</p>
-                        <p className="text-xl font-semibold">
-                          {plan.pricePerEmployee > 0 ? (
-                            <>
-                              ${plan.pricePerEmployee.toFixed(2)}
-                              <span className="text-sm font-normal text-muted-foreground"> /employee</span>
-                            </>
-                          ) : (
-                            "Free"
-                          )}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="rounded-lg border border-border/50 p-4">
+                    <p className="text-sm text-muted-foreground">Price / employee / month</p>
+                    <p className="text-3xl font-bold">${pricePerEmployee.toFixed(2)}</p>
                   </div>
                   <div className="rounded-lg border border-border/50 p-3 text-sm text-muted-foreground">
-                    Tenants are billed per employee: monthly total = employees × the plan's
-                    per-employee rate. The Free plan is always $0.
+                    One flat rate. Every account has every feature; a subscription unlocks
+                    finalizing payroll runs. Monthly bill = employees × rate.
                   </div>
                 </div>
               )}

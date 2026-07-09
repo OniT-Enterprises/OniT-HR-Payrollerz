@@ -22,6 +22,7 @@ import {
 import { db } from '@/lib/firebase';
 import { chunkArray } from '@/lib/utils';
 import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
+import { isTenantSubscribed } from '@/lib/packagePricing';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -36,6 +37,17 @@ import type {
 // ============================================
 // PAYROLL RUNS
 // ============================================
+
+/**
+ * Thrown when a free (unsubscribed) tenant tries to finalize a payroll run.
+ * The UI catches this to send the user to /billing.
+ */
+export class SubscriptionRequiredError extends Error {
+  constructor() {
+    super("A subscription is required to finalize payroll");
+    this.name = "SubscriptionRequiredError";
+  }
+}
 
 class PayrollRunService {
   private get collectionRef() {
@@ -296,6 +308,16 @@ class PayrollRunService {
     }
     if (payroll.status !== 'draft' && payroll.status !== 'processing') {
       throw new Error(`Payroll run must be draft/processing before approval (current: ${payroll.status})`);
+    }
+
+    // Paywall: finalizing a payroll run requires an active subscription. Every
+    // other feature is free; this is the single monetization gate.
+    const tenantId = payroll.tenantId || audit?.tenantId;
+    if (tenantId) {
+      const tenantSnap = await getDoc(doc(db, 'tenants', tenantId));
+      if (!isTenantSubscribed((tenantSnap.data() ?? {}) as Parameters<typeof isTenantSubscribed>[0])) {
+        throw new SubscriptionRequiredError();
+      }
     }
 
     // Two-person rule: approver must differ from creator, unless the tenant

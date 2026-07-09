@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,9 +22,6 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function Signup() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  // Plan chosen from the public pricing page (/auth/signup?plan=professional).
-  const selectedPlan = searchParams.get("plan");
   const { t } = useI18n();
   const { refreshUserProfile, signInWithGoogle } = useAuth();
   const { switchTenant } = useTenant();
@@ -121,13 +118,8 @@ export default function Signup() {
         console.warn("Post-signup tenant load failed, deferring to re-init:", switchErr);
       }
 
-      // 5. If they picked a paid plan on the pricing page, send them straight
-      // to checkout; otherwise land on the dashboard.
-      if (selectedPlan && selectedPlan !== "free") {
-        navigate(`/billing?checkout=${encodeURIComponent(selectedPlan)}`);
-      } else {
-        navigate("/");
-      }
+      // 5. Everyone starts free; they subscribe later when they run payroll.
+      navigate("/");
     } catch (err: unknown) {
       console.error("Signup error:", err);
       const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;

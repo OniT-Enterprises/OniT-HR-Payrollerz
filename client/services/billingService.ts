@@ -16,13 +16,14 @@ async function callable<TReq, TRes>(name: string, data: TReq): Promise<TRes> {
 
 export const billingService = {
   /**
-   * Create a Stripe Checkout session for a plan and redirect the browser to it.
+   * Create a Stripe Checkout session (flat per-employee subscription) and
+   * redirect the browser to it.
    */
-  async startCheckout(tenantId: string, planId: string): Promise<void> {
+  async startCheckout(tenantId: string): Promise<void> {
     const { url } = await callable<
-      { tenantId: string; planId: string; returnUrl: string },
+      { tenantId: string; returnUrl: string },
       { url: string | null }
-    >("createCheckoutSession", { tenantId, planId, returnUrl: window.location.origin });
+    >("createCheckoutSession", { tenantId, returnUrl: window.location.origin });
     if (!url) throw new Error("Stripe did not return a checkout URL");
     window.location.assign(url);
   },

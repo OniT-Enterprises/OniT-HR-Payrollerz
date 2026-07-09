@@ -12,17 +12,16 @@ import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { usePackagesConfig } from "@/hooks/useAdmin";
-import { calculatePackageEstimate, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
+import { ALL_FEATURES, isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { billingService } from "@/services/billingService";
-import type { TenantPlan } from "@/types/tenant";
 import { toast } from "sonner";
 
 interface TenantBilling {
-  plan: TenantPlan;
-  status?: string;
   currentEmployeeCount: number;
   monthlySubscriptionAmount?: number;
   stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  status?: string;
   subscriptionPaidUntil?: { toDate: () => Date } | null;
 }
 
@@ -39,46 +38,46 @@ export default function Billing() {
   const { canManage } = useTenant();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: packagesConfig } = usePackagesConfig();
-  const [busyPlan, setBusyPlan] = useState<string | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const autoCheckoutFired = useRef(false);
 
-  const config = normalizeBillingPackagesConfig(packagesConfig);
+  const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
 
-  const {
-    data: tenant,
-    isLoading,
-    refetch,
-  } = useQuery<TenantBilling>({
+  const { data: tenant, isLoading, refetch } = useQuery<TenantBilling>({
     queryKey: ["tenant-billing", tenantId],
     queryFn: async () => {
       const snap = await getDoc(doc(db, paths.tenant(tenantId)));
       const d = (snap.data() ?? {}) as Record<string, unknown>;
       return {
-        plan: (d.plan as TenantPlan) ?? "free",
-        status: d.status as string | undefined,
         currentEmployeeCount: Math.max(0, (d.currentEmployeeCount as number) ?? 0),
         monthlySubscriptionAmount: d.monthlySubscriptionAmount as number | undefined,
         stripeCustomerId: d.stripeCustomerId as string | undefined,
+        stripeSubscriptionId: d.stripeSubscriptionId as string | undefined,
+        status: d.status as string | undefined,
         subscriptionPaidUntil: (d.subscriptionPaidUntil as TenantBilling["subscriptionPaidUntil"]) ?? null,
       };
     },
     enabled: Boolean(tenantId),
   });
 
-  const startCheckout = async (planId: string) => {
+  const subscribed = tenant ? isTenantSubscribed(tenant) : false;
+  const employees = tenant?.currentEmployeeCount ?? 0;
+  const projected = rate * employees;
+  const paidUntil = tenant?.subscriptionPaidUntil?.toDate?.();
+
+  const startCheckout = async () => {
     if (!canManage()) {
       toast.error("Only owners and admins can manage billing");
       return;
     }
-    setBusyPlan(planId);
+    setCheckoutBusy(true);
     try {
-      await billingService.startCheckout(tenantId, planId);
-      // On success the browser redirects to Stripe; nothing else runs.
+      await billingService.startCheckout(tenantId);
     } catch (error) {
       console.error(error);
       toast.error("Could not start checkout. Please try again.");
-      setBusyPlan(null);
+      setCheckoutBusy(false);
     }
   };
 
@@ -93,20 +92,18 @@ export default function Billing() {
     }
   };
 
-  // Handle Stripe return + auto-start checkout when arriving from signup.
   useEffect(() => {
     const status = searchParams.get("status");
     if (status === "success") {
-      toast.success("Subscription active — thank you!");
+      toast.success("Subscription active — you can now run payroll. Thank you!");
       void refetch();
     } else if (status === "cancel") {
       toast.message("Checkout canceled — no charge was made.");
     }
 
-    const checkoutPlan = searchParams.get("checkout");
-    if (checkoutPlan && checkoutPlan !== "free" && !autoCheckoutFired.current && canManage()) {
+    if (searchParams.get("checkout") && !autoCheckoutFired.current && canManage()) {
       autoCheckoutFired.current = true;
-      void startCheckout(checkoutPlan);
+      void startCheckout();
     }
 
     if (status || searchParams.get("checkout")) {
@@ -118,16 +115,13 @@ export default function Billing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, canManage]);
 
-  const currentPlanId = tenant?.plan ?? "free";
-  const paidUntil = tenant?.subscriptionPaidUntil?.toDate?.();
-
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
       <div className="p-6 mx-auto max-w-screen-2xl">
         <PageHeader
           title="Billing & Plan"
-          subtitle="Simple per-employee pricing. Upgrade, downgrade, or manage payment anytime."
+          subtitle="Every feature is free to use. A subscription unlocks finalizing payroll runs."
           icon={CreditCard}
           iconColor="text-primary"
         />
@@ -137,120 +131,89 @@ export default function Billing() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Current subscription summary */}
-            <Card className="border-border/50">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            {/* Subscription card */}
+            <Card className={subscribed ? "border-primary" : "border-border/50"}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  Current plan
+                  {subscribed ? "Subscription active" : "Subscribe to run payroll"}
                 </CardTitle>
-                <CardDescription>Your active subscription and next billing date.</CardDescription>
+                <CardDescription>
+                  {subscribed
+                    ? "You can finalize payroll runs and use every feature."
+                    : "You're on the free plan — everything works except finalizing a payroll run."}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Plan</p>
-                  <p className="text-2xl font-bold capitalize">{currentPlanId}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Employees</p>
-                  <p className="text-2xl font-bold">{tenant?.currentEmployeeCount ?? 0}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Monthly</p>
-                  <p className="text-2xl font-bold">
-                    {tenant?.monthlySubscriptionAmount
-                      ? formatMoney(tenant.monthlySubscriptionAmount)
-                      : currentPlanId === "free"
-                        ? "Free"
-                        : "—"}
-                  </p>
-                </div>
-                {paidUntil && (
+              <CardContent className="space-y-5">
+                <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
                   <div>
-                    <p className="text-sm text-muted-foreground">Paid until</p>
-                    <p className="text-2xl font-bold">{paidUntil.toLocaleDateString()}</p>
+                    <p className="text-sm text-muted-foreground">Price</p>
+                    <p className="text-3xl font-bold">
+                      {formatMoney(rate)}
+                      <span className="text-sm font-medium text-muted-foreground"> /employee/mo</span>
+                    </p>
                   </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Your employees</p>
+                    <p className="text-3xl font-bold">{employees}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {subscribed ? "Billed monthly" : "Projected monthly"}
+                    </p>
+                    <p className="text-3xl font-bold">
+                      {formatMoney(tenant?.monthlySubscriptionAmount ?? projected)}
+                    </p>
+                  </div>
+                </div>
+
+                {subscribed && paidUntil && (
+                  <Badge variant="outline">Renews {paidUntil.toLocaleDateString()}</Badge>
                 )}
-                {tenant?.status && (
-                  <Badge variant={tenant.status === "active" ? "default" : "destructive"} className="capitalize">
-                    {tenant.status}
-                  </Badge>
-                )}
-                {tenant?.stripeCustomerId && (
-                  <Button variant="outline" className="ml-auto gap-2" onClick={openPortal} disabled={portalBusy}>
-                    {portalBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                    Manage billing
-                  </Button>
+
+                <div className="flex flex-wrap gap-3">
+                  {subscribed ? (
+                    <Button variant="outline" className="gap-2" onClick={openPortal} disabled={portalBusy}>
+                      {portalBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                      Manage billing
+                    </Button>
+                  ) : (
+                    <Button className="gap-2" onClick={startCheckout} disabled={checkoutBusy || !canManage()}>
+                      {checkoutBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+                      Subscribe now
+                    </Button>
+                  )}
+                  {!subscribed && tenant?.stripeCustomerId && (
+                    <Button variant="ghost" onClick={openPortal} disabled={portalBusy}>
+                      Manage billing
+                    </Button>
+                  )}
+                </div>
+
+                {!canManage() && (
+                  <p className="text-sm text-muted-foreground">
+                    Only owners and HR admins can change the subscription.
+                  </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Plan cards */}
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {config.planDefinitions.map((plan) => {
-                const estimate = calculatePackageEstimate(config, {
-                  planId: plan.id,
-                  employeeCount: tenant?.currentEmployeeCount ?? 0,
-                });
-                const isCurrent = plan.id === currentPlanId;
-                return (
-                  <Card key={plan.id} className={isCurrent ? "border-primary" : "border-border/50"}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between gap-2">
-                        <CardTitle>{plan.label}</CardTitle>
-                        {isCurrent && <Badge>Current</Badge>}
-                      </div>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <p className="text-3xl font-bold">
-                          {plan.pricePerEmployee === 0 ? "Free" : formatMoney(plan.pricePerEmployee)}
-                          {plan.pricePerEmployee > 0 && (
-                            <span className="text-sm font-medium text-muted-foreground"> /employee/mo</span>
-                          )}
-                        </p>
-                        {plan.pricePerEmployee > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            ≈ {formatMoney(estimate.monthlyTotal)}/mo for your {tenant?.currentEmployeeCount ?? 0} employees
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        {plan.highlights.map((h) => (
-                          <div key={h} className="flex items-center gap-2 text-sm">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                            <span>{h}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {plan.id === "free" ? (
-                        <Button variant="outline" className="w-full" disabled>
-                          {isCurrent ? "Current plan" : "Free"}
-                        </Button>
-                      ) : (
-                        <Button
-                          className="w-full gap-2"
-                          variant={isCurrent ? "outline" : "default"}
-                          disabled={busyPlan === plan.id || !canManage()}
-                          onClick={() => startCheckout(plan.id)}
-                        >
-                          {busyPlan === plan.id && <Loader2 className="h-4 w-4 animate-spin" />}
-                          {isCurrent ? "Manage / renew" : "Choose " + plan.label}
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            {!canManage() && (
-              <p className="text-sm text-muted-foreground">
-                Only owners and HR admins can change the subscription.
-              </p>
-            )}
+            {/* Everything included */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle>Included with every account</CardTitle>
+                <CardDescription>Free and paid — no feature is locked away.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                {ALL_FEATURES.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

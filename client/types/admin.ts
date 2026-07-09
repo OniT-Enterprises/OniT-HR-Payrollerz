@@ -1,34 +1,12 @@
 import { FirestoreTimestamp } from "./firebase";
-import { TenantPlan } from "./tenant";
 
-export type BillableModuleId =
-  | "people"
-  | "timeleave"
-  | "payroll"
-  | "money"
-  | "accounting"
-  | "reports";
-
-export interface PackagePlanDefinition {
-  id: TenantPlan;
-  label: string;
-  description: string;
-  /** Pricing is purely per-employee: monthly bill = employees * pricePerEmployee. */
-  pricePerEmployee: number;
-  /** Features this plan unlocks — used for marketing/feature display, not billing. */
-  includedModules: BillableModuleId[];
-  maxAdmins: number | null;
-  staffAppIncluded: boolean;
-  trainingVideoUrl?: string;
-  highlights: string[];
-  complianceNotes: {
-    sickDays: boolean;
-    maternityLeave: boolean;
-  };
-}
-
+/**
+ * One product, one price. Every account has every feature; a single flat
+ * per-employee rate is charged once a tenant subscribes (which is what unlocks
+ * finalizing payroll). No tiers, no per-module pricing.
+ */
 export interface PackagesConfig {
-  planDefinitions: PackagePlanDefinition[];
+  pricePerEmployee: number;
   updatedAt?: FirestoreTimestamp;
   updatedBy?: string;
   updatedByEmail?: string;

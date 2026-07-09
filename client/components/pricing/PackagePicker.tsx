@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { DEFAULT_PACKAGES_CONFIG, calculatePackageEstimate } from "@/lib/packagePricing";
+import { ALL_FEATURES, DEFAULT_PACKAGES_CONFIG } from "@/lib/packagePricing";
 
 const DEMO_EMPLOYEES = 20;
 
@@ -15,61 +14,51 @@ function formatMoney(amount: number): string {
 }
 
 export function PackagePicker() {
+  const rate = DEFAULT_PACKAGES_CONFIG.pricePerEmployee;
+
   return (
-    <section id="pricing" className="relative py-20">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <section id="pricing" className="relative scroll-mt-16 py-24 lg:py-28 border-t border-white/5">
+      <div className="mx-auto max-w-4xl px-6 lg:px-8">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Pricing</p>
-          <h2 className="mt-3 text-4xl font-bold tracking-tight text-white">Choose the package that fits today</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-amber-300">Pricing</p>
+          <h2 className="mt-4 text-3xl lg:text-[2.6rem] leading-tight font-extrabold tracking-tight text-white">
+            One simple price. Everything included.
+          </h2>
           <p className="mt-4 text-zinc-400">
-            Simple per-employee pricing. Example totals below assume {DEMO_EMPLOYEES} employees.
+            Start free — set up your whole company, add staff, build a payroll run. You only pay
+            when you're ready to run real payroll.
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) => {
-            const estimate = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, {
-              planId: plan.id,
-              employeeCount: DEMO_EMPLOYEES,
-            });
+        <div className="mt-12 rounded-2xl border border-amber-400/30 bg-amber-400/[0.04] p-8 lg:p-10">
+          <div className="flex flex-col items-center text-center">
+            <p className="text-5xl font-extrabold text-white">
+              {formatMoney(rate)}
+              <span className="text-lg font-medium text-zinc-400"> /employee/mo</span>
+            </p>
+            <p className="mt-2 text-sm text-zinc-500">
+              e.g. {formatMoney(rate * DEMO_EMPLOYEES)}/mo for {DEMO_EMPLOYEES} employees · billed monthly
+            </p>
+            <Button
+              asChild
+              className="mt-6 w-full max-w-xs font-bold bg-amber-400 text-zinc-950 hover:bg-amber-300 shadow-lg shadow-amber-500/20"
+            >
+              <Link to="/auth/signup">Start free</Link>
+            </Button>
+          </div>
 
-            return (
-              <div key={plan.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{plan.label}</h3>
-                    <p className="mt-2 text-sm text-zinc-400">{plan.description}</p>
-                  </div>
-                  {plan.staffAppIncluded && <Badge className="bg-emerald-500/20 text-emerald-100">Staff app</Badge>}
-                </div>
-
-                <p className="mt-6 text-3xl font-bold text-white">
-                  {estimate.pricePerEmployee === 0 ? "Free" : formatMoney(estimate.pricePerEmployee)}
-                  {estimate.pricePerEmployee > 0 && (
-                    <span className="text-base font-medium text-zinc-400"> /employee/mo</span>
-                  )}
-                </p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {estimate.pricePerEmployee === 0
-                    ? "No monthly cost"
-                    : `≈ ${formatMoney(estimate.monthlyTotal)}/mo for ${DEMO_EMPLOYEES} employees`}
-                </p>
-
-                <div className="mt-5 space-y-2">
-                  {plan.highlights.map((highlight) => (
-                    <div key={highlight} className="flex items-center gap-2 text-sm text-zinc-300">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                      <span>{highlight}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button asChild className="mt-6 w-full bg-emerald-600 hover:bg-emerald-500">
-                  <Link to={`/auth/signup?plan=${plan.id}`}>Start with {plan.label}</Link>
-                </Button>
+          <div className="mt-8 grid gap-x-6 gap-y-3 border-t border-white/10 pt-8 sm:grid-cols-2">
+            {ALL_FEATURES.map((feature) => (
+              <div key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
+                <CheckCircle2 className="h-4 w-4 text-lime-400 shrink-0" />
+                <span>{feature}</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          <p className="mt-8 text-center text-xs text-zinc-500">
+            Free accounts include every feature. A subscription unlocks finalizing payroll runs.
+          </p>
         </div>
       </div>
     </section>

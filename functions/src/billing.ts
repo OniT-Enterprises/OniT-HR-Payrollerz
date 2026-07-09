@@ -1,12 +1,13 @@
 /**
- * Stripe billing — per-employee subscriptions.
+ * Stripe billing — one flat per-employee subscription.
  *
- * Pricing is purely per-employee: a subscription has a single line item priced
- * at the plan's per-employee rate with quantity = the tenant's employee count.
+ * Every account has every feature for free; a subscription is what unlocks
+ * finalizing payroll runs. The subscription is a single line item priced at the
+ * flat per-employee rate with quantity = the tenant's employee count.
  *
  * Secrets (set with `firebase functions:secrets:set`):
- *   STRIPE_SECRET_KEY      — the ROTATED live/test secret key (sk_...)
- *   STRIPE_WEBHOOK_SECRET  — the signing secret of the webhook endpoint (whsec_...)
+ *   STRIPE_SECRET_KEY      — the secret key (sk_...)
+ *   STRIPE_WEBHOOK_SECRET  — the webhook endpoint signing secret (whsec_...)
  */
 import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
@@ -19,48 +20,25 @@ const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
 const DEFAULT_APP_URL = "https://payroll.naroman.tl";
-
-// Fallback per-employee rates if the packages config doc is missing a plan.
-const DEFAULT_RATES: Record<string, number> = {
-  free: 0,
-  starter: 2,
-  professional: 4,
-  enterprise: 6,
-};
-const PLAN_LABELS: Record<string, string> = {
-  free: "Free",
-  starter: "Starter",
-  professional: "Professional",
-  enterprise: "Enterprise",
-};
+const DEFAULT_RATE = 4; // fallback per-employee rate if config is missing
 
 function stripeClient(): Stripe {
   return new Stripe(STRIPE_SECRET_KEY.value());
 }
 
-async function getPlanRate(
-  db: FirebaseFirestore.Firestore,
-  planId: string,
-): Promise<number> {
+async function getPerEmployeeRate(db: FirebaseFirestore.Firestore): Promise<number> {
   try {
     const snap = await db.doc(PACKAGES_CONFIG_PATH).get();
-    const plans = (snap.data()?.planDefinitions ?? []) as Array<{
-      id?: string;
-      pricePerEmployee?: number;
-    }>;
-    const match = plans.find((p) => p.id === planId);
-    if (match && typeof match.pricePerEmployee === "number" && Number.isFinite(match.pricePerEmployee)) {
-      return Math.max(0, match.pricePerEmployee);
-    }
+    const rate = snap.data()?.pricePerEmployee;
+    if (typeof rate === "number" && Number.isFinite(rate) && rate > 0) return rate;
   } catch (error) {
     console.warn("Could not read packages config, using default rate:", error);
   }
-  return DEFAULT_RATES[planId] ?? 0;
+  return DEFAULT_RATE;
 }
 
 interface CheckoutData {
   tenantId?: string;
-  planId?: string;
   returnUrl?: string;
 }
 
@@ -68,12 +46,9 @@ export const createCheckoutSession = onCall(
   { secrets: [STRIPE_SECRET_KEY], cors: true },
   async (request) => {
     const { uid } = requireAuth(request);
-    const { tenantId, planId, returnUrl } = (request.data ?? {}) as CheckoutData;
-    if (!tenantId || !planId) {
-      throw new HttpsError("invalid-argument", "tenantId and planId are required");
-    }
-    if (planId === "free") {
-      throw new HttpsError("failed-precondition", "The Free plan does not require checkout");
+    const { tenantId, returnUrl } = (request.data ?? {}) as CheckoutData;
+    if (!tenantId) {
+      throw new HttpsError("invalid-argument", "tenantId is required");
     }
     await requireTenantAdmin(tenantId, uid);
 
@@ -85,12 +60,9 @@ export const createCheckoutSession = onCall(
     }
     const tenant = tenantSnap.data() as Record<string, unknown>;
 
-    const rate = await getPlanRate(db, planId);
-    if (rate <= 0) {
-      throw new HttpsError("failed-precondition", "This plan has no per-employee price set");
-    }
-    // Stripe requires quantity >= 1; a brand-new tenant with 0 employees is
-    // billed for 1 seat until the count syncs upward.
+    const rate = await getPerEmployeeRate(db);
+    // Stripe requires quantity >= 1; a tenant with 0 employees is billed for 1
+    // seat until the count syncs upward.
     const employeeCount = Math.max(1, Math.floor((tenant.currentEmployeeCount as number) ?? 1));
 
     const stripe = stripeClient();
@@ -116,12 +88,12 @@ export const createCheckoutSession = onCall(
             currency: "usd",
             unit_amount: Math.round(rate * 100),
             recurring: { interval: "month" },
-            product_data: { name: `Xefe ${PLAN_LABELS[planId] ?? planId} — per employee` },
+            product_data: { name: "Xefe — per employee" },
           },
         },
       ],
-      metadata: { tenantId, planId },
-      subscription_data: { metadata: { tenantId, planId } },
+      metadata: { tenantId },
+      subscription_data: { metadata: { tenantId } },
       allow_promotion_codes: true,
       success_url: `${base}/billing?status=success`,
       cancel_url: `${base}/billing?status=cancel`,
@@ -159,7 +131,6 @@ export const createBillingPortalSession = onCall(
 async function applySubscription(
   db: FirebaseFirestore.Firestore,
   tenantId: string,
-  planId: string | undefined,
   sub: Stripe.Subscription,
 ): Promise<void> {
   const item = sub.items.data[0];
@@ -168,18 +139,16 @@ async function applySubscription(
   const amount = (unitAmount * quantity) / 100;
   const active = sub.status === "active" || sub.status === "trialing";
 
-  // current_period_end lives on the subscription (older API) or its items (newer).
   const periodEndSec =
     (sub as unknown as { current_period_end?: number }).current_period_end ??
     (item as unknown as { current_period_end?: number })?.current_period_end;
 
   const patch: Record<string, unknown> = {
     stripeCustomerId: typeof sub.customer === "string" ? sub.customer : sub.customer?.id,
-    stripeSubscriptionId: sub.id,
     monthlySubscriptionAmount: amount,
-    status: active ? "active" : "suspended",
+    // stripeSubscriptionId is the "can finalize payroll" gate; only set it while active.
+    stripeSubscriptionId: active ? sub.id : FieldValue.delete(),
   };
-  if (planId) patch.plan = planId;
   if (periodEndSec) patch.subscriptionPaidUntil = Timestamp.fromMillis(periodEndSec * 1000);
 
   await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
@@ -209,14 +178,11 @@ export const stripeWebhook = onRequest(
         case "checkout.session.completed": {
           const session = event.data.object;
           const tenantId = session.metadata?.tenantId;
-          const planId = session.metadata?.planId;
           if (tenantId && session.subscription) {
             const subId =
-              typeof session.subscription === "string"
-                ? session.subscription
-                : session.subscription.id;
+              typeof session.subscription === "string" ? session.subscription : session.subscription.id;
             const sub = await stripe.subscriptions.retrieve(subId);
-            await applySubscription(db, tenantId, planId, sub);
+            await applySubscription(db, tenantId, sub);
           }
           break;
         }
@@ -224,17 +190,16 @@ export const stripeWebhook = onRequest(
         case "customer.subscription.updated": {
           const sub = event.data.object;
           const tenantId = sub.metadata?.tenantId;
-          if (tenantId) await applySubscription(db, tenantId, sub.metadata?.planId, sub);
+          if (tenantId) await applySubscription(db, tenantId, sub);
           break;
         }
         case "customer.subscription.deleted": {
           const sub = event.data.object;
           const tenantId = sub.metadata?.tenantId;
           if (tenantId) {
+            // Revert to free usage: drop the payroll-unlock, zero the amount.
             await db.doc(`tenants/${tenantId}`).set(
               {
-                status: "active",
-                plan: "free",
                 monthlySubscriptionAmount: 0,
                 stripeSubscriptionId: FieldValue.delete(),
               },

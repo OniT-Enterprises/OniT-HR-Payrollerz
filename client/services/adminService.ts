@@ -157,10 +157,8 @@ function normalizePackagesConfig(raw: Record<string, unknown> | undefined): Pack
 }
 
 function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: PackagesConfig): number {
-  // Pure per-employee billing: employees * the plan's per-employee rate.
-  // Free plans resolve to $0 inside the estimator.
+  // Flat per-employee billing: employees × the single rate.
   const estimate = calculatePackageEstimate(packagesConfig, {
-    planId: tenant.plan,
     employeeCount: tenant.currentEmployeeCount ?? 0,
   });
 
@@ -329,13 +327,7 @@ class AdminService {
     if (!db) throw new Error("Database not available");
 
     const sanitized: PackagesConfig = {
-      planDefinitions: config.planDefinitions.map((plan) => ({
-        ...plan,
-        pricePerEmployee: Math.max(0, plan.pricePerEmployee),
-        maxAdmins: plan.maxAdmins === null ? null : Math.max(0, plan.maxAdmins),
-        includedModules: Array.from(new Set(plan.includedModules)),
-        highlights: plan.highlights.filter((highlight) => highlight.trim().length > 0),
-      })),
+      pricePerEmployee: normalizeBillingPackagesConfig(config).pricePerEmployee,
       updatedBy: actorUid,
       updatedByEmail: actorEmail,
     };
