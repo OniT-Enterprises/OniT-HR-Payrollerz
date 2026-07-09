@@ -12,6 +12,7 @@ export * from "./admin";
 export * from "./documentAlerts";
 export * from "./money";
 export * from "./chat";
+export * from "./contracts";
 export * from "./audit";
 export * from "./billing";
 export * from "./email";

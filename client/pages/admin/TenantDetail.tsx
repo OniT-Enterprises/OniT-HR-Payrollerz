@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { TenantProfileForm } from "@/components/admin/TenantProfileForm";
+import { TenantMembersCard } from "@/components/admin/TenantMembersCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import {
+  useDeleteTenant,
   useReactivateTenant,
   useSuspendTenant,
   useTenantDetail,
@@ -37,6 +39,7 @@ import {
   CreditCard,
   Loader2,
   Pencil,
+  Trash2,
   UserCog,
   Users,
 } from "lucide-react";
@@ -70,6 +73,7 @@ function formatDateValue(value: OptionalTimestamp): string {
 export default function TenantDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
   const { data: tenant, isLoading } = useTenantDetail(id);
@@ -77,8 +81,10 @@ export default function TenantDetail() {
   const updateTenantMutation = useUpdateTenantProfile();
   const suspendMutation = useSuspendTenant();
   const reactivateMutation = useReactivateTenant();
-  const [isEditing, setIsEditing] = useState(false);
+  const deleteMutation = useDeleteTenant();
+  const [isEditing, setIsEditing] = useState(searchParams.get("edit") === "1");
   const [formValue, setFormValue] = useState<TenantProfileInput | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
     if (tenant) {
@@ -152,6 +158,23 @@ export default function TenantDetail() {
     } catch (error) {
       console.error(error);
       toast.error("Could not reactivate this tenant.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!tenant || !user || !userProfile?.isSuperAdmin) return;
+
+    try {
+      await deleteMutation.mutateAsync({
+        tenantId: tenant.id,
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
+      toast.success(`${tenant.name} has been deleted`);
+      navigate("/admin/tenants");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not delete this tenant.");
     }
   };
 
@@ -268,10 +291,48 @@ export default function TenantDetail() {
                   Reactivate
                 </Button>
               )}
+
+              {userProfile?.isSuperAdmin && (
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmingDelete(true)}
+                  disabled={deleteMutation.isPending}
+                  className="gap-2 border-red-500/30 text-red-600 hover:bg-red-500/10 hover:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {tenant.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the tenant record for {tenant.name}. Only superadmins can perform
+              this action.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDelete();
+              }}
+              disabled={deleteMutation.isPending || !userProfile?.isSuperAdmin}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="px-6 py-6 lg:px-8">
         {isEditing && formValue ? (
@@ -341,6 +402,8 @@ export default function TenantDetail() {
                 </CardContent>
               </Card>
             </div>
+
+            <TenantMembersCard tenantId={tenant.id} tenantName={tenant.name} />
 
             <div className="grid gap-6 xl:grid-cols-2">
               <Card className="border-border/50">

@@ -55,6 +55,7 @@ export default function EmployeeReports() {
       part_time: "Part-time",
       contract: "Contract",
       contractor: "Contractor",
+      shareholder: "Shareholder",
       casual: "Casual",
       intern: "Intern",
       temporary: "Temporary",

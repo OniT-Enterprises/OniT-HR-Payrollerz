@@ -487,6 +487,13 @@ const messages = {
     "continueWithGoogle": "Continuar com o Google",
     "orDivider": "ou",
     "forgotPassword": "Esqueceu a palavra-passe?",
+    "forgotPasswordTitle": "Repor a sua palavra-passe",
+    "forgotPasswordSubtitle": "Introduza o seu email e enviaremos uma ligação para a repor",
+    "sendResetLink": "Enviar ligação de reposição",
+    "sendingResetLink": "A enviar...",
+    "resetEmailSentTitle": "Verifique o seu email",
+    "resetEmailSentDetail": "Se existir uma conta para {{email}}, uma ligação de reposição está a caminho.",
+    "backToLogin": "Voltar ao início de sessão",
     "noAccount": "Não tem conta?",
     "signUp": "Registar-se",
     "onboarding": {
@@ -509,7 +516,8 @@ const messages = {
       "googleSignInFailed": "Falha ao iniciar sessão com o Google. Tente novamente.",
       "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
       "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
-      "invalidEmail": "Endereço de email inválido."
+      "invalidEmail": "Endereço de email inválido.",
+      "resetFailed": "Não foi possível enviar o email de reposição. Tente novamente."
     },
     "signup": {
       "titleAccount": "Criar a Sua Conta",
@@ -1565,7 +1573,8 @@ const messages = {
       "employmentTypes": {
         "fullTime": "Tempo Inteiro",
         "partTime": "Tempo Parcial",
-        "contractor": "Contratado"
+        "contractor": "Contratado",
+        "shareholder": "Acionista"
       },
       "sefopeTitle": "Registo SEFOPE (Ministério do Trabalho)",
       "sefopeTooltip": "Obrigatório para todos os funcionários de TL",
@@ -1574,6 +1583,32 @@ const messages = {
       "sefopeDate": "Data de Registo",
       "workContract": "Documento de Contrato de Trabalho",
       "workContractHelp": "Carregar contrato de trabalho (PDF/DOC)"
+    },
+    "contractGen": {
+      "openButton": "Gerar a partir de modelo",
+      "title": "Gerar contrato de trabalho",
+      "description": "Escolha um modelo de contrato e preencha-o automaticamente com os dados deste funcionário, ou use o Preenchimento Rápido com IA.",
+      "selectTemplate": "Modelo de contrato",
+      "selectPlaceholder": "Escolher um modelo",
+      "autoFill": "Preencher automaticamente",
+      "quickFillAi": "Preenchimento Rápido com IA",
+      "aiWorking": "A preencher com IA…",
+      "aiDoneTitle": "Contrato preenchido",
+      "aiDoneDesc": "Reveja o texto do contrato antes de o anexar.",
+      "aiFailedTitle": "Falha no preenchimento com IA",
+      "aiFailedDesc": "Não foi possível preencher o modelo com IA. Tente novamente ou edite o texto manualmente.",
+      "missingTokens": "Sem dados para:",
+      "preview": "Pré-visualização do contrato",
+      "previewHint": "Pode editar o texto antes de anexar ou descarregar.",
+      "noTemplates": "Ainda não há modelos de contrato disponíveis. Peça ao administrador da plataforma para carregar um.",
+      "downloadPdf": "Descarregar PDF",
+      "attach": "Anexar como contrato de trabalho",
+      "attachedTitle": "Contrato anexado",
+      "attachedDesc": "O PDF gerado será carregado quando guardar o funcionário.",
+      "attachedFile": "Anexado: {{name}}",
+      "pdfFooter": "Gerado pelo Xefe",
+      "pdfFailedTitle": "Falha ao gerar PDF",
+      "pdfFailedDesc": "Não foi possível criar o PDF. Tente novamente."
     },
     "compensation": {
       "salaryLabel": "Salário Mensal (USD)",
@@ -2472,9 +2507,11 @@ const messages = {
         "nextWeek": "Próxima Semana",
         "day": "Dia",
         "to": "até",
+        "done": "Concluído",
         "shiftsAt": "{{count}} turnos em {{location}}",
         "noSlots": "Nenhum horário de turno ativo",
-        "noSlotsHint": "Ative pelo menos um horário de turno acima para ver a grelha",
+        "noSlotsHint": "Clique no ícone de definições no cartão do local para configurar os horários de turno",
+        "configureSlots": "Configurar Horários de Turno",
         "headquarters": "Sede",
         "slots": {
           "morning": "Manhã",
@@ -2482,6 +2519,10 @@ const messages = {
           "night": "Noite"
         },
         "addStaff": "+/- Pessoal",
+        "editStaff": "Editar pessoal",
+        "staffCount": "{{count}} pessoas atribuídas",
+        "overtimeWarning": "Mais de {{max}}h/semana: {{names}}",
+        "overtime": "Acima das horas semanais",
         "slotShift": "Turno da {{slot}}",
         "filterStaff": "Filtrar pessoal...",
         "noEmployees": "Nenhum funcionário encontrado",
@@ -4513,6 +4554,7 @@ const messages = {
       "users": "Utilizadores",
       "superAdmins": "Super Administradores",
       "packages": "Pacotes",
+      "contractTemplates": "Modelos de Contrato",
       "auditLog": "Registo de Auditoria",
       "backToApp": "Voltar à Aplicação",
       "adminConsole": "Consola de Administração",
@@ -4703,7 +4745,8 @@ const messages = {
         "totalTenants": "Total de Inquilinos",
         "active": "Ativos",
         "suspended": "Suspensos",
-        "enterprise": "Empresa"
+        "enterprise": "Empresa",
+        "paying": "Pagantes"
       },
       "allTenants": "Todos os inquilinos",
       "tenantsFound": "{{count}} inquilinos encontrados",
@@ -4716,13 +4759,18 @@ const messages = {
         "tenant": "Inquilino",
         "status": "Estado",
         "plan": "Plano",
+        "modules": "Módulos",
+        "users": "Utilizadores",
         "created": "Criado",
         "paidUntil": "Pago até",
         "monthlySubscription": "Subscrição mensal",
         "actions": "Ações"
       },
+      "usersAdmins": "{{count}} administradores",
+      "usersStaff": "{{count}} funcionários",
       "actions": {
         "viewDetails": "Ver detalhes",
+        "edit": "Editar",
         "impersonate": "Personificar",
         "suspend": "Suspender",
         "reactivate": "Reativar"

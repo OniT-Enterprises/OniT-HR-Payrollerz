@@ -26,6 +26,7 @@ __exportStar(require("./admin"), exports);
 __exportStar(require("./documentAlerts"), exports);
 __exportStar(require("./money"), exports);
 __exportStar(require("./chat"), exports);
+__exportStar(require("./contracts"), exports);
 __exportStar(require("./audit"), exports);
 __exportStar(require("./billing"), exports);
 __exportStar(require("./email"), exports);

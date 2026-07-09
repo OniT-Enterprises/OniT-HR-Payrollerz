@@ -52,6 +52,7 @@ import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
 import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
+import ContractGeneratorDialog from "@/components/staff/ContractGeneratorDialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -69,6 +70,7 @@ import {
   Mail,
   Phone,
   Smartphone,
+  Sparkles,
   AlertTriangle,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -79,11 +81,12 @@ const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?:
 };
 
 // Normalize employment type from Firestore (may be lowercase) to enum values
-const normalizeEmploymentType = (value: string): "Full-time" | "Part-time" | "Contractor" => {
-  const map: Record<string, "Full-time" | "Part-time" | "Contractor"> = {
+const normalizeEmploymentType = (value: string): "Full-time" | "Part-time" | "Contractor" | "Shareholder" => {
+  const map: Record<string, "Full-time" | "Part-time" | "Contractor" | "Shareholder"> = {
     'full-time': 'Full-time', 'fulltime': 'Full-time',
     'part-time': 'Part-time', 'parttime': 'Part-time',
     'contractor': 'Contractor', 'contract': 'Contractor',
+    'shareholder': 'Shareholder',
   };
   return map[value.toLowerCase()] || 'Full-time';
 };
@@ -230,6 +233,7 @@ export default function AddEmployee() {
 
   // UI state
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showContractGenerator, setShowContractGenerator] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showColumnMapper, setShowColumnMapper] = useState(false);
@@ -700,6 +704,19 @@ export default function AddEmployee() {
           </div>
         )}
 
+        {/* Contract Generator Dialog */}
+        <ContractGeneratorDialog
+          open={showContractGenerator}
+          onOpenChange={setShowContractGenerator}
+          input={{
+            form: formValues,
+            docValues,
+            additionalInfo,
+          }}
+          employeeName={`${formValues.firstName || ""} ${formValues.lastName || ""}`.trim()}
+          onAttach={(file) => handleAdditionalInfoChange("workContract", file)}
+        />
+
         {/* Column Mapper Dialog */}
         <Dialog open={showColumnMapper} onOpenChange={setShowColumnMapper}>
           <DialogContent className="max-w-7xl max-h-[90vh] overflow-auto">
@@ -968,6 +985,7 @@ export default function AddEmployee() {
                           <SelectItem value="Full-time">{t("addEmployee.fields.employmentTypes.fullTime")}</SelectItem>
                           <SelectItem value="Part-time">{t("addEmployee.fields.employmentTypes.partTime")}</SelectItem>
                           <SelectItem value="Contractor">{t("addEmployee.fields.employmentTypes.contractor")}</SelectItem>
+                          <SelectItem value="Shareholder">{t("addEmployee.fields.employmentTypes.shareholder")}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -977,7 +995,18 @@ export default function AddEmployee() {
 
               {/* Work Contract Upload */}
               <div className="space-y-2">
+                <div className="flex items-center justify-between">
                   <Label htmlFor="workContract">{t("addEmployee.fields.workContract")}</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowContractGenerator(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                    {t("addEmployee.contractGen.openButton")}
+                  </Button>
+                </div>
                 <Input
                   id="workContract"
                   type="file"
@@ -985,7 +1014,14 @@ export default function AddEmployee() {
                   onChange={e => handleAdditionalInfoChange("workContract", e.target.files?.[0] || null)}
                   className={isEditMode ? (additionalInfo.workContract || editingEmployee?.documents?.workContract?.fileUrl ? "border-green-500" : "border-red-500") : ""}
                 />
+                {additionalInfo.workContract ? (
+                  <p className="text-xs text-primary flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    {t("addEmployee.contractGen.attachedFile", { name: additionalInfo.workContract.name })}
+                  </p>
+                ) : (
                   <p className="text-xs text-muted-foreground">{t("addEmployee.fields.workContractHelp")}</p>
+                )}
               </div>
             </div>
           </StepContent>

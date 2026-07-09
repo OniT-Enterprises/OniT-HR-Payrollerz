@@ -160,6 +160,10 @@ export const paths = {
   analytics: (tid: string) => `tenants/${tid}/analytics`,
   analytic: (tid: string, docId: string) => `tenants/${tid}/analytics/${docId}`,
   
+  // Contract templates (global, superadmin-managed, readable by all tenants)
+  contractTemplates: () => 'contractTemplates',
+  contractTemplate: (templateId: string) => `contractTemplates/${templateId}`,
+
   // Reference data (global, read-only)
   taxTables: () => 'reference/taxTables',
   taxTable: (year: string) => `reference/taxTables/${year}`,

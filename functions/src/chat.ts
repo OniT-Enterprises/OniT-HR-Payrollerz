@@ -18,7 +18,7 @@ const APP_CHECK_ENFORCED = process.env.ENFORCE_APP_CHECK === "true";
 /**
  * Get OpenAI API key from tenant settings or global settings
  */
-async function getOpenAIApiKey(tenantId: string): Promise<string | null> {
+export async function getOpenAIApiKey(tenantId: string): Promise<string | null> {
   // First try tenant-specific settings
   const tenantSettingsDoc = await db
     .doc(`tenants/${tenantId}/settings/integrations`)

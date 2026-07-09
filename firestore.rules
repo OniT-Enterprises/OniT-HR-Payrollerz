@@ -855,6 +855,16 @@ service cloud.firestore {
     }
 
     // ============================================
+    // CONTRACT TEMPLATES (Global)
+    // Uploaded by superadmins, readable by any signed-in user so tenants
+    // can generate work contracts when adding employees.
+    // ============================================
+    match /contractTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // ============================================
     // LEGACY COLLECTIONS (for migration)
     // These collections store tenantId on each document.
     // SECURITY: Enforce tenant isolation via tenantId field checks.

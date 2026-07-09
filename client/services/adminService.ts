@@ -26,7 +26,15 @@ import {
   PackagesConfig,
   SuperAdminRequest,
 } from "@/types/admin";
-import { TenantConfig, TenantPlan, TenantStatus, PLAN_LIMITS } from "@/types/tenant";
+import {
+  ModulePermission,
+  PLAN_LIMITS,
+  TenantConfig,
+  TenantMember,
+  TenantPlan,
+  TenantRole,
+  TenantStatus,
+} from "@/types/tenant";
 import { AdminAuditEntry, AuditLogEntry, UserProfile } from "@/types/user";
 
 export type { AuditLogEntry };
@@ -679,6 +687,79 @@ class AdminService {
       console.error("Error fetching tenant stats:", error);
       return { memberCount: 0, employeeCount: 0 };
     }
+  }
+
+  async getTenantMembers(tenantId: string): Promise<TenantMember[]> {
+    if (!db) return [];
+
+    try {
+      const snapshot = await getDocs(collection(db, paths.members(tenantId)));
+      const members = snapshot.docs.map((memberDoc) => ({
+        ...(memberDoc.data() as TenantMember),
+        uid: memberDoc.id,
+      }));
+
+      const roleOrder: Record<string, number> = { owner: 0, "hr-admin": 1, manager: 2, viewer: 3 };
+      return members.sort((left, right) => {
+        const byRole = (roleOrder[left.role] ?? 9) - (roleOrder[right.role] ?? 9);
+        if (byRole !== 0) return byRole;
+        return (left.email || "").localeCompare(right.email || "");
+      });
+    } catch (error) {
+      console.error("Error fetching tenant members:", error);
+      throw error;
+    }
+  }
+
+  async addTenantMember(params: {
+    tenantId: string;
+    tenantName: string;
+    userEmail: string;
+    role: TenantRole;
+    modules?: ModulePermission[];
+  }): Promise<void> {
+    const { httpsCallable } = await import("firebase/functions");
+    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
+      await getFunctionsLazy(),
+      "addTenantMember",
+    );
+    await callable(params);
+  }
+
+  async updateTenantMember(params: {
+    tenantId: string;
+    memberUid: string;
+    role?: TenantRole;
+    modules?: ModulePermission[];
+  }): Promise<void> {
+    const { httpsCallable } = await import("firebase/functions");
+    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
+      await getFunctionsLazy(),
+      "updateTenantMember",
+    );
+    await callable(params);
+  }
+
+  async removeTenantMember(params: { tenantId: string; memberUid: string }): Promise<void> {
+    const { httpsCallable } = await import("firebase/functions");
+    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
+      await getFunctionsLazy(),
+      "removeTenantMember",
+    );
+    await callable(params);
+  }
+
+  async sendTenantMemberPasswordReset(params: {
+    tenantId: string;
+    memberUid: string;
+  }): Promise<string> {
+    const { httpsCallable } = await import("firebase/functions");
+    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
+      await getFunctionsLazy(),
+      "sendTenantMemberPasswordReset",
+    );
+    const result = await callable(params);
+    return result.data.message;
   }
 
   async getAllUsers(maxResults = 500): Promise<UserProfile[]> {

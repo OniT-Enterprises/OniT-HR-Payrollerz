@@ -226,10 +226,11 @@ export const addEmployeeFormSchema = z.object({
         'full-time': 'Full-time', 'fulltime': 'Full-time',
         'part-time': 'Part-time', 'parttime': 'Part-time',
         'contractor': 'Contractor', 'contract': 'Contractor',
+        'shareholder': 'Shareholder',
       };
       return map[val.toLowerCase()] || val;
     },
-    z.enum(['Full-time', 'Part-time', 'Contractor']).default('Full-time'),
+    z.enum(['Full-time', 'Part-time', 'Contractor', 'Shareholder']).default('Full-time'),
   ),
 
   // Step 3: Compensation

@@ -5,6 +5,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = exports.hrChat = void 0;
+exports.getOpenAIApiKey = getOpenAIApiKey;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
 const v2_1 = require("firebase-functions/v2");

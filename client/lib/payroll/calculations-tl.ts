@@ -36,7 +36,8 @@ import {
 
 export interface TLEmployeeTaxInfo {
   isResident: boolean;           // Resident vs non-resident
-  hasTaxExemption: boolean;      // Special exemptions if any
+  hasTaxExemption: boolean;      // Exempt from WIT withholding (e.g. shareholder distributions)
+  inssExempt?: boolean;          // Not INSS-enrolled (e.g. shareholders paid distributions, not wages)
 }
 
 export interface TLPayrollInput {
@@ -629,16 +630,21 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // INSS mandatory registration: contribution base is the contributable remuneration earned in the period.
+  // Exempt payees (e.g. shareholders) are not enrolled, so their base is zero.
   const contributableRemuneration = Math.max(0, subtractMoney(inssBase, absenceDeduction, lateDeduction));
-  const inssContributionBase = input.inssContributionBase ?? contributableRemuneration;
+  const inssContributionBase = input.taxInfo.inssExempt
+    ? 0
+    : input.inssContributionBase ?? contributableRemuneration;
 
   // Withholding Income Tax (WIT)
-  const incomeTax = calculateIncomeTax(
-    subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
-    input.taxInfo.isResident,
-    input.payFrequency,
-    input.totalPeriodsInMonth
-  );
+  const incomeTax = input.taxInfo.hasTaxExemption
+    ? 0
+    : calculateIncomeTax(
+        subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
+        input.taxInfo.isResident,
+        input.payFrequency,
+        input.totalPeriodsInMonth
+      );
 
   if (incomeTax > 0) {
     deductions.push({
@@ -758,7 +764,13 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     warnings.push('Net pay is negative. Please review deductions.');
   }
 
-  if (input.taxInfo.isResident && taxableIncome < TL_INCOME_TAX.residentThreshold) {
+  if (input.taxInfo.hasTaxExemption || input.taxInfo.inssExempt) {
+    const exempted = [
+      ...(input.taxInfo.hasTaxExemption ? ['WIT'] : []),
+      ...(input.taxInfo.inssExempt ? ['INSS'] : []),
+    ];
+    warnings.push(`Statutory exemption applied: ${exempted.join(' and ')} not withheld for this payee.`);
+  } else if (input.taxInfo.isResident && taxableIncome < TL_INCOME_TAX.residentThreshold) {
     warnings.push(`Income below $${TL_INCOME_TAX.residentThreshold} threshold - no income tax applied.`);
   }
 
@@ -902,9 +914,13 @@ export function calculateMonthlyWeeklyPayrolls(
 export function validateTLPayrollInput(input: TLPayrollInput): string[] {
   const errors: string[] = [];
 
+  // Minimum wage applies to employment relationships. Fully exempt payees (shareholders
+  // receiving distributions rather than wages) are outside it and may be paid any amount.
+  const isStatutoryExempt = input.taxInfo.hasTaxExemption && input.taxInfo.inssExempt;
+
   if (input.monthlySalary < 0) {
     errors.push('Monthly salary cannot be negative.');
-  } else if (input.monthlySalary < TL_INSS.minimumSalary) {
+  } else if (input.monthlySalary < TL_INSS.minimumSalary && !isStatutoryExempt) {
     errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${TL_INSS.minimumSalary}).`);
   }
 

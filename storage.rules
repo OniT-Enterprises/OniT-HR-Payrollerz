@@ -68,6 +68,20 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
+    // Check if user is a platform superadmin (custom claim or users doc flag)
+    function isPlatformSuperAdmin() {
+      return isAuthenticated() && (
+        (
+          request.auth.token.keys().hasAny(['superadmin']) &&
+          request.auth.token.superadmin == true
+        ) ||
+        (
+          firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true
+        )
+      );
+    }
+
     function isOpenJob(tenantId, jobId) {
       return firestore.exists(/databases/(default)/documents/jobs/$(jobId)) &&
         firestore.get(/databases/(default)/documents/jobs/$(jobId)).data.tenantId == tenantId &&
@@ -117,6 +131,17 @@ service firebase.storage {
     match /tenants/{tenantId}/branding/{allPaths=**} {
       allow read: if isTenantMember(tenantId);
       allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedImageType();
+    }
+
+    // ============================================
+    // PLATFORM-WIDE FILES
+    // ============================================
+
+    // Contract template files (uploaded by superadmins, readable by all tenants)
+    match /platform/contractTemplates/{templateId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isPlatformSuperAdmin() && isUnderSizeLimit() && isAllowedDocType();
+      allow delete: if isPlatformSuperAdmin();
     }
 
     // Attendance photos (supervisor crew clock-in)

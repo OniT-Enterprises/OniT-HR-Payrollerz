@@ -105,6 +105,7 @@ const Settings = lazyWithRetry(() => import("@/pages/Settings"));
 const Billing = lazyWithRetry(() => import("@/pages/Billing"));
 const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
 const AuthOnboarding = lazyWithRetry(() => import("@/pages/auth/Onboarding"));
+const ForgotPassword = lazyWithRetry(() => import("@/pages/auth/ForgotPassword"));
 const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
@@ -211,6 +212,7 @@ const TenantDetail = lazyWithRetry(() => import("@/pages/admin/TenantDetail"));
 const CreateTenant = lazyWithRetry(() => import("@/pages/admin/CreateTenant"));
 const UserList = lazyWithRetry(() => import("@/pages/admin/UserList"));
 const PackagesPage = lazyWithRetry(() => import("@/pages/admin/PackagesPage"));
+const ContractTemplatesAdmin = lazyWithRetry(() => import("@/pages/admin/ContractTemplates"));
 const AuditLog = lazyWithRetry(() => import("@/pages/admin/AuditLog"));
 const AdminSetup = lazyWithRetry(() => import("@/pages/admin/AdminSetup"));
 const DocumentAlerts = lazyWithRetry(() => import("@/pages/admin/DocumentAlerts"));
@@ -226,6 +228,7 @@ export const authRoutes = (
   <>
     <Route path="/auth/login" element={<Login />} />
     <Route path="/auth/signup" element={<Signup />} />
+    <Route path="/auth/forgot-password" element={<ForgotPassword />} />
     <Route path="/auth/onboarding" element={<AuthOnboarding />} />
     {/* Public candidate apply page — no auth required */}
     <Route path="/apply/:jobId" element={<PublicApply />} />
@@ -1138,6 +1141,14 @@ export const adminRoutes = (
       element={
         <SuperadminRoute>
           <PackagesPage />
+        </SuperadminRoute>
+      }
+    />
+    <Route
+      path="/admin/contract-templates"
+      element={
+        <SuperadminRoute>
+          <ContractTemplatesAdmin />
         </SuperadminRoute>
       }
     />

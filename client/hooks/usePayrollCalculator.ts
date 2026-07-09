@@ -51,6 +51,12 @@ interface UsePayrollCalculatorOptions {
   userId: string;
 }
 
+// Shareholders receive profit distributions, not wages — exempt from WIT withholding and
+// INSS enrollment, and outside minimum-wage rules.
+function isShareholder(employee: Employee): boolean {
+  return (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder";
+}
+
 function getInitialPayrollDates() {
   // Use toDateStringTL(new Date()) to get the current date in TL timezone,
   // then derive year/month from that string to avoid browser timezone drift.
@@ -190,7 +196,8 @@ export function usePayrollCalculator({
       subsidioAnual,
       taxInfo: {
         isResident,
-        hasTaxExemption: false,
+        hasTaxExemption: isShareholder(data.employee),
+        inssExempt: isShareholder(data.employee),
       },
       loanRepayment: 0,
       advanceRepayment: 0,
@@ -480,7 +487,7 @@ export function usePayrollCalculator({
       if (excludedEmployees.has(d.employee.id || "")) continue;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
       const salary = d.employee.compensation.monthlySalary || 0;
-      if (salary > 0 && salary < TL_MINIMUM_WAGE.monthly) {
+      if (salary > 0 && salary < TL_MINIMUM_WAGE.monthly && !isShareholder(d.employee)) {
         warnings.push({ employeeName: name, message: t("runPayroll.warningBelowMinWage", { salary: String(salary), min: String(TL_MINIMUM_WAGE.monthly) }), type: "wage" });
       }
       if (d.overtimeHours > maxMonthlyOT) {
@@ -562,7 +569,11 @@ export function usePayrollCalculator({
         transportAllowance: data.allowances,
         otherEarnings: 0,
         subsidioAnual,
-        taxInfo: { isResident, hasTaxExemption: false },
+        taxInfo: {
+          isResident,
+          hasTaxExemption: isShareholder(data.employee),
+          inssExempt: isShareholder(data.employee),
+        },
         loanRepayment: 0,
         advanceRepayment: 0,
         courtOrders: 0,

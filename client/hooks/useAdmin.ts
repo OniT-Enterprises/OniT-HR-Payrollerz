@@ -5,17 +5,25 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService, TenantProfileInput } from '@/services/adminService';
+import {
+  contractTemplateService,
+  ContractTemplate,
+  ContractTemplateInput,
+} from '@/services/contractTemplateService';
 import { PackagesConfig } from '@/types/admin';
+import { ModulePermission, TenantRole } from '@/types/tenant';
 
 const adminKeys = {
   console: () => ['admin', 'console'] as const,
   tenants: () => ['admin', 'tenants'] as const,
   tenant: (id: string) => ['admin', 'tenant', id] as const,
   tenantStats: (id: string) => ['admin', 'tenant', id, 'stats'] as const,
+  tenantMembers: (id: string) => ['admin', 'tenant', id, 'members'] as const,
   users: () => ['admin', 'users'] as const,
   packages: () => ['admin', 'packages'] as const,
   superAdminRequests: () => ['admin', 'superAdminRequests'] as const,
   auditLog: () => ['admin', 'auditLog'] as const,
+  contractTemplates: () => ['admin', 'contractTemplates'] as const,
 };
 
 // ─── Tenant hooks ────────────────────────────────────────────────
@@ -119,6 +127,73 @@ export function useDeleteTenant() {
   });
 }
 
+// ─── Tenant member hooks ─────────────────────────────────────────
+
+export function useTenantMembers(id: string | undefined) {
+  return useQuery({
+    queryKey: adminKeys.tenantMembers(id!),
+    queryFn: () => adminService.getTenantMembers(id!),
+    enabled: !!id,
+    staleTime: 60 * 1000,
+  });
+}
+
+function useInvalidateTenantMembers() {
+  const queryClient = useQueryClient();
+  return (tenantId: string) => {
+    queryClient.invalidateQueries({ queryKey: adminKeys.tenantMembers(tenantId) });
+    queryClient.invalidateQueries({ queryKey: adminKeys.tenantStats(tenantId) });
+    queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+  };
+}
+
+export function useAddTenantMember() {
+  const invalidate = useInvalidateTenantMembers();
+  return useMutation({
+    mutationFn: (params: {
+      tenantId: string;
+      tenantName: string;
+      userEmail: string;
+      role: TenantRole;
+      modules?: ModulePermission[];
+    }) => adminService.addTenantMember(params),
+    onSuccess: (_, { tenantId }) => invalidate(tenantId),
+  });
+}
+
+export function useUpdateTenantMember() {
+  const invalidate = useInvalidateTenantMembers();
+  return useMutation({
+    mutationFn: (params: {
+      tenantId: string;
+      memberUid: string;
+      role?: TenantRole;
+      modules?: ModulePermission[];
+    }) => adminService.updateTenantMember(params),
+    onSuccess: (_, { tenantId }) => invalidate(tenantId),
+  });
+}
+
+export function useRemoveTenantMember() {
+  const invalidate = useInvalidateTenantMembers();
+  return useMutation({
+    mutationFn: (params: { tenantId: string; memberUid: string }) =>
+      adminService.removeTenantMember(params),
+    onSuccess: (_, { tenantId }) => invalidate(tenantId),
+  });
+}
+
+export function useSendMemberPasswordReset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { tenantId: string; memberUid: string }) =>
+      adminService.sendTenantMemberPasswordReset(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
+  });
+}
+
 // ─── User hooks ──────────────────────────────────────────────────
 
 export function useAllUsers(maxResults?: number) {
@@ -207,6 +282,56 @@ export function useSetSuperadmin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
       queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
+  });
+}
+
+// ─── Contract template hooks ─────────────────────────────────────
+
+export function useContractTemplates() {
+  return useQuery({
+    queryKey: adminKeys.contractTemplates(),
+    queryFn: () => contractTemplateService.getAllTemplates(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateContractTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ContractTemplateInput) =>
+      contractTemplateService.createTemplate(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.contractTemplates() });
+    },
+  });
+}
+
+export function useUpdateContractTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      templateId,
+      updates,
+    }: {
+      templateId: string;
+      updates: Partial<
+        Pick<ContractTemplate, 'name' | 'description' | 'language' | 'bodyText' | 'active'>
+      >;
+    }) => contractTemplateService.updateTemplate(templateId, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.contractTemplates() });
+    },
+  });
+}
+
+export function useDeleteContractTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (template: ContractTemplate) =>
+      contractTemplateService.deleteTemplate(template),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.contractTemplates() });
     },
   });
 }

@@ -68,7 +68,7 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   },
   { id: "position", name: "Job Title/Position", category: "Job Details", required: true, type: "text" },
   { id: "hireDate", name: "Hire Date", category: "Job Details", required: false, type: "date" },
-  { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern"] },
+  { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern", "Shareholder"] },
   { id: "workLocation", name: "Work Location", category: "Job Details", required: false, type: "select", options: ["Office", "Remote", "Hybrid", "Field"] },
   { id: "manager", name: "Manager", category: "Job Details", required: false, type: "text" },
   // Compensation

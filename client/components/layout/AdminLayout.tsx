@@ -17,11 +17,11 @@ import {
   Building2,
   Users,
   Shield,
+  FileSignature,
   FileText,
   LayoutDashboard,
   LogOut,
   Settings,
-  ChevronLeft,
   Moon,
   Sun,
 } from "lucide-react";
@@ -39,6 +39,7 @@ function AdminNavLinks({ pathname, t }: { pathname: string; t: (key: string) => 
     { path: "/admin/tenants", label: t("admin.layout.tenants"), icon: Building2 },
     { path: "/admin/users", label: t("admin.layout.superAdmins"), icon: Users },
     { path: "/admin/packages", label: t("admin.layout.packages"), icon: FileText },
+    { path: "/admin/contract-templates", label: t("admin.layout.contractTemplates"), icon: FileSignature },
     { path: "/admin/audit", label: t("admin.layout.auditLog"), icon: FileText },
   ];
 
@@ -157,16 +158,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="flex h-16 items-center px-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 mr-4 text-muted-foreground hover:text-foreground"
-            onClick={() => navigate("/")}
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {t("admin.layout.backToApp")}
-          </Button>
-
           <button
             type="button"
             onClick={() => navigate("/admin")}

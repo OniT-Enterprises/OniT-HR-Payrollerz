@@ -14,29 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Building2,
   Plus,
   Search,
-  MoreHorizontal,
   Eye,
+  Pencil,
   UserCog,
   Ban,
   CheckCircle,
@@ -44,12 +28,10 @@ import {
   Sparkles,
   Calendar,
   Database,
-  Trash2,
 } from "lucide-react";
-import { useAllTenants, useSuspendTenant, useReactivateTenant, useDeleteTenant } from "@/hooks/useAdmin";
-import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
+import { useAllTenants, useTenantStats } from "@/hooks/useAdmin";
+import { TenantConfig, TenantStatus } from "@/types/tenant";
 import { OptionalTimestamp } from "@/types/firebase";
-import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -61,31 +43,122 @@ const statusColors: Record<TenantStatus, string> = {
   cancelled: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
 };
 
-const planColors: Record<TenantPlan, string> = {
-  free: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
-  starter: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  professional: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
-  enterprise: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-};
+// Every module the platform offers; enabled ones get a colored fill, the rest stay grey.
+const MODULE_PILLS: { key: keyof NonNullable<TenantConfig["features"]>; label: string }[] = [
+  { key: "people", label: "People" },
+  { key: "hiring", label: "Hiring" },
+  { key: "timeleave", label: "Time" },
+  { key: "performance", label: "Perf" },
+  { key: "payroll", label: "Payroll" },
+  { key: "money", label: "Money" },
+  { key: "accounting", label: "Acct" },
+  { key: "reports", label: "Reports" },
+];
 
-const planLabels: Record<TenantPlan, string> = {
-  free: "Free",
-  starter: "Starter",
-  professional: "Professional",
-  enterprise: "Enterprise",
-};
+function ModulePillGrid({ features }: { features: TenantConfig["features"] }) {
+  return (
+    <div className="grid grid-cols-4 gap-1 w-fit">
+      {MODULE_PILLS.map((module) => {
+        const enabled = features?.[module.key] !== false;
+        return (
+          <span
+            key={module.key}
+            className={`rounded px-1.5 py-0.5 text-center text-[10px] font-medium leading-4 ${
+              enabled
+                ? "bg-primary/15 text-primary"
+                : "bg-muted text-muted-foreground/50"
+            }`}
+          >
+            {module.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function TenantUsersCell({ tenant }: { tenant: TenantConfig }) {
+  const { t } = useI18n();
+  const { data: stats, isLoading } = useTenantStats(tenant.id);
+
+  if (isLoading) {
+    return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  }
+
+  const adminCount = stats?.memberCount ?? tenant.currentAdminCount ?? 0;
+  const staffCount = stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0;
+
+  return (
+    <div className="text-sm leading-5">
+      <p className="font-medium">
+        {t("admin.tenantList.usersAdmins", { count: adminCount })}
+      </p>
+      <p className="text-muted-foreground">
+        {t("admin.tenantList.usersStaff", { count: staffCount })}
+      </p>
+    </div>
+  );
+}
+
+function TenantRowActions({
+  tenant,
+  onImpersonate,
+}: {
+  tenant: TenantConfig;
+  onImpersonate: (tenant: TenantConfig) => void;
+}) {
+  const navigate = useNavigate();
+  const { t } = useI18n();
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("admin.tenantList.actions.viewDetails")}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/admin/tenants/${tenant.id}?edit=1`)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("admin.tenantList.actions.edit")}</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onImpersonate(tenant)}
+            disabled={tenant.status !== "active"}
+          >
+            <UserCog className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("admin.tenantList.actions.impersonate")}</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
 
 export default function TenantList() {
   const navigate = useNavigate();
-  const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
   const { t } = useI18n();
   const { data: tenants = [], isLoading: loading } = useAllTenants();
-  const suspendMutation = useSuspendTenant();
-  const reactivateMutation = useReactivateTenant();
-  const deleteMutation = useDeleteTenant();
   const [searchQuery, setSearchQuery] = useState("");
-  const [tenantToDelete, setTenantToDelete] = useState<TenantConfig | null>(null);
 
   const handleImpersonate = async (tenant: TenantConfig) => {
     try {
@@ -94,53 +167,6 @@ export default function TenantList() {
       navigate("/");
     } catch (_error) {
       toast.error(t("admin.tenantList.toastImpersonateFailed"));
-    }
-  };
-
-  const handleSuspend = async (tenant: TenantConfig) => {
-    if (!user || !userProfile) return;
-
-    try {
-      await suspendMutation.mutateAsync({
-        tenantId: tenant.id,
-        reason: "Suspended by admin",
-        actorUid: user.uid,
-        actorEmail: userProfile.email,
-      });
-      toast.success(t("admin.tenantList.toastSuspended", { name: tenant.name }));
-    } catch (_error) {
-      toast.error(t("admin.tenantList.toastSuspendFailed"));
-    }
-  };
-
-  const handleReactivate = async (tenant: TenantConfig) => {
-    if (!user || !userProfile) return;
-
-    try {
-      await reactivateMutation.mutateAsync({
-        tenantId: tenant.id,
-        actorUid: user.uid,
-        actorEmail: userProfile.email,
-      });
-      toast.success(t("admin.tenantList.toastReactivated", { name: tenant.name }));
-    } catch (_error) {
-      toast.error(t("admin.tenantList.toastReactivateFailed"));
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!tenantToDelete || !user || !userProfile?.isSuperAdmin) return;
-
-    try {
-      await deleteMutation.mutateAsync({
-        tenantId: tenantToDelete.id,
-        actorUid: user.uid,
-        actorEmail: userProfile.email,
-      });
-      toast.success(`${tenantToDelete.name} has been deleted`);
-      setTenantToDelete(null);
-    } catch (_error) {
-      toast.error("Failed to delete tenant");
     }
   };
 
@@ -164,8 +190,6 @@ export default function TenantList() {
   };
 
   const getStatusLabel = (status: TenantStatus) => t(`admin.tenantList.status.${status}`);
-  const getPlanLabel = (plan: TenantPlan) =>
-    planLabels[plan] ? t(`admin.tenantList.plan.${plan}`) : "Custom";
   const formatMonthlySubscription = (amount?: number): string => {
     if (typeof amount !== "number" || Number.isNaN(amount)) {
       return "-";
@@ -277,9 +301,9 @@ export default function TenantList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.enterprise")}</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.paying")}</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    {tenants.filter((t) => t.plan === "enterprise").length}
+                    {tenants.filter((t) => (t.monthlySubscriptionAmount ?? 0) > 0).length}
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -357,10 +381,11 @@ export default function TenantList() {
                             {getStatusLabel(tenant.status)}
                           </Badge>
                         </div>
+                        <div className="mt-4 flex flex-wrap items-start gap-4">
+                          <ModulePillGrid features={tenant.features} />
+                          <TenantUsersCell tenant={tenant} />
+                        </div>
                         <div className="mt-4 flex flex-wrap items-center gap-2">
-                          <Badge className={`border ${planColors[tenant.plan]}`}>
-                            {getPlanLabel(tenant.plan)}
-                          </Badge>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             <span>{formatDate(tenant.createdAt)}</span>
@@ -372,61 +397,8 @@ export default function TenantList() {
                             {t("admin.tenantList.table.paidUntil")}: {formatDate(tenant.subscriptionPaidUntil)}
                           </Badge>
                         </div>
-                        <div className="mt-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full justify-between">
-                                {t("common.moreActions")}
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[220px]">
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                {t("admin.tenantList.actions.viewDetails")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleImpersonate(tenant)}
-                                disabled={tenant.status !== "active"}
-                              >
-                                <UserCog className="h-4 w-4 mr-2" />
-                                {t("admin.tenantList.actions.impersonate")}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {tenant.status === "active" ? (
-                                <DropdownMenuItem
-                                  onClick={() => handleSuspend(tenant)}
-                                  className="text-red-600"
-                                >
-                                  <Ban className="h-4 w-4 mr-2" />
-                                  {t("admin.tenantList.actions.suspend")}
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleReactivate(tenant)}
-                                  className="text-emerald-600"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  {t("admin.tenantList.actions.reactivate")}
-                                </DropdownMenuItem>
-                              )}
-                              {userProfile?.isSuperAdmin && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => setTenantToDelete(tenant)}
-                                    className="text-red-600"
-                                    disabled={deleteMutation.isPending}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="mt-3 flex justify-end border-t border-border/50 pt-2">
+                          <TenantRowActions tenant={tenant} onImpersonate={handleImpersonate} />
                         </div>
                       </CardContent>
                     </Card>
@@ -438,7 +410,8 @@ export default function TenantList() {
                     <TableRow>
                       <TableHead>{t("admin.tenantList.table.tenant")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.status")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.plan")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.modules")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.users")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.created")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.paidUntil")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.monthlySubscription")}</TableHead>
@@ -468,9 +441,10 @@ export default function TenantList() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`border ${planColors[tenant.plan]}`}>
-                            {getPlanLabel(tenant.plan)}
-                          </Badge>
+                          <ModulePillGrid features={tenant.features} />
+                        </TableCell>
+                        <TableCell>
+                          <TenantUsersCell tenant={tenant} />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -489,60 +463,7 @@ export default function TenantList() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-2">
-                                {t("common.moreActions")}
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                {t("admin.tenantList.actions.viewDetails")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleImpersonate(tenant)}
-                                disabled={tenant.status !== "active"}
-                              >
-                                <UserCog className="h-4 w-4 mr-2" />
-                                {t("admin.tenantList.actions.impersonate")}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              {tenant.status === "active" ? (
-                                <DropdownMenuItem
-                                  onClick={() => handleSuspend(tenant)}
-                                  className="text-red-600"
-                                >
-                                  <Ban className="h-4 w-4 mr-2" />
-                                  {t("admin.tenantList.actions.suspend")}
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleReactivate(tenant)}
-                                  className="text-emerald-600"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  {t("admin.tenantList.actions.reactivate")}
-                                </DropdownMenuItem>
-                              )}
-                              {userProfile?.isSuperAdmin && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => setTenantToDelete(tenant)}
-                                    className="text-red-600"
-                                    disabled={deleteMutation.isPending}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <TenantRowActions tenant={tenant} onImpersonate={handleImpersonate} />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -553,31 +474,6 @@ export default function TenantList() {
           </CardContent>
         </Card>
       </div>
-
-      <AlertDialog open={Boolean(tenantToDelete)} onOpenChange={(open) => !open && setTenantToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {tenantToDelete?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete the tenant record for {tenantToDelete?.name}. Only superadmins can perform this action.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault();
-                void handleDelete();
-              }}
-              disabled={deleteMutation.isPending || !userProfile?.isSuperAdmin}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AdminLayout>
   );
 }

@@ -129,6 +129,74 @@ describe("TL payroll calculations", () => {
 });
 
 // ============================================================
+// Statutory exemptions (shareholder distributions)
+// ============================================================
+
+describe("Statutory exemptions (shareholders)", () => {
+  const exemptTaxInfo = { isResident: true, hasTaxExemption: true, inssExempt: true };
+
+  it("skips WIT when hasTaxExemption is set", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: true, hasTaxExemption: true },
+      })
+    );
+    expect(result.incomeTax).toBe(0);
+  });
+
+  it("skips WIT for exempt non-residents too", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: false, hasTaxExemption: true },
+      })
+    );
+    expect(result.incomeTax).toBe(0);
+  });
+
+  it("skips employee and employer INSS when inssExempt is set", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: true, hasTaxExemption: false, inssExempt: true },
+      })
+    );
+    expect(result.inssBase).toBe(0);
+    expect(result.inssEmployee).toBe(0);
+    expect(result.inssEmployer).toBe(0);
+  });
+
+  it("pays fully exempt payees gross with no statutory deductions", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 1000, bonus: 5000, taxInfo: exemptTaxInfo })
+    );
+    expect(result.grossPay).toBe(6000);
+    expect(result.netPay).toBe(6000);
+    expect(result.totalEmployerCost).toBe(6000);
+    expect(result.deductions.filter((d) => d.isStatutory)).toEqual([]);
+    expect(result.warnings.some((w) => w.includes("exemption"))).toBe(true);
+  });
+
+  it("allows below-minimum-wage amounts for fully exempt payees", () => {
+    const errors = validateTLPayrollInput(
+      makeBaseInput({ monthlySalary: 0, taxInfo: exemptTaxInfo })
+    );
+    expect(errors).toEqual([]);
+  });
+
+  it("still enforces minimum wage when only WIT-exempt", () => {
+    const errors = validateTLPayrollInput(
+      makeBaseInput({
+        monthlySalary: 50,
+        taxInfo: { isResident: true, hasTaxExemption: true },
+      })
+    );
+    expect(errors.some((e) => e.includes("minimum wage"))).toBe(true);
+  });
+});
+
+// ============================================================
 // #17: Subsidio Anual (13th Month) Pro-ration
 // ============================================================
 

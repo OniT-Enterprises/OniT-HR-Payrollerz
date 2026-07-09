@@ -487,6 +487,13 @@ const messages = {
     "continueWithGoogle": "Kontinua ho Google",
     "orDivider": "ka",
     "forgotPassword": "Haluha password?",
+    "forgotPasswordTitle": "Reset ita-nia password",
+    "forgotPasswordSubtitle": "Hatama ita-nia email no ami sei haruka ligasaun atu reset",
+    "sendResetLink": "Haruka ligasaun reset",
+    "sendingResetLink": "Haruka hela...",
+    "resetEmailSentTitle": "Verifika ita-nia email",
+    "resetEmailSentDetail": "Se konta iha ba {{email}}, ligasaun reset password laran daudauk.",
+    "backToLogin": "Fila ba tama",
     "noAccount": "Laiha konta?",
     "signUp": "Rejistu",
     "onboarding": {
@@ -509,7 +516,8 @@ const messages = {
       "googleSignInFailed": "Tama ho Google la konsege. Favór koko fali.",
       "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
       "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
-      "invalidEmail": "Enderesu email invállidu."
+      "invalidEmail": "Enderesu email invállidu.",
+      "resetFailed": "La konsege haruka email reset. Favór koko fali."
     },
     "signup": {
       "titleAccount": "Kria Ita-nia Konta",
@@ -1565,7 +1573,8 @@ const messages = {
       "employmentTypes": {
         "fullTime": "Tempo tomak",
         "partTime": "Part-time",
-        "contractor": "Kontratadu"
+        "contractor": "Kontratadu",
+        "shareholder": "Asionista"
       },
       "sefopeTitle": "Registu SEFOPE (Ministeriu Traballu)",
       "sefopeTooltip": "Presiza ba empregadu TL hotu",
@@ -1574,6 +1583,32 @@ const messages = {
       "sefopeDate": "Data Registu",
       "workContract": "Kontratu Servisu",
       "workContractHelp": "Upload kontratu (PDF/DOC)"
+    },
+    "contractGen": {
+      "openButton": "Kria husi modelu",
+      "title": "Kria kontratu servisu",
+      "description": "Hili modelu kontratu ida no prienxe automatikamente ho dadus funsionáriu nian, ka uza Prienxe Lalais ho IA.",
+      "selectTemplate": "Modelu kontratu",
+      "selectPlaceholder": "Hili modelu ida",
+      "autoFill": "Prienxe automátiku",
+      "quickFillAi": "Prienxe Lalais ho IA",
+      "aiWorking": "Prienxe hela ho IA…",
+      "aiDoneTitle": "Kontratu prienxe tiha ona",
+      "aiDoneDesc": "Reve testu kontratu nian molok anexa.",
+      "aiFailedTitle": "IA la konsege prienxe",
+      "aiFailedDesc": "La konsege prienxe modelu ho IA. Koko fali ka edita testu manualmente.",
+      "missingTokens": "La iha dadus ba:",
+      "preview": "Pre-vizualizasaun kontratu",
+      "previewHint": "Ita bele edita testu molok anexa ka download.",
+      "noTemplates": "Seidauk iha modelu kontratu. Husu ba administradór plataforma atu upload ida.",
+      "downloadPdf": "Download PDF",
+      "attach": "Anexa nudar kontratu servisu",
+      "attachedTitle": "Kontratu anexa tiha ona",
+      "attachedDesc": "PDF ne'ebé kria sei upload bainhira ita rai funsionáriu.",
+      "attachedFile": "Anexa ona: {{name}}",
+      "pdfFooter": "Kria husi Xefe",
+      "pdfFailedTitle": "La konsege kria PDF",
+      "pdfFailedDesc": "La konsege kria PDF. Favór koko fali."
     },
     "compensation": {
       "salaryLabel": "Saláriu Mensal (USD)",
@@ -2472,9 +2507,11 @@ const messages = {
         "nextWeek": "Semana oin mai",
         "day": "Loron",
         "to": "to'o",
+        "done": "Hotu",
         "shiftsAt": "{{count}} turnu iha {{location}}",
         "noSlots": "La iha turnu ativu",
-        "noSlotsHint": "Ativa pelu menus turnu ida iha leten atu haree tabela",
+        "noSlotsHint": "Klik ikon konfigurasaun iha kartaun lokal atu konfigura oras turnu",
+        "configureSlots": "Konfigura Oras Turnu",
         "headquarters": "Sede",
         "slots": {
           "morning": "Dadeer",
@@ -2482,6 +2519,10 @@ const messages = {
           "night": "Kalan"
         },
         "addStaff": "+/- Empregadu",
+        "editStaff": "Edita empregadu",
+        "staffCount": "Empregadu {{count}} atribui ona",
+        "overtimeWarning": "Liu {{max}}h/semana: {{names}}",
+        "overtime": "Liu oras semanál",
         "slotShift": "Turnu {{slot}}",
         "filterStaff": "Filtra empregadu...",
         "noEmployees": "La hetan empregadu",
@@ -3286,6 +3327,7 @@ const messages = {
       "users": "Utilizadór sira",
       "superAdmins": "Super Admin sira",
       "packages": "Pakote sira",
+      "contractTemplates": "Modelu Kontratu sira",
       "auditLog": "Log Auditoría",
       "backToApp": "Fila ba Aplikasaun",
       "adminConsole": "Konsola Admin",
@@ -3476,7 +3518,8 @@ const messages = {
         "totalTenants": "Total Tenante",
         "active": "Ativu",
         "suspended": "Suspende",
-        "enterprise": "Empreza"
+        "enterprise": "Empreza",
+        "paying": "Selu hela"
       },
       "allTenants": "Tenante hotu",
       "tenantsFound": "Tenante {{count}} hetan",
@@ -3489,13 +3532,18 @@ const messages = {
         "tenant": "Tenante",
         "status": "Estatutu",
         "plan": "Planu",
+        "modules": "Modulu sira",
+        "users": "Uzuáriu sira",
         "created": "Kria",
         "paidUntil": "Selu to'o",
         "monthlySubscription": "Subskrisaun mensál",
         "actions": "Asaun"
       },
+      "usersAdmins": "Admin {{count}}",
+      "usersStaff": "Staff {{count}}",
       "actions": {
         "viewDetails": "Haree detalle",
+        "edit": "Edita",
         "impersonate": "Tama hanesan",
         "suspend": "Suspende",
         "reactivate": "Reativa"

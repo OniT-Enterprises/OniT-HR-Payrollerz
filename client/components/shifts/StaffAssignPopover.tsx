@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPlus, Loader2 } from "lucide-react";
+import { SquarePen, Loader2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { ShiftSlot } from "@/services/shiftService";
 
@@ -66,11 +66,12 @@ export default function StaffAssignPopover({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="sm"
-          className="h-7 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          size="icon"
+          className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          aria-label={t("timeLeave.shiftScheduling.locationView.editStaff")}
+          title={t("timeLeave.shiftScheduling.locationView.editStaff")}
         >
-          <UserPlus className="h-3 w-3" />
-          {t("timeLeave.shiftScheduling.locationView.addStaff")}
+          <SquarePen className="h-3.5 w-3.5" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
