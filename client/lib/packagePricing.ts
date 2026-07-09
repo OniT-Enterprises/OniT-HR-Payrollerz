@@ -2,46 +2,32 @@ import type {
   BillableModuleId,
   PackagesConfig,
   PackagePlanDefinition,
-  ModulePrice,
 } from "@/types/admin";
 import type { TenantPlan } from "@/types/tenant";
 
 export interface PackageEstimateInput {
   planId: TenantPlan;
-  staffCount: number;
-  adminCount: number;
-  selectedModules?: BillableModuleId[];
+  employeeCount: number;
 }
 
 export interface PackageEstimate {
   plan: PackagePlanDefinition;
+  /** employees * pricePerEmployee (0 for the free plan). */
   monthlyTotal: number;
-  moduleTotal: number;
-  staffTotal: number;
-  adminTotal: number;
-  selectedModules: BillableModuleId[];
+  pricePerEmployee: number;
+  employeeCount: number;
 }
 
-const DEFAULT_MODULE_PRICES: ModulePrice[] = [
-  { id: "people", label: "People", monthlyPrice: 75 },
-  { id: "timeleave", label: "Time & Leave", monthlyPrice: 45 },
-  { id: "payroll", label: "Payroll", monthlyPrice: 95 },
-  { id: "money", label: "Money", monthlyPrice: 65 },
-  { id: "accounting", label: "Accounting", monthlyPrice: 85 },
-  { id: "reports", label: "Reports", monthlyPrice: 35 },
-];
+// The "free" plan is always $0 regardless of headcount.
+export const FREE_PLAN_ID: TenantPlan = "free";
 
 export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
-  modulePrices: DEFAULT_MODULE_PRICES,
-  personPrices: {
-    staffMonthlyPrice: 2,
-    adminMonthlyPrice: 12,
-  },
   planDefinitions: [
     {
       id: "free",
       label: "Free",
-      description: "Start with core people records for a small team.",
+      description: "Core people records for a small team.",
+      pricePerEmployee: 0,
       includedModules: ["people"],
       maxAdmins: 1,
       staffAppIncluded: false,
@@ -52,6 +38,7 @@ export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
       id: "starter",
       label: "Starter",
       description: "People operations with leave and reporting basics.",
+      pricePerEmployee: 2,
       includedModules: ["people", "timeleave", "reports"],
       maxAdmins: 2,
       staffAppIncluded: true,
@@ -62,6 +49,7 @@ export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
       id: "professional",
       label: "Professional",
       description: "Payroll, time, and business reporting for growing teams.",
+      pricePerEmployee: 4,
       includedModules: ["people", "timeleave", "payroll", "reports"],
       maxAdmins: 5,
       staffAppIncluded: true,
@@ -72,6 +60,7 @@ export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
       id: "enterprise",
       label: "Enterprise",
       description: "Full HR, payroll, money, accounting, and reporting suite.",
+      pricePerEmployee: 6,
       includedModules: ["people", "timeleave", "payroll", "money", "accounting", "reports"],
       maxAdmins: null,
       staffAppIncluded: true,
@@ -82,27 +71,18 @@ export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
 };
 
 export function normalizeBillingPackagesConfig(raw: unknown): PackagesConfig {
-  const input = raw && typeof raw === "object" ? raw as Partial<PackagesConfig> : {};
+  const input = raw && typeof raw === "object" ? (raw as Partial<PackagesConfig>) : {};
   return {
-    ...DEFAULT_PACKAGES_CONFIG,
-    ...input,
-    modulePrices: normalizeModulePrices(input.modulePrices),
-    personPrices: {
-      ...DEFAULT_PACKAGES_CONFIG.personPrices,
-      ...(input.personPrices ?? {}),
-    },
     planDefinitions: normalizePlanDefinitions(input.planDefinitions),
   };
 }
 
-// The "free" plan is always $0 — it is the no-cost tier regardless of which
-// modules it nominally includes or how many people the org has.
-export const FREE_PLAN_ID: TenantPlan = "free";
-
 export function getPackagePlan(config: PackagesConfig, planId: TenantPlan): PackagePlanDefinition {
-  return config.planDefinitions.find((plan) => plan.id === planId)
-    ?? DEFAULT_PACKAGES_CONFIG.planDefinitions.find((plan) => plan.id === planId)
-    ?? DEFAULT_PACKAGES_CONFIG.planDefinitions[0];
+  return (
+    config.planDefinitions.find((plan) => plan.id === planId) ??
+    DEFAULT_PACKAGES_CONFIG.planDefinitions.find((plan) => plan.id === planId) ??
+    DEFAULT_PACKAGES_CONFIG.planDefinitions[0]
+  );
 }
 
 export function calculatePackageEstimate(
@@ -111,36 +91,15 @@ export function calculatePackageEstimate(
 ): PackageEstimate {
   const config = normalizeBillingPackagesConfig(configInput);
   const plan = getPackagePlan(config, input.planId);
-  const selectedModules = input.selectedModules ?? plan.includedModules;
-
-  // Free tier is always $0, no matter its modules or headcount.
-  if (plan.id === FREE_PLAN_ID) {
-    return { plan, monthlyTotal: 0, moduleTotal: 0, staffTotal: 0, adminTotal: 0, selectedModules };
-  }
-
-  const moduleTotal = selectedModules.reduce((total, moduleId) => {
-    const override = plan.modulePriceOverrides?.[moduleId];
-    const modulePrice = config.modulePrices.find((item) => item.id === moduleId)?.monthlyPrice ?? 0;
-    return total + (override ?? modulePrice);
-  }, 0);
-  const staffTotal = Math.max(0, input.staffCount) * config.personPrices.staffMonthlyPrice;
-  const adminTotal = Math.max(0, input.adminCount) * config.personPrices.adminMonthlyPrice;
+  const employeeCount = Math.max(0, Math.floor(input.employeeCount || 0));
+  const pricePerEmployee = plan.id === FREE_PLAN_ID ? 0 : Math.max(0, plan.pricePerEmployee);
 
   return {
     plan,
-    monthlyTotal: moduleTotal + staffTotal + adminTotal,
-    moduleTotal,
-    staffTotal,
-    adminTotal,
-    selectedModules,
+    pricePerEmployee,
+    employeeCount,
+    monthlyTotal: pricePerEmployee * employeeCount,
   };
-}
-
-function normalizeModulePrices(modulePrices: PackagesConfig["modulePrices"] | undefined): ModulePrice[] {
-  return DEFAULT_MODULE_PRICES.map((defaultPrice) => ({
-    ...defaultPrice,
-    ...(modulePrices?.find((item) => item.id === defaultPrice.id) ?? {}),
-  }));
 }
 
 function normalizePlanDefinitions(
@@ -151,6 +110,10 @@ function normalizePlanDefinitions(
     return {
       ...defaultPlan,
       ...(rawPlan ?? {}),
+      pricePerEmployee:
+        typeof rawPlan?.pricePerEmployee === "number" && Number.isFinite(rawPlan.pricePerEmployee)
+          ? Math.max(0, rawPlan.pricePerEmployee)
+          : defaultPlan.pricePerEmployee,
       includedModules: rawPlan?.includedModules ?? defaultPlan.includedModules,
       highlights: rawPlan?.highlights ?? defaultPlan.highlights,
       complianceNotes: {
@@ -160,3 +123,5 @@ function normalizePlanDefinitions(
     };
   });
 }
+
+export type { BillableModuleId };

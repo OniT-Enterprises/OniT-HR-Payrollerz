@@ -49,7 +49,7 @@ export default function AdminConsoleHome() {
   const pendingRequests = requests.filter((request) => request.status !== "approved" && request.status !== "rejected");
   const topTenants = tenants.slice(0, 5);
   const recentAudit = auditEntries.slice(0, 5);
-  const modulePrices = packagesConfig?.modulePrices ?? [];
+  const planDefinitions = packagesConfig?.planDefinitions ?? [];
 
   return (
     <AdminLayout>
@@ -242,18 +242,25 @@ export default function AdminConsoleHome() {
               ) : (
                 <div className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {modulePrices.slice(0, 6).map((modulePrice) => (
-                      <div key={modulePrice.id} className="rounded-lg border border-border/50 p-3">
-                        <p className="text-sm text-muted-foreground">{modulePrice.label}</p>
-                        <p className="text-xl font-semibold">${modulePrice.monthlyPrice.toFixed(2)}</p>
+                    {planDefinitions.map((plan) => (
+                      <div key={plan.id} className="rounded-lg border border-border/50 p-3">
+                        <p className="text-sm text-muted-foreground">{plan.label}</p>
+                        <p className="text-xl font-semibold">
+                          {plan.pricePerEmployee > 0 ? (
+                            <>
+                              ${plan.pricePerEmployee.toFixed(2)}
+                              <span className="text-sm font-normal text-muted-foreground"> /employee</span>
+                            </>
+                          ) : (
+                            "Free"
+                          )}
+                        </p>
                       </div>
                     ))}
                   </div>
                   <div className="rounded-lg border border-border/50 p-3 text-sm text-muted-foreground">
-                    Plans are billed as their included modules plus $
-                    {(packagesConfig?.personPrices.staffMonthlyPrice ?? 0).toFixed(2)}/staff and $
-                    {(packagesConfig?.personPrices.adminMonthlyPrice ?? 0).toFixed(2)}/admin per month.
-                    The Free plan is always $0.
+                    Tenants are billed per employee: monthly total = employees × the plan's
+                    per-employee rate. The Free plan is always $0.
                   </div>
                 </div>
               )}

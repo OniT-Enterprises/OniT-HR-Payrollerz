@@ -157,14 +157,11 @@ function normalizePackagesConfig(raw: Record<string, unknown> | undefined): Pack
 }
 
 function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: PackagesConfig): number {
-  const tenantRecord = tenant as TenantConfig & { currentAdminCount?: number };
-  // Bill by the tenant's plan bundle (its included modules) + per-head charges,
-  // so the admin figure matches the public price for the same plan + headcount.
+  // Pure per-employee billing: employees * the plan's per-employee rate.
   // Free plans resolve to $0 inside the estimator.
   const estimate = calculatePackageEstimate(packagesConfig, {
     planId: tenant.plan,
-    staffCount: tenant.currentEmployeeCount ?? 0,
-    adminCount: tenantRecord.currentAdminCount ?? 1,
+    employeeCount: tenant.currentEmployeeCount ?? 0,
   });
 
   return estimate.monthlyTotal;
@@ -332,16 +329,9 @@ class AdminService {
     if (!db) throw new Error("Database not available");
 
     const sanitized: PackagesConfig = {
-      modulePrices: config.modulePrices.map((modulePrice) => ({
-        ...modulePrice,
-        monthlyPrice: Math.max(0, modulePrice.monthlyPrice),
-      })),
-      personPrices: {
-        staffMonthlyPrice: Math.max(0, config.personPrices.staffMonthlyPrice),
-        adminMonthlyPrice: Math.max(0, config.personPrices.adminMonthlyPrice),
-      },
       planDefinitions: config.planDefinitions.map((plan) => ({
         ...plan,
+        pricePerEmployee: Math.max(0, plan.pricePerEmployee),
         maxAdmins: plan.maxAdmins === null ? null : Math.max(0, plan.maxAdmins),
         includedModules: Array.from(new Set(plan.includedModules)),
         highlights: plan.highlights.filter((highlight) => highlight.trim().length > 0),

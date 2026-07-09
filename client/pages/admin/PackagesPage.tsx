@@ -9,17 +9,26 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, CheckCircle2, Film, Loader2, Package, Save, Users } from "lucide-react";
+import { Calculator, CheckCircle2, Film, Loader2, Save, Users } from "lucide-react";
 import { usePackagesConfig, useSavePackagesConfig } from "@/hooks/useAdmin";
 import { BillableModuleId, PackagePlanDefinition, PackagesConfig } from "@/types/admin";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { calculatePackageEstimate, DEFAULT_PACKAGES_CONFIG, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 
-const demoCounts = {
-  staffCount: 25,
-  adminCount: 2,
-};
+// Example headcount used only to preview monthly totals in the editor.
+const DEMO_EMPLOYEES = 20;
+
+// Modules a plan can unlock. These are feature toggles now — pricing is purely
+// per-employee, so modules no longer carry individual prices.
+const MODULE_OPTIONS: { id: BillableModuleId; label: string }[] = [
+  { id: "people", label: "People" },
+  { id: "timeleave", label: "Time & Leave" },
+  { id: "payroll", label: "Payroll" },
+  { id: "money", label: "Money" },
+  { id: "accounting", label: "Accounting" },
+  { id: "reports", label: "Reports" },
+];
 
 export default function PackagesPage() {
   const { user, userProfile } = useAuth();
@@ -36,46 +45,12 @@ export default function PackagesPage() {
     setForm(normalizeBillingPackagesConfig(data));
   }
 
-  const moduleOptions = form?.modulePrices ?? DEFAULT_PACKAGES_CONFIG.modulePrices;
   const previewEstimates = useMemo(() => {
     const config = form ?? DEFAULT_PACKAGES_CONFIG;
     return config.planDefinitions.map((plan) =>
-      calculatePackageEstimate(config, {
-        planId: plan.id,
-        staffCount: demoCounts.staffCount,
-        adminCount: demoCounts.adminCount,
-      }),
+      calculatePackageEstimate(config, { planId: plan.id, employeeCount: DEMO_EMPLOYEES }),
     );
   }, [form]);
-
-  const updateModulePrice = (moduleId: string, nextValue: string) => {
-    setForm((current) =>
-      current
-        ? {
-            ...current,
-            modulePrices: current.modulePrices.map((modulePrice) =>
-              modulePrice.id === moduleId
-                ? { ...modulePrice, monthlyPrice: Number(nextValue) || 0 }
-                : modulePrice,
-            ),
-          }
-        : current,
-    );
-  };
-
-  const updatePersonPrice = (field: keyof PackagesConfig["personPrices"], nextValue: string) => {
-    setForm((current) =>
-      current
-        ? {
-            ...current,
-            personPrices: {
-              ...current.personPrices,
-              [field]: Number(nextValue) || 0,
-            },
-          }
-        : current,
-    );
-  };
 
   const updatePlan = <K extends keyof PackagePlanDefinition>(
     planId: string,
@@ -105,13 +80,7 @@ export default function PackagesPage() {
             ...current,
             planDefinitions: current.planDefinitions.map((plan) =>
               plan.id === planId
-                ? {
-                    ...plan,
-                    complianceNotes: {
-                      ...plan.complianceNotes,
-                      [field]: value,
-                    },
-                  }
+                ? { ...plan, complianceNotes: { ...plan.complianceNotes, [field]: value } }
                 : plan,
             ),
           }
@@ -140,10 +109,7 @@ export default function PackagesPage() {
     updatePlan(
       planId,
       "highlights",
-      value
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
+      value.split("\n").map((line) => line.trim()).filter(Boolean),
     );
   };
 
@@ -156,7 +122,6 @@ export default function PackagesPage() {
 
   const handleSave = async () => {
     if (!form || !user) return;
-
     try {
       await saveMutation.mutateAsync({
         config: normalizeBillingPackagesConfig(form),
@@ -178,11 +143,11 @@ export default function PackagesPage() {
             <p className="text-sm uppercase tracking-[0.24em] text-emerald-600">Admin pricing</p>
             <h1 className="text-4xl font-bold tracking-tight">Package price matrix</h1>
             <p className="text-muted-foreground mt-2">
-              Edit the rates, module prices, plan defaults, staff app access, and training-video handoff.
+              Pricing is per employee. Set each plan's monthly rate per employee, the features it
+              unlocks, staff-app access, and the training-video handoff.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="secondary">{form?.modulePrices.length || 0} modules</Badge>
             <Badge variant="secondary">{form?.planDefinitions.length || 0} packages</Badge>
           </div>
         </div>
@@ -193,67 +158,6 @@ export default function PackagesPage() {
           </div>
         ) : (
           <>
-            <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-emerald-600" />
-                    People rates
-                  </CardTitle>
-                  <CardDescription>Billing is based on staff and admins, not user seats.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="staffMonthlyPrice">Staff member / month</Label>
-                    <Input
-                      id="staffMonthlyPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.personPrices.staffMonthlyPrice}
-                      onChange={(event) => updatePersonPrice("staffMonthlyPrice", event.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="adminMonthlyPrice">Admin / month</Label>
-                    <Input
-                      id="adminMonthlyPrice"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.personPrices.adminMonthlyPrice}
-                      onChange={(event) => updatePersonPrice("adminMonthlyPrice", event.target.value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-emerald-600" />
-                    Module pricing
-                  </CardTitle>
-                  <CardDescription>Reports can stay cheaper while operational modules use the standard rate.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                  {form.modulePrices.map((modulePrice) => (
-                    <div key={modulePrice.id} className="space-y-2">
-                      <Label htmlFor={`module-${modulePrice.id}`}>{modulePrice.label}</Label>
-                      <Input
-                        id={`module-${modulePrice.id}`}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={modulePrice.monthlyPrice}
-                        onChange={(event) => updateModulePrice(modulePrice.id, event.target.value)}
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -261,7 +165,8 @@ export default function PackagesPage() {
                   Plan preview
                 </CardTitle>
                 <CardDescription>
-                  Example totals for {demoCounts.staffCount} staff and {demoCounts.adminCount} admins.
+                  Example monthly totals for {DEMO_EMPLOYEES} employees. Each tenant is billed its
+                  plan rate × its employee count.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -281,7 +186,9 @@ export default function PackagesPage() {
                       {estimate.monthlyTotal === 0 ? "Free" : formatMoney(estimate.monthlyTotal)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatMoney(estimate.moduleTotal)} modules + {formatMoney(estimate.staffTotal + estimate.adminTotal)} people
+                      {estimate.pricePerEmployee === 0
+                        ? "No monthly cost"
+                        : `${formatMoney(estimate.pricePerEmployee)}/employee × ${DEMO_EMPLOYEES}`}
                     </p>
                   </div>
                 ))}
@@ -301,13 +208,30 @@ export default function PackagesPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor={`${plan.id}-label`}>Package label</Label>
                         <Input
                           id={`${plan.id}-label`}
                           value={plan.label}
                           onChange={(event) => updatePlan(plan.id, "label", event.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`${plan.id}-pricePerEmployee`} className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Price / employee
+                        </Label>
+                        <Input
+                          id={`${plan.id}-pricePerEmployee`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          disabled={plan.id === "free"}
+                          value={plan.id === "free" ? 0 : plan.pricePerEmployee}
+                          onChange={(event) =>
+                            updatePlan(plan.id, "pricePerEmployee", Number(event.target.value) || 0)
+                          }
                         />
                       </div>
                       <div className="space-y-2">
@@ -340,19 +264,18 @@ export default function PackagesPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label>Default subscribed modules</Label>
+                      <Label>Included features</Label>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        {moduleOptions.map((modulePrice) => (
+                        {MODULE_OPTIONS.map((moduleOption) => (
                           <label
-                            key={modulePrice.id}
+                            key={moduleOption.id}
                             className="flex items-center gap-3 rounded-lg border border-border/50 p-3 text-sm"
                           >
                             <Checkbox
-                              checked={plan.includedModules.includes(modulePrice.id)}
-                              onCheckedChange={(checked) => togglePlanModule(plan.id, modulePrice.id, checked === true)}
+                              checked={plan.includedModules.includes(moduleOption.id)}
+                              onCheckedChange={(checked) => togglePlanModule(plan.id, moduleOption.id, checked === true)}
                             />
-                            <span className="flex-1">{modulePrice.label}</span>
-                            <span className="text-muted-foreground">{formatMoney(modulePrice.monthlyPrice)}</span>
+                            <span className="flex-1">{moduleOption.label}</span>
                           </label>
                         ))}
                       </div>
@@ -417,7 +340,7 @@ export default function PackagesPage() {
 
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      Changes apply to admin billing calculations after save.
+                      Changes apply to billing after save.
                     </div>
                   </CardContent>
                 </Card>

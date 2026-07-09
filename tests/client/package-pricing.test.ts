@@ -1,13 +1,8 @@
 /**
- * Package pricing engine tests.
+ * Package pricing engine tests — pure per-employee model.
  *
- * Guards the money math behind admin billing and the public pricing page:
- * - Free plan is always $0
- * - Plan price = included modules + per-head (staff/admin)
- * - The "money" module is billed for Enterprise (regression: it used to be
- *   silently dropped from per-tenant billing)
- * - modulePriceOverrides win over base module prices
- * - normalizeBillingPackagesConfig fills defaults and merges partial input
+ * Monthly bill = employees × the plan's per-employee rate. Free = $0.
+ * No module or per-admin charges.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -16,114 +11,95 @@ import {
   normalizeBillingPackagesConfig,
 } from "@/lib/packagePricing";
 
-// Default module prices: people 75, timeleave 45, payroll 95, money 65,
-// accounting 85, reports 35. Per-head: staff $2, admin $12.
-const DEMO = { staffCount: 25, adminCount: 2 }; // per-head = 50 + 24 = 74
+// Default rates: Free $0, Starter $2, Professional $4, Enterprise $6 /employee.
 
-describe("calculatePackageEstimate — plan totals (default config)", () => {
-  it("Free is always $0, even with staff and admins", () => {
-    const free = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "free", ...DEMO });
-    expect(free.monthlyTotal).toBe(0);
-    expect(free.moduleTotal).toBe(0);
-    expect(free.staffTotal).toBe(0);
-    expect(free.adminTotal).toBe(0);
+describe("calculatePackageEstimate — per-employee totals (default config)", () => {
+  it("Free is always $0, even with employees", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "free", employeeCount: 50 });
+    expect(e.pricePerEmployee).toBe(0);
+    expect(e.monthlyTotal).toBe(0);
   });
 
-  it("Starter = its modules ($155) + per-head ($74) = $229", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "starter", ...DEMO });
-    expect(e.moduleTotal).toBe(155); // people 75 + timeleave 45 + reports 35
-    expect(e.staffTotal + e.adminTotal).toBe(74);
-    expect(e.monthlyTotal).toBe(229);
+  it("Starter = $2 × employees", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "starter", employeeCount: 20 });
+    expect(e.pricePerEmployee).toBe(2);
+    expect(e.monthlyTotal).toBe(40);
   });
 
-  it("Professional = $250 modules + $74 = $324", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "professional", ...DEMO });
-    expect(e.moduleTotal).toBe(250); // people 75 + timeleave 45 + payroll 95 + reports 35
-    expect(e.monthlyTotal).toBe(324);
+  it("Professional = $4 × employees", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "professional", employeeCount: 20 });
+    expect(e.pricePerEmployee).toBe(4);
+    expect(e.monthlyTotal).toBe(80);
   });
 
-  it("Enterprise bills the money module: $400 modules + $74 = $474", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "enterprise", ...DEMO });
-    // Regression: money ($65) must be part of the Enterprise bundle.
-    expect(e.selectedModules).toContain("money");
-    expect(e.moduleTotal).toBe(400); // all six modules
-    expect(e.monthlyTotal).toBe(474);
+  it("Enterprise = $6 × employees", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "enterprise", employeeCount: 20 });
+    expect(e.pricePerEmployee).toBe(6);
+    expect(e.monthlyTotal).toBe(120);
   });
 });
 
-describe("calculatePackageEstimate — per-head scaling", () => {
-  it("scales staff and admin counts", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, {
-      planId: "enterprise",
-      staffCount: 10,
-      adminCount: 1,
-    });
-    expect(e.staffTotal).toBe(20); // 10 * 2
-    expect(e.adminTotal).toBe(12); // 1 * 12
-    expect(e.monthlyTotal).toBe(432); // 400 + 32
-  });
-
-  it("clamps negative counts to zero", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, {
-      planId: "starter",
-      staffCount: -5,
-      adminCount: -1,
-    });
-    expect(e.staffTotal).toBe(0);
-    expect(e.adminTotal).toBe(0);
-    expect(e.monthlyTotal).toBe(155); // modules only
-  });
-
-  it("modules-only when there are no people", () => {
-    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, {
-      planId: "enterprise",
-      staffCount: 0,
-      adminCount: 0,
-    });
+describe("calculatePackageEstimate — headcount handling", () => {
+  it("scales linearly with employee count", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "professional", employeeCount: 100 });
     expect(e.monthlyTotal).toBe(400);
   });
-});
 
-describe("calculatePackageEstimate — overrides & custom prices", () => {
-  it("honors a plan's modulePriceOverrides", () => {
-    const config = normalizeBillingPackagesConfig({
-      planDefinitions: DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) =>
-        plan.id === "professional" ? { ...plan, modulePriceOverrides: { payroll: 0 } } : plan,
-      ),
-    });
-    const e = calculatePackageEstimate(config, { planId: "professional", staffCount: 0, adminCount: 0 });
-    expect(e.moduleTotal).toBe(155); // payroll overridden 95 -> 0
+  it("zero employees = $0", () => {
+    const e = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "enterprise", employeeCount: 0 });
+    expect(e.monthlyTotal).toBe(0);
   });
 
-  it("reflects edited base module prices", () => {
+  it("clamps negative / fractional counts", () => {
+    const neg = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "starter", employeeCount: -5 });
+    expect(neg.monthlyTotal).toBe(0);
+    const frac = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, { planId: "starter", employeeCount: 10.9 });
+    expect(frac.employeeCount).toBe(10);
+    expect(frac.monthlyTotal).toBe(20);
+  });
+});
+
+describe("calculatePackageEstimate — custom rates", () => {
+  it("uses an admin-edited per-employee rate", () => {
     const config = normalizeBillingPackagesConfig({
-      modulePrices: [{ id: "people", label: "People", monthlyPrice: 100 }],
+      planDefinitions: DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) =>
+        plan.id === "professional" ? { ...plan, pricePerEmployee: 3.5 } : plan,
+      ),
     });
-    const e = calculatePackageEstimate(config, { planId: "starter", staffCount: 0, adminCount: 0 });
-    expect(e.moduleTotal).toBe(180); // people 100 + timeleave 45 + reports 35
+    const e = calculatePackageEstimate(config, { planId: "professional", employeeCount: 10 });
+    expect(e.pricePerEmployee).toBe(3.5);
+    expect(e.monthlyTotal).toBe(35);
+  });
+
+  it("free stays $0 even if a rate is set on it", () => {
+    const config = normalizeBillingPackagesConfig({
+      planDefinitions: DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) =>
+        plan.id === "free" ? { ...plan, pricePerEmployee: 99 } : plan,
+      ),
+    });
+    const e = calculatePackageEstimate(config, { planId: "free", employeeCount: 10 });
+    expect(e.monthlyTotal).toBe(0);
   });
 });
 
 describe("normalizeBillingPackagesConfig", () => {
-  it("returns the full default shape for empty input", () => {
+  it("returns the four default plans for empty input", () => {
     const config = normalizeBillingPackagesConfig(undefined);
-    expect(config.modulePrices).toHaveLength(6);
     expect(config.planDefinitions).toHaveLength(4);
-    expect(config.personPrices).toEqual({ staffMonthlyPrice: 2, adminMonthlyPrice: 12 });
+    expect(config.planDefinitions.map((p) => p.id)).toEqual(["free", "starter", "professional", "enterprise"]);
   });
 
-  it("merges partial personPrices with defaults", () => {
-    const config = normalizeBillingPackagesConfig({ personPrices: { staffMonthlyPrice: 5 } as never });
-    expect(config.personPrices.staffMonthlyPrice).toBe(5);
-    expect(config.personPrices.adminMonthlyPrice).toBe(12); // default retained
+  it("keeps default rates when input omits them", () => {
+    const config = normalizeBillingPackagesConfig({});
+    expect(config.planDefinitions.find((p) => p.id === "enterprise")?.pricePerEmployee).toBe(6);
   });
 
-  it("keeps all six modules even when only one is supplied", () => {
+  it("clamps negative rates to zero", () => {
     const config = normalizeBillingPackagesConfig({
-      modulePrices: [{ id: "reports", label: "Reports", monthlyPrice: 10 }],
+      planDefinitions: DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) =>
+        plan.id === "starter" ? { ...plan, pricePerEmployee: -10 } : plan,
+      ),
     });
-    expect(config.modulePrices).toHaveLength(6);
-    expect(config.modulePrices.find((m) => m.id === "reports")?.monthlyPrice).toBe(10);
-    expect(config.modulePrices.find((m) => m.id === "people")?.monthlyPrice).toBe(75); // default
+    expect(config.planDefinitions.find((p) => p.id === "starter")?.pricePerEmployee).toBe(0);
   });
 });

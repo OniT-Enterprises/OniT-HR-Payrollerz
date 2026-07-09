@@ -9,23 +9,14 @@ export type BillableModuleId =
   | "accounting"
   | "reports";
 
-export interface ModulePrice {
-  id: BillableModuleId;
-  label: string;
-  monthlyPrice: number;
-}
-
-export interface PackagePersonPrices {
-  staffMonthlyPrice: number;
-  adminMonthlyPrice: number;
-}
-
 export interface PackagePlanDefinition {
   id: TenantPlan;
   label: string;
   description: string;
+  /** Pricing is purely per-employee: monthly bill = employees * pricePerEmployee. */
+  pricePerEmployee: number;
+  /** Features this plan unlocks — used for marketing/feature display, not billing. */
   includedModules: BillableModuleId[];
-  modulePriceOverrides?: Partial<Record<BillableModuleId, number>>;
   maxAdmins: number | null;
   staffAppIncluded: boolean;
   trainingVideoUrl?: string;
@@ -37,8 +28,6 @@ export interface PackagePlanDefinition {
 }
 
 export interface PackagesConfig {
-  modulePrices: ModulePrice[];
-  personPrices: PackagePersonPrices;
   planDefinitions: PackagePlanDefinition[];
   updatedAt?: FirestoreTimestamp;
   updatedBy?: string;

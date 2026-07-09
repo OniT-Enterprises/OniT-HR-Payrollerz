@@ -4,10 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_PACKAGES_CONFIG, calculatePackageEstimate } from "@/lib/packagePricing";
 
-const demoCounts = {
-  staffCount: 25,
-  adminCount: 2,
-};
+const DEMO_EMPLOYEES = 20;
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -25,7 +22,7 @@ export function PackagePicker() {
           <p className="text-sm uppercase tracking-[0.24em] text-emerald-300">Pricing</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-white">Choose the package that fits today</h2>
           <p className="mt-4 text-zinc-400">
-            Example monthly estimates use {demoCounts.staffCount} staff and {demoCounts.adminCount} admins.
+            Simple per-employee pricing. Example totals below assume {DEMO_EMPLOYEES} employees.
           </p>
         </div>
 
@@ -33,8 +30,7 @@ export function PackagePicker() {
           {DEFAULT_PACKAGES_CONFIG.planDefinitions.map((plan) => {
             const estimate = calculatePackageEstimate(DEFAULT_PACKAGES_CONFIG, {
               planId: plan.id,
-              staffCount: demoCounts.staffCount,
-              adminCount: demoCounts.adminCount,
+              employeeCount: DEMO_EMPLOYEES,
             });
 
             return (
@@ -48,10 +44,15 @@ export function PackagePicker() {
                 </div>
 
                 <p className="mt-6 text-3xl font-bold text-white">
-                  {estimate.monthlyTotal === 0 ? "Free" : formatMoney(estimate.monthlyTotal)}
+                  {estimate.pricePerEmployee === 0 ? "Free" : formatMoney(estimate.pricePerEmployee)}
+                  {estimate.pricePerEmployee > 0 && (
+                    <span className="text-base font-medium text-zinc-400"> /employee/mo</span>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {estimate.monthlyTotal === 0 ? "No monthly cost" : "Estimated monthly total"}
+                  {estimate.pricePerEmployee === 0
+                    ? "No monthly cost"
+                    : `≈ ${formatMoney(estimate.monthlyTotal)}/mo for ${DEMO_EMPLOYEES} employees`}
                 </p>
 
                 <div className="mt-5 space-y-2">
