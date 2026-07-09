@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,11 +27,14 @@ export default function PackagesPage() {
   const saveMutation = useSavePackagesConfig();
   const [form, setForm] = useState<PackagesConfig | null>(null);
 
-  useEffect(() => {
-    if (data) {
-      setForm(normalizeBillingPackagesConfig(data));
-    }
-  }, [data]);
+  // Sync server config into the editable form whenever the query data changes.
+  // Done during render (with a source guard) rather than in an effect to avoid
+  // the cascading-render lint rule and an extra render pass.
+  const [syncedData, setSyncedData] = useState<typeof data>(undefined);
+  if (data && data !== syncedData) {
+    setSyncedData(data);
+    setForm(normalizeBillingPackagesConfig(data));
+  }
 
   const moduleOptions = form?.modulePrices ?? DEFAULT_PACKAGES_CONFIG.modulePrices;
   const previewEstimates = useMemo(() => {

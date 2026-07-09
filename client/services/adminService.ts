@@ -23,7 +23,6 @@ import { db, getFunctionsLazy } from "@/lib/firebase";
 import { calculatePackageEstimate, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { paths } from "@/lib/paths";
 import {
-  EmployeePricingTier,
   ModulePrice,
   PackagesConfig,
   SuperAdminRequest,
@@ -70,23 +69,6 @@ type TenantSettingsDoc = {
 
 const VALID_STATUSES: TenantStatus[] = ["active", "suspended", "pending", "cancelled"];
 const VALID_PLANS: TenantPlan[] = ["free", "starter", "professional", "enterprise"];
-
-const DEFAULT_MODULE_PRICES: ModulePrice[] = [
-  { id: "people", label: "People", monthlyPrice: 75 },
-  { id: "timeleave", label: "Time & Leave", monthlyPrice: 45 },
-  { id: "payroll", label: "Payroll", monthlyPrice: 95 },
-  { id: "money", label: "Money", monthlyPrice: 65 },
-  { id: "accounting", label: "Accounting", monthlyPrice: 85 },
-  { id: "reports", label: "Reports", monthlyPrice: 35 },
-];
-
-const DEFAULT_EMPLOYEE_TIERS: EmployeePricingTier[] = [
-  { id: "tier-1-10", minEmployees: 1, maxEmployees: 10, pricePerEmployee: 4 },
-  { id: "tier-11-20", minEmployees: 11, maxEmployees: 20, pricePerEmployee: 3.5 },
-  { id: "tier-21-30", minEmployees: 21, maxEmployees: 30, pricePerEmployee: 3 },
-  { id: "tier-31-50", minEmployees: 31, maxEmployees: 50, pricePerEmployee: 2.5 },
-  { id: "tier-51-plus", minEmployees: 51, maxEmployees: null, pricePerEmployee: 2 },
-];
 
 function generateTenantSlug(name: string): string {
   return name
