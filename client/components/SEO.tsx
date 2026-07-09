@@ -10,8 +10,8 @@ interface SEOProps {
   noIndex?: boolean;
 }
 
-const BASE_URL = 'https://onit-hr-payroll.web.app';
-const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
+const BASE_URL = 'https://meza.naroman.tl';
+const DEFAULT_IMAGE = `${BASE_URL}/images/illustrations/hero-dashboard.webp`;
 const SITE_NAME = 'Xefe';
 
 const DEFAULT_DESCRIPTION = 'Streamline your HR operations with Xefe. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';

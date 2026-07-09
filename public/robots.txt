@@ -1,5 +1,5 @@
-# OniT HR & Payroll - Robots.txt
-# https://onit-hr-payroll.web.app
+# Xefe - Robots.txt
+# https://meza.naroman.tl
 
 User-agent: Googlebot
 Allow: /
@@ -7,6 +7,12 @@ Disallow: /admin/
 Disallow: /auth/login
 Disallow: /dashboard
 Disallow: /settings
+Disallow: /people/
+Disallow: /time-leave/
+Disallow: /payroll/
+Disallow: /money/
+Disallow: /accounting/
+Disallow: /reports/
 
 User-agent: Bingbot
 Allow: /
@@ -14,6 +20,12 @@ Disallow: /admin/
 Disallow: /auth/login
 Disallow: /dashboard
 Disallow: /settings
+Disallow: /people/
+Disallow: /time-leave/
+Disallow: /payroll/
+Disallow: /money/
+Disallow: /accounting/
+Disallow: /reports/
 
 User-agent: Twitterbot
 Allow: /
@@ -35,4 +47,4 @@ Disallow: /dashboard
 Disallow: /settings
 
 # Sitemap
-Sitemap: https://onit-hr-payroll.web.app/sitemap.xml
+Sitemap: https://meza.naroman.tl/sitemap.xml

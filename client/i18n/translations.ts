@@ -385,9 +385,14 @@ export const translations = {
         "adjustFilters": "Try adjusting your filters."
       },
       "actions": {
-        "export": "Export CSV"
+        "export": "Export CSV",
+        "refresh": "Refresh"
       },
       "toast": {
+        "refreshTitle": "Document alerts refreshed",
+        "refreshDesc": "Latest document expiry data loaded.",
+        "refreshFailedTitle": "Refresh failed",
+        "refreshFailedDesc": "Failed to refresh document alerts.",
         "noDataTitle": "No data",
         "noDataDesc": "No alerts to export.",
         "exportTitle": "Export complete",
@@ -4703,11 +4708,14 @@ export const translations = {
         "noTenants": "No tenants found",
         "clearSearch": "Clear search",
         "createFirstTenant": "Create your first tenant",
+        "legalNameNotSet": "Legal name not set",
         "table": {
           "tenant": "Tenant",
           "status": "Status",
           "plan": "Plan",
           "created": "Created",
+          "paidUntil": "Paid until",
+          "monthlySubscription": "Monthly subscription",
           "actions": "Actions"
         },
         "actions": {
@@ -6337,9 +6345,14 @@ export const translations = {
         "adjustFilters": "Koko muda filtru sira."
       },
       "actions": {
-        "export": "Exporta CSV"
+        "export": "Exporta CSV",
+        "refresh": "Atualiza"
       },
       "toast": {
+        "refreshTitle": "Alerta dokumentu atualiza ona",
+        "refreshDesc": "Karrega ona dadus foun kona-ba dokumentu espira.",
+        "refreshFailedTitle": "Falha atualiza",
+        "refreshFailedDesc": "Falha atu atualiza alerta dokumentu sira.",
         "noDataTitle": "Laiha dadus",
         "noDataDesc": "Laiha alerta atu exporta.",
         "exportTitle": "Exporta remata",
@@ -9428,11 +9441,14 @@ export const translations = {
         "noTenants": "Laiha tenante hetan",
         "clearSearch": "Hamós buka",
         "createFirstTenant": "Kria ita-nia tenante primeiru",
+        "legalNameNotSet": "Naran legál seidauk define",
         "table": {
           "tenant": "Tenante",
           "status": "Estatutu",
           "plan": "Planu",
           "created": "Kria",
+          "paidUntil": "Selu to'o",
+          "monthlySubscription": "Subskrisaun mensál",
           "actions": "Asaun"
         },
         "actions": {
@@ -12289,9 +12305,14 @@ export const translations = {
         "adjustFilters": "Tente ajustar os filtros."
       },
       "actions": {
-        "export": "Exportar CSV"
+        "export": "Exportar CSV",
+        "refresh": "Atualizar"
       },
       "toast": {
+        "refreshTitle": "Alertas de documentos atualizados",
+        "refreshDesc": "Dados mais recentes de expiração carregados.",
+        "refreshFailedTitle": "Falha ao atualizar",
+        "refreshFailedDesc": "Não foi possível atualizar os alertas de documentos.",
         "noDataTitle": "Sem dados",
         "noDataDesc": "Não existem alertas para exportar.",
         "exportTitle": "Exportação concluída",
@@ -16607,11 +16628,14 @@ export const translations = {
         "noTenants": "Nenhum inquilino encontrado",
         "clearSearch": "Limpar pesquisa",
         "createFirstTenant": "Criar o primeiro inquilino",
+        "legalNameNotSet": "Nome legal não definido",
         "table": {
           "tenant": "Inquilino",
           "status": "Estado",
           "plan": "Plano",
           "created": "Criado",
+          "paidUntil": "Pago até",
+          "monthlySubscription": "Subscrição mensal",
           "actions": "Ações"
         },
         "actions": {

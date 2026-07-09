@@ -65,6 +65,7 @@ Express REST API that serves two roles:
 | `PORT` | Listen port (default: 3201) |
 | `API_KEY` | Shared secret for OpenClaw plugin auth |
 | `ALLOWED_TENANT_ID` | Single-tenant lock (`onit-enterprises`) |
+| `OPENCLAW_WEB_TENANT_ID` | Required web-AI tenant; must match the plugin's `defaultTenantId` |
 | `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON |
 | `OPENCLAW_WS_URL` | Gateway address (default: `ws://localhost:18790`) |
 | `OPENCLAW_PASSWORD` | Gateway auth token (same as `OPENCLAW_GATEWAY_TOKEN`) |
@@ -397,7 +398,7 @@ location ^~ /openclaw/ {
 
 | File | Location | Contains |
 |------|----------|----------|
-| Meza API .env | `/opt/meza-api/.env` | API_KEY, ALLOWED_TENANT_ID, OPENCLAW_PASSWORD |
+| Meza API .env | `/opt/meza-api/.env` | API_KEY, ALLOWED_TENANT_ID, OPENCLAW_WEB_TENANT_ID, OPENCLAW_PASSWORD |
 | Firebase SA key | `/opt/meza-api/serviceAccountKey.json` | Firebase Admin credentials |
 | OpenClaw .env | `/opt/openclaw-meza/.env` | ANTHROPIC_API_KEY, OPENCLAW_GATEWAY_TOKEN |
 | OpenClaw config | `/opt/openclaw-meza/openclaw.json` | API keys, tenant ID, WhatsApp allowlist |

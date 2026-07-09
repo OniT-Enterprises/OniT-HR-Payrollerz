@@ -5,7 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "theme_color": "#6A9C29",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en-US",
@@ -67,18 +67,11 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
+      "src": "/images/illustrations/hero-dashboard.webp",
+      "sizes": "1532x1024",
+      "type": "image/webp",
       "form_factor": "wide",
       "label": "HR Dashboard"
-    },
-    {
-      "src": "/screenshots/employees.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Employee Management"
     }
   ],
   "shortcuts": [
