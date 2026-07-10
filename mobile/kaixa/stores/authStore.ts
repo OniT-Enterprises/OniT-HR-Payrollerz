@@ -5,12 +5,23 @@ import { create } from 'zustand';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
   sendPasswordResetEmail,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { auth, db } from '../lib/firebase';
+
+// Web OAuth client of the onit-hr-payroll project (a public identifier, not a
+// secret). Native Google Sign-In mints an idToken for this audience, which
+// Firebase Auth accepts via signInWithCredential.
+const GOOGLE_WEB_CLIENT_ID =
+  '415646082318-97umvlac4hkl7kk321gcnu0hv9lb16u9.apps.googleusercontent.com';
+
+GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
 
 interface UserProfile {
   uid: string;
@@ -27,6 +38,7 @@ interface AuthState {
 
   // Actions
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
@@ -55,6 +67,26 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  signInWithGoogle: async () => {
+    set({ error: null });
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const result = await GoogleSignin.signIn();
+      if (result.type !== 'success') {
+        // User dismissed the account picker — not an error.
+        return;
+      }
+      const idToken = result.data.idToken;
+      if (!idToken) throw new Error('Google sign-in returned no idToken');
+      set({ loading: true });
+      await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+      // onAuthStateChanged will handle the rest
+    } catch (err) {
+      console.warn('Google sign-in failed:', err);
+      set({ loading: false, error: 'Google sign-in failed. Please try again.' });
+    }
+  },
+
   resetPassword: async (email: string) => {
     set({ loading: true, error: null });
     try {
@@ -73,6 +105,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     try {
+      // Also drop the Google session so the account picker shows next time.
+      await GoogleSignin.signOut().catch(() => {});
       await firebaseSignOut(auth);
       set({ user: null, profile: null });
     } catch (err) {

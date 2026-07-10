@@ -13,6 +13,7 @@
   "dependencies": {
     "@onit/shared": "*",
     "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-google-signin/google-signin": "^16.1.2",
     "decimal.js": "^10.6.0",
     "expo": "~55.0.5",
     "expo-constants": "~55.0.7",

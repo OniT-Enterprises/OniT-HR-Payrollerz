@@ -60,7 +60,8 @@
           "color": "#6A9C29",
           "defaultChannel": "ekipa-updates"
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "autolinkingModuleResolution": true
