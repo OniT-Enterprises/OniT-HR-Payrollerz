@@ -159,6 +159,7 @@ createdAt: data.createdAt instanceof Timestamp
 
 ## UI Rules
 - **Simplicity first** — see `docs/DASHBOARD_DESIGN.md`. Customers are first-time, mobile, often non-accountant TL small businesses. Dashboards answer only "what needs attention / the one number / where to go next"; analysis lives on report pages one tap away. **No charts on dashboards or report summaries** (recharts being installed ≠ permission to use it). Don't add filters/toggles/date-pickers to dashboards or a second row of overview cards. When a request would over-complicate, push back and offer the simpler version rather than building it.
+- **Top-left logo is Xefe's, always** — the app-chrome brand (top bar + sidebar header) always shows the Xefe logo, never the tenant/client logo (not even as an "if uploaded" fallback). The client logo belongs on their invoices/PDFs (`companyDetails.logoUrl`), not the app chrome. The `CompanyBrand` component that did this was removed — don't reintroduce it.
 - **No left border accents on cards** — do not use `border-l-4 border-l-{color}` on Card components. Use standard borders only.
 - **No stat cards on report pages** — report pages should use report cards (title, description, label:value rows, export button) and data tables, not 4-column stat card grids.
 - **Brand color** is `#6A9C29` — use `text-primary` / `bg-primary` instead of hardcoded `text-green-500` / `bg-green-500` for brand accent colors. Semantic status colors (success/error badges) can stay as Tailwind greens/reds.

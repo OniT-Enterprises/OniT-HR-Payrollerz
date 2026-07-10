@@ -85,6 +85,24 @@ Ask, in order — if any answer is "no", don't add it:
 A good rule of thumb: **the dashboard should get shorter over time, not longer.**
 New detail almost always belongs on a report page, one tap away.
 
+## Branding: the top-left is Xefe's, always
+
+The top-left logo slot in the app chrome (top bar and sidebar header,
+`MainNavigation.tsx` / `AppSidebar.tsx`) is **reserved for the Xefe logo** —
+`/images/illustrations/xefe-logo-*.webp`. **Never render the tenant's/client's
+logo there**, not even as a "if they uploaded one" fallback.
+
+- ❌ Do not wire `settings.companyDetails.logoUrl` (or any tenant logo/name)
+  into the top bar or sidebar brand. A component that does this was removed
+  (`CompanyBrand`); don't reintroduce it.
+- ✅ The client's own logo belongs on **their invoices/PDFs** (InvoicePaper,
+  InvoicePDF already use `companyDetails.logoUrl`) — customer-facing documents,
+  not the Xefe app chrome.
+
+Why: Xefe is the product the customer logs into; the chrome is Xefe's identity.
+Swapping in the client logo makes it look like a bespoke build and erodes the
+Xefe brand. This one is not a preference — keep the top-left Xefe.
+
 ## How to push back (do this, don't just comply)
 
 If asked to "add some charts / KPIs / analytics to the dashboard" or similar:

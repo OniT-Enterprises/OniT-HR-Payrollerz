@@ -37,6 +37,14 @@ dashboard). The short version:
 - Keep the existing pattern in `client/pages/*Dashboard.tsx`: greeting →
   one row of tappable single-number action cards → "things to do" list.
 
+### Branding — top-left is Xefe's, always
+
+The top-left logo in the app chrome (top bar + sidebar header) is **reserved for
+the Xefe logo**. **Never** put the tenant/client logo there — not even as an
+"if uploaded" fallback. The client's logo belongs on **their invoices/PDFs**
+(already wired via `companyDetails.logoUrl`), not the Xefe app chrome. A
+component that did this (`CompanyBrand`) was removed — don't reintroduce it.
+
 ### When a request would over-complicate
 
 **Push back before building.** Don't silently implement a wall of charts/KPIs.

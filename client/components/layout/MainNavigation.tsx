@@ -54,7 +54,6 @@ import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionThem
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
 import type { ModulePermission } from "@/types/tenant";
-import { CompanyBrand } from "./CompanyBrand";
 
 // 7-tab navigation — no dropdowns, click navigates to module hub
 const NAV_ITEMS: Array<{
@@ -427,8 +426,15 @@ function HeaderBar({
   return (
     <div className="flex h-14 items-center justify-between">
       <div className="flex items-center gap-6">
+        {/* Top-left is reserved for the Xefe logo — never the tenant/client logo.
+            Client branding belongs on invoices/PDFs, not the app chrome.
+            See docs/DASHBOARD_DESIGN.md. */}
         <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
-          <CompanyBrand isDark={isDark} variant="topbar" />
+          <img
+            src={isDark ? "/images/illustrations/xefe-logo-light.webp" : "/images/illustrations/xefe-logo-dark.webp"}
+            alt="Xefe"
+            className="h-8 w-auto"
+          />
         </button>
         <DesktopNav items={visibleNavItems} pathname={pathname} onNavigate={onNavigate} t={t} />
       </div>
