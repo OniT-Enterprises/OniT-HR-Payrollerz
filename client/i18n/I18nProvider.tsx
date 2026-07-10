@@ -114,7 +114,9 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const current = resolvePath(currentTree, key);
       const fallback = resolvePath(fallbackTree, key);
-      const value = typeof current === "string" ? current : typeof fallback === "string" ? fallback : key;
+      // Return "" (not the key) on a total miss so the widespread
+      // `t('key') || fallback` idiom works and raw keys never hit the UI.
+      const value = typeof current === "string" ? current : typeof fallback === "string" ? fallback : "";
       return formatString(value, params);
     },
     [locale, translationBundle]

@@ -200,18 +200,24 @@ export default function ChartOfAccounts() {
   const getTypeConfig = (type: AccountType) => {
     switch (type) {
       case "asset":
-        return { icon: Wallet, color: "text-blue-600", bg: "bg-blue-100" };
+        return { icon: Wallet, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/30" };
       case "liability":
-        return { icon: Building2, color: "text-red-600", bg: "bg-red-100" };
+        return { icon: Building2, color: "text-red-600 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30" };
       case "equity":
-        return { icon: PiggyBank, color: "text-purple-600", bg: "bg-purple-100" };
+        return { icon: PiggyBank, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30" };
       case "revenue":
-        return { icon: TrendingUp, color: "text-green-600", bg: "bg-green-100" };
+        return { icon: TrendingUp, color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-900/30" };
       case "expense":
-        return { icon: TrendingDown, color: "text-orange-600", bg: "bg-orange-100" };
+        return { icon: TrendingDown, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30" };
       default:
-        return { icon: BookOpen, color: "text-gray-600", bg: "bg-gray-100" };
+        return { icon: BookOpen, color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-100 dark:bg-gray-800/50" };
     }
+  };
+
+  // Accounts imported or created before sub-types existed have none stored.
+  const formatSubType = (subType?: string) => {
+    if (!subType) return "—";
+    return t(`accounting.chartOfAccounts.subTypes.${subType}`) || subType.replace(/_/g, " ");
   };
 
   // Handle form submit
@@ -351,14 +357,14 @@ export default function ChartOfAccounts() {
             </div>
           </TableCell>
           <TableCell>
-            <Badge className={`${typeConfig.bg} ${typeConfig.color} dark:bg-opacity-20`}>
+            <Badge className={`${typeConfig.bg} ${typeConfig.color}`}>
               <TypeIcon className="h-3 w-3 mr-1" />
-              {t(`accounting.chartOfAccounts.${account.type}`)}
+              {t(`accounting.chartOfAccounts.${account.type}`) || account.type}
             </Badge>
           </TableCell>
           <TableCell>
             <span className="text-sm text-muted-foreground">
-              {t(`accounting.chartOfAccounts.subTypes.${account.subType}`)}
+              {formatSubType(account.subType)}
             </span>
           </TableCell>
           <TableCell>
@@ -592,7 +598,7 @@ export default function ChartOfAccounts() {
                               expense: ['salary_expense', 'inss_expense', 'rent_expense', 'utilities_expense', 'office_supplies', 'depreciation_expense', 'tax_expense', 'other_expense'],
                             } as Record<string, string[]>)[formData.type]?.map((value) => (
                               <SelectItem key={value} value={value}>
-                                {t(`accounting.chartOfAccounts.subTypes.${value}`)}
+                                {formatSubType(value)}
                               </SelectItem>
                             ))}
                           </SelectContent>
