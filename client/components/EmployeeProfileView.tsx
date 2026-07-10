@@ -218,61 +218,69 @@ function FixedTermConversionWarning({ employee }: { employee: Employee }) {
   );
 }
 
+// Consistent info row: muted icon chip + value over label. Keeps every card
+// uniform and renders empty values as a subtle "Not provided" instead of
+// bold text that competes with real data.
+function InfoRow({
+  icon: Icon,
+  value,
+  label,
+  children,
+}: {
+  icon: React.ElementType;
+  value?: React.ReactNode;
+  label: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  const provided = value !== undefined && value !== null && value !== "";
+  return (
+    <div className="flex items-start gap-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-sm font-medium ${provided ? "text-foreground" : "italic text-muted-foreground/60"}`}>
+          {provided ? value : "Not provided"}
+        </p>
+        <div className="text-xs text-muted-foreground">{label}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function PersonalInfoCard({ employee }: { employee: Employee }) {
+  const p = employee.personalInfo;
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <User className="h-5 w-5" />
+          <User className="h-5 w-5 text-muted-foreground" />
           Personal Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Mail className="h-4 w-4 text-blue-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{employee.personalInfo.email}</p>
-              <p className="text-xs text-muted-foreground">Email</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{employee.personalInfo.phone || "Not provided"}</p>
-              <p className="text-xs text-muted-foreground">Phone</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Smartphone className="h-4 w-4 text-purple-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{employee.personalInfo.phoneApp || "Not provided"}</p>
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
+      <CardContent className="space-y-5">
+        <div className="space-y-4">
+          <InfoRow icon={Mail} value={p.email} label="Email" />
+          <InfoRow icon={Phone} value={p.phone} label="Phone" />
+          <InfoRow
+            icon={Smartphone}
+            value={p.phoneApp}
+            label={
+              <span className="flex items-center gap-1.5">
                 Phone App
-                {employee.personalInfo.appEligible && (
-                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                {p.appEligible && (
+                  <Badge variant="outline" className="border-primary/30 px-1.5 py-0 text-[10px] text-primary">
                     Eligible
                   </Badge>
                 )}
-              </div>
-            </div>
-          </div>
+              </span>
+            }
+          />
         </div>
-        <div className="space-y-3 pt-4 border-t">
-          <div className="flex items-center gap-3">
-            <Users className="h-4 w-4 text-red-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{employee.personalInfo.emergencyContactName || "Not provided"}</p>
-              <p className="text-xs text-muted-foreground">Emergency Contact</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="h-4 w-4 text-red-600 flex-shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium text-sm">{employee.personalInfo.emergencyContactPhone || "Not provided"}</p>
-              <p className="text-xs text-muted-foreground">Emergency Phone</p>
-            </div>
-          </div>
+        <div className="space-y-4 border-t pt-5">
+          <InfoRow icon={Users} value={p.emergencyContactName} label="Emergency Contact" />
+          <InfoRow icon={Phone} value={p.emergencyContactPhone} label="Emergency Phone" />
         </div>
       </CardContent>
     </Card>
@@ -289,48 +297,24 @@ function JobInfoCard({ employee, managerName }: JobInfoCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5" />
+          <Briefcase className="h-5 w-5 text-muted-foreground" />
           Job Information
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Building className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.jobDetails.department}</p>
-            <p className="text-sm text-muted-foreground">Department</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Briefcase className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.jobDetails.position}</p>
-            <p className="text-sm text-muted-foreground">Position</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.jobDetails.hireDate}</p>
-            <p className="text-sm text-muted-foreground">Hire Date</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <MapPin className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.jobDetails.workLocation}</p>
-            <p className="text-sm text-muted-foreground">Work Location</p>
-          </div>
-        </div>
-        <Badge variant="outline">{employee.jobDetails.employmentType}</Badge>
+        <InfoRow icon={Building} value={employee.jobDetails.department} label="Department" />
+        <InfoRow icon={Briefcase} value={employee.jobDetails.position} label="Position" />
+        <InfoRow
+          icon={Calendar}
+          value={employee.jobDetails.hireDate ? formatDateTL(employee.jobDetails.hireDate) : undefined}
+          label="Hire Date"
+        />
+        <InfoRow icon={MapPin} value={employee.jobDetails.workLocation} label="Work Location" />
         {employee.jobDetails.manager && (
-          <div className="flex items-center gap-3">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <p className="font-medium">{managerName}</p>
-              <p className="text-sm text-muted-foreground">Manager</p>
-            </div>
-          </div>
+          <InfoRow icon={User} value={managerName} label="Manager" />
+        )}
+        {employee.jobDetails.employmentType && (
+          <Badge variant="outline" className="ml-11">{employee.jobDetails.employmentType}</Badge>
         )}
       </CardContent>
     </Card>
@@ -347,53 +331,36 @@ function CompensationCard({ employee, leaveBalance }: CompensationCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
+          <DollarSign className="h-5 w-5 text-muted-foreground" />
           Compensation
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium text-lg">
-              {formatSalary(
-                employee.compensation.monthlySalary ||
-                  Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
-                  0,
+        <InfoRow
+          icon={DollarSign}
+          value={formatSalary(
+            employee.compensation.monthlySalary ||
+              Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
+              0,
+          )}
+          label="Monthly Salary"
+        />
+        <InfoRow icon={Calendar} value={`${employee.compensation.annualLeaveDays} days`} label="Annual Leave">
+          {leaveBalance?.annual && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-xs font-medium text-primary">
+                {leaveBalance.annual.remaining} remaining
+              </span>
+              <span className="text-xs text-muted-foreground">{leaveBalance.annual.used} used</span>
+              {leaveBalance.annual.pending > 0 && (
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  {leaveBalance.annual.pending} pending
+                </span>
               )}
-            </p>
-            <p className="text-sm text-muted-foreground">Monthly Salary</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.compensation.annualLeaveDays} days</p>
-            <p className="text-sm text-muted-foreground">Annual Leave</p>
-            {leaveBalance?.annual && (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                  {leaveBalance.annual.remaining} remaining
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {leaveBalance.annual.used} used
-                </span>
-                {leaveBalance.annual.pending > 0 && (
-                  <span className="text-xs text-amber-600 dark:text-amber-400">
-                    {leaveBalance.annual.pending} pending
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Shield className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="font-medium">{employee.compensation.benefitsPackage}</p>
-            <p className="text-sm text-muted-foreground">Benefits Package</p>
-          </div>
-        </div>
+            </div>
+          )}
+        </InfoRow>
+        <InfoRow icon={Shield} value={employee.compensation.benefitsPackage} label="Benefits Package" />
       </CardContent>
     </Card>
   );
@@ -426,10 +393,12 @@ interface DocumentFieldProps {
 
 function DocumentField({ icon, label, number, expiryDate, editFallback }: DocumentFieldProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
       <div className="flex items-center gap-2">
-        {icon}
-        <span className="font-medium">{label}</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+          {icon}
+        </span>
+        <span className="text-sm font-medium leading-tight">{label}</span>
       </div>
       {number ? (
         <div>
@@ -437,7 +406,7 @@ function DocumentField({ icon, label, number, expiryDate, editFallback }: Docume
           <ExpiryBadge expiryDate={expiryDate} />
         </div>
       ) : (
-        editFallback || <p className="text-sm text-muted-foreground">Not provided</p>
+        editFallback || <p className="text-sm italic text-muted-foreground/60">Not provided</p>
       )}
     </div>
   );
@@ -454,7 +423,7 @@ function EditLink({ label, onOpenChange, navigate, employeeId }: EditLinkProps) 
   return (
     <button
       onClick={() => { onOpenChange(false); navigate(`/people/add?edit=${employeeId}`); }}
-      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+      className="inline-flex items-center gap-1 text-sm text-primary hover:text-primary/80 hover:underline cursor-pointer"
     >
       <Pencil className="h-3 w-3" />
       {label}
@@ -551,7 +520,7 @@ function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps)
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
+              <FileText className="h-5 w-5 text-muted-foreground" />
               Documents & Identification
             </CardTitle>
             <CardDescription>
@@ -607,7 +576,7 @@ function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps)
             }
           />
         </div>
-        <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="mt-6 pt-6 border-t border-border">
           <h4 className="font-medium mb-4 flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             Employment Documents
