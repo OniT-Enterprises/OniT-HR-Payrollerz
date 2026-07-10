@@ -38,6 +38,7 @@ import { useVATStore } from '../../stores/vatStore';
 import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { colors } from '../../lib/colors';
 import { generateMonthlyReport } from '../../lib/monthlyReport';
+import { InlineNotice } from '../../components/InlineNotice';
 
 function getGreeting(): { tetum: string; english: string } {
   const hour = new Date().getHours();
@@ -64,6 +65,7 @@ export default function HomeScreen() {
   // Transaction data
   const {
     loading,
+    error,
     totalIn,
     totalOut,
     totalNet,
@@ -172,6 +174,10 @@ export default function HomeScreen() {
       </View>
 
       {/* Hero Summary Card */}
+      {error && (
+        <InlineNotice message={error} onRetry={onRefresh} />
+      )}
+
       <View style={styles.summaryCard}>
         <LinearGradient
           colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}

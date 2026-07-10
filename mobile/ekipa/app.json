@@ -2,26 +2,26 @@
   "expo": {
     "name": "Ekipa",
     "slug": "ekipa",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "ekipa",
-    "backgroundColor": "#F8FAFC",
-    "userInterfaceStyle": "light",
+    "backgroundColor": "#09090B",
+    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F8FAFC"
+      "backgroundColor": "#09090B"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "tl.onit.ekipa",
-      "backgroundColor": "#F8FAFC"
+      "backgroundColor": "#09090B"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F8FAFC"
+        "backgroundColor": "#09090B"
       },
       "package": "tl.onit.ekipa",
       "permissions": [
@@ -37,7 +37,7 @@
       [
         "expo-navigation-bar",
         {
-          "barStyle": "dark"
+          "barStyle": "light"
         }
       ],
       [
@@ -52,7 +52,15 @@
           "locationWhenInUsePermission": "Ekipa needs your location to record where crew attendance was taken."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6A9C29",
+          "defaultChannel": "ekipa-updates"
+        }
+      ]
     ],
     "experiments": {
       "autolinkingModuleResolution": true

@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
@@ -26,6 +27,7 @@ interface AuthState {
 
   // Actions
   signIn: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -50,6 +52,22 @@ export const useAuthStore = create<AuthState>((set) => ({
           ? 'Too many attempts. Please try again later.'
           : 'Sign in failed. Please try again.',
       });
+    }
+  },
+
+  resetPassword: async (email: string) => {
+    set({ loading: true, error: null });
+    try {
+      await sendPasswordResetEmail(auth, email);
+      set({ loading: false });
+    } catch (err: any) {
+      const message = err.code === 'auth/invalid-email'
+        ? 'Enter a valid email address.'
+        : err.code === 'auth/too-many-requests'
+          ? 'Too many attempts. Please try again later.'
+          : 'Could not send the reset email. Please try again.';
+      set({ loading: false, error: message });
+      throw new Error(message);
     }
   },
 

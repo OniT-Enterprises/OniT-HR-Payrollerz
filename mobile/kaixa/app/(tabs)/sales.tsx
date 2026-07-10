@@ -36,10 +36,11 @@ import {
   type CustomerTab,
 } from '../../stores/customerTabStore';
 import { colors } from '../../lib/colors';
+import { InlineNotice } from '../../components/InlineNotice';
 
 export default function CustomerTabsScreen() {
   const { tenantId } = useTenantStore();
-  const { tabs, loading, totalOwed, activeTabCount, loadTabs, addCustomer, addEntry, deleteCustomer } = useCustomerTabStore();
+  const { tabs, loading, error, totalOwed, activeTabCount, loadTabs, addCustomer, addEntry, deleteCustomer } = useCustomerTabStore();
 
   const [addCustomerModal, setAddCustomerModal] = useState(false);
   const [entryModal, setEntryModal] = useState(false);
@@ -85,7 +86,10 @@ export default function CustomerTabsScreen() {
     try {
       await addEntry(tenantId, selectedTab.id, Math.round(parsed * 100) / 100, entryType, entryNote.trim());
       setEntryModal(false);
-    } catch { Alert.alert('Error', 'Failed to save'); }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      Alert.alert('Unable to save payment', message);
+    }
     finally { setSaving(false); }
   };
 
@@ -126,6 +130,9 @@ export default function CustomerTabsScreen() {
       </View>
 
       <ScrollView style={styles.listContainer} contentContainerStyle={styles.listContent}>
+        {error && tenantId && (
+          <InlineNotice message={error} onRetry={() => loadTabs(tenantId)} />
+        )}
         {loading ? (
           <View style={styles.emptyState}><ActivityIndicator size="small" color={colors.primary} /></View>
         ) : tabs.length === 0 ? (

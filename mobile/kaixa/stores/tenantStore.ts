@@ -12,9 +12,9 @@ interface TenantState {
   loading: boolean;
 
   // Actions
-  setTenant: (tenantId: string, tenantName: string, role: string) => void;
+  setTenant: (tenantId: string, tenantName: string, role: string) => Promise<void>;
   loadSavedTenant: () => Promise<void>;
-  clearTenant: () => void;
+  clearTenant: () => Promise<void>;
 }
 
 const TENANT_STORAGE_KEY = '@kaixa/currentTenant';

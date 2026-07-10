@@ -3,15 +3,18 @@
  * Auth gate + tenant/employee resolution
  * Dark theme StatusBar
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { useAuthStore } from '../stores/authStore';
 import { useTenantStore } from '../stores/tenantStore';
 import { useEmployeeStore } from '../stores/employeeStore';
 import { useI18nStore, t } from '../lib/i18n';
 import { colors } from '../lib/colors';
+import { getNotificationRoute, registerForPushNotifications } from '../lib/notifications';
 
 export default function RootLayout() {
   const loading = useAuthStore((s) => s.loading);
@@ -25,7 +28,9 @@ export default function RootLayout() {
   const resolveEmployee = useTenantStore((s) => s.resolveEmployee);
   const fetchEmployee = useEmployeeStore((s) => s.fetchEmployee);
   const loadLanguage = useI18nStore((s) => s.loadLanguage);
+  const language = useI18nStore((s) => s.language);
   const signOut = useAuthStore((s) => s.signOut);
+  const lastNotificationId = useRef<string | null>(null);
 
   // Load saved language
   useEffect(() => {
@@ -66,6 +71,39 @@ export default function RootLayout() {
       fetchEmployee(tenantId, employeeId);
     }
   }, [tenantId, employeeId, fetchEmployee]);
+
+  // Register this signed-in device and keep its tenant/language metadata fresh.
+  useEffect(() => {
+    if (!user || !tenantId || !employeeId) return;
+    void registerForPushNotifications({
+      userId: user.uid,
+      tenantId,
+      employeeId,
+      language,
+    });
+  }, [user, tenantId, employeeId, language]);
+
+  // Deep-link notification taps into the matching employee workflow.
+  useEffect(() => {
+    if (!user || !employeeId) return;
+
+    const openResponse = (response: Notifications.NotificationResponse) => {
+      const notificationId = response.notification.request.identifier;
+      if (lastNotificationId.current === notificationId) return;
+
+      const route = getNotificationRoute(response.notification.request.content.data);
+      if (!route) return;
+      lastNotificationId.current = notificationId;
+      router.push(route as never);
+    };
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(openResponse);
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) openResponse(response);
+    });
+
+    return () => subscription.remove();
+  }, [user, employeeId]);
 
   // Loading splash
   if (loading) {

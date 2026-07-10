@@ -4,7 +4,7 @@
  * Three capabilities:
  * 1. Generate & share a VAT Return document (DGFI format)
  * 2. Export SAFT-TL XML for audit compliance
- * 3. Mock e-filing submission to DGFI
+ * 3. Explain e-filing readiness without pretending a filing was submitted
  *
  * Accessible from Home screen VAT card and Profile.
  */
@@ -90,6 +90,12 @@ export default function TaxFilingScreen() {
 
   const vatActive = isVATActive();
   const vatRate = effectiveRate();
+
+  useEffect(() => {
+    setFrequency(
+      tenantSettings.filingFrequency === 'quarterly' ? 'quarterly' : 'monthly'
+    );
+  }, [tenantSettings.filingFrequency]);
 
   // ── Load VAT Return data ──────────────────
 
@@ -236,24 +242,18 @@ export default function TaxFilingScreen() {
   };
 
   const startSubmission = () => {
-    if (!returnData || returnData.totalTransactions === 0) {
-      Alert.alert(
-        'Seidauk iha dadus',
-        'No transaction data for this period. Record transactions first.'
-      );
-      return;
-    }
-    setSubmitStep('review');
-    setSubmitModal(true);
+    Alert.alert(
+      'DGFI e-filing not connected',
+      'Kaixa has not submitted anything. Export the VAT PDF or SAFT file and use the official filing channel for your business.'
+    );
   };
 
   const confirmSubmission = () => {
-    setSubmitStep('submitting');
-
-    // Simulate e-filing submission (3 seconds)
-    setTimeout(() => {
-      setSubmitStep('success');
-    }, 3000);
+    setSubmitModal(false);
+    Alert.alert(
+      'Submission unavailable',
+      'No data was sent. Use the exported VAT PDF or SAFT file with the official filing channel.'
+    );
   };
 
   // ── Render ────────────────────────────────
@@ -444,7 +444,7 @@ export default function TaxFilingScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Submit to DGFI */}
+            {/* E-filing status — intentionally does not simulate a submission */}
             <TouchableOpacity
               style={[styles.actionBtn, styles.actionBtnSubmit]}
               onPress={startSubmission}
@@ -453,9 +453,9 @@ export default function TaxFilingScreen() {
               <Send size={20} color={colors.success} strokeWidth={2} />
               <View style={styles.actionTextWrap}>
                 <Text style={[styles.actionBtnLabel, { color: colors.success }]}>
-                  Submete ba DGFI
+                  DGFI e-Filing
                 </Text>
-                <Text style={styles.actionBtnSub}>Submit electronically (demo)</Text>
+                <Text style={styles.actionBtnSub}>Not connected · export files to submit</Text>
               </View>
             </TouchableOpacity>
           </View>

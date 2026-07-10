@@ -16,5 +16,6 @@ export * from "./contracts";
 export * from "./audit";
 export * from "./billing";
 export * from "./email";
+export * from "./notifications";
 
 // You can add more function modules here as they're created

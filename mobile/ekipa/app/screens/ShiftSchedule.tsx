@@ -121,6 +121,7 @@ export default function ShiftSchedule() {
         const q = query(
           collection(db, `tenants/${tenantId}/shifts`),
           where('employeeId', '==', employeeId),
+          where('status', '==', 'published'),
           where('date', '>=', startStr),
           where('date', '<=', endStr),
           orderBy('date', 'asc')

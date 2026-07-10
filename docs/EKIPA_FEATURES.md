@@ -3,6 +3,7 @@
 > Employee Self-Service (ESS) mobile app — Tetum for "team"
 > Companion to Meza web platform. Expo Router + Zustand + Firebase.
 > Category: ESS / HR Companion App (like BambooHR Mobile, ADP Mobile, Employment Hero Work App)
+> Last implementation audit: 10 July 2026 (Ekipa 1.0)
 
 ---
 
@@ -11,8 +12,8 @@
 | Feature | Screen(s) | Status |
 |---------|-----------|--------|
 | Email/password login | `(auth)/login` | Done |
-| Forgot password flow | `(auth)/forgot-password` | Done (UI only — email not actually sent, link logged) |
-| Home dashboard | `(tabs)/index` | Done — greeting, payday countdown, leave balance card, latest payslip, quick actions |
+| Forgot password flow | `(auth)/forgot-password` | Done — sends Firebase password-reset email |
+| Home dashboard | `(tabs)/index` | Done — Xefe-configured payday, live hours, next published shift, leave, payslip, announcement preview |
 | Payslip list | `(tabs)/payslips` | Done — 12-month history, pull-to-refresh |
 | Payslip detail | `screens/PayslipDetail` | Done — earnings/deductions breakdown, PDF export via expo-print + expo-sharing |
 | Leave management | `(tabs)/leave` | Done — balances with progress bars, request history, status badges |
@@ -25,16 +26,41 @@
 | QR scanner | `screens/QRScanner` | Done — full-screen camera, multiple barcode formats, haptic feedback |
 | Sync queue | `screens/SyncQueue` | Done — pending/error counts, retry/delete, batch list |
 | Offline sync engine | `lib/syncEngine.ts` + `lib/db.ts` | Done — SQLite local DB for crew data, background sync to Firestore |
-| i18n (EN/Tetum) | `lib/i18n.ts` | Done — useT hook, ~80 strings |
-| Dark theme | `lib/colors.ts` | Done — consistent across all screens |
+| Attendance history | `screens/AttendanceHistory` | Done — employee-only records, month summaries, late/absent/overtime breakdown |
+| Shift schedule | `screens/ShiftSchedule` | Done — published Xefe roster, weekly view, locations, employee-only security rules |
+| Company announcements | `screens/Announcements` | Done — pinned feed, unread badge, employee read receipts |
+| Digital employee ID | `screens/DigitalIDCard` | Done — offline-rendered employee card, QR and share |
+| Document requests | `screens/EmploymentLetterRequest` | Done — employment, salary, and INSS requests with status history |
+| Expense claims | `screens/Expenses`, `screens/ExpenseForm` | Done — receipt capture/upload, status tracking, manager approval/rejection |
+| Personal info updates | `screens/EditProfile` | Done — direct contact updates and approval workflow for bank changes |
+| Tax and INSS summary | `screens/TaxSummary` | Done — year-to-date totals and monthly breakdown |
+| Holiday calendar | `screens/HolidayCalendar` | Done — TL and employer holidays |
+| Manager approvals | `screens/ManagerApprovals` | Done for leave and expenses; timesheet approval remains future work |
+| Directory and recognition | `screens/Directory`, `screens/Recognition` | Done — colleague search and peer kudos |
+| Anonymous grievances | `screens/GrievanceReport` | Done — anonymous ticket submission and status lookup |
+| Wage verification | `screens/WageAlerts` | Done — attendance/payroll hour comparison and minimum-wage warning |
+| Push notifications | `lib/notifications.ts`, `functions/src/notifications.ts` | Done — device registration, shared-device cleanup, deep links, localized event alerts |
+| i18n (Tetum/English/Portuguese/Bahasa Indonesia) | `lib/i18n.ts` | Done — Tetum-first four-language UI |
+| Biometric app lock | `lib/biometricLock.ts` | Done — optional device authentication with inactivity lock |
+| Dark theme | `lib/colors.ts` | Done — Xefe olive-green brand on a consistent dark mobile shell |
 
 ---
 
-## Tier 1 — Must-Have (build next)
+## Remaining 1.x follow-ups
+
+- Add scheduled shift reminders and crew clock-in/out push confirmations.
+- Add a signed public verification endpoint for Digital ID QR codes; the current card/QR is an authenticated/offline identity aid, not a public proof service.
+- Add canonical timesheet approval state in Xefe, then expose it in mobile manager approvals.
+- Add employee-scoped XefeBot access only after the API can enforce per-employee data boundaries.
+
+---
+
+## Tier 1 — Core Capabilities (shipped)
 
 These are table stakes for any ESS app. Every major competitor has them.
 
 ### 1.1 Push Notifications
+**Status:** Shipped for payslips, leave decisions, expense decisions, announcements, and document requests. Shift reminders and clock confirmations remain follow-ups.
 **What:** Firebase Cloud Messaging (FCM) alerts for key events.
 **Triggers:**
 - Payslip ready / payroll processed
@@ -92,7 +118,7 @@ These are table stakes for any ESS app. Every major competitor has them.
 
 ---
 
-## Tier 2 — Should-Have (differentiation, ~3 months)
+## Tier 2 — TL Differentiators (largely shipped)
 
 Features that differentiate Ekipa from generic ESS apps. Tailored to TL context.
 
@@ -182,7 +208,7 @@ Earned: $150
 
 ---
 
-## Tier 3 — Nice-to-Have (~6 months)
+## Tier 3 — Extended ESS (mostly shipped)
 
 Polish features. Build after core is solid and user feedback confirms demand.
 
@@ -222,6 +248,7 @@ Polish features. Build after core is solid and user feedback confirms demand.
 **Ties to payroll:** Holiday pay calculations, leave planning.
 
 ### 3.4 Manager Approvals (Mobile)
+**Status:** Leave and expense decisions are shipped. Timesheet approval remains to be implemented once Xefe exposes a canonical approval state.
 **What:** Managers approve/reject leave requests, timesheets, expense claims from Ekipa.
 **Details:**
 - Badge count on tab or home card

@@ -13,7 +13,7 @@ import type { VATConfig, TenantVATSettings } from '@onit/shared';
 import { DEFAULT_VAT_CONFIG, DEFAULT_TENANT_VAT_SETTINGS } from '@onit/shared';
 
 const PLATFORM_CACHE_KEY = '@kaixa/vatConfig';
-const TENANT_CACHE_KEY = '@kaixa/tenantVatSettings';
+const TENANT_CACHE_KEY_PREFIX = '@kaixa/tenantVatSettings/';
 
 interface VATState {
   /** Platform-level VAT config */
@@ -24,6 +24,8 @@ interface VATState {
   loading: boolean;
   /** Last sync timestamp */
   lastSynced: Date | null;
+  /** Tenant whose settings are currently loaded */
+  activeTenantId: string | null;
 
   // Computed
   /** Is VAT active for this tenant? */
@@ -33,9 +35,10 @@ interface VATState {
 
   // Actions
   /** Load cached config from AsyncStorage */
-  loadCached: () => Promise<void>;
+  loadCached: (tenantId: string) => Promise<void>;
   /** Fetch latest config from Firestore */
   syncFromFirestore: (tenantId: string) => Promise<void>;
+  clear: () => void;
 }
 
 export const useVATStore = create<VATState>((set, get) => ({
@@ -43,6 +46,7 @@ export const useVATStore = create<VATState>((set, get) => ({
   tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
   loading: false,
   lastSynced: null,
+  activeTenantId: null,
 
   isVATActive: () => {
     const { config, tenantSettings } = get();
@@ -55,12 +59,19 @@ export const useVATStore = create<VATState>((set, get) => ({
     return tenantSettings.defaultVATRate || config.standardRate;
   },
 
-  loadCached: async () => {
+  loadCached: async (tenantId) => {
+    set({
+      activeTenantId: tenantId,
+      tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
+      lastSynced: null,
+    });
     try {
       const [configJson, settingsJson] = await Promise.all([
         AsyncStorage.getItem(PLATFORM_CACHE_KEY),
-        AsyncStorage.getItem(TENANT_CACHE_KEY),
+        AsyncStorage.getItem(`${TENANT_CACHE_KEY_PREFIX}${tenantId}`),
       ]);
+
+      if (get().activeTenantId !== tenantId) return;
 
       const updates: Partial<VATState> = {};
       if (configJson) {
@@ -79,6 +90,13 @@ export const useVATStore = create<VATState>((set, get) => ({
   },
 
   syncFromFirestore: async (tenantId: string) => {
+    if (get().activeTenantId !== tenantId) {
+      set({
+        activeTenantId: tenantId,
+        tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
+        lastSynced: null,
+      });
+    }
     set({ loading: true });
     try {
       // Fetch platform config and tenant settings in parallel
@@ -95,17 +113,28 @@ export const useVATStore = create<VATState>((set, get) => ({
         ? (settingsSnap.data() as TenantVATSettings)
         : DEFAULT_TENANT_VAT_SETTINGS;
 
-      // Update state
+      if (get().activeTenantId !== tenantId) return;
+
       set({ config, tenantSettings, lastSynced: new Date(), loading: false });
 
       // Cache for offline use
       await Promise.all([
         AsyncStorage.setItem(PLATFORM_CACHE_KEY, JSON.stringify(config)),
-        AsyncStorage.setItem(TENANT_CACHE_KEY, JSON.stringify(tenantSettings)),
+        AsyncStorage.setItem(
+          `${TENANT_CACHE_KEY_PREFIX}${tenantId}`,
+          JSON.stringify(tenantSettings)
+        ),
       ]);
     } catch {
       // Offline — use cached values
       set({ loading: false });
     }
   },
+
+  clear: () => set({
+    tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
+    loading: false,
+    lastSynced: null,
+    activeTenantId: null,
+  }),
 }));

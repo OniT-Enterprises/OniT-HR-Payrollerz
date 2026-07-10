@@ -38,7 +38,7 @@ import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { createTransaction } from '../../types/transaction';
 import { inferVATCategory } from '@onit/shared';
 import { generateTextReceipt } from '../../lib/receipt';
-import { getNextReceiptNumber } from '../../lib/receiptCounter';
+import { InlineNotice } from '../../components/InlineNotice';
 
 interface CartItem {
   product: Product;
@@ -48,9 +48,9 @@ interface CartItem {
 export default function SellScreen() {
   const { tenantId } = useTenantStore();
   const { user } = useAuthStore();
-  const { loading, loadProducts, activeProducts, decrementStock } =
+  const { loading, error, loadProducts, activeProducts } =
     useProductStore();
-  const { addTransaction } = useTransactionStore();
+  const { completeSale } = useTransactionStore();
   const { isVATActive, effectiveRate, config } = useVATStore();
   const bizProfile = useBusinessProfileStore((s) => s.profile);
 
@@ -108,11 +108,14 @@ export default function SellScreen() {
   const updateQty = (productId: string, delta: number) => {
     setCart((prev) => {
       const updated = prev
-        .map((item) =>
-          item.product.id === productId
-            ? { ...item, qty: item.qty + delta }
-            : item
-        )
+        .map((item) => {
+          if (item.product.id !== productId) return item;
+          const requested = item.qty + delta;
+          const nextQty = item.product.stock === null
+            ? requested
+            : Math.min(requested, item.product.stock);
+          return { ...item, qty: nextQty };
+        })
         .filter((item) => item.qty > 0);
       return updated;
     });
@@ -155,28 +158,25 @@ export default function SellScreen() {
         vatCategory,
       });
 
-      const txId = await addTransaction(txData, tenantId);
+      const completedTx = await completeSale(
+        txData,
+        tenantId,
+        cart.map((item) => ({
+          productId: item.product.id,
+          quantity: item.qty,
+          unitPrice: item.product.price,
+        }))
+      );
 
-      for (const item of cart) {
-        if (item.product.stock !== null) {
-          await decrementStock(tenantId, item.product.id, item.qty);
-        }
-      }
-
-      let receiptNumber: string | undefined;
-      try {
-        receiptNumber = await getNextReceiptNumber(tenantId);
-      } catch {
-        // Continue without receipt number
-      }
+      await loadProducts(tenantId);
 
       const receipt = generateTextReceipt({
-        transaction: { ...txData, id: txId },
+        transaction: completedTx,
         businessName: bizProfile.businessName,
         businessPhone: bizProfile.phone,
         businessAddress: bizProfile.address,
         vatRegNumber: bizProfile.vatRegNumber || undefined,
-        receiptNumber,
+        receiptNumber: completedTx.receiptNumber,
       });
 
       clearCart();
@@ -198,8 +198,9 @@ export default function SellScreen() {
           },
         ]
       );
-    } catch {
-      Alert.alert('Error', 'Failed to complete sale');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to complete sale';
+      Alert.alert('Sale not completed', message);
     } finally {
       setCheckingOut(false);
     }
@@ -241,6 +242,12 @@ export default function SellScreen() {
         style={styles.gridContainer}
         contentContainerStyle={styles.gridContent}
       >
+        {error && tenantId && (
+          <InlineNotice
+            message={error}
+            onRetry={() => loadProducts(tenantId)}
+          />
+        )}
         {loading ? (
           <View style={styles.emptyState}>
             <ActivityIndicator size="small" color={colors.primary} />

@@ -86,6 +86,7 @@ const translations: Record<string, Record<Language, string>> = {
   'home.noPayslip': { tet: 'Seidauk iha recibo', en: 'No payslips yet', pt: 'Sem recibos ainda', id: 'Belum ada slip gaji' },
   'home.daysLeft': { tet: 'loron restu', en: 'days left', pt: 'dias restantes', id: 'hari tersisa' },
   'home.attendance': { tet: 'Prezensa', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
+  'home.hoursThisMonth': { tet: 'oras fulan ida ne\'e', en: 'hours this month', pt: 'horas este mês', id: 'jam bulan ini' },
   'home.nextShift': { tet: 'Turnu tuir mai', en: 'Next shift', pt: 'Próximo turno', id: 'Shift berikutnya' },
   'home.services': { tet: 'Servisu', en: 'Services', pt: 'Serviços', id: 'Layanan' },
 
@@ -418,6 +419,9 @@ const translations: Record<string, Record<Language, string>> = {
   'approvals.tabExpenses': { tet: 'Despeza', en: 'Expenses', pt: 'Despesas', id: 'Pengeluaran' },
   'approvals.emptyLeave': { tet: 'Seidauk iha pedidu lisensa pendente', en: 'No pending leave requests', pt: 'Sem pedidos de licença pendentes', id: 'Tidak ada permintaan cuti menunggu' },
   'approvals.emptyLeaveSub': { tet: 'Pedidu foun sei mosu iha ne\'e', en: 'New requests will appear here', pt: 'Novos pedidos aparecerão aqui', id: 'Permintaan baru akan muncul di sini' },
+  'approvals.emptyExpenses': { tet: 'Seidauk iha despeza pendente', en: 'No pending expenses', pt: 'Sem despesas pendentes', id: 'Tidak ada pengeluaran menunggu' },
+  'approvals.emptyExpensesSub': { tet: 'Despeza foun sei mosu iha ne\'e', en: 'New expense claims will appear here', pt: 'Novos pedidos de despesas aparecerão aqui', id: 'Klaim pengeluaran baru akan muncul di sini' },
+  'approvals.viewReceipt': { tet: 'Haree resibo', en: 'View receipt', pt: 'Ver recibo', id: 'Lihat kwitansi' },
   'approvals.comingSoon': { tet: 'Sei mai', en: 'Coming Soon', pt: 'Em Breve', id: 'Segera Hadir' },
   'approvals.comingSoonSub': { tet: 'Funsionalidade ida ne\'e sei dezenvolve', en: 'This feature is being developed', pt: 'Esta funcionalidade está a ser desenvolvida', id: 'Fitur ini sedang dikembangkan' },
   'approvals.approve': { tet: 'Aprova', en: 'Approve', pt: 'Aprovar', id: 'Setujui' },

@@ -7,11 +7,12 @@
 import { create } from 'zustand';
 import {
   collection,
-  addDoc,
+  doc,
   query,
   where,
   orderBy,
   getDocs,
+  runTransaction,
   Timestamp,
   onSnapshot,
   type Unsubscribe,
@@ -19,6 +20,31 @@ import {
 import { db } from '../lib/firebase';
 import { paths } from '@onit/shared';
 import type { KaixaTransaction } from '../types/transaction';
+
+export interface SaleStockItem {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+function receiptYear(date: Date): string {
+  return date
+    .toLocaleDateString('en-CA', { timeZone: 'Asia/Dili' })
+    .split('-')[0];
+}
+
+function formatReceiptNumber(year: string, sequence: number): string {
+  return `REC-${year}-${String(sequence).padStart(6, '0')}`;
+}
+
+function serializeTransaction(tx: Omit<KaixaTransaction, 'id'>) {
+  return {
+    ...tx,
+    timestamp: Timestamp.fromDate(tx.timestamp),
+    createdAt: Timestamp.fromDate(tx.createdAt),
+    updatedAt: Timestamp.fromDate(tx.updatedAt),
+  };
+}
 
 // ============================================
 // Date Range Helpers
@@ -149,6 +175,15 @@ interface TransactionState {
     tx: Omit<KaixaTransaction, 'id'>,
     tenantId: string
   ) => Promise<string>;
+  completeSale: (
+    tx: Omit<KaixaTransaction, 'id'>,
+    tenantId: string,
+    stockItems: SaleStockItem[]
+  ) => Promise<KaixaTransaction>;
+  ensureReceiptNumber: (
+    tenantId: string,
+    tx: KaixaTransaction
+  ) => Promise<KaixaTransaction>;
   loadRange: (tenantId: string, range?: DateRange) => Promise<void>;
   subscribe: (tenantId: string) => Unsubscribe;
   clear: () => void;
@@ -185,25 +220,180 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
   setDateRange: (range) => set({ dateRange: range }),
 
   addTransaction: async (tx, tenantId) => {
+    set({ error: null });
     try {
-      const colRef = collection(db, paths.transactions(tenantId));
-      const docRef = await addDoc(colRef, {
-        ...tx,
-        timestamp: Timestamp.fromDate(tx.timestamp),
-        createdAt: Timestamp.fromDate(tx.createdAt),
-        updatedAt: Timestamp.fromDate(tx.updatedAt),
+      const txRef = doc(collection(db, paths.transactions(tenantId)));
+      let receiptNumber = tx.receiptNumber;
+
+      await runTransaction(db, async (firestoreTx) => {
+        if (tx.type === 'in' && !receiptNumber) {
+          const year = receiptYear(tx.timestamp);
+          const counterRef = doc(db, paths.receiptCounter(tenantId, year));
+          const counterSnap = await firestoreTx.get(counterRef);
+          const nextSequence = counterSnap.exists()
+            ? ((counterSnap.data().seq as number) || 0) + 1
+            : 1;
+
+          receiptNumber = formatReceiptNumber(year, nextSequence);
+          firestoreTx.set(
+            counterRef,
+            { seq: nextSequence, year, updatedAt: Timestamp.fromDate(new Date()) },
+            { merge: true }
+          );
+        }
+
+        firestoreTx.set(
+          txRef,
+          serializeTransaction({ ...tx, receiptNumber })
+        );
       });
 
       // Optimistic update
-      const newTx: KaixaTransaction = { ...tx, id: docRef.id };
+      const newTx: KaixaTransaction = { ...tx, receiptNumber, id: txRef.id };
       set((state) => ({
         transactions: [newTx, ...state.transactions],
       }));
 
-      return docRef.id;
+      return txRef.id;
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Failed to save transaction';
+      set({ error: message });
+      throw err;
+    }
+  },
+
+  completeSale: async (tx, tenantId, stockItems) => {
+    set({ error: null });
+    try {
+      const txRef = doc(collection(db, paths.transactions(tenantId)));
+      const year = receiptYear(tx.timestamp);
+      const counterRef = doc(db, paths.receiptCounter(tenantId, year));
+      const productRefs = stockItems.map((item) =>
+        doc(db, paths.product(tenantId, item.productId))
+      );
+      let receiptNumber = '';
+
+      await runTransaction(db, async (firestoreTx) => {
+        // Firestore requires every read to happen before the first write.
+        const [counterSnap, ...productSnaps] = await Promise.all([
+          firestoreTx.get(counterRef),
+          ...productRefs.map((ref) => firestoreTx.get(ref)),
+        ]);
+
+        productSnaps.forEach((snapshot, index) => {
+          const item = stockItems[index];
+          if (!snapshot.exists()) {
+            throw new Error('A product in this cart no longer exists. Refresh and try again.');
+          }
+
+          const product = snapshot.data();
+          if (product.isActive === false) {
+            throw new Error('A product in this cart is no longer available.');
+          }
+
+          const currentPrice = Number(product.price ?? 0);
+          if (Math.abs(currentPrice - item.unitPrice) > 0.0001) {
+            throw new Error('A product price changed. Refresh the cart before checkout.');
+          }
+
+          if (product.stock != null && Number(product.stock) < item.quantity) {
+            throw new Error(`Only ${product.stock} ${product.name || 'item(s)'} remain in stock.`);
+          }
+        });
+
+        const nextSequence = counterSnap.exists()
+          ? ((counterSnap.data().seq as number) || 0) + 1
+          : 1;
+        receiptNumber = formatReceiptNumber(year, nextSequence);
+        const now = new Date();
+
+        firestoreTx.set(
+          counterRef,
+          { seq: nextSequence, year, updatedAt: Timestamp.fromDate(now) },
+          { merge: true }
+        );
+        firestoreTx.set(
+          txRef,
+          serializeTransaction({ ...tx, receiptNumber })
+        );
+
+        productSnaps.forEach((snapshot, index) => {
+          const currentStock = snapshot.data()?.stock;
+          if (currentStock == null) return;
+
+          firestoreTx.update(productRefs[index], {
+            stock: Number(currentStock) - stockItems[index].quantity,
+            updatedAt: Timestamp.fromDate(now),
+          });
+        });
+      });
+
+      const completed: KaixaTransaction = {
+        ...tx,
+        id: txRef.id,
+        receiptNumber,
+      };
+      set((state) => ({ transactions: [completed, ...state.transactions] }));
+      return completed;
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to complete sale';
+      set({ error: message });
+      throw err;
+    }
+  },
+
+  ensureReceiptNumber: async (tenantId, tx) => {
+    if (tx.receiptNumber) return tx;
+
+    set({ error: null });
+    try {
+      const txRef = doc(db, paths.transaction(tenantId, tx.id));
+      const year = receiptYear(tx.timestamp);
+      const counterRef = doc(db, paths.receiptCounter(tenantId, year));
+      let receiptNumber = '';
+
+      await runTransaction(db, async (firestoreTx) => {
+        const [txSnap, counterSnap] = await Promise.all([
+          firestoreTx.get(txRef),
+          firestoreTx.get(counterRef),
+        ]);
+
+        if (!txSnap.exists()) {
+          throw new Error('Transaction not found');
+        }
+
+        const existing = txSnap.data().receiptNumber as string | undefined;
+        if (existing) {
+          receiptNumber = existing;
+          return;
+        }
+
+        const nextSequence = counterSnap.exists()
+          ? ((counterSnap.data().seq as number) || 0) + 1
+          : 1;
+        receiptNumber = formatReceiptNumber(year, nextSequence);
+        const now = Timestamp.fromDate(new Date());
+
+        firestoreTx.set(
+          counterRef,
+          { seq: nextSequence, year, updatedAt: now },
+          { merge: true }
+        );
+        firestoreTx.update(txRef, { receiptNumber, updatedAt: now });
+      });
+
+      const updated = { ...tx, receiptNumber, updatedAt: new Date() };
+      set((state) => ({
+        transactions: state.transactions.map((item) =>
+          item.id === tx.id ? updated : item
+        ),
+      }));
+      return updated;
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create receipt number';
       set({ error: message });
       throw err;
     }

@@ -64,6 +64,7 @@ function mapDoc(id: string, data: Record<string, unknown>): Product {
 interface ProductState {
   products: Product[];
   loading: boolean;
+  error: string | null;
 
   // Computed
   activeProducts: () => Product[];
@@ -80,30 +81,34 @@ interface ProductState {
     data: Partial<Pick<Product, 'name' | 'price' | 'category' | 'isActive' | 'stock'>>
   ) => Promise<void>;
   deleteProduct: (tenantId: string, productId: string) => Promise<void>;
-  decrementStock: (tenantId: string, productId: string, qty: number) => Promise<void>;
   clear: () => void;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
   loading: false,
+  error: null,
 
   activeProducts: () => get().products.filter((p) => p.isActive),
 
   loadProducts: async (tenantId) => {
-    set({ loading: true });
+    set({ loading: true, error: null });
     try {
       const colRef = collection(db, paths.products(tenantId));
       const q = query(colRef, orderBy('name', 'asc'));
       const snapshot = await getDocs(q);
       const products = snapshot.docs.map((d) => mapDoc(d.id, d.data()));
       set({ products, loading: false });
-    } catch {
-      set({ loading: false });
+    } catch (err: unknown) {
+      set({
+        loading: false,
+        error: err instanceof Error ? err.message : 'Failed to load products',
+      });
     }
   },
 
   addProduct: async (tenantId, data) => {
+    set({ error: null });
     const now = new Date();
     const colRef = collection(db, paths.products(tenantId));
     const docRef = await addDoc(colRef, {
@@ -137,6 +142,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   updateProduct: async (tenantId, productId, data) => {
+    set({ error: null });
     const ref = doc(db, paths.product(tenantId, productId));
     await updateDoc(ref, {
       ...data,
@@ -151,6 +157,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   deleteProduct: async (tenantId, productId) => {
+    set({ error: null });
     const ref = doc(db, paths.product(tenantId, productId));
     await deleteDoc(ref);
 
@@ -159,23 +166,5 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }));
   },
 
-  decrementStock: async (tenantId, productId, qty) => {
-    const product = get().products.find((p) => p.id === productId);
-    if (!product || product.stock === null) return;
-
-    const newStock = Math.max(0, product.stock - qty);
-    const ref = doc(db, paths.product(tenantId, productId));
-    await updateDoc(ref, {
-      stock: newStock,
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
-
-    set((state) => ({
-      products: state.products.map((p) =>
-        p.id === productId ? { ...p, stock: newStock, updatedAt: new Date() } : p
-      ),
-    }));
-  },
-
-  clear: () => set({ products: [], loading: false }),
+  clear: () => set({ products: [], loading: false, error: null }),
 }));

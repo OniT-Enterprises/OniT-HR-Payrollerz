@@ -1,6 +1,6 @@
 /**
  * Ekipa -- Login Screen
- * Premium dark theme with green (#22C55E) hero section
+ * Premium dark theme with the Xefe olive-green hero section
  * Glass-morphism shield icon, elevated form card overlapping hero
  */
 import { useState } from 'react';

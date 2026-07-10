@@ -5,12 +5,24 @@
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Dimensions } from 'react-native';
 import { router } from 'expo-router';
-import { FileText, Calendar, Clock, CalendarClock, ChevronRight, ArrowRight } from 'lucide-react-native';
+import {
+  FileText,
+  Calendar,
+  Clock,
+  CalendarClock,
+  ChevronRight,
+  ArrowRight,
+  Megaphone,
+} from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { usePayslipStore } from '../../stores/payslipStore';
 import { useLeaveStore } from '../../stores/leaveStore';
+import { useAttendanceStore } from '../../stores/attendanceStore';
+import { useShiftStore } from '../../stores/shiftStore';
+import { useAnnouncementStore } from '../../stores/announcementStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { formatCurrency } from '../../lib/currency';
@@ -26,19 +38,37 @@ function getGreeting(t: (k: string) => string): string {
   return t('home.greetingEvening');
 }
 
-function getDaysUntilPayday(): number {
+function getNextPayday(payDay: number): { date: Date; daysAway: number } {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const lastDay = new Date(year, month + 1, 0);
-  const diff = Math.ceil((lastDay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(0, diff);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const makePayday = (year: number, month: number) => {
+    const finalDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(payDay, finalDay));
+  };
+
+  let date = makePayday(today.getFullYear(), today.getMonth());
+  if (date.getTime() < today.getTime()) {
+    date = makePayday(today.getFullYear(), today.getMonth() + 1);
+  }
+
+  return {
+    date,
+    daysAway: Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
+  };
+}
+
+function formatShiftDate(date: string, t: (key: string) => string): string {
+  const parsed = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return `${parsed.getDate()} ${t(`month.${parsed.getMonth() + 1}`)}`;
 }
 
 export default function HomeScreen() {
   const t = useT();
   const language = useI18nStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
+  const user = useAuthStore((s) => s.user);
   const employee = useEmployeeStore((s) => s.employee);
   const tenantId = useTenantStore((s) => s.tenantId);
   const employeeId = useTenantStore((s) => s.employeeId);
@@ -46,6 +76,16 @@ export default function HomeScreen() {
   const fetchPayslips = usePayslipStore((s) => s.fetchPayslips);
   const balance = useLeaveStore((s) => s.balance);
   const fetchBalance = useLeaveStore((s) => s.fetchBalance);
+  const attendanceSummary = useAttendanceStore((s) => s.summary);
+  const fetchAttendance = useAttendanceStore((s) => s.fetchAttendance);
+  const shifts = useShiftStore((s) => s.shifts);
+  const fetchShifts = useShiftStore((s) => s.fetchShifts);
+  const announcements = useAnnouncementStore((s) => s.announcements);
+  const fetchAnnouncements = useAnnouncementStore((s) => s.fetchAnnouncements);
+  const getUnreadCount = useAnnouncementStore((s) => s.getUnreadCount);
+  const payDay = useSettingsStore((s) => s.payDay);
+  const companyName = useSettingsStore((s) => s.companyName);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -53,8 +93,21 @@ export default function HomeScreen() {
     if (tenantId && employeeId) {
       fetchPayslips(tenantId, employeeId);
       fetchBalance(tenantId, employeeId);
+      fetchAttendance(tenantId, employeeId);
+      fetchShifts(tenantId, employeeId);
+      fetchAnnouncements(tenantId);
+      fetchSettings(tenantId);
     }
-  }, [tenantId, employeeId, fetchPayslips, fetchBalance]);
+  }, [
+    tenantId,
+    employeeId,
+    fetchPayslips,
+    fetchBalance,
+    fetchAttendance,
+    fetchShifts,
+    fetchAnnouncements,
+    fetchSettings,
+  ]);
 
   const onRefresh = useCallback(async () => {
     if (!tenantId || !employeeId) return;
@@ -62,17 +115,36 @@ export default function HomeScreen() {
     await Promise.all([
       fetchPayslips(tenantId, employeeId),
       fetchBalance(tenantId, employeeId),
+      fetchAttendance(tenantId, employeeId),
+      fetchShifts(tenantId, employeeId),
+      fetchAnnouncements(tenantId),
+      fetchSettings(tenantId),
     ]);
     setRefreshing(false);
-  }, [tenantId, employeeId, fetchPayslips, fetchBalance]);
+  }, [
+    tenantId,
+    employeeId,
+    fetchPayslips,
+    fetchBalance,
+    fetchAttendance,
+    fetchShifts,
+    fetchAnnouncements,
+    fetchSettings,
+  ]);
 
   const displayName = employee
     ? employee.firstName
     : profile?.displayName?.split(' ')[0] || '';
 
-  const daysUntilPayday = getDaysUntilPayday();
+  const nextPayday = getNextPayday(payDay);
   const latestPayslip = payslips[0];
   const annualRemaining = balance?.annual?.remaining ?? '--';
+  const hoursThisMonth = attendanceSummary
+    ? attendanceSummary.totalRegularHours + attendanceSummary.totalOvertimeHours
+    : null;
+  const nextShift = shifts[0];
+  const latestAnnouncement = announcements[0];
+  const unreadAnnouncements = user ? getUnreadCount(user.uid) : 0;
 
   return (
     <ScrollView
@@ -86,6 +158,9 @@ export default function HomeScreen() {
       <View style={styles.hero}>
         <Text style={styles.greeting}>{getGreeting(t)}</Text>
         <Text style={styles.name}>{displayName}</Text>
+        {companyName ? (
+          <Text style={styles.companyName} numberOfLines={1}>{companyName}</Text>
+        ) : null}
       </View>
 
       {/* ══ Payday countdown — full-width block ═══ */}
@@ -93,11 +168,12 @@ export default function HomeScreen() {
         <View style={styles.paydayLeft}>
           <Text style={styles.paydayLabel}>{t('home.paydayTitle')}</Text>
           <Text style={styles.paydaySub}>
-            {daysUntilPayday} {t('home.paydaySub')}
+            {nextPayday.date.getDate()} {t(`month.${nextPayday.date.getMonth() + 1}`)}
           </Text>
         </View>
         <View style={styles.paydayBadge}>
-          <Text style={styles.paydayNumber}>{daysUntilPayday}</Text>
+          <Text style={styles.paydayNumber}>{nextPayday.daysAway}</Text>
+          <Text style={styles.paydayBadgeLabel}>{t('home.days')}</Text>
         </View>
       </View>
 
@@ -162,8 +238,11 @@ export default function HomeScreen() {
             <View style={[styles.statIcon, { backgroundColor: colors.emeraldBg }]}>
               <Clock size={18} color={colors.emerald} strokeWidth={2} />
             </View>
-            <Text style={styles.statValue}>--</Text>
-            <Text style={styles.statLabel}>{t('home.attendance')}</Text>
+            <Text style={styles.statValue}>
+              {hoursThisMonth === null ? '--' : `${hoursThisMonth.toFixed(0)}h`}
+            </Text>
+            <Text style={styles.statLabel}>{t('home.hoursThisMonth')}</Text>
+            <Text style={styles.statCaption}>{t('home.attendance')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -178,7 +257,40 @@ export default function HomeScreen() {
           </View>
           <View style={styles.shiftText}>
             <Text style={styles.shiftLabel}>{t('home.nextShift')}</Text>
-            <Text style={styles.shiftValue}>--</Text>
+            <Text style={styles.shiftValue} numberOfLines={1}>
+              {nextShift
+                ? `${formatShiftDate(nextShift.date, t)} · ${nextShift.startTime}–${nextShift.endTime}`
+                : t('time.noShift')}
+            </Text>
+            {nextShift?.location ? (
+              <Text style={styles.shiftMeta} numberOfLines={1}>{nextShift.location}</Text>
+            ) : null}
+          </View>
+          <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.announcementRow}
+          onPress={() => router.push('/screens/Announcements')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.shiftIcon, { backgroundColor: colors.tealBg }]}> 
+            <Megaphone size={18} color={colors.teal} strokeWidth={1.8} />
+          </View>
+          <View style={styles.shiftText}>
+            <View style={styles.announcementTitleRow}>
+              <Text style={styles.shiftLabel}>{t('home.announcements')}</Text>
+              {unreadAnnouncements > 0 ? (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>
+                    {unreadAnnouncements > 99 ? '99+' : unreadAnnouncements}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.shiftValue} numberOfLines={1}>
+              {latestAnnouncement?.title || t('announcements.emptySub')}
+            </Text>
           </View>
           <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
         </TouchableOpacity>
@@ -210,6 +322,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.8,
+  },
+  companyName: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+    letterSpacing: 0.2,
   },
 
   /* ── Payday countdown ────────────────────── */
@@ -245,7 +364,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: colors.primaryBg,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.25)',
+    borderColor: 'rgba(106, 156, 41, 0.28)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -254,6 +373,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.primary,
     letterSpacing: -0.5,
+  },
+  paydayBadgeLabel: {
+    marginTop: -2,
+    fontSize: 8,
+    fontWeight: '700',
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 
   /* ── Section ─────────────────────────────── */
@@ -397,5 +524,40 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: colors.textTertiary,
+  },
+  shiftMeta: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.textTertiary,
+  },
+  announcementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgCard,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: 10,
+  },
+  announcementTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+  },
+  unreadBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.textInverse,
   },
 });

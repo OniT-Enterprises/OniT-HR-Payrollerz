@@ -13,6 +13,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight } from 'lucide-react-native';
@@ -22,11 +23,31 @@ import { colors } from '../../lib/colors';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, loading, error, clearError } = useAuthStore();
+  const { signIn, resetPassword, loading, error, clearError } = useAuthStore();
 
   const handleLogin = () => {
-    if (!email.trim() || !password.trim()) return;
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Informasaun falta', 'Enter your email and password to continue.');
+      return;
+    }
     signIn(email.trim(), password);
+  };
+
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert('Email presiza', 'Enter your email first, then tap reset password.');
+      return;
+    }
+
+    try {
+      await resetPassword(email.trim());
+      Alert.alert(
+        'Email haruka ona',
+        'Check your inbox for a link to reset your password.'
+      );
+    } catch {
+      // The store exposes the localized error in the form card.
+    }
   };
 
   return (
@@ -82,6 +103,14 @@ export default function LoginScreen() {
             returnKeyType="done"
             onSubmitEditing={handleLogin}
           />
+
+          <TouchableOpacity
+            style={styles.forgotButton}
+            onPress={handleResetPassword}
+            disabled={loading}
+          >
+            <Text style={styles.forgotText}>Haluha password? · Reset password</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleLogin}
@@ -178,6 +207,15 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderRadius: 12,
     overflow: 'hidden',
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 10,
+  },
+  forgotText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
   },
   button: {
     borderRadius: 12,

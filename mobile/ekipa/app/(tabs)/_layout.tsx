@@ -6,11 +6,13 @@
  */
 import { Tabs, router } from 'expo-router';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { Home, Zap, Briefcase, Clock, User } from 'lucide-react-native';
+import { Home, Zap, Briefcase, Clock, User, Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { useEmployeeStore } from '../../stores/employeeStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useAnnouncementStore } from '../../stores/announcementStore';
 
 const ICON_SIZE = 21;
 const STROKE_DEFAULT = 1.6;
@@ -35,6 +37,34 @@ function HeaderProfileButton() {
         <User size={18} color={colors.primary} strokeWidth={2} />
       )}
     </TouchableOpacity>
+  );
+}
+
+function HeaderActions() {
+  const uid = useAuthStore((s) => s.user?.uid);
+  const announcements = useAnnouncementStore((s) => s.announcements);
+  const unread = uid
+    ? announcements.filter((announcement) => !announcement.readBy?.[uid]).length
+    : 0;
+
+  return (
+    <View style={styles.headerActions}>
+      <TouchableOpacity
+        onPress={() => router.push('/screens/Announcements')}
+        activeOpacity={0.7}
+        style={styles.notificationBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Announcements"
+      >
+        <Bell size={19} color={colors.textSecondary} strokeWidth={1.9} />
+        {unread > 0 ? (
+          <View style={styles.notificationBadge}>
+            <Text style={styles.notificationBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
+      <HeaderProfileButton />
+    </View>
   );
 }
 
@@ -71,7 +101,7 @@ export default function TabLayout() {
         },
         headerTitle: '',
         headerLeft: () => <HeaderBrand />,
-        headerRight: () => <HeaderProfileButton />,
+        headerRight: () => <HeaderActions />,
         // ── Tab bar — dark bg, subtle top border, green active ──
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
@@ -236,12 +266,46 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
   profileInitials: {
     fontSize: 13,
     fontWeight: '800',
     color: colors.primary,
     letterSpacing: -0.3,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginRight: 16,
+  },
+  notificationBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.bg,
+  },
+  notificationBadgeText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: colors.textInverse,
   },
 });

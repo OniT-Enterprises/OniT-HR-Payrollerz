@@ -6,7 +6,7 @@
  *
  * Format: REC-{YYYY}-{seq} e.g. REC-2026-000042
  */
-import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { doc, runTransaction, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { paths } from '@onit/shared';
 
@@ -20,20 +20,23 @@ export async function getNextReceiptNumber(tenantId: string): Promise<string> {
 
   const counterRef = doc(db, paths.receiptCounter(tenantId, year));
 
-  // Try to read current value first
-  const snap = await getDoc(counterRef);
+  const nextSeq = await runTransaction(db, async (firestoreTx) => {
+    const snap = await firestoreTx.get(counterRef);
+    const sequence = snap.exists()
+      ? ((snap.data().seq as number) || 0) + 1
+      : 1;
 
-  let nextSeq: number;
-  if (snap.exists()) {
-    const current = snap.data().seq as number;
-    nextSeq = current + 1;
-    // Use increment for atomic update
-    await setDoc(counterRef, { seq: increment(1) }, { merge: true });
-  } else {
-    // First receipt of the year
-    nextSeq = 1;
-    await setDoc(counterRef, { seq: 1, year });
-  }
+    firestoreTx.set(
+      counterRef,
+      {
+        seq: sequence,
+        year,
+        updatedAt: Timestamp.fromDate(now),
+      },
+      { merge: true }
+    );
+    return sequence;
+  });
 
   const padded = String(nextSeq).padStart(6, '0');
   return `REC-${year}-${padded}`;

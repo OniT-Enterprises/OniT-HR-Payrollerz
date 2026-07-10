@@ -14,15 +14,16 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import {
   LogOut,
   Globe,
   DollarSign,
-  Bell,
   Info,
-  ChevronRight,
   Building2,
   RefreshCw,
   Save,
@@ -30,6 +31,8 @@ import {
   Phone,
   FileText,
   Edit3,
+  X,
+  Check,
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
@@ -39,7 +42,7 @@ import { colors } from '../../lib/colors';
 
 export default function ProfileScreen() {
   const { profile, signOut } = useAuthStore();
-  const { tenantName, tenantId, role, clearTenant } = useTenantStore();
+  const { tenantName, tenantId, role, setTenant, clearTenant } = useTenantStore();
   const {
     profile: bizProfile,
     loading: bizLoading,
@@ -54,6 +57,7 @@ export default function ProfileScreen() {
   const [bizAddress, setBizAddress] = useState('');
   const [bizPhone, setBizPhone] = useState('');
   const [bizVatReg, setBizVatReg] = useState('');
+  const [switcherVisible, setSwitcherVisible] = useState(false);
 
   useEffect(() => {
     if (tenantId) loadBizProfile(tenantId);
@@ -97,6 +101,19 @@ export default function ProfileScreen() {
       { text: 'Sign Out', style: 'destructive', onPress: () => { clearTenant(); signOut(); }},
     ]);
   };
+
+  const switchBusiness = async (
+    nextTenantId: string,
+    name: string,
+    nextRole: string
+  ) => {
+    await setTenant(nextTenantId, name, nextRole);
+    setSwitcherVisible(false);
+    router.replace('/(tabs)');
+  };
+
+  const tenantEntries = Object.entries(profile?.tenantAccess || {});
+  const appVersion = Constants.expoConfig?.version || '0.1.0';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -192,7 +209,7 @@ export default function ProfileScreen() {
                 )}
               </View>
 
-              {(vatActive || bizProfile.vatRegNumber) && (
+              {(editing || vatActive || bizProfile.vatRegNumber) && (
                 <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <View style={styles.fieldIcon}>
                     <FileText size={14} color={colors.textTertiary} strokeWidth={1.8} />
@@ -219,7 +236,11 @@ export default function ProfileScreen() {
               </View>
 
               {profile?.tenantAccess && Object.keys(profile.tenantAccess).length > 1 && (
-                <TouchableOpacity style={styles.switchButton} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.switchButton}
+                  onPress={() => setSwitcherVisible(true)}
+                  activeOpacity={0.7}
+                >
                   <RefreshCw size={13} color={colors.primary} strokeWidth={2} />
                   <Text style={styles.switchButtonText}>Troka Negosiu</Text>
                 </TouchableOpacity>
@@ -236,45 +257,32 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>DEFINISAUN</Text>
         </View>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
+        <View style={styles.menuItem}>
           <View style={styles.menuLeft}>
             <Globe size={16} color={colors.textSecondary} strokeWidth={1.8} />
-            <Text style={styles.menuText}>Lian (Language)</Text>
+            <Text style={styles.menuText}>Lian · Language</Text>
           </View>
           <View style={styles.menuRight}>
-            <Text style={styles.menuValue}>Tetun</Text>
-            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
+            <Text style={styles.menuValue}>Tetun + English</Text>
           </View>
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
+        <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
           <View style={styles.menuLeft}>
             <DollarSign size={16} color={colors.textSecondary} strokeWidth={1.8} />
-            <Text style={styles.menuText}>Moeda (Currency)</Text>
+            <Text style={styles.menuText}>Moeda · Currency</Text>
           </View>
           <View style={styles.menuRight}>
             <Text style={styles.menuValue}>USD ($)</Text>
-            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
           </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
-          <View style={styles.menuLeft}>
-            <Bell size={16} color={colors.textSecondary} strokeWidth={1.8} />
-            <Text style={styles.menuText}>Notifikasaun</Text>
-          </View>
-          <View style={styles.menuRight}>
-            <Text style={styles.menuValue}>On</Text>
-            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
-          </View>
-        </TouchableOpacity>
+        </View>
       </View>
 
       {/* About */}
       <View style={styles.section}>
         <View style={styles.menuItem}>
           <Text style={styles.menuText}>Versaun</Text>
-          <Text style={styles.menuValue}>0.1.0</Text>
+          <Text style={styles.menuValue}>{appVersion}</Text>
         </View>
         <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
           <Text style={styles.menuText}>Powered by</Text>
@@ -289,6 +297,58 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       <Text style={styles.footer}>Kaixa by OniT — Timor-Leste</Text>
+
+      <Modal
+        visible={switcherVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setSwitcherVisible(false)}
+      >
+        <View style={styles.switcherContainer}>
+          <View style={styles.switcherHeader}>
+            <TouchableOpacity
+              style={styles.switcherClose}
+              onPress={() => setSwitcherVisible(false)}
+            >
+              <X size={18} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
+            <Text style={styles.switcherTitle}>Troka Negósiu</Text>
+            <View style={styles.switcherClose} />
+          </View>
+          <Text style={styles.switcherHint}>
+            Choose which business you want to manage in Kaixa.
+          </Text>
+          <View style={styles.switcherList}>
+            {tenantEntries.map(([id, info]) => {
+              const selected = id === tenantId;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.tenantOption, selected && styles.tenantOptionActive]}
+                  onPress={() => switchBusiness(id, info.name, info.role)}
+                  disabled={selected}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.tenantOptionIcon}>
+                    <Building2
+                      size={18}
+                      color={selected ? colors.primary : colors.textSecondary}
+                      strokeWidth={2}
+                    />
+                  </View>
+                  <View style={styles.tenantOptionText}>
+                    <Text style={styles.tenantOptionName}>{info.name}</Text>
+                    <Text style={styles.tenantOptionRole}>{info.role}</Text>
+                  </View>
+                  {selected && (
+                    <Check size={18} color={colors.primary} strokeWidth={2.5} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -348,4 +408,35 @@ const styles = StyleSheet.create({
   signOutText: { fontSize: 15, fontWeight: '600', color: colors.moneyOut },
 
   footer: { textAlign: 'center', color: colors.textTertiary, fontSize: 11, marginTop: 24, letterSpacing: 0.3 },
+
+  switcherContainer: { flex: 1, backgroundColor: colors.bg },
+  switcherHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 16, backgroundColor: colors.bgCard, borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
+  },
+  switcherClose: {
+    width: 36, height: 36, borderRadius: 8, backgroundColor: colors.bgElevated,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  switcherTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  switcherHint: {
+    fontSize: 13, lineHeight: 19, color: colors.textSecondary,
+    paddingHorizontal: 20, paddingTop: 20,
+  },
+  switcherList: { padding: 20, gap: 8 },
+  tenantOption: {
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 10,
+    backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border,
+  },
+  tenantOptionActive: { borderColor: colors.primary, backgroundColor: colors.primaryGlow },
+  tenantOptionIcon: {
+    width: 38, height: 38, borderRadius: 8, backgroundColor: colors.bgElevated,
+    alignItems: 'center', justifyContent: 'center', marginRight: 12,
+  },
+  tenantOptionText: { flex: 1 },
+  tenantOptionName: { fontSize: 15, fontWeight: '700', color: colors.text },
+  tenantOptionRole: {
+    fontSize: 11, color: colors.textTertiary, marginTop: 2, textTransform: 'capitalize',
+  },
 });

@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { unregisterPushNotifications } from '../lib/notifications';
 
 interface UserProfile {
   uid: string;
@@ -67,6 +68,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     try {
+      const currentUserId = auth.currentUser?.uid;
+      if (currentUserId) {
+        await unregisterPushNotifications(currentUserId);
+      }
       await firebaseSignOut(auth);
       set({ user: null, profile: null });
     } catch {

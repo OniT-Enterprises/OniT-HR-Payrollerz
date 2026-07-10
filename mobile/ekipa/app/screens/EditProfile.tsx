@@ -1,6 +1,6 @@
 /**
  * Ekipa — Edit Profile Screen
- * Premium dark theme with green (#22C55E) accent.
+ * Premium dark theme with the Xefe olive-green accent.
  * Edit personal info (phone, address, emergency contact).
  * Bank details create a change request instead of direct update.
  */
@@ -36,7 +36,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 
-const GREEN = '#22C55E';
+const GREEN = colors.primary;
 
 export default function EditProfile() {
   const t = useT();

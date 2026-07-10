@@ -1,6 +1,6 @@
 /**
  * Ekipa — Manager Approvals Screen
- * Premium dark theme with green (#22C55E) accent.
+ * Premium dark theme with the Xefe olive-green accent.
  * Approval queue for leave requests (expandable to timesheets/expenses).
  */
 import { useEffect, useState, useCallback } from 'react';
@@ -16,6 +16,7 @@ import {
   Platform,
   RefreshControl,
   Alert,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -40,13 +41,15 @@ import {
   doc,
   writeBatch,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAuthStore } from '../../stores/authStore';
-import { useT } from '../../lib/i18n';
+import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { formatCurrency } from '../../lib/currency';
 import { EmptyState } from '../../components/EmptyState';
 
 type ApprovalTab = 'leave' | 'timesheets' | 'expenses';
@@ -66,6 +69,18 @@ interface PendingLeave {
   requestDate: string;
 }
 
+interface PendingExpense {
+  id: string;
+  employeeName: string;
+  employeeId: string;
+  amount: number;
+  currency: string;
+  category: string;
+  date: string;
+  description: string;
+  receiptUrl?: string;
+}
+
 interface LeaveBalanceBucket {
   entitled: number;
   used: number;
@@ -75,6 +90,7 @@ interface LeaveBalanceBucket {
 
 export default function ManagerApprovals() {
   const t = useT();
+  const language = useI18nStore((s) => s.language);
   const insets = useSafeAreaInsets();
   const tenantId = useTenantStore((s) => s.tenantId);
   const role = useTenantStore((s) => s.role);
@@ -83,12 +99,14 @@ export default function ManagerApprovals() {
 
   const [activeTab, setActiveTab] = useState<ApprovalTab>('leave');
   const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([]);
+  const [pendingExpenses, setPendingExpenses] = useState<PendingExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState(false);
 
   // Bottom sheet state
   const [selectedItem, setSelectedItem] = useState<PendingLeave | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<PendingExpense | null>(null);
   const [comment, setComment] = useState('');
 
   const isManager = role === 'owner' || role === 'hr-admin' || role === 'manager';
@@ -127,18 +145,49 @@ export default function ManagerApprovals() {
     }
   }, [tenantId]);
 
+  const fetchPendingExpenses = useCallback(async () => {
+    if (!tenantId) return;
+    try {
+      const expenseQuery = query(
+        collection(db, `tenants/${tenantId}/expenses`),
+        where('status', '==', 'submitted'),
+        limit(100)
+      );
+      const snapshot = await getDocs(expenseQuery);
+      const items: PendingExpense[] = snapshot.docs.map((expenseDoc) => {
+        const data = expenseDoc.data();
+        return {
+          id: expenseDoc.id,
+          employeeName: data.employeeName || '',
+          employeeId: data.employeeId || '',
+          amount: data.amount || 0,
+          currency: data.currency || 'USD',
+          category: data.category || 'other',
+          date: data.date || '',
+          description: data.description || '',
+          receiptUrl: typeof data.receiptUrl === 'string' ? data.receiptUrl : undefined,
+        };
+      });
+      items.sort((a, b) => b.date.localeCompare(a.date));
+      setPendingExpenses(items);
+    } catch {
+      setPendingExpenses([]);
+    }
+  }, [tenantId]);
+
   useEffect(() => {
     if (tenantId && isManager) {
       setLoading(true);
-      fetchPendingLeaves().finally(() => setLoading(false));
+      Promise.all([fetchPendingLeaves(), fetchPendingExpenses()])
+        .finally(() => setLoading(false));
     }
-  }, [tenantId, isManager, fetchPendingLeaves]);
+  }, [tenantId, isManager, fetchPendingLeaves, fetchPendingExpenses]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchPendingLeaves();
+    await Promise.all([fetchPendingLeaves(), fetchPendingExpenses()]);
     setRefreshing(false);
-  }, [fetchPendingLeaves]);
+  }, [fetchPendingLeaves, fetchPendingExpenses]);
 
   const handleAction = async (action: 'approved' | 'rejected') => {
     if (!selectedItem || !employee || !tenantId || processing) return;
@@ -209,7 +258,38 @@ export default function ManagerApprovals() {
     }
   };
 
-  const pendingCount = pendingLeaves.length;
+  const handleExpenseAction = async (action: 'approved' | 'rejected') => {
+    if (!selectedExpense || !employee || !tenantId || processing) return;
+    setProcessing(true);
+    try {
+      const updates: Record<string, unknown> = {
+        status: action,
+        approvedBy: user?.uid || employee.id,
+        approverName: `${employee.firstName} ${employee.lastName}`,
+        updatedAt: serverTimestamp(),
+      };
+      if (action === 'approved') {
+        updates.approvedAt = serverTimestamp();
+      } else {
+        updates.rejectedAt = serverTimestamp();
+        if (comment.trim()) updates.rejectionReason = comment.trim();
+      }
+
+      await updateDoc(
+        doc(db, `tenants/${tenantId}/expenses`, selectedExpense.id),
+        updates
+      );
+      setPendingExpenses((current) => current.filter((item) => item.id !== selectedExpense.id));
+      setSelectedExpense(null);
+      setComment('');
+    } catch {
+      Alert.alert(t('common.error'), t('approvals.actionError'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const pendingCount = pendingLeaves.length + pendingExpenses.length;
 
   const tabs: { id: ApprovalTab; labelKey: string; icon: typeof Calendar }[] = [
     { id: 'leave', labelKey: 'approvals.tabLeave', icon: Calendar },
@@ -341,10 +421,48 @@ export default function ManagerApprovals() {
         )}
 
         {activeTab === 'expenses' && (
-          <EmptyState
-            title={t('approvals.comingSoon')}
-            subtitle={t('approvals.comingSoonSub')}
-          />
+          <>
+            {loading ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="large" color={colors.emerald} />
+              </View>
+            ) : pendingExpenses.length === 0 ? (
+              <EmptyState
+                title={t('approvals.emptyExpenses')}
+                subtitle={t('approvals.emptyExpensesSub')}
+              />
+            ) : (
+              <View style={styles.list}>
+                {pendingExpenses.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.approvalCard}
+                    onPress={() => { setSelectedExpense(item); setComment(''); }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.avatar, styles.expenseAvatar]}>
+                      <Receipt size={19} color={colors.emerald} strokeWidth={2} />
+                    </View>
+
+                    <View style={styles.cardContent}>
+                      <Text style={styles.cardName} numberOfLines={1}>{item.employeeName}</Text>
+                      <Text style={styles.cardType} numberOfLines={1}>{item.description}</Text>
+                      <Text style={styles.cardDates}>
+                        {item.date} · {t(`expense.${item.category}`)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.expenseCardRight}>
+                      <Text style={styles.expenseAmount}>
+                        {formatCurrency(item.amount, language, item.currency)}
+                      </Text>
+                      <ChevronRight size={18} color={colors.textTertiary} strokeWidth={2} />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -435,6 +553,109 @@ export default function ManagerApprovals() {
                   <TouchableOpacity
                     style={styles.approveBtn}
                     onPress={() => handleAction('approved')}
+                    disabled={processing}
+                    activeOpacity={0.85}
+                  >
+                    {processing ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <>
+                        <CheckCircle2 size={18} color={colors.white} strokeWidth={2.5} />
+                        <Text style={styles.actionBtnText}>{t('approvals.approve')}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Expense approval bottom sheet ─────────────── */}
+      <Modal
+        visible={selectedExpense !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedExpense(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalDismiss}
+            onPress={() => setSelectedExpense(null)}
+            activeOpacity={1}
+          />
+          <View style={[styles.bottomSheet, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={styles.sheetHandle} />
+            <TouchableOpacity
+              style={styles.sheetClose}
+              onPress={() => setSelectedExpense(null)}
+              activeOpacity={0.7}
+            >
+              <X size={20} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
+
+            {selectedExpense && (
+              <>
+                <Text style={styles.sheetName}>{selectedExpense.employeeName}</Text>
+                <Text style={styles.sheetExpenseAmount}>
+                  {formatCurrency(selectedExpense.amount, language, selectedExpense.currency)}
+                </Text>
+
+                <View style={styles.sheetDetailRow}>
+                  <Text style={styles.sheetLabel}>{t('expense.date')}</Text>
+                  <Text style={styles.sheetValue}>{selectedExpense.date}</Text>
+                </View>
+                <View style={styles.sheetDetailRow}>
+                  <Text style={styles.sheetLabel}>{t('expense.category')}</Text>
+                  <Text style={styles.sheetValue}>{t(`expense.${selectedExpense.category}`)}</Text>
+                </View>
+                <View style={styles.sheetDetailRow}>
+                  <Text style={styles.sheetLabel}>{t('expense.description')}</Text>
+                  <Text style={styles.sheetValue}>{selectedExpense.description}</Text>
+                </View>
+
+                {selectedExpense.receiptUrl ? (
+                  <TouchableOpacity
+                    style={styles.receiptButton}
+                    onPress={() => {
+                      if (selectedExpense.receiptUrl) {
+                        void Linking.openURL(selectedExpense.receiptUrl);
+                      }
+                    }}
+                    activeOpacity={0.75}
+                  >
+                    <Receipt size={16} color={colors.emerald} strokeWidth={2} />
+                    <Text style={styles.receiptButtonText}>{t('approvals.viewReceipt')}</Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                <View style={styles.commentWrap}>
+                  <MessageSquare size={14} color={colors.textTertiary} strokeWidth={2} />
+                  <TextInput
+                    style={styles.commentInput}
+                    value={comment}
+                    onChangeText={setComment}
+                    placeholder={t('approvals.commentPlaceholder')}
+                    placeholderTextColor={colors.textTertiary}
+                    multiline
+                    numberOfLines={2}
+                  />
+                </View>
+
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={() => handleExpenseAction('rejected')}
+                    disabled={processing}
+                    activeOpacity={0.85}
+                  >
+                    <XCircle size={18} color={colors.white} strokeWidth={2.5} />
+                    <Text style={styles.actionBtnText}>{t('approvals.reject')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={() => handleExpenseAction('approved')}
                     disabled={processing}
                     activeOpacity={0.85}
                   >
@@ -573,10 +794,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   tabPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 14,
+    paddingHorizontal: 8,
     paddingVertical: 9,
     borderRadius: 20,
     backgroundColor: colors.bgCard,
@@ -663,6 +886,20 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: 2,
   },
+  expenseAvatar: {
+    backgroundColor: colors.emeraldBg,
+  },
+  expenseCardRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 8,
+  },
+  expenseAmount: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.text,
+  },
 
   // ── Bottom sheet modal ──────────────────────────────
   modalOverlay: {
@@ -714,6 +951,14 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginBottom: 20,
   },
+  sheetExpenseAmount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.emerald,
+    letterSpacing: -0.7,
+    marginTop: 4,
+    marginBottom: 18,
+  },
   sheetDetailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -735,6 +980,23 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     marginLeft: 12,
+  },
+  receiptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 11,
+    borderRadius: 10,
+    backgroundColor: colors.emeraldBg,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  receiptButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.emerald,
   },
 
   // ── Comment input ───────────────────────────────────

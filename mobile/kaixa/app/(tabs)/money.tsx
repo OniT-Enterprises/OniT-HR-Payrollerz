@@ -6,7 +6,7 @@
  * VAT-ready: every transaction captures VAT fields (zeroed when VAT inactive).
  * Supports date range filtering: today / week / month.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
   Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -44,8 +45,8 @@ import {
 import { inferVATCategory } from '@onit/shared';
 import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { generateTextReceipt, getWhatsAppShareURL } from '../../lib/receipt';
-import { getNextReceiptNumber } from '../../lib/receiptCounter';
 import type { KaixaTransaction } from '../../types/transaction';
+import { InlineNotice } from '../../components/InlineNotice';
 
 type TransactionType = 'in' | 'out';
 
@@ -68,6 +69,7 @@ const PERIOD_OPTIONS: { key: DateRange; label: string; labelEn: string }[] = [
 ];
 
 export default function MoneyScreen() {
+  const params = useLocalSearchParams<{ type?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
   const [txType, setTxType] = useState<TransactionType>('in');
   const [amount, setAmount] = useState('');
@@ -78,17 +80,18 @@ export default function MoneyScreen() {
   const {
     transactions,
     loading,
+    error,
     dateRange,
     totalIn,
     totalOut,
     totalVAT,
     transactionCount,
     addTransaction,
+    ensureReceiptNumber,
     loadRange,
   } = useTransactionStore();
 
-  const { isVATActive, effectiveRate, config, syncFromFirestore, loadCached } =
-    useVATStore();
+  const { isVATActive, effectiveRate, config } = useVATStore();
   const { tenantId } = useTenantStore();
   const { user } = useAuthStore();
   const bizProfile = useBusinessProfileStore((s) => s.profile);
@@ -102,13 +105,6 @@ export default function MoneyScreen() {
     }
   }, [tenantId, loadRange]);
 
-  useEffect(() => {
-    loadCached();
-    if (tenantId) {
-      syncFromFirestore(tenantId);
-    }
-  }, [tenantId, loadCached, syncFromFirestore]);
-
   const categories = txType === 'in' ? CATEGORIES_IN : CATEGORIES_OUT;
 
   const switchPeriod = (range: DateRange) => {
@@ -117,13 +113,20 @@ export default function MoneyScreen() {
     }
   };
 
-  const openEntry = (type: TransactionType) => {
+  const openEntry = useCallback((type: TransactionType) => {
     setTxType(type);
     setAmount('');
     setCategory('');
     setNote('');
     setModalVisible(true);
-  };
+  }, []);
+
+  // Home quick actions deep-link directly into the correct entry form.
+  useEffect(() => {
+    if (params.type !== 'in' && params.type !== 'out') return;
+    openEntry(params.type);
+    router.setParams({ type: '' });
+  }, [params.type, openEntry]);
 
   const saveTransaction = async () => {
     const parsed = parseFloat(amount);
@@ -186,53 +189,43 @@ export default function MoneyScreen() {
   };
 
   const shareReceipt = async (tx: KaixaTransaction) => {
-    let receiptNumber = tx.receiptNumber;
-    if (!receiptNumber && tenantId) {
-      try {
-        receiptNumber = await getNextReceiptNumber(tenantId);
-      } catch {
-        // Continue without receipt number
-      }
-    }
-
-    const receipt = generateTextReceipt({
-      transaction: tx,
-      businessName: bizProfile.businessName,
-      businessPhone: bizProfile.phone,
-      businessAddress: bizProfile.address,
-      vatRegNumber: bizProfile.vatRegNumber || undefined,
-      receiptNumber,
-    });
+    if (!tenantId) return;
 
     try {
+      const receiptedTx = await ensureReceiptNumber(tenantId, tx);
+      const receipt = generateTextReceipt({
+        transaction: receiptedTx,
+        businessName: bizProfile.businessName,
+        businessPhone: bizProfile.phone,
+        businessAddress: bizProfile.address,
+        vatRegNumber: bizProfile.vatRegNumber || undefined,
+        receiptNumber: receiptedTx.receiptNumber,
+      });
       await Share.share({ message: receipt });
-    } catch {
-      // User cancelled
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create receipt';
+      Alert.alert('Receipt error', message);
     }
   };
 
   const shareViaWhatsApp = async (tx: KaixaTransaction) => {
-    let receiptNumber = tx.receiptNumber;
-    if (!receiptNumber && tenantId) {
-      try {
-        receiptNumber = await getNextReceiptNumber(tenantId);
-      } catch {
-        // Continue without receipt number
-      }
-    }
+    if (!tenantId) return;
 
-    const receipt = generateTextReceipt({
-      transaction: tx,
-      businessName: bizProfile.businessName,
-      businessPhone: bizProfile.phone,
-      businessAddress: bizProfile.address,
-      vatRegNumber: bizProfile.vatRegNumber || undefined,
-      receiptNumber,
-    });
-    const url = getWhatsAppShareURL(receipt);
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Error', 'WhatsApp not installed');
-    });
+    try {
+      const receiptedTx = await ensureReceiptNumber(tenantId, tx);
+      const receipt = generateTextReceipt({
+        transaction: receiptedTx,
+        businessName: bizProfile.businessName,
+        businessPhone: bizProfile.phone,
+        businessAddress: bizProfile.address,
+        vatRegNumber: bizProfile.vatRegNumber || undefined,
+        receiptNumber: receiptedTx.receiptNumber,
+      });
+      await Linking.openURL(getWhatsAppShareURL(receipt));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'WhatsApp is not available';
+      Alert.alert('Unable to share', message);
+    }
   };
 
   const periodLabel =
@@ -241,6 +234,15 @@ export default function MoneyScreen() {
   return (
     <View style={styles.container}>
       {/* Period Selector */}
+      {error && (
+        <View style={styles.noticeWrap}>
+          <InlineNotice
+            message={error}
+            onRetry={() => tenantId && loadRange(tenantId, dateRange)}
+          />
+        </View>
+      )}
+
       <View style={styles.periodBar}>
         {PERIOD_OPTIONS.map((opt) => (
           <TouchableOpacity
@@ -543,6 +545,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
+  noticeWrap: { paddingHorizontal: 16, paddingTop: 12 },
 
   // Period Selector
   periodBar: {

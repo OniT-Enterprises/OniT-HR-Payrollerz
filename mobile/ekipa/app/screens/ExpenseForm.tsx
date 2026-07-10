@@ -34,9 +34,10 @@ import {
   Calendar,
 } from 'lucide-react-native';
 import {
-  addDoc,
   collection,
+  doc,
   serverTimestamp,
+  setDoc,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
@@ -116,10 +117,11 @@ export default function ExpenseForm() {
     setSubmitting(true);
     try {
       let receiptUrl: string | undefined;
+      const expenseRef = doc(collection(db, `tenants/${tenantId}/expenses`));
 
       // Upload receipt photo if present
       if (receiptUri) {
-        const filename = `receipts/${tenantId}/${employeeId}/${Date.now()}.jpg`;
+        const filename = `tenants/${tenantId}/expenses/${expenseRef.id}/receipts/${Date.now()}.jpg`;
         const storageRef = ref(storage, filename);
         const response = await fetch(receiptUri);
         const blob = await response.blob();
@@ -127,7 +129,7 @@ export default function ExpenseForm() {
         receiptUrl = await getDownloadURL(storageRef);
       }
 
-      await addDoc(collection(db, `tenants/${tenantId}/expenses`), {
+      await setDoc(expenseRef, {
         tenantId,
         employeeId,
         employeeName: `${employee.firstName} ${employee.lastName}`,

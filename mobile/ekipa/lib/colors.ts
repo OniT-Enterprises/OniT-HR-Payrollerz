@@ -15,7 +15,7 @@ export const colors = {
   // ── Borders ──────────────────────────────────────
   border: 'rgba(63, 63, 70, 0.5)',    // zinc-700 at 50% — subtle
   borderMedium: '#3F3F46',             // zinc-700 — medium emphasis
-  borderAccent: '#22C55E',             // green accent border
+  borderAccent: '#6A9C29',             // Xefe olive-green accent border
 
   // ── Text ─────────────────────────────────────────
   text: '#F1F5F9',          // slate-100 — primary text
@@ -23,11 +23,11 @@ export const colors = {
   textTertiary: '#64748B',  // slate-500 — muted
   textInverse: '#09090B',   // text on colored buttons
 
-  // ── Brand — Green (Meza) ─────────────────────────
-  primary: '#22C55E',        // green-500
-  primaryLight: '#4ADE80',   // green-400
-  primaryDark: '#16A34A',    // green-600
-  primaryBg: 'rgba(34, 197, 94, 0.10)',
+  // ── Brand — Xefe olive green ──────────────────────
+  primary: '#6A9C29',
+  primaryLight: '#86B93B',
+  primaryDark: '#557D21',
+  primaryBg: 'rgba(106, 156, 41, 0.12)',
 
   // ── Module Accents ─────────────────────────────
   // Each tab/section uses its own accent color (like Meza)

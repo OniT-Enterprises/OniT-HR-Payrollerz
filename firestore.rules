@@ -638,8 +638,17 @@ service cloud.firestore {
       match /announcements/{announcementId} {
         // All tenant members can read announcements
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        // Only admins can create/update/delete announcements
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Only admins can publish or edit announcement content.
+        allow create, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) || (
+          isTenantMember(tenantId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']) &&
+          request.resource.data.readBy is map &&
+          request.resource.data.readBy
+            .diff(resource.data.get('readBy', {}))
+            .affectedKeys().hasOnly([request.auth.uid]) &&
+          request.resource.data.readBy[request.auth.uid] == request.time
+        );
       }
 
       // ============================================
@@ -697,7 +706,13 @@ service cloud.firestore {
       // SHIFTS SUBCOLLECTION (Ekipa reads published shifts)
       // ============================================
       match /shifts/{shiftId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        // Managers can plan the full roster. Employees only see their own
+        // published shifts; drafts and coworkers' schedules stay private.
+        allow read: if isSuperAdmin() || isTenantManagerOrAdmin(tenantId) || (
+          resource.data.employeeId != null &&
+          resource.data.status == 'published' &&
+          isSelfEmployee(tenantId, resource.data.employeeId)
+        );
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -768,6 +783,66 @@ service cloud.firestore {
       match /bill_payments/{paymentId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // KAIXA POS + CASH TRACKING
+      // ============================================
+      match /transactions/{transactionId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.tenantId == tenantId &&
+          request.resource.data.createdBy == request.auth.uid &&
+          request.resource.data.type in ['in', 'out'] &&
+          request.resource.data.amount is number &&
+          request.resource.data.amount > 0
+        );
+        // Financial values stay immutable. Kaixa may only attach receipt/sync metadata.
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          resource.data.tenantId == tenantId &&
+          request.resource.data.tenantId == resource.data.tenantId &&
+          request.resource.data.createdBy == resource.data.createdBy &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'receiptNumber',
+            'customerVatId',
+            'syncedToMeza',
+            'mezaInvoiceId',
+            'updatedAt',
+          ])
+        );
+        allow delete: if false;
+      }
+
+      match /products/{productId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /customerTabs/{tabId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /receiptCounters/{year} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.year == year &&
+          request.resource.data.seq == 1
+        );
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.year == resource.data.year &&
+          request.resource.data.seq == resource.data.seq + 1 &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'seq',
+            'year',
+            'updatedAt',
+          ])
+        );
+        allow delete: if false;
       }
 
       match /vatReturns/{periodId} {

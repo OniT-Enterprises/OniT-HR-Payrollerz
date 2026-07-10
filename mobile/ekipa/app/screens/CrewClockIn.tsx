@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: colors.primaryBg,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.28)',
+    borderColor: 'rgba(106, 156, 41, 0.28)',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   quickDateChip: {
     backgroundColor: colors.primaryBg,
     borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.28)',
+    borderColor: 'rgba(106, 156, 41, 0.28)',
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 7,

@@ -1,6 +1,6 @@
 /**
  * Ekipa — Digital Employee ID Card Screen
- * Premium dark theme with green (#22C55E) accent.
+ * Premium dark theme with the Xefe olive-green accent.
  * Full-screen card layout with QR code for employment verification.
  */
 import { useRef } from 'react';
@@ -23,8 +23,8 @@ import { useEmployeeStore } from '../../stores/employeeStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 
-const GREEN = '#22C55E';
-const GREEN_BG = 'rgba(34, 197, 94, 0.10)';
+const GREEN = colors.primary;
+const GREEN_BG = colors.primaryBg;
 
 export default function DigitalIDCard() {
   const t = useT();

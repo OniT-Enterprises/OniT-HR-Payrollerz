@@ -8,12 +8,12 @@ import { create } from 'zustand';
 import {
   collection,
   addDoc,
-  updateDoc,
   deleteDoc,
   doc,
   getDocs,
   query,
   orderBy,
+  runTransaction,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -135,6 +135,7 @@ export const useCustomerTabStore = create<CustomerTabState>((set, get) => ({
   },
 
   addCustomer: async (tenantId, name, phone = '') => {
+    set({ error: null });
     try {
       const now = new Date();
       const colRef = collection(db, paths.customerTabs(tenantId));
@@ -168,10 +169,8 @@ export const useCustomerTabStore = create<CustomerTabState>((set, get) => ({
   },
 
   addEntry: async (tenantId, tabId, amount, type, note = '') => {
+    set({ error: null });
     try {
-      const tab = get().tabs.find((t) => t.id === tabId);
-      if (!tab) throw new Error('Tab not found');
-
       const now = new Date();
       const entry: TabEntry = {
         id: `e-${Date.now()}`,
@@ -180,32 +179,40 @@ export const useCustomerTabStore = create<CustomerTabState>((set, get) => ({
         note,
         date: now,
       };
-
-      const newBalance =
-        type === 'debt' ? tab.balance + amount : tab.balance - amount;
-
-      const updatedEntries = [
-        ...tab.entries.map((e) => ({
-          ...e,
-          date: Timestamp.fromDate(e.date),
-        })),
-        { ...entry, date: Timestamp.fromDate(now) },
-      ];
-
       const ref = doc(db, paths.customerTab(tenantId, tabId));
-      await updateDoc(ref, {
-        balance: newBalance,
-        entries: updatedEntries,
-        updatedAt: Timestamp.fromDate(now),
+      let newBalance = 0;
+
+      await runTransaction(db, async (firestoreTx) => {
+        const snapshot = await firestoreTx.get(ref);
+        if (!snapshot.exists()) throw new Error('Customer tab not found');
+
+        const data = snapshot.data();
+        const currentBalance = Number(data.balance ?? 0);
+        if (type === 'payment' && amount > currentBalance) {
+          throw new Error(`Payment cannot exceed the $${currentBalance.toFixed(2)} balance.`);
+        }
+
+        newBalance = type === 'debt'
+          ? currentBalance + amount
+          : currentBalance - amount;
+        const existingEntries = Array.isArray(data.entries) ? data.entries : [];
+
+        firestoreTx.update(ref, {
+          balance: Math.round(newBalance * 100) / 100,
+          entries: [
+            ...existingEntries,
+            { ...entry, date: Timestamp.fromDate(now) },
+          ],
+          updatedAt: Timestamp.fromDate(now),
+        });
       });
 
-      // Optimistic update
       set((state) => ({
         tabs: state.tabs.map((t) =>
           t.id === tabId
             ? {
                 ...t,
-                balance: newBalance,
+                balance: Math.round(newBalance * 100) / 100,
                 entries: [...t.entries, entry],
                 updatedAt: now,
               }
@@ -221,6 +228,7 @@ export const useCustomerTabStore = create<CustomerTabState>((set, get) => ({
   },
 
   deleteCustomer: async (tenantId, tabId) => {
+    set({ error: null });
     try {
       const ref = doc(db, paths.customerTab(tenantId, tabId));
       await deleteDoc(ref);

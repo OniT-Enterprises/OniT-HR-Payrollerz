@@ -60,7 +60,7 @@ export default function PayslipDetail() {
             td:last-child { text-align: right; font-weight: 600; }
             .section { font-weight: 700; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 0 4px; }
             .total { font-weight: 800; font-size: 16px; border-top: 2px solid #0F172A; }
-            .net { color: #22C55E; }
+            .net { color: #6A9C29; }
           </style>
         </head>
         <body>
