@@ -37,7 +37,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import QuickBillDialog from '@/components/money/QuickBillDialog';
-import { partitionBillFiles, BILL_FILE_ACCEPT } from '@/components/money/BillAttachmentsInput';
+import { partitionBillFiles, BILL_FILE_ACCEPT } from '@/lib/billFiles';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';

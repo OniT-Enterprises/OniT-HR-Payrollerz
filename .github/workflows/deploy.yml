@@ -73,7 +73,7 @@ jobs:
           projectId: onit-hr-payroll
           channelId: live
 
-      - name: Deploy Firestore rules
+      - name: Deploy Firestore & Storage rules
         run: node scripts/deploy-rules.mjs
         env:
           FIREBASE_ADMINSDK_JSON: ${{ secrets.FIREBASE_ADMINSDK_JSON }}

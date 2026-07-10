@@ -7,28 +7,8 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n/I18nProvider';
-import { fileUploadService } from '@/services/fileUploadService';
+import { BILL_FILE_ACCEPT, partitionBillFiles } from '@/lib/billFiles';
 import { FileText, Upload, X, ExternalLink } from 'lucide-react';
-
-export const BILL_FILE_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic,application/pdf';
-
-/**
- * Splits files into valid bill attachments and rejection messages
- * (images/PDFs up to 10MB, per fileUploadService.validateReceiptFile).
- */
-export function partitionBillFiles(files: File[]): { valid: File[]; errors: string[] } {
-  const valid: File[] = [];
-  const errors: string[] = [];
-  for (const file of files) {
-    const result = fileUploadService.validateReceiptFile(file);
-    if (result.valid) {
-      valid.push(file);
-    } else {
-      errors.push(`${file.name}: ${result.error}`);
-    }
-  }
-  return { valid, errors };
-}
 
 function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
