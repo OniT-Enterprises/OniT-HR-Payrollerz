@@ -11,6 +11,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
 import AppSidebar from "./AppSidebar";
 import TopBar from "./TopBar";
+import { ImpersonationBanner } from "./ImpersonationBanner";
 
 // Routes that should NOT show the sidebar layout
 const PUBLIC_PATHS = ["/auth/", "/landing", "/features", "/unauthorized", "/apply/"];
@@ -22,7 +23,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading: authLoading } = useAuth();
-  const { session, loading: tenantLoading } = useTenant();
+  const { session, loading: tenantLoading, isImpersonating } = useTenant();
   const location = useLocation();
 
   const isPublicRoute = PUBLIC_PATHS.some((p) => location.pathname.startsWith(p));
@@ -38,6 +39,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="flex h-dvh bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
+          {isImpersonating && <ImpersonationBanner />}
           <TopBar />
           <main className="flex-1 overflow-y-auto">
             {children}

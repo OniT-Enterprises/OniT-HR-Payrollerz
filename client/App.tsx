@@ -38,7 +38,7 @@ import {
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
   const { user, userProfile, loading, authResolved, isSuperAdmin } = useAuth();
-  const { session, loading: tenantLoading, tenantResolved, availableTenants } = useTenant();
+  const { session, loading: tenantLoading, tenantResolved, availableTenants, isImpersonating } = useTenant();
 
   // A cold load / fresh sign-in can have loading=false (cached) while Firebase
   // is still restoring the session — don't decide anything until auth resolves.
@@ -49,6 +49,14 @@ function HomeRoute() {
   // Not logged in - show landing page
   if (!user) {
     return <Landing />;
+  }
+
+  // While impersonating a tenant, "/" is that tenant's dashboard — not the
+  // admin console. This must win over the superadmin → /admin redirects below
+  // (a superadmin has no tenants of their own, so hasTenants is false and they
+  // would otherwise be bounced to /admin, making impersonation look broken).
+  if (isImpersonating && session) {
+    return <Dashboard />;
   }
 
   // User without a user profile - needs to create their organization.
