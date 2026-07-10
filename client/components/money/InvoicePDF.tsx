@@ -27,7 +27,7 @@ import {
   formatInvoiceDate,
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
-import { multiplyMoney, subtractMoney } from '@/lib/currency';
+import { subtractMoney } from '@/lib/currency';
 
 const TEXT = '#1f2937';
 const MUTED = '#6b7280';

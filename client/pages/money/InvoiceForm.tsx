@@ -533,7 +533,11 @@ export default function InvoiceForm() {
                       value={field.value}
                       onValueChange={(value) => {
                         if (value === '__new__') {
-                          setShowNewCustomer(true);
+                          // Defer until the Select finishes closing — opening a
+                          // Dialog synchronously from onValueChange can leave
+                          // Radix's pointer-events lock stuck on <body>,
+                          // freezing the whole screen.
+                          setTimeout(() => setShowNewCustomer(true), 0);
                           return;
                         }
                         field.onChange(value);
