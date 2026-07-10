@@ -10,8 +10,6 @@ import {
   getDoc,
   addDoc,
   setDoc,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -28,7 +26,12 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney, percentOf } from '@/lib/currency';
+import { addMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
+import {
+  calculateBillPaymentState,
+  calculateTaxedTotal,
+  getFiscalDateParts,
+} from '@/lib/accounting/calculations';
 import type {
   Bill,
   BillFormData,
@@ -37,6 +40,7 @@ import type {
   BillPaymentFormData,
   ExpenseCategory,
 } from '@/types/money';
+import type { JournalEntry } from '@/types/accounting';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
@@ -96,6 +100,9 @@ function mapBill(docSnap: DocumentSnapshot): Bill {
     paidAt: data.paidAt instanceof Timestamp
       ? data.paidAt.toDate()
       : data.paidAt || undefined,
+    cancelledAt: data.cancelledAt instanceof Timestamp
+      ? data.cancelledAt.toDate()
+      : data.cancelledAt || undefined,
   } as Bill;
 }
 
@@ -257,12 +264,38 @@ class BillService {
   }
 
   async getOutstandingPayablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const snapshot = await getDocs(query(
-      this.collectionRef(tenantId),
-      where('status', 'in', UNPAID_BILL_STATUSES),
-      where('billDate', '<=', asOfDate),
-    ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().balanceDue) || 0), 0);
+    const [billSnapshot, paymentSnapshot] = await Promise.all([
+      getDocs(query(this.collectionRef(tenantId), where('billDate', '<=', asOfDate))),
+      getDocs(query(this.paymentsRef(tenantId), where('date', '<=', asOfDate))),
+    ]);
+
+    const paidByBill = new Map<string, number>();
+    for (const paymentDoc of paymentSnapshot.docs) {
+      const data = paymentDoc.data();
+      if (typeof data.billId !== 'string') continue;
+      paidByBill.set(
+        data.billId,
+        addMoney(paidByBill.get(data.billId) || 0, Number(data.amount) || 0),
+      );
+    }
+
+    const cutoff = new Date(`${asOfDate}T23:59:59.999+09:00`).getTime();
+    let total = 0;
+    for (const billDoc of billSnapshot.docs) {
+      const data = billDoc.data();
+      const cancelledAt = data.cancelledAt instanceof Timestamp ? data.cancelledAt.toMillis() : null;
+      if (data.status === 'cancelled' && (cancelledAt === null || cancelledAt <= cutoff)) continue;
+
+      const historicalBalance = maxMoney(
+        0,
+        subtractMoney(
+          Number(data.total) || 0,
+          paidByBill.get(billDoc.id) || 0,
+        ),
+      );
+      total = addMoney(total, historicalBalance);
+    }
+    return total;
   }
 
   async getPaidBillAmountByDateRange(
@@ -271,21 +304,25 @@ class BillService {
     endDate: string
   ): Promise<number> {
     const snapshot = await getDocs(query(
-      this.collectionRef(tenantId),
-      where('status', '==', 'paid'),
-      where('paidAt', '>=', new Date(`${startDate}T00:00:00.000+09:00`)),
-      where('paidAt', '<=', new Date(`${endDate}T23:59:59.999+09:00`)),
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
     ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().amount) || 0), 0);
+    return snapshot.docs.reduce(
+      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      0,
+    );
   }
 
   async getPaidBillAmountAsOf(tenantId: string, asOfDate: string): Promise<number> {
     const snapshot = await getDocs(query(
-      this.collectionRef(tenantId),
-      where('status', '==', 'paid'),
-      where('paidAt', '<=', new Date(`${asOfDate}T23:59:59.999+09:00`)),
+      this.paymentsRef(tenantId),
+      where('date', '<=', asOfDate),
     ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().amount) || 0), 0);
+    return snapshot.docs.reduce(
+      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      0,
+    );
   }
 
   async getVATSummary(
@@ -299,14 +336,39 @@ class BillService {
     let expenseCount = 0;
 
     for (const bill of bills) {
-      const vatAmount = Number(bill.vatAmount) || 0;
-      if (vatAmount > 0) {
+      if (bill.status === 'cancelled') continue;
+      const vatAmount = Number(bill.vatAmount ?? bill.taxAmount) || 0;
+      if (vatAmount > 0 && bill.hasValidVATInvoice !== false) {
         inputVAT = addMoney(inputVAT, vatAmount);
         expenseCount += 1;
       }
     }
 
     return { inputVAT, expenseCount };
+  }
+
+  /** Accrual-basis net bill expenses, grouped for the P&L. */
+  async getExpenseSummaryByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<{ totalExpenses: number; expensesByCategory: Record<string, number> }> {
+    const bills = await this.getBillsByDateRange(tenantId, startDate, endDate);
+    const expensesByCategory: Record<string, number> = {};
+
+    for (const bill of bills) {
+      if (bill.status === 'cancelled') continue;
+      const netExpense = bill.netAmount ?? bill.amount;
+      expensesByCategory[bill.category] = addMoney(
+        expensesByCategory[bill.category] || 0,
+        netExpense,
+      );
+    }
+
+    return {
+      totalExpenses: sumMoney(Object.values(expensesByCategory)),
+      expensesByCategory,
+    };
   }
 
   /**
@@ -416,8 +478,7 @@ class BillService {
     }
 
     // Calculate totals
-    const taxAmount = percentOf(data.amount, data.taxRate);
-    const total = addMoney(data.amount, taxAmount);
+    const { netAmount, taxAmount, total } = calculateTaxedTotal(data.amount, data.taxRate);
 
     const bill: Omit<Bill, 'id'> = {
       billNumber: data.billNumber,
@@ -426,9 +487,12 @@ class BillService {
       billDate: data.billDate,
       dueDate: data.dueDate,
       description: data.description,
-      amount: data.amount,
+      amount: netAmount,
       taxAmount,
       total,
+      vatRate: data.taxRate,
+      vatAmount: taxAmount,
+      netAmount,
       status: 'pending',
       amountPaid: 0,
       balanceDue: total,
@@ -463,7 +527,7 @@ class BillService {
         : doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
         // Journal entry (only transaction.get for entry number, writes journal + GL)
-        await journalEntryService.createFromBill(
+        const journalEntryId = await journalEntryService.createFromBill(
           tenantId,
           { ...bill, id: billDocRef.id },
           userId || 'system',
@@ -473,6 +537,7 @@ class BillService {
         // Write bill in same transaction
         transaction.set(billDocRef, {
           ...bill,
+          journalEntryId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -527,13 +592,15 @@ class BillService {
       const amount = data.amount ?? bill.amount;
       const existingTaxRate = bill.amount > 0 ? (bill.taxAmount / bill.amount) * 100 : 0;
       const taxRate = data.taxRate ?? existingTaxRate;
-      const taxAmount = percentOf(amount, taxRate);
-      const total = addMoney(amount, taxAmount);
+      const calculated = calculateTaxedTotal(amount, taxRate);
 
-      updates.amount = amount;
-      updates.taxAmount = taxAmount;
-      updates.total = total;
-      updates.balanceDue = subtractMoney(total, bill.amountPaid);
+      updates.amount = calculated.netAmount;
+      updates.taxAmount = calculated.taxAmount;
+      updates.total = calculated.total;
+      updates.vatRate = taxRate;
+      updates.vatAmount = calculated.taxAmount;
+      updates.netAmount = calculated.netAmount;
+      updates.balanceDue = subtractMoney(calculated.total, bill.amountPaid);
 
       if (updates.balanceDue < -PAYMENT_EPSILON) {
         throw new Error('Cannot reduce bill total below amount already paid');
@@ -549,10 +616,91 @@ class BillService {
       }
     }
 
-    const docRef = doc(db, paths.bill(tenantId, id));
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
+    const updatedBill: Bill = { ...bill, ...updates };
+    const journalEntry = bill.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, bill.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'bill', id);
+
+    if (journalEntry?.status === 'posted') {
+      const period = await fiscalPeriodService.getPeriodByYearAndPeriod(
+        tenantId,
+        journalEntry.fiscalYear,
+        journalEntry.fiscalPeriod,
+      );
+      if (period && period.status !== 'open') {
+        throw new Error(
+          `Cannot edit bill ${bill.billNumber || id}: its journal is in a ${period.status} fiscal period. `
+          + 'Reopen the period or cancel the bill with a current-period adjustment.',
+        );
+      }
+    }
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const shouldPostJournal = accounts.length > 0;
+    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+
+    if (shouldPostJournal) {
+      const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[updatedBill.category]
+        || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+      const [expenseAccount, apAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, expenseMapping.code),
+        accountService.getAccountByCode(tenantId, '2110'),
+      ]);
+      if (!expenseAccount?.id) throw new Error(`Missing account for code ${expenseMapping.code}`);
+      if (!apAccount?.id) throw new Error('Missing account for code 2110');
+      resolvedAccounts = {
+        [expenseMapping.code]: { id: expenseAccount.id, name: expenseAccount.name },
+        '2110': { id: apAccount.id, name: apAccount.name },
+      };
+    }
+
+    const billRef = doc(db, paths.bill(tenantId, id));
+    await runTransaction(db, async (transaction) => {
+      const currentBillDoc = await transaction.get(billRef);
+      if (!currentBillDoc.exists()) throw new Error('Bill not found');
+      const currentBill = { id: currentBillDoc.id, ...currentBillDoc.data() } as Bill;
+      if (currentBill.status !== 'pending') {
+        throw new Error('Cannot edit bill that has payments or is cancelled');
+      }
+
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentBill.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentBill.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      const replacementBill: Bill = { ...currentBill, ...updates };
+      // Allocate/post the replacement before queuing reversal writes so the
+      // transaction performs its counter read before all writes.
+      let replacementJournalId: string | undefined;
+      if (shouldPostJournal) {
+        replacementJournalId = await journalEntryService.createFromBill(
+          tenantId,
+          replacementBill,
+          'system',
+          transaction,
+          resolvedAccounts,
+        );
+      }
+      if (activeJournal?.id && activeJournal.status === 'posted') {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          activeJournal.id,
+          activeJournal,
+          transaction,
+          'system',
+          `Bill ${bill.billNumber || id} edited`,
+        );
+      }
+      transaction.update(billRef, {
+        ...updates,
+        ...(replacementJournalId ? { journalEntryId: replacementJournalId } : {}),
+        updatedAt: serverTimestamp(),
+      });
     });
 
     return true;
@@ -567,6 +715,9 @@ class BillService {
     if (!bill) {
       throw new Error('Bill not found');
     }
+    if (bill.status === 'cancelled') {
+      throw new Error('Bill is already cancelled');
+    }
     if (bill.status === 'paid') {
       throw new Error('Cannot cancel a fully paid bill');
     }
@@ -575,7 +726,9 @@ class BillService {
     }
 
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
-    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'bill', id);
+    const journalEntry = bill.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, bill.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'bill', id);
 
     // Post-close correction flow:
     // - If the original journal entry is in a closed/locked period, do NOT void it.
@@ -588,8 +741,7 @@ class BillService {
     const adjustmentDate = needsAdjustment ? getTodayTL() : null;
 
     if (needsAdjustment && adjustmentDate) {
-      const adjYear = new Date(adjustmentDate).getFullYear();
-      const adjMonth = new Date(adjustmentDate).getMonth() + 1;
+      const { year: adjYear, period: adjMonth } = getFiscalDateParts(adjustmentDate);
       const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
       if (adjPeriod && adjPeriod.status !== 'open') {
         throw new Error(
@@ -602,33 +754,53 @@ class BillService {
     const billDocRef = doc(db, paths.bill(tenantId, id));
 
     await runTransaction(db, async (transaction) => {
-      // 1. Update bill status to cancelled
+      const currentBillDoc = await transaction.get(billDocRef);
+      if (!currentBillDoc.exists()) throw new Error('Bill not found');
+      const currentBill = { id: currentBillDoc.id, ...currentBillDoc.data() } as Bill;
+      if (currentBill.status === 'cancelled') {
+        throw new Error('Bill is already cancelled');
+      }
+      if (currentBill.status === 'paid' || (currentBill.amountPaid || 0) > PAYMENT_EPSILON) {
+        throw new Error('Cannot cancel a bill with recorded payments');
+      }
+
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentBill.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentBill.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      let adjustmentEntryId: string | undefined;
+      if (activeJournal?.id && needsAdjustment && adjustmentDate) {
+        adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
+          tenantId,
+          activeJournal,
+          {
+            date: adjustmentDate,
+            createdBy: userId || 'system',
+            reason: `Bill ${bill.billNumber || id} cancelled`,
+            txn: transaction,
+          }
+        );
+      }
+
       transaction.update(billDocRef, {
         status: 'cancelled',
+        cancelledAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        ...(adjustmentEntryId ? { cancellationAdjustmentEntryId: adjustmentEntryId } : {}),
       });
 
-      // 2. Void the journal entry and create reversing GL entries
-      if (journalEntry?.id) {
-        if (needsAdjustment && adjustmentDate) {
-          const adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
-            tenantId,
-            journalEntry,
-            {
-              date: adjustmentDate,
-              createdBy: userId || 'system',
-              reason: `Bill ${bill.billNumber || id} cancelled`,
-              txn: transaction,
-            }
-          );
-          transaction.update(billDocRef, {
-            cancellationAdjustmentEntryId: adjustmentEntryId,
-          });
-        } else {
+      if (activeJournal?.id) {
+        if (!needsAdjustment) {
           journalEntryService.voidJournalEntryInTransaction(
             tenantId,
-            journalEntry.id,
-            journalEntry,
+            activeJournal.id,
+            activeJournal,
             transaction,
             userId || 'system',
             `Bill ${bill.billNumber || id} cancelled`
@@ -653,8 +825,54 @@ class BillService {
       throw new Error('Cannot delete bill that has payments. Cancel it instead.');
     }
 
-    const docRef = doc(db, paths.bill(tenantId, id));
-    await deleteDoc(docRef);
+    const journalEntry = bill.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, bill.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'bill', id);
+    if (journalEntry?.status === 'posted') {
+      const period = await fiscalPeriodService.getPeriodByYearAndPeriod(
+        tenantId,
+        journalEntry.fiscalYear,
+        journalEntry.fiscalPeriod,
+      );
+      if (period && period.status !== 'open') {
+        throw new Error(
+          `Cannot delete bill ${bill.billNumber || id}: its journal is in a ${period.status} fiscal period. `
+          + 'Cancel it so Xefe can post a current-period adjustment instead.',
+        );
+      }
+    }
+
+    const billRef = doc(db, paths.bill(tenantId, id));
+    await runTransaction(db, async (transaction) => {
+      const currentBillDoc = await transaction.get(billRef);
+      if (!currentBillDoc.exists()) throw new Error('Bill not found');
+      const currentBill = { id: currentBillDoc.id, ...currentBillDoc.data() } as Bill;
+      if (currentBill.status !== 'pending') {
+        throw new Error('Cannot delete bill that has payments or is cancelled');
+      }
+
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentBill.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentBill.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      if (activeJournal?.id && activeJournal.status === 'posted') {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          activeJournal.id,
+          activeJournal,
+          transaction,
+          'system',
+          `Bill ${bill.billNumber || id} deleted`,
+        );
+      }
+      transaction.delete(billRef);
+    });
     return true;
   }
 
@@ -710,30 +928,20 @@ class BillService {
       if (bill.status === 'paid') {
         throw new Error('Cannot record payment for a fully paid bill');
       }
-      if (payment.amount <= 0) {
-        throw new Error('Payment amount must be greater than zero');
+      if (payment.date < bill.billDate) {
+        throw new Error('Payment date cannot be before the bill date');
       }
-
-      if (payment.amount - bill.balanceDue > PAYMENT_EPSILON) {
-        throw new Error('Payment exceeds remaining bill balance');
-      }
-
-      // Calculate new values using Decimal.js for precision
-      const newAmountPaid = addMoney(bill.amountPaid || 0, payment.amount);
-      const newBalanceDue = subtractMoney(bill.total || 0, newAmountPaid);
-
-      if (newBalanceDue < 0) {
-        throw new Error('Payment exceeds remaining bill balance');
-      }
-
-      const newStatus: BillStatus =
-        newBalanceDue === 0 ? 'paid' : 'partial';
+      const nextPayment = calculateBillPaymentState(
+        bill.total || 0,
+        bill.amountPaid || 0,
+        payment.amount,
+      );
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
       transaction.set(paymentDocRef, {
         date: payment.date,
-        amount: payment.amount,
+        amount: nextPayment.amount,
         method: payment.method,
         reference: payment.reference,
         notes: payment.notes,
@@ -743,10 +951,10 @@ class BillService {
 
       // Update bill within same transaction
       transaction.update(billRef, {
-        amountPaid: newAmountPaid,
-        balanceDue: newBalanceDue,
-        status: newStatus,
-        paidAt: newStatus === 'paid' ? serverTimestamp() : null,
+        amountPaid: nextPayment.amountPaid,
+        balanceDue: nextPayment.balanceDue,
+        status: nextPayment.status,
+        paidAt: nextPayment.status === 'paid' ? serverTimestamp() : null,
         updatedAt: serverTimestamp(),
       });
 
@@ -759,7 +967,7 @@ class BillService {
             billNumber: bill.billNumber,
             vendorName: bill.vendorName,
             date: payment.date,
-            amount: payment.amount,
+            amount: nextPayment.amount,
             method: payment.method,
             reference: payment.reference,
           },

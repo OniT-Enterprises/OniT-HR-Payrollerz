@@ -187,6 +187,13 @@ type RecurringInvoiceDoc = {
   generatedCount: number;
 };
 
+type ResolvedInvoiceAccounts = {
+  ar?: { id: string; name: string } | null;
+  revenue?: { id: string; name: string } | null;
+  tax?: { id: string; name: string } | null;
+  hasAccounts: boolean;
+};
+
 /**
  * Allocate the next invoice number (mirrors client invoiceService.getNextInvoiceNumber()).
  */
@@ -306,7 +313,7 @@ async function processRecurringInvoiceDoc(
   tenantId: string,
   recurringId: string,
   todayTL: string,
-  resolvedAccounts: { ar?: { id: string; name: string } | null; revenue?: { id: string; name: string } | null; hasAccounts: boolean },
+  resolvedAccounts: ResolvedInvoiceAccounts,
 ): Promise<{ generated: number; sent: number; journalPosted: number; skippedJournal: number; autoSendErrors: number }> {
   const maxCatchUp = 6; // prevent runaway generation if nextRunDate is far in the past
   let generated = 0;
@@ -467,7 +474,7 @@ async function attemptAutoSendInvoice(
   tenantId: string,
   invoiceId: string,
   todayTL: string,
-  resolvedAccounts: { ar?: { id: string; name: string } | null; revenue?: { id: string; name: string } | null; hasAccounts: boolean },
+  resolvedAccounts: ResolvedInvoiceAccounts,
 ): Promise<{ sent: boolean; journalCreated: boolean; journalSkipped: boolean }> {
   return db.runTransaction(async (transaction) => {
     const invoiceRef = db.doc(`tenants/${tenantId}/invoices/${invoiceId}`);
@@ -482,6 +489,8 @@ async function attemptAutoSendInvoice(
       invoiceNumber?: string;
       customerName?: string;
       total?: number;
+      subtotal?: number;
+      taxAmount?: number;
       cancelledAt?: unknown;
       journalEntryId?: string;
     };
@@ -522,6 +531,10 @@ async function attemptAutoSendInvoice(
     }
 
     const total = typeof invoice.total === "number" ? invoice.total : 0;
+    const taxAmount = typeof invoice.taxAmount === "number" ? round2(invoice.taxAmount) : 0;
+    const revenueAmount = typeof invoice.subtotal === "number"
+      ? round2(invoice.subtotal)
+      : round2(total - taxAmount);
     const invoiceNumber = invoice.invoiceNumber || invoiceId;
     const customerName = invoice.customerName || "";
 
@@ -547,10 +560,26 @@ async function attemptAutoSendInvoice(
         accountCode: "4100",
         accountName: revenue.name,
         debit: 0,
-        credit: total,
+        credit: revenueAmount,
         description: `Revenue - ${invoiceNumber}`,
       },
     ];
+
+    if (taxAmount > 0) {
+      const tax = resolvedAccounts.tax;
+      if (!tax?.id) {
+        throw new Error("Chart of accounts missing tax payable account (2310)");
+      }
+      lines.push({
+        lineNumber: 3,
+        accountId: tax.id,
+        accountCode: "2310",
+        accountName: tax.name,
+        debit: 0,
+        credit: taxAmount,
+        description: `Sales tax payable - ${invoiceNumber}`,
+      });
+    }
 
     transaction.set(journalRef, {
       entryNumber,
@@ -641,12 +670,13 @@ export const processRecurringInvoices = onSchedule(
       try {
         // Resolve accounting accounts once per tenant
         const hasAccounts = await tenantHasAnyAccounts(tenantId);
-        const [ar, revenue] = hasAccounts
+        const [ar, revenue, tax] = hasAccounts
           ? await Promise.all([
             getAccountByCode(tenantId, "1210"),
             getAccountByCode(tenantId, "4100"),
+            getAccountByCode(tenantId, "2310"),
           ])
-          : [null, null];
+          : [null, null, null];
 
         const recurringSnap = await db
           .collection(`tenants/${tenantId}/recurring_invoices`)
@@ -660,7 +690,12 @@ export const processRecurringInvoices = onSchedule(
         for (const recurringDoc of recurringSnap.docs) {
           templatesProcessed += 1;
 
-          const out = await processRecurringInvoiceDoc(tenantId, recurringDoc.id, todayTL, { hasAccounts, ar, revenue });
+          const out = await processRecurringInvoiceDoc(
+            tenantId,
+            recurringDoc.id,
+            todayTL,
+            { hasAccounts, ar, revenue, tax },
+          );
           invoicesGenerated += out.generated;
           invoicesSent += out.sent;
           journalsPosted += out.journalPosted;

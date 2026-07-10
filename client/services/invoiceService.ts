@@ -27,7 +27,12 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney, sumMoney, multiplyMoney, percentOf } from '@/lib/currency';
+import { addMoney, maxMoney, subtractMoney, sumMoney, multiplyMoney } from '@/lib/currency';
+import {
+  calculateInvoiceAmounts,
+  calculateInvoicePaymentState,
+  getFiscalDateParts,
+} from '@/lib/accounting/calculations';
 import type {
   Invoice,
   InvoiceFormData,
@@ -40,6 +45,7 @@ import type {
   PaymentFormData,
   MoneyStats,
 } from '@/types/money';
+import type { JournalEntry } from '@/types/accounting';
 import { customerService } from './customerService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { firestoreInvoiceSchema } from '@/lib/validations';
@@ -82,16 +88,7 @@ export interface PaginatedResult<T> {
 }
 
 const PAYMENT_EPSILON = 0.00001;
-const TL_TIMEZONE_OFFSET = '+09:00';
 const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = ['sent', 'viewed', 'partial', 'overdue'];
-
-function startOfTLDay(dateISO: string): Date {
-  return new Date(`${dateISO}T00:00:00.000${TL_TIMEZONE_OFFSET}`);
-}
-
-function endOfTLDay(dateISO: string): Date {
-  return new Date(`${dateISO}T23:59:59.999${TL_TIMEZONE_OFFSET}`);
-}
 
 // ============================================
 // MAPPER FUNCTION
@@ -123,6 +120,9 @@ function mapInvoice(docSnap: DocumentSnapshot): Invoice {
     viewedAt: data.viewedAt instanceof Timestamp
       ? data.viewedAt.toDate()
       : data.viewedAt || undefined,
+    cancelledAt: data.cancelledAt instanceof Timestamp
+      ? data.cancelledAt.toDate()
+      : data.cancelledAt || undefined,
   } as Invoice;
 }
 
@@ -143,6 +143,26 @@ function addDaysISO(dateISO: string, days: number): string {
   const date = parseDateISO(dateISO);
   date.setUTCDate(date.getUTCDate() + days);
   return formatDateISO(date);
+}
+
+/**
+ * Join address fragments into one display line, deduplicating repeated
+ * segments — legacy tenant.address values accumulated ", Timor-Leste"
+ * copies from an old compose/save loop and this heals them on read.
+ */
+function joinAddressParts(parts: Array<string | undefined | null>): string {
+  const seen = new Set<string>();
+  return parts
+    .flatMap((part) => (part || '').split(','))
+    .map((segment) => segment.trim())
+    .filter((segment) => {
+      if (!segment) return false;
+      const key = segment.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(', ');
 }
 
 // ============================================
@@ -342,12 +362,46 @@ class InvoiceService {
   }
 
   async getOutstandingReceivablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const snapshot = await getDocs(query(
+    const [invoiceSnapshot, paymentSnapshot] = await Promise.all([
+      getDocs(query(
       this.collectionRef(tenantId),
-      where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
       where('issueDate', '<=', asOfDate),
-    ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().balanceDue) || 0), 0);
+      )),
+      getDocs(query(this.paymentsRef(tenantId), where('date', '<=', asOfDate))),
+    ]);
+
+    const paidByInvoice = new Map<string, number>();
+    for (const paymentDoc of paymentSnapshot.docs) {
+      const data = paymentDoc.data();
+      if (typeof data.invoiceId !== 'string') continue;
+      paidByInvoice.set(
+        data.invoiceId,
+        addMoney(paidByInvoice.get(data.invoiceId) || 0, Number(data.amount) || 0),
+      );
+    }
+
+    const cutoff = new Date(`${asOfDate}T23:59:59.999+09:00`).getTime();
+    let total = 0;
+    for (const invoiceDoc of invoiceSnapshot.docs) {
+      const data = invoiceDoc.data();
+      if (data.status === 'draft') continue;
+
+      const sentAt = data.sentAt instanceof Timestamp ? data.sentAt.toMillis() : null;
+      if (sentAt !== null && sentAt > cutoff) continue;
+
+      const cancelledAt = data.cancelledAt instanceof Timestamp ? data.cancelledAt.toMillis() : null;
+      if (data.status === 'cancelled' && (cancelledAt === null || cancelledAt <= cutoff)) continue;
+
+      const historicalBalance = maxMoney(
+        0,
+        subtractMoney(
+          Number(data.total) || 0,
+          paidByInvoice.get(invoiceDoc.id) || 0,
+        ),
+      );
+      total = addMoney(total, historicalBalance);
+    }
+    return total;
   }
 
   async getPaidInvoiceTotalByDateRange(
@@ -355,22 +409,29 @@ class InvoiceService {
     startDate: string,
     endDate: string
   ): Promise<number> {
+    // Cash flow follows each payment's transaction date. Looking at only the
+    // invoice's final paidAt timestamp drops partial payments and moves all cash
+    // to the date of the last payment.
     const snapshot = await getDocs(query(
-      this.collectionRef(tenantId),
-      where('status', '==', 'paid'),
-      where('paidAt', '>=', startOfTLDay(startDate)),
-      where('paidAt', '<=', endOfTLDay(endDate)),
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
     ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().total) || 0), 0);
+    return snapshot.docs.reduce(
+      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      0,
+    );
   }
 
   async getPaidInvoiceTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
     const snapshot = await getDocs(query(
-      this.collectionRef(tenantId),
-      where('status', '==', 'paid'),
-      where('paidAt', '<=', endOfTLDay(asOfDate)),
+      this.paymentsRef(tenantId),
+      where('date', '<=', asOfDate),
     ));
-    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().total) || 0), 0);
+    return snapshot.docs.reduce(
+      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      0,
+    );
   }
 
   async getVATSummary(
@@ -384,6 +445,7 @@ class InvoiceService {
     let salesCount = 0;
 
     for (const invoice of invoices) {
+      if (invoice.status === 'draft' || invoice.status === 'cancelled') continue;
       const taxAmount = Number(invoice.taxAmount) || 0;
       if (taxAmount > 0) {
         outputVAT = addMoney(outputVAT, taxAmount);
@@ -392,6 +454,20 @@ class InvoiceService {
     }
 
     return { outputVAT, salesCount };
+  }
+
+  /** Accrual-basis net revenue for issued invoices in a period. */
+  async getRevenueTotalByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<number> {
+    const invoices = await this.getInvoicesByDateRange(tenantId, startDate, endDate);
+    return sumMoney(
+      invoices
+        .filter((invoice) => invoice.status !== 'draft' && invoice.status !== 'cancelled')
+        .map((invoice) => invoice.subtotal ?? subtractMoney(invoice.total, invoice.taxAmount || 0)),
+    );
   }
 
   /**
@@ -538,16 +614,13 @@ class InvoiceService {
     // Get next invoice number
     const invoiceNumber = await this.getNextInvoiceNumber(tenantId);
 
-    // Calculate totals
-    const items: InvoiceItem[] = data.items.map((item, index) => ({
-      id: `item_${Date.now()}_${index}`,
+    // Calculate and persist the same per-line totals shown in the form preview.
+    const calculated = calculateInvoiceAmounts(data.items, data.taxRate);
+    const items: InvoiceItem[] = calculated.items.map((item, index) => ({
       ...item,
-      amount: multiplyMoney(item.quantity, item.unitPrice),
+      id: `item_${Date.now()}_${index}`,
     }));
-
-    const subtotal = sumMoney(items.map(item => item.amount));
-    const taxAmount = percentOf(subtotal, data.taxRate);
-    const total = addMoney(subtotal, taxAmount);
+    const { subtotal, taxAmount, total } = calculated;
 
     // Generate share token
     const shareToken = this.generateShareToken();
@@ -624,18 +697,17 @@ class InvoiceService {
       updates.paymentAccount = this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings);
     }
 
-    // If items are being updated, recalculate totals
-    if (data.items) {
-      const items: InvoiceItem[] = data.items.map((item, index) => ({
-        id: `item_${Date.now()}_${index}`,
-        ...item,
-        amount: multiplyMoney(item.quantity, item.unitPrice),
-      }));
-
-      const subtotal = sumMoney(items.map(item => item.amount));
+    // Recalculate when either lines or the default rate changes. This keeps
+    // partial service updates safe as well as full form submissions.
+    if (data.items || data.taxRate !== undefined) {
+      const sourceItems = data.items ?? invoice.items;
       const taxRate = data.taxRate ?? invoice.taxRate;
-      const taxAmount = percentOf(subtotal, taxRate);
-      const total = addMoney(subtotal, taxAmount);
+      const calculated = calculateInvoiceAmounts(sourceItems, taxRate);
+      const items: InvoiceItem[] = calculated.items.map((item, index) => ({
+        ...item,
+        id: item.id || `item_${Date.now()}_${index}`,
+      }));
+      const { subtotal, taxAmount, total } = calculated;
 
       updates.items = items;
       updates.subtotal = subtotal;
@@ -653,6 +725,7 @@ class InvoiceService {
     if (data.customerId && data.customerId !== invoice.customerId) {
       const customer = await customerService.getCustomerById(tenantId, data.customerId);
       if (customer) {
+        updates.customerId = data.customerId;
         updates.customerName = customer.name;
         updates.customerEmail = customer.email;
         updates.customerPhone = customer.phone;
@@ -687,59 +760,87 @@ class InvoiceService {
     // Check if chart of accounts is set up (read BEFORE transaction)
     const accounts = await accountService.getAllAccounts(tenantId);
     const shouldCreateJournal = accounts.length > 0;
-    let needsJournal = false;
+    let existingJournalId = invoice.journalEntryId;
     let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
 
     if (shouldCreateJournal) {
-      // Check for existing journal entry (query, not transaction-safe)
-      const existing = await journalEntryService.getJournalEntryBySource(
-        tenantId,
-        'invoice',
-        id
-      );
-      needsJournal = !existing;
+      if (!existingJournalId) {
+        const existing = await journalEntryService.getJournalEntryBySource(
+          tenantId,
+          'invoice',
+          id
+        );
+        existingJournalId = existing?.id;
+      }
 
-      if (needsJournal) {
+      if (!existingJournalId) {
         // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
-        const [arAccount, revenueAccount] = await Promise.all([
+        const [arAccount, revenueAccount, taxAccount] = await Promise.all([
           accountService.getAccountByCode(tenantId, '1210'),
           accountService.getAccountByCode(tenantId, '4100'),
+          invoice.taxAmount > 0
+            ? accountService.getAccountByCode(tenantId, '2310')
+            : Promise.resolve(null),
         ]);
         if (!arAccount?.id) throw new Error('Missing account for code 1210. Initialize chart of accounts first.');
         if (!revenueAccount?.id) throw new Error('Missing account for code 4100. Initialize chart of accounts first.');
+        if (invoice.taxAmount > 0 && !taxAccount?.id) {
+          throw new Error('Missing account for code 2310. Initialize chart of accounts first.');
+        }
         resolvedAccounts = {
           '1210': { id: arAccount.id, name: arAccount.name },
           '4100': { id: revenueAccount.id, name: revenueAccount.name },
+          ...(taxAccount?.id
+            ? { '2310': { id: taxAccount.id, name: taxAccount.name } }
+            : {}),
         };
       }
     }
 
-    // Atomic: journal entry + status update in one transaction
-    if (invoice.status === 'draft' || needsJournal) {
-      const invoiceRef = doc(db, paths.invoice(tenantId, id));
-      await runTransaction(db, async (transaction) => {
-        if (needsJournal) {
-          await journalEntryService.createFromInvoice(
-            tenantId,
-            invoice,
-            userId || 'system',
-            transaction,
-            resolvedAccounts
-          );
-        }
-        if (invoice.status === 'draft') {
-          transaction.update(invoiceRef, {
-            status: 'sent',
-            sentAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        }
-      });
-    }
+    // The source document stores its active journal ID. Reading and updating
+    // that field in the same transaction prevents double-posting when Send is
+    // clicked twice or two browser tabs race.
+    const invoiceRef = doc(db, paths.invoice(tenantId, id));
+    const sentNow = await runTransaction(db, async (transaction) => {
+      const currentDoc = await transaction.get(invoiceRef);
+      if (!currentDoc.exists()) throw new Error('Invoice not found');
+      const currentInvoice = { id: currentDoc.id, ...currentDoc.data() } as Invoice;
+      if (currentInvoice.status === 'cancelled') {
+        throw new Error('Cannot send a cancelled invoice');
+      }
+
+      let journalEntryId = currentInvoice.journalEntryId || existingJournalId;
+      if (shouldCreateJournal && !journalEntryId) {
+        journalEntryId = await journalEntryService.createFromInvoice(
+          tenantId,
+          currentInvoice,
+          userId || 'system',
+          transaction,
+          resolvedAccounts,
+        );
+      }
+
+      const isFirstSend = currentInvoice.status === 'draft';
+      const updates: Record<string, unknown> = {};
+      if (isFirstSend) {
+        updates.status = 'sent';
+        updates.sentAt = serverTimestamp();
+      }
+      if (journalEntryId && currentInvoice.journalEntryId !== journalEntryId) {
+        updates.journalEntryId = journalEntryId;
+      }
+      if (Object.keys(updates).length > 0) {
+        transaction.update(invoiceRef, {
+          ...updates,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return isFirstSend;
+    });
 
     // Email the invoice to the customer on the first send (draft -> sent).
     // Failure to queue the email must not fail the send itself.
-    if (invoice.status === 'draft' && invoice.customerEmail) {
+    if (sentNow && invoice.customerEmail) {
       try {
         await this.queueInvoiceEmail(tenantId, invoice);
       } catch (error) {
@@ -775,7 +876,7 @@ class InvoiceService {
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatInvoiceMoney(item.unitPrice)}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(item.quantity * item.unitPrice)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(multiplyMoney(item.quantity, item.unitPrice))}</td>
           </tr>`
       )
       .join('');
@@ -865,7 +966,7 @@ class InvoiceService {
       `Due date: ${formatInvoiceDate(invoice.dueDate)}`,
       '',
       ...invoice.items.map(
-        (item) => `${item.description} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(item.quantity * item.unitPrice)}`
+        (item) => `${item.description} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(multiplyMoney(item.quantity, item.unitPrice))}`
       ),
       '',
       `Subtotal: ${formatInvoiceMoney(invoice.subtotal)}`,
@@ -944,6 +1045,9 @@ class InvoiceService {
       throw new Error('Invoice not found');
     }
 
+    if (invoice.status === 'cancelled') {
+      throw new Error('Invoice is already cancelled');
+    }
     if (invoice.status === 'paid') {
       throw new Error('Cannot void a fully paid invoice');
     }
@@ -952,7 +1056,9 @@ class InvoiceService {
     }
 
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
-    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'invoice', id);
+    const journalEntry = invoice.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, invoice.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'invoice', id);
 
     // Post-close correction flow:
     // - If the original journal entry is in a closed/locked period, do NOT void it.
@@ -965,8 +1071,7 @@ class InvoiceService {
     const adjustmentDate = needsAdjustment ? getTodayTL() : null;
 
     if (needsAdjustment && adjustmentDate) {
-      const adjYear = new Date(adjustmentDate).getFullYear();
-      const adjMonth = new Date(adjustmentDate).getMonth() + 1;
+      const { year: adjYear, period: adjMonth } = getFiscalDateParts(adjustmentDate);
       const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
       if (adjPeriod && adjPeriod.status !== 'open') {
         throw new Error(
@@ -979,35 +1084,59 @@ class InvoiceService {
     const invoiceDocRef = doc(db, paths.invoice(tenantId, id));
 
     await runTransaction(db, async (transaction) => {
-      // 1. Update invoice status to cancelled
+      const currentInvoiceDoc = await transaction.get(invoiceDocRef);
+      if (!currentInvoiceDoc.exists()) throw new Error('Invoice not found');
+      const currentInvoice = {
+        id: currentInvoiceDoc.id,
+        ...currentInvoiceDoc.data(),
+      } as Invoice;
+      if (currentInvoice.status === 'cancelled') {
+        throw new Error('Invoice is already cancelled');
+      }
+      if (currentInvoice.status === 'paid' || (currentInvoice.amountPaid || 0) > PAYMENT_EPSILON) {
+        throw new Error('Cannot cancel an invoice with recorded payments');
+      }
+
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentInvoice.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentInvoice.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      // Allocate a current-period adjustment before queuing any writes; the
+      // journal number allocator performs a transaction read.
+      let adjustmentEntryId: string | undefined;
+      if (activeJournal?.id && needsAdjustment && adjustmentDate) {
+        adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
+          tenantId,
+          activeJournal,
+          {
+            date: adjustmentDate,
+            createdBy: userId || 'system',
+            reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`,
+            txn: transaction,
+          }
+        );
+      }
+
       transaction.update(invoiceDocRef, {
         status: 'cancelled',
         cancelledAt: serverTimestamp(),
         cancelReason: reason || null,
         updatedAt: serverTimestamp(),
+        ...(adjustmentEntryId ? { cancellationAdjustmentEntryId: adjustmentEntryId } : {}),
       });
 
-      // 2. Void the journal entry and create reversing GL entries
-      if (journalEntry?.id) {
-        if (needsAdjustment && adjustmentDate) {
-          const adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
-            tenantId,
-            journalEntry,
-            {
-              date: adjustmentDate,
-              createdBy: userId || 'system',
-              reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`,
-              txn: transaction,
-            }
-          );
-          transaction.update(invoiceDocRef, {
-            cancellationAdjustmentEntryId: adjustmentEntryId,
-          });
-        } else {
+      if (activeJournal?.id) {
+        if (!needsAdjustment) {
           journalEntryService.voidJournalEntryInTransaction(
             tenantId,
-            journalEntry.id,
-            journalEntry,
+            activeJournal.id,
+            activeJournal,
             transaction,
             userId || 'system',
             `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`
@@ -1073,7 +1202,7 @@ class InvoiceService {
             <ul style="list-style: none; padding: 0;">
               <li>Invoice Number: ${invoice.invoiceNumber}</li>
               <li>Due Date: ${invoice.dueDate}</li>
-              <li>Amount Due: $${(invoice.total - (invoice.amountPaid || 0)).toFixed(2)}</li>
+              <li>Amount Due: $${invoice.balanceDue.toFixed(2)}</li>
             </ul>
             <p>Please arrange payment at your earliest convenience.</p>
             <p style="color: #666; font-size: 12px; margin-top: 20px;">
@@ -1081,7 +1210,7 @@ class InvoiceService {
             </p>
           </div>
         `,
-        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${(invoice.total - (invoice.amountPaid || 0)).toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
+        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${invoice.balanceDue.toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
         status: 'pending',
         purpose: 'notification',
         relatedId: id,
@@ -1179,24 +1308,14 @@ class InvoiceService {
       if (invoice.status === 'paid') {
         throw new Error('Cannot record payment for a fully paid invoice');
       }
-      if (payment.amount <= 0) {
-        throw new Error('Payment amount must be greater than zero');
+      if (payment.date < invoice.issueDate) {
+        throw new Error('Payment date cannot be before the invoice issue date');
       }
-
-      if (payment.amount - invoice.balanceDue > PAYMENT_EPSILON) {
-        throw new Error('Payment exceeds remaining invoice balance');
-      }
-
-      // Calculate new values using Decimal.js for precision
-      const newAmountPaid = addMoney(invoice.amountPaid || 0, payment.amount);
-      const newBalanceDue = subtractMoney(invoice.total || 0, newAmountPaid);
-
-      if (newBalanceDue < 0) {
-        throw new Error('Payment exceeds remaining invoice balance');
-      }
-
-      const newStatus: InvoiceStatus =
-        newBalanceDue === 0 ? 'paid' : 'partial';
+      const nextPayment = calculateInvoicePaymentState(
+        invoice.total || 0,
+        invoice.amountPaid || 0,
+        payment.amount,
+      );
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
@@ -1206,7 +1325,7 @@ class InvoiceService {
         customerName: invoice.customerName,
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
-        amount: payment.amount,
+        amount: nextPayment.amount,
         method: payment.method,
         reference: payment.reference,
         notes: payment.notes,
@@ -1215,10 +1334,10 @@ class InvoiceService {
 
       // Update invoice within same transaction
       transaction.update(invoiceRef, {
-        amountPaid: newAmountPaid,
-        balanceDue: newBalanceDue,
-        status: newStatus,
-        paidAt: newStatus === 'paid' ? serverTimestamp() : null,
+        amountPaid: nextPayment.amountPaid,
+        balanceDue: nextPayment.balanceDue,
+        status: nextPayment.status,
+        paidAt: nextPayment.status === 'paid' ? serverTimestamp() : null,
         updatedAt: serverTimestamp(),
       });
 
@@ -1231,7 +1350,7 @@ class InvoiceService {
             invoiceNumber: invoice.invoiceNumber,
             customerName: invoice.customerName,
             date: payment.date,
-            amount: payment.amount,
+            amount: nextPayment.amount,
             method: payment.method,
             reference: payment.reference,
           },
@@ -1297,9 +1416,11 @@ class InvoiceService {
   /**
    * Get invoice settings.
    *
-   * Company fields left blank here fall back to the tenant's company profile
-   * (Settings → Company), so invoices are never issued as "Your Company Name"
-   * just because invoice settings were never filled in.
+   * Company fields left blank here fall back to the company profile
+   * (Settings → Company / settings/config companyDetails — the structured,
+   * user-edited source, including its logo), then to the root tenant doc.
+   * Invoices are never issued as "Your Company Name" just because invoice
+   * settings were never filled in.
    */
   async getSettings(tenantId: string): Promise<InvoiceSettings> {
     const docSnap = await getDoc(this.settingsRef(tenantId));
@@ -1317,18 +1438,35 @@ class InvoiceService {
           companyAddress: '',
         };
 
-    if (!settings.companyName || !settings.companyAddress || !settings.companyPhone || !settings.companyTin) {
+    const missingCompanyInfo =
+      !settings.companyName ||
+      !settings.companyAddress ||
+      !settings.companyPhone ||
+      !settings.companyTin ||
+      !settings.logoUrl;
+
+    if (missingCompanyInfo) {
       try {
-        const tenantSnap = await getDoc(doc(db, 'tenants', tenantId));
-        const tenant = tenantSnap.exists() ? tenantSnap.data() : undefined;
-        if (tenant) {
-          settings.companyName = settings.companyName || tenant.tradingName || tenant.name || '';
-          settings.companyAddress = settings.companyAddress || tenant.address || '';
-          settings.companyPhone = settings.companyPhone || tenant.phone || undefined;
-          settings.companyTin = settings.companyTin || tenant.tinNumber || undefined;
-        }
+        const [configSnap, tenantSnap] = await Promise.all([
+          getDoc(doc(db, paths.settings(tenantId))),
+          getDoc(doc(db, 'tenants', tenantId)),
+        ]);
+        const company = (configSnap.exists() ? configSnap.data()?.companyDetails : undefined) ?? {};
+        const tenant = (tenantSnap.exists() ? tenantSnap.data() : undefined) ?? {};
+
+        settings.companyName =
+          settings.companyName || company.tradingName || company.legalName || tenant.tradingName || tenant.name || '';
+        settings.companyAddress =
+          settings.companyAddress ||
+          joinAddressParts([company.registeredAddress, company.city, company.country]) ||
+          joinAddressParts([tenant.address]) ||
+          '';
+        settings.companyPhone = settings.companyPhone || company.phone || tenant.phone || undefined;
+        settings.companyEmail = settings.companyEmail || company.email || undefined;
+        settings.companyTin = settings.companyTin || company.tinNumber || tenant.tinNumber || undefined;
+        settings.logoUrl = settings.logoUrl || company.logoUrl || undefined;
       } catch (error) {
-        console.warn('Could not read tenant profile for invoice settings fallback:', error);
+        console.warn('Could not read company profile for invoice settings fallback:', error);
       }
     }
 
@@ -1382,19 +1520,14 @@ class InvoiceService {
     const lastMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth(), 0));
     const today = getTodayTL();
 
-    const thisMonthStartTs = startOfTLDay(thisMonthStart).getTime();
-    const thisMonthEndTs = endOfTLDay(thisMonthEnd).getTime();
-    const lastMonthStartTs = startOfTLDay(lastMonthStart).getTime();
-    const lastMonthEndTs = endOfTLDay(lastMonthEnd).getTime();
-
     const [
       draftSnapshot,
       outstandingSnapshot,
-      paidSnapshot,
+      paymentsSnapshot,
     ] = await Promise.all([
       getDocs(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
       getDocs(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES))),
-      getDocs(query(this.collectionRef(tenantId), where('status', '==', 'paid'))),
+      getDocs(query(this.paymentsRef(tenantId), orderBy('date', 'desc'))),
     ]);
 
     let totalOutstanding = 0;
@@ -1415,27 +1548,16 @@ class InvoiceService {
     let revenueThisMonth = 0;
     let revenuePreviousMonth = 0;
 
-    for (const doc of paidSnapshot.docs) {
-      const data = doc.data();
-      const amount = Number(data.total) || 0;
+    for (const paymentDoc of paymentsSnapshot.docs) {
+      const data = paymentDoc.data();
+      const amount = Number(data.amount) || 0;
       totalRevenue = addMoney(totalRevenue, amount);
 
-      const paidAt = data.paidAt;
-      const paidTs =
-        paidAt instanceof Timestamp
-          ? paidAt.toMillis()
-          : paidAt instanceof Date
-            ? paidAt.getTime()
-            : typeof paidAt === 'string'
-              ? new Date(paidAt).getTime()
-              : NaN;
-
-      if (!Number.isNaN(paidTs)) {
-        if (paidTs >= thisMonthStartTs && paidTs <= thisMonthEndTs) {
-          revenueThisMonth = addMoney(revenueThisMonth, amount);
-        } else if (paidTs >= lastMonthStartTs && paidTs <= lastMonthEndTs) {
-          revenuePreviousMonth = addMoney(revenuePreviousMonth, amount);
-        }
+      const paymentDate = typeof data.date === 'string' ? data.date : '';
+      if (paymentDate >= thisMonthStart && paymentDate <= thisMonthEnd) {
+        revenueThisMonth = addMoney(revenueThisMonth, amount);
+      } else if (paymentDate >= lastMonthStart && paymentDate <= lastMonthEnd) {
+        revenuePreviousMonth = addMoney(revenuePreviousMonth, amount);
       }
     }
 

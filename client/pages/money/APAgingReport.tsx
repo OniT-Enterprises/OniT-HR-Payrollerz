@@ -15,6 +15,9 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
+import { getDaysPastDue } from '@/lib/accounting/calculations';
+import { addMoney, sumMoney } from '@/lib/currency';
+import { getTodayTL } from '@/lib/dateUtils';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import type { Bill } from '@/types/money';
@@ -50,7 +53,7 @@ export default function APAgingReport() {
   const { data: allBills = [], isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'apAging'],
     queryFn: () => billService.getUnpaidBills(tenantId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
@@ -60,12 +63,11 @@ export default function APAgingReport() {
       return { buckets: [] as AgingBucket[], vendorAging: [] as VendorAging[], totalPayable: 0 };
     }
 
-    const now = new Date();
+    const asOfDate = getTodayTL();
 
     // Calculate days overdue for each bill
     const billsWithAge = allBills.map(bill => {
-      const dueDate = new Date(bill.dueDate);
-      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = getDaysPastDue(bill.dueDate, asOfDate);
       return { ...bill, daysOverdue, vendorName: bill.vendorName || 'Unknown Vendor' };
     });
 
@@ -76,7 +78,7 @@ export default function APAgingReport() {
     const days61to90 = billsWithAge.filter(bill => bill.daysOverdue > 60 && bill.daysOverdue <= 90);
     const days90Plus = billsWithAge.filter(bill => bill.daysOverdue > 90);
 
-    const calcTotal = (bills: Bill[]) => bills.reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
+    const calcTotal = (bills: Bill[]) => sumMoney(bills.map((bill) => bill.balanceDue));
 
     const computedBuckets: AgingBucket[] = [
       { label: t('money.apAging.current') || 'Current', days: '0 days', bills: current, total: calcTotal(current) },
@@ -90,7 +92,7 @@ export default function APAgingReport() {
     const vendorAgingMap = new Map<string, VendorAging>();
 
     billsWithAge.forEach(bill => {
-      const balance = bill.amount - (bill.amountPaid || 0);
+      const balance = bill.balanceDue;
       if (!vendorAgingMap.has(bill.vendorId)) {
         vendorAgingMap.set(bill.vendorId, {
           vendorId: bill.vendorId,
@@ -104,16 +106,16 @@ export default function APAgingReport() {
       }
 
       const vendor = vendorAgingMap.get(bill.vendorId)!;
-      vendor.total += balance;
+      vendor.total = addMoney(vendor.total, balance);
 
       if (bill.daysOverdue <= 0) {
-        vendor.current += balance;
+        vendor.current = addMoney(vendor.current, balance);
       } else if (bill.daysOverdue <= 30) {
-        vendor.days30 += balance;
+        vendor.days30 = addMoney(vendor.days30, balance);
       } else if (bill.daysOverdue <= 60) {
-        vendor.days60 += balance;
+        vendor.days60 = addMoney(vendor.days60, balance);
       } else {
-        vendor.days90Plus += balance;
+        vendor.days90Plus = addMoney(vendor.days90Plus, balance);
       }
     });
 

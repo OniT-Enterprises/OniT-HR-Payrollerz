@@ -26,11 +26,13 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { getTodayTL } from '@/lib/dateUtils';
-import { addMoney } from '@/lib/currency';
+import { addMoney, roundMoney, sumMoney } from '@/lib/currency';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
+import type { JournalEntry } from '@/types/accounting';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
+import { getFiscalDateParts } from '@/lib/accounting/calculations';
 
 /**
  * Filter options for expense queries
@@ -312,6 +314,7 @@ class ExpenseService {
 
     const expense: Omit<Expense, 'id'> = {
       ...data,
+      amount: roundMoney(data.amount),
       vendorName,
       createdAt: new Date(),
     };
@@ -341,7 +344,7 @@ class ExpenseService {
         : doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
         // Journal entry (only transaction.get for entry number, writes journal + GL)
-        await journalEntryService.createFromExpense(
+        const journalEntryId = await journalEntryService.createFromExpense(
           tenantId,
           { ...expense, id: expenseDocRef.id },
           userId || 'system',
@@ -351,6 +354,7 @@ class ExpenseService {
         // Write expense in same transaction
         transaction.set(expenseDocRef, {
           ...expense,
+          journalEntryId,
           createdAt: serverTimestamp(),
         });
       });
@@ -385,21 +389,140 @@ class ExpenseService {
       throw new Error('Expense amount must be greater than zero');
     }
 
-    const updates: Record<string, unknown> = { ...data };
+    const expense = await this.getExpenseById(tenantId, id);
+    if (!expense) {
+      throw new Error('Expense not found');
+    }
+
+    const updates: Record<string, unknown> = {
+      ...data,
+      ...(data.amount !== undefined ? { amount: roundMoney(data.amount) } : {}),
+    };
+    let vendorName = expense.vendorName;
 
     // Update vendor name if vendorId changed
     if (data.vendorId) {
       const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
-      updates.vendorName = vendor?.name;
+      vendorName = vendor?.name;
+      updates.vendorName = vendorName;
     } else if (data.vendorId === '') {
+      vendorName = undefined;
       updates.vendorId = deleteField();
       updates.vendorName = deleteField();
     }
 
-    const docRef = doc(db, paths.expense(tenantId, id));
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
+    const accountingFields: Array<keyof ExpenseFormData> = [
+      'date',
+      'description',
+      'amount',
+      'category',
+      'vendorId',
+      'paymentMethod',
+    ];
+    const changesAccounting = accountingFields.some((field) => data[field] !== undefined);
+    const expenseRef = doc(db, paths.expense(tenantId, id));
+
+    if (!changesAccounting) {
+      await updateDoc(expenseRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      return true;
+    }
+
+    const updatedExpense: Expense = {
+      ...expense,
+      ...data,
+      ...(data.amount !== undefined ? { amount: roundMoney(data.amount) } : {}),
+      vendorName,
+    };
+    const journalEntry = expense.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, expense.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'receipt', id);
+
+    if (journalEntry?.status === 'posted') {
+      const period = await fiscalPeriodService.getPeriodByYearAndPeriod(
+        tenantId,
+        journalEntry.fiscalYear,
+        journalEntry.fiscalPeriod,
+      );
+      if (period && period.status !== 'open') {
+        throw new Error(
+          `Cannot edit expense ${id}: its journal is in a ${period.status} fiscal period. `
+          + 'Reopen the period or delete it with a current-period adjustment.',
+        );
+      }
+    }
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const shouldPostJournal = accounts.length > 0;
+    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+
+    if (shouldPostJournal) {
+      const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[updatedExpense.category]
+        || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+      const cashCode = updatedExpense.paymentMethod === 'cash' ? '1110' : '1120';
+      const [expenseAccount, cashAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, expenseMapping.code),
+        accountService.getAccountByCode(tenantId, cashCode),
+      ]);
+      if (!expenseAccount?.id) throw new Error(`Missing account for code ${expenseMapping.code}`);
+      if (!cashAccount?.id) throw new Error(`Missing account for code ${cashCode}`);
+      resolvedAccounts = {
+        [expenseMapping.code]: { id: expenseAccount.id, name: expenseAccount.name },
+        [cashCode]: { id: cashAccount.id, name: cashAccount.name },
+      };
+    }
+
+    await runTransaction(db, async (transaction) => {
+      const currentExpenseDoc = await transaction.get(expenseRef);
+      if (!currentExpenseDoc.exists()) throw new Error('Expense not found');
+      const currentExpense = {
+        id: currentExpenseDoc.id,
+        ...currentExpenseDoc.data(),
+      } as Expense;
+
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentExpense.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentExpense.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      const replacementExpense: Expense = {
+        ...currentExpense,
+        ...data,
+        ...(data.amount !== undefined ? { amount: roundMoney(data.amount) } : {}),
+        vendorName,
+      };
+      let replacementJournalId: string | undefined;
+      if (shouldPostJournal) {
+        replacementJournalId = await journalEntryService.createFromExpense(
+          tenantId,
+          replacementExpense,
+          'system',
+          transaction,
+          resolvedAccounts,
+        );
+      }
+      if (activeJournal?.id && activeJournal.status === 'posted') {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          activeJournal.id,
+          activeJournal,
+          transaction,
+          'system',
+          `Expense ${id} edited`,
+        );
+      }
+      transaction.update(expenseRef, {
+        ...updates,
+        ...(replacementJournalId ? { journalEntryId: replacementJournalId } : {}),
+        updatedAt: serverTimestamp(),
+      });
     });
     return true;
   }
@@ -409,9 +532,16 @@ class ExpenseService {
    * Also voids the associated journal entry and creates reversing GL entries
    */
   async deleteExpense(tenantId: string, id: string, userId?: string): Promise<boolean> {
+    const expense = await this.getExpenseById(tenantId, id);
+    if (!expense) {
+      throw new Error('Expense not found');
+    }
+
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
     // Expenses use source='receipt' (see createFromExpense in accountingService)
-    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'receipt', id);
+    const journalEntry = expense.journalEntryId
+      ? await journalEntryService.getJournalEntry(tenantId, expense.journalEntryId)
+      : await journalEntryService.getJournalEntryBySource(tenantId, 'receipt', id);
 
     // Post-close correction flow:
     // - If the original journal entry is in a closed/locked period, do NOT void it.
@@ -424,8 +554,7 @@ class ExpenseService {
     const adjustmentDate = needsAdjustment ? getTodayTL() : null;
 
     if (needsAdjustment && adjustmentDate) {
-      const adjYear = new Date(adjustmentDate).getFullYear();
-      const adjMonth = new Date(adjustmentDate).getMonth() + 1;
+      const { year: adjYear, period: adjMonth } = getFiscalDateParts(adjustmentDate);
       const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
       if (adjPeriod && adjPeriod.status !== 'open') {
         throw new Error(
@@ -438,27 +567,45 @@ class ExpenseService {
     const expenseDocRef = doc(db, paths.expense(tenantId, id));
 
     await runTransaction(db, async (transaction) => {
-      // 1. Delete the expense document
+      const currentExpenseDoc = await transaction.get(expenseDocRef);
+      if (!currentExpenseDoc.exists()) throw new Error('Expense not found');
+      const currentExpense = {
+        id: currentExpenseDoc.id,
+        ...currentExpenseDoc.data(),
+      } as Expense;
+      let activeJournal: JournalEntry | null = journalEntry;
+      if (currentExpense.journalEntryId) {
+        const currentJournalDoc = await transaction.get(
+          doc(db, paths.journalEntry(tenantId, currentExpense.journalEntryId)),
+        );
+        activeJournal = currentJournalDoc.exists()
+          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          : null;
+      }
+
+      // A closed-period adjustment allocates a journal number, so do that
+      // transaction read before queuing the source-document delete.
+      if (activeJournal?.id && needsAdjustment && adjustmentDate) {
+        await journalEntryService.createReversingJournalEntry(
+          tenantId,
+          activeJournal,
+          {
+            date: adjustmentDate,
+            createdBy: userId || 'system',
+            reason: `Expense ${id} deleted`,
+            txn: transaction,
+          }
+        );
+      }
+
       transaction.delete(expenseDocRef);
 
-      // 2. Void the journal entry and create reversing GL entries
-      if (journalEntry?.id) {
-        if (needsAdjustment && adjustmentDate) {
-          await journalEntryService.createReversingJournalEntry(
-            tenantId,
-            journalEntry,
-            {
-              date: adjustmentDate,
-              createdBy: userId || 'system',
-              reason: `Expense ${id} deleted`,
-              txn: transaction,
-            }
-          );
-        } else {
+      if (activeJournal?.id) {
+        if (!needsAdjustment) {
           journalEntryService.voidJournalEntryInTransaction(
             tenantId,
-            journalEntry.id,
-            journalEntry,
+            activeJournal.id,
+            activeJournal,
             transaction,
             userId || 'system',
             `Expense ${id} deleted`
@@ -482,7 +629,10 @@ class ExpenseService {
 
     const totals: Record<string, number> = {};
     expenses.forEach((expense) => {
-      totals[expense.category] = (totals[expense.category] || 0) + expense.amount;
+      totals[expense.category] = addMoney(
+        totals[expense.category] || 0,
+        expense.netAmount ?? expense.amount,
+      );
     });
 
     return totals as Record<ExpenseCategory, number>;
@@ -502,8 +652,12 @@ class ExpenseService {
     const expensesByCategory: Record<string, number> = {};
 
     for (const expense of expenses) {
-      totalExpenses = addMoney(totalExpenses, expense.amount);
-      expensesByCategory[expense.category] = addMoney(expensesByCategory[expense.category] || 0, expense.amount);
+      const netExpense = expense.netAmount ?? expense.amount;
+      totalExpenses = addMoney(totalExpenses, netExpense);
+      expensesByCategory[expense.category] = addMoney(
+        expensesByCategory[expense.category] || 0,
+        netExpense,
+      );
     }
 
     return {
@@ -517,7 +671,12 @@ class ExpenseService {
    */
   async getTotalExpenses(tenantId: string, startDate: string, endDate: string): Promise<number> {
     const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    return sumMoney(expenses.map((expense) => expense.amount));
+  }
+
+  async getTotalExpensesAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const expenses = await this.getExpensesByDateRange(tenantId, '0001-01-01', asOfDate);
+    return sumMoney(expenses.map((expense) => expense.amount));
   }
 
   async getVATSummary(
@@ -532,7 +691,7 @@ class ExpenseService {
 
     for (const expense of expenses) {
       const vatAmount = Number(expense.vatAmount) || 0;
-      if (vatAmount > 0) {
+      if (vatAmount > 0 && expense.hasValidVATInvoice !== false) {
         inputVAT = addMoney(inputVAT, vatAmount);
         expenseCount += 1;
       }

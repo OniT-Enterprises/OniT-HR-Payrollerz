@@ -6,6 +6,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   updateDoc,
   deleteDoc,
@@ -20,6 +21,8 @@ import {
 import { db } from '@/lib/firebase';
 import { formatDateISO } from '@/lib/dateUtils';
 import { paths } from '@/lib/paths';
+import { addMoney, roundMoney } from '@/lib/currency';
+import { parseBankAmount } from '@/lib/accounting/calculations';
 import type {
   BankTransaction,
   ReconciliationStatus,
@@ -103,14 +106,14 @@ class BankReconciliationService {
         description = (values[1] || '').trim();
         const debit = this.parseAmount(values[2]);
         const credit = this.parseAmount(values[3]);
-        amount = credit > 0 ? credit : -debit;
+        amount = credit !== 0 ? Math.abs(credit) : -Math.abs(debit);
       } else if (values.length >= 5) {
         // Format 3: Date, Reference, Description, Amount, Balance
         date = this.parseDate(values[0]);
         reference = (values[1] || '').trim();
         description = (values[2] || '').trim();
         amount = this.parseAmount(values[3]);
-        balance = this.parseAmount(values[4]) || undefined;
+        balance = values[4]?.trim() ? this.parseAmount(values[4]) : undefined;
       }
 
       if (date && (amount !== 0 || description)) {
@@ -187,9 +190,7 @@ class BankReconciliationService {
   }
 
   private parseAmount(value: string): number {
-    const cleaned = value.trim().replace(/['"$,]/g, '').replace(/\(([^)]+)\)/, '-$1');
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : num;
+    return parseBankAmount(value);
   }
 
   /**
@@ -313,6 +314,15 @@ class BankReconciliationService {
   async reconcileTransactions(transactionIds: string[]): Promise<boolean> {
     const tenantId = this.ensureTenant();
 
+    const transactionDocs = await Promise.all(
+      transactionIds.map((id) => getDoc(doc(getCollection(tenantId), id))),
+    );
+    if (transactionDocs.some((transactionDoc) => (
+      !transactionDoc.exists() || transactionDoc.data().status !== 'matched'
+    ))) {
+      throw new Error('Only matched bank transactions can be reconciled');
+    }
+
     // Batch all updates (max 499 per batch)
     for (let i = 0; i < transactionIds.length; i += 499) {
       const batch = writeBatch(db);
@@ -367,8 +377,8 @@ class BankReconciliationService {
       else if (status === 'matched') matchedCount++;
       else if (status === 'reconciled') reconciledCount++;
 
-      if (amount > 0) totalDeposits += amount;
-      else if (amount < 0) totalWithdrawals += amount;
+      if (amount > 0) totalDeposits = addMoney(totalDeposits, amount);
+      else if (amount < 0) totalWithdrawals = addMoney(totalWithdrawals, amount);
     }
 
     return {
@@ -376,7 +386,7 @@ class BankReconciliationService {
       matchedCount,
       reconciledCount,
       totalDeposits,
-      totalWithdrawals: Math.abs(totalWithdrawals),
+      totalWithdrawals: roundMoney(Math.abs(totalWithdrawals)),
     };
   }
 }

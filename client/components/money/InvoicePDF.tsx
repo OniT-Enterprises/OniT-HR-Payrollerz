@@ -26,6 +26,7 @@ import {
   formatInvoiceMoney,
   formatInvoiceDate,
 } from '@/lib/invoiceTemplates';
+import { multiplyMoney, subtractMoney } from '@/lib/currency';
 
 const TEXT = '#1f2937';
 const MUTED = '#6b7280';
@@ -314,7 +315,7 @@ function ItemsTable({
           <Text style={[base.cell, base.qtyCol]}>{item.quantity}</Text>
           <Text style={[base.cell, base.priceCol]}>{formatInvoiceMoney(item.unitPrice)}</Text>
           <Text style={[base.cell, base.amountCol, { fontFamily: 'Helvetica-Bold' }]}>
-            {formatInvoiceMoney(item.quantity * item.unitPrice)}
+            {formatInvoiceMoney(multiplyMoney(item.quantity, item.unitPrice))}
           </Text>
         </View>
       ))}
@@ -325,7 +326,7 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? invoice.total - paid;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
 
   return (
     <View style={base.totalsBox}>

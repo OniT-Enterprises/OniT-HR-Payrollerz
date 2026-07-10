@@ -142,6 +142,7 @@ export interface Invoice {
   cancelledAt?: Date;
   cancelReason?: string;
   cancellationAdjustmentEntryId?: string;
+  journalEntryId?: string;          // Active source journal (for idempotent posting)
 
   // Reminders
   lastReminderAt?: Date;
@@ -272,6 +273,7 @@ export interface Expense {
   receiptUrl?: string;
   notes?: string;
   createdAt: Date;
+  journalEntryId?: string;          // Active source journal (for edit/delete reversal)
 
   // VAT (optional — input VAT tracking when vatEnabled)
   vatRate?: number;
@@ -323,7 +325,9 @@ export interface Bill {
   createdAt: Date;
   updatedAt: Date;
   paidAt?: Date;
+  cancelledAt?: Date;
   cancellationAdjustmentEntryId?: string;
+  journalEntryId?: string;          // Active source journal (for edit/cancel reversal)
 
   // Payments made (populated by service)
   payments?: BillPayment[];
@@ -554,4 +558,3 @@ export interface RecurringInvoiceFormData {
   dueDays: number;
   autoSend: boolean;
 }
-

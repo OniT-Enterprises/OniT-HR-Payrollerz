@@ -395,6 +395,10 @@ async function attemptAutoSendInvoice(tenantId, invoiceId, todayTL, resolvedAcco
             throw new Error(`Fiscal period is not open for ${issueDate}`);
         }
         const total = typeof invoice.total === "number" ? invoice.total : 0;
+        const taxAmount = typeof invoice.taxAmount === "number" ? round2(invoice.taxAmount) : 0;
+        const revenueAmount = typeof invoice.subtotal === "number"
+            ? round2(invoice.subtotal)
+            : round2(total - taxAmount);
         const invoiceNumber = invoice.invoiceNumber || invoiceId;
         const customerName = invoice.customerName || "";
         const year = parseDateISO(issueDate).getUTCFullYear();
@@ -417,10 +421,25 @@ async function attemptAutoSendInvoice(tenantId, invoiceId, todayTL, resolvedAcco
                 accountCode: "4100",
                 accountName: revenue.name,
                 debit: 0,
-                credit: total,
+                credit: revenueAmount,
                 description: `Revenue - ${invoiceNumber}`,
             },
         ];
+        if (taxAmount > 0) {
+            const tax = resolvedAccounts.tax;
+            if (!(tax === null || tax === void 0 ? void 0 : tax.id)) {
+                throw new Error("Chart of accounts missing tax payable account (2310)");
+            }
+            lines.push({
+                lineNumber: 3,
+                accountId: tax.id,
+                accountCode: "2310",
+                accountName: tax.name,
+                debit: 0,
+                credit: taxAmount,
+                description: `Sales tax payable - ${invoiceNumber}`,
+            });
+        }
         transaction.set(journalRef, {
             entryNumber,
             date: issueDate,
@@ -500,12 +519,13 @@ exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
         try {
             // Resolve accounting accounts once per tenant
             const hasAccounts = await tenantHasAnyAccounts(tenantId);
-            const [ar, revenue] = hasAccounts
+            const [ar, revenue, tax] = hasAccounts
                 ? await Promise.all([
                     getAccountByCode(tenantId, "1210"),
                     getAccountByCode(tenantId, "4100"),
+                    getAccountByCode(tenantId, "2310"),
                 ])
-                : [null, null];
+                : [null, null, null];
             const recurringSnap = await db
                 .collection(`tenants/${tenantId}/recurring_invoices`)
                 .where("status", "==", "active")
@@ -516,7 +536,7 @@ exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
             tenantsProcessed += 1;
             for (const recurringDoc of recurringSnap.docs) {
                 templatesProcessed += 1;
-                const out = await processRecurringInvoiceDoc(tenantId, recurringDoc.id, todayTL, { hasAccounts, ar, revenue });
+                const out = await processRecurringInvoiceDoc(tenantId, recurringDoc.id, todayTL, { hasAccounts, ar, revenue, tax });
                 invoicesGenerated += out.generated;
                 invoicesSent += out.sent;
                 journalsPosted += out.journalPosted;

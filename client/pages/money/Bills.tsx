@@ -41,6 +41,7 @@ import { partitionBillFiles, BILL_FILE_ACCEPT } from '@/lib/billFiles';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
+import { sumMoney } from '@/lib/currency';
 import type { Bill, BillStatus } from '@/types/money';
 import {
   FileText,
@@ -155,11 +156,11 @@ export default function Bills() {
   };
 
   // Calculate stats
-  const totalPayables = bills
+  const totalPayables = sumMoney(bills
     .filter((b) => ['pending', 'partial', 'overdue'].includes(b.status))
-    .reduce((sum, b) => sum + b.balanceDue, 0);
+    .map((bill) => bill.balanceDue));
   const overdueBills = bills.filter((b) => b.status === 'overdue');
-  const overdueAmount = overdueBills.reduce((sum, b) => sum + b.balanceDue, 0);
+  const overdueAmount = sumMoney(overdueBills.map((bill) => bill.balanceDue));
 
   const handleDelete = async (bill: Bill) => {
     if (!session?.tid) return;

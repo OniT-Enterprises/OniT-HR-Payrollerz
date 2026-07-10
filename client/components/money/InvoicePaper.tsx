@@ -26,6 +26,7 @@ import {
   formatInvoiceMoney,
   formatInvoiceDate,
 } from '@/lib/invoiceTemplates';
+import { multiplyMoney, subtractMoney } from '@/lib/currency';
 
 export interface InvoicePaperItem {
   description: string;
@@ -163,7 +164,7 @@ function ItemsTable({
             <td className="py-3 px-3 text-right tabular-nums">{item.quantity}</td>
             <td className="py-3 px-3 text-right tabular-nums">{formatInvoiceMoney(item.unitPrice)}</td>
             <td className="py-3 px-3 text-right font-medium tabular-nums">
-              {formatInvoiceMoney(item.quantity * item.unitPrice)}
+              {formatInvoiceMoney(multiplyMoney(item.quantity, item.unitPrice))}
             </td>
           </tr>
         ))}
@@ -175,7 +176,7 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? invoice.total - paid;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
 
   return (
     <div className="ml-auto w-64 space-y-1.5 text-sm" style={{ color: PAPER_TEXT }}>

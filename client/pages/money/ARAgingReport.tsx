@@ -15,6 +15,9 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { getDaysPastDue } from '@/lib/accounting/calculations';
+import { addMoney, sumMoney } from '@/lib/currency';
+import { getTodayTL } from '@/lib/dateUtils';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import type { Invoice } from '@/types/money';
@@ -50,7 +53,7 @@ export default function ARAgingReport() {
   const { data: allInvoices = [], isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'arAging'],
     queryFn: () => invoiceService.getOutstandingInvoices(tenantId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
@@ -60,12 +63,11 @@ export default function ARAgingReport() {
       return { buckets: [] as AgingBucket[], customerAging: [] as CustomerAging[], totalOutstanding: 0 };
     }
 
-    const now = new Date();
+    const asOfDate = getTodayTL();
 
     // Calculate days overdue for each invoice
     const invoicesWithAge = allInvoices.map(inv => {
-      const dueDate = new Date(inv.dueDate);
-      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysOverdue = getDaysPastDue(inv.dueDate, asOfDate);
       return { ...inv, daysOverdue };
     });
 
@@ -76,7 +78,7 @@ export default function ARAgingReport() {
     const days61to90 = invoicesWithAge.filter(inv => inv.daysOverdue > 60 && inv.daysOverdue <= 90);
     const days90Plus = invoicesWithAge.filter(inv => inv.daysOverdue > 90);
 
-    const calcTotal = (invs: Invoice[]) => invs.reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
+    const calcTotal = (invs: Invoice[]) => sumMoney(invs.map((inv) => inv.balanceDue));
 
     const computedBuckets: AgingBucket[] = [
       { label: t('money.arAging.current') || 'Current', days: '0 days', invoices: current, total: calcTotal(current) },
@@ -90,7 +92,7 @@ export default function ARAgingReport() {
     const customerMap = new Map<string, CustomerAging>();
 
     invoicesWithAge.forEach(inv => {
-      const balance = inv.total - (inv.amountPaid || 0);
+      const balance = inv.balanceDue;
       if (!customerMap.has(inv.customerId)) {
         customerMap.set(inv.customerId, {
           customerId: inv.customerId,
@@ -104,16 +106,16 @@ export default function ARAgingReport() {
       }
 
       const customer = customerMap.get(inv.customerId)!;
-      customer.total += balance;
+      customer.total = addMoney(customer.total, balance);
 
       if (inv.daysOverdue <= 0) {
-        customer.current += balance;
+        customer.current = addMoney(customer.current, balance);
       } else if (inv.daysOverdue <= 30) {
-        customer.days30 += balance;
+        customer.days30 = addMoney(customer.days30, balance);
       } else if (inv.daysOverdue <= 60) {
-        customer.days60 += balance;
+        customer.days60 = addMoney(customer.days60, balance);
       } else {
-        customer.days90Plus += balance;
+        customer.days90Plus = addMoney(customer.days90Plus, balance);
       }
     });
 

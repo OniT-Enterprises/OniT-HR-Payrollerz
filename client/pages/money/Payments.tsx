@@ -25,7 +25,8 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 
-import { formatDateTL } from '@/lib/dateUtils';
+import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
+import { sumMoney } from '@/lib/currency';
 import {
   DollarSign,
   Search,
@@ -86,15 +87,10 @@ export default function Payments() {
   };
 
   // Calculate summary stats
-  const totalReceived = payments.reduce((sum, p) => sum + p.amount, 0);
-  const thisMonthPayments = payments.filter((p) => {
-    const paymentDate = new Date(p.date);
-    const now = new Date();
-    return (
-      paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear()
-    );
-  });
-  const thisMonthTotal = thisMonthPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalReceived = sumMoney(payments.map((payment) => payment.amount));
+  const currentMonth = getTodayTL().slice(0, 7);
+  const thisMonthPayments = payments.filter((payment) => payment.date.startsWith(currentMonth));
+  const thisMonthTotal = sumMoney(thisMonthPayments.map((payment) => payment.amount));
 
   if (loading) {
     return (

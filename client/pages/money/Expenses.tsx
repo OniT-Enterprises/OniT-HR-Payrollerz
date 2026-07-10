@@ -52,6 +52,7 @@ import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { getTodayTL, formatDateTL } from '@/lib/dateUtils';
+import { sumMoney } from '@/lib/currency';
 import {
   Receipt,
   Plus,
@@ -144,15 +145,10 @@ export default function Expenses() {
   });
 
   // Calculate stats
-  const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-  const thisMonthExpenses = expenses.filter((e) => {
-    const expenseDate = new Date(e.date);
-    const now = new Date();
-    return (
-      expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear()
-    );
-  });
-  const thisMonthTotal = thisMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = sumMoney(expenses.map((expense) => expense.amount));
+  const currentMonth = getTodayTL().slice(0, 7);
+  const thisMonthExpenses = expenses.filter((expense) => expense.date.startsWith(currentMonth));
+  const thisMonthTotal = sumMoney(thisMonthExpenses.map((expense) => expense.amount));
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

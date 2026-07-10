@@ -40,6 +40,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateTL, toDateStringTL } from '@/lib/dateUtils';
+import { addMoney, subtractMoney } from '@/lib/currency';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -129,7 +130,7 @@ export default function VATReturnsPage() {
         createdAt: rData.createdAt?.toDate?.() || new Date(),
       } as VATReturnRecord;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -146,16 +147,16 @@ export default function VATReturnsPage() {
       ]);
 
       const outputVAT = invoiceVAT.outputVAT;
-      const inputVAT = billVAT.inputVAT + expenseVAT.inputVAT;
+      const inputVAT = addMoney(billVAT.inputVAT, expenseVAT.inputVAT);
       const salesCount = invoiceVAT.salesCount;
       const expenseCount = billVAT.expenseCount + expenseVAT.expenseCount;
-      const netDue = outputVAT - inputVAT;
+      const netDue = subtractMoney(outputVAT, inputVAT);
 
       if (salesCount === 0 && expenseCount === 0) return null;
 
       return { outputVAT, inputVAT, netDue, salesCount, expenseCount };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });

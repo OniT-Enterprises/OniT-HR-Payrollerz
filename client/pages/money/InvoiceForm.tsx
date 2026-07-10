@@ -36,7 +36,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { invoiceService } from '@/services/invoiceService';
 import { SEO } from '@/components/SEO';
-import { useActiveCustomers } from '@/hooks/useCustomers';
+import { useQueryClient } from '@tanstack/react-query';
+import { useActiveCustomers, customerKeys } from '@/hooks/useCustomers';
+import { customerService } from '@/services/customerService';
 import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
 import { useTenantId } from '@/contexts/TenantContext';
 import { InvoiceViewScreen } from '@/components/money/InvoiceViewScreen';
@@ -53,7 +55,8 @@ import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/money';
 import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
-import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
+import { calculateInvoiceAmounts } from '@/lib/accounting/calculations';
+import { subtractMoney } from '@/lib/currency';
 import {
   FileText,
   Plus,
@@ -91,6 +94,10 @@ export default function InvoiceForm() {
 
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const queryClient = useQueryClient();
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '' });
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   // React Query hooks for data loading
   const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
@@ -247,22 +254,18 @@ export default function InvoiceForm() {
   const calculateTotals = () => {
     const items = formData.items || [];
     const invoiceTaxRate = Number(formData.taxRate) || 0;
-    const subtotal = sumMoney(
-      items.map((item) => multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0))
+    return calculateInvoiceAmounts(
+      items.map((item) => ({
+        description: item.description || '',
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.unitPrice) || 0,
+        amount: 0,
+        ...(item.vatRate !== undefined && item.vatRate !== null
+          ? { vatRate: Number(item.vatRate) }
+          : {}),
+      })),
+      invoiceTaxRate,
     );
-    // Per-line VAT: use item vatRate if set, otherwise fall back to invoice-level rate
-    const taxAmount = sumMoney(
-      items.map((item) => {
-        const lineTotal = multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0);
-        const rawVat = Number(item.vatRate);
-        const rate = !isNaN(rawVat) && item.vatRate !== undefined && item.vatRate !== null
-          ? rawVat
-          : invoiceTaxRate;
-        return percentOf(lineTotal, rate);
-      })
-    );
-    const total = addMoney(subtotal, taxAmount);
-    return { subtotal, taxAmount, total };
   };
 
   const { subtotal, taxAmount, total } = calculateTotals();
@@ -298,7 +301,7 @@ export default function InvoiceForm() {
       taxAmount,
       total,
       amountPaid: invoice?.amountPaid || 0,
-      balanceDue: total - (invoice?.amountPaid || 0),
+      balanceDue: subtractMoney(total, invoice?.amountPaid || 0),
       notes: formData.notes,
       terms: formData.terms,
       templateId: formData.templateId,
@@ -307,6 +310,35 @@ export default function InvoiceForm() {
       paymentAccount: previewAccount,
     };
   }, [formData, subtotal, taxAmount, total, invoice, invoiceSettings, paymentAccounts, _selectedCustomer, t]);
+
+  const handleCreateCustomer = async () => {
+    const name = newCustomer.name.trim();
+    if (!name) return;
+    setCreatingCustomer(true);
+    try {
+      const data: Parameters<typeof customerService.createCustomer>[1] = { name, type: 'business' };
+      if (newCustomer.phone.trim()) data.phone = newCustomer.phone.trim();
+      if (newCustomer.email.trim()) data.email = newCustomer.email.trim();
+      const customerId = await customerService.createCustomer(tenantId, data);
+      await queryClient.invalidateQueries({ queryKey: customerKeys.all(tenantId) });
+      setValue('customerId', customerId, { shouldValidate: true, shouldDirty: true });
+      setShowNewCustomer(false);
+      setNewCustomer({ name: '', phone: '', email: '' });
+      toast({
+        title: t('common.success') || 'Success',
+        description: t('money.invoices.customerAdded') || `Customer "${name}" added`,
+      });
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.customerAddError') || 'Could not add customer',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingCustomer(false);
+    }
+  };
 
   const addLineItem = () => {
     append({ description: '', quantity: 1, unitPrice: 0, amount: 0, vatRate: undefined });
@@ -478,7 +510,16 @@ export default function InvoiceForm() {
                   name="customerId"
                   control={control}
                   render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(value) => {
+                        if (value === '__new__') {
+                          setShowNewCustomer(true);
+                          return;
+                        }
+                        field.onChange(value);
+                      }}
+                    >
                       <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
                         <SelectValue
                           placeholder={t('money.invoices.selectCustomer') || 'Select a customer'}
@@ -490,6 +531,9 @@ export default function InvoiceForm() {
                             {customer.name}
                           </SelectItem>
                         ))}
+                        <SelectItem value="__new__" className="text-primary font-medium">
+                          + {t('money.invoices.newCustomer') || 'New customer…'}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -499,9 +543,10 @@ export default function InvoiceForm() {
                 )}
                 {customers.length === 0 && (
                   <Button
+                    type="button"
                     variant="link"
-                    className="mt-2 p-0 h-auto text-indigo-600"
-                    onClick={() => navigate('/money/customers')}
+                    className="mt-2 p-0 h-auto text-primary"
+                    onClick={() => setShowNewCustomer(true)}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     {t('money.invoices.addCustomerFirst') || 'Add a customer first'}
@@ -926,6 +971,72 @@ export default function InvoiceForm() {
             </DialogDescription>
           </DialogHeader>
           <InvoicePaper invoice={previewInvoice} settings={invoiceSettings} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick-add customer without leaving the invoice */}
+      <Dialog open={showNewCustomer} onOpenChange={setShowNewCustomer}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('money.invoices.newCustomerTitle') || 'New Customer'}</DialogTitle>
+            <DialogDescription>
+              {t('money.invoices.newCustomerDesc') ||
+                'Add the basics now — you can complete the profile later in Customers.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-customer-name">
+                {t('money.customers.name') || 'Name'} *
+              </Label>
+              <Input
+                id="new-customer-name"
+                value={newCustomer.name}
+                onChange={(e) => setNewCustomer((p) => ({ ...p, name: e.target.value }))}
+                placeholder={t('money.customers.namePlaceholder') || 'Customer or business name'}
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="new-customer-phone">{t('money.customers.phone') || 'Phone'}</Label>
+                <Input
+                  id="new-customer-phone"
+                  value={newCustomer.phone}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, phone: e.target.value }))}
+                  placeholder="+670"
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-customer-email">{t('money.customers.email') || 'Email'}</Label>
+                <Input
+                  id="new-customer-email"
+                  type="email"
+                  value={newCustomer.email}
+                  onChange={(e) => setNewCustomer((p) => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setShowNewCustomer(false)}>
+                {t('common.cancel') || 'Cancel'}
+              </Button>
+              <Button
+                type="button"
+                onClick={handleCreateCustomer}
+                disabled={!newCustomer.name.trim() || creatingCustomer}
+              >
+                {creatingCustomer ? (
+                  t('common.saving') || 'Saving…'
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('money.invoices.addCustomer') || 'Add Customer'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
