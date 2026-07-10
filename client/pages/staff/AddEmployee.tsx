@@ -595,6 +595,29 @@ export default function AddEmployee() {
             name: `${data.firstName} ${data.lastName}`,
           }),
         });
+
+        // Provision app access + email a password-setup link (non-blocking:
+        // the employee record is already saved either way).
+        const inviteEmail = newEmployee.personalInfo.email?.trim();
+        if (inviteEmail) {
+          try {
+            await employeeService.sendAppInvite(tenantId, { email: inviteEmail, employeeDocId: id });
+            toast({
+              title: "App invite sent",
+              description: `${inviteEmail} will receive an email to set their password and sign in.`,
+            });
+          } catch (inviteError) {
+            const code = (inviteError as { code?: string }).code;
+            if (code !== "functions/already-exists") {
+              console.error("App invite failed:", inviteError);
+              toast({
+                title: "Employee saved, but the app invite failed",
+                description: "You can re-send it from their profile (Send app invite).",
+                variant: "destructive",
+              });
+            }
+          }
+        }
       }
 
       if (failedUploads.length > 0) {

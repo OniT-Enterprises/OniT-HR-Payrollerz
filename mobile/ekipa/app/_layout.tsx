@@ -107,15 +107,6 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, [user, employeeId]);
 
-  console.log('[ekipa-debug]', JSON.stringify({
-    user: !!user,
-    ta: profile ? Object.keys(profile.tenantAccess || {}) : 'noProfile',
-    tenantId,
-    employeeId,
-    tenantError,
-    loading,
-  }));
-
   // Loading splash
   if (loading) {
     return (
@@ -168,7 +159,7 @@ export default function RootLayout() {
       <View style={styles.splash}>
         <StatusBar style="light" />
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.errorSub}>{t('login.error.settingUp') || 'Setting up your account…'}</Text>
+        <Text style={styles.errorSub}>Setting up your account…</Text>
         <TouchableOpacity style={styles.errorButton} onPress={signOut}>
           <Text style={styles.errorButtonText}>{t('profile.signOut')}</Text>
         </TouchableOpacity>

@@ -18,7 +18,7 @@ import {
   DocumentSnapshot,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, getFunctionsLazy } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import type { ForeignWorkerData } from "@/types/tax-filing";
 import { auditLogService } from "./auditLogService";
@@ -434,6 +434,33 @@ class EmployeeService {
     );
     const snapshot = await getDocs(q);
     return snapshot.docs.map(mapEmployee);
+  }
+
+  /**
+   * Provision app access for an employee: creates (or links) their login,
+   * writes the member doc (role "viewer", linked to the employee record), and
+   * emails them a password-setup link so they can sign in to Ekipa/Xefe.
+   * Backed by the addTenantMember callable; throws `functions/already-exists`
+   * if the person is already a member of the tenant.
+   */
+  async sendAppInvite(
+    tenantId: string,
+    params: { email: string; employeeDocId: string },
+  ): Promise<void> {
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import("firebase/functions"),
+      getFunctionsLazy(),
+    ]);
+    const addTenantMember = httpsCallable<
+      { tenantId: string; userEmail: string; role: string; employeeId: string },
+      { success: boolean; message: string }
+    >(functions, "addTenantMember");
+    await addTenantMember({
+      tenantId,
+      userEmail: params.email,
+      role: "viewer",
+      employeeId: params.employeeDocId,
+    });
   }
 
   async addEmployee(

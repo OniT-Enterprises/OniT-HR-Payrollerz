@@ -44,6 +44,7 @@ import {
   Pencil,
   AlertTriangle,
   Flag,
+  Send,
 } from "lucide-react";
 
 import { NATIONALITY_FLAGS } from "@/lib/constants";
@@ -600,6 +601,43 @@ interface ProfileHeaderProps {
 }
 
 function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps) {
+  const tenantId = useTenantId();
+  const { toast } = useToast();
+  const [inviting, setInviting] = useState(false);
+  const inviteEmail = employee.personalInfo.email?.trim();
+
+  const handleAppInvite = async () => {
+    if (!inviteEmail || !employee.id) return;
+    setInviting(true);
+    try {
+      await employeeService.sendAppInvite(tenantId, {
+        email: inviteEmail,
+        employeeDocId: employee.id,
+      });
+      toast({
+        title: "App invite sent",
+        description: `${inviteEmail} will receive an email to set their password and sign in to Ekipa.`,
+      });
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "functions/already-exists") {
+        toast({
+          title: "Already has access",
+          description: `${inviteEmail} is already a member — they can sign in or use "Forgot password".`,
+        });
+      } else {
+        console.error("App invite failed:", error);
+        toast({
+          title: "Could not send invite",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <DialogHeader>
       <DialogTitle className="flex items-center gap-3">
@@ -624,6 +662,12 @@ function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps)
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {inviteEmail && (
+            <Button variant="outline" size="sm" onClick={handleAppInvite} disabled={inviting}>
+              <Send className="h-4 w-4 mr-2" />
+              {inviting ? "Sending…" : "App invite"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

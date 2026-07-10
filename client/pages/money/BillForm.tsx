@@ -47,8 +47,8 @@ import { paths } from '@/lib/paths';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
-import { getTodayTL, toDateStringTL, formatDateTL } from '@/lib/dateUtils';
-import { percentOf, addMoney } from '@/lib/currency';
+import { addDaysISO, getTodayTL, formatDateTL } from '@/lib/dateUtils';
+import { calculateTaxedTotal } from '@/lib/accounting/calculations';
 import {
   ArrowLeft,
   Save,
@@ -127,7 +127,7 @@ export default function BillForm() {
       billNumber: '',
       vendorId: preselectedVendorId || '',
       billDate: getTodayTL(),
-      dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+      dueDate: addDaysISO(getTodayTL(), 30),
       description: '',
       amount: 0,
       taxRate: 0,
@@ -171,9 +171,7 @@ export default function BillForm() {
   }, [searchParams, bill]);
 
   const calculateTotals = () => {
-    const taxAmount = percentOf(formData.amount, formData.taxRate);
-    const total = addMoney(formData.amount, taxAmount);
-    return { taxAmount, total };
+    return calculateTaxedTotal(formData.amount, formData.taxRate);
   };
 
   const { taxAmount, total } = calculateTotals();

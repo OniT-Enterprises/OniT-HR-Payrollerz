@@ -57,7 +57,7 @@ import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/money';
 import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
-import { sumMoney, percentOf, addMoney } from '@/lib/currency';
+import { sumMoney, percentOf, addMoney, subtractMoney } from '@/lib/currency';
 import {
   FileText,
   Plus,
