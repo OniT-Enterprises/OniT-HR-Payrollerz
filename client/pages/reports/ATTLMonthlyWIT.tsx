@@ -82,6 +82,7 @@ import type {
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { ATTL_TAX_ACCOUNTS } from "@/lib/tlBanking";
+import { AssistedEtaxFiling } from "@/components/reports/AssistedEtaxFiling";
 import { useAuth } from "@/contexts/AuthContext";
 import { downloadBlob } from "@/lib/downloadBlob";
 
@@ -745,6 +746,9 @@ export default function ATTLMonthlyWIT() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Assisted e-Tax filing — the two numbers the portal wants */}
+              <AssistedEtaxFiling ret={selectedReturn} />
+
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
                 <div>
