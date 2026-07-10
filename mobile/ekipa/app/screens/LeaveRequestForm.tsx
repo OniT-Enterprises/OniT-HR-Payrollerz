@@ -1,6 +1,6 @@
 /**
  * Ekipa — Leave Request Form
- * Premium dark theme with violet (#8B5CF6) module accent.
+ * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Type picker, date range, reason, submit.
  */
 import { useState } from 'react';
@@ -190,7 +190,7 @@ export default function LeaveRequestForm() {
           onPress={() => setDatePickerField('start')}
           activeOpacity={0.8}
         >
-          <Calendar size={16} color={colors.violet} strokeWidth={2.2} />
+          <Calendar size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={startDate ? styles.dateFieldValue : styles.dateFieldPlaceholder}>
             {startDate || t('common.selectDate')}
           </Text>
@@ -205,7 +205,7 @@ export default function LeaveRequestForm() {
           onPress={() => setDatePickerField('end')}
           activeOpacity={0.8}
         >
-          <Calendar size={16} color={colors.violet} strokeWidth={2.2} />
+          <Calendar size={16} color={colors.primary} strokeWidth={2.2} />
           <Text style={endDate ? styles.dateFieldValue : styles.dateFieldPlaceholder}>
             {endDate || t('common.selectDate')}
           </Text>
@@ -262,7 +262,7 @@ export default function LeaveRequestForm() {
           textAlignVertical="top"
         />
 
-        {/* Submit — violet solid with glow */}
+        {/* Submit — olive solid with glow */}
         <TouchableOpacity
           style={[styles.submitBtn, !canSubmit && styles.btnDisabled]}
           onPress={handleSubmit}
@@ -283,7 +283,7 @@ export default function LeaveRequestForm() {
         value={datePickerField === 'start' ? startDate : endDate}
         minDate={datePickerField === 'end' && startDateValid ? startDate : undefined}
         maxDate={datePickerField === 'start' && endDateValid ? endDate : undefined}
-        accentColor={colors.violet}
+        accentColor={colors.primary}
         onClose={() => setDatePickerField(null)}
         onSelect={handleSelectDate}
       />
@@ -390,8 +390,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickRangeChip: {
-    backgroundColor: colors.violetBg,
-    borderColor: 'rgba(139, 92, 246, 0.28)',
+    backgroundColor: colors.primaryBg,
+    borderColor: 'rgba(106, 156, 41, 0.28)',
     borderWidth: 1,
     borderRadius: 18,
     paddingHorizontal: 12,
@@ -400,14 +400,14 @@ const styles = StyleSheet.create({
   quickRangeChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.violet,
+    color: colors.primary,
   },
   textarea: {
     height: 100,
     paddingTop: 14,
   },
 
-  // ── Type chips — dark cards, active = violet solid ─
+  // ── Type chips — dark cards, active = olive solid ──
   typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -425,11 +425,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   typeChipActive: {
-    backgroundColor: colors.violet,
-    borderColor: colors.violet,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.violet,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -452,9 +452,9 @@ const styles = StyleSheet.create({
   durationPreview: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.violet,
+    color: colors.primary,
     marginTop: 10,
-    backgroundColor: colors.violetBg,
+    backgroundColor: colors.primaryBg,
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -462,16 +462,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ── Submit — violet solid with subtle glow ────────
+  // ── Submit — olive solid with subtle glow ─────────
   submitBtn: {
     marginTop: 32,
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
-    backgroundColor: colors.violet,
+    backgroundColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.violet,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.35,
         shadowRadius: 10,

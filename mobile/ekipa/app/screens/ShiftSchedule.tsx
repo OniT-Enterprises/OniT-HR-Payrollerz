@@ -1,6 +1,6 @@
 /**
  * Ekipa — Shift Schedule Screen
- * Premium dark theme with orange (#F97316) module accent.
+ * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Calendar week strip and daily shift list.
  */
 import { useState, useEffect, useMemo } from 'react';
@@ -41,8 +41,8 @@ import { Card } from '../../components/Card';
 import { EmptyState } from '../../components/EmptyState';
 import type { Shift } from '../../types/shift';
 
-const ACCENT = colors.orange;
-const ACCENT_BG = colors.orangeBg;
+const ACCENT = colors.primary;
+const ACCENT_BG = colors.primaryBg;
 
 function getWeekDates(baseDate: Date): Date[] {
   const dates: Date[] = [];
@@ -76,9 +76,9 @@ function formatWeekRange(dates: Date[]): string {
 const WEEKDAY_KEYS = ['weekday.1', 'weekday.2', 'weekday.3', 'weekday.4', 'weekday.5', 'weekday.6', 'weekday.0'];
 
 const SHIFT_TYPE_CONFIG: Record<string, { color: string; bg: string; icon: typeof Sun }> = {
-  morning: { color: colors.warning, bg: colors.warningBg, icon: Sun },
-  afternoon: { color: colors.blue, bg: colors.blueBg, icon: Sunset },
-  night: { color: colors.violet, bg: colors.violetBg, icon: Moon },
+  morning: { color: colors.primary, bg: colors.primaryBg, icon: Sun },
+  afternoon: { color: colors.primary, bg: colors.primaryBg, icon: Sunset },
+  night: { color: colors.primary, bg: colors.primaryBg, icon: Moon },
 };
 
 function getShiftHours(startTime: string, endTime: string): number {
@@ -172,7 +172,7 @@ export default function ShiftSchedule() {
 
   return (
     <View style={styles.container}>
-      {/* Orange hero header */}
+      {/* Olive hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Orange hero header --
+  // -- Olive hero header --
   heroHeader: {
     backgroundColor: ACCENT,
     paddingBottom: 24,
@@ -444,7 +444,8 @@ const styles = StyleSheet.create({
 
   // -- Shift cards --
   listContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
     gap: 12,
   },

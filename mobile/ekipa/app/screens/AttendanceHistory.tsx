@@ -1,6 +1,6 @@
 /**
  * Ekipa — Attendance History Screen
- * Premium dark theme with cyan (#06B6D4) module accent.
+ * Xefe · Ekipa design language: one olive accent, semantic status colors only.
  * Month selector, summary card, grouped attendance records.
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -30,9 +30,10 @@ import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { Card } from '../../components/Card';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel } from '../../components/ui';
 import type { AttendanceRecord, AttendanceStatus } from '../../types/attendance';
 
-const ACCENT = colors.cyan;
+const ACCENT = colors.primary;
 type StatusIcon = typeof CheckCircle2;
 
 function getMonthOptions(): { label: string; value: string }[] {
@@ -65,7 +66,7 @@ function formatDate(dateStr: string): string {
 }
 
 const STATUS_CONFIG: Record<AttendanceStatus, { color: string; bg: string; icon: StatusIcon }> = {
-  present: { color: colors.emerald, bg: colors.successBg, icon: CheckCircle2 },
+  present: { color: colors.success, bg: colors.successBg, icon: CheckCircle2 },
   late: { color: colors.warning, bg: colors.warningBg, icon: AlertTriangle },
   absent: { color: colors.error, bg: colors.errorBg, icon: XCircle },
   leave: { color: colors.violet, bg: colors.violetBg, icon: Palmtree },
@@ -157,7 +158,7 @@ export default function AttendanceHistory() {
 
   const renderWeekGroup = ({ item }: { item: WeekGroup }) => (
     <View style={styles.weekGroup}>
-      <Text style={styles.weekLabel}>{item.weekLabel}</Text>
+      <SectionLabel>{item.weekLabel}</SectionLabel>
       <Card>
         {item.records.map((r, i) => (
           <View key={r.id}>
@@ -171,7 +172,7 @@ export default function AttendanceHistory() {
 
   return (
     <View style={styles.container}>
-      {/* Cyan hero header with decorative circles */}
+      {/* Olive hero header with decorative circles */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -241,7 +242,7 @@ export default function AttendanceHistory() {
                   <Text style={styles.summaryLabel}>{t('attendance.totalDays')}</Text>
                 </View>
                 <View style={styles.summaryCard}>
-                  <Text style={[styles.summaryValue, { color: colors.emerald }]}>
+                  <Text style={[styles.summaryValue, { color: colors.success }]}>
                     {summary.daysPresent}
                   </Text>
                   <Text style={styles.summaryLabel}>{t('attendance.present')}</Text>
@@ -259,13 +260,13 @@ export default function AttendanceHistory() {
                   <Text style={styles.summaryLabel}>{t('attendance.absent')}</Text>
                 </View>
                 <View style={styles.summaryCard}>
-                  <Text style={[styles.summaryValue, { color: ACCENT }]}>
+                  <Text style={[styles.summaryValue, { color: colors.text }]}>
                     {summary.totalRegularHours.toFixed(1)}
                   </Text>
                   <Text style={styles.summaryLabel}>{t('attendance.regularHours')}</Text>
                 </View>
                 <View style={styles.summaryCard}>
-                  <Text style={[styles.summaryValue, { color: colors.orange }]}>
+                  <Text style={[styles.summaryValue, { color: colors.text }]}>
                     {summary.totalOvertimeHours.toFixed(1)}
                   </Text>
                   <Text style={styles.summaryLabel}>{t('attendance.overtimeHours')}</Text>
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Cyan hero header --
+  // -- Olive hero header --
   heroHeader: {
     backgroundColor: ACCENT,
     paddingBottom: 32,
@@ -405,13 +406,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 28,
   },
   summaryCard: {
     width: '30%',
     flexGrow: 1,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     paddingVertical: 14,
@@ -436,14 +437,6 @@ const styles = StyleSheet.create({
   // -- Week groups --
   weekGroup: {
     marginBottom: 16,
-  },
-  weekLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
   },
 
   // -- Record row --
@@ -508,7 +501,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
 });

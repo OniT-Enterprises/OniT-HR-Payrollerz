@@ -5,7 +5,7 @@
  * Profile, Payslips, Leave accessible as hidden screens (not in tab bar).
  */
 import { Tabs, router } from 'expo-router';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { Home, Zap, Briefcase, Clock, User, Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useT } from '../../lib/i18n';
@@ -72,8 +72,15 @@ function HeaderActions() {
 function HeaderBrand() {
   return (
     <View style={styles.brandWrap}>
-      <View style={styles.brandDot} />
-      <Text style={styles.brandText}>Ekipa</Text>
+      <Image
+        source={require('../../assets/xefe-mark.webp')}
+        style={styles.brandMark}
+        resizeMode="contain"
+      />
+      <View>
+        <Text style={styles.brandOverline}>XEFE</Text>
+        <Text style={styles.brandText}>Ekipa</Text>
+      </View>
     </View>
   );
 }
@@ -102,23 +109,17 @@ export default function TabLayout() {
         headerTitle: '',
         headerLeft: () => <HeaderBrand />,
         headerRight: () => <HeaderActions />,
-        // ── Tab bar — dark bg, subtle top border, green active ──
+        // ── Tab bar — floating dock: rounded, raised above the nav inset,
+        //    active tab rests in an olive tint pill; content scrolls behind ──
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          paddingBottom: Math.max(4, insets.bottom),
-          paddingTop: 8,
-          height: 58 + insets.bottom,
-          shadowColor: 'transparent',
-          elevation: 0,
-        },
+        tabBarStyle: [styles.tabBar, { bottom: insets.bottom + 12 }],
+        tabBarItemStyle: styles.tabItem,
+        tabBarActiveBackgroundColor: colors.primaryBg,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
-          marginTop: 4,
+          fontWeight: '700',
+          marginTop: 2,
           letterSpacing: 0.2,
         },
         sceneStyle: {
@@ -133,7 +134,6 @@ export default function TabLayout() {
           tabBarLabel: t('nav.home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Home
                 size={ICON_SIZE}
                 color={color}
@@ -150,7 +150,6 @@ export default function TabLayout() {
           tabBarLabel: t('nav.actions'),
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Zap
                 size={ICON_SIZE}
                 color={color}
@@ -167,7 +166,6 @@ export default function TabLayout() {
           tabBarLabel: t('nav.services'),
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Briefcase
                 size={ICON_SIZE}
                 color={color}
@@ -184,7 +182,6 @@ export default function TabLayout() {
           tabBarLabel: t('nav.time'),
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Clock
                 size={ICON_SIZE}
                 color={color}
@@ -222,18 +219,33 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  /* ── Floating dock tab bar ─────────────────────── */
+  tabBar: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    height: 64,
+    borderRadius: 26,
+    backgroundColor: colors.bgCard,
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: colors.borderMedium,
+    paddingTop: 6,
+    paddingBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  tabItem: {
+    borderRadius: 19,
+    marginHorizontal: 6,
+  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-  },
-  activeDot: {
-    position: 'absolute',
-    top: -8,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
   },
 
   /* ── Brand (header left) ───────────────────────── */
@@ -243,17 +255,22 @@ const styles = StyleSheet.create({
     gap: 8,
     marginLeft: 16,
   },
-  brandDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
+  brandMark: {
+    width: 26,
+    height: 29,
+  },
+  brandOverline: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 2,
+    marginBottom: -2,
   },
   brandText: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
 
   /* ── Profile button (header right) ──────────── */

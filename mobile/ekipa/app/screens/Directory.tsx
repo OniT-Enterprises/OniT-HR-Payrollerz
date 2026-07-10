@@ -1,6 +1,6 @@
 /**
  * Ekipa — Employee Directory Screen
- * Premium dark theme with blue (#3B82F6) accent.
+ * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Search bar + section list grouped by department.
  */
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -37,6 +37,7 @@ import { useTenantStore } from '../../stores/tenantStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 import type { DirectoryEntry } from '../../types/directory';
 import { normalizeEmployeeDoc, sortByEmployeeName } from '../../lib/employeeDoc';
 
@@ -187,9 +188,7 @@ export default function Directory() {
                 onPress={() => handleEmail(item.email)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.contactIcon, { backgroundColor: colors.blueBg }]}>
-                  <Mail size={14} color={colors.blue} strokeWidth={2.2} />
-                </View>
+                <ChipIcon icon={Mail} size={32} iconSize={14} />
                 <Text style={styles.contactText}>{item.email}</Text>
               </TouchableOpacity>
             )}
@@ -201,9 +200,7 @@ export default function Directory() {
                 onPress={() => handleCall(item.phone!)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.contactIcon, { backgroundColor: colors.primaryBg }]}>
-                  <Phone size={14} color={colors.primary} strokeWidth={2.2} />
-                </View>
+                <ChipIcon icon={Phone} size={32} iconSize={14} />
                 <Text style={styles.contactText}>{item.phone}</Text>
               </TouchableOpacity>
             )}
@@ -227,7 +224,7 @@ export default function Directory() {
 
   const renderSectionHeader = ({ section }: { section: DirectorySection }) => (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{section.title}</Text>
+      <SectionLabel style={styles.sectionLabelInline}>{section.title}</SectionLabel>
       <View style={styles.sectionBadge}>
         <Text style={styles.sectionBadgeText}>{section.data.length}</Text>
       </View>
@@ -236,7 +233,7 @@ export default function Directory() {
 
   return (
     <View style={styles.container}>
-      {/* ── Blue hero header ───────────────────────────── */}
+      {/* ── Olive hero header ──────────────────────────── */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -278,7 +275,7 @@ export default function Directory() {
       {/* ── Section list ───────────────────────────────── */}
       {loading ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={colors.blue} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : sections.length === 0 ? (
         <EmptyState
@@ -295,7 +292,7 @@ export default function Directory() {
           stickySectionHeadersEnabled={false}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
           }
         />
       )}
@@ -309,9 +306,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // ── Blue hero header ────────────────────────────────
+  // ── Olive hero header ───────────────────────────────
   heroHeader: {
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
     paddingBottom: 24,
     overflow: 'hidden',
   },
@@ -379,7 +376,7 @@ const styles = StyleSheet.create({
 
   // ── Search bar ──────────────────────────────────────
   searchWrap: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
     backgroundColor: colors.bg,
   },
@@ -410,7 +407,7 @@ const styles = StyleSheet.create({
 
   // ── Section list ────────────────────────────────────
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingBottom: 40,
   },
   sectionHeader: {
@@ -420,15 +417,11 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 10,
   },
-  sectionHeaderText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  sectionLabelInline: {
+    marginBottom: 0,
   },
   sectionBadge: {
-    backgroundColor: colors.blueBg,
+    backgroundColor: colors.primaryBg,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -436,7 +429,7 @@ const styles = StyleSheet.create({
   sectionBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.blue,
+    color: colors.primary,
   },
 
   // ── Employee row ────────────────────────────────────
@@ -444,7 +437,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -453,7 +446,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.blueBg,
+    backgroundColor: colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -461,7 +454,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 14,
     fontWeight: '800',
-    color: colors.blue,
+    color: colors.primary,
   },
   rowInfo: {
     flex: 1,
@@ -484,8 +477,8 @@ const styles = StyleSheet.create({
   // ── Expanded row ────────────────────────────────────
   expandedRow: {
     backgroundColor: colors.bgCard,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     paddingHorizontal: 14,
     paddingBottom: 14,
     marginTop: -14,
@@ -501,17 +494,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 6,
   },
-  contactIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   contactText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.blue,
+    color: colors.primary,
   },
   detailRow: {
     flexDirection: 'row',

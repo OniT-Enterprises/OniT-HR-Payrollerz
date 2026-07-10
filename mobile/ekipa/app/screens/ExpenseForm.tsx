@@ -1,6 +1,6 @@
 /**
  * Ekipa — Expense Submission Form
- * Premium dark theme with emerald (#10B981) module accent.
+ * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Amount, date, category, description, receipt photo upload.
  */
 import { useState } from 'react';
@@ -50,8 +50,8 @@ import { toISODateLocal } from '../../lib/dateInput';
 import { DatePickerModal } from '../../components/DatePickerModal';
 import type { ExpenseCategory } from '../../types/expense';
 
-const ACCENT = colors.emerald;
-const ACCENT_BG = colors.emeraldBg;
+const ACCENT = colors.primary;
+const ACCENT_BG = colors.primaryBg;
 
 interface CategoryOption {
   id: ExpenseCategory;
@@ -159,7 +159,7 @@ export default function ExpenseForm() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* Emerald hero header */}
+      {/* Olive hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Emerald hero header --
+  // -- Olive hero header --
   heroHeader: {
     backgroundColor: ACCENT,
     paddingBottom: 20,

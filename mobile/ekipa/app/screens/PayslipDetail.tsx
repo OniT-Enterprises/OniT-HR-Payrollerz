@@ -1,6 +1,6 @@
 /**
  * Ekipa — Payslip Detail Screen
- * Premium dark theme with blue (#3B82F6) module accent.
+ * Xefe · Ekipa design language: olive hero, one accent, semantic deltas.
  * Full earnings + deductions breakdown with PDF share.
  */
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
@@ -16,6 +16,7 @@ import { colors } from '../../lib/colors';
 import { formatCurrency } from '../../lib/currency';
 import { Card } from '../../components/Card';
 import { PayslipFunnel } from '../../components/PayslipFunnel';
+import { SectionLabel } from '../../components/ui';
 
 export default function PayslipDetail() {
   const t = useT();
@@ -111,7 +112,7 @@ export default function PayslipDetail() {
             <Text style={styles.headerTitleWhite}>{payslip.periodLabel}</Text>
           </View>
           <TouchableOpacity onPress={handleShare} style={styles.shareBtnActive} activeOpacity={0.7}>
-            <Share2 size={20} color={colors.blue} strokeWidth={2} />
+            <Share2 size={20} color={colors.white} strokeWidth={2} />
           </TouchableOpacity>
         </View>
         <View style={styles.heroContent}>
@@ -121,20 +122,18 @@ export default function PayslipDetail() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Gross / Deductions summary row — dark cards with colored left borders */}
+        {/* Gross / Deductions summary row — semantic deltas on quiet cards */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
-            <View style={[styles.summaryBorderLeft, { backgroundColor: colors.emerald }]} />
             <View style={styles.summaryCardInner}>
-              <TrendingUp size={16} color={colors.emerald} strokeWidth={2} />
+              <TrendingUp size={16} color={colors.success} strokeWidth={2} />
               <Text style={styles.summaryCardLabel}>{t('payslips.gross')}</Text>
-              <Text style={[styles.summaryCardValue, { color: colors.emerald }]}>
+              <Text style={[styles.summaryCardValue, { color: colors.success }]}>
                 {formatCurrency(payslip.grossPay, language, currency)}
               </Text>
             </View>
           </View>
           <View style={styles.summaryCard}>
-            <View style={[styles.summaryBorderLeft, { backgroundColor: colors.error }]} />
             <View style={styles.summaryCardInner}>
               <TrendingDown size={16} color={colors.error} strokeWidth={2} />
               <Text style={styles.summaryCardLabel}>{t('payslips.deductions')}</Text>
@@ -149,7 +148,7 @@ export default function PayslipDetail() {
         <PayslipFunnel payslip={payslip} language={language} currency={currency} />
 
         {/* Earnings line items */}
-        <Text style={styles.sectionTitle}>{t('payslips.earnings')}</Text>
+        <SectionLabel style={styles.sectionLabel}>{t('payslips.earnings')}</SectionLabel>
         <Card>
           {payslip.earnings.map((e, i) => (
             <View
@@ -166,7 +165,7 @@ export default function PayslipDetail() {
         </Card>
 
         {/* Deductions line items */}
-        <Text style={styles.sectionTitle}>{t('payslips.deductions')}</Text>
+        <SectionLabel style={styles.sectionLabel}>{t('payslips.deductions')}</SectionLabel>
         <Card>
           {payslip.deductions.map((d, i) => (
             <View
@@ -194,9 +193,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // ── Blue hero header ──────────────────────────────
+  // ── Olive hero header ─────────────────────────────
   heroHeader: {
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
     paddingBottom: 32,
     overflow: 'hidden',
   },
@@ -238,7 +237,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
   },
   backBtn: {
     width: 40,
@@ -293,11 +292,12 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
 
-  // ── Summary row — dark cards with colored left borders ──
+  // ── Summary row — quiet cards with semantic deltas ──
   summaryRow: {
     flexDirection: 'row',
     gap: 10,
@@ -307,14 +307,11 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  summaryBorderLeft: {
-    width: 3,
   },
   summaryCardInner: {
     flex: 1,
@@ -335,14 +332,8 @@ const styles = StyleSheet.create({
   },
 
   // ── Sections ──────────────────────────────────────
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    marginTop: 20,
+  sectionLabel: {
+    marginTop: 28,
   },
 
   // ── Line items ────────────────────────────────────

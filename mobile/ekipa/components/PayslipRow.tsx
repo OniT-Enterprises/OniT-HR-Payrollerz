@@ -48,14 +48,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
   },
   accent: {
     width: 4,
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
   },
   body: {
     flex: 1,
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   netValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.blue,
+    color: colors.primary,
     letterSpacing: -0.3,
   },
   netLabel: {

@@ -28,7 +28,6 @@ import {
   X,
   RotateCcw,
   Clock,
-  Users,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
 import { useT } from '../../lib/i18n';
@@ -38,6 +37,8 @@ import { useCrewStore } from '../../stores/crewStore';
 import { compressPhoto, savePhotoLocally } from '../../lib/photoUtils';
 import { WorkerCheckRow } from '../../components/WorkerCheckRow';
 import { Card } from '../../components/Card';
+import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel } from '../../components/ui';
 import type { PendingClockIn } from '../../types/crew';
 
 export default function CrewClockOutScreen() {
@@ -139,13 +140,12 @@ export default function CrewClockOutScreen() {
 
   const renderStep1 = () => (
     <View style={styles.stepContentFlex}>
-      <Text style={styles.stepTitle}>{t('crew.selectWorkersClockOut')}</Text>
-      <Text style={styles.stepSub}>{t('crew.selectWorkersClockOutSub')}</Text>
+      <View style={styles.stepHeader}>
+        <SectionLabel style={styles.stepLabel}>{t('crew.selectWorkersClockOut')}</SectionLabel>
+        <Text style={styles.stepSub}>{t('crew.selectWorkersClockOutSub')}</Text>
+      </View>
       {availableWorkers.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Users size={32} color={colors.textTertiary} strokeWidth={1.5} />
-          <Text style={styles.emptyText}>{t('crew.noWorkersToClockOut')}</Text>
-        </View>
+        <EmptyState title={t('crew.noWorkersToClockOut')} />
       ) : (
         <>
           <View style={styles.selectActions}>
@@ -191,8 +191,10 @@ export default function CrewClockOutScreen() {
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.stepContent}>
-          <Text style={styles.stepTitle}>{t('crew.optionalPhoto')}</Text>
-          <Text style={styles.stepSub}>{t('crew.optionalPhotoSub')}</Text>
+          <View style={styles.stepHeader}>
+            <SectionLabel style={styles.stepLabel}>{t('crew.optionalPhoto')}</SectionLabel>
+            <Text style={styles.stepSub}>{t('crew.optionalPhotoSub')}</Text>
+          </View>
           <TouchableOpacity style={styles.primaryBtn} onPress={requestCameraPermission}>
             <Camera size={20} color="#fff" strokeWidth={2} />
             <Text style={styles.primaryBtnText}>{t('crew.enableCamera')}</Text>
@@ -245,7 +247,7 @@ export default function CrewClockOutScreen() {
 
   const renderStep3 = () => (
     <ScrollView style={styles.stepContent} contentContainerStyle={{ gap: 16 }}>
-      <Text style={styles.stepTitle}>{t('crew.reviewSubmit')}</Text>
+      <SectionLabel style={styles.stepLabel}>{t('crew.reviewSubmit')}</SectionLabel>
 
       <Card style={styles.reviewCard}>
         <View style={styles.reviewRow}>
@@ -267,7 +269,7 @@ export default function CrewClockOutScreen() {
       ) : null}
 
       <View style={styles.reviewWorkerList}>
-        <Text style={styles.reviewWorkerHeader}>{t('crew.selectedWorkers')}</Text>
+        <SectionLabel style={styles.stepLabel}>{t('crew.selectedWorkers')}</SectionLabel>
         {selectedWorkers.map((w) => (
           <View key={w.employeeId} style={styles.reviewWorkerRow}>
             <Check size={14} color={colors.success} strokeWidth={2} />
@@ -361,10 +363,9 @@ const styles = StyleSheet.create({
   progressFill: { height: 3, backgroundColor: colors.primary },
   stepContent: { flex: 1, padding: 20, gap: 16 },
   stepContentFlex: { flex: 1, paddingHorizontal: 20, paddingTop: 20, gap: 12 },
-  stepTitle: { fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
-  stepSub: { fontSize: 14, color: colors.textSecondary, lineHeight: 20 },
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  emptyText: { fontSize: 14, color: colors.textTertiary, fontWeight: '500' },
+  stepHeader: { gap: 6 },
+  stepLabel: { marginBottom: 0 },
+  stepSub: { fontSize: 13, fontWeight: '500', color: colors.textTertiary, lineHeight: 18 },
   selectActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   selectActionText: { fontSize: 13, fontWeight: '600', color: colors.primary },
   selectCount: { fontSize: 13, fontWeight: '700', color: colors.text },
@@ -396,12 +397,12 @@ const styles = StyleSheet.create({
   },
   retakeBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: colors.bgSubtle, borderRadius: 10, paddingVertical: 14,
+    gap: 6, backgroundColor: colors.bgSubtle, borderRadius: 14, paddingVertical: 15,
   },
   retakeBtnText: { fontSize: 15, fontWeight: '600', color: colors.text },
   primaryBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 14,
+    gap: 6, backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 15,
   },
   primaryBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
   skipBtn: {
@@ -413,15 +414,14 @@ const styles = StyleSheet.create({
   reviewRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   reviewLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   reviewValue: { fontSize: 14, color: colors.text, fontWeight: '600' },
-  reviewPhoto: { width: '100%', height: 160, borderRadius: 12 },
+  reviewPhoto: { width: '100%', height: 160, borderRadius: 16 },
   reviewWorkerList: { gap: 8 },
-  reviewWorkerHeader: { fontSize: 14, fontWeight: '700', color: colors.text },
   reviewWorkerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   reviewWorkerName: { fontSize: 14, color: colors.text, fontWeight: '500' },
   reviewWorkerDept: { fontSize: 12, color: colors.textTertiary },
   submitBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 16, marginTop: 8,
+    gap: 8, backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 15, marginTop: 8,
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitBtnText: { fontSize: 16, fontWeight: '800', color: '#fff' },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14,
+    gap: 6, backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 15,
   },
   nextBtnDisabled: { opacity: 0.4 },
   nextBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },

@@ -19,6 +19,7 @@ import { useTenantStore } from '../../stores/tenantStore';
 import { getAllBatchesByMonth } from '../../lib/db';
 import { CrewSummaryCard } from '../../components/CrewSummaryCard';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel } from '../../components/ui';
 import type { SyncBatch } from '../../types/crew';
 
 interface MonthSection {
@@ -107,7 +108,7 @@ export default function CrewHistoryScreen() {
             style={styles.sectionHeader}
             onPress={() => toggleMonth(section.yearMonth)}
           >
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <SectionLabel style={{ marginBottom: 0 }}>{section.title}</SectionLabel>
             <View style={styles.sectionRight}>
               <Text style={styles.sectionCount}>
                 {section.data.length}{' '}
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-  list: { padding: 16, gap: 8 },
+  list: { padding: 20, gap: 8 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -162,12 +163,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.3,
   },
   sectionRight: {
     flexDirection: 'row',

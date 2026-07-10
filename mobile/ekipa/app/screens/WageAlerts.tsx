@@ -1,6 +1,6 @@
 /**
  * Ekipa — Wage Alerts Screen
- * Premium dark theme with amber (#F59E0B) accent.
+ * Xefe · Ekipa design language: one olive accent, semantic status colors only.
  * Compares attendance hours vs payslip hours, minimum wage check.
  */
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -30,6 +30,8 @@ import { useAttendanceStore } from '../../stores/attendanceStore';
 import { usePayslipStore } from '../../stores/payslipStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel } from '../../components/ui';
+import { EmptyState } from '../../components/EmptyState';
 
 const TL_MIN_WAGE = 115; // USD per month
 
@@ -116,7 +118,7 @@ export default function WageAlerts() {
 
   return (
     <View style={styles.container}>
-      {/* ── Amber hero header ──────────────────────────── */}
+      {/* ── Olive hero header ──────────────────────────── */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -141,20 +143,19 @@ export default function WageAlerts() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.warning} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         {isLoading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={colors.warning} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.loadingText}>{t('wageAlerts.checking')}</Text>
           </View>
         ) : !check ? (
-          <View style={styles.noDataWrap}>
-            <Clock size={36} color={colors.textTertiary} strokeWidth={1.5} />
-            <Text style={styles.noDataTitle}>{t('wageAlerts.noData')}</Text>
-            <Text style={styles.noDataSubtext}>{t('wageAlerts.noDataSub')}</Text>
-          </View>
+          <EmptyState
+            title={t('wageAlerts.noData')}
+            subtitle={t('wageAlerts.noDataSub')}
+          />
         ) : (
           <>
             {/* ── Status summary ─────────────────────────── */}
@@ -182,18 +183,13 @@ export default function WageAlerts() {
             </View>
 
             {/* ── Hours comparison ────────────────────────── */}
-            <View style={styles.sectionHeader}>
-              <View style={styles.iconBadge}>
-                <Clock size={14} color={colors.warning} strokeWidth={2.5} />
-              </View>
-              <Text style={styles.sectionTitle}>{t('wageAlerts.hoursComparison')}</Text>
-            </View>
+            <SectionLabel>{t('wageAlerts.hoursComparison')}</SectionLabel>
 
             <View style={[styles.comparisonCard, check.hasHourDiscrepancy && styles.comparisonCardAlert]}>
               {/* Attendance hours */}
               <View style={styles.compRow}>
                 <View style={styles.compLabel}>
-                  <Clock size={14} color={colors.blue} strokeWidth={2} />
+                  <Clock size={14} color={colors.primary} strokeWidth={2} />
                   <Text style={styles.compLabelText}>{t('wageAlerts.attendanceHours')}</Text>
                 </View>
                 <Text style={styles.compValue}>{check.attendanceHours}h</Text>
@@ -249,12 +245,7 @@ export default function WageAlerts() {
             </View>
 
             {/* ── Minimum wage check ─────────────────────── */}
-            <View style={styles.sectionHeader}>
-              <View style={[styles.iconBadge, { backgroundColor: colors.primaryBg }]}>
-                <DollarSign size={14} color={colors.primary} strokeWidth={2.5} />
-              </View>
-              <Text style={styles.sectionTitle}>{t('wageAlerts.minWageCheck')}</Text>
-            </View>
+            <SectionLabel>{t('wageAlerts.minWageCheck')}</SectionLabel>
 
             <View style={[styles.wageCard, check.hasMinWageWarning && styles.wageCardAlert]}>
               <View style={styles.wageRow}>
@@ -299,9 +290,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // ── Amber hero header ───────────────────────────────
+  // ── Olive hero header ───────────────────────────────
   heroHeader: {
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
     paddingBottom: 24,
     overflow: 'hidden',
   },
@@ -369,7 +360,7 @@ const styles = StyleSheet.create({
 
   // ── Content ─────────────────────────────────────────
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     flexGrow: 1,
   },
@@ -387,27 +378,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.textSecondary,
   },
-  noDataWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingTop: 60,
-  },
-  noDataTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: 8,
-  },
-  noDataSubtext: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-
   // ── All good card ───────────────────────────────────
   allGoodCard: {
     alignItems: 'center',
@@ -447,7 +417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     backgroundColor: colors.warningBg,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     marginBottom: 20,
     borderWidth: 1,
@@ -465,11 +435,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 20,
+    marginBottom: 28,
   },
   periodLabel: {
     fontSize: 13,
@@ -484,38 +454,14 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  // ── Section header ──────────────────────────────────
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  iconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.warningBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
   // ── Comparison card ─────────────────────────────────
   comparisonCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 24,
+    marginBottom: 28,
     gap: 10,
   },
   comparisonCardAlert: {
@@ -593,11 +539,11 @@ const styles = StyleSheet.create({
   // ── Wage card ───────────────────────────────────────
   wageCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: 24,
+    marginBottom: 28,
     gap: 10,
   },
   wageCardAlert: {

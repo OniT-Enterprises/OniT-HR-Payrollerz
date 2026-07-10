@@ -1,18 +1,18 @@
 /**
  * Ekipa — Payslips Tab
- * Premium dark theme with blue (#3B82F6) module accent.
+ * Xefe · Ekipa design language: one olive accent, editorial section labels.
  * Month list with gross/net, tap for detail.
  */
 import { useEffect, useCallback, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
-import { FileText } from 'lucide-react-native';
 import { useTenantStore } from '../../stores/tenantStore';
 import { usePayslipStore } from '../../stores/payslipStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { PayslipRow } from '../../components/PayslipRow';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel } from '../../components/ui';
 import type { Payslip } from '../../types/payslip';
 
 export default function PayslipsScreen() {
@@ -47,7 +47,7 @@ export default function PayslipsScreen() {
   if (loading && payslips.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.blue} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -63,18 +63,13 @@ export default function PayslipsScreen() {
       contentContainerStyle={payslips.length === 0 ? styles.emptyContainer : styles.list}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
       ListHeaderComponent={
         payslips.length > 0 ? (
-          <View style={styles.listHeader}>
-            <View style={styles.iconBadge}>
-              <FileText size={13} color={colors.blue} strokeWidth={2.5} />
-            </View>
-            <Text style={styles.listHeaderText}>
-              {payslips.length} {payslips.length === 1 ? t('payslips.countOne') : t('payslips.count')}
-            </Text>
-          </View>
+          <SectionLabel style={styles.listHeader}>
+            {payslips.length} {payslips.length === 1 ? t('payslips.countOne') : t('payslips.count')}
+          </SectionLabel>
         ) : null
       }
       ListEmptyComponent={<EmptyState title={t('payslips.empty')} />}
@@ -94,8 +89,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   list: {
-    padding: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120,
   },
   emptyContainer: {
     flex: 1,
@@ -104,25 +100,6 @@ const styles = StyleSheet.create({
     height: 10,
   },
   listHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
     marginTop: 4,
-  },
-  iconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: colors.blueBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listHeaderText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 });

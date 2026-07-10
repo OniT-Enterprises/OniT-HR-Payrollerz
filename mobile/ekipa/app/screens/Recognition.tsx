@@ -1,6 +1,6 @@
 /**
  * Ekipa — Recognition Screen
- * Premium dark theme with amber (#F59E0B) accent.
+ * Xefe · Ekipa design language: one olive accent, quiet empties.
  * Peer recognition feed + "Send Kudos" FAB.
  */
 import { useEffect, useState, useCallback } from 'react';
@@ -51,7 +51,7 @@ import type { RecognitionCategory } from '../../types/recognition';
 import type { DirectoryEntry } from '../../types/directory';
 import { normalizeEmployeeDoc, sortByEmployeeName } from '../../lib/employeeDoc';
 
-/** Category configuration: label key, icon, color */
+/** Category configuration: label key, icon, color (single olive accent) */
 const CATEGORIES: {
   id: RecognitionCategory;
   labelKey: string;
@@ -59,11 +59,11 @@ const CATEGORIES: {
   color: string;
   bg: string;
 }[] = [
-  { id: 'teamwork', labelKey: 'recognition.teamwork', icon: Users, color: colors.blue, bg: colors.blueBg },
-  { id: 'above_and_beyond', labelKey: 'recognition.aboveAndBeyond', icon: Sparkles, color: colors.warning, bg: colors.warningBg },
-  { id: 'safety', labelKey: 'recognition.safety', icon: Shield, color: colors.orange, bg: colors.orangeBg },
-  { id: 'customer_service', labelKey: 'recognition.customerService', icon: Heart, color: colors.emerald, bg: colors.emeraldBg },
-  { id: 'innovation', labelKey: 'recognition.innovation', icon: Lightbulb, color: colors.violet, bg: colors.violetBg },
+  { id: 'teamwork', labelKey: 'recognition.teamwork', icon: Users, color: colors.primary, bg: colors.primaryBg },
+  { id: 'above_and_beyond', labelKey: 'recognition.aboveAndBeyond', icon: Sparkles, color: colors.primary, bg: colors.primaryBg },
+  { id: 'safety', labelKey: 'recognition.safety', icon: Shield, color: colors.primary, bg: colors.primaryBg },
+  { id: 'customer_service', labelKey: 'recognition.customerService', icon: Heart, color: colors.primary, bg: colors.primaryBg },
+  { id: 'innovation', labelKey: 'recognition.innovation', icon: Lightbulb, color: colors.primary, bg: colors.primaryBg },
   { id: 'leadership', labelKey: 'recognition.leadership', icon: Crown, color: colors.primary, bg: colors.primaryBg },
 ];
 
@@ -196,7 +196,7 @@ export default function Recognition() {
 
   return (
     <View style={styles.container}>
-      {/* ── Amber hero header ──────────────────────────── */}
+      {/* ── Olive hero header ──────────────────────────── */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -222,12 +222,12 @@ export default function Recognition() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.warning} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
       >
         {loading && recognitions.length === 0 ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={colors.warning} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : recognitions.length === 0 ? (
           <EmptyState
@@ -241,9 +241,6 @@ export default function Recognition() {
               const CatIcon = catConfig.icon;
               return (
                 <View key={rec.id} style={styles.feedCard}>
-                  {/* Category accent bar */}
-                  <View style={[styles.accentBar, { backgroundColor: catConfig.color }]} />
-
                   <View style={styles.feedCardInner}>
                     {/* From -> To */}
                     <View style={styles.feedHeader}>
@@ -345,7 +342,7 @@ export default function Recognition() {
                 </View>
 
                 {loadingColleagues ? (
-                  <ActivityIndicator size="small" color={colors.warning} style={{ margin: 20 }} />
+                  <ActivityIndicator size="small" color={colors.primary} style={{ margin: 20 }} />
                 ) : (
                   <View style={styles.colleagueList}>
                     {filteredColleagues.slice(0, 20).map((c) => (
@@ -447,9 +444,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // ── Amber hero header ───────────────────────────────
+  // ── Olive hero header ───────────────────────────────
   heroHeader: {
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
     paddingBottom: 24,
     overflow: 'hidden',
   },
@@ -517,7 +514,7 @@ const styles = StyleSheet.create({
 
   // ── Feed ────────────────────────────────────────────
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 100,
     flexGrow: 1,
   },
@@ -530,17 +527,12 @@ const styles = StyleSheet.create({
   },
   feedCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
-    flexDirection: 'row',
-  },
-  accentBar: {
-    width: 4,
   },
   feedCardInner: {
-    flex: 1,
     padding: 14,
     gap: 8,
   },
@@ -567,7 +559,7 @@ const styles = StyleSheet.create({
   feedTo: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.warning,
+    color: colors.primary,
     flex: 1,
   },
   feedTime: {
@@ -606,13 +598,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
     borderRadius: 28,
     paddingVertical: 14,
     paddingHorizontal: 20,
     ...Platform.select({
       ios: {
-        shadowColor: colors.warning,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 12,
@@ -707,7 +699,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.warningBg,
+    backgroundColor: colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -715,7 +707,7 @@ const styles = StyleSheet.create({
   colleagueAvatarText: {
     fontSize: 13,
     fontWeight: '800',
-    color: colors.warning,
+    color: colors.primary,
   },
   colleagueInfo: {
     flex: 1,
@@ -736,21 +728,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: colors.warning + '40',
+    borderColor: colors.primary + '40',
   },
   changeBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: colors.warningBg,
+    backgroundColor: colors.primaryBg,
   },
   changeBtnText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.warning,
+    color: colors.primary,
   },
 
   // ── Category grid ───────────────────────────────────
@@ -796,11 +788,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 28,
     borderRadius: 14,
-    padding: 16,
-    backgroundColor: colors.warning,
+    padding: 15,
+    backgroundColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.warning,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,

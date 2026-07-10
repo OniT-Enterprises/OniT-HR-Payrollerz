@@ -1,6 +1,6 @@
 /**
  * Ekipa — Leave Tab
- * Premium dark theme with violet (#8B5CF6) module accent.
+ * Xefe · Ekipa design language: one olive accent, editorial section labels.
  * Balance cards with progress bars, request history with status badges.
  */
 import { useEffect, useState, useCallback } from 'react';
@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
-import { Plus, Calendar } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useLeaveStore } from '../../stores/leaveStore';
 import { useT } from '../../lib/i18n';
@@ -23,6 +23,7 @@ import { colors } from '../../lib/colors';
 import { LeaveBalanceCard } from '../../components/LeaveBalanceCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { EmptyState } from '../../components/EmptyState';
+import { SectionLabel } from '../../components/ui';
 
 
 export default function LeaveScreen() {
@@ -59,16 +60,11 @@ export default function LeaveScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.violet} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
       {/* ── Balance section ── */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.iconBadge}>
-          <Calendar size={14} color={colors.violet} strokeWidth={2.5} />
-        </View>
-        <Text style={styles.sectionTitle}>{t('leave.balance')}</Text>
-      </View>
+      <SectionLabel>{t('leave.balance')}</SectionLabel>
 
       {balance ? (
         <View style={styles.balanceGrid}>
@@ -80,26 +76,26 @@ export default function LeaveScreen() {
           <LeaveBalanceCard
             label={t('leave.sick')}
             balance={balance.sick}
-            color={colors.warning}
+            color={colors.primary}
           />
           {balance.maternity && (
             <LeaveBalanceCard
               label={t('leave.maternity')}
               balance={balance.maternity}
-              color={colors.info}
+              color={colors.primary}
             />
           )}
           {balance.paternity && (
             <LeaveBalanceCard
               label={t('leave.paternity')}
               balance={balance.paternity}
-              color={colors.info}
+              color={colors.primary}
             />
           )}
         </View>
       ) : (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={colors.violet} />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       )}
 
@@ -114,16 +110,11 @@ export default function LeaveScreen() {
       </TouchableOpacity>
 
       {/* ── History section ── */}
-      <View style={styles.sectionHeader}>
-        <View style={styles.iconBadge}>
-          <Calendar size={14} color={colors.violet} strokeWidth={2.5} />
-        </View>
-        <Text style={styles.sectionTitle}>{t('leave.history')}</Text>
-      </View>
+      <SectionLabel>{t('leave.history')}</SectionLabel>
 
       {loading && requests.length === 0 ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={colors.violet} />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       ) : requests.length === 0 ? (
         <EmptyState title={t('leave.empty')} />
@@ -158,32 +149,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-
-  // ── Section headers ──
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 14,
-    marginTop: 8,
-  },
-  iconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.violetBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 120,
   },
 
   // ── Loading ──
@@ -203,14 +171,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.violet,
+    backgroundColor: colors.primary,
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 15,
     paddingHorizontal: 24,
     marginBottom: 28,
     ...Platform.select({
       ios: {
-        shadowColor: colors.violet,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.20,
         shadowRadius: 10,
@@ -236,7 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,

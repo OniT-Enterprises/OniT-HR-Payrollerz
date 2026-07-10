@@ -73,7 +73,8 @@ export async function registerForPushNotifications({
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 150, 250],
         lightColor: '#6A9C29',
-        sound: 'default',
+        // no `sound`: a string here means a custom sound FILE; omitting it uses
+        // the system default (a 'default' string spams "sound not found").
       });
     }
 

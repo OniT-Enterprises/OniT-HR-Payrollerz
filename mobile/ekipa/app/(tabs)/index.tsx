@@ -1,9 +1,19 @@
 /**
  * Ekipa — Home Dashboard
- * Landing-page style: hero greeting, payday countdown, pay card, status section.
+ * Xefe · Ekipa design language: olive hero card (greeting + payday countdown,
+ * Xefe mark watermark), editorial section labels, one accent, quiet empties.
  */
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Dimensions,
+} from 'react-native';
 import { router } from 'expo-router';
 import {
   FileText,
@@ -11,7 +21,6 @@ import {
   Clock,
   CalendarClock,
   ChevronRight,
-  ArrowRight,
   Megaphone,
 } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
@@ -26,6 +35,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { formatCurrency } from '../../lib/currency';
+import { SectionLabel, ChipIcon, EmptyCard } from '../../components/ui';
 
 const SCREEN_W = Dimensions.get('window').width;
 const PAIR_GAP = 12;
@@ -138,7 +148,7 @@ export default function HomeScreen() {
 
   const nextPayday = getNextPayday(payDay);
   const latestPayslip = payslips[0];
-  const annualRemaining = balance?.annual?.remaining ?? '--';
+  const annualRemaining = balance?.annual?.remaining;
   const hoursThisMonth = attendanceSummary
     ? attendanceSummary.totalRegularHours + attendanceSummary.totalOvertimeHours
     : null;
@@ -154,66 +164,71 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
     >
-      {/* ══ Hero — greeting ════════════════════════ */}
+      {/* ══ Hero — olive brand card: greeting + payday ══ */}
       <View style={styles.hero}>
+        {/* Decorative pattern (same language as the login hero) */}
+        <View style={StyleSheet.absoluteFill}>
+          <View style={styles.heroCircle1} />
+          <View style={styles.heroCircle2} />
+        </View>
+        <Image
+          source={require('../../assets/xefe-mark.webp')}
+          style={styles.heroMark}
+          resizeMode="contain"
+        />
+
         <Text style={styles.greeting}>{getGreeting(t)}</Text>
-        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
         {companyName ? (
-          <Text style={styles.companyName} numberOfLines={1}>{companyName}</Text>
+          <View style={styles.companyPill}>
+            <Text style={styles.companyPillText} numberOfLines={1}>{companyName}</Text>
+          </View>
         ) : null}
-      </View>
 
-      {/* ══ Payday countdown — full-width block ═══ */}
-      <View style={styles.paydayBlock}>
-        <View style={styles.paydayLeft}>
-          <Text style={styles.paydayLabel}>{t('home.paydayTitle')}</Text>
-          <Text style={styles.paydaySub}>
-            {nextPayday.date.getDate()} {t(`month.${nextPayday.date.getMonth() + 1}`)}
-          </Text>
-        </View>
-        <View style={styles.paydayBadge}>
-          <Text style={styles.paydayNumber}>{nextPayday.daysAway}</Text>
-          <Text style={styles.paydayBadgeLabel}>{t('home.days')}</Text>
-        </View>
-      </View>
+        <View style={styles.heroDivider} />
 
-      {/* ══ Latest pay — featured card ════════════ */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('home.payTitle')}</Text>
-        <Text style={styles.sectionSub}>{t('home.paySub')}</Text>
-
-        <TouchableOpacity
-          style={styles.payCard}
-          onPress={() => router.push('/(tabs)/payslips')}
-          activeOpacity={0.7}
-        >
-          <View style={styles.payTop}>
-            <View style={[styles.payIcon, { backgroundColor: colors.blueBg }]}>
-              <FileText size={20} color={colors.blue} strokeWidth={1.8} />
-            </View>
-            <Text style={styles.payPeriod}>
-              {latestPayslip
-                ? latestPayslip.periodLabel
-                : '--'}
+        <View style={styles.paydayRow}>
+          <View style={styles.paydayLeft}>
+            <Text style={styles.paydayLabel}>{t('home.paydayTitle')}</Text>
+            <Text style={styles.paydayDate}>
+              {nextPayday.date.getDate()} {t(`month.${nextPayday.date.getMonth() + 1}`)}
             </Text>
           </View>
-          <Text style={styles.payAmount} numberOfLines={1}>
-            {latestPayslip
-              ? formatCurrency(latestPayslip.netPay, language, employee?.currency || 'USD')
-              : t('home.noPayslip')}
-          </Text>
-          <Text style={styles.payLabel}>{t('payslips.netPay')}</Text>
-
-          <View style={styles.payBtn}>
-            <Text style={styles.payBtnText}>{t('home.viewDetails')}</Text>
-            <ArrowRight size={14} color={colors.blue} strokeWidth={2.5} />
+          <View style={styles.paydayBadge}>
+            <Text style={styles.paydayNumber}>{nextPayday.daysAway}</Text>
+            <Text style={styles.paydayBadgeLabel}>{t('home.days')}</Text>
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
 
-      {/* ══ At a glance — status section ══════════ */}
+      {/* ══ Your pay ══ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('home.statusTitle')}</Text>
+        <SectionLabel>{t('home.payTitle')}</SectionLabel>
+
+        {latestPayslip ? (
+          <TouchableOpacity
+            style={styles.payCard}
+            onPress={() => router.push('/(tabs)/payslips')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.payTop}>
+              <ChipIcon icon={FileText} />
+              <Text style={styles.payPeriod}>{latestPayslip.periodLabel}</Text>
+              <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
+            </View>
+            <Text style={styles.payAmount} numberOfLines={1}>
+              {formatCurrency(latestPayslip.netPay, language, employee?.currency || 'USD')}
+            </Text>
+            <Text style={styles.payLabel}>{t('payslips.netPay')}</Text>
+          </TouchableOpacity>
+        ) : (
+          <EmptyCard title={t('home.noPayslip')} subtitle={t('home.noPayslipSub')} />
+        )}
+      </View>
+
+      {/* ══ At a glance ══ */}
+      <View style={styles.section}>
+        <SectionLabel>{t('home.statusTitle')}</SectionLabel>
 
         {/* Leave + Attendance pair */}
         <View style={styles.pair}>
@@ -222,10 +237,10 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/leave')}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIcon, { backgroundColor: colors.violetBg }]}>
-              <Calendar size={18} color={colors.violet} strokeWidth={2} />
-            </View>
-            <Text style={styles.statValue}>{annualRemaining}</Text>
+            <ChipIcon icon={Calendar} />
+            <Text style={[styles.statValue, annualRemaining == null && styles.statValueEmpty]}>
+              {annualRemaining ?? '—'}
+            </Text>
             <Text style={styles.statLabel}>{t('home.daysLeft')}</Text>
             <Text style={styles.statCaption}>{t('home.leaveBalance')}</Text>
           </TouchableOpacity>
@@ -235,51 +250,46 @@ export default function HomeScreen() {
             onPress={() => router.push('/screens/AttendanceHistory')}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIcon, { backgroundColor: colors.emeraldBg }]}>
-              <Clock size={18} color={colors.emerald} strokeWidth={2} />
-            </View>
-            <Text style={styles.statValue}>
-              {hoursThisMonth === null ? '--' : `${hoursThisMonth.toFixed(0)}h`}
+            <ChipIcon icon={Clock} />
+            <Text style={[styles.statValue, hoursThisMonth === null && styles.statValueEmpty]}>
+              {hoursThisMonth === null ? '—' : `${hoursThisMonth.toFixed(0)}h`}
             </Text>
             <Text style={styles.statLabel}>{t('home.hoursThisMonth')}</Text>
             <Text style={styles.statCaption}>{t('home.attendance')}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Next shift — compact row */}
+        {/* Next shift */}
         <TouchableOpacity
-          style={styles.shiftRow}
+          style={styles.row}
           onPress={() => router.push('/screens/ShiftSchedule')}
           activeOpacity={0.7}
         >
-          <View style={[styles.shiftIcon, { backgroundColor: colors.orangeBg }]}>
-            <CalendarClock size={18} color={colors.orange} strokeWidth={1.8} />
-          </View>
-          <View style={styles.shiftText}>
-            <Text style={styles.shiftLabel}>{t('home.nextShift')}</Text>
-            <Text style={styles.shiftValue} numberOfLines={1}>
+          <ChipIcon icon={CalendarClock} />
+          <View style={styles.rowText}>
+            <Text style={styles.rowLabel}>{t('home.nextShift')}</Text>
+            <Text style={styles.rowValue} numberOfLines={1}>
               {nextShift
                 ? `${formatShiftDate(nextShift.date, t)} · ${nextShift.startTime}–${nextShift.endTime}`
                 : t('time.noShift')}
             </Text>
             {nextShift?.location ? (
-              <Text style={styles.shiftMeta} numberOfLines={1}>{nextShift.location}</Text>
+              <Text style={styles.rowMeta} numberOfLines={1}>{nextShift.location}</Text>
             ) : null}
           </View>
           <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
         </TouchableOpacity>
 
+        {/* Announcements */}
         <TouchableOpacity
-          style={styles.announcementRow}
+          style={[styles.row, styles.rowSpaced]}
           onPress={() => router.push('/screens/Announcements')}
           activeOpacity={0.7}
         >
-          <View style={[styles.shiftIcon, { backgroundColor: colors.tealBg }]}> 
-            <Megaphone size={18} color={colors.teal} strokeWidth={1.8} />
-          </View>
-          <View style={styles.shiftText}>
-            <View style={styles.announcementTitleRow}>
-              <Text style={styles.shiftLabel}>{t('home.announcements')}</Text>
+          <ChipIcon icon={Megaphone} />
+          <View style={styles.rowText}>
+            <View style={styles.rowTitleGroup}>
+              <Text style={styles.rowLabel}>{t('home.announcements')}</Text>
               {unreadAnnouncements > 0 ? (
                 <View style={styles.unreadBadge}>
                   <Text style={styles.unreadBadgeText}>
@@ -288,122 +298,143 @@ export default function HomeScreen() {
                 </View>
               ) : null}
             </View>
-            <Text style={styles.shiftValue} numberOfLines={1}>
+            <Text style={styles.rowValue} numberOfLines={1}>
               {latestAnnouncement?.title || t('announcements.emptySub')}
             </Text>
           </View>
           <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
-
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingBottom: 48 },
+  content: { paddingBottom: 120 },
 
-  /* ── Hero ─────────────────────────────────── */
+  /* ── Hero card ─────────────────────────────── */
   hero: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 4,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 28,
+    borderRadius: 24,
+    backgroundColor: colors.primary,
+    padding: 22,
+    overflow: 'hidden',
+  },
+  heroCircle1: {
+    position: 'absolute',
+    top: -70,
+    right: -50,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  heroCircle2: {
+    position: 'absolute',
+    bottom: -60,
+    left: -40,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  heroMark: {
+    position: 'absolute',
+    right: 14,
+    top: 16,
+    width: 64,
+    height: 72,
+    opacity: 0.9,
   },
   greeting: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    letterSpacing: 0.2,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.72)',
+    fontWeight: '600',
+    letterSpacing: 0.3,
     marginBottom: 2,
   },
   name: {
     fontSize: 30,
-    fontWeight: '800',
-    color: colors.text,
+    fontWeight: '900',
+    color: colors.white,
     letterSpacing: -0.8,
+    paddingRight: 76, // clear the mark
   },
-  companyName: {
-    marginTop: 4,
+  companyPill: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  companyPillText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
+    fontWeight: '700',
+    color: colors.white,
     letterSpacing: 0.2,
   },
-
-  /* ── Payday countdown ────────────────────── */
-  paydayBlock: {
+  heroDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  paydayRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 32,
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   paydayLeft: { flex: 1 },
   paydayLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.2,
-    marginBottom: 2,
+    fontSize: 11,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.65)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 3,
   },
-  paydaySub: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textTertiary,
+  paydayDate: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.white,
+    letterSpacing: -0.3,
   },
   paydayBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: colors.primaryBg,
+    minWidth: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(106, 156, 41, 0.28)',
+    borderColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   paydayNumber: {
     fontSize: 22,
-    fontWeight: '800',
-    color: colors.primary,
+    fontWeight: '900',
+    color: colors.white,
     letterSpacing: -0.5,
   },
   paydayBadgeLabel: {
     marginTop: -2,
     fontSize: 8,
-    fontWeight: '700',
-    color: colors.primary,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.7)',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
 
-  /* ── Section ─────────────────────────────── */
+  /* ── Sections ──────────────────────────────── */
   section: {
     paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  sectionSub: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    marginBottom: 14,
-    lineHeight: 18,
+    marginBottom: 28,
   },
 
-  /* ── Pay card ────────────────────────────── */
+  /* ── Pay card ──────────────────────────────── */
   payCard: {
     backgroundColor: colors.bgCard,
     borderRadius: 16,
@@ -414,17 +445,11 @@ const styles = StyleSheet.create({
   payTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 16,
   },
-  payIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   payPeriod: {
+    flex: 1,
     fontSize: 13,
     fontWeight: '600',
     color: colors.textTertiary,
@@ -440,21 +465,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.textTertiary,
-    marginBottom: 16,
-  },
-  payBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  payBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.blue,
   },
 
-  /* ── Stat cards (2-up) ───────────────────── */
+  /* ── Stat cards (2-up) ─────────────────────── */
   pair: {
     flexDirection: 'row',
     gap: PAIR_GAP,
@@ -463,25 +476,22 @@ const styles = StyleSheet.create({
   statCard: {
     width: PAIR_W,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 18,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
   },
   statValue: {
     fontSize: 28,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.6,
+    marginTop: 14,
     marginBottom: 1,
+  },
+  statValueEmpty: {
+    color: colors.textTertiary,
+    fontWeight: '600',
   },
   statLabel: {
     fontSize: 12,
@@ -495,56 +505,40 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* ── Shift row ───────────────────────────── */
-  shiftRow: {
+  /* ── Rows ──────────────────────────────────── */
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
+    gap: 12,
   },
-  shiftIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+  rowSpaced: { marginTop: 10 },
+  rowText: { flex: 1 },
+  rowTitleGroup: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    gap: 7,
   },
-  shiftText: { flex: 1 },
-  shiftLabel: {
+  rowLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
     marginBottom: 1,
   },
-  shiftValue: {
+  rowValue: {
     fontSize: 12,
     fontWeight: '500',
     color: colors.textTertiary,
   },
-  shiftMeta: {
+  rowMeta: {
     marginTop: 2,
     fontSize: 11,
     fontWeight: '500',
     color: colors.textTertiary,
-  },
-  announcementRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 10,
-  },
-  announcementTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
   },
   unreadBadge: {
     minWidth: 20,
@@ -558,6 +552,6 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: colors.textInverse,
+    color: colors.white,
   },
 });

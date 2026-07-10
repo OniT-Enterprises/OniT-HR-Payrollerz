@@ -35,6 +35,7 @@ import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel } from '../../components/ui';
 
 const GREEN = colors.primary;
 
@@ -185,7 +186,7 @@ export default function EditProfile() {
         </View>
 
         {/* Emergency contact section */}
-        <Text style={styles.sectionTitle}>{t('editProfile.emergencyContact')}</Text>
+        <SectionLabel style={styles.sectionLabel}>{t('editProfile.emergencyContact')}</SectionLabel>
 
         <View style={styles.fieldGroup}>
           <View style={styles.fieldLabel}>
@@ -217,11 +218,11 @@ export default function EditProfile() {
         </View>
 
         {/* Bank details section */}
-        <Text style={styles.sectionTitle}>{t('editProfile.bankDetails')}</Text>
+        <SectionLabel style={styles.sectionLabel}>{t('editProfile.bankDetails')}</SectionLabel>
 
         {/* Info banner */}
         <View style={styles.infoBanner}>
-          <Info size={16} color={colors.blue} strokeWidth={2} />
+          <Info size={16} color={colors.primary} strokeWidth={2} />
           <Text style={styles.infoBannerText}>
             {t('editProfile.bankInfoNote')}
           </Text>
@@ -229,7 +230,7 @@ export default function EditProfile() {
 
         <View style={styles.fieldGroup}>
           <View style={styles.fieldLabel}>
-            <Landmark size={16} color={colors.blue} strokeWidth={2} />
+            <Landmark size={16} color={GREEN} strokeWidth={2} />
             <Text style={styles.fieldLabelText}>{t('editProfile.bankName')}</Text>
           </View>
           <TextInput
@@ -243,7 +244,7 @@ export default function EditProfile() {
 
         <View style={styles.fieldGroup}>
           <View style={styles.fieldLabel}>
-            <Landmark size={16} color={colors.blue} strokeWidth={2} />
+            <Landmark size={16} color={GREEN} strokeWidth={2} />
             <Text style={styles.fieldLabelText}>{t('editProfile.bankNumber')}</Text>
           </View>
           <TextInput
@@ -346,15 +347,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // -- Section title --
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  // -- Section label --
+  sectionLabel: {
     marginTop: 28,
-    marginBottom: 4,
+    marginBottom: 0,
   },
 
   // -- Field groups --
@@ -392,18 +388,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: colors.blueBg,
+    backgroundColor: colors.primaryBg,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.2)',
+    borderColor: 'rgba(106, 156, 41, 0.2)',
     marginTop: 12,
   },
   infoBannerText: {
     flex: 1,
     fontSize: 13,
     fontWeight: '500',
-    color: colors.blue,
+    color: colors.primaryLight,
     lineHeight: 19,
   },
 

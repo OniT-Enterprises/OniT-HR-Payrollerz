@@ -1,6 +1,6 @@
 /**
  * Ekipa — Profile Tab
- * Premium dark theme with blue (#3B82F6) module accent.
+ * Xefe · Ekipa design language: one olive accent, editorial section labels.
  * Green header banner, personal info, job details, documents, attendance, settings.
  */
 import { useEffect, useState, useCallback } from 'react';
@@ -19,10 +19,6 @@ import {
 } from 'react-native';
 import {
   User,
-  Briefcase,
-  FileCheck,
-  Clock,
-  Globe,
   LogOut,
   AlertTriangle,
   ChevronRight,
@@ -42,6 +38,7 @@ import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAttendanceStore } from '../../stores/attendanceStore';
 import { useI18nStore, useT, type Language } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 
 /* ── Info Row ─────────────────────────────────────────── */
 function InfoRow({ label, value, last }: { label: string; value?: string; last?: boolean }) {
@@ -49,18 +46,6 @@ function InfoRow({ label, value, last }: { label: string; value?: string; last?:
     <View style={[styles.infoRow, last && styles.infoRowLast]}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue}>{value || '\u2014'}</Text>
-    </View>
-  );
-}
-
-/* ── Section Header ───────────────────────────────────── */
-function SectionHeader({ icon: Icon, label }: { icon: typeof User; label: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionIconBadge}>
-        <Icon size={14} color={colors.blue} strokeWidth={2.2} />
-      </View>
-      <Text style={styles.sectionTitle}>{label}</Text>
     </View>
   );
 }
@@ -183,7 +168,7 @@ export default function ProfileScreen() {
 
         {/* Personal Info */}
         <View style={styles.section}>
-          <SectionHeader icon={User} label={t('profile.personalInfo')} />
+          <SectionLabel>{t('profile.personalInfo')}</SectionLabel>
           <View style={styles.card}>
             <InfoRow label={t('profile.email')} value={employee?.email} />
             <InfoRow label={t('profile.phone')} value={employee?.phone} />
@@ -193,7 +178,7 @@ export default function ProfileScreen() {
 
         {/* Job Details */}
         <View style={styles.section}>
-          <SectionHeader icon={Briefcase} label={t('profile.jobDetails')} />
+          <SectionLabel>{t('profile.jobDetails')}</SectionLabel>
           <View style={styles.card}>
             <InfoRow label={t('profile.department')} value={employee?.department} />
             <InfoRow label={t('profile.position')} value={employee?.position} />
@@ -204,7 +189,7 @@ export default function ProfileScreen() {
         {/* Documents */}
         {employee?.documents && employee.documents.length > 0 && (
           <View style={styles.section}>
-            <SectionHeader icon={FileCheck} label={t('profile.documents')} />
+            <SectionLabel>{t('profile.documents')}</SectionLabel>
             <View style={styles.card}>
               {employee.documents.map((docItem, i) => {
                 const isExpired = docItem.expiryDate && new Date(docItem.expiryDate) < new Date();
@@ -248,7 +233,7 @@ export default function ProfileScreen() {
         {/* Attendance */}
         {summary && (
           <View style={styles.section}>
-            <SectionHeader icon={Clock} label={t('profile.attendance')} />
+            <SectionLabel>{t('profile.attendance')}</SectionLabel>
             <View style={styles.attendanceGrid}>
               {/* Present */}
               <View style={styles.attendanceCard}>
@@ -280,30 +265,22 @@ export default function ProfileScreen() {
 
         {/* Quick Links */}
         <View style={styles.section}>
-          <SectionHeader icon={FileText} label={t('profile.quickLinks')} />
+          <SectionLabel>{t('profile.quickLinks')}</SectionLabel>
           <View style={styles.quickLinksGrid}>
             <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/EditProfile')} activeOpacity={0.7}>
-              <View style={[styles.quickLinkIcon, { backgroundColor: colors.primaryBg }]}>
-                <Edit3 size={18} color={colors.primary} strokeWidth={2} />
-              </View>
+              <ChipIcon icon={Edit3} />
               <Text style={styles.quickLinkLabel}>{t('profile.editInfo')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/DigitalIDCard')} activeOpacity={0.7}>
-              <View style={[styles.quickLinkIcon, { backgroundColor: colors.primaryBg }]}>
-                <CreditCard size={18} color={colors.primary} strokeWidth={2} />
-              </View>
+              <ChipIcon icon={CreditCard} />
               <Text style={styles.quickLinkLabel}>{t('profile.digitalId')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/EmploymentLetterRequest')} activeOpacity={0.7}>
-              <View style={[styles.quickLinkIcon, { backgroundColor: colors.blueBg }]}>
-                <FileText size={18} color={colors.blue} strokeWidth={2} />
-              </View>
+              <ChipIcon icon={FileText} />
               <Text style={styles.quickLinkLabel}>{t('profile.requestLetter')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/GrievanceReport')} activeOpacity={0.7}>
-              <View style={[styles.quickLinkIcon, { backgroundColor: colors.errorBg }]}>
-                <ShieldAlert size={18} color={colors.error} strokeWidth={2} />
-              </View>
+              <ChipIcon icon={ShieldAlert} tone="error" />
               <Text style={styles.quickLinkLabel}>{t('profile.reportConcern')}</Text>
             </TouchableOpacity>
           </View>
@@ -311,7 +288,7 @@ export default function ProfileScreen() {
 
         {/* Settings */}
         <View style={styles.section}>
-          <SectionHeader icon={Globe} label={t('profile.settings')} />
+          <SectionLabel>{t('profile.settings')}</SectionLabel>
 
           <TouchableOpacity style={styles.settingRow} onPress={toggleLanguage} activeOpacity={0.7}>
             <Text style={styles.settingLabel}>{t('profile.language')}</Text>
@@ -475,40 +452,19 @@ const styles = StyleSheet.create({
 
   /* ── Body ───────────────────────────────────────── */
   body: {
-    paddingHorizontal: 16,
-    paddingBottom: 48,
+    paddingHorizontal: 20,
+    paddingBottom: 120,
   },
 
   /* ── Sections ───────────────────────────────────── */
   section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
-  },
-  sectionIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.blueBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    marginBottom: 28,
   },
 
   /* ── Cards (inline, no shadow) ──────────────────── */
   card: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -578,7 +534,7 @@ const styles = StyleSheet.create({
   attendanceCard: {
     flex: 1,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     paddingTop: 0,
@@ -590,8 +546,8 @@ const styles = StyleSheet.create({
   attendanceTopBorder: {
     width: '100%',
     height: 3,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     marginBottom: 14,
   },
   attendanceValue: {
@@ -614,7 +570,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -632,7 +588,7 @@ const styles = StyleSheet.create({
   },
   settingValue: {
     fontSize: 15,
-    color: colors.blue,
+    color: colors.primary,
     fontWeight: '600',
   },
   signOutRow: {
@@ -640,7 +596,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.errorBg,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.15)',
@@ -661,19 +617,12 @@ const styles = StyleSheet.create({
   quickLink: {
     width: '48%' as DimensionValue,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
     gap: 8,
-  },
-  quickLinkIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   quickLinkLabel: {
     fontSize: 12,
