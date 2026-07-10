@@ -7,6 +7,7 @@ import {
   calculateTaxedTotal,
   getAccountNet,
   getDaysPastDue,
+  getDaysPastDueLenient,
   getFiscalDateParts,
   normalizeJournalAmounts,
   parseBankAmount,
@@ -25,6 +26,28 @@ describe('accounting calculations', () => {
     expect(result.taxAmount).toBe(0.02);
     expect(result.total).toBe(2.62);
     expect(result.items.map((item) => item.vatAmount)).toEqual([0.01, 0.01, 0]);
+  });
+
+  it('applies per-line discounts before tax and reports the discount total', () => {
+    const result = calculateInvoiceAmounts([
+      { description: 'Discounted', quantity: 1, unitPrice: 100, amount: 0, discount: 10, vatRate: 10 },
+      { description: 'Full price', quantity: 2, unitPrice: 25, amount: 0 },
+    ], 0);
+
+    expect(result.items[0].amount).toBe(90);
+    expect(result.subtotal).toBe(140);
+    expect(result.discountTotal).toBe(10);
+    expect(result.taxAmount).toBe(9);
+    expect(result.total).toBe(149);
+  });
+
+  it('does not stamp the default rate onto lines without an override', () => {
+    const result = calculateInvoiceAmounts([
+      { description: 'Default', quantity: 1, unitPrice: 10, amount: 0 },
+    ], 10);
+
+    expect(result.items[0].vatRate).toBeUndefined();
+    expect(result.taxAmount).toBe(1);
   });
 
   it('applies the default rate only when a line has no override', () => {
@@ -102,11 +125,22 @@ describe('accounting calculations', () => {
     expect(() => getFiscalDateParts('2026-13-01')).toThrow('Invalid accounting date');
   });
 
+  it('tolerates legacy due-date formats in report contexts', () => {
+    expect(getDaysPastDueLenient('2026-03-31', '2026-04-01')).toBe(1);
+    expect(getDaysPastDueLenient('2026-03-31T15:00:00.000Z', '2026-04-01')).toBe(1);
+    expect(getDaysPastDueLenient(new Date(2026, 2, 31), '2026-04-01')).toBe(1);
+    expect(getDaysPastDueLenient('not a date', '2026-04-01')).toBe(0);
+    expect(getDaysPastDueLenient(undefined, '2026-04-01')).toBe(0);
+  });
+
   it('parses common bank amount formats at currency precision', () => {
     expect(parseBankAmount('$1,234.56')).toBe(1234.56);
     expect(parseBankAmount('1.234,56')).toBe(1234.56);
     expect(parseBankAmount('(42,10)')).toBe(-42.1);
     expect(parseBankAmount('not-a-number')).toBe(0);
+    expect(parseBankAmount('1.234')).toBe(1234);
+    expect(parseBankAmount('€1.234.567')).toBe(1234567);
+    expect(parseBankAmount('12.34')).toBe(12.34);
   });
 });
 

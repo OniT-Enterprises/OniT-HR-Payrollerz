@@ -15,7 +15,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
-import { getDaysPastDue } from '@/lib/accounting/calculations';
+import { getDaysPastDueLenient } from '@/lib/accounting/calculations';
 import { addMoney, sumMoney } from '@/lib/currency';
 import { getTodayTL } from '@/lib/dateUtils';
 
@@ -67,7 +67,7 @@ export default function APAgingReport() {
 
     // Calculate days overdue for each bill
     const billsWithAge = allBills.map(bill => {
-      const daysOverdue = getDaysPastDue(bill.dueDate, asOfDate);
+      const daysOverdue = getDaysPastDueLenient(bill.dueDate, asOfDate);
       return { ...bill, daysOverdue, vendorName: bill.vendorName || 'Unknown Vendor' };
     });
 

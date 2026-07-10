@@ -50,14 +50,14 @@ import {
   getSettingsPaymentAccounts,
   resolveInvoicePaymentAccount,
   DEFAULT_TEMPLATE_ID,
-  computeLineTotals,
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/money';
 import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
-import { sumMoney, percentOf, addMoney, subtractMoney } from '@/lib/currency';
+import { subtractMoney } from '@/lib/currency';
+import { calculateInvoiceAmounts } from '@/lib/accounting/calculations';
 import {
   FileText,
   Plus,
@@ -261,19 +261,22 @@ export default function InvoiceForm() {
   const calculateTotals = () => {
     const items = formData.items || [];
     const invoiceTaxRate = Number(formData.taxRate) || 0;
-    // Line amounts are net of per-line discounts
-    const { subtotal, discountTotal } = computeLineTotals(items);
-    // Per-line VAT: use item vatRate if set, otherwise fall back to invoice-level rate
-    const taxAmount = sumMoney(
-      items.map((item) => {
-        const rawVat = Number(item.vatRate);
-        const rate = !isNaN(rawVat) && item.vatRate !== undefined && item.vatRate !== null
-          ? rawVat
-          : invoiceTaxRate;
-        return percentOf(lineNetAmount(item), rate);
-      })
+    // Same math the service persists — one source of truth for the preview.
+    const { subtotal, discountTotal, taxAmount, total } = calculateInvoiceAmounts(
+      items.map((item) => ({
+        description: item.description || '',
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.unitPrice) || 0,
+        amount: 0,
+        ...(item.discount !== undefined && item.discount !== null
+          ? { discount: Number(item.discount) }
+          : {}),
+        ...(item.vatRate !== undefined && item.vatRate !== null
+          ? { vatRate: Number(item.vatRate) }
+          : {}),
+      })),
+      invoiceTaxRate,
     );
-    const total = addMoney(subtotal, taxAmount);
     return { subtotal, discountTotal, taxAmount, total };
   };
 

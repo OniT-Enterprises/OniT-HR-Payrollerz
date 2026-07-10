@@ -4373,7 +4373,7 @@ const messages = {
       "equity": "Capital Próprio",
       "totalEquity": "Total de Capital Próprio",
       "totalLiabilitiesAndEquity": "Total de Passivos & Capital Próprio",
-      "currentYearEarnings": "Resultados do Exercício Corrente",
+      "currentYearEarnings": "Resultados Acumulados",
       "balanced": "Balanço Patrimonial Equilibrado",
       "balancedDesc": "Ativos = Passivos + Capital Próprio",
       "notBalanced": "Balanço Patrimonial NÃO Equilibrado",

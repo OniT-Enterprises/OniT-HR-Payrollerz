@@ -26,7 +26,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { getTodayTL } from '@/lib/dateUtils';
-import { addMoney, roundMoney, sumMoney } from '@/lib/currency';
+import { addMoney, compareMoney, roundMoney, sumMoney } from '@/lib/currency';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import type { JournalEntry } from '@/types/accounting';
 import { vendorService } from './vendorService';
@@ -411,15 +411,14 @@ class ExpenseService {
       updates.vendorName = deleteField();
     }
 
-    const accountingFields: Array<keyof ExpenseFormData> = [
-      'date',
-      'description',
-      'amount',
-      'category',
-      'vendorId',
-      'paymentMethod',
-    ];
-    const changesAccounting = accountingFields.some((field) => data[field] !== undefined);
+    // Only values that change the posted journal (amount, entry date,
+    // expense/cash accounts) warrant a void + repost. Edit forms resend
+    // every field, so compare values rather than field presence.
+    const changesAccounting =
+      (data.amount !== undefined && compareMoney(roundMoney(data.amount), expense.amount) !== 0)
+      || (data.date !== undefined && data.date !== expense.date)
+      || (data.category !== undefined && data.category !== expense.category)
+      || (data.paymentMethod !== undefined && data.paymentMethod !== expense.paymentMethod);
     const expenseRef = doc(db, paths.expense(tenantId, id));
 
     if (!changesAccounting) {

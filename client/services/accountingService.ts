@@ -2277,7 +2277,9 @@ class TrialBalanceService {
       equityItems.push({
         accountId: '__current_year_earnings__',
         accountCode: '',
-        accountName: 'Current Year Earnings',
+        // Cumulative since inception — the system has no year-end close, so
+        // this line is retained + current-year earnings combined.
+        accountName: 'Accumulated Earnings',
         accountType: 'equity',
         amount: currentYearEarnings,
         level: 0,

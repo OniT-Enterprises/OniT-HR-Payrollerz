@@ -1,9 +1,9 @@
 import type { JournalEntryLine } from '@/types/accounting';
 import type { InvoiceItem, InvoiceStatus, BillStatus } from '@/types/money';
+import { computeLineTotals, lineNetAmount } from '@/lib/invoiceTemplates';
 import {
   addMoney,
   compareMoney,
-  multiplyMoney,
   percentOf,
   roundMoney,
   subtractMoney,
@@ -13,40 +13,46 @@ import {
 export interface InvoiceCalculation {
   items: Array<Omit<InvoiceItem, 'id'> & { id?: string }>;
   subtotal: number;
+  discountTotal: number;
   taxAmount: number;
   total: number;
 }
 
 /**
  * Single source of truth for invoice line and document totals.
- * Tax is rounded per line, matching what appears on the invoice and avoiding
- * a preview/save mismatch on mixed-rate invoices.
+ * Line amounts are net of per-line discounts. Tax is rounded per line with the
+ * line's own vatRate (invoice default when unset), matching what appears on
+ * the invoice and avoiding a preview/save mismatch on mixed-rate invoices.
+ * The default rate is intentionally NOT stamped onto lines, so changing the
+ * invoice-level rate later still applies to lines without an explicit rate.
  */
 export function calculateInvoiceAmounts(
   items: Array<Omit<InvoiceItem, 'id'> & { id?: string }>,
   defaultTaxRate: number,
 ): InvoiceCalculation {
   const calculatedItems = items.map((item) => {
-    const amount = multiplyMoney(item.quantity, item.unitPrice);
-    const taxRate = item.vatRate ?? defaultTaxRate;
+    const amount = lineNetAmount(item);
+    const taxRate = Number.isFinite(item.vatRate as number)
+      ? (item.vatRate as number)
+      : defaultTaxRate;
     const vatAmount = percentOf(amount, taxRate);
 
     return {
       ...item,
       amount,
-      vatRate: taxRate,
       vatAmount,
       netAmount: amount,
       grossAmount: addMoney(amount, vatAmount),
     };
   });
 
-  const subtotal = sumMoney(calculatedItems.map((item) => item.amount));
+  const { subtotal, discountTotal } = computeLineTotals(calculatedItems);
   const taxAmount = sumMoney(calculatedItems.map((item) => item.vatAmount ?? 0));
 
   return {
     items: calculatedItems,
     subtotal,
+    discountTotal,
     taxAmount,
     total: addMoney(subtotal, taxAmount),
   };
@@ -182,6 +188,28 @@ export function getDaysPastDue(dueDate: string, asOfDate: string): number {
   return Math.floor((parseUtc(asOfDate) - parseUtc(dueDate)) / 86_400_000);
 }
 
+/**
+ * Lenient variant for report rows: legacy documents may hold non-ISO due
+ * dates, and one bad row must not take down a whole aging report. Falls back
+ * to Date parsing and treats unparseable values as not yet due.
+ */
+export function getDaysPastDueLenient(dueDate: unknown, asOfDate: string): number {
+  if (typeof dueDate === 'string') {
+    const isoPrefix = /^(\d{4}-\d{2}-\d{2})/.exec(dueDate);
+    if (isoPrefix) return getDaysPastDue(isoPrefix[1], asOfDate);
+  }
+
+  const parsed = dueDate instanceof Date ? dueDate : new Date(String(dueDate ?? ''));
+  if (Number.isNaN(parsed.getTime())) return 0;
+
+  const iso = [
+    String(parsed.getFullYear()).padStart(4, '0'),
+    String(parsed.getMonth() + 1).padStart(2, '0'),
+    String(parsed.getDate()).padStart(2, '0'),
+  ].join('-');
+  return getDaysPastDue(iso, asOfDate);
+}
+
 export function getFiscalDateParts(date: string): { year: number; period: number } {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   if (!match) throw new Error(`Invalid accounting date: ${date}`);
@@ -209,6 +237,10 @@ export function parseBankAmount(value: string): number {
     cleaned = decimalDigits > 0 && decimalDigits <= 2
       ? cleaned.replace(',', '.')
       : cleaned.replace(/,/g, '');
+  } else if (dot >= 0 && /^-?\d{1,3}(\.\d{3})+$/.test(cleaned)) {
+    // Dot-only European thousands grouping ("1.234" = 1234); bank amounts
+    // never carry 3-decimal precision, so grouped dots are separators.
+    cleaned = cleaned.replace(/\./g, '');
   }
 
   const amount = Number(cleaned);

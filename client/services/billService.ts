@@ -10,6 +10,7 @@ import {
   getDoc,
   addDoc,
   setDoc,
+  updateDoc,
   query,
   where,
   orderBy,
@@ -26,7 +27,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
+import { addMoney, compareMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
 import {
   calculateBillPaymentState,
   calculateTaxedTotal,
@@ -614,6 +615,24 @@ class BillService {
         updates.vendorId = data.vendorId;
         updates.vendorName = vendor.name;
       }
+    }
+
+    // Only amounts, category (expense account), and billDate (entry date /
+    // fiscal period) affect the posted journal. Label-only edits must not
+    // void + repost — that churns entry numbers for nothing.
+    const changesAccounting =
+      (updates.total !== undefined && compareMoney(updates.total, bill.total) !== 0)
+      || (updates.amount !== undefined && compareMoney(updates.amount, bill.amount) !== 0)
+      || (updates.taxAmount !== undefined && compareMoney(updates.taxAmount, bill.taxAmount || 0) !== 0)
+      || (updates.category !== undefined && updates.category !== bill.category)
+      || (updates.billDate !== undefined && updates.billDate !== bill.billDate);
+
+    if (!changesAccounting) {
+      await updateDoc(doc(db, paths.bill(tenantId, id)), {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      return true;
     }
 
     const updatedBill: Bill = { ...bill, ...updates };

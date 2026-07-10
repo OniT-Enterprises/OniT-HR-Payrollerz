@@ -15,7 +15,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { getDaysPastDue } from '@/lib/accounting/calculations';
+import { getDaysPastDueLenient } from '@/lib/accounting/calculations';
 import { addMoney, sumMoney } from '@/lib/currency';
 import { getTodayTL } from '@/lib/dateUtils';
 
@@ -67,7 +67,7 @@ export default function ARAgingReport() {
 
     // Calculate days overdue for each invoice
     const invoicesWithAge = allInvoices.map(inv => {
-      const daysOverdue = getDaysPastDue(inv.dueDate, asOfDate);
+      const daysOverdue = getDaysPastDueLenient(inv.dueDate, asOfDate);
       return { ...inv, daysOverdue };
     });
 

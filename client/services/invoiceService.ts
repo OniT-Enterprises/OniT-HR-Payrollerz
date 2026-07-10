@@ -27,8 +27,9 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, maxMoney, subtractMoney, sumMoney, percentOf } from '@/lib/currency';
+import { addMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
 import {
+  calculateInvoiceAmounts,
   calculateInvoicePaymentState,
   getFiscalDateParts,
 } from '@/lib/accounting/calculations';
@@ -58,7 +59,6 @@ import {
   formatInvoiceMoney,
   formatInvoiceDate,
   lineNetAmount,
-  computeLineTotals,
 } from '@/lib/invoiceTemplates';
 
 // ============================================
@@ -615,19 +615,15 @@ class InvoiceService {
     // Get next invoice number
     const invoiceNumber = await this.getNextInvoiceNumber(tenantId);
 
-    // Calculate totals (line amounts net of per-line discounts; per-line VAT
-    // rate wins over the invoice-level rate, matching the editor summary)
-    const items: InvoiceItem[] = data.items.map((item, index) => ({
-      id: `item_${Date.now()}_${index}`,
+    // Calculate and persist the same per-line totals shown in the form
+    // preview (net of per-line discounts; per-line VAT rate wins over the
+    // invoice-level rate).
+    const calculated = calculateInvoiceAmounts(data.items, data.taxRate);
+    const items: InvoiceItem[] = calculated.items.map((item, index) => ({
       ...item,
-      amount: lineNetAmount(item),
+      id: `item_${Date.now()}_${index}`,
     }));
-
-    const { subtotal, discountTotal } = computeLineTotals(items);
-    const taxAmount = sumMoney(
-      items.map(item => percentOf(item.amount, item.vatRate ?? data.taxRate))
-    );
-    const total = addMoney(subtotal, taxAmount);
+    const { subtotal, discountTotal, taxAmount, total } = calculated;
 
     // Generate share token
     const shareToken = this.generateShareToken();
@@ -709,28 +705,24 @@ class InvoiceService {
       updates.paymentAccount = this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings);
     }
 
-    // If items are being updated, recalculate totals
-    if (data.items) {
-      const items: InvoiceItem[] = data.items.map((item, index) => ({
-        id: `item_${Date.now()}_${index}`,
+    // Recalculate when either lines or the default rate changes. This keeps
+    // partial service updates consistent as well as full form submissions.
+    if (data.items || data.taxRate !== undefined) {
+      const sourceItems = data.items ?? invoice.items;
+      const taxRate = data.taxRate ?? invoice.taxRate;
+      const calculated = calculateInvoiceAmounts(sourceItems, taxRate);
+      const items: InvoiceItem[] = calculated.items.map((item, index) => ({
         ...item,
-        amount: lineNetAmount(item),
+        id: item.id || `item_${Date.now()}_${index}`,
       }));
 
-      const { subtotal, discountTotal } = computeLineTotals(items);
-      const taxRate = data.taxRate ?? invoice.taxRate;
-      const taxAmount = sumMoney(
-        items.map(item => percentOf(item.amount, item.vatRate ?? taxRate))
-      );
-      const total = addMoney(subtotal, taxAmount);
-
       updates.items = items;
-      updates.subtotal = subtotal;
-      updates.discountTotal = discountTotal;
+      updates.subtotal = calculated.subtotal;
+      updates.discountTotal = calculated.discountTotal;
       updates.taxRate = taxRate;
-      updates.taxAmount = taxAmount;
-      updates.total = total;
-      updates.balanceDue = subtractMoney(total, invoice.amountPaid);
+      updates.taxAmount = calculated.taxAmount;
+      updates.total = calculated.total;
+      updates.balanceDue = subtractMoney(calculated.total, invoice.amountPaid);
 
       if (updates.balanceDue < -PAYMENT_EPSILON) {
         throw new Error('Cannot reduce invoice total below amount already paid');
