@@ -268,6 +268,28 @@ export default function INSSMonthly() {
     });
   };
 
+  const handleExportDrExcel = async () => {
+    if (!selectedReturn) return;
+    try {
+      // exceljs is heavy — load it only when the user actually exports.
+      const { downloadInssDrExcel } = await import("@/lib/reports/inssDrExcel");
+      await downloadInssDrExcel(selectedReturn);
+      toast({
+        title: t("reports.inssMonthly.toast.exportedTitle"),
+        description:
+          t("reports.inssMonthly.toast.drExportedDescription") ||
+          "INSS DR Excel downloaded — matches the official portal template columns",
+      });
+    } catch (error) {
+      console.error("Error exporting INSS DR Excel:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("reports.inssMonthly.toast.drExportError") || "Could not export the DR Excel file",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleOpenMarkFiled = (filingId: string, task: TaxFilingTask) => {
     setSelectedFilingId(filingId);
     setSelectedTask(task);
@@ -501,6 +523,10 @@ export default function INSSMonthly() {
                   <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="h-4 w-4 mr-2" />
                     {t("reports.inssMonthly.actions.export")}
+                  </Button>
+                  <Button onClick={handleExportDrExcel}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {t("reports.inssMonthly.actions.exportDr") || "DR Excel (INSS portal)"}
                   </Button>
                 </div>
               </CardTitle>
