@@ -127,6 +127,20 @@ export function paymentMethodsSummary(methods?: PaymentMethod[]): string | null 
   return methods.map(paymentMethodLabel).join(' · ');
 }
 
+/**
+ * Accepted methods to display for an invoice. Legacy invoices predate the
+ * field entirely (undefined) — fall back to the tenant defaults so they gain
+ * the payment details newer invoices have. An explicit empty array means the
+ * user deselected every method, so show none.
+ */
+export function resolveInvoicePaymentMethods(
+  invoice?: Pick<Invoice, 'paymentMethods'> | null,
+  settings?: Partial<InvoiceSettings>
+): PaymentMethod[] {
+  if (invoice?.paymentMethods !== undefined) return invoice.paymentMethods;
+  return settings?.defaultPaymentMethods || [];
+}
+
 // ============================================
 // PAYMENT ACCOUNTS
 // ============================================

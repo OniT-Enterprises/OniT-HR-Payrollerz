@@ -21,6 +21,7 @@ import {
   resolveTemplateId,
   resolveAccentColor,
   resolveInvoicePaymentAccount,
+  resolveInvoicePaymentMethods,
   paymentTermsLabel,
   paymentMethodsSummary,
   formatInvoiceMoney,
@@ -537,7 +538,7 @@ export function InvoicePaper({ invoice, settings, templateId, className = '' }: 
     accent,
     account,
     termsLabel: paymentTermsLabel(invoice.paymentTermsDays),
-    methodsLabel: paymentMethodsSummary(invoice.paymentMethods),
+    methodsLabel: paymentMethodsSummary(resolveInvoicePaymentMethods(invoice, settings)),
   };
 
   return (

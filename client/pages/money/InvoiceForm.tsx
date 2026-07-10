@@ -207,10 +207,14 @@ export default function InvoiceForm() {
         terms: invoice.terms || '',
         templateId: invoice.templateId || invoiceSettings.defaultTemplate || DEFAULT_TEMPLATE_ID,
         paymentTermsDays: invoice.paymentTermsDays ?? null,
-        paymentMethods: invoice.paymentMethods || [],
+        // Legacy invoices predate the payment fields — seed from tenant
+        // defaults so editing an old draft upgrades it to the new controls
+        paymentMethods: invoice.paymentMethods ?? invoiceSettings.defaultPaymentMethods ?? [],
         paymentAccountId: invoice.paymentAccount === null
           ? 'none'
-          : invoice.paymentAccount?.id || '',
+          : invoice.paymentAccount?.id
+            || resolveInvoicePaymentAccount(null, invoiceSettings)?.id
+            || 'none',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- settings only seed the template fallback
@@ -233,10 +237,12 @@ export default function InvoiceForm() {
         terms: duplicateInvoice.terms || '',
         templateId: duplicateInvoice.templateId || invoiceSettings.defaultTemplate || DEFAULT_TEMPLATE_ID,
         paymentTermsDays: termsDays,
-        paymentMethods: duplicateInvoice.paymentMethods || [],
+        paymentMethods: duplicateInvoice.paymentMethods ?? invoiceSettings.defaultPaymentMethods ?? [],
         paymentAccountId: duplicateInvoice.paymentAccount === null
           ? 'none'
-          : duplicateInvoice.paymentAccount?.id || '',
+          : duplicateInvoice.paymentAccount?.id
+            || resolveInvoicePaymentAccount(null, invoiceSettings)?.id
+            || 'none',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- settings only seed the template fallback
@@ -444,7 +450,7 @@ export default function InvoiceForm() {
       />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="p-6 max-w-screen-xl mx-auto">
         <PageHeader
           title={isNew ? t('money.invoices.newInvoice') || 'New Invoice' : t('money.invoices.editInvoice') || 'Edit Invoice'}
           icon={FileText}
@@ -475,11 +481,11 @@ export default function InvoiceForm() {
           }
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
+          {/* Customer & dates */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Customer Selection */}
-            <Card>
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <User className="h-4 w-4" />
@@ -550,8 +556,54 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
-            {/* Line Items */}
+            {/* Dates */}
             <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {t('money.invoices.dates') || 'Dates'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{t('money.invoices.issueDate') || 'Issue Date'}</Label>
+                  <Input
+                    type="date"
+                    {...register('issueDate')}
+                    className={errors.issueDate ? 'border-red-500' : ''}
+                  />
+                  {errors.issueDate && (
+                    <p className="text-sm text-red-500">{errors.issueDate.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    {t('money.invoices.dueDate') || 'Due Date'}
+                    <InfoTooltip content={MoneyTooltips.terms.dueDate} />
+                  </Label>
+                  <Input
+                    type="date"
+                    {...register('dueDate', {
+                      // Manual edits switch payment terms to "Custom"
+                      onChange: () => setValue('paymentTermsDays', null),
+                    })}
+                    className={errors.dueDate ? 'border-red-500' : ''}
+                  />
+                  {errors.dueDate && (
+                    <p className="text-sm text-red-500">{errors.dueDate.message}</p>
+                  )}
+                  {formData.paymentTermsDays !== null && formData.paymentTermsDays !== undefined && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('money.invoices.dueDateAuto') || 'Set automatically from payment terms.'}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Line Items — full width so descriptions get room */}
+          <Card>
               <CardHeader>
                 <CardTitle className="text-base">
                   {t('money.invoices.lineItems') || 'Line Items'}
@@ -664,8 +716,10 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
+          {/* Payment options & template */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Payment Options */}
-            <Card>
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Landmark className="h-4 w-4" />
@@ -789,82 +843,6 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
-            <MoreDetailsSection>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {t('money.invoices.additionalInfo') || 'Additional Information'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>{t('money.invoices.notes') || 'Notes'}</Label>
-                    <Textarea
-                      {...register('notes')}
-                      placeholder={t('money.invoices.notesPlaceholder') || 'Notes visible to customer'}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t('money.invoices.terms') || 'Terms & Conditions'}</Label>
-                    <Textarea
-                      {...register('terms')}
-                      placeholder={t('money.invoices.termsPlaceholder') || 'Payment terms'}
-                      rows={2}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </MoreDetailsSection>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Dates */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {t('money.invoices.dates') || 'Dates'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t('money.invoices.issueDate') || 'Issue Date'}</Label>
-                  <Input
-                    type="date"
-                    {...register('issueDate')}
-                    className={errors.issueDate ? 'border-red-500' : ''}
-                  />
-                  {errors.issueDate && (
-                    <p className="text-sm text-red-500">{errors.issueDate.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    {t('money.invoices.dueDate') || 'Due Date'}
-                    <InfoTooltip content={MoneyTooltips.terms.dueDate} />
-                  </Label>
-                  <Input
-                    type="date"
-                    {...register('dueDate', {
-                      // Manual edits switch payment terms to "Custom"
-                      onChange: () => setValue('paymentTermsDays', null),
-                    })}
-                    className={errors.dueDate ? 'border-red-500' : ''}
-                  />
-                  {errors.dueDate && (
-                    <p className="text-sm text-red-500">{errors.dueDate.message}</p>
-                  )}
-                  {formData.paymentTermsDays !== null && formData.paymentTermsDays !== undefined && (
-                    <p className="text-xs text-muted-foreground">
-                      {t('money.invoices.dueDateAuto') || 'Set automatically from payment terms.'}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Template */}
             <Card>
               <CardHeader>
@@ -897,8 +875,37 @@ export default function InvoiceForm() {
                 </Button>
               </CardContent>
             </Card>
+          </div>
 
-            <MoreDetailsSection>
+          <MoreDetailsSection>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {t('money.invoices.additionalInfo') || 'Additional Information'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('money.invoices.notes') || 'Notes'}</Label>
+                    <Textarea
+                      {...register('notes')}
+                      placeholder={t('money.invoices.notesPlaceholder') || 'Notes visible to customer'}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('money.invoices.terms') || 'Terms & Conditions'}</Label>
+                    <Textarea
+                      {...register('terms')}
+                      placeholder={t('money.invoices.termsPlaceholder') || 'Payment terms'}
+                      rows={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tax */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-1.5">
@@ -930,10 +937,12 @@ export default function InvoiceForm() {
                   />
                 </CardContent>
               </Card>
-            </MoreDetailsSection>
+            </div>
+          </MoreDetailsSection>
 
-            {/* Summary */}
-            <Card>
+          {/* Summary — bottom right, like a paper invoice */}
+          <div className="flex justify-end">
+            <Card className="w-full max-w-sm">
               <CardHeader>
                 <CardTitle className="text-base">
                   {t('money.invoices.summary') || 'Summary'}

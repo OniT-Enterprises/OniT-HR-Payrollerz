@@ -49,6 +49,7 @@ import {
   paymentTermsLabel,
   paymentMethodsSummary,
   resolveInvoicePaymentAccount,
+  resolveInvoicePaymentMethods,
   resolveAccentColor,
   formatInvoiceMoney,
   formatInvoiceDate,
@@ -776,7 +777,7 @@ class InvoiceService {
     const accent = resolveAccentColor(invoice, settings);
     const account = resolveInvoicePaymentAccount(invoice, settings);
     const termsLabel = paymentTermsLabel(invoice.paymentTermsDays);
-    const methodsLabel = paymentMethodsSummary(invoice.paymentMethods);
+    const methodsLabel = paymentMethodsSummary(resolveInvoicePaymentMethods(invoice, settings));
 
     const esc = (value: string | undefined | null) =>
       (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1352,9 +1353,12 @@ class InvoiceService {
           companyAddress: '',
         };
 
-    if (!settings.companyName || !settings.companyAddress || !settings.companyPhone || !settings.companyTin) {
+    if (!settings.companyName || !settings.companyAddress || !settings.companyPhone || !settings.companyTin || !settings.logoUrl) {
       try {
-        const tenantSnap = await getDoc(doc(db, 'tenants', tenantId));
+        const [tenantSnap, tenantSettingsSnap] = await Promise.all([
+          getDoc(doc(db, 'tenants', tenantId)),
+          getDoc(doc(db, paths.settings(tenantId))),
+        ]);
         const tenant = tenantSnap.exists() ? tenantSnap.data() : undefined;
         if (tenant) {
           settings.companyName = settings.companyName || tenant.tradingName || tenant.name || '';
@@ -1362,6 +1366,12 @@ class InvoiceService {
           settings.companyPhone = settings.companyPhone || tenant.phone || undefined;
           settings.companyTin = settings.companyTin || tenant.tinNumber || undefined;
         }
+        // Company logo uploaded in Settings → Company Details doubles as the
+        // invoice logo until one is set in invoice settings
+        const companyDetails = tenantSettingsSnap.exists()
+          ? (tenantSettingsSnap.data()?.companyDetails as { logoUrl?: string } | undefined)
+          : undefined;
+        settings.logoUrl = settings.logoUrl || companyDetails?.logoUrl?.trim() || undefined;
       } catch (error) {
         console.warn('Could not read tenant profile for invoice settings fallback:', error);
       }

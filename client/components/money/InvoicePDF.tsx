@@ -21,6 +21,7 @@ import {
   resolveTemplateId,
   resolveAccentColor,
   resolveInvoicePaymentAccount,
+  resolveInvoicePaymentMethods,
   paymentTermsLabel,
   paymentMethodsSummary,
   formatInvoiceMoney,
@@ -626,7 +627,11 @@ function MinimalTemplate({ ctx }: { ctx: PdfContext }) {
 interface InvoicePDFProps {
   invoice: Invoice;
   settings?: Partial<InvoiceSettings>;
-  /** Pre-fetched logo (data URL) — falls back to settings.logoUrl */
+  /**
+   * Pre-fetched logo as a PNG data URL. Raw URLs are deliberately NOT used:
+   * react-pdf fetching a URL that fails (or a format it can't decode, like
+   * webp/svg) rejects or silently drops the whole image.
+   */
   logoSrc?: string;
 }
 
@@ -636,10 +641,10 @@ const InvoiceDocument = ({ invoice, settings, logoSrc }: InvoicePDFProps) => {
     invoice,
     settings,
     accent: resolveAccentColor(invoice, settings),
-    logoSrc: logoSrc || settings?.logoUrl,
+    logoSrc,
     account: resolveInvoicePaymentAccount(invoice, settings),
     termsLabel: paymentTermsLabel(invoice.paymentTermsDays),
-    methodsLabel: paymentMethodsSummary(invoice.paymentMethods),
+    methodsLabel: paymentMethodsSummary(resolveInvoicePaymentMethods(invoice, settings)),
   };
 
   return (
@@ -651,25 +656,59 @@ const InvoiceDocument = ({ invoice, settings, logoSrc }: InvoicePDFProps) => {
   );
 };
 
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function loadHtmlImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    // document.createElement — `Image` here is react-pdf's component, not the DOM constructor
+    const img = document.createElement('img');
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 /**
- * Fetch the company logo as a data URL so PDF generation never fails on
- * image loading (react-pdf rejects the whole document otherwise).
+ * Fetch the company logo and normalize it to a PNG data URL so PDF
+ * generation never fails on image loading. react-pdf can only decode
+ * png/jpg — webp and svg logos (which the app happily displays via <img>)
+ * are rasterized through a canvas first.
  */
-async function fetchLogoAsDataUrl(logoUrl?: string): Promise<string | undefined> {
+async function fetchLogoAsPngDataUrl(logoUrl?: string): Promise<string | undefined> {
   if (!logoUrl) return undefined;
   try {
     const response = await fetch(logoUrl);
-    if (!response.ok) return undefined;
+    if (!response.ok) {
+      console.warn(`Invoice PDF: logo fetch returned ${response.status}; generating without logo`);
+      return undefined;
+    }
     const blob = await response.blob();
-    // react-pdf supports png/jpg; skip svg and other formats it can't decode
-    if (!/image\/(png|jpe?g)/.test(blob.type)) return undefined;
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  } catch {
+    if (/image\/(png|jpe?g)/.test(blob.type)) {
+      return await blobToDataUrl(blob);
+    }
+
+    // webp / svg / anything else — rasterize to PNG. Loading from a data URL
+    // keeps the canvas untainted regardless of storage CORS headers.
+    const sourceDataUrl = await blobToDataUrl(blob);
+    const img = await loadHtmlImage(sourceDataUrl);
+    const width = img.naturalWidth || 600;
+    const height = img.naturalHeight || 200;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return undefined;
+    context.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.warn('Invoice PDF: could not load company logo; generating without it', error);
     return undefined;
   }
 }
@@ -677,11 +716,11 @@ async function fetchLogoAsDataUrl(logoUrl?: string): Promise<string | undefined>
 /**
  * Generate invoice PDF as blob (for preview or email attachment)
  */
-const generateInvoiceBlob = async (
+export const generateInvoiceBlob = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>
 ): Promise<Blob> => {
-  const logoSrc = await fetchLogoAsDataUrl(settings?.logoUrl);
+  const logoSrc = await fetchLogoAsPngDataUrl(settings?.logoUrl);
   const doc = <InvoiceDocument invoice={invoice} settings={settings} logoSrc={logoSrc} />;
   return await pdf(doc).toBlob();
 };
