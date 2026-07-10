@@ -28,6 +28,7 @@ import { accountService, trialBalanceService } from '@/services/accountingServic
 import { addMoney, subtractMoney } from '@/lib/currency';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import { InstallmentTaxEtaxFiling } from '@/components/reports/InstallmentTaxEtaxFiling';
 import type { ExpenseCategory } from '@/types/money';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
@@ -365,6 +366,13 @@ export default function ProfitLoss() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Assisted installment-tax filing — monthly only (0.5% of turnover) */}
+        {(period === 'this_month' || period === 'last_month') && (
+          <div className="mt-6">
+            <InstallmentTaxEtaxFiling revenue={data.revenue} periodLabel={getPeriodLabel()} />
+          </div>
+        )}
 
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
