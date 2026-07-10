@@ -5124,7 +5124,7 @@ const messages = {
       "uploadLogo": "Upload Logotipu",
       "changeLogo": "Muda Logotipu",
       "logoHint": "PNG ka JPG di'ak liu, másimu 5MB. Mosu iha fatura no PDF.",
-      "logoUploaded": "Logotipu upload tiha ona — keta haluha rai",
+      "logoUploaded": "Logotipu upload tiha ona",
       "logoUploadError": "Falha upload logotipu",
       "invoiceTemplate": "Modelu Fatura",
       "invoiceTemplateDesc": "Oinsá ita-nia fatura mosu iha ekrã, PDF no email",

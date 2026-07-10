@@ -5124,7 +5124,7 @@ const messages = {
       "uploadLogo": "Carregar Logótipo",
       "changeLogo": "Mudar Logótipo",
       "logoHint": "PNG ou JPG recomendado, máx. 5MB. Aparece nas faturas e PDFs.",
-      "logoUploaded": "Logótipo carregado — não se esqueça de guardar",
+      "logoUploaded": "Logótipo carregado",
       "logoUploadError": "Falha ao carregar o logótipo",
       "invoiceTemplate": "Modelo de Fatura",
       "invoiceTemplateDesc": "O aspeto das suas faturas no ecrã, em PDF e por email",

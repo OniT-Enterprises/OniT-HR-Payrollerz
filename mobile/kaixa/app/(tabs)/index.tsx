@@ -40,11 +40,17 @@ import { colors } from '../../lib/colors';
 import { generateMonthlyReport } from '../../lib/monthlyReport';
 import { InlineNotice } from '../../components/InlineNotice';
 
-function getGreeting(): { tetum: string; english: string } {
-  const hour = new Date().getHours();
-  if (hour < 12) return { tetum: 'Bondia', english: 'Good morning' };
-  if (hour < 18) return { tetum: 'Botarde', english: 'Good afternoon' };
-  return { tetum: 'Bonite', english: 'Good evening' };
+function getGreeting(): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'Asia/Dili',
+    }).format(new Date())
+  );
+  if (hour < 12) return 'Bondia';
+  if (hour < 18) return 'Botarde';
+  return 'Bonite';
 }
 
 function getTodayFormatted(): string {
@@ -167,7 +173,7 @@ export default function HomeScreen() {
       {/* Greeting */}
       <View style={styles.greetingContainer}>
         <Text style={styles.greetingText}>
-          {greeting.tetum}, {firstName}
+          {greeting}, {firstName}
         </Text>
         <Text style={styles.dateText}>{getTodayFormatted()}</Text>
         {tenantName && <Text style={styles.tenantText}>{tenantName}</Text>}

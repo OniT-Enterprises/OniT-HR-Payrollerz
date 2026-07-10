@@ -38,6 +38,16 @@
     ],
     "experiments": {
       "autolinkingModuleResolution": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "expo-navigation-bar": {
+        "barStyle": "light"
+      },
+      "eas": {
+        "projectId": "4379d976-f338-45ac-821c-835e05b43f63"
+      }
+    },
+    "owner": "naroman"
   }
 }
