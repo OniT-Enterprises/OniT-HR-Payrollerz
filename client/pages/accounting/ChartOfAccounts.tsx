@@ -757,31 +757,31 @@ export default function ChartOfAccounts() {
                       <SelectItem value="all">{t("accounting.chartOfAccounts.allTypes")}</SelectItem>
                       <SelectItem value="asset">
                         <span className="flex items-center gap-2">
-                          <Wallet className="h-3.5 w-3.5 text-blue-600" />
+                          <Wallet className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                           {t("accounting.chartOfAccounts.assets")}
                         </span>
                       </SelectItem>
                       <SelectItem value="liability">
                         <span className="flex items-center gap-2">
-                          <Building2 className="h-3.5 w-3.5 text-red-600" />
+                          <Building2 className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                           {t("accounting.chartOfAccounts.liabilities")}
                         </span>
                       </SelectItem>
                       <SelectItem value="equity">
                         <span className="flex items-center gap-2">
-                          <PiggyBank className="h-3.5 w-3.5 text-purple-600" />
+                          <PiggyBank className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                           {t("accounting.chartOfAccounts.equityLabel")}
                         </span>
                       </SelectItem>
                       <SelectItem value="revenue">
                         <span className="flex items-center gap-2">
-                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                           {t("accounting.chartOfAccounts.revenueLabel")}
                         </span>
                       </SelectItem>
                       <SelectItem value="expense">
                         <span className="flex items-center gap-2">
-                          <TrendingDown className="h-3.5 w-3.5 text-orange-600" />
+                          <TrendingDown className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
                           {t("accounting.chartOfAccounts.expenses")}
                         </span>
                       </SelectItem>

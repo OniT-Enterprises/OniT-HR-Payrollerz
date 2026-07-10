@@ -261,7 +261,7 @@ export default function VATReturnsPage() {
             {savedReturn && (
               <div className="flex items-center gap-2">
                 {savedReturn.status === 'filed' ? (
-                  <Badge className="bg-green-100 text-green-700 gap-1">
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1">
                     <CheckCircle className="h-3 w-3" />
                     Filed
                     {savedReturn.filedAt &&
