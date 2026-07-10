@@ -40,6 +40,7 @@ import { createTransaction } from '../../types/transaction';
 import { inferVATCategory } from '@onit/shared';
 import { generateTextReceipt } from '../../lib/receipt';
 import { InlineNotice } from '../../components/InlineNotice';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CartItem {
   product: Product;
@@ -47,6 +48,7 @@ interface CartItem {
 }
 
 export default function SellScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { user } = useAuthStore();
   const { loading, error, loadProducts, activeProducts } =
@@ -427,7 +429,7 @@ export default function SellScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setAddProductModal(false)}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
               onPress={() => setAddProductModal(false)}

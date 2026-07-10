@@ -40,8 +40,10 @@ import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { useVATStore } from '../../stores/vatStore';
 import { colors } from '../../lib/colors';
 import { SectionLabel, ChipIcon } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, signOut } = useAuthStore();
   const { tenantName, tenantId, role, setTenant, clearTenant } = useTenantStore();
   const {
@@ -293,7 +295,7 @@ export default function ProfileScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setSwitcherVisible(false)}
       >
-        <View style={styles.switcherContainer}>
+        <View style={[styles.switcherContainer, { paddingTop: insets.top }]}>
           <View style={styles.switcherHeader}>
             <TouchableOpacity
               style={styles.switcherClose}

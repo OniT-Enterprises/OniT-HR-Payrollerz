@@ -161,23 +161,27 @@ export default function HomeScreen() {
         />
       }
     >
-      {/* Logo */}
-      <View style={styles.logoRow}>
+      {/* Hero — terracotta brand card (the header already carries the logo) */}
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1.2, y: 1.4 }}
+        style={styles.heroCard}
+      >
         <Image
-          source={require('../../assets/kaixa-logo-light-on-dark.png')}
-          style={styles.logo}
+          source={require('../../assets/xefe-mark.webp')}
+          style={styles.heroMark}
           resizeMode="contain"
         />
-      </View>
-
-      {/* Greeting */}
-      <View style={styles.greetingContainer}>
-        <Text style={styles.greetingText}>
-          {greeting}, {firstName}
-        </Text>
-        <Text style={styles.dateText}>{getTodayFormatted()}</Text>
-        {tenantName && <Text style={styles.tenantText}>{tenantName}</Text>}
-      </View>
+        <Text style={styles.heroGreeting}>{greeting},</Text>
+        <Text style={styles.heroName} numberOfLines={1}>{firstName}</Text>
+        <Text style={styles.heroDate}>{getTodayFormatted()}</Text>
+        {tenantName && (
+          <View style={styles.heroPill}>
+            <Text style={styles.heroPillText} numberOfLines={1}>{tenantName}</Text>
+          </View>
+        )}
+      </LinearGradient>
 
       {/* Hero Summary Card */}
       {error && (
@@ -404,37 +408,54 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
 
-  // Logo
-  logoRow: {
-    marginBottom: 20,
-  },
-  logo: {
-    height: 36,
-    width: 140,
-  },
-
-  // Greeting
-  greetingContainer: {
+  // Hero — terracotta brand card
+  heroCard: {
+    borderRadius: 24,
+    padding: 22,
     marginBottom: 28,
+    overflow: 'hidden',
   },
-  greetingText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.5,
+  heroMark: {
+    position: 'absolute',
+    right: 16,
+    top: 18,
+    width: 56,
+    height: 63,
+    opacity: 0.9,
   },
-  dateText: {
+  heroGreeting: {
     fontSize: 13,
-    color: colors.textTertiary,
-    marginTop: 4,
-    letterSpacing: 0.1,
-  },
-  tenantText: {
-    fontSize: 12,
-    color: colors.primary,
     fontWeight: '600',
-    marginTop: 6,
-    letterSpacing: 0.2,
+    color: 'rgba(255,255,255,0.78)',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  heroName: {
+    fontSize: 30,
+    fontWeight: '900',
+    color: colors.white,
+    letterSpacing: -0.8,
+    paddingRight: 68, // clear the mark
+  },
+  heroDate: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.72)',
+    marginTop: 4,
+  },
+  heroPill: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  heroPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
 

@@ -44,6 +44,7 @@ import { useBusinessProfileStore } from '../stores/businessProfileStore';
 import { generateVATReturn, type VATReturnData } from '../lib/vatReturn';
 import { generateSAFT } from '../lib/saftExport';
 import { generateAndShareVATReturnPDF, printVATReturn } from '../lib/vatReturnPdf';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ============================================
 // Types
@@ -63,6 +64,7 @@ const TETUM_MONTHS = [
 // ============================================
 
 export default function TaxFilingScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { isVATActive, effectiveRate, tenantSettings } = useVATStore();
   const bizProfile = useBusinessProfileStore((s) => s.profile);
@@ -482,7 +484,7 @@ export default function TaxFilingScreen() {
           if (submitStep !== 'submitting') setSubmitModal(false);
         }}
       >
-        <View style={styles.submitContainer}>
+        <View style={[styles.submitContainer, { paddingTop: insets.top }]}>
           {submitStep === 'review' && (
             <>
               <View style={styles.submitHeader}>

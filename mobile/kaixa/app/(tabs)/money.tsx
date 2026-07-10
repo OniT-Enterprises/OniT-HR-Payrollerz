@@ -47,6 +47,7 @@ import { generateTextReceipt, getWhatsAppShareURL } from '../../lib/receipt';
 import type { KaixaTransaction } from '../../types/transaction';
 import { InlineNotice } from '../../components/InlineNotice';
 import { EmptyCard } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TransactionType = 'in' | 'out';
 
@@ -69,6 +70,7 @@ const PERIOD_OPTIONS: { key: DateRange; label: string; labelEn: string }[] = [
 ];
 
 export default function MoneyScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ type?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
   const [txType, setTxType] = useState<TransactionType>('in');
@@ -426,7 +428,7 @@ export default function MoneyScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
+          style={[styles.modalContainer, { paddingTop: insets.top }]}
         >
           <View style={styles.modalHeader}>
             <TouchableOpacity

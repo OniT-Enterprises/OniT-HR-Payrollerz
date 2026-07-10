@@ -37,8 +37,10 @@ import {
 import { colors } from '../../lib/colors';
 import { InlineNotice } from '../../components/InlineNotice';
 import { EmptyCard } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerTabsScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { tabs, loading, error, totalOwed, activeTabCount, loadTabs, addCustomer, addEntry, deleteCustomer } = useCustomerTabStore();
 
@@ -219,7 +221,7 @@ export default function CustomerTabsScreen() {
 
       {/* Add Customer Modal */}
       <Modal visible={addCustomerModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAddCustomerModal(false)}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setAddCustomerModal(false)} style={styles.modalHeaderBtn}>
               <X size={18} color={colors.textSecondary} strokeWidth={2} />
@@ -245,7 +247,7 @@ export default function CustomerTabsScreen() {
 
       {/* Add Entry Modal */}
       <Modal visible={entryModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEntryModal(false)}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setEntryModal(false)} style={styles.modalHeaderBtn}>
               <X size={18} color={colors.textSecondary} strokeWidth={2} />
