@@ -11,36 +11,60 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Platform superadmin (custom claim, falling back to the users doc flag).
+    // Mirrors firestore.rules isSuperAdmin() so impersonation works for
+    // tenant files too — superadmins are not tenant members.
+    function isPlatformSuperAdmin() {
+      return isAuthenticated() && (
+        (
+          request.auth.token.keys().hasAny(['superadmin']) &&
+          request.auth.token.superadmin == true
+        ) ||
+        (
+          firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true
+        )
+      );
+    }
+
     function tenantMemberDoc(tenantId) {
       return firestore.get(/databases/(default)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
 
-    // Check if user belongs to this tenant
-    function isTenantMember(tenantId) {
+    // Actual membership doc check — superadmin bypass is added in the
+    // isTenant* wrappers below, kept second so members never pay its reads.
+    function isRealTenantMember(tenantId) {
       return isAuthenticated() &&
         firestore.exists(/databases/(default)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
 
+    // Check if user belongs to this tenant
+    function isTenantMember(tenantId) {
+      return isRealTenantMember(tenantId) || isPlatformSuperAdmin();
+    }
+
     // Check if user is admin (owner or hr-admin) for this tenant
     function isTenantAdmin(tenantId) {
-      return isTenantMember(tenantId) &&
-        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin'];
+      return (isRealTenantMember(tenantId) &&
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin']) ||
+        isPlatformSuperAdmin();
     }
 
     function isTenantManagerOrAdmin(tenantId) {
-      return isTenantMember(tenantId) &&
-        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin', 'manager'];
+      return (isRealTenantMember(tenantId) &&
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin', 'manager']) ||
+        isPlatformSuperAdmin();
     }
 
     function getTenantModules(tenantId) {
-      return isTenantMember(tenantId) ? tenantMemberDoc(tenantId).data.modules : [];
+      return isRealTenantMember(tenantId) ? tenantMemberDoc(tenantId).data.modules : [];
     }
 
     function hasTenantModule(tenantId, module) {
-      return isTenantMember(tenantId) && (
+      return (isRealTenantMember(tenantId) && (
         tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin'] ||
         (getTenantModules(tenantId) is list && getTenantModules(tenantId).hasAny([module]))
-      );
+      )) || isPlatformSuperAdmin();
     }
 
     function canAccessHiringRecords(tenantId) {
@@ -66,20 +90,6 @@ service firebase.storage {
 
     function isAllowedImageType() {
       return request.resource.contentType.matches('image/.*');
-    }
-
-    // Check if user is a platform superadmin (custom claim or users doc flag)
-    function isPlatformSuperAdmin() {
-      return isAuthenticated() && (
-        (
-          request.auth.token.keys().hasAny(['superadmin']) &&
-          request.auth.token.superadmin == true
-        ) ||
-        (
-          firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true
-        )
-      );
     }
 
     function isOpenJob(tenantId, jobId) {
