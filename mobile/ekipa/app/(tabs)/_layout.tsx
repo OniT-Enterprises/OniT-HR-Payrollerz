@@ -222,10 +222,11 @@ const styles = StyleSheet.create({
   /* ── Floating dock tab bar ─────────────────────── */
   tabBar: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    height: 64,
-    borderRadius: 26,
+    // React Navigation pins the absolute tab bar to both edges; margins are
+    // what actually inset the floating island.
+    marginHorizontal: 52,
+    height: 62,
+    borderRadius: 31,
     backgroundColor: colors.bgCard,
     borderTopWidth: 0,
     borderWidth: 1,
@@ -239,8 +240,12 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   tabItem: {
-    borderRadius: 19,
+    // overflow-hidden + margins turn the active background into a rounded
+    // pill instead of a hard-cornered block filling the item rect.
+    borderRadius: 22,
     marginHorizontal: 6,
+    marginVertical: 2,
+    overflow: 'hidden',
   },
   iconWrap: {
     alignItems: 'center',
