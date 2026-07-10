@@ -4,7 +4,7 @@
  * Files are staged locally; the parent uploads them on save.
  */
 
-import { useEffect, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n/I18nProvider';
 import { fileUploadService } from '@/services/fileUploadService';
@@ -54,17 +54,20 @@ export default function BillAttachmentsInput({
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [previews, setPreviews] = useState<(string | null)[]>([]);
+
+  // Blob preview URLs are derived from the staged files. Computing them during
+  // render (rather than via setState in an effect) avoids the cascading-render
+  // lint rule; a cleanup-only effect revokes them when they change/unmount.
+  const previews = useMemo(
+    () => files.map((file) => (file.type.startsWith('image/') ? URL.createObjectURL(file) : null)),
+    [files],
+  );
 
   useEffect(() => {
-    const urls = files.map((file) =>
-      file.type.startsWith('image/') ? URL.createObjectURL(file) : null
-    );
-    setPreviews(urls);
     return () => {
-      urls.forEach((url) => url && URL.revokeObjectURL(url));
+      previews.forEach((url) => url && URL.revokeObjectURL(url));
     };
-  }, [files]);
+  }, [previews]);
 
   const addFiles = (incoming: File[]) => {
     if (disabled || incoming.length === 0) return;
