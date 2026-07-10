@@ -1295,26 +1295,44 @@ class InvoiceService {
   // ----------------------------------------
 
   /**
-   * Get invoice settings
+   * Get invoice settings.
+   *
+   * Company fields left blank here fall back to the tenant's company profile
+   * (Settings → Company), so invoices are never issued as "Your Company Name"
+   * just because invoice settings were never filled in.
    */
   async getSettings(tenantId: string): Promise<InvoiceSettings> {
     const docSnap = await getDoc(this.settingsRef(tenantId));
 
-    if (!docSnap.exists()) {
-      // Return defaults
-      return {
-        prefix: 'INV',
-        nextNumber: 1,
-        defaultTaxRate: 0,
-        defaultTerms: 'Payment due within 30 days',
-        defaultNotes: 'Thank you for your business',
-        defaultDueDays: 30,
-        companyName: '',
-        companyAddress: '',
-      };
+    const settings: InvoiceSettings = docSnap.exists()
+      ? (docSnap.data() as InvoiceSettings)
+      : {
+          prefix: 'INV',
+          nextNumber: 1,
+          defaultTaxRate: 0,
+          defaultTerms: 'Payment due within 30 days',
+          defaultNotes: 'Thank you for your business',
+          defaultDueDays: 30,
+          companyName: '',
+          companyAddress: '',
+        };
+
+    if (!settings.companyName || !settings.companyAddress || !settings.companyPhone || !settings.companyTin) {
+      try {
+        const tenantSnap = await getDoc(doc(db, 'tenants', tenantId));
+        const tenant = tenantSnap.exists() ? tenantSnap.data() : undefined;
+        if (tenant) {
+          settings.companyName = settings.companyName || tenant.tradingName || tenant.name || '';
+          settings.companyAddress = settings.companyAddress || tenant.address || '';
+          settings.companyPhone = settings.companyPhone || tenant.phone || undefined;
+          settings.companyTin = settings.companyTin || tenant.tinNumber || undefined;
+        }
+      } catch (error) {
+        console.warn('Could not read tenant profile for invoice settings fallback:', error);
+      }
     }
 
-    return docSnap.data() as InvoiceSettings;
+    return settings;
   }
 
   /**
