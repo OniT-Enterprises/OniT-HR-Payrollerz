@@ -50,6 +50,19 @@ export type InvoiceStatus =
   | 'overdue'
   | 'cancelled';
 
+/** Visual template used to render/print an invoice */
+export type InvoiceTemplateId = 'classic' | 'modern' | 'minimal';
+
+/** A bank/payment account that can be shown on invoices */
+export interface PaymentAccount {
+  id: string;
+  label: string;                   // "BNU USD Account"
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  swiftCode?: string;
+}
+
 export interface InvoiceItem {
   id: string;
   description: string;
@@ -109,6 +122,15 @@ export interface Invoice {
   notes?: string;                  // "Thank you for your business"
   terms?: string;                  // "Payment due within 30 days"
 
+  // Presentation
+  templateId?: InvoiceTemplateId;  // Visual template (default 'classic')
+  accentColor?: string;            // Hex accent color for the template
+
+  // Payment options (shown on the invoice)
+  paymentTermsDays?: number | null; // 0 = due on receipt; null/undefined = custom due date
+  paymentMethods?: PaymentMethod[]; // Accepted payment methods
+  paymentAccount?: PaymentAccount | null; // Snapshot of the bank account to pay into
+
   currency: 'USD';
 
   // Metadata
@@ -140,6 +162,10 @@ export interface InvoiceFormData {
   taxRate: number;
   notes?: string;
   terms?: string;
+  templateId?: InvoiceTemplateId;
+  paymentTermsDays?: number | null;
+  paymentMethods?: PaymentMethod[];
+  paymentAccountId?: string;       // Resolved to a PaymentAccount snapshot on save
 }
 
 // ============================================
@@ -149,6 +175,7 @@ export interface InvoiceFormData {
 export type PaymentMethod =
   | 'cash'
   | 'bank_transfer'
+  | 'card'
   | 'check'
   | 'mobile_money'
   | 'other';
@@ -320,6 +347,7 @@ export interface BillFormData {
   taxRate: number;
   category: ExpenseCategory;
   notes?: string;
+  attachmentUrls?: string[];
 }
 
 export interface BillPayment {
@@ -423,10 +451,19 @@ export interface InvoiceSettings {
   companyTin?: string;
   logoUrl?: string;
 
-  // Bank details (for payment)
+  // Presentation defaults
+  defaultTemplate?: InvoiceTemplateId;
+  accentColor?: string;            // Hex accent used by templates
+
+  // Bank details (legacy single account — superseded by paymentAccounts)
   bankName?: string;
   bankAccountName?: string;
   bankAccountNumber?: string;
+
+  // Payment options
+  paymentAccounts?: PaymentAccount[];
+  defaultPaymentAccountId?: string;
+  defaultPaymentMethods?: PaymentMethod[];
 
   // VAT (populated when vatEnabled)
   vatRegistrationNumber?: string;  // Business VAT ID / TIN

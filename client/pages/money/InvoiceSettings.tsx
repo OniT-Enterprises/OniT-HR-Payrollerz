@@ -1,9 +1,10 @@
 /**
  * Invoice Settings Page
- * Configure company info, bank details, and invoice defaults
+ * Configure company info + logo, invoice template, payment accounts,
+ * accepted payment methods, and invoice defaults
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -27,17 +28,29 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { fileUploadService } from '@/services/fileUploadService';
 import { useInvoiceSettings } from '@/hooks/useInvoices';
-
-import type { InvoiceSettings } from '@/types/money';
+import { TemplatePicker } from '@/components/money/TemplatePicker';
+import {
+  ACCEPTED_METHOD_OPTIONS,
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_TEMPLATE_ID,
+  getSettingsPaymentAccounts,
+} from '@/lib/invoiceTemplates';
+import type { InvoiceSettings, PaymentAccount, PaymentMethod } from '@/types/money';
 import {
   Settings,
   Building2,
-  CreditCard,
+  Landmark,
   FileText,
   Save,
   ArrowLeft,
   Loader2,
+  Palette,
+  Upload,
+  Trash2,
+  Plus,
+  ImageIcon,
 } from 'lucide-react';
 
 const DEFAULT_SETTINGS: Partial<InvoiceSettings> = {
@@ -49,6 +62,22 @@ const DEFAULT_SETTINGS: Partial<InvoiceSettings> = {
   defaultDueDays: 30,
 };
 
+const BANK_OPTIONS = [
+  { value: 'BNU', label: 'BNU (Banco Nacional Ultramarino)' },
+  { value: 'BNCTL', label: 'BNCTL (Banco Nacional Comercio Timor-Leste)' },
+  { value: 'Mandiri', label: 'Bank Mandiri' },
+  { value: 'ANZ', label: 'ANZ Bank' },
+  { value: 'Other', label: 'Other' },
+];
+
+const EMPTY_ACCOUNT_FORM = {
+  label: '',
+  bankName: '',
+  accountName: '',
+  accountNumber: '',
+  swiftCode: '',
+};
+
 export default function InvoiceSettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -58,6 +87,10 @@ export default function InvoiceSettingsPage() {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>(DEFAULT_SETTINGS);
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  const [accountForm, setAccountForm] = useState(EMPTY_ACCOUNT_FORM);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const { data: loadedSettings, isLoading: loading } = useInvoiceSettings();
 
@@ -66,7 +99,6 @@ export default function InvoiceSettingsPage() {
       return;
     }
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing server state into local form state
     setSettings({ ...DEFAULT_SETTINGS, ...loadedSettings });
   }, [hasLocalChanges, loadedSettings]);
 
@@ -113,9 +145,102 @@ export default function InvoiceSettingsPage() {
     saveMutation.mutate(settings);
   };
 
-  const updateField = (field: keyof InvoiceSettings, value: string | number) => {
+  const updateField = (
+    field: keyof InvoiceSettings,
+    value: InvoiceSettings[keyof InvoiceSettings]
+  ) => {
     setHasLocalChanges(true);
     setSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // ----- Logo -----
+
+  const handleLogoSelected = async (file: File | undefined) => {
+    if (!file) return;
+    const validation = fileUploadService.validateImageFile(file);
+    if (!validation.valid) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setUploadingLogo(true);
+      const url = await fileUploadService.uploadCompanyLogo(file, tenantId);
+      updateField('logoUrl', url);
+      toast({
+        title: t('common.success') || 'Success',
+        description: t('money.settings.logoUploaded') || 'Logo uploaded — remember to save',
+      });
+    } catch (_error) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.settings.logoUploadError') || 'Failed to upload logo',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  // ----- Payment accounts -----
+
+  const displayedAccounts = getSettingsPaymentAccounts(settings);
+
+  const handleAddAccount = () => {
+    if (!accountForm.bankName || !accountForm.accountNumber) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.settings.accountRequired') || 'Bank and account number are required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const account: PaymentAccount = {
+      id: `acc_${Date.now()}`,
+      label: accountForm.label || `${accountForm.bankName} Account`,
+      bankName: accountForm.bankName,
+      accountName: accountForm.accountName,
+      accountNumber: accountForm.accountNumber,
+      ...(accountForm.swiftCode ? { swiftCode: accountForm.swiftCode } : {}),
+    };
+
+    updateField('paymentAccounts', [...(settings.paymentAccounts || []), account]);
+    setAccountForm(EMPTY_ACCOUNT_FORM);
+    setShowAccountForm(false);
+  };
+
+  const handleRemoveAccount = (accountId: string) => {
+    setHasLocalChanges(true);
+    if (accountId === 'legacy') {
+      // Synthetic account backed by the old single-bank fields
+      setSettings((prev) => ({
+        ...prev,
+        bankName: '',
+        bankAccountName: '',
+        bankAccountNumber: '',
+      }));
+      return;
+    }
+    setSettings((prev) => ({
+      ...prev,
+      paymentAccounts: (prev.paymentAccounts || []).filter((a) => a.id !== accountId),
+    }));
+  };
+
+  const toggleDefaultMethod = (method: PaymentMethod) => {
+    const current = settings.defaultPaymentMethods || [];
+    updateField(
+      'defaultPaymentMethods',
+      current.includes(method)
+        ? current.filter((m) => m !== method)
+        : [...current, method]
+    );
   };
 
   if (loading) {
@@ -181,6 +306,64 @@ export default function InvoiceSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Logo */}
+              <div className="flex items-center gap-4">
+                <div className="flex h-20 w-32 items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted/40">
+                  {settings.logoUrl ? (
+                    <img
+                      src={settings.logoUrl}
+                      alt="Company logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingLogo}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {uploadingLogo ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      {settings.logoUrl
+                        ? t('money.settings.changeLogo') || 'Change Logo'
+                        : t('money.settings.uploadLogo') || 'Upload Logo'}
+                    </Button>
+                    {settings.logoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateField('logoUrl', '')}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                        {t('common.remove') || 'Remove'}
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('money.settings.logoHint') || 'PNG or JPG recommended, max 5MB. Shown on invoices and PDFs.'}
+                  </p>
+                </div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => handleLogoSelected(e.target.files?.[0])}
+                />
+              </div>
+
+              <Separator />
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('money.settings.companyName') || 'Company Name'}</Label>
@@ -232,54 +415,185 @@ export default function InvoiceSettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Bank Details */}
+          {/* Invoice Template */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-indigo-600" />
-                {t('money.settings.bankDetails') || 'Bank Details'}
+                <Palette className="h-5 w-5 text-indigo-600" />
+                {t('money.settings.invoiceTemplate') || 'Invoice Template'}
               </CardTitle>
               <CardDescription>
-                {t('money.settings.bankDetailsDesc') || 'Payment information shown on invoices for bank transfers'}
+                {t('money.settings.invoiceTemplateDesc') || 'How your invoices look on screen, in PDFs, and in emails'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TemplatePicker
+                value={settings.defaultTemplate || DEFAULT_TEMPLATE_ID}
+                onChange={(id) => updateField('defaultTemplate', id)}
+                accentColor={settings.accentColor || DEFAULT_ACCENT_COLOR}
+                onAccentChange={(hex) => updateField('accentColor', hex)}
+                showAccent
+              />
+            </CardContent>
+          </Card>
+
+          {/* Payment Accounts */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Landmark className="h-5 w-5 text-indigo-600" />
+                {t('money.settings.paymentAccounts') || 'Payment Accounts'}
+              </CardTitle>
+              <CardDescription>
+                {t('money.settings.paymentAccountsDesc') || 'Bank accounts customers can pay into — pick one per invoice'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t('money.settings.bankName') || 'Bank Name'}</Label>
-                <Select
-                  value={settings.bankName || ''}
-                  onValueChange={(value) => updateField('bankName', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('money.settings.selectBank') || 'Select a bank'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BNU">BNU (Banco Nacional Ultramarino)</SelectItem>
-                    <SelectItem value="BNCTL">BNCTL (Banco Nacional Comercio Timor-Leste)</SelectItem>
-                    <SelectItem value="Mandiri">Bank Mandiri</SelectItem>
-                    <SelectItem value="ANZ">ANZ Bank</SelectItem>
-                    <SelectItem value="Other">{t('money.settings.bankOther') || 'Other'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {displayedAccounts.length > 0 ? (
+                <div className="space-y-2">
+                  {displayedAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between rounded-lg border px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{account.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[account.bankName, account.accountName, account.accountNumber]
+                            .filter(Boolean)
+                            .join(' · ')}
+                          {account.swiftCode ? ` · SWIFT ${account.swiftCode}` : ''}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveAccount(account.id)}
+                        title={t('common.remove') || 'Remove'}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t('money.settings.noAccounts') || 'No payment accounts yet. Add one so customers know where to pay.'}
+                </p>
+              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('money.settings.bankAccountName') || 'Account Name'}</Label>
-                  <Input
-                    value={settings.bankAccountName || ''}
-                    onChange={(e) => updateField('bankAccountName', e.target.value)}
-                    placeholder={t('money.settings.accountNamePlaceholder') || 'Account holder name'}
-                  />
+              {showAccountForm ? (
+                <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('money.settings.accountLabel') || 'Label'}</Label>
+                      <Input
+                        value={accountForm.label}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, label: e.target.value }))}
+                        placeholder={t('money.settings.accountLabelPlaceholder') || 'e.g., BNU USD Account'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('money.settings.bankName') || 'Bank Name'}</Label>
+                      <Select
+                        value={accountForm.bankName}
+                        onValueChange={(value) => setAccountForm((p) => ({ ...p, bankName: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('money.settings.selectBank') || 'Select a bank'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {BANK_OPTIONS.map((bank) => (
+                            <SelectItem key={bank.value} value={bank.value}>
+                              {bank.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('money.settings.bankAccountName') || 'Account Name'}</Label>
+                      <Input
+                        value={accountForm.accountName}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, accountName: e.target.value }))}
+                        placeholder={t('money.settings.accountNamePlaceholder') || 'Account holder name'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('money.settings.bankAccountNumber') || 'Account Number'}</Label>
+                      <Input
+                        value={accountForm.accountNumber}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, accountNumber: e.target.value }))}
+                        placeholder={t('money.settings.accountNumberPlaceholder') || 'XXXX-XXXX-XXXX'}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        {t('money.settings.swiftCode') || 'SWIFT Code'}{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({t('common.optional') || 'optional'})
+                        </span>
+                      </Label>
+                      <Input
+                        value={accountForm.swiftCode}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, swiftCode: e.target.value }))}
+                        placeholder="BNULTLDI"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" onClick={handleAddAccount}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      {t('money.settings.addAccount') || 'Add Account'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setShowAccountForm(false);
+                        setAccountForm(EMPTY_ACCOUNT_FORM);
+                      }}
+                    >
+                      {t('common.cancel') || 'Cancel'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t('money.settings.bankAccountNumber') || 'Account Number'}</Label>
-                  <Input
-                    value={settings.bankAccountNumber || ''}
-                    onChange={(e) => updateField('bankAccountNumber', e.target.value)}
-                    placeholder={t('money.settings.accountNumberPlaceholder') || 'XXXX-XXXX-XXXX'}
-                  />
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowAccountForm(true)}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('money.settings.addAccount') || 'Add Account'}
+                </Button>
+              )}
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Label>{t('money.settings.defaultMethods') || 'Payment methods you accept by default'}</Label>
+                <div className="flex flex-wrap gap-2">
+                  {ACCEPTED_METHOD_OPTIONS.map((option) => {
+                    const selected = (settings.defaultPaymentMethods || []).includes(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => toggleDefaultMethod(option.value)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          selected
+                            ? 'border-indigo-600 bg-indigo-600 text-white'
+                            : 'border-border bg-background text-muted-foreground hover:border-indigo-300 hover:text-foreground'
+                        }`}
+                      >
+                        {t(option.labelKey) || option.fallbackLabel}
+                      </button>
+                    );
+                  })}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('money.settings.defaultMethodsHint') || 'Pre-selected on new invoices; you can change them per invoice.'}
+                </p>
               </div>
             </CardContent>
           </Card>

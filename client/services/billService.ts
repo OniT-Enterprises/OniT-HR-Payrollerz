@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -401,7 +402,13 @@ class BillService {
    * Create a new bill
    * Also creates a journal entry (Debit Expense, Credit AP)
    */
-  async createBill(tenantId: string, data: BillFormData, userId?: string): Promise<string> {
+  async createBill(
+    tenantId: string,
+    data: BillFormData,
+    userId?: string,
+    /** Pre-generated Firestore document ID (used when attachments were uploaded before save) */
+    preGeneratedId?: string
+  ): Promise<string> {
     // Get vendor info
     const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
     if (!vendor) {
@@ -427,6 +434,7 @@ class BillService {
       balanceDue: total,
       category: data.category,
       notes: data.notes,
+      attachmentUrls: data.attachmentUrls ?? [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -450,7 +458,9 @@ class BillService {
       };
 
       // ATOMIC: Create bill + journal entry in a single transaction.
-      const billDocRef = doc(this.collectionRef(tenantId));
+      const billDocRef = preGeneratedId
+        ? doc(this.collectionRef(tenantId), preGeneratedId)
+        : doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
         // Journal entry (only transaction.get for entry number, writes journal + GL)
         await journalEntryService.createFromBill(
@@ -471,6 +481,15 @@ class BillService {
     }
 
     // No accounting setup — just create bill
+    if (preGeneratedId) {
+      const docRef = doc(this.collectionRef(tenantId), preGeneratedId);
+      await setDoc(docRef, {
+        ...bill,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return preGeneratedId;
+    }
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...bill,
       createdAt: serverTimestamp(),
@@ -501,6 +520,7 @@ class BillService {
     if (data.description) updates.description = data.description;
     if (data.category) updates.category = data.category;
     if (data.notes !== undefined) updates.notes = data.notes;
+    if (data.attachmentUrls !== undefined) updates.attachmentUrls = data.attachmentUrls;
 
     // Recalculate totals if amount or tax changed
     if (data.amount !== undefined || data.taxRate !== undefined) {

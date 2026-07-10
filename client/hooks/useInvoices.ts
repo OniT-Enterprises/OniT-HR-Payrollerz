@@ -10,7 +10,7 @@ import {
   type InvoiceFilters,
   type PaginatedResult,
 } from '@/services/invoiceService';
-import type { Invoice, InvoiceFormData } from '@/types/money';
+import type { Invoice, InvoiceFormData, InvoiceSettings, InvoiceTemplateId } from '@/types/money';
 import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const invoiceKeys = {
@@ -70,6 +70,31 @@ export function useUpdateInvoice() {
   });
 }
 
+/** Presentation-only template switch — allowed on sent invoices too */
+export function useUpdateInvoiceTemplate() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+
+  return useMutation({
+    mutationFn: ({ id, templateId }: { id: string; templateId: InvoiceTemplateId }) =>
+      invoiceService.updateInvoiceTemplate(tenantId, id, templateId),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, id) });
+    },
+  });
+}
+
+/** Payments recorded against one invoice (for the view screen history) */
+export function useInvoicePayments(invoiceId: string | undefined) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: [...invoiceKeys.detail(tenantId, invoiceId!), 'payments'] as const,
+    queryFn: () => invoiceService.getPaymentsForInvoice(tenantId, invoiceId!),
+    enabled: !!invoiceId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useInvoiceStats() {
   const tenantId = useTenantId();
   return useQuery({
@@ -95,7 +120,8 @@ export function useInvoiceSettings() {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: ['invoiceSettings', tenantId],
-    queryFn: () => invoiceService.getSettings(tenantId).catch(() => ({})),
+    queryFn: (): Promise<Partial<InvoiceSettings>> =>
+      invoiceService.getSettings(tenantId).catch(() => ({})),
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });

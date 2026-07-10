@@ -123,6 +123,28 @@ class FileUploadService {
   }
 
   /**
+   * Upload bill attachment (vendor invoice/receipt file)
+   * @param file - The attachment file (image or PDF)
+   * @param tenantId - Tenant ID for storage isolation
+   * @param billId - Bill ID (pre-generated Firestore doc ID for new bills)
+   * @param index - Position within a multi-file upload (keeps filenames unique)
+   * @returns Promise with download URL
+   */
+  async uploadBillAttachment(
+    file: File,
+    tenantId: string,
+    billId: string,
+    index: number = 0,
+  ): Promise<string> {
+    const timestamp = Date.now();
+    const fileExtension = file.name.split(".").pop();
+    const fileName = `attachment_${timestamp}_${index}.${fileExtension}`;
+    const path = `tenants/${tenantId}/bills/${billId}/attachments/${fileName}`;
+
+    return this.uploadFile(file, path);
+  }
+
+  /**
    * Upload company logo for tenant branding
    * @param file - The image file to upload
    * @param tenantId - Tenant ID for storage isolation

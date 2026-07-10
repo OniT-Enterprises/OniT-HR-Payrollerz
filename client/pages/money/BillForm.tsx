@@ -33,10 +33,16 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
+import { fileUploadService } from '@/services/fileUploadService';
+import { doc, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
@@ -49,6 +55,8 @@ import {
   DollarSign,
   Calendar,
   Building2,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 
 const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
@@ -81,12 +89,14 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   const isNew = !id || id === 'new';
   const isEdit = searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit');
   const preselectedVendorId = searchParams.get('vendor');
 
   const [saving, setSaving] = useState(false);
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
@@ -181,6 +191,26 @@ export default function BillForm() {
     return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  const uploadAttachments = async (billId: string): Promise<string[] | null> => {
+    try {
+      return await Promise.all(
+        attachmentFiles.map((file, index) =>
+          fileUploadService.uploadBillAttachment(file, tenantId, billId, index)
+        )
+      );
+    } catch (uploadError) {
+      console.error('Error uploading bill attachments:', uploadError);
+      toast({
+        title: t('common.error') || 'Error',
+        description:
+          t('money.bills.attachmentUploadError') ||
+          'Failed to upload attachment. Bill was not saved.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
+
   const onSubmit = async (data: BillFormSchemaData) => {
     try {
       setSaving(true);
@@ -198,13 +228,28 @@ export default function BillForm() {
       };
 
       if (isNew) {
-        const newId = await createBillMutation.mutateAsync(billData);
+        // Pre-generate the bill ID so attachment storage paths match the final document
+        const billId = doc(collection(db, paths.bills(tenantId))).id;
+        if (attachmentFiles.length > 0) {
+          const urls = await uploadAttachments(billId);
+          if (!urls) return;
+          billData.attachmentUrls = urls;
+        }
+        const newId = await createBillMutation.mutateAsync({
+          data: billData,
+          preGeneratedId: billId,
+        });
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
         navigate(`/money/bills/${newId}`);
       } else if (id) {
+        if (attachmentFiles.length > 0) {
+          const urls = await uploadAttachments(id);
+          if (!urls) return;
+          billData.attachmentUrls = [...(bill?.attachmentUrls || []), ...urls];
+        }
         await updateBillMutation.mutateAsync({ id, data: billData });
         toast({
           title: t('common.success') || 'Success',
@@ -380,6 +425,29 @@ export default function BillForm() {
                   <div>
                     <p className="text-sm text-muted-foreground">{t('common.notes') || 'Notes'}</p>
                     <p className="text-sm">{bill.notes}</p>
+                  </div>
+                )}
+
+                {bill.attachmentUrls && bill.attachmentUrls.length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {t('money.bills.attachments') || 'Attachments'}
+                    </p>
+                    <div className="space-y-1">
+                      {bill.attachmentUrls.map((url, i) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline w-fit"
+                        >
+                          <FileText className="h-4 w-4 shrink-0" />
+                          {(t('money.bills.attachment') || 'Attachment') + ` ${i + 1}`}
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -705,6 +773,23 @@ export default function BillForm() {
                   </div>
                 </div>
               </MoreDetailsSection>
+
+              <div className="space-y-2">
+                <Label>{t('money.bills.attachments') || 'Attachments'}</Label>
+                <BillAttachmentsInput
+                  files={attachmentFiles}
+                  onFilesChange={setAttachmentFiles}
+                  existingUrls={!isNew ? bill?.attachmentUrls || [] : []}
+                  onInvalidFiles={(fileErrors) =>
+                    toast({
+                      title: t('money.bills.invalidFiles') || 'Some files were skipped',
+                      description: fileErrors.join('\n'),
+                      variant: 'destructive',
+                    })
+                  }
+                  disabled={saving}
+                />
+              </div>
             </CardContent>
           </Card>
 

@@ -1,14 +1,13 @@
 /**
  * Invoice Form
- * Create, edit, and view invoices
+ * Create and edit invoices; read view is InvoiceViewScreen.
  * Uses react-hook-form + Zod for form management and validation
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
@@ -17,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -31,24 +29,30 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
-import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { SEO } from '@/components/SEO';
 import { useActiveCustomers } from '@/hooks/useCustomers';
-import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice, invoiceKeys } from '@/hooks/useInvoices';
-
-
-import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
+import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
+import { useTenantId } from '@/contexts/TenantContext';
+import { InvoiceViewScreen } from '@/components/money/InvoiceViewScreen';
+import { InvoicePaper, type InvoicePaperData } from '@/components/money/InvoicePaper';
+import { TemplatePicker } from '@/components/money/TemplatePicker';
+import {
+  PAYMENT_TERM_PRESETS,
+  ACCEPTED_METHOD_OPTIONS,
+  getSettingsPaymentAccounts,
+  resolveInvoicePaymentAccount,
+  DEFAULT_TEMPLATE_ID,
+} from '@/lib/invoiceTemplates';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
-import type { InvoiceFormData, InvoiceSettings } from '@/types/money';
-import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
+import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/money';
+import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
 import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
   FileText,
@@ -57,23 +61,12 @@ import {
   Save,
   Send,
   ArrowLeft,
-  DollarSign,
   Calendar,
   User,
-  Share2,
-  Download,
-  Loader2,
+  Eye,
+  Landmark,
+  Palette,
 } from 'lucide-react';
-
-const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-slate-100 text-slate-700',
-  sent: 'bg-blue-100 text-blue-700',
-  viewed: 'bg-purple-100 text-purple-700',
-  paid: 'bg-green-100 text-green-700',
-  partial: 'bg-yellow-100 text-yellow-700',
-  overdue: 'bg-red-100 text-red-700',
-  cancelled: 'bg-slate-100 text-slate-500',
-};
 
 export default function InvoiceForm() {
   const { id } = useParams();
@@ -91,23 +84,21 @@ export default function InvoiceForm() {
     import('@/components/money/InvoicePDF');
   }, []);
 
-  const queryClient = useQueryClient();
-
   const isNew = !id || id === 'new';
   const isEditMode = searchParams.get('mode') === 'edit' || window.location.pathname.endsWith('/edit');
   const duplicateId = searchParams.get('duplicate');
   const preselectedCustomerId = searchParams.get('customer');
 
   const [saving, setSaving] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<string>('cash');
-  const [paymentNotes, setPaymentNotes] = useState('');
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // React Query hooks for data loading
   const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
-  const { data: invoiceSettings = {} as Partial<InvoiceSettings> } = useInvoiceSettings();
+  const { data: loadedSettings } = useInvoiceSettings();
+  const invoiceSettings: Partial<InvoiceSettings> = useMemo(
+    () => loadedSettings || {},
+    [loadedSettings]
+  );
   const invoiceIdToLoad = !isNew && id ? id : undefined;
   const { data: invoice = null, isLoading: invoiceLoading } = useInvoice(invoiceIdToLoad);
   const { data: duplicateInvoice } = useInvoice(duplicateId || undefined);
@@ -132,17 +123,23 @@ export default function InvoiceForm() {
     handleSubmit,
     watch,
     reset,
-    formState: { errors },
+    setValue,
+    getValues,
+    formState: { errors, isDirty },
   } = useForm<InvoiceFormSchemaData>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
       customerId: preselectedCustomerId || '',
       issueDate: getTodayTL(),
-      dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+      dueDate: addDaysISO(getTodayTL(), 30),
       items: [{ description: '', quantity: 1, unitPrice: 0, amount: 0 }],
       taxRate: 0,
       notes: '',
       terms: 'Payment due within 30 days.',
+      templateId: undefined,
+      paymentTermsDays: 30,
+      paymentMethods: [],
+      paymentAccountId: '',
     },
   });
 
@@ -154,6 +151,35 @@ export default function InvoiceForm() {
 
   // Watch form values for summary calculation
   const formData = watch();
+
+  const paymentAccounts = useMemo(
+    () => getSettingsPaymentAccounts(invoiceSettings),
+    [invoiceSettings]
+  );
+
+  // Apply tenant defaults (template, terms, notes, methods, account) to new invoices
+  const defaultsApplied = useRef(false);
+  useEffect(() => {
+    if (!isNew || duplicateId || defaultsApplied.current || !loadedSettings) return;
+    if (isDirty) return;
+    defaultsApplied.current = true;
+
+    const dueDays = loadedSettings.defaultDueDays ?? 30;
+    const defaultAccount = resolveInvoicePaymentAccount(null, loadedSettings);
+    reset((prev) => ({
+      ...prev,
+      dueDate: addDaysISO(prev.issueDate || getTodayTL(), dueDays),
+      taxRate: loadedSettings.defaultTaxRate ?? prev.taxRate,
+      notes: loadedSettings.defaultNotes ?? prev.notes,
+      terms: loadedSettings.defaultTerms ?? prev.terms,
+      templateId: loadedSettings.defaultTemplate || DEFAULT_TEMPLATE_ID,
+      paymentTermsDays: dueDays,
+      paymentMethods: loadedSettings.defaultPaymentMethods?.length
+        ? loadedSettings.defaultPaymentMethods
+        : ['cash', 'bank_transfer'],
+      paymentAccountId: defaultAccount?.id || 'none',
+    }));
+  }, [isNew, duplicateId, loadedSettings, isDirty, reset]);
 
   // Set preselected customer if provided
   useEffect(() => {
@@ -173,32 +199,50 @@ export default function InvoiceForm() {
         taxRate: invoice.taxRate,
         notes: invoice.notes || '',
         terms: invoice.terms || '',
+        templateId: invoice.templateId || invoiceSettings.defaultTemplate || DEFAULT_TEMPLATE_ID,
+        paymentTermsDays: invoice.paymentTermsDays ?? null,
+        paymentMethods: invoice.paymentMethods || [],
+        paymentAccountId: invoice.paymentAccount === null
+          ? 'none'
+          : invoice.paymentAccount?.id || '',
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- settings only seed the template fallback
   }, [isNew, invoice, reset]);
 
   // Handle duplicate
   useEffect(() => {
     if (duplicateInvoice) {
+      const termsDays = duplicateInvoice.paymentTermsDays ?? null;
+      const today = getTodayTL();
       reset({
         customerId: duplicateInvoice.customerId,
-        issueDate: getTodayTL(),
-        dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+        issueDate: today,
+        dueDate: addDaysISO(today, termsDays ?? 30),
         items: duplicateInvoice.items,
         taxRate: duplicateInvoice.taxRate,
         notes: duplicateInvoice.notes || '',
         terms: duplicateInvoice.terms || '',
+        templateId: duplicateInvoice.templateId || invoiceSettings.defaultTemplate || DEFAULT_TEMPLATE_ID,
+        paymentTermsDays: termsDays,
+        paymentMethods: duplicateInvoice.paymentMethods || [],
+        paymentAccountId: duplicateInvoice.paymentAccount === null
+          ? 'none'
+          : duplicateInvoice.paymentAccount?.id || '',
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- settings only seed the template fallback
   }, [duplicateInvoice, reset]);
 
+  // Keep due date in sync with the selected payment terms
   useEffect(() => {
-    // Check if we should show payment dialog
-    if (searchParams.get('record') === 'payment' && invoice) {
-      setPaymentAmount(invoice.balanceDue.toString());
-      setShowPaymentDialog(true);
+    const days = formData.paymentTermsDays;
+    if (days === null || days === undefined || !formData.issueDate) return;
+    const expected = addDaysISO(formData.issueDate, days);
+    if (getValues('dueDate') !== expected) {
+      setValue('dueDate', expected);
     }
-  }, [searchParams, invoice]);
+  }, [formData.issueDate, formData.paymentTermsDays, getValues, setValue]);
 
   const calculateTotals = () => {
     const items = formData.items || [];
@@ -222,6 +266,47 @@ export default function InvoiceForm() {
   };
 
   const { subtotal, taxAmount, total } = calculateTotals();
+
+  const _selectedCustomer = customers.find((c) => c.id === formData.customerId);
+
+  // Live data for the preview dialog — mirrors what will be saved
+  const previewInvoice: InvoicePaperData = useMemo(() => {
+    const validItems = (formData.items || []).filter((item) => item.description?.trim());
+    const accountId = formData.paymentAccountId;
+    const previewAccount = accountId === 'none'
+      ? null
+      : paymentAccounts.find((a) => a.id === accountId)
+        || resolveInvoicePaymentAccount(null, invoiceSettings);
+
+    return {
+      invoiceNumber: invoice?.invoiceNumber
+        || `${invoiceSettings.prefix || 'INV'}-${new Date().getFullYear()}-•••`,
+      status: invoice?.status || 'draft',
+      customerName: _selectedCustomer?.name || t('money.invoices.customer') || 'Customer',
+      customerEmail: _selectedCustomer?.email,
+      customerPhone: _selectedCustomer?.phone,
+      customerAddress: _selectedCustomer?.address,
+      issueDate: formData.issueDate,
+      dueDate: formData.dueDate,
+      items: validItems.map((item) => ({
+        description: item.description,
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.unitPrice) || 0,
+      })),
+      subtotal,
+      taxRate: Number(formData.taxRate) || 0,
+      taxAmount,
+      total,
+      amountPaid: invoice?.amountPaid || 0,
+      balanceDue: total - (invoice?.amountPaid || 0),
+      notes: formData.notes,
+      terms: formData.terms,
+      templateId: formData.templateId,
+      paymentTermsDays: formData.paymentTermsDays,
+      paymentMethods: formData.paymentMethods as PaymentMethod[] | undefined,
+      paymentAccount: previewAccount,
+    };
+  }, [formData, subtotal, taxAmount, total, invoice, invoiceSettings, paymentAccounts, _selectedCustomer, t]);
 
   const addLineItem = () => {
     append({ description: '', quantity: 1, unitPrice: 0, amount: 0, vatRate: undefined });
@@ -252,6 +337,10 @@ export default function InvoiceForm() {
         taxRate: Number(data.taxRate),
         notes: data.notes || '',
         terms: data.terms || '',
+        templateId: data.templateId,
+        paymentTermsDays: data.paymentTermsDays ?? null,
+        paymentMethods: (data.paymentMethods || []) as PaymentMethod[],
+        paymentAccountId: data.paymentAccountId || undefined,
       };
 
       let invoiceId: string;
@@ -275,9 +364,12 @@ export default function InvoiceForm() {
 
       if (sendAfter) {
         await invoiceService.markAsSent(tenantId, invoiceId);
+        const customerEmail = customers.find((c) => c.id === data.customerId)?.email;
         toast({
           title: t('common.success') || 'Success',
-          description: t('money.invoices.sentSuccess') || 'Invoice sent',
+          description: customerEmail
+            ? (t('money.invoices.sentToEmail') || 'Invoice emailed to {{email}}').replace('{{email}}', customerEmail)
+            : t('money.invoices.sentSuccess') || 'Invoice sent',
         });
       }
 
@@ -304,87 +396,6 @@ export default function InvoiceForm() {
     })();
   };
 
-  const handleRecordPayment = async () => {
-    if (!invoice) return;
-
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.payments.invalidAmount') || 'Enter a valid amount',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await invoiceService.recordPayment(tenantId, invoice.id, {
-        date: getTodayTL(),
-        amount,
-        method: paymentMethod as 'cash' | 'bank_transfer' | 'check' | 'other',
-        notes: paymentNotes,
-      });
-
-      toast({
-        title: t('common.success') || 'Success',
-        description: t('money.payments.recorded') || 'Payment recorded',
-      });
-
-      setShowPaymentDialog(false);
-      // Reload invoice via React Query
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, invoice.id) });
-    } catch (error) {
-      console.error('Error recording payment:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.payments.recordError') || 'Failed to record payment',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleShare = async () => {
-    if (!invoice) return;
-
-    try {
-      const shareUrl = invoiceService.getShareUrl(invoice);
-      await navigator.clipboard.writeText(shareUrl);
-
-      toast({
-        title: t('common.success') || 'Success',
-        description: t('money.invoices.linkCopied') || 'Invoice link copied to clipboard',
-      });
-    } catch (error) {
-      console.error('Error sharing:', error);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!invoice) return;
-
-    try {
-      setDownloadingPdf(true);
-      const { downloadInvoicePDF } = await import('@/components/money/InvoicePDF');
-      await downloadInvoicePDF(invoice, invoiceSettings);
-      toast({
-        title: t('common.success') || 'Success',
-        description: t('money.invoices.pdfDownloaded') || 'Invoice PDF downloaded',
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.pdfError') || 'Failed to generate PDF',
-        variant: 'destructive',
-      });
-    } finally {
-      setDownloadingPdf(false);
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -393,7 +404,6 @@ export default function InvoiceForm() {
     }).format(amount);
   };
 
-  const _selectedCustomer = customers.find((c) => c.id === formData.customerId);
   const canEdit = isNew || duplicateId || (invoice && invoice.status === 'draft');
 
   if (loading) {
@@ -410,272 +420,7 @@ export default function InvoiceForm() {
 
   // View mode for non-draft invoices
   if (invoice && !canEdit && !isEditMode) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SEO title={`Invoice ${invoice.invoiceNumber} - Xefe`} />
-        <MainNavigation />
-
-        <div className="p-6 max-w-screen-lg mx-auto">
-          <PageHeader
-            title={`${t('money.invoices.invoice') || 'Invoice'} ${invoice.invoiceNumber}`}
-            subtitle={invoice.customerName}
-            icon={FileText}
-            iconColor="text-indigo-500"
-            actions={
-              <>
-                <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {t('common.back') || 'Back'}
-                </Button>
-                <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
-                  {downloadingPdf ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4 mr-2" />
-                  )}
-                  {t('money.invoices.downloadPdf') || 'Download PDF'}
-                </Button>
-                <Button variant="outline" onClick={handleShare}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  {t('money.invoices.share') || 'Share'}
-                </Button>
-                {['sent', 'viewed', 'partial'].includes(invoice.status) && (
-                  <Button
-                    onClick={() => {
-                      setPaymentAmount(invoice.balanceDue.toString());
-                      setShowPaymentDialog(true);
-                    }}
-                    className="bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    {t('money.invoices.recordPayment') || 'Record Payment'}
-                  </Button>
-                )}
-              </>
-            }
-          />
-
-          {/* Status Timeline */}
-          <Card className="mb-6">
-            <CardContent className="py-2">
-              <InvoiceStatusTimeline invoice={invoice} />
-            </CardContent>
-          </Card>
-
-          {/* Invoice Preview Card */}
-          <Card>
-            <CardContent className="p-8">
-              {/* Invoice Header */}
-              <div className="flex justify-between items-start mb-8">
-                <div>
-                  <h1 className="text-2xl font-bold mb-1">
-                    {t('money.invoices.invoice') || 'INVOICE'}
-                  </h1>
-                  <p className="text-lg font-mono">{invoice.invoiceNumber}</p>
-                </div>
-                <Badge className={STATUS_STYLES[invoice.status]} variant="secondary">
-                  {t(`money.status.${invoice.status}`) || invoice.status}
-                </Badge>
-              </div>
-
-              {/* Customer & Dates */}
-              <div className="grid grid-cols-2 gap-8 mb-8">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {t('money.invoices.billTo') || 'Bill To'}
-                  </p>
-                  <p className="font-semibold">{invoice.customerName}</p>
-                  {invoice.customerEmail && (
-                    <p className="text-sm text-muted-foreground">{invoice.customerEmail}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <div className="mb-2">
-                    <p className="text-sm text-muted-foreground">
-                      {t('money.invoices.issueDate') || 'Issue Date'}
-                    </p>
-                    <p className="font-medium">{invoice.issueDate}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {t('money.invoices.dueDate') || 'Due Date'}
-                    </p>
-                    <p className="font-medium">{invoice.dueDate}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Line Items */}
-              <table className="w-full mb-6">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2 text-sm text-muted-foreground">
-                      {t('money.invoices.description') || 'Description'}
-                    </th>
-                    <th className="text-right py-2 text-sm text-muted-foreground w-20">
-                      {t('money.invoices.qty') || 'Qty'}
-                    </th>
-                    <th className="text-right py-2 text-sm text-muted-foreground w-28">
-                      {t('money.invoices.price') || 'Price'}
-                    </th>
-                    <th className="text-right py-2 text-sm text-muted-foreground w-28">
-                      {t('money.invoices.amount') || 'Amount'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.items.map((item, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="py-3">{item.description}</td>
-                      <td className="text-right py-3">{item.quantity}</td>
-                      <td className="text-right py-3">{formatCurrency(item.unitPrice)}</td>
-                      <td className="text-right py-3">
-                        {formatCurrency(item.quantity * item.unitPrice)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Totals */}
-              <div className="flex justify-end">
-                <div className="w-64 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t('money.invoices.subtotal') || 'Subtotal'}
-                    </span>
-                    <span>{formatCurrency(invoice.subtotal)}</span>
-                  </div>
-                  {invoice.taxAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {t('money.invoices.tax') || 'Tax'} ({invoice.taxRate}%)
-                      </span>
-                      <span>{formatCurrency(invoice.taxAmount)}</span>
-                    </div>
-                  )}
-                  <Separator />
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>{t('money.invoices.total') || 'Total'}</span>
-                    <span>{formatCurrency(invoice.total)}</span>
-                  </div>
-                  {invoice.amountPaid > 0 && (
-                    <>
-                      <div className="flex justify-between text-green-600">
-                        <span>{t('money.invoices.paid') || 'Paid'}</span>
-                        <span>-{formatCurrency(invoice.amountPaid)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span>{t('money.invoices.balanceDue') || 'Balance Due'}</span>
-                        <span>{formatCurrency(invoice.balanceDue)}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Notes & Terms */}
-              {(invoice.notes || invoice.terms) && (
-                <div className="mt-8 pt-8 border-t">
-                  {invoice.notes && (
-                    <div className="mb-4">
-                      <p className="text-sm font-medium mb-1">
-                        {t('money.invoices.notes') || 'Notes'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{invoice.notes}</p>
-                    </div>
-                  )}
-                  {invoice.terms && (
-                    <div>
-                      <p className="text-sm font-medium mb-1">
-                        {t('money.invoices.terms') || 'Terms'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{invoice.terms}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Payment Dialog */}
-        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('money.payments.record') || 'Record Payment'}</DialogTitle>
-              <DialogDescription>
-                {t('money.payments.forInvoice') || 'For invoice'} {invoice.invoiceNumber}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>{t('money.payments.amount') || 'Amount'}</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    $
-                  </span>
-                  <Input
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="pl-8"
-                    step="0.01"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t('money.payments.balanceDue') || 'Balance due'}:{' '}
-                  {formatCurrency(invoice.balanceDue)}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('money.payments.method') || 'Payment Method'}</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">{t('money.payments.cash') || 'Cash'}</SelectItem>
-                    <SelectItem value="bank_transfer">
-                      {t('money.payments.bankTransfer') || 'Bank Transfer'}
-                    </SelectItem>
-                    <SelectItem value="check">{t('money.payments.check') || 'Check'}</SelectItem>
-                    <SelectItem value="other">{t('money.payments.other') || 'Other'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('common.notes') || 'Notes'}</Label>
-                <Textarea
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder={t('money.payments.notesPlaceholder') || 'Optional payment notes'}
-                  rows={2}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPaymentDialog(false)}>
-                {t('common.cancel') || 'Cancel'}
-              </Button>
-              <Button
-                onClick={handleRecordPayment}
-                disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                {saving
-                  ? t('common.saving') || 'Saving...'
-                  : t('money.payments.record') || 'Record Payment'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
+    return <InvoiceViewScreen invoice={invoice} settings={invoiceSettings} />;
   }
 
   // Edit/Create mode
@@ -696,6 +441,10 @@ export default function InvoiceForm() {
               <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('common.back') || 'Back'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowPreview(true)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t('money.invoices.preview') || 'Preview'}
               </Button>
               <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
                 <Save className="h-4 w-4 mr-2" />
@@ -853,6 +602,131 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
+            {/* Payment Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Landmark className="h-4 w-4" />
+                  {t('money.invoices.paymentOptions') || 'Payment Options'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Payment terms */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      {t('money.invoices.paymentTerms') || 'Payment Terms'}
+                      <InfoTooltip content={MoneyTooltips.terms.dueDate} />
+                    </Label>
+                    <Controller
+                      name="paymentTermsDays"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value === null || field.value === undefined ? 'custom' : String(field.value)}
+                          onValueChange={(v) => field.onChange(v === 'custom' ? null : parseInt(v, 10))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYMENT_TERM_PRESETS.map((preset) => (
+                              <SelectItem
+                                key={preset.days === null ? 'custom' : preset.days}
+                                value={preset.days === null ? 'custom' : String(preset.days)}
+                              >
+                                {t(preset.labelKey) || preset.fallbackLabel}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  {/* Payment account */}
+                  <div className="space-y-2">
+                    <Label>{t('money.invoices.paymentAccount') || 'Payment Account'}</Label>
+                    <Controller
+                      name="paymentAccountId"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value || 'none'} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t('money.invoices.selectAccount') || 'Select account'}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {paymentAccounts.map((account) => (
+                              <SelectItem key={account.id} value={account.id}>
+                                {account.label || `${account.bankName} ${account.accountNumber}`}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="none">
+                              {t('money.invoices.noBankDetails') || "Don't show bank details"}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {paymentAccounts.length === 0 && (
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto text-xs text-indigo-600"
+                        type="button"
+                        onClick={() => navigate('/money/invoices/settings')}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        {t('money.invoices.addAccountInSettings') || 'Add a payment account in Settings'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Accepted payment methods */}
+                <div className="space-y-2">
+                  <Label>{t('money.invoices.acceptedMethods') || 'Payment methods you accept'}</Label>
+                  <Controller
+                    name="paymentMethods"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="flex flex-wrap gap-2">
+                        {ACCEPTED_METHOD_OPTIONS.map((option) => {
+                          const selected = (field.value || []).includes(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => {
+                                const current = field.value || [];
+                                field.onChange(
+                                  selected
+                                    ? current.filter((m: string) => m !== option.value)
+                                    : [...current, option.value]
+                                );
+                              }}
+                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                                selected
+                                  ? 'border-indigo-600 bg-indigo-600 text-white'
+                                  : 'border-border bg-background text-muted-foreground hover:border-indigo-300 hover:text-foreground'
+                              }`}
+                            >
+                              {t(option.labelKey) || option.fallbackLabel}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('money.invoices.acceptedMethodsHint') || 'Shown on the invoice under Payment Details.'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <MoreDetailsSection>
               <Card>
                 <CardHeader>
@@ -911,13 +785,54 @@ export default function InvoiceForm() {
                   </Label>
                   <Input
                     type="date"
-                    {...register('dueDate')}
+                    {...register('dueDate', {
+                      // Manual edits switch payment terms to "Custom"
+                      onChange: () => setValue('paymentTermsDays', null),
+                    })}
                     className={errors.dueDate ? 'border-red-500' : ''}
                   />
                   {errors.dueDate && (
                     <p className="text-sm text-red-500">{errors.dueDate.message}</p>
                   )}
+                  {formData.paymentTermsDays !== null && formData.paymentTermsDays !== undefined && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('money.invoices.dueDateAuto') || 'Set automatically from payment terms.'}
+                    </p>
+                  )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Template */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  {t('money.invoices.template') || 'Template'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Controller
+                  name="templateId"
+                  control={control}
+                  render={({ field }) => (
+                    <TemplatePicker
+                      compact
+                      value={field.value || invoiceSettings.defaultTemplate || DEFAULT_TEMPLATE_ID}
+                      onChange={field.onChange}
+                      accentColor={invoiceSettings.accentColor}
+                    />
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mt-2 h-auto p-0 text-xs text-indigo-600"
+                  onClick={() => setShowPreview(true)}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  {t('money.invoices.previewInvoice') || 'Preview invoice'}
+                </Button>
               </CardContent>
             </Card>
 
@@ -992,6 +907,19 @@ export default function InvoiceForm() {
           </div>
         </div>
       </div>
+
+      {/* Live invoice preview */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t('money.invoices.previewTitle') || 'Invoice Preview'}</DialogTitle>
+            <DialogDescription>
+              {t('money.invoices.previewDesc') || 'This is how your invoice will look to the customer.'}
+            </DialogDescription>
+          </DialogHeader>
+          <InvoicePaper invoice={previewInvoice} settings={invoiceSettings} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

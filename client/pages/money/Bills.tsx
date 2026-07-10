@@ -3,7 +3,7 @@
  * List, filter, and manage bills (accounts payable)
  */
 
-import { useState } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -36,6 +36,8 @@ import { useSmartBills, billKeys } from '@/hooks/useBills';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import QuickBillDialog from '@/components/money/QuickBillDialog';
+import { partitionBillFiles, BILL_FILE_ACCEPT } from '@/components/money/BillAttachmentsInput';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
@@ -51,6 +53,7 @@ import {
   DollarSign,
   Calendar,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<BillStatus, string> = {
@@ -72,6 +75,60 @@ export default function Bills() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // Quick-add bill from dropped/picked files
+  const [quickFiles, setQuickFiles] = useState<File[]>([]);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepth = useRef(0);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  const handleIncomingFiles = (incoming: File[]) => {
+    if (incoming.length === 0) return;
+    const { valid, errors } = partitionBillFiles(incoming);
+    if (errors.length > 0) {
+      toast({
+        title: t('money.bills.invalidFiles') || 'Some files were skipped',
+        description: errors.join('\n'),
+        variant: 'destructive',
+      });
+    }
+    if (valid.length > 0) {
+      setQuickFiles(valid);
+      setQuickAddOpen(true);
+    }
+  };
+
+  const isFileDrag = (e: DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
+
+  const handlePageDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+
+  const handlePageDragOver = (e: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+  };
+
+  const handlePageDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0;
+      setDragActive(false);
+    }
+  };
+
+  const handlePageDrop = (e: DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragActive(false);
+    handleIncomingFiles(Array.from(e.dataTransfer.files));
+  };
 
   const { bills, totalLoaded, isLoading: loading, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartBills(isSearching);
 
@@ -155,9 +212,48 @@ export default function Bills() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      onDragEnter={handlePageDragEnter}
+      onDragOver={handlePageDragOver}
+      onDragLeave={handlePageDragLeave}
+      onDrop={handlePageDrop}
+    >
       <SEO title="Bills - Xefe" description="Manage your bills and accounts payable" />
       <MainNavigation />
+
+      {/* Full-page drop overlay */}
+      {dragActive && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="border-2 border-dashed border-indigo-500 rounded-xl px-12 py-10 text-center bg-background shadow-lg">
+            <Upload className="h-10 w-10 mx-auto mb-3 text-indigo-500" />
+            <p className="text-lg font-semibold">
+              {t('money.bills.dropOverlayTitle') || 'Drop to add a bill'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t('money.bills.dropOverlayHint') || 'PDF or photo — a quick form will open'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept={BILL_FILE_ACCEPT}
+        multiple
+        className="sr-only"
+        onChange={(e) => {
+          handleIncomingFiles(Array.from(e.target.files || []));
+          e.target.value = '';
+        }}
+      />
+
+      <QuickBillDialog
+        open={quickAddOpen}
+        onOpenChange={setQuickAddOpen}
+        initialFiles={quickFiles}
+      />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
         <PageHeader
@@ -166,13 +262,19 @@ export default function Bills() {
           icon={FileText}
           iconColor="text-indigo-500"
           actions={
-            <Button
-              onClick={() => navigate('/money/bills/new')}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t('money.bills.new') || 'New Bill'}
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => uploadInputRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />
+                {t('money.bills.uploadBill') || 'Upload Bill'}
+              </Button>
+              <Button
+                onClick={() => navigate('/money/bills/new')}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('money.bills.new') || 'New Bill'}
+              </Button>
+            </>
           }
         />
 
@@ -249,6 +351,29 @@ export default function Bills() {
             </Select>
           </div>
         </MoreDetailsSection>
+
+        {/* Quick-add dropzone */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => uploadInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              uploadInputRef.current?.click();
+            }
+          }}
+          className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-4 py-3 border-2 border-dashed border-muted-foreground/25 rounded-lg text-sm text-muted-foreground hover:border-indigo-400 hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+        >
+          <Upload className="h-4 w-4 shrink-0" />
+          <span className="text-center">
+            {t('money.bills.dropStrip') ||
+              'Drag & drop bill files here (PDF or photo), or click to browse'}
+          </span>
+          <span className="hidden md:inline text-xs text-muted-foreground/70">
+            {t('money.bills.dropStripHint') || '— works with Google Drive & OneDrive folders'}
+          </span>
+        </div>
 
         {/* Bill List */}
         {filteredBills.length === 0 ? (

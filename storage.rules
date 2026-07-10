@@ -121,6 +121,12 @@ service firebase.storage {
       allow write: if isTenantMember(tenantId) && isUnderSizeLimit();
     }
 
+    // Bill attachments (vendor invoices, receipts)
+    match /tenants/{tenantId}/bills/{billId}/attachments/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantMember(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+    }
+
     // Payslip PDFs
     match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
       allow read: if isTenantMember(tenantId);

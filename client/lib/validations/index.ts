@@ -265,6 +265,10 @@ export const invoiceFormSchema = z.object({
   taxRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).default(0)),
   notes: z.string().max(1000).optional().or(z.literal('')),
   terms: z.string().max(1000).optional().or(z.literal('')),
+  templateId: z.enum(['classic', 'modern', 'minimal']).optional(),
+  paymentTermsDays: z.number().min(0).max(365).nullable().optional(),
+  paymentMethods: z.array(z.enum(['cash', 'bank_transfer', 'card', 'check', 'mobile_money', 'other'])).optional(),
+  paymentAccountId: z.string().optional().or(z.literal('')),
 }).refine(
   (data) => new Date(data.dueDate) >= new Date(data.issueDate),
   { message: 'Due date must be on or after issue date', path: ['dueDate'] }

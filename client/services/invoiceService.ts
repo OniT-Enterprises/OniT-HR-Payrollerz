@@ -34,6 +34,8 @@ import type {
   InvoiceItem,
   InvoiceStatus,
   InvoiceSettings,
+  InvoiceTemplateId,
+  PaymentAccount,
   PaymentReceived,
   PaymentFormData,
   MoneyStats,
@@ -41,6 +43,16 @@ import type {
 import { customerService } from './customerService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { firestoreInvoiceSchema } from '@/lib/validations';
+import {
+  DEFAULT_TEMPLATE_ID,
+  getSettingsPaymentAccounts,
+  paymentTermsLabel,
+  paymentMethodsSummary,
+  resolveInvoicePaymentAccount,
+  resolveAccentColor,
+  formatInvoiceMoney,
+  formatInvoiceDate,
+} from '@/lib/invoiceTemplates';
 
 // ============================================
 // FILTER INTERFACES
@@ -490,11 +502,35 @@ class InvoiceService {
   }
 
   /**
+   * Resolve the PaymentAccount snapshot to store on an invoice.
+   * 'none' hides payment details; undefined falls back to the tenant default.
+   */
+  private resolvePaymentAccountSnapshot(
+    paymentAccountId: string | undefined,
+    settings: Partial<InvoiceSettings>
+  ): PaymentAccount | null {
+    if (paymentAccountId === 'none') return null;
+
+    const accounts = getSettingsPaymentAccounts(settings);
+    if (accounts.length === 0) return null;
+
+    if (paymentAccountId) {
+      const match = accounts.find((a) => a.id === paymentAccountId);
+      if (match) return match;
+    }
+
+    return resolveInvoicePaymentAccount(null, settings);
+  }
+
+  /**
    * Create a new invoice
    */
   async createInvoice(tenantId: string, data: InvoiceFormData): Promise<string> {
-    // Get customer info
-    const customer = await customerService.getCustomerById(tenantId, data.customerId);
+    // Get customer info + settings (for presentation/payment defaults)
+    const [customer, settings] = await Promise.all([
+      customerService.getCustomerById(tenantId, data.customerId),
+      this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)),
+    ]);
     if (!customer) {
       throw new Error('Customer not found');
     }
@@ -535,6 +571,11 @@ class InvoiceService {
       balanceDue: total,
       notes: data.notes,
       terms: data.terms,
+      templateId: data.templateId || settings.defaultTemplate || DEFAULT_TEMPLATE_ID,
+      ...(settings.accentColor ? { accentColor: settings.accentColor } : {}),
+      paymentTermsDays: data.paymentTermsDays ?? null,
+      paymentMethods: data.paymentMethods ?? settings.defaultPaymentMethods ?? [],
+      paymentAccount: this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings),
       currency: 'USD',
       shareToken,
       createdAt: new Date(),
@@ -575,6 +616,13 @@ class InvoiceService {
     if (data.dueDate) updates.dueDate = data.dueDate;
     if (data.notes !== undefined) updates.notes = data.notes;
     if (data.terms !== undefined) updates.terms = data.terms;
+    if (data.templateId) updates.templateId = data.templateId;
+    if (data.paymentTermsDays !== undefined) updates.paymentTermsDays = data.paymentTermsDays;
+    if (data.paymentMethods !== undefined) updates.paymentMethods = data.paymentMethods;
+    if (data.paymentAccountId !== undefined) {
+      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      updates.paymentAccount = this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings);
+    }
 
     // If items are being updated, recalculate totals
     if (data.items) {
@@ -689,6 +737,182 @@ class InvoiceService {
       });
     }
 
+    // Email the invoice to the customer on the first send (draft -> sent).
+    // Failure to queue the email must not fail the send itself.
+    if (invoice.status === 'draft' && invoice.customerEmail) {
+      try {
+        await this.queueInvoiceEmail(tenantId, invoice);
+      } catch (error) {
+        console.error('Failed to queue invoice email:', error);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Queue a branded invoice email to the customer (sent via the `mail`
+   * collection -> Resend). The email body mirrors the invoice so the
+   * customer needs no login to see line items, totals, and how to pay.
+   */
+  private async queueInvoiceEmail(tenantId: string, invoice: Invoice): Promise<void> {
+    if (!invoice.customerEmail) return;
+
+    const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+    const companyName = settings.companyName || 'Your supplier';
+    const accent = resolveAccentColor(invoice, settings);
+    const account = resolveInvoicePaymentAccount(invoice, settings);
+    const termsLabel = paymentTermsLabel(invoice.paymentTermsDays);
+    const methodsLabel = paymentMethodsSummary(invoice.paymentMethods);
+
+    const esc = (value: string | undefined | null) =>
+      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const itemRows = invoice.items
+      .map(
+        (item) => `
+          <tr>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatInvoiceMoney(item.unitPrice)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(item.quantity * item.unitPrice)}</td>
+          </tr>`
+      )
+      .join('');
+
+    const paymentRows: string[] = [];
+    if (termsLabel) paymentRows.push(`<strong>Payment terms:</strong> ${esc(termsLabel)}`);
+    if (methodsLabel) paymentRows.push(`<strong>We accept:</strong> ${esc(methodsLabel)}`);
+    if (account) {
+      const accountBits = [
+        account.bankName && `Bank: ${esc(account.bankName)}`,
+        account.accountName && `Account name: ${esc(account.accountName)}`,
+        account.accountNumber && `Account number: ${esc(account.accountNumber)}`,
+        account.swiftCode && `SWIFT: ${esc(account.swiftCode)}`,
+        `Reference: ${esc(invoice.invoiceNumber)}`,
+      ].filter(Boolean);
+      paymentRows.push(`<strong>Bank transfer details:</strong><br/>${accountBits.join('<br/>')}`);
+    }
+
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#1f2937;">
+        <div style="background:${accent};border-radius:8px 8px 0 0;padding:24px 28px;color:#ffffff;">
+          <p style="margin:0;font-size:13px;opacity:0.85;">${esc(companyName)}</p>
+          <h1 style="margin:6px 0 0;font-size:22px;">Invoice ${esc(invoice.invoiceNumber)}</h1>
+        </div>
+        <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:28px;">
+          <p style="margin:0 0 4px;">Dear ${esc(invoice.customerName)},</p>
+          <p style="margin:0 0 20px;color:#6b7280;">Please find your invoice from ${esc(companyName)} below.</p>
+
+          <div style="background:#f9fafb;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+            <table style="width:100%;font-size:14px;">
+              <tr>
+                <td style="color:#6b7280;padding:2px 0;">Amount due</td>
+                <td style="text-align:right;font-size:20px;font-weight:700;">${formatInvoiceMoney(invoice.balanceDue ?? invoice.total)}</td>
+              </tr>
+              <tr>
+                <td style="color:#6b7280;padding:2px 0;">Due date</td>
+                <td style="text-align:right;font-weight:600;">${esc(formatInvoiceDate(invoice.dueDate))}</td>
+              </tr>
+            </table>
+          </div>
+
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
+            <thead>
+              <tr style="background:${accent};color:#ffffff;">
+                <th style="padding:8px 12px;text-align:left;border-radius:6px 0 0 0;">Description</th>
+                <th style="padding:8px 12px;text-align:right;">Qty</th>
+                <th style="padding:8px 12px;text-align:right;">Price</th>
+                <th style="padding:8px 12px;text-align:right;border-radius:0 6px 0 0;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${itemRows}</tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Subtotal</td>
+                <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.subtotal)}</td>
+              </tr>
+              ${invoice.taxAmount > 0 ? `
+              <tr>
+                <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Tax (${invoice.taxRate}%)</td>
+                <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.taxAmount)}</td>
+              </tr>` : ''}
+              <tr>
+                <td colspan="3" style="padding:8px 12px;text-align:right;font-weight:700;">Total</td>
+                <td style="padding:8px 12px;text-align:right;font-weight:700;color:${accent};">${formatInvoiceMoney(invoice.total)}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          ${paymentRows.length > 0 ? `
+          <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;font-size:13px;line-height:1.7;margin-bottom:16px;">
+            <p style="margin:0 0 6px;font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:${accent};">How to pay</p>
+            ${paymentRows.map((row) => `<p style="margin:0 0 8px;">${row}</p>`).join('')}
+          </div>` : ''}
+
+          ${invoice.notes ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(invoice.notes)}</p>` : ''}
+
+          <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
+            Questions about this invoice? ${settings.companyEmail ? `Contact us at ${esc(settings.companyEmail)}.` : 'Reply to this email.'}
+          </p>
+        </div>
+      </div>`;
+
+    const textLines = [
+      `Invoice ${invoice.invoiceNumber} from ${companyName}`,
+      '',
+      `Amount due: ${formatInvoiceMoney(invoice.balanceDue ?? invoice.total)}`,
+      `Due date: ${formatInvoiceDate(invoice.dueDate)}`,
+      '',
+      ...invoice.items.map(
+        (item) => `${item.description} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(item.quantity * item.unitPrice)}`
+      ),
+      '',
+      `Subtotal: ${formatInvoiceMoney(invoice.subtotal)}`,
+      ...(invoice.taxAmount > 0 ? [`Tax (${invoice.taxRate}%): ${formatInvoiceMoney(invoice.taxAmount)}`] : []),
+      `Total: ${formatInvoiceMoney(invoice.total)}`,
+      ...(termsLabel ? ['', `Payment terms: ${termsLabel}`] : []),
+      ...(methodsLabel ? [`We accept: ${methodsLabel}`] : []),
+      ...(account
+        ? [
+            '',
+            'Bank transfer details:',
+            ...(account.bankName ? [`  Bank: ${account.bankName}`] : []),
+            ...(account.accountName ? [`  Account name: ${account.accountName}`] : []),
+            ...(account.accountNumber ? [`  Account number: ${account.accountNumber}`] : []),
+            `  Reference: ${invoice.invoiceNumber}`,
+          ]
+        : []),
+    ];
+
+    await addDoc(collection(db, 'mail'), {
+      tenantId,
+      to: [invoice.customerEmail],
+      ...(settings.companyEmail ? { replyTo: settings.companyEmail } : {}),
+      subject: `Invoice ${invoice.invoiceNumber} from ${companyName} — ${formatInvoiceMoney(invoice.total)} due ${formatInvoiceDate(invoice.dueDate)}`,
+      html,
+      text: textLines.join('\n'),
+      status: 'pending',
+      purpose: 'invoice',
+      relatedId: invoice.id,
+      createdAt: serverTimestamp(),
+    });
+  }
+
+  /**
+   * Update presentation only (template) — allowed for any non-cancelled
+   * invoice since it never touches amounts or accounting.
+   */
+  async updateInvoiceTemplate(
+    tenantId: string,
+    id: string,
+    templateId: InvoiceTemplateId
+  ): Promise<boolean> {
+    const docRef = doc(db, paths.invoice(tenantId, id));
+    await updateDoc(docRef, {
+      templateId,
+      updatedAt: serverTimestamp(),
+    });
     return true;
   }
 
@@ -878,7 +1102,8 @@ class InvoiceService {
     }
 
     const today = getTodayTL();
-    const dueDate = addDaysISO(today, 30);
+    // Respect the source invoice's payment terms when re-dating
+    const dueDate = addDaysISO(today, invoice.paymentTermsDays ?? 30);
 
     const newInvoice: InvoiceFormData = {
       customerId: invoice.customerId,
@@ -893,6 +1118,10 @@ class InvoiceService {
       taxRate: invoice.taxRate,
       notes: invoice.notes,
       terms: invoice.terms,
+      templateId: invoice.templateId,
+      paymentTermsDays: invoice.paymentTermsDays ?? null,
+      paymentMethods: invoice.paymentMethods,
+      paymentAccountId: invoice.paymentAccount === null ? 'none' : invoice.paymentAccount?.id,
     };
 
     return this.createInvoice(tenantId, newInvoice);
@@ -1020,16 +1249,16 @@ class InvoiceService {
 
   /**
    * Get payments for an invoice
+   * (sorted client-side — where + orderBy would need a composite index)
    */
   async getPaymentsForInvoice(tenantId: string, invoiceId: string): Promise<PaymentReceived[]> {
     const q = query(
       this.paymentsRef(tenantId),
-      where('invoiceId', '==', invoiceId),
-      orderBy('date', 'desc')
+      where('invoiceId', '==', invoiceId)
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map(mapPayment);
+    return querySnapshot.docs.map(mapPayment).sort((a, b) => (a.date < b.date ? 1 : -1));
   }
 
   /**

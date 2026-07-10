@@ -37,6 +37,7 @@ import { subtractMoney } from '@/lib/currency';
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Cash' },
   { value: 'bank_transfer', label: 'Bank Transfer' },
+  { value: 'card', label: 'Card' },
   { value: 'mobile_money', label: 'Mobile Money (Telemor/Telkomcel)' },
   { value: 'check', label: 'Check' },
 ];

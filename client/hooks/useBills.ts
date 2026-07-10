@@ -69,7 +69,8 @@ export function useCreateBill() {
   const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (data: BillFormData) => billService.createBill(tenantId, data),
+    mutationFn: ({ data, preGeneratedId }: { data: BillFormData; preGeneratedId?: string }) =>
+      billService.createBill(tenantId, data, undefined, preGeneratedId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: billKeys.all(tenantId) });
     },
