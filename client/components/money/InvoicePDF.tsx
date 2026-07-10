@@ -25,6 +25,7 @@ import {
   paymentMethodsSummary,
   formatInvoiceMoney,
   formatInvoiceDate,
+  lineNetAmount,
 } from '@/lib/invoiceTemplates';
 
 const TEXT = '#1f2937';
@@ -136,6 +137,12 @@ const base = StyleSheet.create({
   qtyCol: { width: '12%', textAlign: 'right' },
   priceCol: { width: '19%', textAlign: 'right' },
   amountCol: { width: '19%', textAlign: 'right' },
+  // Column set when a line discount is present
+  descColD: { width: '42%' },
+  qtyColD: { width: '10%', textAlign: 'right' },
+  priceColD: { width: '17%', textAlign: 'right' },
+  discColD: { width: '13%', textAlign: 'right' },
+  amountColD: { width: '18%', textAlign: 'right' },
   totalsBox: { width: 220, marginLeft: 'auto', marginTop: 14 },
   totalRow: {
     flexDirection: 'row',
@@ -272,6 +279,8 @@ function MetaBlock({ ctx }: { ctx: PdfContext }) {
     { label: 'Issue Date', value: formatInvoiceDate(invoice.issueDate) },
     { label: 'Due Date', value: formatInvoiceDate(invoice.dueDate) },
     ...(termsLabel ? [{ label: 'Terms', value: termsLabel }] : []),
+    ...(invoice.projectName ? [{ label: 'Project', value: invoice.projectName }] : []),
+    ...(invoice.poNumber ? [{ label: 'Ref / PO', value: invoice.poNumber }] : []),
   ];
   return (
     <View>
@@ -296,13 +305,21 @@ function ItemsTable({
   headerTextColor: string;
   zebra?: boolean;
 }) {
+  const showDiscount = ctx.invoice.items.some((item) => (item.discount || 0) > 0);
+  const cols = showDiscount
+    ? { desc: base.descColD, qty: base.qtyColD, price: base.priceColD, amount: base.amountColD }
+    : { desc: base.descCol, qty: base.qtyCol, price: base.priceCol, amount: base.amountCol };
+
   return (
     <View>
       <View style={[{ flexDirection: 'row', paddingVertical: 7, paddingHorizontal: 8 }, headerStyle]}>
-        <Text style={[base.tableHeaderText, base.descCol, { color: headerTextColor }]}>Description</Text>
-        <Text style={[base.tableHeaderText, base.qtyCol, { color: headerTextColor }]}>Qty</Text>
-        <Text style={[base.tableHeaderText, base.priceCol, { color: headerTextColor }]}>Unit Price</Text>
-        <Text style={[base.tableHeaderText, base.amountCol, { color: headerTextColor }]}>Amount</Text>
+        <Text style={[base.tableHeaderText, cols.desc, { color: headerTextColor }]}>Description</Text>
+        <Text style={[base.tableHeaderText, cols.qty, { color: headerTextColor }]}>Qty</Text>
+        <Text style={[base.tableHeaderText, cols.price, { color: headerTextColor }]}>Unit Price</Text>
+        {showDiscount && (
+          <Text style={[base.tableHeaderText, base.discColD, { color: headerTextColor }]}>Disc.</Text>
+        )}
+        <Text style={[base.tableHeaderText, cols.amount, { color: headerTextColor }]}>Amount</Text>
       </View>
       {ctx.invoice.items.map((item, index) => (
         <View
@@ -310,11 +327,16 @@ function ItemsTable({
           style={[base.tableRow, zebra && index % 2 === 1 ? { backgroundColor: '#f9fafb' } : {}]}
           wrap={false}
         >
-          <Text style={[base.cell, base.descCol]}>{item.description}</Text>
-          <Text style={[base.cell, base.qtyCol]}>{item.quantity}</Text>
-          <Text style={[base.cell, base.priceCol]}>{formatInvoiceMoney(item.unitPrice)}</Text>
-          <Text style={[base.cell, base.amountCol, { fontFamily: 'Helvetica-Bold' }]}>
-            {formatInvoiceMoney(item.quantity * item.unitPrice)}
+          <Text style={[base.cell, cols.desc]}>{item.description}</Text>
+          <Text style={[base.cell, cols.qty]}>{item.quantity}</Text>
+          <Text style={[base.cell, cols.price]}>{formatInvoiceMoney(item.unitPrice)}</Text>
+          {showDiscount && (
+            <Text style={[base.cell, base.discColD, { color: MUTED }]}>
+              {item.discount ? `${item.discount}%` : '—'}
+            </Text>
+          )}
+          <Text style={[base.cell, cols.amount, { fontFamily: 'Helvetica-Bold' }]}>
+            {formatInvoiceMoney(lineNetAmount(item))}
           </Text>
         </View>
       ))}
@@ -333,6 +355,14 @@ function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTempla
         <Text style={base.totalLabel}>Subtotal</Text>
         <Text style={base.totalValue}>{formatInvoiceMoney(invoice.subtotal)}</Text>
       </View>
+      {(invoice.discountTotal || 0) > 0 && (
+        <View style={base.totalRow}>
+          <Text style={[base.totalLabel, { fontSize: 8.5 }]}>Includes discount of</Text>
+          <Text style={[base.totalValue, { fontSize: 8.5, color: MUTED }]}>
+            -{formatInvoiceMoney(invoice.discountTotal || 0)}
+          </Text>
+        </View>
+      )}
       {invoice.taxAmount > 0 && (
         <View style={base.totalRow}>
           <Text style={base.totalLabel}>Tax ({invoice.taxRate}%)</Text>
@@ -397,6 +427,8 @@ function PaymentInfoBlock({ ctx, boxed }: { ctx: PdfContext; boxed?: boolean }) 
     if (account.accountName) rows.push({ label: 'Account Name', value: account.accountName });
     if (account.accountNumber) rows.push({ label: 'Account Number', value: account.accountNumber });
     if (account.swiftCode) rows.push({ label: 'SWIFT', value: account.swiftCode });
+    if (account.iban) rows.push({ label: 'IBAN', value: account.iban });
+    if (account.bin) rows.push({ label: 'BIN', value: account.bin });
     rows.push({ label: 'Reference', value: invoice.invoiceNumber });
   }
 
@@ -450,11 +482,13 @@ function NotesBlock({ ctx }: { ctx: PdfContext }) {
   );
 }
 
-function FooterNote({ ctx }: { ctx: PdfContext }) {
+function FooterNote({ ctx, showDefault = true }: { ctx: PdfContext; showDefault?: boolean }) {
   const { settings } = ctx;
+  const message = settings?.footerMessage || (showDefault ? 'Thank you for your business!' : null);
+  if (!message) return null;
   return (
     <Text style={base.footer}>
-      Thank you for your business!
+      {message}
       {settings?.companyEmail ? `  ·  Questions? Contact ${settings.companyEmail}` : ''}
     </Text>
   );
@@ -578,6 +612,7 @@ function MinimalTemplate({ ctx }: { ctx: PdfContext }) {
         <TotalsBlock ctx={ctx} variant="minimal" />
         <PaymentInfoBlock ctx={ctx} />
         <NotesBlock ctx={ctx} />
+        <FooterNote ctx={ctx} showDefault={false} />
       </View>
       <StatusStamp invoice={invoice} />
     </Page>

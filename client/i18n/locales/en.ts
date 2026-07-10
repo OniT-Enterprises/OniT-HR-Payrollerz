@@ -5027,7 +5027,16 @@ const messages = {
       "termsNet60": "Net 60 days",
       "termsCustom": "Custom due date",
       "dueDateAuto": "Set automatically from payment terms.",
-      "received": "Received"
+      "received": "Received",
+      "discountShort": "Disc %",
+      "vatShort": "VAT %",
+      "discountTitle": "Discount %",
+      "vatTitle": "VAT %",
+      "projectName": "Project / Service",
+      "projectPlaceholder": "e.g., Website redesign",
+      "poNumber": "Reference / PO",
+      "poPlaceholder": "Customer PO number",
+      "includesDiscount": "Includes discount of"
     },
     "payments": {
       "title": "Payments",
@@ -5128,7 +5137,12 @@ const messages = {
       "swiftCode": "SWIFT Code",
       "accountRequired": "Bank and account number are required",
       "defaultMethods": "Payment methods you accept by default",
-      "defaultMethodsHint": "Pre-selected on new invoices; you can change them per invoice."
+      "defaultMethodsHint": "Pre-selected on new invoices; you can change them per invoice.",
+      "footerMessage": "Footer Message",
+      "footerPlaceholder": "Thank you for your business!",
+      "footerHelp": "Closing line at the bottom of invoices, PDFs, and emails — e.g., \"Thank you for choosing Onit Enterprises Lda.\"",
+      "bin": "BIN",
+      "binPlaceholder": "Bank identification number"
     },
     "recurring": {
       "title": "Recurring Invoices",

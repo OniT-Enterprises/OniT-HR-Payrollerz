@@ -61,6 +61,8 @@ export interface PaymentAccount {
   accountName: string;
   accountNumber: string;
   swiftCode?: string;
+  iban?: string;                   // For international transfers
+  bin?: string;                    // TL bank identification number (BNU statements)
 }
 
 export interface InvoiceItem {
@@ -68,7 +70,8 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unitPrice: number;
-  amount: number;                  // quantity × unitPrice
+  discount?: number;               // Per-line discount % (0-100)
+  amount: number;                  // quantity × unitPrice, less discount
 
   // VAT (optional — populated when vatEnabled)
   vatCategory?: VATCategory;       // 'standard' | 'reduced' | 'zero' | 'exempt'
@@ -96,8 +99,13 @@ export interface Invoice {
   // Line items
   items: InvoiceItem[];
 
+  // Engagement context (optional — shown in the invoice meta block)
+  projectName?: string;            // "PCIC website"
+  poNumber?: string;               // Customer reference / purchase order
+
   // Totals
-  subtotal: number;
+  subtotal: number;                // Sum of line amounts (after line discounts)
+  discountTotal?: number;          // Informational: total discount included
   taxRate: number;                 // 0-100 (percentage)
   taxAmount: number;
   total: number;
@@ -159,6 +167,8 @@ export interface InvoiceFormData {
   issueDate: string;
   dueDate: string;
   items: Omit<InvoiceItem, 'id'>[];
+  projectName?: string;
+  poNumber?: string;
   taxRate: number;
   notes?: string;
   terms?: string;
@@ -442,6 +452,7 @@ export interface InvoiceSettings {
   defaultTerms: string;
   defaultNotes: string;
   defaultDueDays: number;          // Days until due (e.g., 30)
+  footerMessage?: string;          // "Thank you for choosing Onit Enterprises Lda."
 
   // Company info (shown on invoice)
   companyName: string;

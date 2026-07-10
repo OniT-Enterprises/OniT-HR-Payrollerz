@@ -27,7 +27,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney, sumMoney, multiplyMoney, percentOf } from '@/lib/currency';
+import { addMoney, subtractMoney, sumMoney, percentOf } from '@/lib/currency';
 import type {
   Invoice,
   InvoiceFormData,
@@ -52,6 +52,8 @@ import {
   resolveAccentColor,
   formatInvoiceMoney,
   formatInvoiceDate,
+  lineNetAmount,
+  computeLineTotals,
 } from '@/lib/invoiceTemplates';
 
 // ============================================
@@ -538,15 +540,18 @@ class InvoiceService {
     // Get next invoice number
     const invoiceNumber = await this.getNextInvoiceNumber(tenantId);
 
-    // Calculate totals
+    // Calculate totals (line amounts net of per-line discounts; per-line VAT
+    // rate wins over the invoice-level rate, matching the editor summary)
     const items: InvoiceItem[] = data.items.map((item, index) => ({
       id: `item_${Date.now()}_${index}`,
       ...item,
-      amount: multiplyMoney(item.quantity, item.unitPrice),
+      amount: lineNetAmount(item),
     }));
 
-    const subtotal = sumMoney(items.map(item => item.amount));
-    const taxAmount = percentOf(subtotal, data.taxRate);
+    const { subtotal, discountTotal } = computeLineTotals(items);
+    const taxAmount = sumMoney(
+      items.map(item => percentOf(item.amount, item.vatRate ?? data.taxRate))
+    );
     const total = addMoney(subtotal, taxAmount);
 
     // Generate share token
@@ -562,7 +567,10 @@ class InvoiceService {
       issueDate: data.issueDate,
       dueDate: data.dueDate,
       items,
+      ...(data.projectName ? { projectName: data.projectName } : {}),
+      ...(data.poNumber ? { poNumber: data.poNumber } : {}),
       subtotal,
+      ...(discountTotal > 0 ? { discountTotal } : {}),
       taxRate: data.taxRate,
       taxAmount,
       total,
@@ -616,6 +624,8 @@ class InvoiceService {
     if (data.dueDate) updates.dueDate = data.dueDate;
     if (data.notes !== undefined) updates.notes = data.notes;
     if (data.terms !== undefined) updates.terms = data.terms;
+    if (data.projectName !== undefined) updates.projectName = data.projectName;
+    if (data.poNumber !== undefined) updates.poNumber = data.poNumber;
     if (data.templateId) updates.templateId = data.templateId;
     if (data.paymentTermsDays !== undefined) updates.paymentTermsDays = data.paymentTermsDays;
     if (data.paymentMethods !== undefined) updates.paymentMethods = data.paymentMethods;
@@ -629,16 +639,19 @@ class InvoiceService {
       const items: InvoiceItem[] = data.items.map((item, index) => ({
         id: `item_${Date.now()}_${index}`,
         ...item,
-        amount: multiplyMoney(item.quantity, item.unitPrice),
+        amount: lineNetAmount(item),
       }));
 
-      const subtotal = sumMoney(items.map(item => item.amount));
+      const { subtotal, discountTotal } = computeLineTotals(items);
       const taxRate = data.taxRate ?? invoice.taxRate;
-      const taxAmount = percentOf(subtotal, taxRate);
+      const taxAmount = sumMoney(
+        items.map(item => percentOf(item.amount, item.vatRate ?? taxRate))
+      );
       const total = addMoney(subtotal, taxAmount);
 
       updates.items = items;
       updates.subtotal = subtotal;
+      updates.discountTotal = discountTotal;
       updates.taxRate = taxRate;
       updates.taxAmount = taxAmount;
       updates.total = total;
@@ -772,10 +785,10 @@ class InvoiceService {
       .map(
         (item) => `
           <tr>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}${item.discount ? ` <span style="color:#6b7280;">(−${item.discount}%)</span>` : ''}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatInvoiceMoney(item.unitPrice)}</td>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(item.quantity * item.unitPrice)}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(lineNetAmount(item))}</td>
           </tr>`
       )
       .join('');
@@ -789,6 +802,8 @@ class InvoiceService {
         account.accountName && `Account name: ${esc(account.accountName)}`,
         account.accountNumber && `Account number: ${esc(account.accountNumber)}`,
         account.swiftCode && `SWIFT: ${esc(account.swiftCode)}`,
+        account.iban && `IBAN: ${esc(account.iban)}`,
+        account.bin && `BIN: ${esc(account.bin)}`,
         `Reference: ${esc(invoice.invoiceNumber)}`,
       ].filter(Boolean);
       paymentRows.push(`<strong>Bank transfer details:</strong><br/>${accountBits.join('<br/>')}`);
@@ -814,6 +829,16 @@ class InvoiceService {
                 <td style="color:#6b7280;padding:2px 0;">Due date</td>
                 <td style="text-align:right;font-weight:600;">${esc(formatInvoiceDate(invoice.dueDate))}</td>
               </tr>
+              ${invoice.projectName ? `
+              <tr>
+                <td style="color:#6b7280;padding:2px 0;">Project</td>
+                <td style="text-align:right;font-weight:600;">${esc(invoice.projectName)}</td>
+              </tr>` : ''}
+              ${invoice.poNumber ? `
+              <tr>
+                <td style="color:#6b7280;padding:2px 0;">Ref / PO</td>
+                <td style="text-align:right;font-weight:600;">${esc(invoice.poNumber)}</td>
+              </tr>` : ''}
             </table>
           </div>
 
@@ -832,6 +857,11 @@ class InvoiceService {
                 <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Subtotal</td>
                 <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.subtotal)}</td>
               </tr>
+              ${(invoice.discountTotal || 0) > 0 ? `
+              <tr>
+                <td colspan="3" style="padding:2px 12px;text-align:right;color:#6b7280;font-size:11px;">Includes discount of</td>
+                <td style="padding:2px 12px;text-align:right;color:#6b7280;font-size:11px;">-${formatInvoiceMoney(invoice.discountTotal || 0)}</td>
+              </tr>` : ''}
               ${invoice.taxAmount > 0 ? `
               <tr>
                 <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Tax (${invoice.taxRate}%)</td>
@@ -851,6 +881,7 @@ class InvoiceService {
           </div>` : ''}
 
           ${invoice.notes ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(invoice.notes)}</p>` : ''}
+          ${settings.footerMessage ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(settings.footerMessage)}</p>` : ''}
 
           <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
             Questions about this invoice? ${settings.companyEmail ? `Contact us at ${esc(settings.companyEmail)}.` : 'Reply to this email.'}
@@ -865,7 +896,7 @@ class InvoiceService {
       `Due date: ${formatInvoiceDate(invoice.dueDate)}`,
       '',
       ...invoice.items.map(
-        (item) => `${item.description} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(item.quantity * item.unitPrice)}`
+        (item) => `${item.description}${item.discount ? ` (-${item.discount}%)` : ''} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(lineNetAmount(item))}`
       ),
       '',
       `Subtotal: ${formatInvoiceMoney(invoice.subtotal)}`,
@@ -1109,12 +1140,16 @@ class InvoiceService {
       customerId: invoice.customerId,
       issueDate: today,
       dueDate,
-      items: invoice.items.map(({ description, quantity, unitPrice }) => ({
+      items: invoice.items.map(({ description, quantity, unitPrice, discount, vatRate }) => ({
         description,
         quantity,
         unitPrice,
-        amount: multiplyMoney(quantity, unitPrice),
+        ...(discount !== undefined && { discount }),
+        ...(vatRate !== undefined && { vatRate }),
+        amount: lineNetAmount({ quantity, unitPrice, discount }),
       })),
+      projectName: invoice.projectName,
+      poNumber: invoice.poNumber,
       taxRate: invoice.taxRate,
       notes: invoice.notes,
       terms: invoice.terms,

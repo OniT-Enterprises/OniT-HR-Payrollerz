@@ -11,6 +11,7 @@ import type {
   PaymentAccount,
   PaymentMethod,
 } from '@/types/money';
+import { multiplyMoney, percentOf, subtractMoney, sumMoney } from '@/lib/currency';
 
 // ============================================
 // TEMPLATES
@@ -49,7 +50,7 @@ export const ACCENT_COLORS: { value: string; name: string }[] = [
   { value: '#0f766e', name: 'Teal' },
   { value: '#b45309', name: 'Amber' },
   { value: '#be123c', name: 'Crimson' },
-  { value: '#1e3a5f', name: 'Navy' },
+  { value: '#2648B6', name: 'Navy' },
 ];
 
 export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS[0].value;
@@ -178,6 +179,43 @@ export function resolveInvoicePaymentAccount(
     : undefined;
 
   return preferred || accounts[0];
+}
+
+// ============================================
+// LINE MATH
+// ============================================
+
+export interface InvoiceLineInput {
+  quantity: number;
+  unitPrice: number;
+  discount?: number | null;        // percent 0-100
+}
+
+/** Net amount for one line: qty × price, less the line discount */
+export function lineNetAmount(item: InvoiceLineInput): number {
+  const gross = multiplyMoney(Number(item.quantity) || 0, Number(item.unitPrice) || 0);
+  const rate = Number(item.discount);
+  if (isNaN(rate) || rate <= 0) return gross;
+  return subtractMoney(gross, percentOf(gross, rate));
+}
+
+/** Discount amount included in one line */
+export function lineDiscountAmount(item: InvoiceLineInput): number {
+  const gross = multiplyMoney(Number(item.quantity) || 0, Number(item.unitPrice) || 0);
+  const rate = Number(item.discount);
+  if (isNaN(rate) || rate <= 0) return 0;
+  return percentOf(gross, rate);
+}
+
+/** Subtotal (after line discounts) + informational discount total */
+export function computeLineTotals(items: InvoiceLineInput[]): {
+  subtotal: number;
+  discountTotal: number;
+} {
+  return {
+    subtotal: sumMoney(items.map(lineNetAmount)),
+    discountTotal: sumMoney(items.map(lineDiscountAmount)),
+  };
 }
 
 // ============================================

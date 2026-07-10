@@ -5027,7 +5027,16 @@ const messages = {
       "termsNet60": "60 dias",
       "termsCustom": "Data personalizada",
       "dueDateAuto": "Definida automaticamente pelas condições de pagamento.",
-      "received": "Recebido"
+      "received": "Recebido",
+      "discountShort": "Desc %",
+      "vatShort": "IVA %",
+      "discountTitle": "Desconto %",
+      "vatTitle": "IVA %",
+      "projectName": "Projeto / Serviço",
+      "projectPlaceholder": "ex., Redesenho do website",
+      "poNumber": "Referência / PO",
+      "poPlaceholder": "Número de PO do cliente",
+      "includesDiscount": "Inclui desconto de"
     },
     "payments": {
       "title": "Pagamentos",
@@ -5128,7 +5137,12 @@ const messages = {
       "swiftCode": "Código SWIFT",
       "accountRequired": "Banco e número de conta são obrigatórios",
       "defaultMethods": "Métodos de pagamento aceites por defeito",
-      "defaultMethodsHint": "Pré-selecionados em novas faturas; pode alterar por fatura."
+      "defaultMethodsHint": "Pré-selecionados em novas faturas; pode alterar por fatura.",
+      "footerMessage": "Mensagem de Rodapé",
+      "footerPlaceholder": "Obrigado pela sua preferência!",
+      "footerHelp": "Linha final no fundo das faturas, PDFs e emails — ex., \"Obrigado por escolher a Onit Enterprises Lda.\"",
+      "bin": "BIN",
+      "binPlaceholder": "Número de identificação bancária"
     },
     "recurring": {
       "title": "Faturas Recorrentes",
