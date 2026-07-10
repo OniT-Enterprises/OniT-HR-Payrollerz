@@ -5115,7 +5115,7 @@ const messages = {
       "uploadLogo": "Upload Logo",
       "changeLogo": "Change Logo",
       "logoHint": "PNG or JPG recommended, max 5MB. Shown on invoices and PDFs.",
-      "logoUploaded": "Logo uploaded — remember to save",
+      "logoUploaded": "Logo uploaded",
       "logoUploadError": "Failed to upload logo",
       "invoiceTemplate": "Invoice Template",
       "invoiceTemplateDesc": "How your invoices look on screen, in PDFs, and in emails",

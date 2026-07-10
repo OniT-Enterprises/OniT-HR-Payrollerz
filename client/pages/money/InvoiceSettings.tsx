@@ -170,10 +170,14 @@ export default function InvoiceSettingsPage() {
     try {
       setUploadingLogo(true);
       const url = await fileUploadService.uploadCompanyLogo(file, tenantId);
-      updateField('logoUrl', url);
+      // Persist right away — a logo left only in form state until "Save"
+      // silently vanishes when the user navigates off to try it out.
+      setSettings((prev) => ({ ...prev, logoUrl: url }));
+      await invoiceService.updateSettings(tenantId, { logoUrl: url });
+      queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
       toast({
         title: t('common.success') || 'Success',
-        description: t('money.settings.logoUploaded') || 'Logo uploaded — remember to save',
+        description: t('money.settings.logoUploaded') || 'Logo uploaded',
       });
     } catch (_error) {
       toast({
@@ -184,6 +188,20 @@ export default function InvoiceSettingsPage() {
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    setSettings((prev) => ({ ...prev, logoUrl: '' }));
+    try {
+      await invoiceService.updateSettings(tenantId, { logoUrl: '' });
+      queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
+    } catch (_error) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.settings.saveError') || 'Failed to save settings',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -342,7 +360,7 @@ export default function InvoiceSettingsPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateField('logoUrl', '')}
+                        onClick={handleLogoRemove}
                       >
                         <Trash2 className="h-4 w-4 mr-2 text-muted-foreground" />
                         {t('common.remove') || 'Remove'}

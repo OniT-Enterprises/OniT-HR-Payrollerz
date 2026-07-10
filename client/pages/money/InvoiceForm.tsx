@@ -518,6 +518,14 @@ export default function InvoiceForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="hidden sm:flex gap-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <div className="flex-1">{t('money.invoices.description') || 'Description'}</div>
+                  <div className="w-20">{t('money.invoices.qty') || 'Qty'}</div>
+                  <div className="w-28">{t('money.invoices.price') || 'Unit price'}</div>
+                  <div className="w-20">{t('money.invoices.taxRate') || 'Tax %'}</div>
+                  <div className="w-28 text-right">{t('money.invoices.amount') || 'Amount'}</div>
+                  <div className="w-10 shrink-0" />
+                </div>
                 <div className="space-y-3">
                   {fields.map((field, index) => {
                     const itemValues = formData.items?.[index];
