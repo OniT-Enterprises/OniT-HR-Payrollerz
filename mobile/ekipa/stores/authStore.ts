@@ -6,23 +6,13 @@ import { create } from 'zustand';
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithCredential,
-  GoogleAuthProvider,
   signOut as firebaseSignOut,
   User,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { signInWithGoogleNative, signOutGoogleNative } from '@xefe/mobile';
 import { auth, db } from '../lib/firebase';
 import { unregisterPushNotifications } from '../lib/notifications';
-
-// Web OAuth client of the onit-hr-payroll project (a public identifier, not a
-// secret — it ships in every client). Native Google Sign-In mints an idToken
-// for this audience, which Firebase Auth accepts via signInWithCredential.
-const GOOGLE_WEB_CLIENT_ID =
-  '415646082318-97umvlac4hkl7kk321gcnu0hv9lb16u9.apps.googleusercontent.com';
-
-GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
 
 interface UserProfile {
   uid: string;
@@ -81,16 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithGoogle: async () => {
     set({ error: null });
     try {
-      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-      const result = await GoogleSignin.signIn();
-      if (result.type !== 'success') {
+      set({ loading: true });
+      const result = await signInWithGoogleNative(auth);
+      if (result.type === 'cancelled') {
         // User dismissed the account picker — not an error.
+        set({ loading: false });
         return;
       }
-      const idToken = result.data.idToken;
-      if (!idToken) throw new Error('Google sign-in returned no idToken');
-      set({ loading: true });
-      await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
       // onAuthStateChanged will handle the rest
     } catch (err: unknown) {
       console.warn('Google sign-in failed:', err);
@@ -105,7 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         await unregisterPushNotifications(currentUserId);
       }
       // Also drop the Google session so the account picker shows next time.
-      await GoogleSignin.signOut().catch(() => {});
+      await signOutGoogleNative();
       await firebaseSignOut(auth);
       set({ user: null, profile: null });
     } catch {
