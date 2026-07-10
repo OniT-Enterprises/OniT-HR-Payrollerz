@@ -1,14 +1,16 @@
 /**
  * Ekipa — Services Tab
- * Stripe-style landing page layout with hero, grouped sections, mixed card sizes.
+ * Xefe · Ekipa design language: one olive accent, editorial section labels,
+ * hero intro, featured tax card, grouped sections, mixed card sizes.
  */
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import {
-  FileText, CalendarDays, Users, Star, CalendarClock, Shield, ClipboardCheck, ChevronRight,
+  CalendarDays, Users, Star, CalendarClock, Shield, ClipboardCheck, ChevronRight,
 } from 'lucide-react-native';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 
 const SCREEN_W = Dimensions.get('window').width;
 const PAIR_GAP = 12;
@@ -33,9 +35,11 @@ export default function ServicesScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.featRow}>
-          <View style={[styles.featIcon, { backgroundColor: colors.blueBg }]}>
-            <FileText size={22} color={colors.blue} strokeWidth={1.8} />
-          </View>
+          <Image
+            source={require('../../assets/xefe-card-tax.webp')}
+            style={styles.featImage}
+            resizeMode="contain"
+          />
           <View style={styles.featText}>
             <Text style={styles.featTitle}>{t('home.taxSummary')}</Text>
             <Text style={styles.featDesc}>{t('services.taxSub')}</Text>
@@ -46,17 +50,14 @@ export default function ServicesScreen() {
 
       {/* ══ Calendar — section ═════════════════════ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('services.calendarSection')}</Text>
-        <Text style={styles.sectionSub}>{t('services.calendarSectionSub')}</Text>
+        <SectionLabel>{t('services.calendarSection')}</SectionLabel>
         <View style={styles.pair}>
           <TouchableOpacity
             style={styles.pairCard}
             onPress={() => router.push('/screens/HolidayCalendar')}
             activeOpacity={0.7}
           >
-            <View style={[styles.pairIcon, { backgroundColor: colors.violetBg }]}>
-              <CalendarDays size={20} color={colors.violet} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={CalendarDays} />
             <Text style={styles.pairLabel}>{t('home.holidays')}</Text>
             <Text style={styles.pairDesc}>{t('services.holidaysSub')}</Text>
           </TouchableOpacity>
@@ -66,9 +67,7 @@ export default function ServicesScreen() {
             onPress={() => router.push('/screens/ShiftSchedule')}
             activeOpacity={0.7}
           >
-            <View style={[styles.pairIcon, { backgroundColor: colors.orangeBg }]}>
-              <CalendarClock size={20} color={colors.orange} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={CalendarClock} />
             <Text style={styles.pairLabel}>{t('home.shifts')}</Text>
             <Text style={styles.pairDesc}>{t('services.shiftsSub')}</Text>
           </TouchableOpacity>
@@ -77,17 +76,14 @@ export default function ServicesScreen() {
 
       {/* ══ People — section ══════════════════════ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('services.peopleSection')}</Text>
-        <Text style={styles.sectionSub}>{t('services.peopleSectionSub')}</Text>
+        <SectionLabel>{t('services.peopleSection')}</SectionLabel>
         <View style={styles.pair}>
           <TouchableOpacity
             style={styles.pairCard}
             onPress={() => router.push('/screens/Directory')}
             activeOpacity={0.7}
           >
-            <View style={[styles.pairIcon, { backgroundColor: colors.blueBg }]}>
-              <Users size={20} color={colors.blue} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={Users} />
             <Text style={styles.pairLabel}>{t('home.directory')}</Text>
             <Text style={styles.pairDesc}>{t('services.directorySub')}</Text>
           </TouchableOpacity>
@@ -97,9 +93,7 @@ export default function ServicesScreen() {
             onPress={() => router.push('/screens/Recognition')}
             activeOpacity={0.7}
           >
-            <View style={[styles.pairIcon, { backgroundColor: colors.amberBg }]}>
-              <Star size={20} color={colors.amber} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={Star} />
             <Text style={styles.pairLabel}>{t('home.recognition')}</Text>
             <Text style={styles.pairDesc}>{t('services.recognitionSub')}</Text>
           </TouchableOpacity>
@@ -108,13 +102,10 @@ export default function ServicesScreen() {
 
       {/* ══ Tools — grouped rows in a card ════════ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('services.toolsSection')}</Text>
-        <Text style={styles.sectionSub}>{t('services.toolsSectionSub')}</Text>
+        <SectionLabel>{t('services.toolsSection')}</SectionLabel>
         <View style={styles.rowList}>
           <TouchableOpacity style={styles.row} onPress={() => router.push('/screens/WageAlerts')} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: colors.amberBg }]}>
-              <Shield size={18} color={colors.amber} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={Shield} />
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>{t('home.wageCheck')}</Text>
               <Text style={styles.rowDesc}>{t('services.wageSub')}</Text>
@@ -125,9 +116,7 @@ export default function ServicesScreen() {
           <View style={styles.rowDivider} />
 
           <TouchableOpacity style={styles.row} onPress={() => router.push('/screens/ManagerApprovals')} activeOpacity={0.7}>
-            <View style={[styles.rowIcon, { backgroundColor: colors.primaryBg }]}>
-              <ClipboardCheck size={18} color={colors.primary} strokeWidth={1.8} />
-            </View>
+            <ChipIcon icon={ClipboardCheck} />
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>{t('home.approvals')}</Text>
               <Text style={styles.rowDesc}>{t('services.approvalsSub')}</Text>
@@ -143,7 +132,7 @@ export default function ServicesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingBottom: 48 },
+  content: { paddingBottom: 120 },
 
   /* ── Hero ─────────────────────────────────── */
   hero: {
@@ -169,7 +158,7 @@ const styles = StyleSheet.create({
   featCard: {
     marginHorizontal: 20,
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 28,
     backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: 18,
@@ -179,16 +168,13 @@ const styles = StyleSheet.create({
   featRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  featIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
+    gap: 14,
   },
   featText: { flex: 1 },
+  featImage: {
+    width: 52,
+    height: 62,
+  },
   featTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -206,21 +192,7 @@ const styles = StyleSheet.create({
   /* ── Section ─────────────────────────────── */
   section: {
     paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  sectionSub: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    marginBottom: 14,
-    lineHeight: 18,
+    marginBottom: 28,
   },
 
   /* ── Pair cards (2-up) ───────────────────── */
@@ -231,23 +203,16 @@ const styles = StyleSheet.create({
   pairCard: {
     width: PAIR_W,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 18,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  pairIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
   },
   pairLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+    marginTop: 12,
     marginBottom: 3,
   },
   pairDesc: {
@@ -260,7 +225,7 @@ const styles = StyleSheet.create({
   /* ── Row list (grouped in a card) ────────── */
   rowList: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -268,20 +233,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     padding: 14,
   },
   rowDivider: {
     height: 1,
     backgroundColor: colors.border,
     marginHorizontal: 14,
-  },
-  rowIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
   },
   rowText: { flex: 1 },
   rowLabel: {

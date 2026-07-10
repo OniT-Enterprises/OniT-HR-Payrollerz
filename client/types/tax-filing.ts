@@ -98,6 +98,14 @@ export interface MonthlyINSSEmployeeRecord {
   employeeContribution: number;
   employerContribution: number;
   totalContribution: number;
+
+  // DR (Declaração de Remunerações) export enrichment — optional so
+  // previously stored filing snapshots keep validating.
+  grossWages?: number;
+  annualSubsidy?: number;          // subsídio anual (13th month) portion of gross
+  incomeTax?: number;              // WIT withheld in the period
+  netPay?: number;
+  isResident?: boolean;
 }
 
 export interface MonthlyINSSReturn {

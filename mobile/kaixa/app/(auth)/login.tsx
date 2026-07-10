@@ -23,7 +23,7 @@ import { colors } from '../../lib/colors';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, resetPassword, loading, error, clearError } = useAuthStore();
+  const { signIn, signInWithGoogle, resetPassword, loading, error, clearError } = useAuthStore();
 
   const handleLogin = () => {
     if (!email.trim() || !password.trim()) {
@@ -58,6 +58,11 @@ export default function LoginScreen() {
       <View style={styles.inner}>
         {/* Logo */}
         <View style={styles.brandContainer}>
+          <Image
+            source={require('../../assets/xefe-mark.webp')}
+            style={styles.xefeMark}
+            resizeMode="contain"
+          />
           <Image
             source={require('../../assets/kaixa-logo-light-on-dark.png')}
             style={styles.logo}
@@ -134,10 +139,30 @@ export default function LoginScreen() {
               )}
             </LinearGradient>
           </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ka</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google sign-in */}
+          <TouchableOpacity
+            onPress={signInWithGoogle}
+            disabled={loading}
+            activeOpacity={0.85}
+            style={[styles.googleButton, loading && styles.buttonDisabled]}
+          >
+            <View style={styles.buttonInner}>
+              <Text style={styles.googleG}>G</Text>
+              <Text style={styles.googleButtonText}>Kontinua ho Google</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>powered by Meza</Text>
+        <Text style={styles.footer}>powered by Xefe</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -158,6 +183,12 @@ const styles = StyleSheet.create({
   brandContainer: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  xefeMark: {
+    width: 34,
+    height: 38,
+    marginBottom: 14,
+    opacity: 0.9,
   },
   logo: {
     width: 200,
@@ -224,6 +255,43 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  googleButton: {
+    marginTop: 18,
+    borderRadius: 14,
+    padding: 15,
+    alignItems: 'center',
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  googleG: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  googleButtonText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '700',
   },
   buttonInner: {
     flexDirection: 'row',

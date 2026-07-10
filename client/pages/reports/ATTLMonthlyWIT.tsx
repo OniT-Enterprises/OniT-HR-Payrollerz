@@ -81,6 +81,8 @@ import type {
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
+import { ATTL_TAX_ACCOUNTS } from "@/lib/tlBanking";
+import { AssistedEtaxFiling } from "@/components/reports/AssistedEtaxFiling";
 import { useAuth } from "@/contexts/AuthContext";
 import { downloadBlob } from "@/lib/downloadBlob";
 
@@ -671,6 +673,39 @@ export default function ATTLMonthlyWIT() {
           </Card>
         </div>
 
+        {/* How to pay — ATTL's published payment channel for wage income tax */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {t("reports.attlMonthlyWit.payment.title") || "How to pay (ATTL)"}
+            </CardTitle>
+            <CardDescription>
+              {t("reports.attlMonthlyWit.payment.description") ||
+                "Deliver 3 copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked “electronic payment”. Due by the 15th of the following month."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{t("reports.attlMonthlyWit.payment.beneficiary") || "Beneficiary"}</span>
+                <span className="font-medium text-right">{ATTL_TAX_ACCOUNTS.beneficiary}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{t("reports.attlMonthlyWit.payment.bank") || "Bank"}</span>
+                <span className="font-medium">{ATTL_TAX_ACCOUNTS.bank}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{t("reports.attlMonthlyWit.payment.account") || "Wage income tax account (IBAN)"}</span>
+                <span className="font-mono font-medium">{ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">SWIFT</span>
+                <span className="font-mono font-medium">{ATTL_TAX_ACCOUNTS.swift}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Return Preview */}
         {selectedReturn && (
           <Card>
@@ -711,6 +746,9 @@ export default function ATTLMonthlyWIT() {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Assisted e-Tax filing — the two numbers the portal wants */}
+              <AssistedEtaxFiling ret={selectedReturn} />
+
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
                 <div>

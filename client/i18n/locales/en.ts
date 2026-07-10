@@ -4373,7 +4373,7 @@ const messages = {
       "equity": "Equity",
       "totalEquity": "Total Equity",
       "totalLiabilitiesAndEquity": "Total Liabilities & Equity",
-      "currentYearEarnings": "Current Year Earnings",
+      "currentYearEarnings": "Accumulated Earnings",
       "balanced": "Balance Sheet is Balanced",
       "balancedDesc": "Assets = Liabilities + Equity",
       "notBalanced": "Balance Sheet is NOT Balanced",

@@ -23,8 +23,11 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
+import { accountService, generalLedgerService } from '@/services/accountingService';
+import { balanceSnapshotService } from '@/services/balanceSnapshotService';
 
-import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
+import { addDaysISO, toDateStringTL, formatDateTL } from '@/lib/dateUtils';
+import { addMoney, subtractMoney } from '@/lib/currency';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   ArrowDownLeft,
@@ -38,10 +41,12 @@ import {
 interface CashflowData {
   // Inflows
   customerPayments: number;
+  otherInflows: number;
   totalInflows: number;
   // Outflows
   vendorPayments: number;
   expenses: number;
+  otherOutflows: number;
   totalOutflows: number;
   // Net
   netCashflow: number;
@@ -92,9 +97,11 @@ export default function Cashflow() {
 
   const { data = {
     customerPayments: 0,
+    otherInflows: 0,
     totalInflows: 0,
     vendorPayments: 0,
     expenses: 0,
+    otherOutflows: 0,
     totalOutflows: 0,
     netCashflow: 0,
     openingBalance: 0,
@@ -102,29 +109,101 @@ export default function Cashflow() {
   }, isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'cashflow', startStr, endStr],
     queryFn: async (): Promise<CashflowData> => {
-      const [customerPayments, vendorPayments, expenseTotal] = await Promise.all([
+      const openingCutoff = addDaysISO(startStr, -1);
+      const accounts = await accountService.getAllAccounts(tenantId);
+      const cashAccounts = accounts.filter((account) => (
+        account.isActive && account.type === 'asset' && ['cash', 'bank'].includes(account.subType)
+      ));
+
+      if (cashAccounts.length > 0) {
+        const [entries, openingBalances, customerPayments, vendorPayments, expenseTotal] = await Promise.all([
+          balanceSnapshotService.queryGLRange(tenantId, startStr, endStr),
+          Promise.all(cashAccounts.map((account) => generalLedgerService.getAccountBalance(
+            tenantId,
+            account.id!,
+            account.code,
+            openingCutoff,
+          ))),
+          invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+          billService.getPaidBillAmountByDateRange(tenantId, startStr, endStr),
+          expenseService.getTotalExpenses(tenantId, startStr, endStr),
+        ]);
+        const cashIds = new Set(cashAccounts.map((account) => account.id));
+        const cashCodes = new Set(cashAccounts.map((account) => account.code));
+        const netByJournal = new Map<string, number>();
+        for (const entry of entries) {
+          if (!cashIds.has(entry.accountId) && !cashCodes.has(entry.accountCode)) continue;
+          netByJournal.set(
+            entry.journalEntryId,
+            addMoney(
+              netByJournal.get(entry.journalEntryId) || 0,
+              subtractMoney(entry.debit, entry.credit),
+            ),
+          );
+        }
+
+        let totalInflows = 0;
+        let totalOutflows = 0;
+        for (const netCash of netByJournal.values()) {
+          if (netCash > 0) totalInflows = addMoney(totalInflows, netCash);
+          if (netCash < 0) totalOutflows = addMoney(totalOutflows, -netCash);
+        }
+        const openingBalance = addMoney(...openingBalances);
+        const netCashflow = subtractMoney(totalInflows, totalOutflows);
+
+        return {
+          customerPayments,
+          otherInflows: subtractMoney(totalInflows, customerPayments),
+          totalInflows,
+          vendorPayments,
+          expenses: expenseTotal,
+          otherOutflows: subtractMoney(totalOutflows, vendorPayments, expenseTotal),
+          totalOutflows,
+          netCashflow,
+          openingBalance,
+          closingBalance: addMoney(openingBalance, netCashflow),
+        };
+      }
+
+      const [
+        customerPayments,
+        vendorPayments,
+        expenseTotal,
+        priorCustomerPayments,
+        priorVendorPayments,
+        priorExpenses,
+      ] = await Promise.all([
         invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
         billService.getPaidBillAmountByDateRange(tenantId, startStr, endStr),
         expenseService.getTotalExpenses(tenantId, startStr, endStr),
+        invoiceService.getPaidInvoiceTotalAsOf(tenantId, openingCutoff),
+        billService.getPaidBillAmountAsOf(tenantId, openingCutoff),
+        expenseService.getTotalExpensesAsOf(tenantId, openingCutoff),
       ]);
 
       const totalInflows = customerPayments;
-      const totalOutflows = vendorPayments + expenseTotal;
-      const netCashflow = totalInflows - totalOutflows;
-      const openingBalance = 0;
+      const totalOutflows = addMoney(vendorPayments, expenseTotal);
+      const netCashflow = subtractMoney(totalInflows, totalOutflows);
+      const openingBalance = subtractMoney(
+        priorCustomerPayments,
+        priorVendorPayments,
+        priorExpenses,
+      );
 
       return {
         customerPayments,
+        otherInflows: 0,
         totalInflows,
         vendorPayments,
         expenses: expenseTotal,
+        otherOutflows: 0,
         totalOutflows,
         netCashflow,
         openingBalance,
-        closingBalance: openingBalance + netCashflow,
+        closingBalance: addMoney(openingBalance, netCashflow),
       };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
@@ -267,6 +346,12 @@ export default function Cashflow() {
                   </span>
                   <span className="font-medium">{formatCurrency(data.customerPayments)}</span>
                 </div>
+                {data.otherInflows !== 0 && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">Other Inflows / Adjustments</span>
+                    <span className="font-medium">{formatCurrency(data.otherInflows)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-between py-2 font-semibold border-t">
                 <span>{t('money.cashflow.totalInflows') || 'Total Inflows'}</span>
@@ -295,6 +380,12 @@ export default function Cashflow() {
                   </span>
                   <span className="font-medium">{formatCurrency(data.expenses)}</span>
                 </div>
+                {data.otherOutflows !== 0 && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">Other Outflows / Adjustments</span>
+                    <span className="font-medium">{formatCurrency(data.otherOutflows)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-between py-2 font-semibold border-t">
                 <span>{t('money.cashflow.totalOutflows') || 'Total Outflows'}</span>
@@ -304,12 +395,22 @@ export default function Cashflow() {
 
             <Separator />
 
-            {/* Net Cash Flow */}
-            <div className="flex justify-between py-3 text-lg font-bold bg-muted rounded-lg px-4">
-              <span>{t('money.cashflow.netCashflow') || 'Net Cash Flow'}</span>
-              <span className={data.netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}>
-                {formatCurrency(data.netCashflow)}
-              </span>
+            {/* Cash reconciliation */}
+            <div className="space-y-2 bg-muted rounded-lg px-4 py-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Opening Cash Balance</span>
+                <span>{formatCurrency(data.openingBalance)}</span>
+              </div>
+              <div className="flex justify-between font-semibold">
+                <span>{t('money.cashflow.netCashflow') || 'Net Cash Flow'}</span>
+                <span className={data.netCashflow >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  {formatCurrency(data.netCashflow)}
+                </span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
+                <span>Closing Cash Balance</span>
+                <span>{formatCurrency(data.closingBalance)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -1,59 +1,16 @@
 /**
- * Firebase configuration for Ekipa mobile app
- * Connects to the same onit-hr-payroll Firebase project as Meza web and Kaixa
+ * Firebase configuration for Ekipa — bootstrapped by the shared
+ * @xefe/mobile init (same onit-hr-payroll project as Meza web and Kaixa;
+ * AsyncStorage auth persistence, memory-only Firestore cache).
  */
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  initializeAuth,
-  // @ts-expect-error - getReactNativePersistence is exported by the React Native bundle
-  getReactNativePersistence,
-  getAuth,
-  type Auth,
-} from 'firebase/auth';
-import {
-  getFirestore,
-  initializeFirestore,
-  memoryLocalCache,
-  type Firestore,
-} from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { initXefeFirebase } from '@xefe/mobile';
 
-const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
-  authDomain: 'onit-hr-payroll.firebaseapp.com',
-  projectId: 'onit-hr-payroll',
-  storageBucket: 'onit-hr-payroll.firebasestorage.app',
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? '',
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
-};
+const { app, auth, db } = initXefeFirebase();
 
-// Prevent re-initialization in dev (hot reload)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-
-// Auth with AsyncStorage persistence
-let auth: Auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
-  });
-} catch {
-  auth = getAuth(app);
-}
-export { auth };
-
-// Firestore with memory cache
-let db: Firestore;
-try {
-  db = initializeFirestore(app, {
-    localCache: memoryLocalCache(),
-  });
-} catch {
-  db = getFirestore(app);
-}
-export { db };
+export { auth, db };
 
 // Storage for attendance photos
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
 export const storage: FirebaseStorage = getStorage(app);
 
 export default app;

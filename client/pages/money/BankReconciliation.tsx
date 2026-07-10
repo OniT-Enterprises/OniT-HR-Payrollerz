@@ -515,7 +515,7 @@ export default function BankReconciliation() {
                         }`}
                       >
                         <TableCell>
-                          {tx.status !== 'reconciled' && (
+                          {tx.status === 'matched' && (
                             <Checkbox
                               checked={selectedIds.has(tx.id)}
                               onCheckedChange={() => toggleSelect(tx.id)}

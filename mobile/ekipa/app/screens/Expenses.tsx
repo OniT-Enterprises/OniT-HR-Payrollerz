@@ -1,6 +1,6 @@
 /**
  * Ekipa — Expenses List Screen
- * Premium dark theme with emerald (#10B981) module accent.
+ * Xefe · Ekipa design language: olive hero, one accent.
  * Expense list with filter pills and FAB to add new expense.
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -41,10 +41,8 @@ import { formatCurrency } from '../../lib/currency';
 import { colors } from '../../lib/colors';
 import { StatusBadge } from '../../components/StatusBadge';
 import { EmptyState } from '../../components/EmptyState';
+import { ChipIcon } from '../../components/ui';
 import type { Expense, ExpenseCategory, ExpenseStatus } from '../../types/expense';
-
-const ACCENT = colors.emerald;
-const ACCENT_BG = colors.emeraldBg;
 
 type FilterType = 'all' | ExpenseStatus;
 
@@ -145,9 +143,7 @@ export default function Expenses() {
 
     return (
       <TouchableOpacity style={styles.expenseRow} activeOpacity={0.8}>
-        <View style={styles.expenseIcon}>
-          <Icon size={18} color={ACCENT} strokeWidth={2} />
-        </View>
+        <ChipIcon icon={Icon} />
         <View style={styles.expenseInfo}>
           <Text style={styles.expenseDesc} numberOfLines={1}>
             {item.description}
@@ -168,7 +164,7 @@ export default function Expenses() {
 
   return (
     <View style={styles.container}>
-      {/* Emerald hero header */}
+      {/* Olive hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -215,7 +211,7 @@ export default function Expenses() {
       {/* Expense list */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={ACCENT} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -251,9 +247,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Emerald hero header --
+  // -- Olive hero header --
   heroHeader: {
-    backgroundColor: ACCENT,
+    backgroundColor: colors.primary,
     paddingBottom: 32,
     overflow: 'hidden',
   },
@@ -348,8 +344,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   filterPillActive: {
-    backgroundColor: ACCENT,
-    borderColor: ACCENT,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   filterPillText: {
     fontSize: 13,
@@ -362,7 +358,8 @@ const styles = StyleSheet.create({
 
   // -- Expense list --
   listContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 100,
     gap: 10,
   },
@@ -378,18 +375,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  expenseIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: ACCENT_BG,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   expenseInfo: {
     flex: 1,
@@ -422,12 +411,12 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: ACCENT,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...StyleSheet.flatten([
       {
-        shadowColor: ACCENT,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.4,
         shadowRadius: 12,

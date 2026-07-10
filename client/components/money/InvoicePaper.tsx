@@ -28,6 +28,7 @@ import {
   formatInvoiceDate,
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
+import { subtractMoney } from '@/lib/currency';
 
 export interface InvoicePaperItem {
   description: string;
@@ -190,7 +191,7 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? invoice.total - paid;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
 
   return (
     <div className="ml-auto w-64 space-y-1.5 text-sm" style={{ color: PAPER_TEXT }}>

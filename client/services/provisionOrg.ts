@@ -180,5 +180,15 @@ async function provisionOrgWrites({
     { merge: true },
   );
 
+  // Seed the standard TL chart of accounts so invoices, bills, and expenses
+  // post journals from day one. Non-fatal: the owner can still initialize it
+  // from the Chart of Accounts page if this write is rejected.
+  try {
+    const { accountService } = await import("./accountingService");
+    await accountService.initializeChartOfAccounts(tenantId);
+  } catch (err) {
+    console.warn("Chart of accounts seeding failed during onboarding:", err);
+  }
+
   return tenantId;
 }

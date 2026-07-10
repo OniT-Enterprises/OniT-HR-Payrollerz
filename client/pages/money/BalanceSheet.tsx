@@ -22,6 +22,9 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
+import { expenseService } from '@/services/expenseService';
+import { accountService, trialBalanceService } from '@/services/accountingService';
+import { addMoney, subtractMoney, sumMoney } from '@/lib/currency';
 
 import { formatDateTL, toDateStringTL } from '@/lib/dateUtils';
 import {
@@ -36,12 +39,14 @@ interface BalanceSheetData {
   // Assets
   cashAndBank: number;
   accountsReceivable: number;
+  otherAssets: number;
   totalAssets: number;
   // Liabilities
   accountsPayable: number;
+  otherLiabilities: number;
   totalLiabilities: number;
   // Equity
-  retainedEarnings: number;
+  equityBalance: number;
   totalEquity: number;
 }
 
@@ -72,43 +77,85 @@ export default function BalanceSheet() {
   const { data = {
     cashAndBank: 0,
     accountsReceivable: 0,
+    otherAssets: 0,
     totalAssets: 0,
     accountsPayable: 0,
+    otherLiabilities: 0,
     totalLiabilities: 0,
-    retainedEarnings: 0,
+    equityBalance: 0,
     totalEquity: 0,
   }, isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'balanceSheet', asOfStr],
     queryFn: async (): Promise<BalanceSheetData> => {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        const report = await trialBalanceService.generateBalanceSheet(
+          tenantId,
+          asOfStr,
+          Number(asOfStr.slice(0, 4)),
+        );
+        const accountsById = new Map(accounts.map((account) => [account.id, account]));
+        const accountsByCode = new Map(accounts.map((account) => [account.code, account]));
+        const rowsForSubTypes = (
+          rows: typeof report.assetItems,
+          subTypes: string[],
+        ) => sumMoney(rows
+          .filter((row) => {
+            const account = accountsById.get(row.accountId) || accountsByCode.get(row.accountCode);
+            return account ? subTypes.includes(account.subType) : false;
+          })
+          .map((row) => row.amount));
+
+        const cashAndBank = rowsForSubTypes(report.assetItems, ['cash', 'bank']);
+        const accountsReceivable = rowsForSubTypes(report.assetItems, ['accounts_receivable']);
+        const accountsPayable = rowsForSubTypes(report.liabilityItems, ['accounts_payable']);
+
+        return {
+          cashAndBank,
+          accountsReceivable,
+          otherAssets: subtractMoney(report.totalAssets, cashAndBank, accountsReceivable),
+          totalAssets: report.totalAssets,
+          accountsPayable,
+          otherLiabilities: subtractMoney(report.totalLiabilities, accountsPayable),
+          totalLiabilities: report.totalLiabilities,
+          equityBalance: report.totalEquity,
+          totalEquity: report.totalEquity,
+        };
+      }
+
       const [
         accountsReceivable,
         accountsPayable,
         cashReceived,
         cashPaid,
+        directExpensesPaid,
       ] = await Promise.all([
         invoiceService.getOutstandingReceivablesTotalAsOf(tenantId, asOfStr),
         billService.getOutstandingPayablesTotalAsOf(tenantId, asOfStr),
         invoiceService.getPaidInvoiceTotalAsOf(tenantId, asOfStr),
         billService.getPaidBillAmountAsOf(tenantId, asOfStr),
+        expenseService.getTotalExpensesAsOf(tenantId, asOfStr),
       ]);
 
-      const cashAndBank = cashReceived - cashPaid;
-      const totalAssets = cashAndBank + accountsReceivable;
+      const cashAndBank = subtractMoney(cashReceived, cashPaid, directExpensesPaid);
+      const totalAssets = addMoney(cashAndBank, accountsReceivable);
       const totalLiabilities = accountsPayable;
-      const retainedEarnings = totalAssets - totalLiabilities;
-      const totalEquity = retainedEarnings;
+      const equityBalance = subtractMoney(totalAssets, totalLiabilities);
+      const totalEquity = equityBalance;
 
       return {
         cashAndBank,
         accountsReceivable,
+        otherAssets: 0,
         totalAssets,
         accountsPayable,
+        otherLiabilities: 0,
         totalLiabilities,
-        retainedEarnings,
+        equityBalance,
         totalEquity,
       };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
@@ -198,6 +245,12 @@ export default function BalanceSheet() {
                   </span>
                   <span className="font-medium">{formatCurrency(data.accountsReceivable)}</span>
                 </div>
+                {data.otherAssets !== 0 && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">Other Assets</span>
+                    <span className="font-medium">{formatCurrency(data.otherAssets)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-between py-2 font-semibold border-t">
                 <span>{t('money.balanceSheet.totalAssets') || 'Total Assets'}</span>
@@ -220,6 +273,12 @@ export default function BalanceSheet() {
                   </span>
                   <span className="font-medium">{formatCurrency(data.accountsPayable)}</span>
                 </div>
+                {data.otherLiabilities !== 0 && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">Other Liabilities</span>
+                    <span className="font-medium">{formatCurrency(data.otherLiabilities)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-between py-2 font-semibold border-t">
                 <span>{t('money.balanceSheet.totalLiabilities') || 'Total Liabilities'}</span>
@@ -238,9 +297,9 @@ export default function BalanceSheet() {
               <div className="ml-6 space-y-1">
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">
-                    {t('money.balanceSheet.retainedEarnings') || 'Retained Earnings'}
+                    Equity Balance
                   </span>
-                  <span className="font-medium">{formatCurrency(data.retainedEarnings)}</span>
+                  <span className="font-medium">{formatCurrency(data.equityBalance)}</span>
                 </div>
               </div>
               <div className="flex justify-between py-2 font-semibold border-t">
@@ -254,11 +313,11 @@ export default function BalanceSheet() {
             {/* Total Liabilities & Equity */}
             <div className="flex justify-between py-3 text-lg font-bold bg-muted rounded-lg px-4">
               <span>{t('money.balanceSheet.totalLiabilitiesEquity') || 'Total Liabilities & Equity'}</span>
-              <span>{formatCurrency(data.totalLiabilities + data.totalEquity)}</span>
+              <span>{formatCurrency(addMoney(data.totalLiabilities, data.totalEquity))}</span>
             </div>
 
             {/* Balance Check */}
-            {Math.abs(data.totalAssets - (data.totalLiabilities + data.totalEquity)) > 0.01 && (
+            {Math.abs(subtractMoney(data.totalAssets, data.totalLiabilities, data.totalEquity)) >= 0.01 && (
               <p className="text-sm text-amber-600 text-center">
                 {t('money.balanceSheet.outOfBalance') || 'Note: Balance sheet is out of balance'}
               </p>

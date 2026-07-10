@@ -51,6 +51,7 @@ import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { formatCurrency } from '../../lib/currency';
 import { EmptyState } from '../../components/EmptyState';
+import { ChipIcon } from '../../components/ui';
 
 type ApprovalTab = 'leave' | 'timesheets' | 'expenses';
 
@@ -424,7 +425,7 @@ export default function ManagerApprovals() {
           <>
             {loading ? (
               <View style={styles.loadingWrap}>
-                <ActivityIndicator size="large" color={colors.emerald} />
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             ) : pendingExpenses.length === 0 ? (
               <EmptyState
@@ -440,8 +441,8 @@ export default function ManagerApprovals() {
                     onPress={() => { setSelectedExpense(item); setComment(''); }}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.avatar, styles.expenseAvatar]}>
-                      <Receipt size={19} color={colors.emerald} strokeWidth={2} />
+                    <View style={styles.chipWrap}>
+                      <ChipIcon icon={Receipt} size={42} />
                     </View>
 
                     <View style={styles.cardContent}>
@@ -625,7 +626,7 @@ export default function ManagerApprovals() {
                     }}
                     activeOpacity={0.75}
                   >
-                    <Receipt size={16} color={colors.emerald} strokeWidth={2} />
+                    <Receipt size={16} color={colors.primary} strokeWidth={2} />
                     <Text style={styles.receiptButtonText}>{t('approvals.viewReceipt')}</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -790,7 +791,7 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     gap: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 14,
   },
   tabPill: {
@@ -830,7 +831,8 @@ const styles = StyleSheet.create({
 
   // ── Content ─────────────────────────────────────────
   scrollContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
     flexGrow: 1,
   },
@@ -847,7 +849,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -886,8 +888,8 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: 2,
   },
-  expenseAvatar: {
-    backgroundColor: colors.emeraldBg,
+  chipWrap: {
+    marginRight: 12,
   },
   expenseCardRight: {
     flexDirection: 'row',
@@ -954,7 +956,7 @@ const styles = StyleSheet.create({
   sheetExpenseAmount: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.emerald,
+    color: colors.text,
     letterSpacing: -0.7,
     marginTop: 4,
     marginBottom: 18,
@@ -989,14 +991,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
     paddingVertical: 11,
     borderRadius: 10,
-    backgroundColor: colors.emeraldBg,
+    backgroundColor: colors.primaryBg,
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
+    borderColor: 'rgba(106, 156, 41, 0.28)',
   },
   receiptButtonText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.emerald,
+    color: colors.primary,
   },
 
   // ── Comment input ───────────────────────────────────

@@ -226,9 +226,9 @@ const styles = StyleSheet.create({
   },
   permBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 15,
   },
   permBtnText: {
     fontSize: 15,

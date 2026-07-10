@@ -25,14 +25,22 @@ const NOTIFICATION_ROUTES = new Set([
   '/screens/EmploymentLetterRequest',
 ]);
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// expo-notifications' push native module was removed from Expo Go (SDK 53+),
+// so touching it there throws and red-screens the app. Only wire notifications
+// up in real builds (dev client / standalone); the app still runs in Expo Go
+// for UI work — push just no-ops. Full push works in a dev/production build.
+export const isExpoGo = Constants.executionEnvironment === "storeClient";
+
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 interface RegisterPushParams {
   userId: string;
@@ -55,6 +63,8 @@ export async function registerForPushNotifications({
   employeeId,
   language,
 }: RegisterPushParams): Promise<string | null> {
+  // Push isn't available in Expo Go (SDK 53+); skip cleanly so the app runs.
+  if (isExpoGo) return null;
   try {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(DEFAULT_CHANNEL_ID, {
@@ -63,7 +73,8 @@ export async function registerForPushNotifications({
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 150, 250],
         lightColor: '#6A9C29',
-        sound: 'default',
+        // no `sound`: a string here means a custom sound FILE; omitting it uses
+        // the system default (a 'default' string spams "sound not found").
       });
     }
 

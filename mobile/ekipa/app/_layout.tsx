@@ -14,7 +14,7 @@ import { useTenantStore } from '../stores/tenantStore';
 import { useEmployeeStore } from '../stores/employeeStore';
 import { useI18nStore, t } from '../lib/i18n';
 import { colors } from '../lib/colors';
-import { getNotificationRoute, registerForPushNotifications } from '../lib/notifications';
+import { getNotificationRoute, isExpoGo, registerForPushNotifications } from '../lib/notifications';
 
 export default function RootLayout() {
   const loading = useAuthStore((s) => s.loading);
@@ -86,6 +86,8 @@ export default function RootLayout() {
   // Deep-link notification taps into the matching employee workflow.
   useEffect(() => {
     if (!user || !employeeId) return;
+    // Notification-tap listeners hit the push native module, absent in Expo Go.
+    if (isExpoGo) return;
 
     const openResponse = (response: Notifications.NotificationResponse) => {
       const notificationId = response.notification.request.identifier;
@@ -131,7 +133,8 @@ export default function RootLayout() {
     );
   }
 
-  // Logged in, has tenant, but no employeeId
+  // Logged in, has tenant, but no employeeId (member doc isn't linked to an
+  // employee record, e.g. an owner/admin who isn't crew).
   if (user && tenantId && tenantError === 'noEmployee') {
     return (
       <View style={styles.splash}>
@@ -140,6 +143,23 @@ export default function RootLayout() {
         <Text style={styles.errorSub}>
           Your account is not linked to an employee record.
         </Text>
+        <TouchableOpacity style={styles.errorButton} onPress={signOut}>
+          <Text style={styles.errorButtonText}>{t('profile.signOut')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Catch-all: never render the Stack below without an employeeId — every screen
+  // in it has redirect={!user || !employeeId}, so it would render a blank white
+  // screen. Show a spinner (tenant/employee still resolving) with an escape
+  // hatch instead. Terminal no-access / no-employee states are handled above.
+  if (user && !employeeId) {
+    return (
+      <View style={styles.splash}>
+        <StatusBar style="light" />
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.errorSub}>Setting up your account…</Text>
         <TouchableOpacity style={styles.errorButton} onPress={signOut}>
           <Text style={styles.errorButtonText}>{t('profile.signOut')}</Text>
         </TouchableOpacity>

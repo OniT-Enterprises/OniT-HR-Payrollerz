@@ -29,7 +29,6 @@ import {
   ArrowUpRight,
   X,
   Check,
-  FileText,
   Share2,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
@@ -47,6 +46,8 @@ import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { generateTextReceipt, getWhatsAppShareURL } from '../../lib/receipt';
 import type { KaixaTransaction } from '../../types/transaction';
 import { InlineNotice } from '../../components/InlineNotice';
+import { EmptyCard } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type TransactionType = 'in' | 'out';
 
@@ -69,6 +70,7 @@ const PERIOD_OPTIONS: { key: DateRange; label: string; labelEn: string }[] = [
 ];
 
 export default function MoneyScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ type?: string }>();
   const [modalVisible, setModalVisible] = useState(false);
   const [txType, setTxType] = useState<TransactionType>('in');
@@ -359,13 +361,10 @@ export default function MoneyScreen() {
             <Text style={styles.emptySubtext}>Loading...</Text>
           </View>
         ) : transactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <FileText size={22} color={colors.textTertiary} strokeWidth={1.5} />
-            <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
-            <Text style={styles.emptySubtext}>
-              Tap the green or red button above to record money coming in or going out
-            </Text>
-          </View>
+          <EmptyCard
+            title="Seidauk iha transasaun"
+            subtitle="Tap the green or red button above to record money coming in or going out"
+          />
         ) : (
           transactions.map((tx) => (
             <TouchableOpacity
@@ -429,7 +428,7 @@ export default function MoneyScreen() {
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
+          style={[styles.modalContainer, { paddingTop: insets.top }]}
         >
           <View style={styles.modalHeader}>
             <TouchableOpacity
@@ -565,7 +564,7 @@ const styles = StyleSheet.create({
   },
   periodTabActive: {
     backgroundColor: colors.bgElevated,
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: colors.primary,
   },
   periodTabText: {
@@ -655,12 +654,12 @@ const styles = StyleSheet.create({
   },
   bigButtonWrap: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   bigButton: {
-    borderRadius: 10,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     alignItems: 'center',
     gap: 4,
   },
@@ -681,8 +680,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   listContent: {
-    paddingBottom: 20,
-    gap: 2,
+    paddingBottom: 120,
+    gap: 8,
   },
   listHint: {
     fontSize: 10,
@@ -692,7 +691,9 @@ const styles = StyleSheet.create({
   },
   txRow: {
     backgroundColor: colors.bgCard,
-    borderRadius: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 14,
     paddingLeft: 16,
     flexDirection: 'row',
@@ -749,11 +750,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
     gap: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
   },
   emptySubtext: {
     fontSize: 12,

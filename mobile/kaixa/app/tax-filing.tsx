@@ -35,13 +35,16 @@ import {
 } from 'lucide-react-native';
 import * as Sharing from 'expo-sharing';
 import { File, Paths } from 'expo-file-system';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../lib/colors';
+import { SectionLabel, EmptyCard } from '../components/ui';
 import { useTenantStore } from '../stores/tenantStore';
 import { useVATStore } from '../stores/vatStore';
 import { useBusinessProfileStore } from '../stores/businessProfileStore';
 import { generateVATReturn, type VATReturnData } from '../lib/vatReturn';
 import { generateSAFT } from '../lib/saftExport';
 import { generateAndShareVATReturnPDF, printVATReturn } from '../lib/vatReturnPdf';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ============================================
 // Types
@@ -61,6 +64,7 @@ const TETUM_MONTHS = [
 // ============================================
 
 export default function TaxFilingScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { isVATActive, effectiveRate, tenantSettings } = useVATStore();
   const bizProfile = useBusinessProfileStore((s) => s.profile);
@@ -332,7 +336,7 @@ export default function TaxFilingScreen() {
         <>
           {/* Output VAT Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>BOX 1 — OUTPUT VAT</Text>
+            <SectionLabel style={styles.cardTitleLabel}>BOX 1 — OUTPUT VAT</SectionLabel>
             <Text style={styles.cardSubtitle}>VAT iha Vendas</Text>
             <View style={styles.cardRow}>
               <Text style={styles.cardLabel}>Taxable Sales (net)</Text>
@@ -360,7 +364,7 @@ export default function TaxFilingScreen() {
 
           {/* Input VAT Card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>BOX 2 — INPUT VAT</Text>
+            <SectionLabel style={styles.cardTitleLabel}>BOX 2 — INPUT VAT</SectionLabel>
             <Text style={styles.cardSubtitle}>VAT iha Kompras</Text>
             <View style={styles.cardRow}>
               <Text style={styles.cardLabel}>Taxable Purchases (net)</Text>
@@ -376,7 +380,7 @@ export default function TaxFilingScreen() {
 
           {/* Net VAT Card */}
           <View style={[styles.card, styles.netCard]}>
-            <Text style={styles.cardTitle}>BOX 3 — NET VAT</Text>
+            <SectionLabel style={styles.cardTitleLabel}>BOX 3 — NET VAT</SectionLabel>
             <Text style={styles.cardSubtitle}>VAT atu Selu</Text>
             <View style={styles.netRow}>
               <Text style={styles.netLabel}>
@@ -398,21 +402,28 @@ export default function TaxFilingScreen() {
           <View style={styles.actions}>
             {/* Generate VAT Return PDF */}
             <TouchableOpacity
-              style={[styles.actionBtn, styles.actionBtnPrimary]}
+              style={styles.actionBtnPrimaryWrap}
               onPress={shareVATReturnPDF}
               activeOpacity={0.85}
             >
-              <FileText size={20} color={colors.white} strokeWidth={2} />
-              <View style={styles.actionTextWrap}>
-                <Text style={styles.actionBtnLabel}>Deklarasaun VAT (PDF)</Text>
-                <Text style={styles.actionBtnSub}>Generate & share DGFI form</Text>
-              </View>
+              <LinearGradient
+                colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionBtnGradient}
+              >
+                <FileText size={20} color={colors.white} strokeWidth={2} />
+                <View style={styles.actionTextWrap}>
+                  <Text style={styles.actionBtnLabel}>Deklarasaun VAT (PDF)</Text>
+                  <Text style={styles.actionBtnSub}>Generate & share DGFI form</Text>
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
 
             {/* Print / Share as text */}
             <View style={styles.actionRow}>
               <TouchableOpacity
-                style={[styles.actionBtnSmall, { backgroundColor: 'rgba(224, 141, 107, 0.08)', borderColor: 'rgba(224, 141, 107, 0.2)' }]}
+                style={[styles.actionBtnSmall, styles.actionBtnTint]}
                 onPress={handlePrint}
                 activeOpacity={0.85}
               >
@@ -420,7 +431,7 @@ export default function TaxFilingScreen() {
                 <Text style={[styles.actionBtnSmallLabel, { color: colors.primary }]}>Print</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionBtnSmall, { backgroundColor: colors.bgCard, borderColor: colors.border }]}
+                style={[styles.actionBtnSmall, styles.actionBtnNeutral]}
                 onPress={shareVATReturnText}
                 activeOpacity={0.85}
               >
@@ -431,39 +442,37 @@ export default function TaxFilingScreen() {
 
             {/* Export SAFT */}
             <TouchableOpacity
-              style={[styles.actionBtn, styles.actionBtnSecondary]}
+              style={[styles.actionBtn, styles.actionBtnTint]}
               onPress={exportSAFT}
               activeOpacity={0.85}
             >
-              <FileCode size={20} color={colors.info} strokeWidth={2} />
+              <FileCode size={20} color={colors.primary} strokeWidth={2} />
               <View style={styles.actionTextWrap}>
-                <Text style={[styles.actionBtnLabel, { color: colors.info }]}>
+                <Text style={[styles.actionBtnLabel, { color: colors.primary }]}>
                   SAFT-TL Export
                 </Text>
-                <Text style={styles.actionBtnSub}>XML audit file for {selectedYear}</Text>
+                <Text style={[styles.actionBtnSub, styles.actionBtnSubMuted]}>XML audit file for {selectedYear}</Text>
               </View>
             </TouchableOpacity>
 
             {/* E-filing status — intentionally does not simulate a submission */}
             <TouchableOpacity
-              style={[styles.actionBtn, styles.actionBtnSubmit]}
+              style={[styles.actionBtn, styles.actionBtnNeutral]}
               onPress={startSubmission}
               activeOpacity={0.85}
             >
-              <Send size={20} color={colors.success} strokeWidth={2} />
+              <Send size={20} color={colors.textSecondary} strokeWidth={2} />
               <View style={styles.actionTextWrap}>
-                <Text style={[styles.actionBtnLabel, { color: colors.success }]}>
+                <Text style={[styles.actionBtnLabel, { color: colors.textSecondary }]}>
                   DGFI e-Filing
                 </Text>
-                <Text style={styles.actionBtnSub}>Not connected · export files to submit</Text>
+                <Text style={[styles.actionBtnSub, styles.actionBtnSubMuted]}>Not connected · export files to submit</Text>
               </View>
             </TouchableOpacity>
           </View>
         </>
       ) : (
-        <View style={styles.loadingWrap}>
-          <Text style={styles.loadingText}>No data available</Text>
-        </View>
+        <EmptyCard title="No data available" />
       )}
 
       {/* e-Filing Submission Modal */}
@@ -475,7 +484,7 @@ export default function TaxFilingScreen() {
           if (submitStep !== 'submitting') setSubmitModal(false);
         }}
       >
-        <View style={styles.submitContainer}>
+        <View style={[styles.submitContainer, { paddingTop: insets.top }]}>
           {submitStep === 'review' && (
             <>
               <View style={styles.submitHeader}>
@@ -674,7 +683,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
 
@@ -684,7 +694,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
   },
   statusActive: {
@@ -745,7 +755,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 20,
-    marginBottom: 20,
+    marginBottom: 28,
   },
   periodArrow: {
     width: 36,
@@ -778,16 +788,14 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgCard,
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cardTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.textTertiary,
-    letterSpacing: 1,
+  cardTitleLabel: {
+    marginBottom: 0,
   },
   cardSubtitle: {
     fontSize: 11,
@@ -840,27 +848,34 @@ const styles = StyleSheet.create({
   // Action Buttons
   actions: {
     gap: 10,
-    marginTop: 8,
+    marginTop: 16,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    padding: 16,
+    padding: 15,
     borderRadius: 14,
     borderWidth: 1,
   },
-  actionBtnPrimary: {
-    backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
+  actionBtnPrimaryWrap: {
+    borderRadius: 14,
+    overflow: 'hidden',
   },
-  actionBtnSecondary: {
-    backgroundColor: 'rgba(96, 165, 250, 0.06)',
-    borderColor: 'rgba(96, 165, 250, 0.2)',
+  actionBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
   },
-  actionBtnSubmit: {
-    backgroundColor: 'rgba(74, 222, 128, 0.06)',
-    borderColor: 'rgba(74, 222, 128, 0.2)',
+  actionBtnTint: {
+    backgroundColor: colors.primaryGlow,
+    borderColor: 'rgba(224, 141, 107, 0.25)',
+  },
+  actionBtnNeutral: {
+    backgroundColor: colors.bgCard,
+    borderColor: colors.border,
   },
   actionTextWrap: {
     flex: 1,
@@ -874,6 +889,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(255,255,255,0.6)',
     marginTop: 1,
+  },
+  actionBtnSubMuted: {
+    color: colors.textTertiary,
   },
   actionRow: {
     flexDirection: 'row',
@@ -963,8 +981,8 @@ const styles = StyleSheet.create({
   submitCancel: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 15,
+    borderRadius: 14,
     backgroundColor: colors.bgCard,
     borderWidth: 1,
     borderColor: colors.border,
@@ -980,14 +998,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.success,
+    paddingVertical: 15,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
   },
   submitConfirmText: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.textInverse,
+    color: colors.white,
   },
 
   // Submitting Progress
@@ -1108,8 +1126,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.success,
-    paddingVertical: 14,
+    backgroundColor: colors.primary,
+    paddingVertical: 15,
     paddingHorizontal: 32,
     borderRadius: 14,
     marginTop: 24,
@@ -1117,6 +1135,6 @@ const styles = StyleSheet.create({
   successBtnText: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.textInverse,
+    color: colors.white,
   },
 });

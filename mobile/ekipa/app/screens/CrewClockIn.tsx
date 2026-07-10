@@ -44,6 +44,7 @@ import { getCurrentLocation } from '../../lib/locationUtils';
 import { compressPhoto, savePhotoLocally } from '../../lib/photoUtils';
 import { WorkerCheckRow } from '../../components/WorkerCheckRow';
 import { Card } from '../../components/Card';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 import { addDays, isValidISODate, toISODateLocal } from '../../lib/dateInput';
 import { DatePickerModal } from '../../components/DatePickerModal';
 
@@ -162,8 +163,7 @@ export default function CrewClockInScreen() {
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>{t('crew.siteAndDate')}</Text>
-      <Text style={styles.stepSub}>{t('crew.siteAndDateSub')}</Text>
+      <SectionLabel style={styles.stepLabel}>{t('crew.siteAndDate')}</SectionLabel>
       <View style={styles.field}>
         <View style={styles.fieldLabel}>
           <MapPin size={16} color={colors.textSecondary} strokeWidth={2} />
@@ -240,8 +240,10 @@ export default function CrewClockInScreen() {
 
   const renderStep2 = () => (
     <View style={styles.stepContentFlex}>
-      <Text style={styles.stepTitle}>{t('crew.selectWorkers')}</Text>
-      <Text style={styles.stepSub}>{t('crew.selectWorkersSub')}</Text>
+      <View style={styles.stepHeader}>
+        <SectionLabel style={styles.stepLabel}>{t('crew.selectWorkers')}</SectionLabel>
+        <Text style={styles.stepSub}>{t('crew.selectWorkersSub')}</Text>
+      </View>
       <View style={styles.searchRow}>
         <View style={styles.searchInput}>
           <Search size={16} color={colors.textTertiary} strokeWidth={2} />
@@ -254,10 +256,9 @@ export default function CrewClockInScreen() {
           />
         </View>
         <TouchableOpacity
-          style={styles.qrButton}
           onPress={() => router.push('/screens/QRScanner')}
         >
-          <QrCode size={20} color={colors.primary} strokeWidth={2} />
+          <ChipIcon icon={QrCode} size={44} />
         </TouchableOpacity>
       </View>
 
@@ -298,8 +299,10 @@ export default function CrewClockInScreen() {
     if (!cameraPermission?.granted) {
       return (
         <View style={styles.stepContent}>
-          <Text style={styles.stepTitle}>{t('crew.takePhoto')}</Text>
-          <Text style={styles.stepSub}>{t('crew.photoRequired')}</Text>
+          <View style={styles.stepHeader}>
+            <SectionLabel style={styles.stepLabel}>{t('crew.takePhoto')}</SectionLabel>
+            <Text style={styles.stepSub}>{t('crew.photoRequired')}</Text>
+          </View>
           <TouchableOpacity style={styles.primaryBtn} onPress={requestCameraPermission}>
             <Camera size={20} color="#fff" strokeWidth={2} />
             <Text style={styles.primaryBtnText}>{t('crew.enableCamera')}</Text>
@@ -342,7 +345,7 @@ export default function CrewClockInScreen() {
 
   const renderStep4 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>{t('crew.reviewSubmit')}</Text>
+      <SectionLabel style={styles.stepLabel}>{t('crew.reviewSubmit')}</SectionLabel>
 
       <Card style={styles.reviewCard}>
         <View style={styles.reviewRow}>
@@ -374,7 +377,7 @@ export default function CrewClockInScreen() {
       ) : null}
 
       <View style={styles.reviewWorkerList}>
-        <Text style={styles.reviewWorkerHeader}>{t('crew.selectedWorkers')}</Text>
+        <SectionLabel style={styles.stepLabel}>{t('crew.selectedWorkers')}</SectionLabel>
         {selectedWorkers.map((w) => (
           <View key={w.employeeId} style={styles.reviewWorkerRow}>
             <Check size={14} color={colors.success} strokeWidth={2} />
@@ -516,16 +519,17 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     gap: 12,
   },
-  stepTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.3,
+  stepHeader: {
+    gap: 6,
+  },
+  stepLabel: {
+    marginBottom: 0,
   },
   stepSub: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textTertiary,
+    lineHeight: 18,
   },
   field: {
     gap: 6,
@@ -645,16 +649,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
   },
-  qrButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: colors.primaryBg,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
   selectActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -728,8 +722,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     backgroundColor: colors.bgSubtle,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 15,
   },
   retakeBtnText: {
     fontSize: 15,
@@ -743,8 +737,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     backgroundColor: colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 15,
   },
   primaryBtnText: {
     fontSize: 15,
@@ -773,15 +767,10 @@ const styles = StyleSheet.create({
   reviewPhoto: {
     width: '100%',
     height: 160,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   reviewWorkerList: {
     gap: 8,
-  },
-  reviewWorkerHeader: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
   },
   reviewWorkerRow: {
     flexDirection: 'row',
@@ -803,8 +792,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 14,
+    paddingVertical: 15,
     marginTop: 8,
   },
   submitBtnDisabled: {
@@ -828,8 +817,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: 14,
+    paddingVertical: 15,
   },
   nextBtnDisabled: {
     opacity: 0.4,

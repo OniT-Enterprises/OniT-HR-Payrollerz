@@ -1,6 +1,6 @@
 /**
  * Ekipa — Tax Summary Screen (WIT/INSS Year-to-Date)
- * Premium dark theme with blue (#3B82F6) module accent.
+ * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Aggregates payslip data for the selected year with visual bar chart.
  */
 import { useEffect, useState, useMemo } from 'react';
@@ -31,8 +31,9 @@ import { useI18nStore, useT } from '../../lib/i18n';
 import { formatCurrency } from '../../lib/currency';
 import { colors } from '../../lib/colors';
 import { Card } from '../../components/Card';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 
-const ACCENT = colors.blue;
+const ACCENT = colors.primary;
 
 interface MonthlyData {
   month: number; // 1-12
@@ -140,7 +141,7 @@ export default function TaxSummary() {
 
   return (
     <View style={styles.container}>
-      {/* Blue hero header */}
+      {/* Olive hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -189,53 +190,48 @@ export default function TaxSummary() {
           {/* Summary cards */}
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
-              <View style={[styles.summaryBorderTop, { backgroundColor: colors.emerald }]} />
-              <TrendingUp size={18} color={colors.emerald} strokeWidth={2} />
+              <ChipIcon icon={TrendingUp} size={32} />
               <Text style={styles.summaryLabel}>{t('tax.grossYTD')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.emerald }]}>
+              <Text style={styles.summaryValue}>
                 {formatCurrency(summary.totalGross, language, currency)}
               </Text>
             </View>
 
             <View style={styles.summaryCard}>
-              <View style={[styles.summaryBorderTop, { backgroundColor: colors.error }]} />
-              <DollarSign size={18} color={colors.error} strokeWidth={2} />
+              <ChipIcon icon={DollarSign} size={32} tone="neutral" />
               <Text style={styles.summaryLabel}>{t('tax.witYTD')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.error }]}>
+              <Text style={styles.summaryValue}>
                 {formatCurrency(summary.totalWIT, language, currency)}
               </Text>
             </View>
 
             <View style={styles.summaryCard}>
-              <View style={[styles.summaryBorderTop, { backgroundColor: ACCENT }]} />
-              <Shield size={18} color={ACCENT} strokeWidth={2} />
+              <ChipIcon icon={Shield} size={32} tone="neutral" />
               <Text style={styles.summaryLabel}>{t('tax.inssEmployeeYTD')}</Text>
-              <Text style={[styles.summaryValue, { color: ACCENT }]}>
+              <Text style={styles.summaryValue}>
                 {formatCurrency(summary.totalINSSEmployee, language, currency)}
               </Text>
             </View>
 
             <View style={styles.summaryCard}>
-              <View style={[styles.summaryBorderTop, { backgroundColor: colors.violet }]} />
-              <Shield size={18} color={colors.violet} strokeWidth={2} />
+              <ChipIcon icon={Shield} size={32} tone="neutral" />
               <Text style={styles.summaryLabel}>{t('tax.inssEmployerYTD')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.violet }]}>
+              <Text style={styles.summaryValue}>
                 {formatCurrency(summary.totalINSSEmployer, language, currency)}
               </Text>
             </View>
 
             <View style={[styles.summaryCard, styles.summaryCardWide]}>
-              <View style={[styles.summaryBorderTop, { backgroundColor: colors.primary }]} />
-              <DollarSign size={18} color={colors.primary} strokeWidth={2} />
+              <ChipIcon icon={DollarSign} size={32} />
               <Text style={styles.summaryLabel}>{t('tax.netYTD')}</Text>
-              <Text style={[styles.summaryValue, { color: colors.primary }]}>
+              <Text style={styles.summaryValue}>
                 {formatCurrency(summary.totalNet, language, currency)}
               </Text>
             </View>
           </View>
 
           {/* Monthly bar chart */}
-          <Text style={styles.sectionTitle}>{t('tax.monthlyBreakdown')}</Text>
+          <SectionLabel>{t('tax.monthlyBreakdown')}</SectionLabel>
           <Card>
             <View style={styles.chartContainer}>
               {summary.months.map((m) => {
@@ -269,7 +265,7 @@ export default function TaxSummary() {
           {/* Employer INSS info card */}
           {summary.totalINSSEmployer > 0 && (
             <View style={styles.infoCard}>
-              <Info size={18} color={colors.violet} strokeWidth={2} />
+              <Info size={18} color={colors.primary} strokeWidth={2} />
               <Text style={styles.infoCardText}>
                 {t('tax.employerContribution').replace(
                   '{amount}',
@@ -290,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Blue hero header --
+  // -- Olive hero header --
   heroHeader: {
     backgroundColor: ACCENT,
     paddingBottom: 24,
@@ -373,7 +369,8 @@ const styles = StyleSheet.create({
 
   // -- Content --
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
   },
   loadingContainer: {
@@ -387,28 +384,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   summaryCard: {
     width: '47%',
     flexGrow: 1,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 16,
     gap: 6,
-    overflow: 'hidden',
   },
   summaryCardWide: {
     width: '100%',
-  },
-  summaryBorderTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
   },
   summaryLabel: {
     fontSize: 11,
@@ -416,21 +405,13 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
+    marginTop: 4,
   },
   summaryValue: {
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
-  },
-
-  // -- Section title --
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    color: colors.text,
   },
 
   // -- Bar chart --
@@ -474,18 +455,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    backgroundColor: colors.violetBg,
-    borderRadius: 14,
+    backgroundColor: colors.primaryBg,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
+    borderColor: 'rgba(106, 156, 41, 0.2)',
     marginTop: 20,
   },
   infoCardText: {
     flex: 1,
     fontSize: 14,
     fontWeight: '500',
-    color: colors.violet,
+    color: colors.primary,
     lineHeight: 21,
   },
 });

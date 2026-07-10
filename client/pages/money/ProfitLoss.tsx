@@ -22,9 +22,13 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
+import { accountService, trialBalanceService } from '@/services/accountingService';
+import { addMoney, subtractMoney } from '@/lib/currency';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import { InstallmentTaxEtaxFiling } from '@/components/reports/InstallmentTaxEtaxFiling';
 import type { ExpenseCategory } from '@/types/money';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
@@ -114,19 +118,52 @@ export default function ProfitLoss() {
   }, isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'profitLoss', startStr, endStr],
     queryFn: async (): Promise<PeriodData> => {
-      const [revenue, expenseSummary] = await Promise.all([
-        invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        const statement = await trialBalanceService.generateIncomeStatement(
+          tenantId,
+          startStr,
+          endStr,
+          Number(endStr.slice(0, 4)),
+        );
+        const expensesByAccount: Record<string, number> = {};
+        for (const item of statement.expenseItems) {
+          expensesByAccount[item.accountName] = addMoney(
+            expensesByAccount[item.accountName] || 0,
+            item.amount,
+          );
+        }
+        return {
+          revenue: statement.totalRevenue,
+          expenses: statement.totalExpenses,
+          expensesByCategory: expensesByAccount,
+          profit: statement.netIncome,
+        };
+      }
+
+      const [revenue, directExpenseSummary, billExpenseSummary] = await Promise.all([
+        invoiceService.getRevenueTotalByDateRange(tenantId, startStr, endStr),
         expenseService.getExpenseSummaryByDateRange(tenantId, startStr, endStr),
+        billService.getExpenseSummaryByDateRange(tenantId, startStr, endStr),
       ]);
+
+      const expensesByCategory = { ...directExpenseSummary.expensesByCategory };
+      for (const [category, amount] of Object.entries(billExpenseSummary.expensesByCategory)) {
+        expensesByCategory[category] = addMoney(expensesByCategory[category] || 0, amount);
+      }
+      const expenses = addMoney(
+        directExpenseSummary.totalExpenses,
+        billExpenseSummary.totalExpenses,
+      );
 
       return {
         revenue,
-        expenses: expenseSummary.totalExpenses,
-        expensesByCategory: expenseSummary.expensesByCategory,
-        profit: revenue - expenseSummary.totalExpenses,
+        expenses,
+        expensesByCategory,
+        profit: subtractMoney(revenue, expenses),
       };
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
@@ -329,6 +366,13 @@ export default function ProfitLoss() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Assisted installment-tax filing — monthly only (0.5% of turnover) */}
+        {(period === 'this_month' || period === 'last_month') && (
+          <div className="mt-6">
+            <InstallmentTaxEtaxFiling revenue={data.revenue} periodLabel={getPeriodLabel()} />
+          </div>
+        )}
 
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">

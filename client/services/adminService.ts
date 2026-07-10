@@ -497,6 +497,16 @@ class AdminService {
         ),
       ]);
 
+      // Seed the standard TL chart of accounts so the tenant's money module
+      // posts journals from day one. Non-fatal: the owner can initialize it
+      // from the Chart of Accounts page if this fails.
+      try {
+        const { accountService } = await import("./accountingService");
+        await accountService.initializeChartOfAccounts(createdTenantId);
+      } catch (err) {
+        console.warn("Chart of accounts seeding failed during tenant creation:", err);
+      }
+
       await this.logAdminAction({
         action: "tenant_created",
         actorUid: createdBy,

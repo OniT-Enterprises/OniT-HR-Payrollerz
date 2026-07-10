@@ -3146,7 +3146,7 @@ const messages = {
       "equity": "Ekuidade",
       "totalEquity": "Totál Ekuidade",
       "totalLiabilitiesAndEquity": "Totál Pasivu & Ekuidade",
-      "currentYearEarnings": "Rendimentu Tinan Agora",
+      "currentYearEarnings": "Rendimentu Akumuladu",
       "balanced": "Balansu Patrimonial Balansu",
       "balancedDesc": "Ativu = Pasivu + Ekuidade",
       "notBalanced": "Balansu Patrimonial LA Balansu",

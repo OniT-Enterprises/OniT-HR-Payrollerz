@@ -14,9 +14,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { ArrowRight, Shield } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
@@ -25,7 +26,7 @@ import { colors } from '../../lib/colors';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signIn, loading, error, clearError } = useAuthStore();
+  const { signIn, signInWithGoogle, loading, error, clearError } = useAuthStore();
   const t = useT();
 
   const handleLogin = () => {
@@ -38,7 +39,9 @@ export default function LoginScreen() {
       ? t('login.error.invalid')
       : error === 'tooMany'
         ? t('login.error.tooMany')
-        : t('login.error.generic')
+        : error === 'google'
+          ? 'Google login la konsege. Koko fali.'
+          : t('login.error.generic')
     : null;
 
   return (
@@ -61,10 +64,14 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.heroContent}>
-            {/* Glass-morphism shield icon */}
+            {/* Glass-morphism Xefe mark */}
             <View style={styles.logoGlass}>
               <View style={styles.logoInner}>
-                <Shield size={30} color={colors.white} strokeWidth={2} />
+                <Image
+                  source={require('../../assets/xefe-mark.webp')}
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
             </View>
 
@@ -142,6 +149,26 @@ export default function LoginScreen() {
                   <ArrowRight size={18} color={colors.white} strokeWidth={2.5} />
                 </View>
               )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>ka</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Google sign-in */}
+            <TouchableOpacity
+              onPress={signInWithGoogle}
+              disabled={loading}
+              activeOpacity={0.85}
+              style={[styles.googleButton, loading && styles.buttonDisabled]}
+            >
+              <View style={styles.buttonInner}>
+                <Text style={styles.googleG}>G</Text>
+                <Text style={styles.googleButtonText}>Kontinua ho Google</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -227,6 +254,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  logoImage: {
+    width: 34,
+    height: 38,
   },
 
   brandName: {
@@ -339,6 +370,45 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.white,
     fontSize: 17,
+    fontWeight: '700',
+  },
+
+  /* Divider + Google button */
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  googleButton: {
+    marginTop: 20,
+    borderRadius: 14,
+    padding: 15,
+    alignItems: 'center',
+    backgroundColor: colors.bg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  googleG: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  googleButtonText: {
+    color: colors.text,
+    fontSize: 16,
     fontWeight: '700',
   },
 

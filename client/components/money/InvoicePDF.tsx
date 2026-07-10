@@ -28,6 +28,7 @@ import {
   formatInvoiceDate,
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
+import { subtractMoney } from '@/lib/currency';
 
 const TEXT = '#1f2937';
 const MUTED = '#6b7280';
@@ -348,7 +349,7 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? invoice.total - paid;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
 
   return (
     <View style={base.totalsBox}>

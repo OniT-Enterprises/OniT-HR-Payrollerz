@@ -30,6 +30,7 @@ import {
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
+import { addMoney, percentOf, sumMoney } from '@/lib/currency';
 import type { RecurringInvoice, RecurringStatus } from '@/types/money';
 import {
   Repeat,
@@ -149,9 +150,8 @@ export default function RecurringInvoices() {
   };
 
   const calculateTotal = (item: RecurringInvoice) => {
-    const subtotal = item.items.reduce((sum, i) => sum + i.amount, 0);
-    const tax = subtotal * (item.taxRate / 100);
-    return subtotal + tax;
+    const subtotal = sumMoney(item.items.map((lineItem) => lineItem.amount));
+    return addMoney(subtotal, percentOf(subtotal, item.taxRate));
   };
 
   if (loading) {

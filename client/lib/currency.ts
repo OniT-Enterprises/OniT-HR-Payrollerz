@@ -98,6 +98,11 @@ export function roundMoney(value: number): number {
   return toMoney(toDecimal(value));
 }
 
+/** Compare currency values without binary floating-point drift. */
+export function compareMoney(a: number, b: number): -1 | 0 | 1 {
+  return toDecimal(a).comparedTo(toDecimal(b)) as -1 | 0 | 1;
+}
+
 /**
  * Get maximum of currency values
  */
@@ -113,4 +118,3 @@ export function proRata(amount: number, numerator: number, denominator: number):
   if (denominator === 0) return 0;
   return toMoney(toDecimal(amount).times(numerator).dividedBy(denominator));
 }
-

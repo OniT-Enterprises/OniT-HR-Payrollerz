@@ -1,6 +1,6 @@
 /**
  * Ekipa — Employment Letter Request Screen
- * Premium dark theme with blue (#3B82F6) module accent.
+ * Xefe · Ekipa design language: one olive accent, quiet empties.
  * Request proof of employment, salary certificate, or INSS summary.
  */
 import { useState, useEffect, useCallback } from 'react';
@@ -44,9 +44,10 @@ import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { StatusBadge } from '../../components/StatusBadge';
+import { SectionLabel, ChipIcon, EmptyCard } from '../../components/ui';
 
-const ACCENT = colors.blue;
-const ACCENT_BG = colors.blueBg;
+const ACCENT = colors.primary;
+const ACCENT_BG = colors.primaryBg;
 
 type DocType = 'proof_of_employment' | 'salary_certificate' | 'inss_summary';
 
@@ -175,15 +176,13 @@ export default function EmploymentLetterRequest() {
     const Icon = item.status === 'ready' ? CheckCircle2
       : item.status === 'rejected' ? XCircle
       : Clock;
-    const iconColor = item.status === 'ready' ? colors.emerald
-      : item.status === 'rejected' ? colors.error
-      : colors.warning;
+    const tone = item.status === 'ready' ? 'success' as const
+      : item.status === 'rejected' ? 'error' as const
+      : 'warning' as const;
 
     return (
       <View style={styles.requestRow}>
-        <View style={[styles.requestIcon, { backgroundColor: `${iconColor}15` }]}>
-          <Icon size={16} color={iconColor} strokeWidth={2} />
-        </View>
+        <ChipIcon icon={Icon} tone={tone} size={36} iconSize={16} />
         <View style={styles.requestInfo}>
           <Text style={styles.requestType}>{item.typeLabel}</Text>
           <Text style={styles.requestDate}>
@@ -204,7 +203,7 @@ export default function EmploymentLetterRequest() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* Blue hero header */}
+      {/* Olive hero header */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -227,7 +226,7 @@ export default function EmploymentLetterRequest() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {submitted ? (
           <View style={styles.successCard}>
-            <CheckCircle2 size={40} color={colors.emerald} strokeWidth={1.5} />
+            <CheckCircle2 size={40} color={colors.success} strokeWidth={1.5} />
             <Text style={styles.successTitle}>{t('docRequest.successTitle')}</Text>
             <Text style={styles.successMessage}>{t('docRequest.successMessage')}</Text>
             <TouchableOpacity
@@ -298,11 +297,11 @@ export default function EmploymentLetterRequest() {
         )}
 
         {/* Previous requests */}
-        <Text style={styles.sectionTitle}>{t('docRequest.previousRequests')}</Text>
+        <SectionLabel style={{ marginTop: 32 }}>{t('docRequest.previousRequests')}</SectionLabel>
         {loadingRequests ? (
           <ActivityIndicator size="small" color={ACCENT} style={{ marginTop: 20 }} />
         ) : requests.length === 0 ? (
-          <Text style={styles.noRequests}>{t('docRequest.noRequests')}</Text>
+          <EmptyCard title={t('docRequest.noRequests')} />
         ) : (
           <View style={styles.requestsList}>
             {requests.map((req) => (
@@ -321,7 +320,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Blue hero header --
+  // -- Olive hero header --
   heroHeader: {
     backgroundColor: ACCENT,
     paddingBottom: 28,
@@ -411,7 +410,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -474,7 +473,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 24,
     borderRadius: 14,
-    padding: 16,
+    padding: 15,
     backgroundColor: ACCENT,
     ...Platform.select({
       ios: {
@@ -505,7 +504,7 @@ const styles = StyleSheet.create({
   successCard: {
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 32,
     borderWidth: 1,
     borderColor: colors.border,
@@ -540,22 +539,6 @@ const styles = StyleSheet.create({
   },
 
   // -- Previous requests --
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 32,
-    marginBottom: 12,
-  },
-  noRequests: {
-    fontSize: 14,
-    color: colors.textTertiary,
-    fontWeight: '500',
-    textAlign: 'center',
-    paddingVertical: 20,
-  },
   requestsList: {
     gap: 10,
   },
@@ -564,17 +547,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  requestIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   requestInfo: {
     flex: 1,

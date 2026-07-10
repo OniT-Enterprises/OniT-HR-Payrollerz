@@ -336,12 +336,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: GREEN,
+    backgroundColor: colors.success,
   },
   activeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: GREEN,
+    color: colors.success,
   },
 
   // -- QR code --

@@ -10,6 +10,7 @@ import {
   User,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { signInWithGoogleNative, signOutGoogleNative } from '@xefe/mobile';
 import { auth, db } from '../lib/firebase';
 import { unregisterPushNotifications } from '../lib/notifications';
 
@@ -27,6 +28,7 @@ interface AuthState {
   error: string | null;
 
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -66,12 +68,31 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
+  signInWithGoogle: async () => {
+    set({ error: null });
+    try {
+      set({ loading: true });
+      const result = await signInWithGoogleNative(auth);
+      if (result.type === 'cancelled') {
+        // User dismissed the account picker — not an error.
+        set({ loading: false });
+        return;
+      }
+      // onAuthStateChanged will handle the rest
+    } catch (err: unknown) {
+      console.warn('Google sign-in failed:', err);
+      set({ loading: false, error: 'google' });
+    }
+  },
+
   signOut: async () => {
     try {
       const currentUserId = auth.currentUser?.uid;
       if (currentUserId) {
         await unregisterPushNotifications(currentUserId);
       }
+      // Also drop the Google session so the account picker shows next time.
+      await signOutGoogleNative();
       await firebaseSignOut(auth);
       set({ user: null, profile: null });
     } catch {

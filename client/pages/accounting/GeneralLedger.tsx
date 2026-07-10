@@ -367,14 +367,14 @@ export default function GeneralLedger() {
                             {entry.entryDate}
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm font-medium text-blue-600">
+                            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                               {entry.entryNumber}
                             </span>
                           </TableCell>
                           <TableCell>{entry.description}</TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
                             {entry.debit > 0 ? (
-                              <span className="flex items-center justify-end gap-1 text-green-600">
+                              <span className="flex items-center justify-end gap-1 text-green-600 dark:text-green-400">
                                 <ArrowUpRight className="h-3 w-3" />
                                 {formatCurrencyTL(entry.debit)}
                               </span>
@@ -384,7 +384,7 @@ export default function GeneralLedger() {
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
                             {entry.credit > 0 ? (
-                              <span className="flex items-center justify-end gap-1 text-red-600">
+                              <span className="flex items-center justify-end gap-1 text-red-600 dark:text-red-400">
                                 <ArrowDownRight className="h-3 w-3" />
                                 {formatCurrencyTL(entry.credit)}
                               </span>

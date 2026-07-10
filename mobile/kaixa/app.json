@@ -34,7 +34,8 @@
           "barStyle": "light"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "autolinkingModuleResolution": true

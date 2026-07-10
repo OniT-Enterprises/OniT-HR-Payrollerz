@@ -26,7 +26,6 @@ import {
   Trash2,
   X,
   Plus,
-  Users,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react-native';
@@ -37,8 +36,11 @@ import {
 } from '../../stores/customerTabStore';
 import { colors } from '../../lib/colors';
 import { InlineNotice } from '../../components/InlineNotice';
+import { EmptyCard } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CustomerTabsScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { tabs, loading, error, totalOwed, activeTabCount, loadTabs, addCustomer, addEntry, deleteCustomer } = useCustomerTabStore();
 
@@ -136,16 +138,10 @@ export default function CustomerTabsScreen() {
         {loading ? (
           <View style={styles.emptyState}><ActivityIndicator size="small" color={colors.primary} /></View>
         ) : tabs.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Users size={28} color={colors.textTertiary} strokeWidth={1.5} />
-            </View>
-            <Text style={styles.emptyText}>Seidauk iha kliente</Text>
-            <Text style={styles.emptySubtext}>
-              Track who owes you money.{'\n'}
-              Tap + to add your first customer.
-            </Text>
-          </View>
+          <EmptyCard
+            title="Seidauk iha kliente"
+            subtitle={'Track who owes you money.\nTap + to add your first customer.'}
+          />
         ) : (
           tabs.map((tab) => (
             <View key={tab.id} style={styles.tabCard}>
@@ -186,9 +182,9 @@ export default function CustomerTabsScreen() {
                     </TouchableOpacity>
 
                     {tab.phone && (
-                      <TouchableOpacity style={[styles.tabActionBtn, { backgroundColor: colors.moneyInBg }]} onPress={() => sendWhatsAppReminder(tab)} activeOpacity={0.7}>
-                        <MessageCircle size={14} color={colors.moneyIn} strokeWidth={2} />
-                        <Text style={[styles.tabActionText, { color: colors.moneyIn }]}>Remind</Text>
+                      <TouchableOpacity style={[styles.tabActionBtn, { backgroundColor: colors.primaryBg }]} onPress={() => sendWhatsAppReminder(tab)} activeOpacity={0.7}>
+                        <MessageCircle size={14} color={colors.primary} strokeWidth={2} />
+                        <Text style={[styles.tabActionText, { color: colors.primary }]}>Remind</Text>
                       </TouchableOpacity>
                     )}
 
@@ -225,7 +221,7 @@ export default function CustomerTabsScreen() {
 
       {/* Add Customer Modal */}
       <Modal visible={addCustomerModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAddCustomerModal(false)}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setAddCustomerModal(false)} style={styles.modalHeaderBtn}>
               <X size={18} color={colors.textSecondary} strokeWidth={2} />
@@ -251,7 +247,7 @@ export default function CustomerTabsScreen() {
 
       {/* Add Entry Modal */}
       <Modal visible={entryModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEntryModal(false)}>
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setEntryModal(false)} style={styles.modalHeaderBtn}>
               <X size={18} color={colors.textSecondary} strokeWidth={2} />
@@ -298,9 +294,9 @@ const styles = StyleSheet.create({
   summaryDivider: { width: 0.5, height: 36, backgroundColor: colors.borderMedium },
 
   listContainer: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
-  listContent: { paddingBottom: 100, gap: 6 },
+  listContent: { paddingBottom: 120, gap: 8 },
 
-  tabCard: { backgroundColor: colors.bgCard, borderRadius: 10, borderWidth: 0.5, borderColor: colors.border, overflow: 'hidden' },
+  tabCard: { backgroundColor: colors.bgCard, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   tabHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
   tabLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   tabAvatar: { width: 38, height: 38, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
@@ -324,12 +320,9 @@ const styles = StyleSheet.create({
   historyNote: { flex: 1, fontSize: 12, color: colors.textSecondary },
   historyAmount: { fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'], letterSpacing: -0.2 },
 
-  fab: { position: 'absolute', bottom: 24, right: 20, width: 52, height: 52, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
+  fab: { position: 'absolute', bottom: 110, right: 20, width: 52, height: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
 
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyIconWrap: { width: 56, height: 56, borderRadius: 12, backgroundColor: colors.bgElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-  emptySubtext: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', lineHeight: 18, paddingHorizontal: 20 },
 
   modalContainer: { flex: 1, backgroundColor: colors.bg },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: colors.bgCard, borderBottomWidth: 0.5, borderBottomColor: colors.border },

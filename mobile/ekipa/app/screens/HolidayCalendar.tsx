@@ -1,6 +1,6 @@
 /**
  * Ekipa — Holiday Calendar Screen
- * Premium dark theme with violet (#8B5CF6) module accent.
+ * Xefe · Ekipa design language: olive hero, one accent.
  * TL public holidays + remaining count in hero header.
  */
 import { useMemo } from 'react';
@@ -14,9 +14,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { TouchableOpacity } from 'react-native';
-import { ArrowLeft, Calendar, CalendarDays } from 'lucide-react-native';
+import { ArrowLeft, Calendar } from 'lucide-react-native';
 import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel } from '../../components/ui';
 import { getHolidays } from '../../lib/holidays';
 import type { Holiday } from '../../lib/holidays';
 
@@ -73,7 +74,7 @@ export default function HolidayCalendar() {
 
   return (
     <View style={styles.container}>
-      {/* ── Violet hero header ─────────────────────────── */}
+      {/* ── Olive hero header ──────────────────────────── */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -103,12 +104,7 @@ export default function HolidayCalendar() {
 
       {/* ── Holiday list ───────────────────────────────── */}
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.iconBadge}>
-            <CalendarDays size={14} color={colors.violet} strokeWidth={2.5} />
-          </View>
-          <Text style={styles.sectionTitle}>{t('holidays.allHolidays')}</Text>
-        </View>
+        <SectionLabel>{t('holidays.allHolidays')}</SectionLabel>
 
         <View style={styles.list}>
           {holidays.map((holiday) => {
@@ -132,7 +128,7 @@ export default function HolidayCalendar() {
                 <View style={[styles.dateCol, isNext && styles.dateColNext]}>
                   <Calendar
                     size={16}
-                    color={past ? colors.textTertiary : isNext ? colors.white : colors.violet}
+                    color={past ? colors.textTertiary : colors.primary}
                     strokeWidth={2}
                   />
                   <Text
@@ -188,9 +184,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // ── Violet hero header ──────────────────────────────
+  // ── Olive hero header ───────────────────────────────
   heroHeader: {
-    backgroundColor: colors.violet,
+    backgroundColor: colors.primary,
     paddingBottom: 28,
     overflow: 'hidden',
   },
@@ -282,30 +278,9 @@ const styles = StyleSheet.create({
 
   // ── Content ─────────────────────────────────────────
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 14,
-    marginTop: 4,
-  },
-  iconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.violetBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 
   // ── Holiday list ────────────────────────────────────
@@ -316,7 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
@@ -325,11 +300,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   holidayCardNext: {
-    borderColor: colors.violet,
+    borderColor: colors.primary,
     borderWidth: 2,
     ...Platform.select({
       ios: {
-        shadowColor: colors.violet,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
@@ -350,7 +325,7 @@ const styles = StyleSheet.create({
     borderRightColor: colors.border,
   },
   dateColNext: {
-    borderRightColor: 'rgba(139, 92, 246, 0.3)',
+    borderRightColor: 'rgba(106, 156, 41, 0.3)',
   },
   dateText: {
     fontSize: 13,
@@ -359,7 +334,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   dateTextNext: {
-    color: colors.violet,
+    color: colors.primary,
   },
 
   // ── Info column ─────────────────────────────────────
@@ -391,17 +366,17 @@ const styles = StyleSheet.create({
 
   // ── Next badge ──────────────────────────────────────
   nextBadge: {
-    backgroundColor: colors.violetBg,
+    backgroundColor: colors.primaryBg,
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.25)',
+    borderColor: 'rgba(106, 156, 41, 0.25)',
   },
   nextBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: colors.violet,
+    color: colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

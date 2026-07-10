@@ -1059,7 +1059,7 @@ export default function JournalEntries() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    <TableRow className="bg-gray-50 font-semibold">
+                    <TableRow className="bg-muted/50 font-semibold">
                       <TableCell>{t("accounting.journalEntries.total")}</TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(selectedEntry.totalDebit)}

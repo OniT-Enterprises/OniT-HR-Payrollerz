@@ -84,6 +84,7 @@ const translations: Record<string, Record<Language, string>> = {
   'home.viewDetails': { tet: 'Haree detallu', en: 'View details', pt: 'Ver detalhes', id: 'Lihat detail' },
   'home.statusTitle': { tet: 'Sumáriu', en: 'At a glance', pt: 'Resumo', id: 'Sekilas' },
   'home.noPayslip': { tet: 'Seidauk iha recibo', en: 'No payslips yet', pt: 'Sem recibos ainda', id: 'Belum ada slip gaji' },
+  'home.noPayslipSub': { tet: 'Ita-nia recibo sei mosu iha ne\'e bainhira payroll halo tiha', en: 'Your payslips will appear here once payroll runs', pt: 'Os seus recibos aparecerão aqui após o processamento', id: 'Slip gaji Anda akan muncul di sini setelah penggajian' },
   'home.daysLeft': { tet: 'loron restu', en: 'days left', pt: 'dias restantes', id: 'hari tersisa' },
   'home.attendance': { tet: 'Prezensa', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
   'home.hoursThisMonth': { tet: 'oras fulan ida ne\'e', en: 'hours this month', pt: 'horas este mês', id: 'jam bulan ini' },
@@ -532,7 +533,7 @@ const translations: Record<string, Record<Language, string>> = {
   'common.selectDate': { tet: 'Hili data', en: 'Select date', pt: 'Selecionar data', id: 'Pilih tanggal' },
   'common.today': { tet: 'Ohin', en: 'Today', pt: 'Hoje', id: 'Hari ini' },
   'common.yesterday': { tet: 'Horiseik', en: 'Yesterday', pt: 'Ontem', id: 'Kemarin' },
-  'common.poweredBy': { tet: 'husi Meza', en: 'powered by Meza', pt: 'fornecido por Meza', id: 'didukung oleh Meza' },
+  'common.poweredBy': { tet: 'husi Xefe', en: 'powered by Xefe', pt: 'fornecido por Xefe', id: 'didukung oleh Xefe' },
 
   // ── Attendance History ─────────────────────────────
   'attendance.title': { tet: 'Prezensa', en: 'Attendance History', pt: 'Histórico de Presença', id: 'Riwayat Kehadiran' },

@@ -39,8 +39,11 @@ import { useTenantStore } from '../../stores/tenantStore';
 import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { useVATStore } from '../../stores/vatStore';
 import { colors } from '../../lib/colors';
+import { SectionLabel, ChipIcon } from '../../components/ui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, signOut } = useAuthStore();
   const { tenantName, tenantId, role, setTenant, clearTenant } = useTenantStore();
   const {
@@ -137,8 +140,7 @@ export default function ProfileScreen() {
       {tenantId && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Building2 size={13} color={colors.textTertiary} strokeWidth={2} />
-            <Text style={styles.sectionTitle}>NEGOSIU</Text>
+            <SectionLabel style={styles.sectionLabelInline}>NEGOSIU</SectionLabel>
             <Text style={styles.sectionHint}>Your business details for receipts</Text>
             {!editing ? (
               <TouchableOpacity onPress={startEditing} style={styles.editButton} activeOpacity={0.7}>
@@ -168,67 +170,57 @@ export default function ProfileScreen() {
           ) : (
             <>
               <View style={styles.fieldRow}>
-                <View style={styles.fieldIcon}>
-                  <Building2 size={14} color={colors.textTertiary} strokeWidth={1.8} />
-                </View>
+                <ChipIcon icon={Building2} tone="neutral" size={30} />
                 {editing ? (
                   <TextInput style={styles.fieldInput} value={bizName} onChangeText={setBizName} placeholder="Business name" placeholderTextColor={colors.textTertiary} />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Naran</Text>
-                    <Text style={styles.fieldValue}>{bizProfile.businessName || tenantName || '—'}</Text>
+                    <Text style={[styles.fieldValue, !(bizProfile.businessName || tenantName) && styles.fieldValueEmpty]}>{bizProfile.businessName || tenantName || '—'}</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.fieldRow}>
-                <View style={styles.fieldIcon}>
-                  <MapPin size={14} color={colors.textTertiary} strokeWidth={1.8} />
-                </View>
+                <ChipIcon icon={MapPin} tone="neutral" size={30} />
                 {editing ? (
                   <TextInput style={styles.fieldInput} value={bizAddress} onChangeText={setBizAddress} placeholder="Address" placeholderTextColor={colors.textTertiary} />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Enderesu</Text>
-                    <Text style={styles.fieldValue}>{bizProfile.address || '—'}</Text>
+                    <Text style={[styles.fieldValue, !bizProfile.address && styles.fieldValueEmpty]}>{bizProfile.address || '—'}</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.fieldRow}>
-                <View style={styles.fieldIcon}>
-                  <Phone size={14} color={colors.textTertiary} strokeWidth={1.8} />
-                </View>
+                <ChipIcon icon={Phone} tone="neutral" size={30} />
                 {editing ? (
                   <TextInput style={styles.fieldInput} value={bizPhone} onChangeText={setBizPhone} placeholder="Phone number" placeholderTextColor={colors.textTertiary} keyboardType="phone-pad" />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Telefone</Text>
-                    <Text style={styles.fieldValue}>{bizProfile.phone || '—'}</Text>
+                    <Text style={[styles.fieldValue, !bizProfile.phone && styles.fieldValueEmpty]}>{bizProfile.phone || '—'}</Text>
                   </View>
                 )}
               </View>
 
               {(editing || vatActive || bizProfile.vatRegNumber) && (
                 <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
-                  <View style={styles.fieldIcon}>
-                    <FileText size={14} color={colors.textTertiary} strokeWidth={1.8} />
-                  </View>
+                  <ChipIcon icon={FileText} tone="neutral" size={30} />
                   {editing ? (
                     <TextInput style={styles.fieldInput} value={bizVatReg} onChangeText={setBizVatReg} placeholder="VAT registration number" placeholderTextColor={colors.textTertiary} />
                   ) : (
                     <View style={styles.fieldDisplay}>
                       <Text style={styles.fieldLabel}>VAT No.</Text>
-                      <Text style={styles.fieldValue}>{bizProfile.vatRegNumber || '—'}</Text>
+                      <Text style={[styles.fieldValue, !bizProfile.vatRegNumber && styles.fieldValueEmpty]}>{bizProfile.vatRegNumber || '—'}</Text>
                     </View>
                   )}
                 </View>
               )}
 
               <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
-                <View style={styles.fieldIcon}>
-                  <Info size={14} color={colors.textTertiary} strokeWidth={1.8} />
-                </View>
+                <ChipIcon icon={Info} tone="neutral" size={30} />
                 <View style={styles.fieldDisplay}>
                   <Text style={styles.fieldLabel}>Papel</Text>
                   <Text style={styles.fieldValue}>{role}</Text>
@@ -253,8 +245,7 @@ export default function ProfileScreen() {
       {/* Settings */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Info size={13} color={colors.textTertiary} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>DEFINISAUN</Text>
+          <SectionLabel style={styles.sectionLabelInline}>DEFINISAUN</SectionLabel>
         </View>
 
         <View style={styles.menuItem}>
@@ -304,7 +295,7 @@ export default function ProfileScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setSwitcherVisible(false)}
       >
-        <View style={styles.switcherContainer}>
+        <View style={[styles.switcherContainer, { paddingTop: insets.top }]}>
           <View style={styles.switcherHeader}>
             <TouchableOpacity
               style={styles.switcherClose}
@@ -329,13 +320,11 @@ export default function ProfileScreen() {
                   disabled={selected}
                   activeOpacity={0.75}
                 >
-                  <View style={styles.tenantOptionIcon}>
-                    <Building2
-                      size={18}
-                      color={selected ? colors.primary : colors.textSecondary}
-                      strokeWidth={2}
-                    />
-                  </View>
+                  <ChipIcon
+                    icon={Building2}
+                    tone={selected ? 'primary' : 'neutral'}
+                    size={38}
+                  />
                   <View style={styles.tenantOptionText}>
                     <Text style={styles.tenantOptionName}>{info.name}</Text>
                     <Text style={styles.tenantOptionRole}>{info.role}</Text>
@@ -355,11 +344,11 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingBottom: 120 },
 
   profileCard: {
-    backgroundColor: colors.bgCard, borderRadius: 12, padding: 28,
-    alignItems: 'center', marginBottom: 16, borderWidth: 0.5, borderColor: colors.border,
+    backgroundColor: colors.bgCard, borderRadius: 16, padding: 28,
+    alignItems: 'center', marginBottom: 28, borderWidth: 1, borderColor: colors.border,
   },
   avatar: {
     width: 64, height: 64, borderRadius: 16,
@@ -370,11 +359,11 @@ const styles = StyleSheet.create({
   email: { fontSize: 13, color: colors.textTertiary, marginTop: 2 },
 
   section: {
-    backgroundColor: colors.bgCard, borderRadius: 10, padding: 16,
-    marginBottom: 12, borderWidth: 0.5, borderColor: colors.border,
+    backgroundColor: colors.bgCard, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20,
+    marginBottom: 28, borderWidth: 1, borderColor: colors.border,
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' },
-  sectionTitle: { fontSize: 10, fontWeight: '700', color: colors.textTertiary, letterSpacing: 1.5 },
+  sectionLabelInline: { marginBottom: 0 },
   sectionHint: { fontSize: 11, color: colors.textTertiary, flex: 1 },
 
   editButton: { width: 26, height: 26, borderRadius: 6, backgroundColor: colors.primaryGlow, alignItems: 'center', justifyContent: 'center' },
@@ -385,10 +374,10 @@ const styles = StyleSheet.create({
   saveText: { fontSize: 11, color: colors.white, fontWeight: '700' },
 
   fieldRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.border, gap: 10 },
-  fieldIcon: { width: 30, height: 30, borderRadius: 6, backgroundColor: colors.bgElevated, alignItems: 'center', justifyContent: 'center' },
   fieldDisplay: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   fieldLabel: { fontSize: 14, color: colors.textSecondary },
   fieldValue: { fontSize: 14, fontWeight: '600', color: colors.text },
+  fieldValueEmpty: { color: colors.textTertiary, fontWeight: '500' },
   fieldInput: { flex: 1, fontSize: 14, color: colors.text, backgroundColor: colors.bgElevated, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, borderWidth: 0.5, borderColor: colors.borderMedium },
 
   switchButton: { marginTop: 12, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: colors.primaryGlow, flexDirection: 'row', justifyContent: 'center', gap: 8 },
@@ -401,8 +390,8 @@ const styles = StyleSheet.create({
   menuValue: { fontSize: 13, color: colors.textTertiary },
 
   signOutButton: {
-    backgroundColor: colors.bgCard, borderRadius: 10, padding: 14,
-    alignItems: 'center', borderWidth: 0.5, borderColor: 'rgba(251, 113, 133, 0.15)',
+    backgroundColor: colors.bgCard, borderRadius: 14, padding: 15,
+    alignItems: 'center', borderWidth: 1, borderColor: 'rgba(251, 113, 133, 0.15)',
     marginTop: 4, flexDirection: 'row', justifyContent: 'center', gap: 8,
   },
   signOutText: { fontSize: 15, fontWeight: '600', color: colors.moneyOut },
@@ -426,14 +415,10 @@ const styles = StyleSheet.create({
   },
   switcherList: { padding: 20, gap: 8 },
   tenantOption: {
-    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 10,
-    backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border,
+    flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16,
+    backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.border, gap: 12,
   },
   tenantOptionActive: { borderColor: colors.primary, backgroundColor: colors.primaryGlow },
-  tenantOptionIcon: {
-    width: 38, height: 38, borderRadius: 8, backgroundColor: colors.bgElevated,
-    alignItems: 'center', justifyContent: 'center', marginRight: 12,
-  },
   tenantOptionText: { flex: 1 },
   tenantOptionName: { fontSize: 15, fontWeight: '700', color: colors.text },
   tenantOptionRole: {

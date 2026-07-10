@@ -1,6 +1,6 @@
 /**
  * Ekipa — Grievance Report Screen
- * Premium dark theme with error red (#EF4444) accent.
+ * Xefe · Ekipa design language: one olive accent, semantic status colors only.
  * Anonymous grievance submission + status check by ticket ID.
  */
 import { useState } from 'react';
@@ -35,6 +35,7 @@ import { useTenantStore } from '../../stores/tenantStore';
 import { useGrievanceStore } from '../../stores/grievanceStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { SectionLabel } from '../../components/ui';
 import type { GrievanceCategory, GrievanceStatus } from '../../types/grievance';
 
 const CATEGORIES: { id: GrievanceCategory; labelKey: string }[] = [
@@ -47,7 +48,7 @@ const CATEGORIES: { id: GrievanceCategory; labelKey: string }[] = [
 
 const STATUS_CONFIG: Record<GrievanceStatus, { icon: typeof Clock; color: string; labelKey: string }> = {
   submitted: { icon: Clock, color: colors.warning, labelKey: 'grievance.statusSubmitted' },
-  reviewing: { icon: AlertTriangle, color: colors.blue, labelKey: 'grievance.statusReviewing' },
+  reviewing: { icon: AlertTriangle, color: colors.info, labelKey: 'grievance.statusReviewing' },
   resolved: { icon: CheckCircle2, color: colors.success, labelKey: 'grievance.statusResolved' },
   dismissed: { icon: XCircle, color: colors.textTertiary, labelKey: 'grievance.statusDismissed' },
 };
@@ -130,14 +131,14 @@ export default function GrievanceReport() {
 
           {/* Ticket ID display */}
           <View style={styles.ticketIdCard}>
-            <Ticket size={20} color={colors.warning} strokeWidth={2} />
+            <Ticket size={20} color={colors.primary} strokeWidth={2} />
             <Text style={styles.ticketIdText}>{submittedTicketId}</Text>
             <TouchableOpacity
               onPress={() => handleCopyTicket(submittedTicketId)}
               style={styles.copyBtn}
               activeOpacity={0.7}
             >
-              <Copy size={16} color={colors.blue} strokeWidth={2} />
+              <Copy size={16} color={colors.primary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
 
@@ -171,7 +172,7 @@ export default function GrievanceReport() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* ── Red hero header ─────────────────────────────── */}
+      {/* ── Olive hero header ───────────────────────────── */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
@@ -266,7 +267,7 @@ export default function GrievanceReport() {
         </View>
 
         {/* ── Check Status ─────────────────────────────── */}
-        <Text style={styles.sectionTitle}>{t('grievance.checkStatus')}</Text>
+        <SectionLabel style={{ marginBottom: 4 }}>{t('grievance.checkStatus')}</SectionLabel>
         <Text style={styles.sectionSubtext}>{t('grievance.checkStatusSub')}</Text>
 
         <View style={styles.checkRow}>
@@ -323,10 +324,15 @@ export default function GrievanceReport() {
                     </View>
                     <View style={styles.statusDetailRow}>
                       <Text style={styles.statusDetailLabel}>{t('grievance.submittedOn')}</Text>
-                      <Text style={styles.statusDetailValue}>
+                      <Text
+                        style={[
+                          styles.statusDetailValue,
+                          !trackedGrievance.createdAt && styles.statusDetailValueEmpty,
+                        ]}
+                      >
                         {trackedGrievance.createdAt
                           ? trackedGrievance.createdAt.toLocaleDateString()
-                          : '--'}
+                          : '—'}
                       </Text>
                     </View>
                     {trackedGrievance.resolution && (
@@ -377,9 +383,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── Red hero header ─────────────────────────────────
+  // ── Olive hero header ───────────────────────────────
   heroHeader: {
-    backgroundColor: colors.error,
+    backgroundColor: colors.primary,
     paddingBottom: 24,
     overflow: 'hidden',
   },
@@ -457,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: colors.successBg,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.2)',
@@ -497,11 +503,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
   },
   categoryChipActive: {
-    backgroundColor: colors.error,
-    borderColor: colors.error,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.error,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -546,11 +552,11 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 24,
     borderRadius: 14,
-    padding: 16,
-    backgroundColor: colors.error,
+    padding: 15,
+    backgroundColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.error,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 10,
@@ -592,12 +598,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Check status section ────────────────────────────
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
   sectionSubtext: {
     fontSize: 13,
     fontWeight: '500',
@@ -625,12 +625,12 @@ const styles = StyleSheet.create({
   checkBtn: {
     width: 50,
     borderRadius: 12,
-    backgroundColor: colors.blue,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: colors.blue,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.25,
         shadowRadius: 6,
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
   // ── Status result card ──────────────────────────────
   statusCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 18,
     marginTop: 16,
     borderWidth: 1,
@@ -682,6 +682,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.text,
+  },
+  statusDetailValueEmpty: {
+    color: colors.textTertiary,
   },
 
   // ── Success page ────────────────────────────────────
@@ -723,11 +726,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 18,
     borderWidth: 2,
-    borderColor: colors.warning,
+    borderColor: colors.primary,
     marginBottom: 12,
     ...Platform.select({
       ios: {
-        shadowColor: colors.warning,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
@@ -738,7 +741,7 @@ const styles = StyleSheet.create({
   ticketIdText: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.warning,
+    color: colors.primary,
     letterSpacing: 3,
     flex: 1,
     textAlign: 'center',
@@ -747,7 +750,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: colors.blueBg,
+    backgroundColor: colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -762,7 +765,7 @@ const styles = StyleSheet.create({
   doneBtn: {
     width: '100%',
     borderRadius: 14,
-    padding: 16,
+    padding: 15,
     alignItems: 'center',
     backgroundColor: colors.primary,
     marginBottom: 12,

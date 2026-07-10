@@ -2,7 +2,7 @@
  * Ekipa — Time Tab (dual-mode)
  * Regular staff: personal time tracking, attendance summary, upcoming shifts.
  * Supervisors: + crew batch clock in/out and recent activity.
- * Stripe-style landing page layout.
+ * Xefe · Ekipa design language: one olive accent, editorial section labels.
  */
 import { useEffect, useCallback, useState, useMemo } from 'react';
 import {
@@ -36,6 +36,7 @@ import { useCrewStore } from '../../stores/crewStore';
 import { useSyncStore } from '../../stores/syncStore';
 import { CrewSummaryCard } from '../../components/CrewSummaryCard';
 import { startAutoSync } from '../../lib/syncEngine';
+import { SectionLabel, ChipIcon } from '../../components/ui';
 
 const SCREEN_W = Dimensions.get('window').width;
 const PAIR_GAP = 12;
@@ -143,19 +144,11 @@ export default function TimeScreen() {
       {/* ══ Today's Status — featured card ═════════ */}
       <View style={styles.todayCard}>
         <View style={styles.todayTop}>
-          <View style={[styles.todayIcon, {
-            backgroundColor: todayRecord?.clockIn ? colors.emeraldBg : colors.orangeBg,
-          }]}>
-            <Clock
-              size={22}
-              color={todayRecord?.clockIn ? colors.emerald : colors.orange}
-              strokeWidth={1.8}
-            />
-          </View>
+          <ChipIcon icon={Clock} tone={todayRecord?.clockIn ? 'success' : 'neutral'} size={48} />
           <View style={styles.todayTextCol}>
             <Text style={styles.todayLabel}>{t('time.today')}</Text>
             <Text style={[styles.todayStatus, {
-              color: todayRecord?.clockIn ? colors.emerald : colors.textTertiary,
+              color: todayRecord?.clockIn ? colors.success : colors.textTertiary,
             }]}>
               {todayRecord?.clockIn
                 ? todayRecord.clockOut
@@ -192,8 +185,7 @@ export default function TimeScreen() {
 
       {/* ══ This Month — stat cards ════════════════ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('time.monthTitle')}</Text>
-        <Text style={styles.sectionSub}>{t('time.monthSub')}</Text>
+        <SectionLabel>{t('time.monthTitle')}</SectionLabel>
 
         <View style={styles.pair}>
           <TouchableOpacity
@@ -201,10 +193,10 @@ export default function TimeScreen() {
             onPress={() => router.push('/screens/AttendanceHistory')}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIcon, { backgroundColor: colors.emeraldBg }]}>
-              <CheckCircle2 size={18} color={colors.emerald} strokeWidth={2} />
-            </View>
-            <Text style={styles.statValue}>{summary?.daysPresent ?? '--'}</Text>
+            <ChipIcon icon={CheckCircle2} />
+            <Text style={[styles.statValue, !summary && styles.statValueEmpty]}>
+              {summary?.daysPresent ?? '—'}
+            </Text>
             <Text style={styles.statLabel}>{t('time.daysPresent')}</Text>
           </TouchableOpacity>
 
@@ -213,11 +205,9 @@ export default function TimeScreen() {
             onPress={() => router.push('/screens/AttendanceHistory')}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIcon, { backgroundColor: colors.cyanBg }]}>
-              <Clock size={18} color={colors.cyan} strokeWidth={2} />
-            </View>
-            <Text style={styles.statValue}>
-              {summary ? `${(summary.totalRegularHours + summary.totalOvertimeHours).toFixed(0)}` : '--'}
+            <ChipIcon icon={Clock} />
+            <Text style={[styles.statValue, !summary && styles.statValueEmpty]}>
+              {summary ? `${(summary.totalRegularHours + summary.totalOvertimeHours).toFixed(0)}` : '—'}
             </Text>
             <Text style={styles.statLabel}>{t('time.totalHours')}</Text>
           </TouchableOpacity>
@@ -235,7 +225,7 @@ export default function TimeScreen() {
             <Text style={styles.miniValue}>{summary?.daysAbsent ?? 0}</Text>
           </View>
           <View style={styles.miniStat}>
-            <View style={[styles.miniDot, { backgroundColor: colors.orange }]} />
+            <View style={[styles.miniDot, { backgroundColor: colors.primary }]} />
             <Text style={styles.miniLabel}>{t('time.overtime')}</Text>
             <Text style={styles.miniValue}>{summary?.totalOvertimeHours?.toFixed(0) ?? 0}h</Text>
           </View>
@@ -247,23 +237,20 @@ export default function TimeScreen() {
           activeOpacity={0.7}
         >
           <Text style={styles.linkText}>{t('time.viewAttendance')}</Text>
-          <ArrowRight size={14} color={colors.cyan} strokeWidth={2.5} />
+          <ArrowRight size={14} color={colors.primary} strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
       {/* ══ Next Shift — compact card ══════════════ */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('time.shiftTitle')}</Text>
-        <Text style={styles.sectionSub}>{t('time.shiftSub')}</Text>
+        <SectionLabel>{t('time.shiftTitle')}</SectionLabel>
 
         <TouchableOpacity
           style={styles.shiftCard}
           onPress={() => router.push('/screens/ShiftSchedule')}
           activeOpacity={0.7}
         >
-          <View style={[styles.shiftIcon, { backgroundColor: colors.orangeBg }]}>
-            <CalendarClock size={20} color={colors.orange} strokeWidth={1.8} />
-          </View>
+          <ChipIcon icon={CalendarClock} size={44} />
           <View style={styles.shiftText}>
             {nextShift ? (
               <>
@@ -287,29 +274,18 @@ export default function TimeScreen() {
       {/* ══ Supervisor: Crew Management ════════════ */}
       {isSupervisor && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('time.crewTitle')}</Text>
-          <Text style={styles.sectionSub}>{t('time.crewSub')}</Text>
+          <SectionLabel>{t('time.crewTitle')}</SectionLabel>
 
           {/* Crew stat row */}
           <View style={styles.crewStats}>
             <View style={styles.crewStatItem}>
-              <View style={[styles.crewStatIcon, { backgroundColor: colors.emeraldBg }]}>
-                <Users size={16} color={colors.emerald} strokeWidth={2.5} />
-              </View>
+              <ChipIcon icon={Users} size={36} />
               <Text style={styles.crewStatValue}>{todayClockedIn}</Text>
               <Text style={styles.crewStatLabel}>{t('crew.clockedInToday')}</Text>
             </View>
             <View style={styles.crewStatDivider} />
             <View style={styles.crewStatItem}>
-              <View style={[styles.crewStatIcon, {
-                backgroundColor: pendingCount > 0 ? colors.warningBg : 'rgba(100,116,139,0.10)',
-              }]}>
-                <CloudOff
-                  size={16}
-                  color={pendingCount > 0 ? colors.warning : colors.textTertiary}
-                  strokeWidth={2.5}
-                />
-              </View>
+              <ChipIcon icon={CloudOff} tone={pendingCount > 0 ? 'warning' : 'neutral'} size={36} />
               <Text style={[styles.crewStatValue, pendingCount > 0 && { color: colors.warning }]}>
                 {pendingCount}
               </Text>
@@ -338,20 +314,18 @@ export default function TimeScreen() {
             onPress={handleClockOut}
             activeOpacity={0.85}
           >
-            <View style={styles.clockOutIconWrap}>
-              <Clock size={18} color={colors.orange} strokeWidth={2.5} />
-            </View>
+            <ChipIcon icon={Clock} size={42} />
             <View style={styles.btnTextCol}>
               <Text style={styles.clockOutText}>{t('crew.clockOut')}</Text>
               <Text style={styles.clockOutSub}>{t('crew.selectWorkersClockOut')}</Text>
             </View>
-            <ArrowUpRight size={18} color="rgba(249,115,22,0.4)" strokeWidth={2} />
+            <ArrowUpRight size={18} color={colors.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
 
           {/* Recent crew activity */}
           {recentBatches.length > 0 && (
             <>
-              <Text style={styles.crewActivityLabel}>{t('crew.recentActivity')}</Text>
+              <SectionLabel>{t('crew.recentActivity')}</SectionLabel>
               {recentBatches.slice(0, 3).map((batch) => (
                 <View key={batch.id} style={styles.batchItem}>
                   <CrewSummaryCard batch={batch} />
@@ -367,9 +341,7 @@ export default function TimeScreen() {
               onPress={() => router.push('/screens/CrewHistory')}
               activeOpacity={0.7}
             >
-              <View style={[styles.crewLinkIcon, { backgroundColor: colors.orangeBg }]}>
-                <History size={16} color={colors.orange} strokeWidth={2.5} />
-              </View>
+              <ChipIcon icon={History} tone="neutral" size={32} />
               <Text style={styles.crewLinkText}>{t('crew.viewHistory')}</Text>
               <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
@@ -381,15 +353,7 @@ export default function TimeScreen() {
               onPress={() => router.push('/screens/SyncQueue')}
               activeOpacity={0.7}
             >
-              <View style={[styles.crewLinkIcon, {
-                backgroundColor: pendingCount > 0 ? colors.warningBg : 'rgba(100,116,139,0.10)',
-              }]}>
-                <CloudOff
-                  size={16}
-                  color={pendingCount > 0 ? colors.warning : colors.textTertiary}
-                  strokeWidth={2.5}
-                />
-              </View>
+              <ChipIcon icon={CloudOff} tone={pendingCount > 0 ? 'warning' : 'neutral'} size={32} />
               <Text style={styles.crewLinkText}>{t('crew.syncQueue')}</Text>
               {pendingCount > 0 && (
                 <View style={styles.syncBadge}>
@@ -408,7 +372,7 @@ export default function TimeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingBottom: 48 },
+  content: { paddingBottom: 120 },
 
   /* ── Hero ─────────────────────────────────── */
   hero: {
@@ -434,7 +398,7 @@ const styles = StyleSheet.create({
   todayCard: {
     marginHorizontal: 20,
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 28,
     backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: 20,
@@ -444,14 +408,7 @@ const styles = StyleSheet.create({
   todayTop: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  todayIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
+    gap: 14,
   },
   todayTextCol: { flex: 1 },
   todayLabel: {
@@ -499,21 +456,7 @@ const styles = StyleSheet.create({
   /* ── Section ─────────────────────────────── */
   section: {
     paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  sectionSub: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textTertiary,
-    marginBottom: 14,
-    lineHeight: 18,
+    marginBottom: 28,
   },
 
   /* ── Stat cards (2-up) ───────────────────── */
@@ -525,25 +468,22 @@ const styles = StyleSheet.create({
   statCard: {
     width: PAIR_W,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 18,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
   },
   statValue: {
     fontSize: 28,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.6,
+    marginTop: 14,
     marginBottom: 1,
+  },
+  statValueEmpty: {
+    color: colors.textTertiary,
+    fontWeight: '600',
   },
   statLabel: {
     fontSize: 12,
@@ -592,26 +532,19 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.cyan,
+    color: colors.primary,
   },
 
   /* ── Shift card ──────────────────────────── */
   shiftCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 14,
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  shiftIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
   },
   shiftText: { flex: 1 },
   shiftDate: {
@@ -631,7 +564,7 @@ const styles = StyleSheet.create({
   crewStats: {
     flexDirection: 'row',
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 12,
@@ -646,13 +579,6 @@ const styles = StyleSheet.create({
     width: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginVertical: 12,
-  },
-  crewStatIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   crewStatValue: {
     fontSize: 24,
@@ -673,13 +599,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: colors.orange,
-    borderRadius: 16,
-    padding: 18,
+    backgroundColor: colors.primary,
+    borderRadius: 14,
+    padding: 15,
     marginBottom: 10,
     ...Platform.select({
       ios: {
-        shadowColor: colors.orange,
+        shadowColor: colors.primary,
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 12,
@@ -714,24 +640,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 14,
+    padding: 15,
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(249, 115, 22, 0.3)',
-  },
-  clockOutIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: colors.orangeBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   clockOutText: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.orange,
+    color: colors.primary,
   },
   clockOutSub: {
     fontSize: 12,
@@ -740,14 +658,6 @@ const styles = StyleSheet.create({
   },
 
   /* Crew activity */
-  crewActivityLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
   batchItem: {
     marginBottom: 8,
   },
@@ -755,7 +665,7 @@ const styles = StyleSheet.create({
   /* Crew footer links */
   crewLinks: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -771,13 +681,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginHorizontal: 14,
-  },
-  crewLinkIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   crewLinkText: {
     flex: 1,

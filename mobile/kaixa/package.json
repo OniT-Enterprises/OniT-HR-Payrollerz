@@ -13,6 +13,7 @@
   "dependencies": {
     "@onit/shared": "*",
     "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-google-signin/google-signin": "^16.1.2",
     "decimal.js": "^10.6.0",
     "expo": "~55.0.5",
     "expo-constants": "~55.0.7",
@@ -34,7 +35,8 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "15.15.3",
-    "zustand": "^5.0.0"
+    "zustand": "^5.0.0",
+    "@xefe/mobile": "*"
   },
   "devDependencies": {
     "@types/react": "~19.2.10",

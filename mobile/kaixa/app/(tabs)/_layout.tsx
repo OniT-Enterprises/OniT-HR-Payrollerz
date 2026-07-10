@@ -7,8 +7,9 @@
  * Konta accessible via top-right header icon on all screens.
  */
 import { Tabs, router } from 'expo-router';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Image } from 'react-native';
 import { Home, Wallet, ShoppingBag, User } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../lib/colors';
 
 const ICON_SIZE = 21;
@@ -27,7 +28,24 @@ function KontaHeaderButton() {
   );
 }
 
+function HeaderBrand() {
+  return (
+    <View style={styles.brandWrap}>
+      <Image
+        source={require('../../assets/xefe-mark.webp')}
+        style={styles.brandMark}
+        resizeMode="contain"
+      />
+      <View>
+        <Text style={styles.brandOverline}>XEFE</Text>
+        <Text style={styles.brandText}>Kaixa</Text>
+      </View>
+    </View>
+  );
+}
+
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -44,21 +62,20 @@ export default function TabLayout() {
           color: colors.text,
           letterSpacing: -0.3,
         },
+        headerTitle: '',
+        headerLeft: () => <HeaderBrand />,
         headerRight: () => <KontaHeaderButton />,
+        // ── Tab bar — floating dock: rounded island, active tab in a
+        //    terracotta tint pill; content scrolls behind ──
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarStyle: {
-          backgroundColor: colors.bg,
-          borderTopColor: colors.border,
-          borderTopWidth: 0.5,
-          paddingBottom: 2,
-          paddingTop: 10,
-          height: 68,
-        },
+        tabBarStyle: [styles.tabBar, { bottom: insets.bottom + 12 }],
+        tabBarItemStyle: styles.tabItem,
+        tabBarActiveBackgroundColor: colors.primaryBg,
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
-          marginTop: 4,
+          fontWeight: '700',
+          marginTop: 2,
           letterSpacing: 0.2,
         },
         sceneStyle: {
@@ -73,7 +90,6 @@ export default function TabLayout() {
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Home
                 size={ICON_SIZE}
                 color={color}
@@ -90,7 +106,6 @@ export default function TabLayout() {
           tabBarLabel: 'Osan',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <Wallet
                 size={ICON_SIZE}
                 color={color}
@@ -107,7 +122,6 @@ export default function TabLayout() {
           tabBarLabel: 'Faan',
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
               <ShoppingBag
                 size={ICON_SIZE}
                 color={color}
@@ -139,18 +153,62 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  /* ── Floating dock tab bar ─────────────────────── */
+  tabBar: {
+    position: 'absolute',
+    // React Navigation pins the absolute tab bar to both edges; margins are
+    // what actually inset the floating island.
+    marginHorizontal: 64,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: colors.bgCard,
+    borderTopWidth: 0,
+    borderWidth: 1,
+    borderColor: colors.borderMedium,
+    paddingTop: 6,
+    paddingBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  tabItem: {
+    // overflow-hidden + margins turn the active background into a rounded pill.
+    borderRadius: 22,
+    marginHorizontal: 6,
+    marginVertical: 2,
+    overflow: 'hidden',
+  },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  activeDot: {
-    position: 'absolute',
-    top: -8,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
+
+  /* ── Brand (header left) ───────────────────────── */
+  brandWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 16,
+  },
+  brandMark: {
+    width: 26,
+    height: 29,
+  },
+  brandOverline: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 2,
+    marginBottom: -2,
+  },
+  brandText: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -0.6,
   },
   headerBtn: {
     width: 36,

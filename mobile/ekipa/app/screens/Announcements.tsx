@@ -1,6 +1,6 @@
 /**
  * Ekipa — Announcements Screen
- * Premium dark theme with teal (#0D9488) accent.
+ * Xefe · Ekipa design language: olive hero, one accent.
  * Company announcements feed with pinned items and read tracking.
  */
 import { useEffect, useState, useCallback } from 'react';
@@ -28,10 +28,8 @@ import { useAnnouncementStore } from '../../stores/announcementStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { EmptyState } from '../../components/EmptyState';
+import { ChipIcon } from '../../components/ui';
 import type { Announcement } from '../../types/announcement';
-
-const TEAL = '#0D9488';
-const TEAL_BG = 'rgba(13, 148, 136, 0.10)';
 
 function formatDate(date: Date): string {
   return date.toLocaleDateString('en-GB', {
@@ -106,11 +104,7 @@ export default function Announcements() {
         {/* Header row */}
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
-            {isPinned && (
-              <View style={styles.pinBadge}>
-                <Pin size={12} color={TEAL} strokeWidth={2.5} />
-              </View>
-            )}
+            {isPinned && <ChipIcon icon={Pin} size={24} />}
             {!isRead && <View style={styles.unreadDot} />}
             <Text style={styles.cardTitle} numberOfLines={isExpanded ? undefined : 2}>
               {item.title}
@@ -178,7 +172,7 @@ export default function Announcements() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={TEAL} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -205,9 +199,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // -- Teal hero header --
+  // -- Olive hero header --
   heroHeader: {
-    backgroundColor: TEAL,
+    backgroundColor: colors.primary,
     paddingBottom: 28,
     overflow: 'hidden',
   },
@@ -275,7 +269,8 @@ const styles = StyleSheet.create({
 
   // -- List --
   listContent: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     paddingBottom: 40,
     gap: 12,
   },
@@ -288,15 +283,13 @@ const styles = StyleSheet.create({
   // -- Announcement card --
   announcementCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
   },
   announcementCardPinned: {
-    borderColor: `${TEAL}40`,
-    borderLeftWidth: 3,
-    borderLeftColor: TEAL,
+    borderColor: 'rgba(106, 156, 41, 0.4)',
   },
   announcementCardUnread: {
     backgroundColor: colors.bgElevated,
@@ -316,19 +309,11 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
   },
-  pinBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
-    backgroundColor: TEAL_BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: TEAL,
+    backgroundColor: colors.primary,
   },
   cardTitle: {
     fontSize: 16,

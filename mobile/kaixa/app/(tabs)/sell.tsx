@@ -19,6 +19,7 @@ import {
   ActivityIndicator,
   Share,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   ShoppingBag,
   Plus,
@@ -26,9 +27,9 @@ import {
   X,
   Check,
   Trash2,
-  Package,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
+import { EmptyCard } from '../../components/ui';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useProductStore, type Product } from '../../stores/productStore';
@@ -39,6 +40,7 @@ import { createTransaction } from '../../types/transaction';
 import { inferVATCategory } from '@onit/shared';
 import { generateTextReceipt } from '../../lib/receipt';
 import { InlineNotice } from '../../components/InlineNotice';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CartItem {
   product: Product;
@@ -46,6 +48,7 @@ interface CartItem {
 }
 
 export default function SellScreen() {
+  const insets = useSafeAreaInsets();
   const { tenantId } = useTenantStore();
   const { user } = useAuthStore();
   const { loading, error, loadProducts, activeProducts } =
@@ -253,20 +256,10 @@ export default function SellScreen() {
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
         ) : active.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconWrap}>
-              <Package
-                size={28}
-                color={colors.textTertiary}
-                strokeWidth={1.5}
-              />
-            </View>
-            <Text style={styles.emptyText}>Seidauk iha produtu</Text>
-            <Text style={styles.emptySubtext}>
-              Add your products here for quick selling.{'\n'}
-              Tap the + button to get started.
-            </Text>
-          </View>
+          <EmptyCard
+            title="Seidauk iha produtu"
+            subtitle={'Add your products here for quick selling.\nTap the + button to get started.'}
+          />
         ) : (
           <>
             <Text style={styles.gridHint}>
@@ -397,21 +390,28 @@ export default function SellScreen() {
               disabled={checkingOut}
               activeOpacity={0.85}
             >
-              {checkingOut ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <>
-                  <ShoppingBag size={16} color={colors.white} strokeWidth={2} />
-                  <Text style={styles.checkoutText}>Selu</Text>
-                </>
-              )}
+              <LinearGradient
+                colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.checkoutGradient}
+              >
+                {checkingOut ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <>
+                    <ShoppingBag size={16} color={colors.white} strokeWidth={2} />
+                    <Text style={styles.checkoutText}>Selu</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       <TouchableOpacity
-        style={[styles.fab, cart.length > 0 && { bottom: 180 }]}
+        style={[styles.fab, cart.length > 0 && { bottom: 260 }]}
         onPress={() => {
           setNewName('');
           setNewPrice('');
@@ -429,7 +429,7 @@ export default function SellScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setAddProductModal(false)}
       >
-        <View style={styles.modalContainer}>
+        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
               onPress={() => setAddProductModal(false)}
@@ -499,13 +499,13 @@ export default function SellScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   gridContainer: { flex: 1 },
-  gridContent: { padding: 12, paddingBottom: 100 },
+  gridContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 120 },
   gridHint: { fontSize: 11, color: colors.textTertiary, marginBottom: 10, paddingHorizontal: 4 },
   productGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 
   productCard: {
-    width: '47.5%', backgroundColor: colors.bgCard, borderRadius: 10, padding: 16,
-    borderWidth: 0.5, borderColor: colors.border, minHeight: 96,
+    width: '47.5%', backgroundColor: colors.bgCard, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: colors.border, minHeight: 96,
     justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
   productCardActive: { borderColor: colors.primary, borderWidth: 1, backgroundColor: colors.primaryGlow },
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
   cartBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: colors.primary, borderRadius: 4, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
   cartBadgeText: { fontSize: 10, fontWeight: '800', color: colors.white },
 
-  cartBar: { backgroundColor: colors.bgCard, borderTopWidth: 0.5, borderTopColor: colors.borderMedium, paddingBottom: 8 },
+  cartBar: { backgroundColor: colors.bgCard, borderTopWidth: 0.5, borderTopColor: colors.borderMedium, paddingBottom: 96 },
   cartItems: { maxHeight: 60, borderBottomWidth: 0.5, borderBottomColor: colors.border },
   cartItemsContent: { paddingHorizontal: 12, gap: 6, paddingVertical: 8 },
   cartItem: { backgroundColor: colors.bgElevated, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -534,15 +534,13 @@ const styles = StyleSheet.create({
   cartTotalLabel: { fontSize: 11, color: colors.textTertiary, fontWeight: '500' },
   cartTotalAmount: { fontSize: 22, fontWeight: '800', color: colors.text, fontVariant: ['tabular-nums'], letterSpacing: -0.5 },
   cartVatHint: { fontSize: 9, color: colors.textTertiary },
-  checkoutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.moneyIn, paddingHorizontal: 22, paddingVertical: 12, borderRadius: 8 },
-  checkoutText: { fontSize: 15, fontWeight: '700', color: colors.textInverse, letterSpacing: 0.3 },
+  checkoutBtn: { borderRadius: 14, overflow: 'hidden' },
+  checkoutGradient: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 22, paddingVertical: 15 },
+  checkoutText: { fontSize: 15, fontWeight: '700', color: colors.white, letterSpacing: 0.3 },
 
-  fab: { position: 'absolute', bottom: 24, right: 20, width: 52, height: 52, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
+  fab: { position: 'absolute', bottom: 110, right: 20, width: 52, height: 52, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 8 },
 
   emptyState: { alignItems: 'center', paddingVertical: 60, gap: 8 },
-  emptyIconWrap: { width: 56, height: 56, borderRadius: 12, backgroundColor: colors.bgElevated, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-  emptySubtext: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', lineHeight: 18, paddingHorizontal: 20 },
 
   modalContainer: { flex: 1, backgroundColor: colors.bg },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: colors.bgCard, borderBottomWidth: 0.5, borderBottomColor: colors.border },

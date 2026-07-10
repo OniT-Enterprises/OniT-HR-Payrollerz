@@ -438,9 +438,21 @@ class TaxFilingService {
     const recordsByRunMap = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
     const periodRecords = Array.from(recordsByRunMap.values()).flat();
 
-    const totalsByEmployee = new Map<string, { grossWages: number; employeeINSS: number; employerINSS: number; contributionBase: number }>();
+    const totalsByEmployee = new Map<string, {
+      grossWages: number;
+      employeeINSS: number;
+      employerINSS: number;
+      contributionBase: number;
+      incomeTax: number;
+      annualSubsidy: number;
+      isResident?: boolean;
+    }>();
     periodRecords.forEach(record => {
-      const rec = record as TaxablePayrollRecord & { employeeId?: string };
+      const rec = record as TaxablePayrollRecord & {
+        employeeId?: string;
+        isResident?: boolean;
+        earnings?: { type?: string; amount?: number }[];
+      };
       if (!rec.employeeId) return;
 
       const employeeINSS = getRecordINSSEmployee(rec);
@@ -448,12 +460,18 @@ class TaxFilingService {
       const contributionBase = taxConfig.inss.employeeRate > 0
         ? divideMoney(employeeINSS, taxConfig.inss.employeeRate)
         : 0;
+      const annualSubsidy = (rec.earnings || [])
+        .filter((e) => e?.type === 'subsidio_anual')
+        .reduce((sum, e) => addMoney(sum, e?.amount || 0), 0);
 
       const existing = totalsByEmployee.get(rec.employeeId) || {
         grossWages: 0,
         employeeINSS: 0,
         employerINSS: 0,
         contributionBase: 0,
+        incomeTax: 0,
+        annualSubsidy: 0,
+        isResident: undefined as boolean | undefined,
       };
 
       totalsByEmployee.set(rec.employeeId, {
@@ -461,6 +479,9 @@ class TaxFilingService {
         employeeINSS: addMoney(existing.employeeINSS, employeeINSS),
         employerINSS: addMoney(existing.employerINSS, employerINSS),
         contributionBase: addMoney(existing.contributionBase, contributionBase),
+        incomeTax: addMoney(existing.incomeTax, getRecordWITWithheld(rec)),
+        annualSubsidy: addMoney(existing.annualSubsidy, annualSubsidy),
+        isResident: typeof rec.isResident === 'boolean' ? rec.isResident : existing.isResident,
       });
     });
 
@@ -487,6 +508,8 @@ class TaxFilingService {
 
       if (employeeContribution === 0 && employerContribution === 0) continue;
 
+      const grossWages = roundMoney(totals.grossWages);
+      const incomeTax = roundMoney(totals.incomeTax);
       employeeRecords.push({
         employeeId: employee.id,
         fullName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
@@ -495,6 +518,11 @@ class TaxFilingService {
         employeeContribution,
         employerContribution,
         totalContribution,
+        grossWages,
+        annualSubsidy: roundMoney(totals.annualSubsidy),
+        incomeTax,
+        netPay: subtractMoney(grossWages, incomeTax, employeeContribution),
+        ...(typeof totals.isResident === 'boolean' ? { isResident: totals.isResident } : {}),
       });
 
       totalContributionBase = addMoney(totalContributionBase, contributionBase);
