@@ -18,6 +18,7 @@ export default [
       "netlify/",
       "server/",
       "mobile/",
+      "packages/xefe-mobile/", // React Native shared package — linted via the mobile apps
       "client/i18n/translations.ts",
       "client/i18n/locales/",
       "public/sw.js",
