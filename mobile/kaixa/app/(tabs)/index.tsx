@@ -22,7 +22,6 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-  Clock,
   ArrowDownLeft,
   ArrowUpRight,
   Minus,
@@ -39,6 +38,7 @@ import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { colors } from '../../lib/colors';
 import { generateMonthlyReport } from '../../lib/monthlyReport';
 import { InlineNotice } from '../../components/InlineNotice';
+import { SectionLabel, ChipIcon, EmptyCard } from '../../components/ui';
 
 function getGreeting(): string {
   const hour = Number(
@@ -242,9 +242,7 @@ export default function HomeScreen() {
       {vatActive && (
         <View style={styles.vatDashboard}>
           <View style={styles.vatDashHeader}>
-            <View style={styles.vatDashIcon}>
-              <Receipt size={14} color={colors.info} strokeWidth={2} />
-            </View>
+            <ChipIcon icon={Receipt} size={26} iconSize={14} />
             <Text style={styles.vatDashTitle}>VAT {vatRate}%</Text>
           </View>
           <View style={styles.vatDashRow}>
@@ -265,109 +263,94 @@ export default function HomeScreen() {
             onPress={() => router.push('/tax-filing')}
             activeOpacity={0.7}
           >
-            <FileBarChart size={13} color={colors.info} strokeWidth={2} />
+            <FileBarChart size={13} color={colors.primary} strokeWidth={2} />
             <Text style={styles.vatDashBtnText}>Deklarasaun VAT</Text>
           </TouchableOpacity>
         </View>
       )}
 
       {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Aksaun Lalais</Text>
+      <SectionLabel>Aksaun Lalais</SectionLabel>
       <View style={styles.actionsGrid}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.moneyInBg }]}
+          style={styles.actionButton}
           onPress={() => router.push('/(tabs)/money?type=in')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(52, 211, 153, 0.12)' }]}>
-            <TrendingUp size={20} color={colors.moneyIn} strokeWidth={2} />
-          </View>
+          <ChipIcon icon={TrendingUp} tone="moneyIn" size={38} iconSize={20} />
           <Text style={styles.actionLabel}>Osan Tama</Text>
           <Text style={styles.actionSub}>Money In</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.moneyOutBg }]}
+          style={styles.actionButton}
           onPress={() => router.push('/(tabs)/money?type=out')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(251, 113, 133, 0.12)' }]}>
-            <TrendingDown size={20} color={colors.moneyOut} strokeWidth={2} />
-          </View>
+          <ChipIcon icon={TrendingDown} tone="moneyOut" size={38} iconSize={20} />
           <Text style={styles.actionLabel}>Osan Sai</Text>
           <Text style={styles.actionSub}>Money Out</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.primaryGlow }]}
+          style={styles.actionButton}
           onPress={() => router.push('/(tabs)/sell')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(224, 141, 107, 0.12)' }]}>
-            <ShoppingBag size={20} color={colors.primary} strokeWidth={2} />
-          </View>
+          <ChipIcon icon={ShoppingBag} size={38} iconSize={20} />
           <Text style={styles.actionLabel}>Faan</Text>
           <Text style={styles.actionSub}>Sell</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(250, 204, 21, 0.06)' }]}
+          style={styles.actionButton}
           onPress={() => router.push('/(tabs)/sales')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(250, 204, 21, 0.12)' }]}>
-            <Users size={20} color={colors.warning} strokeWidth={2} />
-          </View>
+          <ChipIcon icon={Users} size={38} iconSize={20} />
           <Text style={styles.actionLabel}>Tab</Text>
           <Text style={styles.actionSub}>Credit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(96, 165, 250, 0.06)' }]}
+          style={styles.actionButton}
           onPress={handleMonthlyReport}
           disabled={generatingReport}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(96, 165, 250, 0.12)' }]}>
-            {generatingReport ? (
-              <ActivityIndicator size="small" color={colors.info} />
-            ) : (
-              <FileBarChart size={20} color={colors.info} strokeWidth={2} />
-            )}
-          </View>
+          {generatingReport ? (
+            <View style={styles.actionSpinner}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : (
+            <ChipIcon icon={FileBarChart} size={38} iconSize={20} />
+          )}
           <Text style={styles.actionLabel}>Relatóriu</Text>
           <Text style={styles.actionSub}>Report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(74, 222, 128, 0.06)' }]}
+          style={styles.actionButton}
           onPress={() => router.push('/tax-filing')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(74, 222, 128, 0.12)' }]}>
-            <Receipt size={20} color={colors.success} strokeWidth={2} />
-          </View>
+          <ChipIcon icon={Receipt} size={38} iconSize={20} />
           <Text style={styles.actionLabel}>VAT</Text>
           <Text style={styles.actionSub}>Tax Filing</Text>
         </TouchableOpacity>
       </View>
 
       {/* Recent Transactions */}
-      <Text style={styles.sectionTitle}>Movimentu Ikus</Text>
+      <SectionLabel>Movimentu Ikus</SectionLabel>
       {loading ? (
         <View style={styles.emptyState}>
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       ) : recent.length === 0 ? (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyIconWrap}>
-            <Clock size={24} color={colors.textTertiary} strokeWidth={1.5} />
-          </View>
-          <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
-          <Text style={styles.emptySubtext}>
-            Tap Money In or Money Out to start tracking
-          </Text>
-        </View>
+        <EmptyCard
+          title="Seidauk iha transasaun"
+          subtitle="Tap Money In or Money Out to start tracking"
+        />
       ) : (
         <View style={styles.recentList}>
           {recent.map((tx) => (
@@ -418,7 +401,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 120,
   },
 
   // Logo
@@ -432,7 +415,7 @@ const styles = StyleSheet.create({
 
   // Greeting
   greetingContainer: {
-    marginBottom: 24,
+    marginBottom: 28,
   },
   greetingText: {
     fontSize: 30,
@@ -457,10 +440,10 @@ const styles = StyleSheet.create({
 
   // Summary Card
   summaryCard: {
-    borderRadius: 10,
+    borderRadius: 16,
     padding: 20,
-    marginBottom: 24,
-    borderWidth: 0.5,
+    marginBottom: 28,
+    borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.bgCard,
     overflow: 'hidden',
@@ -525,11 +508,12 @@ const styles = StyleSheet.create({
   // VAT Dashboard
   vatDashboard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 0.5,
-    borderColor: 'rgba(96, 165, 250, 0.15)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   vatDashHeader: {
     flexDirection: 'row',
@@ -537,18 +521,10 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  vatDashIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    backgroundColor: 'rgba(96, 165, 250, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   vatDashTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.info,
+    color: colors.primary,
     letterSpacing: 0.3,
   },
   vatDashRow: {
@@ -584,27 +560,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginTop: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: 'rgba(96, 165, 250, 0.08)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(96, 165, 250, 0.2)',
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: colors.primaryBg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   vatDashBtnText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.info,
+    color: colors.primary,
     letterSpacing: 0.1,
-  },
-
-  // Section Title
-  sectionTitle: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
   },
 
   // Quick Actions
@@ -616,24 +582,27 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     width: '31%',
-    borderRadius: 10,
-    padding: 14,
+    borderRadius: 14,
+    padding: 15,
     alignItems: 'center',
-    borderWidth: 0,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  actionIconWrap: {
+  actionSpinner: {
     width: 38,
     height: 38,
-    borderRadius: 8,
+    borderRadius: 11,
+    backgroundColor: colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
   actionLabel: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.text,
     letterSpacing: -0.1,
+    marginTop: 8,
   },
   actionSub: {
     fontSize: 10,
@@ -643,11 +612,13 @@ const styles = StyleSheet.create({
 
   // Recent Transactions
   recentList: {
-    gap: 2,
+    gap: 8,
   },
   txRow: {
     backgroundColor: colors.bgCard,
-    borderRadius: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 14,
     paddingLeft: 16,
     flexDirection: 'row',
@@ -690,31 +661,10 @@ const styles = StyleSheet.create({
   // Empty State
   emptyState: {
     backgroundColor: colors.bgCard,
-    borderRadius: 10,
+    borderRadius: 16,
     padding: 32,
     alignItems: 'center',
-    borderWidth: 0.5,
+    borderWidth: 1,
     borderColor: colors.border,
-    borderStyle: 'dashed',
-  },
-  emptyIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: colors.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  emptySubtext: {
-    fontSize: 12,
-    color: colors.textTertiary,
-    textAlign: 'center',
   },
 });

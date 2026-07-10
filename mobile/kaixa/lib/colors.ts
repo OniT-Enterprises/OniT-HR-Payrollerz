@@ -28,6 +28,7 @@ export const colors = {
   primaryMuted: '#C2714F', // terracotta-500 — the OG brand color
   primaryDark: '#8A452E',  // terracotta-700 — subtle tints
   primaryGlow: 'rgba(224, 141, 107, 0.08)', // very subtle brand wash
+  primaryBg: 'rgba(224, 141, 107, 0.12)',   // icon chips / active pills
 
   // ── Gradient (terracotta → amber/gold) ───────────
   gradientStart: '#C2714F', // terracotta

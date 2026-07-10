@@ -59,6 +59,11 @@ export default function LoginScreen() {
         {/* Logo */}
         <View style={styles.brandContainer}>
           <Image
+            source={require('../../assets/xefe-mark.webp')}
+            style={styles.xefeMark}
+            resizeMode="contain"
+          />
+          <Image
             source={require('../../assets/kaixa-logo-light-on-dark.png')}
             style={styles.logo}
             resizeMode="contain"
@@ -157,7 +162,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Footer */}
-        <Text style={styles.footer}>powered by Meza</Text>
+        <Text style={styles.footer}>powered by Xefe</Text>
       </View>
     </KeyboardAvoidingView>
   );
@@ -178,6 +183,12 @@ const styles = StyleSheet.create({
   brandContainer: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  xefeMark: {
+    width: 34,
+    height: 38,
+    marginBottom: 14,
+    opacity: 0.9,
   },
   logo: {
     width: 200,
@@ -269,7 +280,7 @@ const styles = StyleSheet.create({
     padding: 15,
     alignItems: 'center',
     backgroundColor: colors.bgElevated,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.border,
   },
   googleG: {
