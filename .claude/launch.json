@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "8090", "--strictPort", "false"],
       "port": 8090
+    },
+    {
+      "name": "vite-emulator",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--mode", "emulator", "--port", "8091", "--strictPort", "false"],
+      "port": 8091
     }
   ]
 }

@@ -5027,7 +5027,16 @@ const messages = {
       "termsNet60": "Loron 60",
       "termsCustom": "Data rasik",
       "dueDateAuto": "Define automátiku husi kondisaun pagamentu.",
-      "received": "Simu ona"
+      "received": "Simu ona",
+      "discountShort": "Desk %",
+      "vatShort": "IVA %",
+      "discountTitle": "Deskontu %",
+      "vatTitle": "IVA %",
+      "projectName": "Projetu / Servisu",
+      "projectPlaceholder": "ex., Redesenhu website",
+      "poNumber": "Referénsia / PO",
+      "poPlaceholder": "Númeru PO kliente nian",
+      "includesDiscount": "Inklui deskontu"
     },
     "payments": {
       "title": "Pagamentu",
@@ -5128,7 +5137,12 @@ const messages = {
       "swiftCode": "Kódigu SWIFT",
       "accountRequired": "Banku no númeru konta presiza",
       "defaultMethods": "Metodu pagamentu padraun ne'ebé ita simu",
-      "defaultMethodsHint": "Pre-hili ona iha fatura foun; bele muda ba kada fatura."
+      "defaultMethodsHint": "Pre-hili ona iha fatura foun; bele muda ba kada fatura.",
+      "footerMessage": "Mensajen Rodapé",
+      "footerPlaceholder": "Obrigadu ba ita-nia negósiu!",
+      "footerHelp": "Liña ikus iha fatura, PDF no email nia okos — ex., \"Obrigadu tanba hili Onit Enterprises Lda.\"",
+      "bin": "BIN",
+      "binPlaceholder": "Númeru identifikasaun banku"
     },
     "recurring": {
       "title": "Fatura Rekorrente",

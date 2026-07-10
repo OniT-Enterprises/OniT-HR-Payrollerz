@@ -25,6 +25,7 @@ import {
   paymentMethodsSummary,
   formatInvoiceMoney,
   formatInvoiceDate,
+  lineNetAmount,
 } from '@/lib/invoiceTemplates';
 import { multiplyMoney, subtractMoney } from '@/lib/currency';
 
@@ -32,6 +33,7 @@ export interface InvoicePaperItem {
   description: string;
   quantity: number;
   unitPrice: number;
+  discount?: number;
 }
 
 /** Minimal shape needed to render — a full Invoice satisfies this */
@@ -45,7 +47,10 @@ export interface InvoicePaperData {
   issueDate: string;
   dueDate: string;
   items: InvoicePaperItem[];
+  projectName?: string;
+  poNumber?: string;
   subtotal: number;
+  discountTotal?: number;
   taxRate: number;
   taxAmount: number;
   total: number;
@@ -141,6 +146,7 @@ function ItemsTable({
   headerClassName?: string;
   zebra?: boolean;
 }) {
+  const showDiscount = ctx.invoice.items.some((item) => (item.discount || 0) > 0);
   return (
     <table className="w-full text-sm" style={{ color: PAPER_TEXT }}>
       <thead>
@@ -148,6 +154,9 @@ function ItemsTable({
           <th className="py-2.5 px-3 text-left text-[11px] font-bold uppercase tracking-wider">Description</th>
           <th className="py-2.5 px-3 text-right text-[11px] font-bold uppercase tracking-wider w-16">Qty</th>
           <th className="py-2.5 px-3 text-right text-[11px] font-bold uppercase tracking-wider w-28">Unit Price</th>
+          {showDiscount && (
+            <th className="py-2.5 px-3 text-right text-[11px] font-bold uppercase tracking-wider w-16">Disc.</th>
+          )}
           <th className="py-2.5 px-3 text-right text-[11px] font-bold uppercase tracking-wider w-28">Amount</th>
         </tr>
       </thead>
@@ -163,8 +172,13 @@ function ItemsTable({
             <td className="py-3 px-3">{item.description}</td>
             <td className="py-3 px-3 text-right tabular-nums">{item.quantity}</td>
             <td className="py-3 px-3 text-right tabular-nums">{formatInvoiceMoney(item.unitPrice)}</td>
+            {showDiscount && (
+              <td className="py-3 px-3 text-right tabular-nums" style={{ color: PAPER_MUTED }}>
+                {item.discount ? `${item.discount}%` : '—'}
+              </td>
+            )}
             <td className="py-3 px-3 text-right font-medium tabular-nums">
-              {formatInvoiceMoney(multiplyMoney(item.quantity, item.unitPrice))}
+              {formatInvoiceMoney(lineNetAmount(item))}
             </td>
           </tr>
         ))}
@@ -184,6 +198,12 @@ function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceT
         <span style={{ color: PAPER_MUTED }}>Subtotal</span>
         <span className="tabular-nums">{formatInvoiceMoney(invoice.subtotal)}</span>
       </div>
+      {(invoice.discountTotal || 0) > 0 && (
+        <div className="flex justify-between py-0.5 text-xs" style={{ color: PAPER_MUTED }}>
+          <span>Includes discount of</span>
+          <span className="tabular-nums">-{formatInvoiceMoney(invoice.discountTotal || 0)}</span>
+        </div>
+      )}
       {invoice.taxAmount > 0 && (
         <div className="flex justify-between py-0.5">
           <span style={{ color: PAPER_MUTED }}>Tax ({invoice.taxRate}%)</span>
@@ -237,6 +257,8 @@ function PaymentInfoBlock({ ctx, boxed }: { ctx: TemplateContext; boxed?: boolea
     if (account.accountName) rows.push({ label: 'Account Name', value: account.accountName });
     if (account.accountNumber) rows.push({ label: 'Account Number', value: account.accountNumber });
     if (account.swiftCode) rows.push({ label: 'SWIFT', value: account.swiftCode });
+    if (account.iban) rows.push({ label: 'IBAN', value: account.iban });
+    if (account.bin) rows.push({ label: 'BIN', value: account.bin });
     rows.push({ label: 'Reference', value: invoice.invoiceNumber });
   }
 
@@ -293,6 +315,17 @@ function NotesBlock({ ctx }: { ctx: TemplateContext }) {
   );
 }
 
+/** Thank-you line; minimal template shows it only when explicitly configured */
+function PaperFooter({ ctx, showDefault = true }: { ctx: TemplateContext; showDefault?: boolean }) {
+  const message = ctx.settings?.footerMessage || (showDefault ? 'Thank you for your business!' : null);
+  if (!message) return null;
+  return (
+    <p className="pt-2 text-center text-xs" style={{ color: PAPER_FAINT }}>
+      {message}
+    </p>
+  );
+}
+
 function CompanyDetails({ settings, light }: { settings?: Partial<InvoiceSettings>; light?: boolean }) {
   const muted = light ? 'rgba(255,255,255,0.85)' : PAPER_MUTED;
   return (
@@ -328,6 +361,8 @@ function MetaRows({ ctx, align = 'right' }: { ctx: TemplateContext; align?: 'lef
     { label: 'Issue Date', value: formatInvoiceDate(invoice.issueDate) },
     { label: 'Due Date', value: formatInvoiceDate(invoice.dueDate) },
     ...(termsLabel ? [{ label: 'Terms', value: termsLabel }] : []),
+    ...(invoice.projectName ? [{ label: 'Project', value: invoice.projectName }] : []),
+    ...(invoice.poNumber ? [{ label: 'Ref / PO', value: invoice.poNumber }] : []),
   ];
   return (
     <div className={`space-y-1 text-xs ${align === 'right' ? 'text-right' : ''}`}>
@@ -384,10 +419,7 @@ function ClassicTemplate({ ctx }: { ctx: TemplateContext }) {
       <TotalsBlock ctx={ctx} variant="classic" />
       <PaymentInfoBlock ctx={ctx} />
       <NotesBlock ctx={ctx} />
-
-      <p className="pt-2 text-center text-xs" style={{ color: PAPER_FAINT }}>
-        Thank you for your business!
-      </p>
+      <PaperFooter ctx={ctx} />
     </div>
   );
 }
@@ -439,10 +471,7 @@ function ModernTemplate({ ctx }: { ctx: TemplateContext }) {
         <TotalsBlock ctx={ctx} variant="modern" />
         <PaymentInfoBlock ctx={ctx} boxed />
         <NotesBlock ctx={ctx} />
-
-        <p className="pt-2 text-center text-xs" style={{ color: PAPER_FAINT }}>
-          Thank you for your business!
-        </p>
+        <PaperFooter ctx={ctx} />
       </div>
     </div>
   );
@@ -489,6 +518,7 @@ function MinimalTemplate({ ctx }: { ctx: TemplateContext }) {
       <TotalsBlock ctx={ctx} variant="minimal" />
       <PaymentInfoBlock ctx={ctx} />
       <NotesBlock ctx={ctx} />
+      <PaperFooter ctx={ctx} showDefault={false} />
     </div>
   );
 }

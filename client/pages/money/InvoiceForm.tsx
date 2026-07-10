@@ -50,13 +50,14 @@ import {
   getSettingsPaymentAccounts,
   resolveInvoicePaymentAccount,
   DEFAULT_TEMPLATE_ID,
+  computeLineTotals,
+  lineNetAmount,
 } from '@/lib/invoiceTemplates';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/money';
 import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
-import { calculateInvoiceAmounts } from '@/lib/accounting/calculations';
-import { subtractMoney } from '@/lib/currency';
+import { sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
   FileText,
   Plus,
@@ -140,6 +141,8 @@ export default function InvoiceForm() {
       issueDate: getTodayTL(),
       dueDate: addDaysISO(getTodayTL(), 30),
       items: [{ description: '', quantity: 1, unitPrice: 0, amount: 0 }],
+      projectName: '',
+      poNumber: '',
       taxRate: 0,
       notes: '',
       terms: 'Payment due within 30 days.',
@@ -203,6 +206,8 @@ export default function InvoiceForm() {
         issueDate: invoice.issueDate,
         dueDate: invoice.dueDate,
         items: invoice.items,
+        projectName: invoice.projectName || '',
+        poNumber: invoice.poNumber || '',
         taxRate: invoice.taxRate,
         notes: invoice.notes || '',
         terms: invoice.terms || '',
@@ -227,6 +232,8 @@ export default function InvoiceForm() {
         issueDate: today,
         dueDate: addDaysISO(today, termsDays ?? 30),
         items: duplicateInvoice.items,
+        projectName: duplicateInvoice.projectName || '',
+        poNumber: duplicateInvoice.poNumber || '',
         taxRate: duplicateInvoice.taxRate,
         notes: duplicateInvoice.notes || '',
         terms: duplicateInvoice.terms || '',
@@ -254,21 +261,23 @@ export default function InvoiceForm() {
   const calculateTotals = () => {
     const items = formData.items || [];
     const invoiceTaxRate = Number(formData.taxRate) || 0;
-    return calculateInvoiceAmounts(
-      items.map((item) => ({
-        description: item.description || '',
-        quantity: Number(item.quantity) || 0,
-        unitPrice: Number(item.unitPrice) || 0,
-        amount: 0,
-        ...(item.vatRate !== undefined && item.vatRate !== null
-          ? { vatRate: Number(item.vatRate) }
-          : {}),
-      })),
-      invoiceTaxRate,
+    // Line amounts are net of per-line discounts
+    const { subtotal, discountTotal } = computeLineTotals(items);
+    // Per-line VAT: use item vatRate if set, otherwise fall back to invoice-level rate
+    const taxAmount = sumMoney(
+      items.map((item) => {
+        const rawVat = Number(item.vatRate);
+        const rate = !isNaN(rawVat) && item.vatRate !== undefined && item.vatRate !== null
+          ? rawVat
+          : invoiceTaxRate;
+        return percentOf(lineNetAmount(item), rate);
+      })
     );
+    const total = addMoney(subtotal, taxAmount);
+    return { subtotal, discountTotal, taxAmount, total };
   };
 
-  const { subtotal, taxAmount, total } = calculateTotals();
+  const { subtotal, discountTotal, taxAmount, total } = calculateTotals();
 
   const _selectedCustomer = customers.find((c) => c.id === formData.customerId);
 
@@ -295,8 +304,12 @@ export default function InvoiceForm() {
         description: item.description,
         quantity: Number(item.quantity) || 0,
         unitPrice: Number(item.unitPrice) || 0,
+        ...(item.discount ? { discount: Number(item.discount) } : {}),
       })),
+      projectName: formData.projectName || undefined,
+      poNumber: formData.poNumber || undefined,
       subtotal,
+      discountTotal,
       taxRate: Number(formData.taxRate) || 0,
       taxAmount,
       total,
@@ -309,7 +322,7 @@ export default function InvoiceForm() {
       paymentMethods: formData.paymentMethods as PaymentMethod[] | undefined,
       paymentAccount: previewAccount,
     };
-  }, [formData, subtotal, taxAmount, total, invoice, invoiceSettings, paymentAccounts, _selectedCustomer, t]);
+  }, [formData, subtotal, discountTotal, taxAmount, total, invoice, invoiceSettings, paymentAccounts, _selectedCustomer, t]);
 
   const handleCreateCustomer = async () => {
     const name = newCustomer.name.trim();
@@ -341,7 +354,7 @@ export default function InvoiceForm() {
   };
 
   const addLineItem = () => {
-    append({ description: '', quantity: 1, unitPrice: 0, amount: 0, vatRate: undefined });
+    append({ description: '', quantity: 1, unitPrice: 0, amount: 0, discount: undefined, vatRate: undefined });
   };
 
   const removeLineItem = (index: number) => {
@@ -363,9 +376,12 @@ export default function InvoiceForm() {
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unitPrice),
-          amount: Number(item.quantity) * Number(item.unitPrice),
+          ...(item.discount !== undefined && item.discount !== null && item.discount > 0 && { discount: Number(item.discount) }),
+          amount: lineNetAmount(item),
           ...(item.vatRate !== undefined && item.vatRate !== null && { vatRate: Number(item.vatRate) }),
         })),
+        projectName: data.projectName || '',
+        poNumber: data.poNumber || '',
         taxRate: Number(data.taxRate),
         notes: data.notes || '',
         terms: data.terms || '',
@@ -552,6 +568,33 @@ export default function InvoiceForm() {
                     {t('money.invoices.addCustomerFirst') || 'Add a customer first'}
                   </Button>
                 )}
+
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>
+                      {t('money.invoices.projectName') || 'Project / Service'}{' '}
+                      <span className="font-normal text-muted-foreground">
+                        ({t('common.optional') || 'optional'})
+                      </span>
+                    </Label>
+                    <Input
+                      {...register('projectName')}
+                      placeholder={t('money.invoices.projectPlaceholder') || 'e.g., Website redesign'}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      {t('money.invoices.poNumber') || 'Reference / PO'}{' '}
+                      <span className="font-normal text-muted-foreground">
+                        ({t('common.optional') || 'optional'})
+                      </span>
+                    </Label>
+                    <Input
+                      {...register('poNumber')}
+                      placeholder={t('money.invoices.poPlaceholder') || 'Customer PO number'}
+                    />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -563,18 +606,19 @@ export default function InvoiceForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="hidden sm:flex gap-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  <div className="flex-1">{t('money.invoices.description') || 'Description'}</div>
-                  <div className="w-20">{t('money.invoices.qty') || 'Qty'}</div>
-                  <div className="w-28">{t('money.invoices.price') || 'Unit price'}</div>
-                  <div className="w-20">{t('money.invoices.taxRate') || 'Tax %'}</div>
-                  <div className="w-28 text-right">{t('money.invoices.amount') || 'Amount'}</div>
-                  <div className="w-10 shrink-0" />
+                {/* Column labels */}
+                <div className="mb-2 hidden gap-3 pr-12 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:flex">
+                  <span className="flex-1">{t('money.invoices.description') || 'Description'}</span>
+                  <span className="w-16 text-right">{t('money.invoices.qty') || 'Qty'}</span>
+                  <span className="w-28 text-right">{t('money.invoices.price') || 'Price'}</span>
+                  <span className="w-16 text-right">{t('money.invoices.discountShort') || 'Disc %'}</span>
+                  <span className="w-16 text-right">{t('money.invoices.vatShort') || 'VAT %'}</span>
+                  <span className="w-28 text-right">{t('money.invoices.amount') || 'Amount'}</span>
                 </div>
                 <div className="space-y-3">
                   {fields.map((field, index) => {
                     const itemValues = formData.items?.[index];
-                    const lineTotal = (itemValues?.quantity || 0) * (itemValues?.unitPrice || 0);
+                    const lineTotal = itemValues ? lineNetAmount(itemValues) : 0;
                     return (
                       <div key={field.id} className="flex gap-3 items-start">
                         <div className="flex-1">
@@ -591,7 +635,7 @@ export default function InvoiceForm() {
                             </p>
                           )}
                         </div>
-                        <div className="w-20">
+                        <div className="w-16">
                           <Input
                             type="number"
                             {...register(`items.${index}.quantity`, { valueAsNumber: true })}
@@ -616,7 +660,19 @@ export default function InvoiceForm() {
                             />
                           </div>
                         </div>
-                        <div className="w-20">
+                        <div className="w-16">
+                          <Input
+                            type="number"
+                            {...register(`items.${index}.discount`, { valueAsNumber: true })}
+                            placeholder="0%"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            title={t('money.invoices.discountTitle') || 'Discount %'}
+                            className={`text-xs ${errors.items?.[index]?.discount ? 'border-red-500' : ''}`}
+                          />
+                        </div>
+                        <div className="w-16">
                           <Input
                             type="number"
                             {...register(`items.${index}.vatRate`, { valueAsNumber: true })}
@@ -624,6 +680,7 @@ export default function InvoiceForm() {
                             min="0"
                             max="100"
                             step="0.5"
+                            title={t('money.invoices.vatTitle') || 'VAT %'}
                             className="text-xs"
                           />
                         </div>
@@ -938,6 +995,12 @@ export default function InvoiceForm() {
                   </span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
+                {discountTotal > 0 && (
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t('money.invoices.includesDiscount') || 'Includes discount of'}</span>
+                    <span>-{formatCurrency(discountTotal)}</span>
+                  </div>
+                )}
                 {formData.taxRate > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1">

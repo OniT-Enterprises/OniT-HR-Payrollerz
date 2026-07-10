@@ -76,6 +76,8 @@ const EMPTY_ACCOUNT_FORM = {
   accountName: '',
   accountNumber: '',
   swiftCode: '',
+  iban: '',
+  bin: '',
 };
 
 export default function InvoiceSettingsPage() {
@@ -226,6 +228,8 @@ export default function InvoiceSettingsPage() {
       accountName: accountForm.accountName,
       accountNumber: accountForm.accountNumber,
       ...(accountForm.swiftCode ? { swiftCode: accountForm.swiftCode } : {}),
+      ...(accountForm.iban ? { iban: accountForm.iban } : {}),
+      ...(accountForm.bin ? { bin: accountForm.bin } : {}),
     };
 
     updateField('paymentAccounts', [...(settings.paymentAccounts || []), account]);
@@ -481,6 +485,7 @@ export default function InvoiceSettingsPage() {
                             .filter(Boolean)
                             .join(' · ')}
                           {account.swiftCode ? ` · SWIFT ${account.swiftCode}` : ''}
+                          {account.iban ? ` · IBAN ${account.iban}` : ''}
                         </p>
                       </div>
                       <Button
@@ -557,6 +562,32 @@ export default function InvoiceSettingsPage() {
                         value={accountForm.swiftCode}
                         onChange={(e) => setAccountForm((p) => ({ ...p, swiftCode: e.target.value }))}
                         placeholder="BNULTLDI"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        IBAN{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({t('common.optional') || 'optional'})
+                        </span>
+                      </Label>
+                      <Input
+                        value={accountForm.iban}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, iban: e.target.value }))}
+                        placeholder="TL38 0021 ..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>
+                        {t('money.settings.bin') || 'BIN'}{' '}
+                        <span className="font-normal text-muted-foreground">
+                          ({t('common.optional') || 'optional'})
+                        </span>
+                      </Label>
+                      <Input
+                        value={accountForm.bin}
+                        onChange={(e) => setAccountForm((p) => ({ ...p, bin: e.target.value }))}
+                        placeholder={t('money.settings.binPlaceholder') || 'Bank identification number'}
                       />
                     </div>
                   </div>
@@ -714,6 +745,19 @@ export default function InvoiceSettingsPage() {
                   placeholder={t('money.settings.termsPlaceholder') || 'Payment due within 30 days'}
                   rows={2}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t('money.settings.footerMessage') || 'Footer Message'}</Label>
+                <Input
+                  value={settings.footerMessage || ''}
+                  onChange={(e) => updateField('footerMessage', e.target.value)}
+                  placeholder={t('money.settings.footerPlaceholder') || 'Thank you for your business!'}
+                  maxLength={150}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('money.settings.footerHelp') || 'Closing line at the bottom of invoices, PDFs, and emails — e.g., "Thank you for choosing Onit Enterprises Lda."'}
+                </p>
               </div>
             </CardContent>
           </Card>
