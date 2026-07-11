@@ -27,6 +27,14 @@ Every business above the registration threshold must:
 - Kaixa mobile: Built **VAT-ready from day one** — data model captures VAT fields even when rate is 0%
 - When VAT goes live: flip the flag, set the rate, existing data is already structured correctly
 
+> **Status (2026-07-11, commit `2102cdd`):** the flag is now **enforced** on the
+> VAT Returns page (`client/pages/money/VATReturns.tsx`). While the platform
+> `vatConfig.isActive` flag is off, the page shows a "VAT filing is not active in
+> Timor-Leste" notice and will **not** compute the summary, save, or mark a
+> return filed. This intentionally parks the earlier concern that the returns
+> screen used an EU-style input-credit model — no VAT math runs until the flag
+> is switched on. Flip `vatConfig.isActive` to re-enable.
+
 ### 2. Three User Levels
 ```
 Level 1: Kaixa-only user (kiosk owner)
