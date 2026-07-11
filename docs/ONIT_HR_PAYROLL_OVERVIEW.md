@@ -11,7 +11,12 @@
 
 OniT HR/Payroll is a comprehensive, cloud-based human resources and payroll management system built specifically for the Timor-Leste market. Unlike generic international HR software, OniT is designed from the ground up to handle TL's unique tax requirements, labor laws, banking systems, and multilingual workforce.
 
-The platform enables businesses of any size to manage their entire employee lifecycle - from hiring to retirement - while ensuring full compliance with Timorese regulations including INSS contributions, withholding tax, and foreign worker permit tracking.
+The platform enables businesses to manage their employee lifecycle—from hiring
+to retirement—while supporting Timor-Leste requirements including INSS
+contributions, wage income-tax withholding, and foreign-worker permit tracking.
+Payroll defaults and calculations are designed for Timor-Leste, but local
+accountant/legal sign-off is still required for the interpretations listed in the
+[Timor-Leste Accounting Mathematics Review](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html).
 
 ### Key Differentiators
 

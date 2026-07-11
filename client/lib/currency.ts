@@ -9,7 +9,7 @@ import Decimal from 'decimal.js';
 // Configure Decimal.js for currency operations
 Decimal.set({
   precision: 20,        // High precision for intermediate calculations
-  rounding: Decimal.ROUND_HALF_UP, // Standard banking rounding
+  rounding: Decimal.ROUND_HALF_UP, // Currency half-up rounding (not half-even/banker's rounding)
 });
 
 /**

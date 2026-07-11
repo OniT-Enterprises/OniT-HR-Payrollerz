@@ -75,9 +75,13 @@ There are parallel “generic” payroll types (US‑centric) and TL‑specific 
 
 A pass over the payroll engine, accounting posting, and statutory-filing aggregation.
 All changes are covered by the unit suite (`tests/client/payroll-*.test.ts`,
-207 passing) and typecheck/lint clean. Functions were also deployed. A
-methodology summary for an external accountant was produced as an Artifact
-(rates, formulas, worked examples, GL journal, and the open questions below).
+208 passing) and typecheck/lint clean. Functions were also deployed. The
+standalone [Timor-Leste Accounting Mathematics Review](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html)
+records the rates, formulas, worked examples, balanced payroll journal, official
+sources, and questions for an external accountant. It is print-friendly and can
+be saved as a PDF without running the application. A commentable Google Docs
+copy for the external accountant (fillable decision/approval tables) lives at
+<https://docs.google.com/document/d/1Dwmth6fPgxz1sHFgEdHyIuuBFaxHEEG4zaauksMVBHg/>.
 
 ### Rules corrected / clarified
 
@@ -125,6 +129,20 @@ minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged
   allocation remainders (refuses to post an unbalanced entry). New default
   account **2260 · Other Payroll Deductions Payable** added to the chart.
 
+### Precision follow-up
+
+- Proportionally capped court/loan/advance/other deductions now reconcile to the
+  available 30% ceiling **exactly at cent precision**. The last capped line
+  absorbs the cent remainder without exceeding the ceiling **or the line's own
+  requested amount** (a rounding edge case could previously assign the last line
+  a cent more than was owed; now clamped, with a regression test).
+- The scalar deduction fields returned by the payroll engine now contain the
+  **amount actually deducted after capping**, matching the payslip lines, net pay,
+  journal summary, and saved record.
+- Daily and premium rates now go through the Decimal money helpers. The rounding
+  mode is documented accurately as `ROUND_HALF_UP`, not “banker's rounding”
+  (`ROUND_HALF_EVEN`).
+
 ### Constant corrections (`taxConfig.ts` / `constants-tl.ts`)
 
 - Maternity leave: **84 days** (14 pre-natal / 70 post-natal).
@@ -147,6 +165,10 @@ minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged
 
 ### Open questions — need Nico / accountant sign-off
 
+The full reviewer checklist and signature table are in
+[TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html#questions).
+The highest-risk decisions are summarized here:
+
 1. **Scope of the 30% cap** — we treat WIT + INSS as outside the cap (lenient
    reading of Art. 42(3)); a strict reading would count everything toward 30%.
 2. **Carry-forward** — when a court order/loan is trimmed to fit the cap, the
@@ -162,4 +184,3 @@ minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged
 6. **INSS base exclusions** — confirm the excluded-items list (overtime,
    bonuses, commissions, gratuities, profit-sharing, per-diem/travel/food/
    housing/transport/representation) matches current INSS guidance.
-

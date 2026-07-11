@@ -1,5 +1,11 @@
 # Accounting Module Audit — March 2026
 
+> **Historical UI audit:** This document records issues found in March 2026.
+> For the current payroll, statutory and journal mathematics—including official
+> Timor-Leste sources and items awaiting accountant sign-off—use the
+> [Timor-Leste Accounting Mathematics Review](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html)
+> and [11 July 2026 compliance update](TL_COMPLIANCE_AUDIT.md).
+
 Full review of the accounting interface from a professional accountant's perspective. Each issue is categorized by severity and tagged with the files that need changes.
 
 ---

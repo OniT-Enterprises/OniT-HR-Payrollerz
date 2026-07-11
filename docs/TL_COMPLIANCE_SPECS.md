@@ -1,5 +1,14 @@
 # Timor-Leste Compliance Features Specification
 
+> **Status note — 11 July 2026:** This is an older feature-planning document,
+> not the authoritative calculation specification. Some research links below
+> are third-party summaries and may be stale. For implemented formulas, current
+> primary-source links, worked examples, and unresolved professional-review
+> questions, use the
+> [Timor-Leste Accounting Mathematics Review](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html)
+> and [current compliance audit](TL_COMPLIANCE_AUDIT.md). Do not change payroll
+> rates from this planning document alone.
+
 ## Overview
 
 This document details the implementation specifications for TL government compliance features:

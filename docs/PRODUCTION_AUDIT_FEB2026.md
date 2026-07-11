@@ -3,6 +3,12 @@
 > Full audit of OniT HR/Payroll for Timor-Leste production deployment.
 > Covers calculations, security, data integrity, i18n, and market fit.
 
+> **Historical audit:** Test counts and implementation claims below describe the
+> February 2026 codebase. The current payroll/accounting position is documented
+> in the [11 July 2026 compliance update](TL_COMPLIANCE_AUDIT.md) and the
+> [accountant review page](TIMOR_LESTE_ACCOUNTING_MATH_REVIEW.html). Those newer
+> documents take precedence where this audit differs.
+
 ---
 
 ## Executive Summary
@@ -29,10 +35,10 @@
 - [x] WIT 10% above $500/month for residents — properly pro-rated for weekly/biweekly
 - [x] INSS 4% employee + 6% employer — correct base exclusions
 - [x] Overtime 150%, holidays/rest days 200% — matches Labor Code Art. 24
-- [x] Night shift 125% premium
+- [x] Night work is an additional 25% premium when the hours are already included in regular pay
 - [x] Subsidio Anual (13th month) — pro-rated by months worked
 - [x] Sick leave tiered: 100% first 6 days, 50% next 6, max 12/year
-- [x] Weekly-to-monthly reconciliation prevents rounding drift
+- [~] A weekly reconciliation helper exists, but the live wizard's final-period cent reconciliation and 52/26-versus-calendar-month method still require accountant/product sign-off
 - [x] All math uses Decimal.js (precision: 20, ROUND_HALF_UP)
 - [x] `sumMoney()`, `subtractMoney()`, `multiplyMoney()` — no raw floating-point
 - [x] Minimum wage $115/month defined in constants
@@ -56,7 +62,11 @@
 #### CALC-3: Deduction Cap
 - **Severity:** LOW (figure confirmed)
 - **Status:** `[x]` CONFIRMED at 30% — **Lei 4/2012, Artigo 42.º(3)** (primary source, Jornal da República / ILO NATLEX): *"Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total da remuneração recebida pelo trabalhador."* The earlier "1/6 ≈ 16.67% / Art. 279" claim was **wrong** — Art. 279 is **Portugal's** Código do Trabalho, not Timor-Leste's. The code value (30%, Art. 42) is correct.
-- **Open nuance:** Art. 42(3) caps the *total* of deductions made; the app caps only *voluntary* deductions (exempting WIT/INSS/court orders, the lenient reading). Decide whether to also warn when total deductions exceed 30%.
+- **Current implementation:** WIT and employee INSS are protected at their
+  statutory amounts. Court orders, loans, advances and other deductions share
+  the remainder of 30% of wages paid and are proportionally reduced at cent
+  precision. Whether WIT/INSS themselves must sit inside the 30% ceiling still
+  requires local professional sign-off.
 
 #### CALC-4: Negative Salary Rejection
 - **Status:** `[x]` Done

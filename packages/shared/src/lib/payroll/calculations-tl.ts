@@ -396,7 +396,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     ? input.hourlyRate
     : calculateHourlyRate(input.monthlySalary);
 
-  const dailyRate = hourlyRate * TL_WORKING_HOURS.standardDailyHours;
+  const dailyRate = multiplyMoney(hourlyRate, TL_WORKING_HOURS.standardDailyHours);
 
   // ========== EARNINGS ==========
 
@@ -437,7 +437,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Overtime',
       descriptionTL: 'Oras Extra',
       hours: input.overtimeHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.standard,
+      rate: multiplyMoney(hourlyRate, TL_OVERTIME_RATES.standard),
       amount: overtimePay.overtime,
       isTaxable: true,
       isINSSBase: false,
@@ -450,7 +450,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Night Shift Premium',
       descriptionTL: 'Prémiu Turnu Kalan',
       hours: input.nightShiftHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.nightShiftPremium,
+      rate: multiplyMoney(hourlyRate, TL_OVERTIME_RATES.nightShiftPremium),
       amount: overtimePay.nightShift,
       isTaxable: true,
       isINSSBase: true,
@@ -463,7 +463,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Public Holiday Pay',
       descriptionTL: 'Pagamentu Feriadu',
       hours: input.holidayHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.publicHoliday,
+      rate: multiplyMoney(hourlyRate, TL_OVERTIME_RATES.publicHoliday),
       amount: overtimePay.holiday,
       isTaxable: true,
       // INSS excludes overtime/extraordinary pay; public holiday premiums are treated as overtime.
@@ -477,7 +477,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Rest Day Pay',
       descriptionTL: 'Pagamentu Loron Deskansa',
       hours: input.restDayHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.restDay,
+      rate: multiplyMoney(hourlyRate, TL_OVERTIME_RATES.restDay),
       amount: overtimePay.restDay,
       isTaxable: true,
       // INSS excludes overtime/extraordinary pay; rest day premiums are treated as overtime.
@@ -729,9 +729,17 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       `Excess deductions have been reduced proportionally.`
     );
     const reductionRatio = availableCap / cappedTotal;
-    for (const d of deductionsToCap) {
-      d.amount = multiplyMoney(d.amount, reductionRatio);
-    }
+    let allocatedCap = 0;
+    deductionsToCap.forEach((deduction, index) => {
+      const remainingCap = Math.max(0, subtractMoney(availableCap, allocatedCap));
+      const proportionalAmount = index === deductionsToCap.length - 1
+        ? remainingCap
+        : multiplyMoney(deduction.amount, reductionRatio);
+      // Never deduct more than the line's requested amount, even when the last
+      // line absorbs the cent remainder (the cap is a ceiling, not a target).
+      deduction.amount = Math.min(proportionalAmount, remainingCap, deduction.amount);
+      allocatedCap = addMoney(allocatedCap, deduction.amount);
+    });
   }
 
   // ========== FINAL CALCULATIONS ==========
@@ -740,6 +748,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   const totalDeductions = sumMoney(deductions.map(d => d.amount));
   const netPay = subtractMoney(grossPay, totalDeductions);
   const totalEmployerCost = addMoney(wagesPaid, inss.employer);
+  const finalDeductionAmount = (type: string): number => sumMoney(
+    deductions.filter(deduction => deduction.type === type).map(deduction => deduction.amount),
+  );
 
   // Warnings
   if (netPay < 0) {
@@ -776,12 +787,12 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     // Deductions
     incomeTax,
     inssEmployee: inss.employee,
-    loanRepayment: input.loanRepayment,
-    advanceRepayment: input.advanceRepayment,
-    courtOrders: input.courtOrders,
+    loanRepayment: finalDeductionAmount('loan_repayment'),
+    advanceRepayment: finalDeductionAmount('advance_repayment'),
+    courtOrders: finalDeductionAmount('court_order'),
     absenceDeduction,
     lateDeduction,
-    otherDeductions: input.otherDeductions,
+    otherDeductions: finalDeductionAmount('other'),
 
     // Employer costs
     inssEmployer: inss.employer,

@@ -524,6 +524,47 @@ describe("Edge cases", () => {
     );
     expect(result.warnings.some((warning) => warning.includes('30% cap'))).toBe(true);
   });
+
+  it("reconciles proportional rounding exactly to the available deduction cap", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 0.07,
+        loanRepayment: 1,
+        advanceRepayment: 1,
+        courtOrders: 1,
+        otherDeductions: 1,
+        taxInfo: { isResident: true, hasTaxExemption: true, inssExempt: true },
+      })
+    );
+    const cappedDeductions = result.deductions.filter((deduction) =>
+      ['loan_repayment', 'advance_repayment', 'court_order', 'other'].includes(deduction.type)
+    );
+
+    expect(cappedDeductions.reduce((total, deduction) => total + deduction.amount, 0)).toBe(0.02);
+    expect(result.loanRepayment + result.advanceRepayment + result.courtOrders + result.otherDeductions).toBe(0.02);
+    expect(result.totalDeductions).toBe(0.02);
+    expect(result.netPay).toBe(0.05);
+  });
+
+  it("never caps a deduction line above its requested amount", () => {
+    // Rounding on the first three lines under-allocates the cap by ~1.5 cents,
+    // so the remainder handed to the last line would exceed its requested $0.01.
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 44.57,
+        loanRepayment: 8.9,
+        advanceRepayment: 8.9,
+        courtOrders: 8.9,
+        otherDeductions: 0.01,
+        taxInfo: { isResident: true, hasTaxExemption: true, inssExempt: true },
+      })
+    );
+    const other = result.deductions.find((deduction) => deduction.type === 'other');
+
+    expect(other?.amount).toBe(0.01);
+    expect(result.otherDeductions).toBe(0.01);
+    expect(result.totalDeductions).toBeLessThanOrEqual(13.37);
+  });
 });
 
 // ============================================================
