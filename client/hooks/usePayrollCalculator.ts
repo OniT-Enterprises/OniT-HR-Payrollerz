@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
@@ -28,13 +29,14 @@ import {
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
   TL_DEDUCTION_TYPE_LABELS,
-  TL_MINIMUM_WAGE,
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
-import { sumMoney } from "@/lib/currency";
+import type { PayrollConfig } from "@/types/settings";
+import { addMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import type { Employee } from "@/services/employeeService";
+import { payrollService } from "@/services/payrollService";
 import { leaveService, calculateWorkingDays, TL_LEAVE_TYPES } from "@/services/leaveService";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 
@@ -49,6 +51,7 @@ interface UsePayrollCalculatorOptions {
   activeEmployees: Employee[];
   tenantId: string;
   userId: string;
+  payrollConfig?: PayrollConfig;
 }
 
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
@@ -81,6 +84,7 @@ export function usePayrollCalculator({
   activeEmployees,
   tenantId,
   userId,
+  payrollConfig,
 }: UsePayrollCalculatorOptions) {
   const { toast } = useToast();
   const { t } = useI18n();
@@ -96,6 +100,29 @@ export function usePayrollCalculator({
   const [periodEnd, setPeriodEnd] = useState(initialPayrollDates.periodEnd);
   const [payDate, setPayDate] = useState(initialPayrollDates.payDate);
   const [includeSubsidioAnual, setIncludeSubsidioAnual] = useState(false);
+  const calculationConfig = useMemo(() => payrollConfig ? ({
+    incomeTax: {
+      residentRate: payrollConfig.tax.residentRate / 100,
+      nonResidentRate: payrollConfig.tax.nonResidentRate / 100,
+      residentThreshold: payrollConfig.tax.residentThreshold,
+    },
+    inss: {
+      employeeRate: payrollConfig.socialSecurity.employeeRate / 100,
+      employerRate: payrollConfig.socialSecurity.employerRate / 100,
+    },
+    overtime: {
+      standard: payrollConfig.overtimeRates.standard,
+      sundayHoliday: payrollConfig.overtimeRates.sundayHoliday,
+    },
+    minimumWage: payrollConfig.minimumWage,
+  }) : undefined, [payrollConfig]);
+  const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
+  const { data: ytdByEmployee = {} } = useQuery({
+    queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
+    queryFn: () => payrollService.records.getTenantYTDTotals(tenantId, payrollYear),
+    enabled: Boolean(tenantId) && Number.isInteger(payrollYear) && activeEmployees.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const {
     data: attendanceSummary = [],
@@ -170,6 +197,7 @@ export function usePayrollCalculator({
       (data.employee.documents?.residencyStatus
         ? data.employee.documents.residencyStatus !== "foreign_worker"
         : true);
+    const ytd = ytdByEmployee[data.employee.id || ""];
 
     const input: TLPayrollInput = {
       employeeId: data.employee.id || "",
@@ -186,7 +214,7 @@ export function usePayrollCalculator({
       absenceHours: data.absenceHours,
       lateArrivalMinutes: data.lateArrivalMinutes,
       sickDaysUsed: data.sickDays,
-      ytdSickDaysUsed: 0,
+      ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
       bonus: data.bonus,
       commission: 0,
       perDiem: data.perDiem,
@@ -203,20 +231,20 @@ export function usePayrollCalculator({
       advanceRepayment: 0,
       courtOrders: 0,
       otherDeductions: 0,
-      ytdGrossPay: 0,
-      ytdIncomeTax: 0,
-      ytdINSSEmployee: 0,
+      ytdGrossPay: ytd?.ytdGrossPay || 0,
+      ytdIncomeTax: ytd?.ytdIncomeTax || 0,
+      ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
       monthsWorkedThisYear,
       hireDate,
     };
 
     try {
-      return calculateTLPayroll(input);
+      return calculateTLPayroll(input, calculationConfig);
     } catch (error) {
       console.error("Calculation error for employee:", data.employee.id, error);
       return null;
     }
-  }, [payFrequency, payDate, includeSubsidioAnual]);
+  }, [payFrequency, payDate, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
 
   // Initial calculation when data is first loaded
   useEffect(() => {
@@ -487,8 +515,9 @@ export function usePayrollCalculator({
       if (excludedEmployees.has(d.employee.id || "")) continue;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
       const salary = d.employee.compensation.monthlySalary || 0;
-      if (salary > 0 && salary < TL_MINIMUM_WAGE.monthly && !isShareholder(d.employee)) {
-        warnings.push({ employeeName: name, message: t("runPayroll.warningBelowMinWage", { salary: String(salary), min: String(TL_MINIMUM_WAGE.monthly) }), type: "wage" });
+      const minimumWage = calculationConfig?.minimumWage ?? 115;
+      if (salary > 0 && salary < minimumWage && !isShareholder(d.employee)) {
+        warnings.push({ employeeName: name, message: t("runPayroll.warningBelowMinWage", { salary: String(salary), min: String(minimumWage) }), type: "wage" });
       }
       if (d.overtimeHours > maxMonthlyOT) {
         warnings.push({ employeeName: name, message: t("runPayroll.warningOTExceeds", { hours: String(d.overtimeHours), max: String(maxMonthlyOT), weekly: String(TL_WORKING_HOURS.maxOvertimePerWeek) }), type: "hours" });
@@ -499,7 +528,7 @@ export function usePayrollCalculator({
       }
     }
     return warnings;
-  }, [employeePayrollData, excludedEmployees, t]);
+  }, [employeePayrollData, excludedEmployees, t, calculationConfig]);
 
   // ─── Filtered data ──────────────────────────────────────────────
 
@@ -545,6 +574,7 @@ export function usePayrollCalculator({
         (data.employee.documents?.residencyStatus
           ? data.employee.documents.residencyStatus !== "foreign_worker"
           : true);
+      const ytd = ytdByEmployee[data.employee.id || ""];
 
       const input: TLPayrollInput = {
         employeeId: data.employee.id || "",
@@ -561,7 +591,7 @@ export function usePayrollCalculator({
         absenceHours: data.absenceHours,
         lateArrivalMinutes: data.lateArrivalMinutes,
         sickDaysUsed: data.sickDays,
-        ytdSickDaysUsed: 0,
+        ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
         bonus: data.bonus,
         commission: 0,
         perDiem: data.perDiem,
@@ -578,21 +608,21 @@ export function usePayrollCalculator({
         advanceRepayment: 0,
         courtOrders: 0,
         otherDeductions: 0,
-        ytdGrossPay: 0,
-        ytdIncomeTax: 0,
-        ytdINSSEmployee: 0,
+        ytdGrossPay: ytd?.ytdGrossPay || 0,
+        ytdIncomeTax: ytd?.ytdIncomeTax || 0,
+        ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
         monthsWorkedThisYear,
         hireDate,
       };
 
-      const errors = validateTLPayrollInput(input);
+      const errors = validateTLPayrollInput(input, calculationConfig);
       if (errors.length > 0) {
         const name = `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`;
         allErrors.push(...errors.map(e => `${name}: ${e}`));
       }
     }
     return allErrors;
-  }, [payDate, payFrequency, includeSubsidioAnual]);
+  }, [payDate, payFrequency, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
 
   // ─── Build payroll run / records ────────────────────────────────
 
@@ -621,6 +651,11 @@ export function usePayrollCalculator({
       employeeNumber: d.employee.jobDetails.employeeId,
       department: d.employee.jobDetails.department,
       position: d.employee.jobDetails.position,
+      isResident:
+        d.employee.compensation?.isResident ??
+        (d.employee.documents?.residencyStatus
+          ? d.employee.documents.residencyStatus !== "foreign_worker"
+          : true),
       regularHours: d.regularHours,
       overtimeHours: d.overtimeHours,
       doubleTimeHours: 0,
@@ -628,7 +663,7 @@ export function usePayrollCalculator({
       ptoHoursUsed: 0,
       sickHoursUsed: d.sickDays * 8,
       hourlyRate: (d.employee.compensation.monthlySalary || 0) / ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
-      overtimeRate: TL_OVERTIME_RATES.standard,
+      overtimeRate: calculationConfig?.overtime?.standard ?? TL_OVERTIME_RATES.standard,
       earnings: d.calculation!.earnings.map((earning) => ({
         type: (['regular','overtime','double_time','holiday','bonus','subsidio_anual','commission','tip','reimbursement','allowance'].includes(earning.type)
           ? earning.type
@@ -641,6 +676,10 @@ export function usePayrollCalculator({
         amount: earning.amount,
       })),
       totalGrossPay: d.calculation!.grossPay,
+      wagesPaid: d.calculation!.wagesPaid,
+      taxableIncome: d.calculation!.taxableIncome,
+      witTaxableAmount: d.calculation!.witTaxableAmount,
+      inssBase: d.calculation!.inssBase,
       deductions: d.calculation!.deductions.map((deduction) => ({
         type: deduction.type as PayrollRecord['deductions'][number]['type'],
         description: deduction.description,
@@ -659,12 +698,15 @@ export function usePayrollCalculator({
       totalEmployerTaxes: d.calculation!.inssEmployer,
       netPay: d.calculation!.netPay,
       totalEmployerCost: d.calculation!.totalEmployerCost,
-      ytdGrossPay: 0,
-      ytdNetPay: 0,
-      ytdIncomeTax: 0,
-      ytdINSSEmployee: 0,
+      ytdGrossPay: d.calculation!.newYtdGrossPay,
+      ytdNetPay: addMoney(
+        ytdByEmployee[d.employee.id || ""]?.ytdNetPay || 0,
+        d.calculation!.netPay,
+      ),
+      ytdIncomeTax: d.calculation!.newYtdIncomeTax,
+      ytdINSSEmployee: d.calculation!.newYtdINSSEmployee,
     })),
-    [tenantId]
+    [tenantId, ytdByEmployee, calculationConfig]
   );
 
   return {

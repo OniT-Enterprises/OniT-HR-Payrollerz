@@ -177,10 +177,6 @@ export interface SocialSecurityConfig {
   paymentDueDay: number; // 20th of following month (payment window closes on day 20)
   excludeFoodAllowance: boolean;
   excludePerDiem: boolean;
-  // Small business reduction
-  smallBusinessReduction: boolean;
-  smallBusinessMaxEmployees: number;
-  smallBusinessMinTimoresePercent: number;
 }
 
 export interface PayrollConfig {
@@ -191,8 +187,7 @@ export interface PayrollConfig {
   currencySymbol: string; // $
   maxWorkHoursPerWeek: number; // 44 in TL
   overtimeRates: {
-    first2Hours: number; // 1.5 (50% extra)
-    beyond2Hours: number; // 2.0 (100% extra)
+    standard: number; // 1.5 (normal hourly pay + 50%)
     sundayHoliday: number; // 2.0 (100% extra)
   };
   subsidioAnual: {
@@ -257,9 +252,6 @@ const TL_DEFAULT_SS_CONFIG: SocialSecurityConfig = {
   paymentDueDay: 20,
   excludeFoodAllowance: true,
   excludePerDiem: true,
-  smallBusinessReduction: true,
-  smallBusinessMaxEmployees: 10,
-  smallBusinessMinTimoresePercent: 60,
 };
 
 export const TL_DEFAULT_PAYROLL_CONFIG: PayrollConfig = {
@@ -270,8 +262,7 @@ export const TL_DEFAULT_PAYROLL_CONFIG: PayrollConfig = {
   currencySymbol: '$',
   maxWorkHoursPerWeek: 44,
   overtimeRates: {
-    first2Hours: 1.5,
-    beyond2Hours: 2.0,
+    standard: 1.5,
     sundayHoliday: 2.0,
   },
   subsidioAnual: {

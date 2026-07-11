@@ -88,7 +88,7 @@ export const TL_SOCIAL_PENSION_USD = 60;
  * Reference: INSS contributions guidance.
  */
 export const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
-  2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 100, 200,
+  2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 55, 70, 95, 125, 160, 200,
 ] as const;
 
 export interface TLInssContributionBand {
@@ -169,8 +169,8 @@ export const TL_OVERTIME_RATES = {
   // Standard overtime (beyond 44 hours/week)
   standard: 1.5,  // 150%
 
-  // Night shift (10pm - 6am)
-  nightShift: 1.25,  // 125% (25% premium)
+  // Additional premium for normal hours worked at night (21:00-06:00).
+  nightShiftPremium: 0.25,
 
   // Sunday/Rest day work
   restDay: 2.0,  // 200%
@@ -217,13 +217,13 @@ export const TL_SICK_LEAVE = {
  */
 export const TL_MATERNITY_LEAVE = {
   // Duration
-  totalDays: 90,  // 12 weeks
+  totalDays: 84,  // minimum 12 weeks
 
   // Before birth
-  preNatalDays: 30,
+  preNatalDays: 14,
 
   // After birth
-  postNatalDays: 60,
+  postNatalDays: 70, // at least 10 weeks must be taken after birth
 
   // Payment rate
   payRate: 1.0,  // 100% paid
@@ -243,16 +243,16 @@ export const TL_ANNUAL_LEAVE = {
   minimumDays: 12,
 
   // After 3 years of service
-  after3Years: 15,
+  after3Years: 12,
 
   // After 6 years of service
-  after6Years: 18,
+  after6Years: 12,
 
   // After 9 years of service
-  after9Years: 22,
+  after9Years: 12,
 
   // Probation period before leave accrual
-  probationMonths: 6,  // Typical, but company can define
+  probationMonths: 0,
 };
 
 // ============================================

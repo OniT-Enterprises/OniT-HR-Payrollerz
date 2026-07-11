@@ -1209,7 +1209,7 @@ const messages = {
       "excludePerDiem": "Excluir per diem da SS",
       "overtime": "Horário de Trabalho e Horas Extra",
       "maxHoursWeek": "Máximo Horas/Semana",
-      "first2HoursRate": "Taxa Primeiras 2h HE",
+      "first2HoursRate": "Taxa Normal de Horas Extra",
       "first2HoursHint": "1,5x = +50%",
       "beyond2HoursRate": "Taxa Além de 2h HE",
       "beyond2HoursHint": "2x = +100%",

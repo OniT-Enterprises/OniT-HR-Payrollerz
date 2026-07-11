@@ -150,7 +150,7 @@ export const provisionTenant = onCall(
           ...config?.payrollPolicy,
         },
         settings: {
-          timezone: "UTC",
+          timezone: "Asia/Dili",
           currency: "USD",
           dateFormat: "YYYY-MM-DD",
           ...config?.settings,

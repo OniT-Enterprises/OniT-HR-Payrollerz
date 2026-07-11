@@ -381,10 +381,11 @@ export const recomputeWeekTotals = async (
     const tenantConfig = await db
       .doc(`tenants/${tenantId}/settings/config`)
       .get();
+    const payrollSettings = tenantConfig.exists ? tenantConfig.data() : undefined;
     const overtimeThreshold =
-      (tenantConfig.exists &&
-        tenantConfig.data()?.payrollPolicy?.overtimeThreshold) ||
-      40;
+      payrollSettings?.payrollConfig?.maxWorkHoursPerWeek ??
+      payrollSettings?.payrollPolicy?.overtimeThreshold ??
+      44;
 
     // Calculate regular vs overtime hours
     const regularHours = Math.min(totalWorkHours, overtimeThreshold);

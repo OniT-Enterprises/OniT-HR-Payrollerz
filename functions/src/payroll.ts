@@ -396,6 +396,9 @@ export const validatePayrunInputs = onCall(async (request) => {
 
     const validationErrors: any[] = [];
     const warnings: any[] = [];
+    const year = parseInt(yyyymm.substring(0, 4), 10);
+    const month = parseInt(yyyymm.substring(4, 6), 10);
+    const weeksInPeriod = getWeeksInMonth(year, month).length;
 
     for (const input of inputs) {
       const { empId, snapshot, timesheetTotals } = input;
@@ -431,12 +434,16 @@ export const validatePayrunInputs = onCall(async (request) => {
         });
       }
 
-      // Warn about excessive overtime
-      if ((timesheetTotals.overtimeHours || 0) > 40) {
+      // TL Labour Law caps overtime at 16 hours per week. This input is a
+      // monthly aggregation, so scale the warning by the weeks compiled.
+      const maximumOvertimeHours = 16 * weeksInPeriod;
+      if ((timesheetTotals.overtimeHours || 0) > maximumOvertimeHours) {
         warnings.push({
           employeeId: empId,
           type: "excessive_overtime",
-          message: `Excessive overtime hours: ${timesheetTotals.overtimeHours}`,
+          message:
+            `Overtime hours (${timesheetTotals.overtimeHours}) exceed the ` +
+            `${maximumOvertimeHours}-hour limit for ${weeksInPeriod} weeks`,
         });
       }
     }

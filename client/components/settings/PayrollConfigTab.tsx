@@ -250,7 +250,7 @@ export function PayrollConfigTab({
             <Clock className="h-5 w-5" />
             {t('settings.payroll.overtime')}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>{t('settings.payroll.maxHoursWeek')}</Label>
               <Input
@@ -272,13 +272,13 @@ export function PayrollConfigTab({
                   type="number"
                   min={1}
                   step={0.1}
-                  value={payrollConfig.overtimeRates.first2Hours}
+                  value={payrollConfig.overtimeRates.standard}
                   onChange={(e) =>
                     setPayrollConfig({
                       ...payrollConfig,
                       overtimeRates: {
                         ...payrollConfig.overtimeRates,
-                        first2Hours: parseFloat(e.target.value) || 1,
+                        standard: parseFloat(e.target.value) || 1,
                       },
                     })
                   }
@@ -287,30 +287,6 @@ export function PayrollConfigTab({
               </div>
               <p className="text-xs text-muted-foreground">
                 {t('settings.payroll.first2HoursHint')}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.beyond2HoursRate')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  step={0.1}
-                  value={payrollConfig.overtimeRates.beyond2Hours}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      overtimeRates: {
-                        ...payrollConfig.overtimeRates,
-                        beyond2Hours: parseFloat(e.target.value) || 1,
-                      },
-                    })
-                  }
-                />
-                <span className="text-muted-foreground">&times;</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.beyond2HoursHint')}
               </p>
             </div>
             <div className="space-y-2">

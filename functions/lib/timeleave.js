@@ -220,7 +220,7 @@ exports.createOrUpdateShift = (0, https_1.onCall)(async (request) => {
  * Recomputes timesheet totals for a specific employee and week
  */
 const recomputeWeekTotals = async (tenantId, empId, weekIso) => {
-    var _a, _b;
+    var _a, _b, _c, _d;
     try {
         // Get all shifts for this employee in this week
         const [yearStr, weekStr] = weekIso.split("-W");
@@ -289,9 +289,8 @@ const recomputeWeekTotals = async (tenantId, empId, weekIso) => {
         const tenantConfig = await db
             .doc(`tenants/${tenantId}/settings/config`)
             .get();
-        const overtimeThreshold = (tenantConfig.exists &&
-            ((_b = (_a = tenantConfig.data()) === null || _a === void 0 ? void 0 : _a.payrollPolicy) === null || _b === void 0 ? void 0 : _b.overtimeThreshold)) ||
-            40;
+        const payrollSettings = tenantConfig.exists ? tenantConfig.data() : undefined;
+        const overtimeThreshold = (_d = (_b = (_a = payrollSettings === null || payrollSettings === void 0 ? void 0 : payrollSettings.payrollConfig) === null || _a === void 0 ? void 0 : _a.maxWorkHoursPerWeek) !== null && _b !== void 0 ? _b : (_c = payrollSettings === null || payrollSettings === void 0 ? void 0 : payrollSettings.payrollPolicy) === null || _c === void 0 ? void 0 : _c.overtimeThreshold) !== null && _d !== void 0 ? _d : 44;
         // Calculate regular vs overtime hours
         const regularHours = Math.min(totalWorkHours, overtimeThreshold);
         const overtimeHours = Math.max(0, totalWorkHours - overtimeThreshold);

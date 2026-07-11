@@ -56,6 +56,7 @@ import {
 } from '@/lib/accounting/calculations';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
+import { summarizePayrollForAccounting } from '@/lib/payroll/accounting-summary';
 
 // ============================================
 // ACCOUNTS SERVICE
@@ -968,117 +969,31 @@ class JournalEntryService {
   async createFromPayroll(
     tenantId: string,
     payrollRun: TLPayrollRun,
-    _records: TLPayrollRecord[]
+    records: TLPayrollRecord[]
   ): Promise<string> {
-    const { year, period: month } = getFiscalDateParts(payrollRun.periodEnd);
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const totals = summarizePayrollForAccounting(records.map((record) => ({
+      totalGrossPay: record.grossPay,
+      totalDeductions: record.totalDeductions,
+      netPay: record.netPay,
+      deductions: record.deductions,
+      employerTaxes: [{ type: 'inss_employer', amount: record.inssEmployer }],
+    })));
 
-    const lines: JournalEntryLine[] = [];
-    let lineNumber = 1;
-
-    // Get account IDs from codes
-    const getAccountId = async (code: string) => {
-      const account = await accountService.getAccountByCode(tenantId, code);
-      if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
-      }
-      return account.id;
-    };
-
-    // 1. Debit Salary Expense
-    const salaryAccountId = await getAccountId('5110');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: salaryAccountId,
-      accountCode: '5110',
-      accountName: 'Salaries and Wages',
-      debit: payrollRun.totalGrossPay,
-      credit: 0,
-      description: 'Gross salaries',
-    });
-
-    // 2. Debit INSS Employer Expense
-    const inssExpenseId = await getAccountId('5150');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssExpenseId,
-      accountCode: '5150',
-      accountName: 'INSS Employer Contribution',
-      debit: payrollRun.totalINSSEmployer,
-      credit: 0,
-      description: 'INSS employer contribution (6%)',
-    });
-
-    // 3. Credit Salaries Payable (net pay)
-    const salariesPayableId = await getAccountId('2210');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: salariesPayableId,
-      accountCode: '2210',
-      accountName: 'Salaries Payable',
-      debit: 0,
-      credit: payrollRun.totalNetPay,
-      description: 'Net salaries payable',
-    });
-
-    // 4. Credit WIT (Withholding Income Tax)
-    const taxPayableId = await getAccountId('2220');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: taxPayableId,
-      accountCode: '2220',
-      accountName: 'Withholding Income Tax (WIT)',
-      debit: 0,
-      credit: payrollRun.totalIncomeTax,
-      description: 'WIT withholdings',
-    });
-
-    // 5. Credit INSS Payable - Employee
-    const inssEmployeePayableId = await getAccountId('2230');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssEmployeePayableId,
-      accountCode: '2230',
-      accountName: 'INSS Payable - Employee',
-      debit: 0,
-      credit: payrollRun.totalINSSEmployee,
-      description: 'INSS employee contribution (4%)',
-    });
-
-    // 6. Credit INSS Payable - Employer
-    const inssEmployerPayableId = await getAccountId('2240');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssEmployerPayableId,
-      accountCode: '2240',
-      accountName: 'INSS Payable - Employer',
-      debit: 0,
-      credit: payrollRun.totalINSSEmployer,
-      description: 'INSS employer contribution (6%)',
-    });
-
-    // Calculate totals
-    const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
-    const totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
-
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
-      entryNumber,
-      date: payrollRun.payDate,
-      description: `Payroll for ${payrollRun.periodStart} to ${payrollRun.periodEnd}`,
-      source: 'payroll',
+    return this.createFromPayrollSummary({
+      periodStart: payrollRun.periodStart,
+      periodEnd: payrollRun.periodEnd,
+      payDate: payrollRun.payDate,
+      totalGrossPay: totals.totalWagesExpense,
+      totalINSSEmployer: totals.totalINSSEmployer,
+      totalIncomeTax: totals.totalIncomeTax,
+      totalINSSEmployee: totals.totalINSSEmployee,
+      totalNetPay: totals.totalNetPay,
+      totalAdvanceRepayments: totals.totalAdvanceRepayments,
+      totalOtherDeductions: totals.totalOtherDeductions,
+      employeeCount: payrollRun.employeeCount,
+      approvedBy: payrollRun.approvedBy,
       sourceId: payrollRun.id,
-      sourceRef: `Payroll Run - ${payrollRun.employeeCount} employees`,
-      lines,
-      totalDebit,
-      totalCredit,
-      status: 'posted',
-      postedAt: serverTimestamp(),
-      postedBy: payrollRun.approvedBy || 'system',
-      fiscalYear: year,
-      fiscalPeriod: month,
-    };
-
-    return await this.createJournalEntry(tenantId, journalEntry);
+    }, tenantId);
   }
 
   /**
@@ -1094,6 +1009,8 @@ class JournalEntryService {
     totalIncomeTax: number;
     totalINSSEmployee: number;
     totalNetPay: number;
+    totalAdvanceRepayments?: number;
+    totalOtherDeductions?: number;
     employeeCount: number;
     approvedBy?: string;
     sourceId?: string;
@@ -1104,6 +1021,17 @@ class JournalEntryService {
       inssEmployer: number;
     }>;
   }, tenantId: string): Promise<string> {
+    if (summary.sourceId) {
+      const existing = await this.getJournalEntryBySource(
+        tenantId,
+        'payroll',
+        summary.sourceId,
+      );
+      if (existing?.id && existing.status === 'posted') {
+        return existing.id;
+      }
+    }
+
     const { year, period: month } = getFiscalDateParts(summary.periodEnd);
     const entryNumber = await this.getNextEntryNumber(tenantId, year);
 
@@ -1166,6 +1094,9 @@ class JournalEntryService {
       }
 
       const grossRemainder = subtractMoney(summary.totalGrossPay, allocatedGross);
+      if (grossRemainder < 0) {
+        throw new Error('Payroll allocations exceed total wages expense');
+      }
       if (grossRemainder > 0) {
         lines.push({
           lineNumber: lineNumber++,
@@ -1181,6 +1112,9 @@ class JournalEntryService {
       }
 
       const inssRemainder = subtractMoney(summary.totalINSSEmployer, allocatedINSS);
+      if (inssRemainder < 0) {
+        throw new Error('Payroll allocations exceed total employer INSS expense');
+      }
       if (inssRemainder > 0) {
         lines.push({
           lineNumber: lineNumber++,
@@ -1260,8 +1194,36 @@ class JournalEntryService {
       description: 'INSS employer contribution (6%)',
     });
 
-    const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
-    const totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
+    if ((summary.totalAdvanceRepayments || 0) > 0) {
+      const employeeAdvances = await getAccountId('1220');
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: employeeAdvances.id,
+        accountCode: '1220',
+        accountName: employeeAdvances.name,
+        debit: 0,
+        credit: summary.totalAdvanceRepayments || 0,
+        description: 'Employee loan and advance repayments',
+      });
+    }
+
+    if ((summary.totalOtherDeductions || 0) > 0) {
+      // Use the long-standing payroll-liabilities control account so existing
+      // tenants do not need a chart-of-accounts migration before approval.
+      const otherPayrollDeductions = await getAccountId('2200');
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: otherPayrollDeductions.id,
+        accountCode: '2200',
+        accountName: otherPayrollDeductions.name,
+        debit: 0,
+        credit: summary.totalOtherDeductions || 0,
+        description: 'Other payroll deductions payable',
+      });
+    }
+
+    const totalDebit = sumMoney(lines.map((line) => line.debit));
+    const totalCredit = sumMoney(lines.map((line) => line.credit));
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,

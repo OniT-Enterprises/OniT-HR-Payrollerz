@@ -1,4 +1,5 @@
 import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
+import { addMoney, maxMoney, subtractMoney } from "@/lib/currency";
 
 export const UNASSIGNED_ALLOCATION = "Unassigned";
 
@@ -62,7 +63,9 @@ interface AmountLineLike {
 }
 
 function findAmountByType(lines: AmountLineLike[] | undefined, type: string): number {
-  return lines?.find((line) => line.type === type)?.amount || 0;
+  return (lines || [])
+    .filter((line) => line.type === type)
+    .reduce((total, line) => addMoney(total, line.amount || 0), 0);
 }
 
 interface PayrollAllocationBucket {
@@ -82,6 +85,7 @@ interface PayrollAllocationRollup {
 interface PayrollAllocationRecord {
   employeeId: string;
   totalGrossPay?: number;
+  wagesPaid?: number;
   deductions?: AmountLineLike[];
   employerTaxes?: AmountLineLike[];
 }
@@ -99,13 +103,19 @@ export function summarizePayrollAllocations(
     const meta =
       employeeMetaById.get(record.employeeId) ||
       normalizeAllocationMeta(undefined, undefined);
-    const grossPay = record.totalGrossPay || 0;
+    const attendanceReductions = addMoney(
+      findAmountByType(record.deductions, 'absence'),
+      findAmountByType(record.deductions, 'late_arrival'),
+    );
+    const grossPay = typeof record.wagesPaid === 'number'
+      ? record.wagesPaid
+      : maxMoney(0, subtractMoney(record.totalGrossPay || 0, attendanceReductions));
     const inssEmployer = findAmountByType(record.employerTaxes, "inss_employer");
 
     if (isUnassignedAllocation(meta)) {
       unassignedEmployeeIds.add(record.employeeId);
       unassignedRecordCount += 1;
-      unassignedGrossPay += grossPay;
+      unassignedGrossPay = addMoney(unassignedGrossPay, grossPay);
     }
 
     const key = `${meta.projectCode}::${meta.fundingSource}`;
@@ -116,8 +126,8 @@ export function summarizePayrollAllocations(
       inssEmployer: 0,
     };
 
-    existing.grossPay += grossPay;
-    existing.inssEmployer += inssEmployer;
+    existing.grossPay = addMoney(existing.grossPay, grossPay);
+    existing.inssEmployer = addMoney(existing.inssEmployer, inssEmployer);
     grouped.set(key, existing);
   }
 
@@ -200,12 +210,15 @@ export function summarizeDonorLines(lines: DonorLine[]): DonorSummary[] {
     };
 
     if (line.accountCode === "5110") {
-      existing.salaryExpense += line.debit;
+      existing.salaryExpense = addMoney(existing.salaryExpense, line.debit);
     }
     if (line.accountCode === "5150") {
-      existing.inssEmployerExpense += line.debit;
+      existing.inssEmployerExpense = addMoney(existing.inssEmployerExpense, line.debit);
     }
-    existing.totalExpense += line.debit - line.credit;
+    existing.totalExpense = addMoney(
+      existing.totalExpense,
+      subtractMoney(line.debit, line.credit),
+    );
     grouped.set(key, existing);
   }
 

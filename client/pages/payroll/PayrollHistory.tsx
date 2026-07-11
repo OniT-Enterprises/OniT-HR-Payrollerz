@@ -106,6 +106,7 @@ import {
   createEmployeeAllocationMetaMap,
   summarizePayrollAllocations,
 } from "@/lib/reports/ngoReporting";
+import { summarizePayrollForAccounting } from "@/lib/payroll/accounting-summary";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
@@ -354,6 +355,7 @@ export default function PayrollHistory() {
       return;
     }
 
+    let approvedThisAttempt = false;
     try {
       // Approve the run (service enforces two-person rule)
       await approveMutation.mutateAsync({
@@ -362,37 +364,35 @@ export default function PayrollHistory() {
         audit: { tenantId, userId: user.uid, userEmail: user.email || "" },
         allowSelfApproval: selfApprovalAllowed,
       });
+      approvedThisAttempt = true;
 
       // Create accounting journal entry
       const records = approveRunRecords.length
         ? approveRunRecords
         : await payrollService.records.getPayrollRecordsByRunId(approveRun.id, tenantId);
-      const totalINSSEmployee = records.reduce((sum, r) =>
-        sum + (r.deductions?.find(d => d.type === 'inss_employee')?.amount || 0), 0);
-      const totalINSSEmployer = records.reduce((sum, r) =>
-        sum + (r.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0), 0);
-      const totalIncomeTax = records.reduce((sum, r) =>
-        sum + (r.deductions?.find(d => d.type === 'income_tax')?.amount || 0), 0);
+      const accountingTotals = summarizePayrollForAccounting(records);
       const allocationRollup = summarizePayrollAllocations(records, employeeAllocationMeta);
 
       const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
         periodStart: approveRun.periodStart,
         periodEnd: approveRun.periodEnd,
         payDate: approveRun.payDate,
-        totalGrossPay: approveRun.totalGrossPay,
-        totalINSSEmployer: totalINSSEmployer,
-        totalIncomeTax: totalIncomeTax,
-        totalINSSEmployee: totalINSSEmployee,
-        totalNetPay: approveRun.totalNetPay,
+        totalGrossPay: accountingTotals.totalWagesExpense,
+        totalINSSEmployer: accountingTotals.totalINSSEmployer,
+        totalIncomeTax: accountingTotals.totalIncomeTax,
+        totalINSSEmployee: accountingTotals.totalINSSEmployee,
+        totalNetPay: accountingTotals.totalNetPay,
+        totalAdvanceRepayments: accountingTotals.totalAdvanceRepayments,
+        totalOtherDeductions: accountingTotals.totalOtherDeductions,
         employeeCount: approveRun.employeeCount,
         approvedBy: user.uid,
         sourceId: approveRun.id,
         allocations: allocationRollup.allocations,
       }, tenantId);
 
-      // Mark as paid and link journal entry
-      await markPaidMutation.mutateAsync(approveRun.id);
+      // Link the idempotent journal before the final paid-state transition.
       await updateRunMutation.mutateAsync({ id: approveRun.id, updates: { journalEntryId } });
+      await markPaidMutation.mutateAsync(approveRun.id);
 
       toast({
         title: t("payrollHistory.toastApproved"),
@@ -403,6 +403,18 @@ export default function PayrollHistory() {
       setNextStepsRun(approveRun);
       setApproveRun(null);
     } catch (error: unknown) {
+      // Approval is not complete unless accounting and the paid transition both
+      // succeed. Return the run to the approval queue so a transient accounting
+      // failure cannot strand it in an unretryable approved state. The journal
+      // creation is idempotent by payroll sourceId, so retries cannot duplicate it.
+      if (approvedThisAttempt && approveRun?.id) {
+        await payrollService.runs.updatePayrollRun(approveRun.id, {
+          status: 'processing',
+        }).catch((rollbackError) => {
+          console.error('Failed to restore payroll approval state:', rollbackError);
+        });
+      }
+
       // Free accounts can build a run but not finalize it — send them to billing.
       if (error instanceof SubscriptionRequiredError) {
         setShowApproveDialog(false);

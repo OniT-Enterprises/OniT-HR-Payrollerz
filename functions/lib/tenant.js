@@ -100,7 +100,7 @@ exports.provisionTenant = (0, https_1.onCall)(async (request) => {
             branding: (config === null || config === void 0 ? void 0 : config.branding) || {},
             features: Object.assign({ hiring: true, timeleave: true, performance: true, payroll: true, money: true, accounting: true, reports: true }, config === null || config === void 0 ? void 0 : config.features),
             payrollPolicy: Object.assign({ overtimeThreshold: 44, overtimeRate: 1.5, payrollCycle: "monthly" }, config === null || config === void 0 ? void 0 : config.payrollPolicy),
-            settings: Object.assign({ timezone: "UTC", currency: "USD", dateFormat: "YYYY-MM-DD" }, config === null || config === void 0 ? void 0 : config.settings),
+            settings: Object.assign({ timezone: "Asia/Dili", currency: "USD", dateFormat: "YYYY-MM-DD" }, config === null || config === void 0 ? void 0 : config.settings),
             createdAt: new Date(),
             updatedAt: new Date(),
         };

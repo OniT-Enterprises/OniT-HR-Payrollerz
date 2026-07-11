@@ -135,7 +135,9 @@ export interface TLPayrollResult {
 
   // Totals
   grossPay: number;              // Total earnings
-  taxableIncome: number;         // Gross - non-taxable items
+  wagesPaid: number;             // Gross less unpaid absence/late reductions
+  taxableIncome: number;         // Taxable wages after attendance reductions
+  witTaxableAmount: number;      // Amount to which the WIT rate was applied
   inssBase: number;              // Base for INSS calculation
 
   // Deductions - statutory
@@ -220,7 +222,10 @@ export function calculateOvertimePay(
 } {
   return {
     overtime: multiplyMoney(multiplyMoney(hourlyRate, overtimeHours), TL_OVERTIME_RATES.standard),
-    nightShift: multiplyMoney(multiplyMoney(hourlyRate, nightShiftHours), TL_OVERTIME_RATES.nightShift),
+    nightShift: multiplyMoney(
+      multiplyMoney(hourlyRate, nightShiftHours),
+      TL_OVERTIME_RATES.nightShiftPremium,
+    ),
     holiday: multiplyMoney(multiplyMoney(hourlyRate, holidayHours), TL_OVERTIME_RATES.publicHoliday),
     restDay: multiplyMoney(multiplyMoney(hourlyRate, restDayHours), TL_OVERTIME_RATES.restDay),
   };
@@ -445,7 +450,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Night Shift Premium',
       descriptionTL: 'Prémiu Turnu Kalan',
       hours: input.nightShiftHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.nightShift,
+      rate: hourlyRate * TL_OVERTIME_RATES.nightShiftPremium,
       amount: overtimePay.nightShift,
       isTaxable: true,
       isINSSBase: true,
@@ -589,7 +594,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   // Use decimal.js for precise currency summation
 
   const grossPay = sumMoney(earnings.map(e => e.amount));
-  const taxableIncome = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
+  const taxableEarnings = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
   const inssBase = sumMoney(earnings.filter(e => e.isINSSBase).map(e => e.amount));
 
   // ========== DEDUCTIONS ==========
@@ -618,17 +623,26 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
+  const wagesPaid = Math.max(0, subtractMoney(grossPay, absenceDeduction, lateDeduction));
+  const taxableIncome = Math.max(
+    0,
+    subtractMoney(taxableEarnings, absenceDeduction, lateDeduction),
+  );
+
   // INSS mandatory registration: contribution base is the contributable remuneration earned in the period.
   const contributableRemuneration = Math.max(0, subtractMoney(inssBase, absenceDeduction, lateDeduction));
   const inssContributionBase = input.inssContributionBase ?? contributableRemuneration;
 
   // Withholding Income Tax (WIT)
   const incomeTax = calculateIncomeTax(
-    subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
+    taxableIncome,
     input.taxInfo.isResident,
     input.payFrequency,
     input.totalPeriodsInMonth
   );
+  const witTaxableAmount = TL_INCOME_TAX.rate > 0
+    ? divideMoney(incomeTax, TL_INCOME_TAX.rate)
+    : 0;
 
   if (incomeTax > 0) {
     deductions.push({
@@ -697,25 +711,25 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
-  // ========== DEDUCTION CAP (CALC-3) ==========
-  // Based on Portuguese Labour Code Art. 279 (TL Law 4/2012 precedent):
-  // - Statutory deductions (WIT, INSS) and court orders: no cap
-  // - Voluntary deductions (loans, advances, other): capped at 1/6 of gross pay
-  const VOLUNTARY_DEDUCTION_CAP_RATIO = 1 / 6; // ~16.67%
+  // ========== DEDUCTION CAP (TL Labour Law 4/2012, Art. 42(3)) ==========
+  const protectedDeductions = deductions.filter(
+    d => d.type === 'income_tax' || d.type === 'inss_employee',
+  );
+  const deductionsToCap = deductions.filter(
+    d => !protectedDeductions.includes(d) && d.type !== 'absence' && d.type !== 'late_arrival',
+  );
+  const protectedTotal = sumMoney(protectedDeductions.map(d => d.amount));
+  const cappedTotal = sumMoney(deductionsToCap.map(d => d.amount));
+  const totalCap = multiplyMoney(wagesPaid, 0.30);
+  const availableCap = Math.max(0, subtractMoney(totalCap, protectedTotal));
 
-  const _statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
-  const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
-  const voluntaryTotal = sumMoney(voluntaryDeductions.map(d => d.amount));
-  const voluntaryCap = multiplyMoney(grossPay, VOLUNTARY_DEDUCTION_CAP_RATIO);
-
-  if (voluntaryTotal > voluntaryCap && voluntaryDeductions.length > 0) {
+  if (cappedTotal > availableCap && deductionsToCap.length > 0) {
     warnings.push(
-      `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 1/6 cap ($${voluntaryCap.toFixed(2)}). ` +
+      `Payroll deductions exceed the 30% cap ($${totalCap.toFixed(2)}). ` +
       `Excess deductions have been reduced proportionally.`
     );
-    // Proportionally reduce each voluntary deduction to fit within cap
-    const reductionRatio = voluntaryCap / voluntaryTotal;
-    for (const d of voluntaryDeductions) {
+    const reductionRatio = availableCap / cappedTotal;
+    for (const d of deductionsToCap) {
       d.amount = multiplyMoney(d.amount, reductionRatio);
     }
   }
@@ -725,15 +739,15 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
   const totalDeductions = sumMoney(deductions.map(d => d.amount));
   const netPay = subtractMoney(grossPay, totalDeductions);
-  const totalEmployerCost = addMoney(grossPay, inss.employer);
+  const totalEmployerCost = addMoney(wagesPaid, inss.employer);
 
   // Warnings
   if (netPay < 0) {
     warnings.push('Net pay is negative. Please review deductions.');
   }
 
-  if (input.taxInfo.isResident && taxableIncome < TL_INCOME_TAX.residentThreshold) {
-    warnings.push(`Income below $${TL_INCOME_TAX.residentThreshold} threshold - no income tax applied.`);
+  if (input.taxInfo.isResident && incomeTax === 0) {
+    warnings.push('Income is below the pro-rated resident threshold for this pay period - no WIT applied.');
   }
 
   return {
@@ -754,7 +768,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
     // Totals
     grossPay,
+    wagesPaid,
     taxableIncome,
+    witTaxableAmount,
     inssBase: inssContributionBase,
 
     // Deductions

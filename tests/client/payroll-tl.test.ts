@@ -52,9 +52,9 @@ describe("TL INSS (optional registration) band selection", () => {
     expect(getDefaultTLInssOptionalContributionBase(1)).toBe(120);
     expect(getDefaultTLInssOptionalContributionBase(120)).toBe(120);
     expect(getDefaultTLInssOptionalContributionBase(121)).toBe(150);
-    expect(getDefaultTLInssOptionalContributionBase(800)).toBe(840);
-    expect(getDefaultTLInssOptionalContributionBase(6000)).toBe(6000);
-    expect(getDefaultTLInssOptionalContributionBase(6001)).toBe(12000);
+    expect(getDefaultTLInssOptionalContributionBase(800)).toBe(900);
+    expect(getDefaultTLInssOptionalContributionBase(6000)).toBe(7500);
+    expect(getDefaultTLInssOptionalContributionBase(6001)).toBe(7500);
     expect(getDefaultTLInssOptionalContributionBase(25000)).toBe(12000);
   });
 });
@@ -69,6 +69,7 @@ describe("TL payroll calculations", () => {
     expect(result.taxableIncome).toBe(800);
     // 10% on (800 - 500) = $30
     expect(result.incomeTax).toBe(30);
+    expect(result.witTaxableAmount).toBe(300);
   });
 
   it("calculates non-resident WIT correctly (monthly)", () => {
@@ -125,6 +126,24 @@ describe("TL payroll calculations", () => {
     // 4% employee + 6% employer on base salary
     expect(result.inssEmployee).toBe(40);
     expect(result.inssEmployer).toBe(60);
+  });
+
+  it("uses the payroll configuration passed by the tenant settings flow", () => {
+    const result = calculateTLPayroll(makeBaseInput({ monthlySalary: 800 }), {
+      incomeTax: {
+        residentRate: 0.08,
+        nonResidentRate: 0.12,
+        residentThreshold: 400,
+      },
+      inss: { employeeRate: 0.03, employerRate: 0.05 },
+      overtime: { standard: 1.6, sundayHoliday: 2 },
+      minimumWage: 100,
+    });
+
+    expect(result.incomeTax).toBe(32);
+    expect(result.witTaxableAmount).toBe(400);
+    expect(result.inssEmployee).toBe(24);
+    expect(result.inssEmployer).toBe(40);
   });
 });
 
@@ -303,6 +322,20 @@ describe("Sick leave tiers", () => {
       expect(sickEarning.amount).toBeCloseTo(expected, 0);
     }
   });
+
+  it("does not overstate wages paid or employer cost for salaried sick leave", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 1200,
+        sickDaysUsed: 3,
+        absenceHours: 24,
+      })
+    );
+
+    expect(result.wagesPaid).toBe(1200);
+    expect(result.taxableIncome).toBe(1200);
+    expect(result.totalEmployerCost).toBe(result.wagesPaid + result.inssEmployer);
+  });
 });
 
 // ============================================================
@@ -369,11 +402,11 @@ describe("Overtime, night shift, and holiday rate calculations", () => {
     expect(result.overtimePay).toBeCloseTo(hourlyRate * 10 * 1.5, 1);
   });
 
-  it("calculates night shift at 125% (1.25x)", () => {
+  it("adds the statutory 25% night-work premium", () => {
     const result = calculateTLPayroll(
       makeBaseInput({ monthlySalary: salary, nightShiftHours: 10 })
     );
-    expect(result.nightShiftPay).toBeCloseTo(hourlyRate * 10 * 1.25, 1);
+    expect(result.nightShiftPay).toBeCloseTo(hourlyRate * 10 * 0.25, 1);
   });
 
   it("calculates holiday pay at 200% (2x)", () => {
@@ -404,7 +437,7 @@ describe("Overtime, night shift, and holiday rate calculations", () => {
       })
     );
     const expectedOT = hourlyRate * 5 * 1.5;
-    const expectedNight = hourlyRate * 3 * 1.25;
+    const expectedNight = hourlyRate * 3 * 0.25;
     const expectedHoliday = hourlyRate * 2 * 2.0;
 
     expect(result.overtimePay).toBeCloseTo(expectedOT, 1);
@@ -476,6 +509,20 @@ describe("Edge cases", () => {
     expect(voluntaryDeductions).toBeLessThanOrEqual(cap + 0.01);
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings.some((w) => w.includes("30% cap"))).toBe(true);
+  });
+
+  it("includes court orders in the remaining 30% deduction ceiling", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 800, courtOrders: 500 })
+    );
+    const attendanceReductions = result.deductions
+      .filter((deduction) => deduction.type === 'absence' || deduction.type === 'late_arrival')
+      .reduce((total, deduction) => total + deduction.amount, 0);
+
+    expect(result.totalDeductions - attendanceReductions).toBeLessThanOrEqual(
+      result.wagesPaid * 0.30 + 0.01,
+    );
+    expect(result.warnings.some((warning) => warning.includes('30% cap'))).toBe(true);
   });
 });
 

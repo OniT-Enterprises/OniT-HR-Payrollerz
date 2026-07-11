@@ -42,7 +42,7 @@ interface TLTaxConfig {
   // Overtime Rates
   overtimeRates: {
     standard: number;              // e.g., 1.5 for 150%
-    nightShift: number;            // e.g., 1.25 for 125%
+    nightShiftPremium: number;     // e.g., 0.25 additional premium
     restDay: number;               // e.g., 2.0 for 200%
     publicHoliday: number;         // e.g., 2.0 for 200%
   };
@@ -68,13 +68,6 @@ interface TLTaxConfig {
     preNatalDays: number;          // e.g., 28
     postNatalDays: number;         // e.g., 56
     payRate: number;               // e.g., 1.0 for 100%
-  };
-
-  // Severance
-  severance: {
-    daysPerYear: number;           // e.g., 30
-    minimumMonths: number;         // e.g., 3
-    noticePeriodDays: number;      // e.g., 30
   };
 
   // Metadata
@@ -111,15 +104,15 @@ const DEFAULT_TAX_CONFIG: TLTaxConfig = {
   },
   overtimeRates: {
     standard: 1.5,
-    nightShift: 1.25,
+    nightShiftPremium: 0.25,
     restDay: 2.0,
     publicHoliday: 2.0,
   },
   annualLeave: {
     minimumDays: 12,
-    after3Years: 15,
-    after6Years: 18,
-    after9Years: 22,
+    after3Years: 12,
+    after6Years: 12,
+    after9Years: 12,
   },
   sickLeave: {
     totalDays: 12,
@@ -128,14 +121,9 @@ const DEFAULT_TAX_CONFIG: TLTaxConfig = {
   },
   maternityLeave: {
     totalDays: 84,
-    preNatalDays: 28,
-    postNatalDays: 56,
+    preNatalDays: 14,
+    postNatalDays: 70,
     payRate: 1.0,
-  },
-  severance: {
-    daysPerYear: 30,
-    minimumMonths: 3,
-    noticePeriodDays: 30,
   },
   lastUpdated: null,
   updatedBy: null,

@@ -55,6 +55,7 @@ import {
   Download,
   CheckCircle,
   Clock,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface VATSummary {
@@ -110,6 +111,15 @@ export default function VATReturnsPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
+  const { data: platformActive = false, isLoading: platformLoading } = useQuery({
+    queryKey: ['config', 'vat', 'platformActive'],
+    queryFn: async () => {
+      const platformSnap = await getDoc(doc(db, paths.vatConfig()));
+      return platformSnap.exists() && platformSnap.data().isActive === true;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Fetch saved VAT return for the selected period
   const { data: savedReturn, isLoading: returnLoading } = useQuery({
     queryKey: ['vatReturn', tenantId, selectedPeriod],
@@ -131,6 +141,7 @@ export default function VATReturnsPage() {
       } as VATReturnRecord;
     },
     staleTime: 0,
+    enabled: !!tenantId && platformActive,
   });
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -158,13 +169,13 @@ export default function VATReturnsPage() {
     },
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
-    enabled: !!tenantId,
+    enabled: !!tenantId && platformActive,
   });
 
-  const loading = summaryLoading || returnLoading;
+  const loading = platformLoading || (platformActive && (summaryLoading || returnLoading));
 
   const saveReturn = async (markAsFiled = false) => {
-    if (!tenantId || !summary) return;
+    if (!tenantId || !summary || !platformActive) return;
     setSaving(true);
     try {
       const [year, month] = selectedPeriod.split('-').map(Number);
@@ -250,7 +261,20 @@ export default function VATReturnsPage() {
           }
         />
 
-        {loading ? (
+        {!loading && !platformActive ? (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="p-6 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div>
+                <p className="font-semibold">VAT filing is not active in Timor-Leste</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  This page is kept ready for the future VAT rollout. Xefe will not calculate,
+                  save, or mark a VAT return as filed until the national VAT platform flag is active.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : loading ? (
           <div className="space-y-4">
             <Skeleton className="h-32 w-full rounded-lg" />
             <Skeleton className="h-64 w-full rounded-lg" />

@@ -309,6 +309,16 @@ const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
     isSystem: true,
     parentCode: '2200',
   },
+  {
+    code: '2260',
+    name: 'Other Payroll Deductions Payable',
+    nameTL: 'Dedusaun Seluk Folha Pagamentu a Pagar',
+    type: 'liability',
+    subType: 'other_liability',
+    description: 'Court orders and other payroll deductions awaiting remittance',
+    isSystem: true,
+    parentCode: '2200',
+  },
 
   // Other Taxes
   {
@@ -832,4 +842,3 @@ export const MONEY_JOURNAL_MAPPINGS = {
     credit: { code: '1120', name: 'Cash in Bank - Operating' },
   },
 };
-

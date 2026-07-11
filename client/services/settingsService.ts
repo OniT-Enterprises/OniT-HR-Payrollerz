@@ -103,6 +103,9 @@ function normalizeTenantSettings(
 ): TenantSettings {
   const defaults = buildDefaultTenantSettings(tenantId);
   const data = raw as Partial<TenantSettings>;
+  const legacyOvertimeRates = data.payrollConfig?.overtimeRates as
+    | (Partial<PayrollConfig['overtimeRates']> & { first2Hours?: number })
+    | undefined;
 
   return {
     id: tenantId,
@@ -164,8 +167,13 @@ function normalizeTenantSettings(
         ...(data.payrollConfig?.socialSecurity || {}),
       },
       overtimeRates: {
-        ...defaults.payrollConfig.overtimeRates,
-        ...(data.payrollConfig?.overtimeRates || {}),
+        standard:
+          legacyOvertimeRates?.standard ??
+          legacyOvertimeRates?.first2Hours ??
+          defaults.payrollConfig.overtimeRates.standard,
+        sundayHoliday:
+          legacyOvertimeRates?.sundayHoliday ??
+          defaults.payrollConfig.overtimeRates.sundayHoliday,
       },
       subsidioAnual: {
         ...defaults.payrollConfig.subsidioAnual,
@@ -458,4 +466,3 @@ export const settingsService = {
     };
   },
 };
-

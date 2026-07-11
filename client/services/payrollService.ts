@@ -23,6 +23,7 @@ import { db } from '@/lib/firebase';
 import { chunkArray } from '@/lib/utils';
 import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
 import { isTenantSubscribed } from '@/lib/packagePricing';
+import { addMoney } from '@/lib/currency';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -33,6 +34,14 @@ import type {
   BankTransfer,
   ListPayrollRunsOptions,
 } from '@/types/payroll';
+
+export interface EmployeePayrollYTD {
+  ytdGrossPay: number;
+  ytdNetPay: number;
+  ytdIncomeTax: number;
+  ytdINSSEmployee: number;
+  ytdSickDaysUsed: number;
+}
 
 // ============================================
 // PAYROLL RUNS
@@ -241,8 +250,14 @@ class PayrollRunService {
           period: `${payrollRun.periodStart} to ${payrollRun.periodEnd}`,
           metadata: {
             employeeCount: records.length,
-            totalGross: records.reduce((sum, r) => sum + (r.totalGrossPay || 0), 0),
-            totalNet: records.reduce((sum, r) => sum + (r.netPay || 0), 0),
+            totalGross: records.reduce(
+              (sum, record) => addMoney(sum, record.totalGrossPay || 0),
+              0,
+            ),
+            totalNet: records.reduce(
+              (sum, record) => addMoney(sum, record.netPay || 0),
+              0,
+            ),
           },
         }).catch(err => console.error('Audit log failed for run ' + runId + ':', err));
       }
@@ -640,10 +655,16 @@ class PayrollRecordService {
 
     const totals = ytdRecords.reduce(
       (acc, record) => ({
-        ytdGrossPay: acc.ytdGrossPay + record.totalGrossPay,
-        ytdNetPay: acc.ytdNetPay + record.netPay,
-        ytdIncomeTax: acc.ytdIncomeTax + (record.ytdIncomeTax || 0),
-        ytdINSSEmployee: acc.ytdINSSEmployee + (record.ytdINSSEmployee || 0),
+        ytdGrossPay: addMoney(acc.ytdGrossPay, record.totalGrossPay),
+        ytdNetPay: addMoney(acc.ytdNetPay, record.netPay),
+        ytdIncomeTax: addMoney(
+          acc.ytdIncomeTax,
+          record.deductions?.find((deduction) => deduction.type === 'income_tax')?.amount || 0,
+        ),
+        ytdINSSEmployee: addMoney(
+          acc.ytdINSSEmployee,
+          record.deductions?.find((deduction) => deduction.type === 'inss_employee')?.amount || 0,
+        ),
       }),
       {
         ytdGrossPay: 0,
@@ -652,6 +673,57 @@ class PayrollRecordService {
         ytdINSSEmployee: 0,
       }
     );
+
+    return totals;
+  }
+
+  /** Aggregate current-period values from paid records; never re-sum YTD snapshots. */
+  async getTenantYTDTotals(
+    tenantId: string,
+    year: number,
+  ): Promise<Record<string, EmployeePayrollYTD>> {
+    const runsSnapshot = await getDocs(query(
+      collection(db, 'payrollRuns'),
+      where('tenantId', '==', tenantId),
+      where('status', '==', 'paid'),
+      where('payDate', '>=', `${year}-01-01`),
+      where('payDate', '<=', `${year}-12-31`),
+    ));
+    const runIds = runsSnapshot.docs.map((runDoc) => runDoc.id);
+    const totals: Record<string, EmployeePayrollYTD> = {};
+
+    for (const runIdChunk of chunkArray(runIds, 10)) {
+      if (runIdChunk.length === 0) continue;
+      const recordsSnapshot = await getDocs(query(
+        this.collectionRef,
+        where('payrollRunId', 'in', runIdChunk),
+      ));
+
+      for (const recordDoc of recordsSnapshot.docs) {
+        const record = normalizeLegacyRecord({ ...recordDoc.data() }) as PayrollRecord;
+        if (!record.employeeId) continue;
+        const current = totals[record.employeeId] || {
+          ytdGrossPay: 0,
+          ytdNetPay: 0,
+          ytdIncomeTax: 0,
+          ytdINSSEmployee: 0,
+          ytdSickDaysUsed: 0,
+        };
+        totals[record.employeeId] = {
+          ytdGrossPay: addMoney(current.ytdGrossPay, record.totalGrossPay || 0),
+          ytdNetPay: addMoney(current.ytdNetPay, record.netPay || 0),
+          ytdIncomeTax: addMoney(
+            current.ytdIncomeTax,
+            record.deductions?.find((deduction) => deduction.type === 'income_tax')?.amount || 0,
+          ),
+          ytdINSSEmployee: addMoney(
+            current.ytdINSSEmployee,
+            record.deductions?.find((deduction) => deduction.type === 'inss_employee')?.amount || 0,
+          ),
+          ytdSickDaysUsed: current.ytdSickDaysUsed + ((record.sickHoursUsed || 0) / 8),
+        };
+      }
+    }
 
     return totals;
   }

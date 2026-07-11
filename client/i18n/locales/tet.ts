@@ -1209,7 +1209,7 @@ const messages = {
       "excludePerDiem": "Labele konta ajuda de custo ba SS",
       "overtime": "Horas Servisu no Extra",
       "maxHoursWeek": "Maximu Horas/Semana",
-      "first2HoursRate": "Taxa 2 oras uluk",
+      "first2HoursRate": "Taxa oras estra padrão",
       "first2HoursHint": "1.5x = +50%",
       "beyond2HoursRate": "Taxa depois 2 oras",
       "beyond2HoursHint": "2x = +100%",

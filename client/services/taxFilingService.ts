@@ -146,18 +146,31 @@ function getDaysUntilDue(dueDate: string): number {
 interface TaxablePayrollRecord {
   totalGrossPay?: number;
   grossPay?: number;
+  wagesPaid?: number;
+  taxableIncome?: number;
+  witTaxableAmount?: number;
+  inssBase?: number;
   incomeTax?: number;
   inssEmployee?: number;
   inssEmployer?: number;
+  isResident?: boolean;
+  netPay?: number;
   deductions?: { type?: string; description?: string; amount?: number }[];
   employerTaxes?: { type?: string; description?: string; amount?: number }[];
 }
 
 function getRecordGrossPay(record: TaxablePayrollRecord | null): number {
   if (!record) return 0;
-  if (typeof record.totalGrossPay === 'number') return record.totalGrossPay;
-  if (typeof record.grossPay === 'number') return record.grossPay;
-  return 0;
+  if (typeof record.wagesPaid === 'number') return record.wagesPaid;
+  const gross = typeof record.totalGrossPay === 'number'
+    ? record.totalGrossPay
+    : typeof record.grossPay === 'number'
+      ? record.grossPay
+      : 0;
+  const attendanceReduction = (record.deductions || [])
+    .filter((deduction) => deduction.type === 'absence' || deduction.type === 'late_arrival')
+    .reduce((total, deduction) => addMoney(total, deduction.amount || 0), 0);
+  return maxMoney(0, subtractMoney(gross, attendanceReduction));
 }
 
 function getRecordWITWithheld(record: TaxablePayrollRecord | null): number {
@@ -165,12 +178,13 @@ function getRecordWITWithheld(record: TaxablePayrollRecord | null): number {
   if (typeof record.incomeTax === 'number') return record.incomeTax;
 
   const deductions = Array.isArray(record.deductions) ? record.deductions : [];
-  const wit = deductions.find((d) =>
-    d?.type === 'income_tax' ||
-    String(d?.description || '').toLowerCase().includes('wit') ||
-    String(d?.description || '').toLowerCase().includes('income tax')
-  );
-  return typeof wit?.amount === 'number' ? wit.amount : 0;
+  return deductions
+    .filter((deduction) => (
+      deduction?.type === 'income_tax' ||
+      String(deduction?.description || '').toLowerCase().includes('wit') ||
+      String(deduction?.description || '').toLowerCase().includes('income tax')
+    ))
+    .reduce((total, deduction) => addMoney(total, deduction.amount || 0), 0);
 }
 
 function getRecordINSSEmployee(record: TaxablePayrollRecord | null): number {
@@ -178,11 +192,12 @@ function getRecordINSSEmployee(record: TaxablePayrollRecord | null): number {
   if (typeof record.inssEmployee === 'number') return record.inssEmployee;
 
   const deductions = Array.isArray(record.deductions) ? record.deductions : [];
-  const inss = deductions.find((d) =>
-    d?.type === 'inss_employee' ||
-    String(d?.description || '').toLowerCase().includes('inss')
-  );
-  return typeof inss?.amount === 'number' ? inss.amount : 0;
+  return deductions
+    .filter((deduction) => (
+      deduction?.type === 'inss_employee' ||
+      String(deduction?.description || '').toLowerCase().includes('inss')
+    ))
+    .reduce((total, deduction) => addMoney(total, deduction.amount || 0), 0);
 }
 
 function getRecordINSSEmployer(record: TaxablePayrollRecord | null): number {
@@ -190,11 +205,12 @@ function getRecordINSSEmployer(record: TaxablePayrollRecord | null): number {
   if (typeof record.inssEmployer === 'number') return record.inssEmployer;
 
   const employerTaxes = Array.isArray(record.employerTaxes) ? record.employerTaxes : [];
-  const inss = employerTaxes.find((t) =>
-    t?.type === 'inss_employer' ||
-    String(t?.description || '').toLowerCase().includes('inss')
-  );
-  return typeof inss?.amount === 'number' ? inss.amount : 0;
+  return employerTaxes
+    .filter((tax) => (
+      tax?.type === 'inss_employer' ||
+      String(tax?.description || '').toLowerCase().includes('inss')
+    ))
+    .reduce((total, tax) => addMoney(total, tax.amount || 0), 0);
 }
 
 /**
@@ -332,15 +348,35 @@ class TaxFilingService {
     const recordsByRun = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
     const periodRecords = Array.from(recordsByRun.values()).flat();
 
-    const totalsByEmployee = new Map<string, { grossWages: number; witWithheld: number }>();
+    const totalsByEmployee = new Map<string, {
+      grossWages: number;
+      taxableWages: number;
+      hasStoredTaxableWages: boolean;
+      witWithheld: number;
+      isResident?: boolean;
+    }>();
     periodRecords.forEach(record => {
       const rec = record as TaxablePayrollRecord & { employeeId?: string };
       if (!rec.employeeId) return;
 
-      const existing = totalsByEmployee.get(rec.employeeId) || { grossWages: 0, witWithheld: 0 };
+      const existing = totalsByEmployee.get(rec.employeeId) || {
+        grossWages: 0,
+        taxableWages: 0,
+        hasStoredTaxableWages: false,
+        witWithheld: 0,
+        isResident: undefined,
+      };
       totalsByEmployee.set(rec.employeeId, {
         grossWages: addMoney(existing.grossWages, getRecordGrossPay(rec)),
+        taxableWages: addMoney(
+          existing.taxableWages,
+          typeof rec.witTaxableAmount === 'number' ? rec.witTaxableAmount : 0,
+        ),
+        hasStoredTaxableWages:
+          existing.hasStoredTaxableWages || typeof rec.witTaxableAmount === 'number',
         witWithheld: addMoney(existing.witWithheld, getRecordWITWithheld(rec)),
+        isResident:
+          typeof rec.isResident === 'boolean' ? rec.isResident : existing.isResident,
       });
     });
 
@@ -363,10 +399,12 @@ class TaxFilingService {
       const witWithheld = totals?.witWithheld || 0;
       if (grossWages === 0) continue; // Skip employees with no pay this period
 
-      const isResident = employee.compensation?.isResident ?? true;
-      const taxableWages = taxConfig.incomeTax.rate > 0
-        ? divideMoney(witWithheld, taxConfig.incomeTax.rate)
-        : 0;
+      const isResident = totals?.isResident ?? employee.compensation?.isResident ?? true;
+      const taxableWages = totals?.hasStoredTaxableWages
+        ? totals.taxableWages
+        : taxConfig.incomeTax.rate > 0
+          ? divideMoney(witWithheld, taxConfig.incomeTax.rate)
+          : 0;
 
       employeeRecords.push({
         employeeId: employee.id!,
@@ -445,6 +483,8 @@ class TaxFilingService {
       contributionBase: number;
       incomeTax: number;
       annualSubsidy: number;
+      netPay: number;
+      hasStoredNetPay: boolean;
       isResident?: boolean;
     }>();
     periodRecords.forEach(record => {
@@ -457,9 +497,11 @@ class TaxFilingService {
 
       const employeeINSS = getRecordINSSEmployee(rec);
       const employerINSS = getRecordINSSEmployer(rec);
-      const contributionBase = taxConfig.inss.employeeRate > 0
-        ? divideMoney(employeeINSS, taxConfig.inss.employeeRate)
-        : 0;
+      const contributionBase = typeof rec.inssBase === 'number'
+        ? rec.inssBase
+        : taxConfig.inss.employeeRate > 0
+          ? divideMoney(employeeINSS, taxConfig.inss.employeeRate)
+          : 0;
       const annualSubsidy = (rec.earnings || [])
         .filter((e) => e?.type === 'subsidio_anual')
         .reduce((sum, e) => addMoney(sum, e?.amount || 0), 0);
@@ -471,6 +513,8 @@ class TaxFilingService {
         contributionBase: 0,
         incomeTax: 0,
         annualSubsidy: 0,
+        netPay: 0,
+        hasStoredNetPay: false,
         isResident: undefined as boolean | undefined,
       };
 
@@ -481,6 +525,8 @@ class TaxFilingService {
         contributionBase: addMoney(existing.contributionBase, contributionBase),
         incomeTax: addMoney(existing.incomeTax, getRecordWITWithheld(rec)),
         annualSubsidy: addMoney(existing.annualSubsidy, annualSubsidy),
+        netPay: addMoney(existing.netPay, rec.netPay || 0),
+        hasStoredNetPay: existing.hasStoredNetPay || typeof rec.netPay === 'number',
         isResident: typeof rec.isResident === 'boolean' ? rec.isResident : existing.isResident,
       });
     });
@@ -521,7 +567,9 @@ class TaxFilingService {
         grossWages,
         annualSubsidy: roundMoney(totals.annualSubsidy),
         incomeTax,
-        netPay: subtractMoney(grossWages, incomeTax, employeeContribution),
+        netPay: totals.hasStoredNetPay
+          ? roundMoney(totals.netPay)
+          : subtractMoney(grossWages, incomeTax, employeeContribution),
         ...(typeof totals.isResident === 'boolean' ? { isResident: totals.isResident } : {}),
       });
 
@@ -593,6 +641,7 @@ class TaxFilingService {
       totalGrossWages: number;
       totalWIT: number;
       monthsWorked: Set<number>;
+      isResident?: boolean;
     }> = new Map();
 
     for (const [runId, records] of recordsByRun) {
@@ -610,10 +659,12 @@ class TaxFilingService {
           totalGrossWages: 0,
           totalWIT: 0,
           monthsWorked: new Set<number>(),
+          isResident: undefined,
         };
 
         existing.totalGrossWages = addMoney(existing.totalGrossWages, getRecordGrossPay(rec));
         existing.totalWIT = addMoney(existing.totalWIT, getRecordWITWithheld(rec));
+        if (typeof rec.isResident === 'boolean') existing.isResident = rec.isResident;
         existing.monthsWorked.add(runMonth);
 
         employeeAggregates.set(rec.employeeId, existing);
@@ -640,7 +691,7 @@ class TaxFilingService {
         employeeId: employee.id!,
         fullName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         tinNumber: undefined, // TL employees typically don't have individual TINs
-        isResident: employee.compensation?.isResident ?? true,
+        isResident: data.isResident ?? employee.compensation?.isResident ?? true,
         startDate,
         endDate,
         monthsWorked: monthsWorked.size,

@@ -22,6 +22,7 @@ interface WizardStepPeriodProps {
   setPayDate: (v: string) => void;
   includeSubsidioAnual: boolean;
   setIncludeSubsidioAnual: (v: boolean) => void;
+  subsidioEnabled?: boolean;
 }
 
 const frequencyOptions: { value: TLPayFrequency; icon: typeof CalendarDays; labelKey: string; descKey: string }[] = [
@@ -41,6 +42,7 @@ export function WizardStepPeriod({
   setPayDate,
   includeSubsidioAnual,
   setIncludeSubsidioAnual,
+  subsidioEnabled = true,
 }: WizardStepPeriodProps) {
   const { t } = useI18n();
 
@@ -130,7 +132,7 @@ export function WizardStepPeriod({
       </div>
 
       {/* Subsidio Anual — simple toggle card */}
-      <div
+      {subsidioEnabled && <div
         className={cn(
           "flex items-start gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all",
           includeSubsidioAnual
@@ -150,7 +152,7 @@ export function WizardStepPeriod({
             {t("runPayroll.subsidioDesc")}
           </p>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

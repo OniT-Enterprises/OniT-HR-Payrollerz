@@ -1209,7 +1209,7 @@ const messages = {
       "excludePerDiem": "Exclude per diem from SS",
       "overtime": "Working Hours & Overtime",
       "maxHoursWeek": "Max Hours/Week",
-      "first2HoursRate": "First 2 hrs OT Rate",
+      "first2HoursRate": "Standard OT Rate",
       "first2HoursHint": "1.5x = +50%",
       "beyond2HoursRate": "Beyond 2 hrs OT Rate",
       "beyond2HoursHint": "2x = +100%",

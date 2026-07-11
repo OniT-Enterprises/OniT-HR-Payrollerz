@@ -86,7 +86,7 @@ const TL_SOCIAL_PENSION_USD = 60;
  * Reference: INSS contributions guidance.
  */
 const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
-  2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 100, 200,
+  2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 55, 70, 95, 125, 160, 200,
 ] as const;
 
 interface TLInssContributionBand {
@@ -167,8 +167,9 @@ export const TL_OVERTIME_RATES = {
   // Standard overtime (beyond 44 hours/week)
   standard: 1.5,  // 150%
 
-  // Night shift premium (night work window is 21:00-06:00 under TL labor law)
-  nightShift: 1.25,  // 125% (25% premium)
+  // Additional premium for normal hours worked at night (21:00-06:00).
+  // Regular pay already covers the underlying hour, so payroll adds 25%, not 125%.
+  nightShiftPremium: 0.25,
 
   // Sunday/Rest day work
   restDay: 2.0,  // 200%

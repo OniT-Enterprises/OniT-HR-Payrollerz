@@ -236,13 +236,13 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
     expect(result.overtimePay).toBeCloseTo(approxOT, -1); // Within $5
   });
 
-  it("calculates night shift at 125% premium", () => {
+  it("adds the statutory 25% night-work premium", () => {
     const result = calculateTLPayroll(roster[4]); // Night shift worker
     expect(result.nightShiftPay).toBeGreaterThan(0);
 
-    // Night shift hours at 125% (Decimal.js precision)
+    // Regular salary covers the underlying hours; add only the 25% premium.
     const hourlyRate = 700 / 190;
-    const approxNight = hourlyRate * 1.25 * 40;
+    const approxNight = hourlyRate * 0.25 * 40;
     expect(result.nightShiftPay).toBeCloseTo(approxNight, -1); // Within $5
   });
 
@@ -263,10 +263,10 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
     expect(result.sickPay).toBeGreaterThan(0);
   });
 
-  it("employer cost equals gross + employer INSS", () => {
+  it("employer cost equals wages paid + employer INSS", () => {
     const { results } = runPayrollBatch(roster);
     for (const r of results) {
-      expect(r.totalEmployerCost).toBeCloseTo(r.grossPay + r.inssEmployer, 1);
+      expect(r.totalEmployerCost).toBeCloseTo(r.wagesPaid + r.inssEmployer, 1);
     }
   });
 
@@ -481,6 +481,14 @@ describe("Absence and Late Arrival Deductions", () => {
 
     // INSS base should be reduced by absence
     expect(absenceResult.inssBase).toBeLessThan(baseResult.inssBase);
+    expect(absenceResult.wagesPaid).toBeCloseTo(
+      absenceResult.grossPay - absenceResult.absenceDeduction,
+      2,
+    );
+    expect(absenceResult.totalEmployerCost).toBeCloseTo(
+      absenceResult.wagesPaid + absenceResult.inssEmployer,
+      2,
+    );
   });
 
   it("late arrival reduces net pay and appears as deduction", () => {

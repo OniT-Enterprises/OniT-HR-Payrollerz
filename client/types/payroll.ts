@@ -101,6 +101,7 @@ export interface PayrollRecord {
   employeeNumber: string;
   department: string;
   position: string;
+  isResident?: boolean;
 
   // Hours worked
   regularHours: number;
@@ -117,6 +118,14 @@ export interface PayrollRecord {
   // Earnings breakdown
   earnings: PayrollEarning[];
   totalGrossPay: number;
+  /** Statutory wages actually paid after unpaid absence/late reductions. */
+  wagesPaid?: number;
+  /** WIT wage base for the period after attendance reductions. */
+  taxableIncome?: number;
+  /** Threshold-adjusted amount to which the WIT rate was applied. */
+  witTaxableAmount?: number;
+  /** INSS contribution base used for the period. */
+  inssBase?: number;
 
   // Deductions breakdown
   deductions: PayrollDeduction[];
@@ -266,4 +275,3 @@ export interface ListPayrollRunsOptions {
   limit?: number;
   offset?: number;
 }
-

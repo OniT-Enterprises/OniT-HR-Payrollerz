@@ -28,6 +28,7 @@ import {
   subtractMoney,
   sumMoney,
   proRata,
+  maxMoney,
 } from '@/lib/currency';
 
 // ============================================
@@ -38,6 +39,18 @@ export interface TLEmployeeTaxInfo {
   isResident: boolean;           // Resident vs non-resident
   hasTaxExemption: boolean;      // Exempt from WIT withholding (e.g. shareholder distributions)
   inssExempt?: boolean;          // Not INSS-enrolled (e.g. shareholders paid distributions, not wages)
+}
+
+export interface TLPayrollCalculationConfig {
+  incomeTax?: {
+    residentRate: number;
+    nonResidentRate: number;
+    residentThreshold: number;
+  };
+  inss?: { employeeRate: number; employerRate: number };
+  overtime?: { standard: number; sundayHoliday: number };
+  minimumWage?: number;
+  maxOvertimePerWeek?: number;
 }
 
 export interface TLPayrollInput {
@@ -136,7 +149,9 @@ export interface TLPayrollResult {
 
   // Totals
   grossPay: number;              // Total earnings
-  taxableIncome: number;         // Gross - non-taxable items
+  wagesPaid: number;             // Gross earnings less unpaid absence/late reductions
+  taxableIncome: number;         // Taxable wages after absence/late reductions
+  witTaxableAmount: number;      // Amount to which the WIT rate was applied
   inssBase: number;              // Base for INSS calculation
 
   // Deductions - statutory
@@ -212,7 +227,8 @@ function calculateOvertimePay(
   overtimeHours: number,
   nightShiftHours: number,
   holidayHours: number,
-  restDayHours: number
+  restDayHours: number,
+  config?: TLPayrollCalculationConfig['overtime'],
 ): {
   overtime: number;
   nightShift: number;
@@ -220,10 +236,22 @@ function calculateOvertimePay(
   restDay: number;
 } {
   return {
-    overtime: multiplyMoney(multiplyMoney(hourlyRate, overtimeHours), TL_OVERTIME_RATES.standard),
-    nightShift: multiplyMoney(multiplyMoney(hourlyRate, nightShiftHours), TL_OVERTIME_RATES.nightShift),
-    holiday: multiplyMoney(multiplyMoney(hourlyRate, holidayHours), TL_OVERTIME_RATES.publicHoliday),
-    restDay: multiplyMoney(multiplyMoney(hourlyRate, restDayHours), TL_OVERTIME_RATES.restDay),
+    overtime: multiplyMoney(
+      multiplyMoney(hourlyRate, overtimeHours),
+      config?.standard ?? TL_OVERTIME_RATES.standard,
+    ),
+    nightShift: multiplyMoney(
+      multiplyMoney(hourlyRate, nightShiftHours),
+      TL_OVERTIME_RATES.nightShiftPremium,
+    ),
+    holiday: multiplyMoney(
+      multiplyMoney(hourlyRate, holidayHours),
+      config?.sundayHoliday ?? TL_OVERTIME_RATES.publicHoliday,
+    ),
+    restDay: multiplyMoney(
+      multiplyMoney(hourlyRate, restDayHours),
+      config?.sundayHoliday ?? TL_OVERTIME_RATES.restDay,
+    ),
   };
 }
 
@@ -274,11 +302,17 @@ function calculateIncomeTax(
   isResident: boolean,
   payFrequency: TLPayFrequency,
   totalPeriodsInMonth?: number,
-  configOverride?: { rate: number; residentThreshold: number }
+  configOverride?: {
+    residentRate: number;
+    nonResidentRate: number;
+    residentThreshold: number;
+  }
 ): number {
   if (taxableIncome <= 0) return 0;
 
-  const rate = configOverride?.rate ?? TL_INCOME_TAX.rate;
+  const rate = isResident
+    ? configOverride?.residentRate ?? TL_INCOME_TAX.rate
+    : configOverride?.nonResidentRate ?? TL_INCOME_TAX.rate;
   const residentThreshold = configOverride?.residentThreshold ?? TL_INCOME_TAX.residentThreshold;
 
   // Convert the monthly threshold to the current pay period.
@@ -392,7 +426,10 @@ export function calculateLateDeduction(
 /**
  * Calculate complete Timor-Leste payroll for an employee
  */
-export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
+export function calculateTLPayroll(
+  input: TLPayrollInput,
+  config?: TLPayrollCalculationConfig,
+): TLPayrollResult {
   const warnings: string[] = [];
   const earnings: TLPayrollEarning[] = [];
   const deductions: TLPayrollDeduction[] = [];
@@ -434,7 +471,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     input.overtimeHours,
     input.nightShiftHours,
     input.holidayHours,
-    input.restDayHours
+    input.restDayHours,
+    config?.overtime,
   );
 
   if (input.overtimeHours > 0) {
@@ -443,7 +481,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Overtime',
       descriptionTL: 'Oras Extra',
       hours: input.overtimeHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.standard,
+      rate: hourlyRate * (config?.overtime?.standard ?? TL_OVERTIME_RATES.standard),
       amount: overtimePay.overtime,
       isTaxable: true,
       isINSSBase: false,
@@ -456,7 +494,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Night Shift Premium',
       descriptionTL: 'Prémiu Turnu Kalan',
       hours: input.nightShiftHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.nightShift,
+      rate: hourlyRate * TL_OVERTIME_RATES.nightShiftPremium,
       amount: overtimePay.nightShift,
       isTaxable: true,
       isINSSBase: true,
@@ -469,7 +507,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Public Holiday Pay',
       descriptionTL: 'Pagamentu Feriadu',
       hours: input.holidayHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.publicHoliday,
+      rate: hourlyRate * (
+        config?.overtime?.sundayHoliday ?? TL_OVERTIME_RATES.publicHoliday
+      ),
       amount: overtimePay.holiday,
       isTaxable: true,
       // INSS excludes overtime/extraordinary pay; public holiday premiums are treated as overtime.
@@ -483,7 +523,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       description: 'Rest Day Pay',
       descriptionTL: 'Pagamentu Loron Deskansa',
       hours: input.restDayHours,
-      rate: hourlyRate * TL_OVERTIME_RATES.restDay,
+      rate: hourlyRate * (
+        config?.overtime?.sundayHoliday ?? TL_OVERTIME_RATES.restDay
+      ),
       amount: overtimePay.restDay,
       isTaxable: true,
       // INSS excludes overtime/extraordinary pay; rest day premiums are treated as overtime.
@@ -600,7 +642,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   // Use decimal.js for precise currency summation
 
   const grossPay = sumMoney(earnings.map(e => e.amount));
-  const taxableIncome = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
+  const taxableEarnings = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
   const inssBase = sumMoney(earnings.filter(e => e.isINSSBase).map(e => e.amount));
 
   // ========== DEDUCTIONS ==========
@@ -629,6 +671,16 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
+  // Attendance reductions are not money owed to a third party. Keep them as
+  // payslip deductions, but report statutory wages and employer cost after the
+  // reduction. This also nets the separate sick-pay earning against the absent
+  // hours for salaried staff.
+  const wagesPaid = Math.max(0, subtractMoney(grossPay, absenceDeduction, lateDeduction));
+  const taxableIncome = Math.max(
+    0,
+    subtractMoney(taxableEarnings, absenceDeduction, lateDeduction),
+  );
+
   // INSS mandatory registration: contribution base is the contributable remuneration earned in the period.
   // Exempt payees (e.g. shareholders) are not enrolled, so their base is zero.
   const contributableRemuneration = Math.max(0, subtractMoney(inssBase, absenceDeduction, lateDeduction));
@@ -640,11 +692,18 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   const incomeTax = input.taxInfo.hasTaxExemption
     ? 0
     : calculateIncomeTax(
-        subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
+        taxableIncome,
         input.taxInfo.isResident,
         input.payFrequency,
-        input.totalPeriodsInMonth
+        input.totalPeriodsInMonth,
+        config?.incomeTax,
       );
+  const appliedIncomeTaxRate = input.taxInfo.isResident
+    ? config?.incomeTax?.residentRate ?? TL_INCOME_TAX.rate
+    : config?.incomeTax?.nonResidentRate ?? TL_INCOME_TAX.rate;
+  const witTaxableAmount = appliedIncomeTaxRate > 0
+    ? divideMoney(incomeTax, appliedIncomeTaxRate)
+    : 0;
 
   if (incomeTax > 0) {
     deductions.push({
@@ -657,7 +716,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // INSS
-  const inss = calculateINSS(inssContributionBase);
+  const inss = calculateINSS(inssContributionBase, config?.inss);
 
   if (inss.employee > 0) {
     deductions.push({
@@ -718,37 +777,37 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   //   "Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total
   //    da remuneração recebida pelo trabalhador."
   //   ("Deductions made may not exceed, per month, 30% of the total remuneration received.")
-  // => The cap is 30%. (NOT the 1/6 ≈ 16.67% once mis-cited from Portugal's Código do
-  //    Trabalho Art. 279, which does not apply to Timor-Leste.)
-  //
-  // OPEN INTERPRETATION: Art. 42(3) literally caps the TOTAL of "descontos efetuados"
-  // (statutory + voluntary). This code applies the 30% cap to VOLUNTARY deductions only and
-  // exempts statutory ones (WIT, INSS, court orders) — the lenient reading. A strict reading
-  // would also warn when TOTAL deductions exceed 30%. Confirm intended behaviour with HR/legal.
-  const VOLUNTARY_DEDUCTION_CAP_RATIO = 0.30; // 30% per Lei 4/2012 Art. 42(3)
-
-  const _statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
-  const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
-  const voluntaryTotal = sumMoney(voluntaryDeductions.map(d => d.amount));
-  const voluntaryCap = multiplyMoney(grossPay, VOLUNTARY_DEDUCTION_CAP_RATIO);
+  // WIT and INSS must be withheld at their statutory amounts. All remaining
+  // deductions (including court orders) share what remains of the 30% ceiling.
+  // Unpaid absence/late time is a loss of remuneration under Art. 33(5), not a
+  // retained amount awaiting remittance, so it sits outside this ceiling.
+  const DEDUCTION_CAP_RATIO = 0.30;
+  const protectedDeductions = deductions.filter(
+    d => d.type === 'income_tax' || d.type === 'inss_employee',
+  );
+  const deductionsToCap = deductions.filter(
+    d => !protectedDeductions.includes(d) && d.type !== 'absence' && d.type !== 'late_arrival',
+  );
+  const protectedTotal = sumMoney(protectedDeductions.map(d => d.amount));
+  const cappedTotal = sumMoney(deductionsToCap.map(d => d.amount));
+  const totalCap = multiplyMoney(wagesPaid, DEDUCTION_CAP_RATIO);
+  const availableCap = maxMoney(0, subtractMoney(totalCap, protectedTotal));
   let finalDeductions = deductions;
 
-  if (voluntaryTotal > voluntaryCap && voluntaryDeductions.length > 0) {
+  if (cappedTotal > availableCap && deductionsToCap.length > 0) {
     warnings.push(
-      `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 30% cap ($${voluntaryCap.toFixed(2)}). ` +
+      `Payroll deductions exceed the 30% cap ($${totalCap.toFixed(2)}). ` +
       `Excess deductions have been reduced proportionally.`
     );
-    // Proportionally reduce each voluntary deduction to fit within cap (immutable)
-    const reductionRatio = voluntaryCap / voluntaryTotal;
-    const adjustedVoluntary = voluntaryDeductions.map(d => ({
+    const reductionRatio = availableCap / cappedTotal;
+    const adjustedCapped = deductionsToCap.map(d => ({
       ...d,
       amount: multiplyMoney(d.amount, reductionRatio),
     }));
-    // Rebuild deductions array with adjusted voluntary amounts
-    const voluntarySet = new Set(voluntaryDeductions);
-    let volIdx = 0;
+    const cappedSet = new Set(deductionsToCap);
+    let cappedIndex = 0;
     finalDeductions = deductions.map(d =>
-      voluntarySet.has(d) ? adjustedVoluntary[volIdx++] : d
+      cappedSet.has(d) ? adjustedCapped[cappedIndex++] : d
     );
   }
 
@@ -757,7 +816,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
   const totalDeductions = sumMoney(finalDeductions.map(d => d.amount));
   const netPay = subtractMoney(grossPay, totalDeductions);
-  const totalEmployerCost = addMoney(grossPay, inss.employer);
+  const totalEmployerCost = addMoney(wagesPaid, inss.employer);
 
   // Warnings
   if (netPay < 0) {
@@ -770,8 +829,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       ...(input.taxInfo.inssExempt ? ['INSS'] : []),
     ];
     warnings.push(`Statutory exemption applied: ${exempted.join(' and ')} not withheld for this payee.`);
-  } else if (input.taxInfo.isResident && taxableIncome < TL_INCOME_TAX.residentThreshold) {
-    warnings.push(`Income below $${TL_INCOME_TAX.residentThreshold} threshold - no income tax applied.`);
+  } else if (input.taxInfo.isResident && incomeTax === 0) {
+    warnings.push('Income is below the pro-rated resident threshold for this pay period - no WIT applied.');
   }
 
   return {
@@ -792,7 +851,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
     // Totals
     grossPay,
+    wagesPaid,
     taxableIncome,
+    witTaxableAmount,
     inssBase: inssContributionBase,
 
     // Deductions
@@ -911,7 +972,10 @@ export function calculateMonthlyWeeklyPayrolls(
 /**
  * Validate payroll input before calculation
  */
-export function validateTLPayrollInput(input: TLPayrollInput): string[] {
+export function validateTLPayrollInput(
+  input: TLPayrollInput,
+  config?: TLPayrollCalculationConfig,
+): string[] {
   const errors: string[] = [];
 
   // Minimum wage applies to employment relationships. Fully exempt payees (shareholders
@@ -920,15 +984,20 @@ export function validateTLPayrollInput(input: TLPayrollInput): string[] {
 
   if (input.monthlySalary < 0) {
     errors.push('Monthly salary cannot be negative.');
-  } else if (input.monthlySalary < TL_INSS.minimumSalary && !isStatutoryExempt) {
-    errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${TL_INSS.minimumSalary}).`);
+  } else if (
+    input.monthlySalary < (config?.minimumWage ?? TL_INSS.minimumSalary) &&
+    !isStatutoryExempt
+  ) {
+    const minimumWage = config?.minimumWage ?? TL_INSS.minimumSalary;
+    errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${minimumWage}).`);
   }
 
   if (input.regularHours < 0) {
     errors.push('Regular hours cannot be negative.');
   }
 
-  if (input.overtimeHours > TL_WORKING_HOURS.maxOvertimePerWeek * 4) {
+  const maxOvertimePerWeek = config?.maxOvertimePerWeek ?? TL_WORKING_HOURS.maxOvertimePerWeek;
+  if (input.overtimeHours > maxOvertimePerWeek * 4) {
     errors.push(`Overtime hours (${input.overtimeHours}) exceed maximum allowed per month.`);
   }
 

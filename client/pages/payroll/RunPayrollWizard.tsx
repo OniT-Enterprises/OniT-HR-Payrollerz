@@ -64,7 +64,7 @@ export default function RunPayrollWizard() {
   const createPayrollMutation = useCreatePayrollRunWithRecords();
 
   // Solo-operator mode changes the "what happens next" copy on the review step
-  const { data: tenantSettings } = useQuery({
+  const { data: tenantSettings, isLoading: loadingSettings } = useQuery({
     queryKey: ["tenants", tenantId, "settings"],
     queryFn: () => settingsService.getSettings(tenantId),
     enabled: Boolean(tenantId),
@@ -76,6 +76,7 @@ export default function RunPayrollWizard() {
     activeEmployees,
     tenantId,
     userId: user?.uid || "current-user",
+    payrollConfig: tenantSettings?.payrollConfig,
   });
 
   // ─── Step validation ─────────────────────────────────────────
@@ -225,7 +226,7 @@ export default function RunPayrollWizard() {
     }
   }, [calc, createPayrollMutation, tenantId, user, toast, t, navigate]);
 
-  if (loadingEmployees) {
+  if (loadingEmployees || loadingSettings) {
     return <PayrollLoadingSkeleton />;
   }
 
@@ -266,6 +267,7 @@ export default function RunPayrollWizard() {
               setPayDate={calc.setPayDate}
               includeSubsidioAnual={calc.includeSubsidioAnual}
               setIncludeSubsidioAnual={calc.setIncludeSubsidioAnual}
+              subsidioEnabled={tenantSettings?.payrollConfig?.subsidioAnual.enabled !== false}
             />
           </StepContent>
 
