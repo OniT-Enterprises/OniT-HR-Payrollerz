@@ -10,8 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends tini git ca-cer
 # Rewrite SSH git URLs to HTTPS (openclaw deps use ssh://git@github.com/...)
 RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
 
-# Install openclaw globally
-RUN npm install -g openclaw@latest
+# Install openclaw globally.
+# PINNED to 2026.4.15: this is the version the xefe-hr plugin (api.registerTool)
+# was built against. openclaw 2026.5.20 changed plugin/tool loading so the
+# plugin's tools stop registering (0 tools). Pin here so a rebuild is
+# behaviour-preserving; bump deliberately with a plugin-compat check.
+RUN npm install -g openclaw@2026.4.15
 
 # Create workspace directory for the non-root user
 RUN mkdir -p /home/node/.openclaw/extensions/xefe-hr \
