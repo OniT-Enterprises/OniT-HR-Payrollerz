@@ -5,6 +5,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { SEO, seoConfig } from "@/components/SEO";
 import { PackagePicker } from "@/components/pricing/PackagePicker";
+import { PayslipExample } from "@/components/marketing/PayslipExample";
 import {
   ArrowRight,
   BadgeCheck,
@@ -64,7 +65,7 @@ function SectionEyebrow({ children }: { children: React.ReactNode }) {
 }
 
 export default function Landing() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const tlFeatures = [
     {
@@ -363,6 +364,24 @@ export default function Landing() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* ── Example payslip ────────────────────────────────────── */}
+      <section className="py-24 lg:py-28 border-t border-white/5 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-blue-500/[0.05] rounded-full blur-[160px]" />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <SectionEyebrow>{t("landing.payslip.eyebrow")}</SectionEyebrow>
+            <h2 className="mt-4 text-3xl lg:text-[2.6rem] leading-tight font-extrabold tracking-tight text-white">
+              {t("landing.payslip.title")}{" "}
+              <span className="text-amber-300">{t("landing.payslip.titleAccent")}</span>
+            </h2>
+            <p className="mt-4 text-zinc-400">{t("landing.payslip.subtitle")}</p>
+          </div>
+          <PayslipExample locale={locale} />
         </div>
       </section>
 

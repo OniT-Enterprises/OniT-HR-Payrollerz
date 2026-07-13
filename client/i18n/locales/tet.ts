@@ -760,6 +760,12 @@ const messages = {
         "badge": "Auto-kalkuladu"
       }
     },
+    "payslip": {
+      "eyebrow": "Resibu Pagamentu",
+      "title": "Resibu pagamentu ne'ebé ita-nia ekipa",
+      "titleAccent": "bele lee duni",
+      "subtitle": "Kada prosesu folha pagamentu prodús resibu ne'ebé tuir lei — WIT, INSS no subsídiu anuál fahe liña ba liña, iha Tetun, Inglés ka Portugés. Trabalhador sira simu sira-nian iha telefone liuhusi Ekipa."
+    },
     "cta": {
       "title": "Prontu atu hahu?",
       "titleAccent": "Hahu ohin",

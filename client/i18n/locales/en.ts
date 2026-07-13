@@ -760,6 +760,12 @@ const messages = {
         "badge": "Auto-calculated"
       }
     },
+    "payslip": {
+      "eyebrow": "Payslips",
+      "title": "A payslip your team can",
+      "titleAccent": "actually read",
+      "subtitle": "Every payroll run produces a compliant payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa."
+    },
     "cta": {
       "title": "Ready to Start?",
       "titleAccent": "Start Today",

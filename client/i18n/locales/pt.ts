@@ -760,6 +760,12 @@ const messages = {
         "badge": "Calculado automaticamente"
       }
     },
+    "payslip": {
+      "eyebrow": "Recibos de Vencimento",
+      "title": "Um recibo que a sua equipa",
+      "titleAccent": "consegue mesmo ler",
+      "subtitle": "Cada processamento gera um recibo conforme a lei — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa."
+    },
     "cta": {
       "title": "Pronto para Começar?",
       "titleAccent": "Comece Hoje",

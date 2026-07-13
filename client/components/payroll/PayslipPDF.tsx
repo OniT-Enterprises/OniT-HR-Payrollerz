@@ -19,9 +19,9 @@ import { PayrollRecord, PayrollRun } from '@/types/payroll';
 // Tetum translations for payslip labels so TL workers can read their payslips
 // ============================================================
 
-type PayslipLocale = 'en' | 'tet' | 'pt';
+export type PayslipLocale = 'en' | 'tet' | 'pt';
 
-const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
+export const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
   en: {
     title: 'EARNINGS STATEMENT',
     payDate: 'Pay Date:',
