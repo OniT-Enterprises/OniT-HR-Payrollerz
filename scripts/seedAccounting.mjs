@@ -8,7 +8,7 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { readFileSync } from 'fs';
 
 const serviceAccount = JSON.parse(
-  readFileSync(new URL('../server/meza-api/serviceAccountKey.json', import.meta.url), 'utf8')
+  readFileSync(new URL('../server/xefe-api/serviceAccountKey.json', import.meta.url), 'utf8')
 );
 
 initializeApp({ credential: cert(serviceAccount) });

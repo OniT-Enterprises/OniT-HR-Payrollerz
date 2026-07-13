@@ -10,7 +10,7 @@ interface SEOProps {
   noIndex?: boolean;
 }
 
-const BASE_URL = 'https://meza.naroman.tl';
+const BASE_URL = 'https://xefe.tl';
 const DEFAULT_IMAGE = `${BASE_URL}/images/illustrations/hero-dashboard.webp`;
 const SITE_NAME = 'Xefe';
 

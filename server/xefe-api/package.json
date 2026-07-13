@@ -1,13 +1,13 @@
 {
-  "name": "meza-api",
+  "name": "xefe-api",
   "version": "1.0.0",
-  "description": "Meza HR/Payroll API - REST gateway for OpenClaw bot integration",
+  "description": "Xefe HR/Payroll API - REST gateway for OpenClaw bot integration",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js"
   },
-  "keywords": ["meza", "hr", "payroll", "api", "openclaw"],
+  "keywords": ["xefe", "hr", "payroll", "api", "openclaw"],
   "author": "OniT Enterprises",
   "license": "MIT",
   "dependencies": {

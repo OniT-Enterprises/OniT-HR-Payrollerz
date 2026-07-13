@@ -39,7 +39,7 @@ async function getCredentials() {
   const possiblePaths = [
     join(process.cwd(), "service-account.json"),
     join(process.cwd(), "serviceAccountKey.json"),
-    join(process.cwd(), "server", "meza-api", "serviceAccountKey.json"),
+    join(process.cwd(), "server", "xefe-api", "serviceAccountKey.json"),
     join(homedir(), ".config", "firebase", `${projectId}-firebase-adminsdk.json`),
   ];
   try {

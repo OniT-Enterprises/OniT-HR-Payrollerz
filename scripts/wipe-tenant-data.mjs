@@ -54,7 +54,7 @@ const ROOT_COLLECTIONS = [
 function getCredentials() {
   const paths = [
     join(__dirname, '..', 'service-account.json'),
-    join(__dirname, '..', 'server', 'meza-api', 'serviceAccountKey.json'),
+    join(__dirname, '..', 'server', 'xefe-api', 'serviceAccountKey.json'),
   ];
   const p = paths.find(existsSync);
   if (!p) throw new Error('No service account found: ' + paths.join(', '));

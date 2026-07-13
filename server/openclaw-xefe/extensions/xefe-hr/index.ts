@@ -2,23 +2,23 @@ import type { OpenclawPluginApi } from "openclaw/plugin-sdk";
 import { Type } from "@sinclair/typebox";
 
 export default function register(api: OpenclawPluginApi) {
-  const config = api.config.plugins?.entries?.["meza-hr"]?.config || {};
+  const config = api.config.plugins?.entries?.["xefe-hr"]?.config || {};
   const apiBaseUrl = config.apiBaseUrl || "http://localhost:3201";
   const apiKey = config.apiKey;
   const tenantId = config.defaultTenantId;
 
   if (!apiKey) {
-    console.warn("[meza-hr] API key not configured. Please add to openclaw.json");
+    console.warn("[xefe-hr] API key not configured. Please add to openclaw.json");
     return;
   }
 
   if (!tenantId) {
-    console.warn("[meza-hr] Default tenant ID not configured. Please add to openclaw.json");
+    console.warn("[xefe-hr] Default tenant ID not configured. Please add to openclaw.json");
     return;
   }
 
   // ============================================================================
-  // Helper: Call Meza API
+  // Helper: Call Xefe API
   // ============================================================================
 
   function createRequestId() {
@@ -34,7 +34,7 @@ export default function register(api: OpenclawPluginApi) {
     const method = options?.method || 'GET';
     // The OpenClaw service credential is scoped to one configured tenant.
     // Never let a model-provided tool argument move an API call to another
-    // tenant; web chat is separately restricted to this same tenant by Meza.
+    // tenant; web chat is separately restricted to this same tenant by Xefe.
     if (options?.tenantId && options.tenantId !== tenantId) {
       throw new Error(`[${requestId}] Tenant override is not allowed`);
     }
@@ -2814,5 +2814,5 @@ export default function register(api: OpenclawPluginApi) {
     },
   });
 
-  console.log("[meza-hr] Plugin loaded — 65 tools (32 read + 33 write/verify), 5 commands registered");
+  console.log("[xefe-hr] Plugin loaded — 65 tools (32 read + 33 write/verify), 5 commands registered");
 }

@@ -277,7 +277,7 @@ export default function ProfileScreen() {
         </View>
         <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
           <Text style={styles.menuText}>Powered by</Text>
-          <Text style={[styles.menuValue, { color: colors.primary }]}>Meza</Text>
+          <Text style={[styles.menuValue, { color: colors.primary }]}>Xefe</Text>
         </View>
       </View>
 

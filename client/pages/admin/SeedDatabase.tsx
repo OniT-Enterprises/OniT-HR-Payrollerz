@@ -319,7 +319,7 @@ const EXPENSES = [
 // ============================================
 
 // Production safety check - NEVER allow seeding/clearing in production
-const PRODUCTION_HOSTNAMES = ['payroll.naroman.tl', 'app.onithr.com', 'onithr.com'];
+const PRODUCTION_HOSTNAMES = ['xefe.tl', 'www.xefe.tl', 'meza.naroman.tl', 'payroll.naroman.tl', 'app.onithr.com', 'onithr.com'];
 const _PRODUCTION_PROJECT_IDS = ['onit-hr-payroll']; // Add production project IDs here
 
 function isProductionEnvironment(): boolean {
@@ -1451,7 +1451,7 @@ export default function SeedDatabase() {
 
       let report = '';
       report += '═'.repeat(100) + '\n';
-      report += '  MEZA - COMPREHENSIVE DATA AUDIT REPORT\n';
+      report += '  XEFE - COMPREHENSIVE DATA AUDIT REPORT\n';
       report += `  Generated: ${new Date().toISOString()}\n`;
       report += `  Tenant: ${tenantId}\n`;
       report += '═'.repeat(100) + '\n\n';

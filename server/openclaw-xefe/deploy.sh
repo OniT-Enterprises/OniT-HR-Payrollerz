@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# deploy.sh - Deploy OpenClaw Meza gateway to production server
+# deploy.sh - Deploy OpenClaw Xefe gateway to production server
 # Usage: ./deploy.sh [--rebuild]
 #
 # Idempotent: safe to run multiple times.
@@ -10,7 +10,7 @@ set -euo pipefail
 # --- Configuration ---
 SERVER="65.109.173.122"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_hetzner}"
-REMOTE_DIR="/opt/openclaw-meza"
+REMOTE_DIR="/opt/openclaw-xefe"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REBUILD=false
 
@@ -103,39 +103,39 @@ else
 fi
 
 # --- Step 7: Start container ---
-info "Starting OpenClaw Meza container..."
+info "Starting OpenClaw Xefe container..."
 $SSH_CMD "cd $REMOTE_DIR && docker compose down 2>/dev/null || true && docker compose up -d"
 
 # --- Step 8: Verify ---
 info "Waiting for container to start..."
 sleep 5
 
-CONTAINER_STATUS=$($SSH_CMD "docker ps --filter name=openclaw-meza --format '{{.Status}}'" || echo "not running")
+CONTAINER_STATUS=$($SSH_CMD "docker ps --filter name=openclaw-xefe --format '{{.Status}}'" || echo "not running")
 info "Container status: $CONTAINER_STATUS"
 
 if echo "$CONTAINER_STATUS" | grep -q "Up"; then
   echo ""
-  info "OpenClaw Meza deployed successfully!"
+  info "OpenClaw Xefe deployed successfully!"
   echo ""
-  echo "  Container: openclaw-meza"
+  echo "  Container: openclaw-xefe"
   echo "  Dashboard: http://localhost:18790 (via Nginx at /openclaw/)"
   echo ""
   echo "  Next steps:"
   echo "  1. Edit .env with Anthropic API key (if not done):"
   echo "     ssh -i $SSH_KEY root@$SERVER 'nano $REMOTE_DIR/.env'"
   echo ""
-  echo "  2. Edit openclaw.json with Meza API key + tenant ID (if not done):"
+  echo "  2. Edit openclaw.json with Xefe API key + tenant ID (if not done):"
   echo "     ssh -i $SSH_KEY root@$SERVER 'nano $REMOTE_DIR/openclaw.json'"
   echo ""
   echo "  3. Pair WhatsApp:"
-  echo "     ssh -i $SSH_KEY root@$SERVER 'docker compose -f $REMOTE_DIR/docker-compose.yml exec -it openclaw-meza openclaw channels login'"
+  echo "     ssh -i $SSH_KEY root@$SERVER 'docker compose -f $REMOTE_DIR/docker-compose.yml exec -it openclaw-xefe openclaw channels login'"
   echo ""
   echo "  4. Access dashboard via Nginx:"
   echo "     https://payroll.naroman.tl/openclaw/"
   echo ""
   echo "  5. View logs:"
-  echo "     ssh -i $SSH_KEY root@$SERVER 'docker logs -f openclaw-meza'"
+  echo "     ssh -i $SSH_KEY root@$SERVER 'docker logs -f openclaw-xefe'"
 else
   warn "Container may not be running. Check logs:"
-  echo "  ssh -i $SSH_KEY root@$SERVER 'docker logs openclaw-meza'"
+  echo "  ssh -i $SSH_KEY root@$SERVER 'docker logs openclaw-xefe'"
 fi

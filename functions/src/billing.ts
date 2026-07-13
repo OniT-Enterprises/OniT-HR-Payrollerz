@@ -19,7 +19,7 @@ const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
-const DEFAULT_APP_URL = "https://payroll.naroman.tl";
+const DEFAULT_APP_URL = "https://xefe.tl";
 const DEFAULT_RATE = 4; // fallback per-employee rate if config is missing
 
 function stripeClient(): Stripe {

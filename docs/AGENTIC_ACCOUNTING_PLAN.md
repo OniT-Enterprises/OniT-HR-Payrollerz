@@ -103,7 +103,7 @@ Bot checks on schedule:
 ┌──────────────────────────────────────────────────────────┐
 │  OpenClaw Gateway (Docker, port 18790)                    │
 │                                                           │
-│  meza-hr plugin:                                          │
+│  xefe-hr plugin:                                          │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐ │
 │  │ Read tools   │  │ Write tools  │  │ Verify tools    │ │
 │  │ (29 exist)   │  │ (Phase 2)    │  │ (Phase 3)       │ │
@@ -117,7 +117,7 @@ Bot checks on schedule:
 
 ## Phase 1: Write API Endpoints
 
-Add POST/PUT endpoints to `server/meza-api/index.js` alongside the existing read endpoints. All write endpoints follow the same pattern:
+Add POST/PUT endpoints to `server/xefe-api/index.js` alongside the existing read endpoints. All write endpoints follow the same pattern:
 
 ### Auth & Safety (applies to all write endpoints)
 
@@ -339,7 +339,7 @@ await runRef.update({ status: targetStatus, updatedAt: admin.firestore.FieldValu
 
 ## Phase 2: Write Tools in OpenClaw Plugin
 
-Add action tools to `server/openclaw-meza/extensions/meza-hr/index.ts`. These call the new write endpoints through the existing `callApi` pattern, extended for POST/PUT.
+Add action tools to `server/openclaw-xefe/extensions/xefe-hr/index.ts`. These call the new write endpoints through the existing `callApi` pattern, extended for POST/PUT.
 
 ### 2.1 Extend callApi for Write Operations
 
@@ -1261,7 +1261,7 @@ OpenClaw supports cron-based scheduling via its cron volume. Add a scheduled tas
   "id": "monitor",
   "name": "Meza Monitor",
   "schedule": "0 8 * * *",  // Daily at 8am TL time
-  "tools": { "allow": ["meza-hr"] },
+  "tools": { "allow": ["xefe-hr"] },
   "systemPrompt": "You are a compliance monitor. Run run_compliance_check and report any issues."
 }
 ```

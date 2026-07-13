@@ -9,9 +9,9 @@
 
 ## Product
 
-- [Landing page](https://meza.naroman.tl/landing): product overview and Timor-Leste compliance details
-- [Features](https://meza.naroman.tl/features): full feature list across the nine modules
-- [Sign up](https://meza.naroman.tl/auth/signup): self-serve organization creation with a free trial
+- [Landing page](https://xefe.tl/landing): product overview and Timor-Leste compliance details
+- [Features](https://xefe.tl/features): full feature list across the nine modules
+- [Sign up](https://xefe.tl/auth/signup): self-serve organization creation with a free trial
 
 ## Family
 
@@ -21,8 +21,8 @@
 
 ## Legal
 
-- [Privacy Policy](https://meza.naroman.tl/privacy)
-- [Terms of Service](https://meza.naroman.tl/terms)
+- [Privacy Policy](https://xefe.tl/privacy)
+- [Terms of Service](https://xefe.tl/terms)
 
 ## Contact
 

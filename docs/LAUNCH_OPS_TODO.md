@@ -77,7 +77,7 @@ config, and the integration doc; gateway restarted and healthy.
 **⚠️ Found while deploying: the WhatsApp pairing has been dead since July 2**
 (2,596 × 401 "Connection Failure" in the logs — the phone unlinked the device).
 Re-pair from a phone with the bot's WhatsApp account:
-`ssh hetzner`, then `docker exec -it openclaw-meza openclaw channels login`
+`ssh hetzner`, then `docker exec -it openclaw-xefe openclaw channels login`
 and scan the QR. This outage went unnoticed for 3 days — item 3 (uptime
 monitoring) would have caught it.
 
@@ -89,7 +89,7 @@ bundle never contained it. Rotating at platform.openai.com is good hygiene, not 
 ### 9. Domain naming (decision)
 The public URL is still `meza.naroman.tl` (payroll.naroman.tl 301s to it) while the
 product is now **Xefe** — consider registering `xefe.tl` and migrating. If the domain
-changes: new nginx site + certbot, update CORS allowlist in `server/meza-api/index.js`,
+changes: new nginx site + certbot, update CORS allowlist in `server/xefe-api/index.js`,
 CI deploy target, and Firebase authorized domains.
 
 ## Notes for whoever does this (or future Claude sessions)
@@ -100,10 +100,10 @@ CI deploy target, and Firebase authorized domains.
 - **CI deploys everything now**: hosting + Hetzner rsync + Firestore rules
   (rules via Admin SDK script — the firebase-tools CLI path 403s because neither
   service account has `firebaserules` IAM roles).
-- **meza-api deploys are still manual**:
-  `rsync -avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules server/meza-api/ hetzner:/opt/meza-api/ && ssh hetzner 'cd /opt/meza-api && npm install --omit=dev && pm2 restart meza-api'`
+- **xefe-api deploys are still manual**:
+  `rsync -avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules server/xefe-api/ hetzner:/opt/xefe-api/ && ssh hetzner 'cd /opt/xefe-api && npm install --omit=dev && pm2 restart xefe-api'`
   (the `--exclude` flags protect the server's `.env` and credentials — do not drop them).
-- **nginx security headers** live in `/etc/nginx/snippets/meza-headers.conf` on Hetzner,
+- **nginx security headers** live in `/etc/nginx/snippets/xefe-headers.conf` on Hetzner,
   included at server level AND inside each `location` that has its own `add_header`
   (nginx discards inherited headers in those locations — keep the includes if editing).
 - **FirebaseExtended/action-hosting-deploy is pinned at @v0** and runs under forced

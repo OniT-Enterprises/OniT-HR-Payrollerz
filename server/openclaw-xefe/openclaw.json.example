@@ -28,7 +28,7 @@
         "name": "XefeBot",
         "tools": {
           "allow": [
-            "meza-hr"
+            "xefe-hr"
           ]
         }
       }
@@ -104,11 +104,11 @@
   },
   "plugins": {
     "entries": {
-      "meza-hr": {
+      "xefe-hr": {
         "enabled": true,
         "config": {
           "apiBaseUrl": "http://localhost:3201",
-          "apiKey": "REPLACE_WITH_MEZA_API_KEY",
+          "apiKey": "REPLACE_WITH_XEFE_API_KEY",
           "defaultTenantId": "REPLACE_WITH_TENANT_ID"
         }
       },

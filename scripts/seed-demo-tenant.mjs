@@ -156,7 +156,7 @@ async function run() {
 
   console.log(`  ✓ ${departments.length} departments, ${employees.length} employees`);
   console.log(`\n✅ Demo tenant ready.\n`);
-  console.log(`   URL:      https://meza.naroman.tl/auth/login`);
+  console.log(`   URL:      https://xefe.tl/auth/login`);
   console.log(`   Email:    ${OWNER_EMAIL}`);
   console.log(`   Password: ${OWNER_PASSWORD}`);
   console.log(`   Tenant:   ${TENANT_ID}\n`);

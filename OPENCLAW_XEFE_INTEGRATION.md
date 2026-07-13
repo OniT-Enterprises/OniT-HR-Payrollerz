@@ -1,4 +1,4 @@
-# OpenClaw Meza Integration — OniT HR Bot
+# OpenClaw Xefe Integration — OniT HR Bot
 
 AI assistant for the OniT HR/Payroll system. Provides natural-language access to employee, payroll, leave, recruitment, and financial data via a **web chat widget** and **WhatsApp**.
 
@@ -13,7 +13,7 @@ HR Manager (Web Dashboard)          HR Manager (WhatsApp)
   POST /api/tenants/:tid/chat              |
        |                                    |
        v                                    v
-  Meza API (Express, port 3201)     OpenClaw Gateway (Docker, port 18790)
+  Xefe API (Express, port 3201)     OpenClaw Gateway (Docker, port 18790)
        |                                    |
        |--- HTTP POST ------>               |
        |  /v1/chat/completions              |
@@ -22,7 +22,7 @@ HR Manager (Web Dashboard)          HR Manager (WhatsApp)
   OpenClaw Gateway  <-----------------------+
   (XefeBot agent, 29 tools, 5 commands)
        |
-       |--- HTTP GET (X-API-Key) --->  Meza API
+       |--- HTTP GET (X-API-Key) --->  Xefe API
        |                                    |
        v                                    v
                    Firebase Firestore
@@ -35,24 +35,24 @@ HR Manager (Web Dashboard)          HR Manager (WhatsApp)
 
 | Endpoint | URL | Auth |
 |----------|-----|------|
-| API health | `https://meza.naroman.tl/api/health` | None |
-| API (data) | `https://meza.naroman.tl/api/tenants/onit-enterprises/...` | `X-API-Key` header |
-| API (chat) | `https://meza.naroman.tl/api/tenants/onit-enterprises/chat` | Firebase ID token |
-| Bot dashboard | `https://meza.naroman.tl/openclaw/` | Basic auth |
-| Frontend SPA | `https://meza.naroman.tl/` | Firebase Auth |
+| API health | `https://xefe.tl/api/health` | None |
+| API (data) | `https://xefe.tl/api/tenants/onit-enterprises/...` | `X-API-Key` header |
+| API (chat) | `https://xefe.tl/api/tenants/onit-enterprises/chat` | Firebase ID token |
+| Bot dashboard | `https://xefe.tl/openclaw/` | Basic auth |
+| Frontend SPA | `https://xefe.tl/` | Firebase Auth |
 
 ## Services on Hetzner
 
 | Service | Port | Process | Remote path |
 |---------|------|---------|-------------|
-| Meza API | 3201 | PM2 (`meza-api`) | `/opt/meza-api/` |
-| OpenClaw Meza | 18790 | Docker (`openclaw-meza`) | `/opt/openclaw-meza/` |
+| Xefe API | 3201 | PM2 (`xefe-api`) | `/opt/xefe-api/` |
+| OpenClaw Xefe | 18790 | Docker (`openclaw-xefe`) | `/opt/openclaw-xefe/` |
 
 ---
 
 ## Components
 
-### 1. Meza API (`server/meza-api/`)
+### 1. Xefe API (`server/xefe-api/`)
 
 Express REST API that serves two roles:
 - **Data API** for the OpenClaw plugin (API key auth, `X-API-Key` header)
@@ -126,12 +126,12 @@ Express REST API that serves two roles:
 
 ---
 
-### 2. OpenClaw Gateway (`server/openclaw-meza/`)
+### 2. OpenClaw Gateway (`server/openclaw-xefe/`)
 
-Dockerized OpenClaw instance with the Meza HR plugin.
+Dockerized OpenClaw instance with the Xefe HR plugin.
 
 - **Port:** 18790 (localhost only, proxied by Nginx with basic auth)
-- **Container:** `openclaw-meza`
+- **Container:** `openclaw-xefe`
 - **AI Model:** Claude Opus 4.6 (via Anthropic API)
 - **Security:** Read-only rootfs, all caps dropped, no-new-privileges, 2GB RAM limit
 
@@ -144,14 +144,14 @@ Dockerized OpenClaw instance with the Meza HR plugin.
 
 #### Key Config (`openclaw.json`)
 
-- **Agent:** `main` ("XefeBot"), tools restricted to `meza-hr` plugin
+- **Agent:** `main` ("XefeBot"), tools restricted to `xefe-hr` plugin
 - **HTTP API:** `gateway.http.endpoints.chatCompletions.enabled: true` — required for web chat
 - **WhatsApp:** allowlist-based DM policy
 - **Session memory:** enabled via internal hooks
 
 ---
 
-### 3. Meza HR Plugin (`server/openclaw-meza/extensions/meza-hr/`)
+### 3. Xefe HR Plugin (`server/openclaw-xefe/extensions/xefe-hr/`)
 
 OpenClaw plugin providing HR read/write tools and 5 WhatsApp commands.
 
@@ -190,7 +190,7 @@ The `create_job` write tool accepts TL Labour Code probation fields: `contractTy
 ```json
 {
   "apiBaseUrl": "http://localhost:3201",
-  "apiKey": "<meza-api-key>",
+  "apiKey": "<xefe-api-key>",
   "defaultTenantId": "onit-enterprises"
 }
 ```
@@ -218,7 +218,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
 - Links sanitized to http/https/mailto/tel only
 - Auto-detects confirmation questions and shows Confirm/Cancel buttons
 - Session key format: `chat-{timestamp36}-{random6}` (resets on "New Chat")
-- API base URL: `VITE_MEZA_API_URL` env var (defaults to `https://meza.naroman.tl`)
+- API base URL: `VITE_MEZA_API_URL` env var (defaults to `https://xefe.tl`)
 
 #### Mounted in `client/App.tsx`
 
@@ -242,7 +242,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
 2. ChatPanel POSTs to /api/tenants/{tid}/chat
    - Header: Authorization: Bearer <firebase-id-token>
    - Body: { message, sessionKey }
-3. Meza API:
+3. Xefe API:
    a. Validates Firebase token (authenticateFirebaseToken middleware)
    b. Classifies intent (read/write/confirm/cancel) via chatUtils.js
    c. Builds system prefix with user context + Tetun personality
@@ -253,10 +253,10 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
       - Body: { model: "openclaw:main", messages, stream: false, user }
 4. OpenClaw Gateway:
    a. Routes to "main" agent (XefeBot)
-   b. Claude processes using meza-hr plugin tools
-   c. Tools call back to Meza API (X-API-Key auth)
+   b. Claude processes using xefe-hr plugin tools
+   c. Tools call back to Xefe API (X-API-Key auth)
    d. Returns OpenAI-compatible completion
-5. Meza API:
+5. Xefe API:
    a. Extracts reply from completion
    b. Logs to tenants/{tid}/chat_audit collection
    c. Returns { reply, actions } to frontend
@@ -271,7 +271,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
 1. User sends message to paired WhatsApp number
 2. OpenClaw Gateway receives via WhatsApp channel
 3. Routes to "main" agent (XefeBot)
-4. Claude processes with meza-hr plugin tools
+4. Claude processes with xefe-hr plugin tools
 5. Reply sent back via WhatsApp
 ```
 
@@ -322,31 +322,31 @@ Top-level collections (filtered by `tenantId` field):
 
 ## Deployment
 
-### Redeploy Meza API
+### Redeploy Xefe API
 
 ```bash
-scp server/meza-api/index.js hetzner:/opt/meza-api/index.js
-scp server/meza-api/chatUtils.js hetzner:/opt/meza-api/chatUtils.js
-ssh hetzner 'cd /opt/meza-api && pm2 restart meza-api'
+scp server/xefe-api/index.js hetzner:/opt/xefe-api/index.js
+scp server/xefe-api/chatUtils.js hetzner:/opt/xefe-api/chatUtils.js
+ssh hetzner 'cd /opt/xefe-api && pm2 restart xefe-api'
 ```
 
 For dependency changes:
 ```bash
 rsync -avz --exclude='node_modules' --exclude='.env' --exclude='serviceAccountKey.json' \
-  server/meza-api/ hetzner:/opt/meza-api/
-ssh hetzner 'cd /opt/meza-api && npm install --omit=dev && pm2 restart meza-api'
+  server/xefe-api/ hetzner:/opt/xefe-api/
+ssh hetzner 'cd /opt/xefe-api && npm install --omit=dev && pm2 restart xefe-api'
 ```
 
 ### Redeploy OpenClaw Bot
 
 ```bash
 # Quick: deploy script handles everything
-cd server/openclaw-meza && ./deploy.sh
+cd server/openclaw-xefe && ./deploy.sh
 
 # Or manual:
 rsync -avz --exclude='.env' --exclude='openclaw.json' --exclude='node_modules' \
-  server/openclaw-meza/ hetzner:/opt/openclaw-meza/
-ssh hetzner 'cd /opt/openclaw-meza && docker compose build && docker compose down && docker compose up -d'
+  server/openclaw-xefe/ hetzner:/opt/openclaw-xefe/
+ssh hetzner 'cd /opt/openclaw-xefe && docker compose build && docker compose down && docker compose up -d'
 ```
 
 For plugin changes only (rebuild required):
@@ -365,7 +365,7 @@ npm run build && rsync -avz --delete dist/spa/ hetzner:/var/www/payroll.naroman.
 ## Nginx Config (on meza.naroman.tl)
 
 ```nginx
-# Meza API proxy
+# Xefe API proxy
 location /api/ {
     proxy_pass http://localhost:3201;
     proxy_http_version 1.1;
@@ -376,10 +376,10 @@ location /api/ {
     proxy_read_timeout 120s;
 }
 
-# OpenClaw Meza dashboard (basic auth)
+# OpenClaw Xefe dashboard (basic auth)
 location ^~ /openclaw/ {
-    auth_basic "Meza Bot Dashboard";
-    auth_basic_user_file /etc/nginx/.meza_openclaw_htpasswd;
+    auth_basic "Xefe Bot Dashboard";
+    auth_basic_user_file /etc/nginx/.xefe_openclaw_htpasswd;
 
     proxy_pass http://localhost:18790/;
     proxy_http_version 1.1;
@@ -398,11 +398,11 @@ location ^~ /openclaw/ {
 
 | File | Location | Contains |
 |------|----------|----------|
-| Meza API .env | `/opt/meza-api/.env` | API_KEY, ALLOWED_TENANT_ID, OPENCLAW_WEB_TENANT_ID, OPENCLAW_PASSWORD |
-| Firebase SA key | `/opt/meza-api/serviceAccountKey.json` | Firebase Admin credentials |
-| OpenClaw .env | `/opt/openclaw-meza/.env` | ANTHROPIC_API_KEY, OPENCLAW_GATEWAY_TOKEN |
-| OpenClaw config | `/opt/openclaw-meza/openclaw.json` | API keys, tenant ID, WhatsApp allowlist |
-| Nginx htpasswd | `/etc/nginx/.meza_openclaw_htpasswd` | Dashboard basic auth |
+| Xefe API .env | `/opt/xefe-api/.env` | API_KEY, ALLOWED_TENANT_ID, OPENCLAW_WEB_TENANT_ID, OPENCLAW_PASSWORD |
+| Firebase SA key | `/opt/xefe-api/serviceAccountKey.json` | Firebase Admin credentials |
+| OpenClaw .env | `/opt/openclaw-xefe/.env` | ANTHROPIC_API_KEY, OPENCLAW_GATEWAY_TOKEN |
+| OpenClaw config | `/opt/openclaw-xefe/openclaw.json` | API keys, tenant ID, WhatsApp allowlist |
+| Nginx htpasswd | `/etc/nginx/.xefe_openclaw_htpasswd` | Dashboard basic auth |
 
 ---
 
@@ -410,29 +410,29 @@ location ^~ /openclaw/ {
 
 ```bash
 # 1. API health (no auth)
-curl https://meza.naroman.tl/api/health
+curl https://xefe.tl/api/health
 
 # 2. Data endpoint (API key auth)
-curl -H "X-API-Key: KEY" https://meza.naroman.tl/api/tenants/onit-enterprises/employees/counts
+curl -H "X-API-Key: KEY" https://xefe.tl/api/tenants/onit-enterprises/employees/counts
 
 # 3. OpenClaw HTTP API directly (on server)
-ssh hetzner 'source /opt/openclaw-meza/.env && curl -s -X POST http://localhost:18790/v1/chat/completions \
+ssh hetzner 'source /opt/openclaw-xefe/.env && curl -s -X POST http://localhost:18790/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $OPENCLAW_GATEWAY_TOKEN" \
   -d "{\"model\":\"openclaw:main\",\"messages\":[{\"role\":\"user\",\"content\":\"How many employees?\"}],\"stream\":false}"'
 
 # 4. Plugin loaded
-ssh hetzner 'docker logs openclaw-meza 2>&1 | grep "Plugin loaded"'
-# Expected: [meza-hr] Plugin loaded — 29 tools, 5 commands registered
+ssh hetzner 'docker logs openclaw-xefe 2>&1 | grep "Plugin loaded"'
+# Expected: [xefe-hr] Plugin loaded — 29 tools, 5 commands registered
 
 # 5. PM2 status
-ssh hetzner 'pm2 status meza-api'
+ssh hetzner 'pm2 status xefe-api'
 
 # 6. Docker status
-ssh hetzner 'docker ps | grep openclaw-meza'
+ssh hetzner 'docker ps | grep openclaw-xefe'
 
 # 7. Dashboard (browser, behind basic auth)
-# https://meza.naroman.tl/openclaw/
+# https://xefe.tl/openclaw/
 
 # 8. Web chat: log into meza.naroman.tl, click chat bubble, send a message
 ```
@@ -446,8 +446,8 @@ ssh hetzner 'docker ps | grep openclaw-meza'
 Gateway not running or HTTP API not enabled.
 
 ```bash
-ssh hetzner 'docker ps | grep openclaw-meza'
-ssh hetzner 'docker logs openclaw-meza --tail 20 2>&1 | grep -v "Config was last"'
+ssh hetzner 'docker ps | grep openclaw-xefe'
+ssh hetzner 'docker logs openclaw-xefe --tail 20 2>&1 | grep -v "Config was last"'
 ```
 
 Verify HTTP API is enabled: check `openclaw.json` has `gateway.http.endpoints.chatCompletions.enabled: true`. Restart container after config changes.
@@ -458,30 +458,30 @@ Firebase token issue. User must be logged in. Check browser console for auth err
 
 ### Chat returns 403
 
-Tenant ID mismatch. Verify `ALLOWED_TENANT_ID=onit-enterprises` in `/opt/meza-api/.env` matches the tenant ID from the web app.
+Tenant ID mismatch. Verify `ALLOWED_TENANT_ID=onit-enterprises` in `/opt/xefe-api/.env` matches the tenant ID from the web app.
 
 ### "missing scope: operator.write"
 
-This happens if the Meza API is using the WebSocket protocol instead of the HTTP API. The `chat.send` WS method requires `operator.write` scope which password auth doesn't grant in OpenClaw v2026.2.15.
+This happens if the Xefe API is using the WebSocket protocol instead of the HTTP API. The `chat.send` WS method requires `operator.write` scope which password auth doesn't grant in OpenClaw v2026.2.15.
 
-**Fix:** Ensure `openClawChat()` in `index.js` uses `fetch()` to `http://localhost:18790/v1/chat/completions`, not WebSocket. Then restart: `pm2 restart meza-api`.
+**Fix:** Ensure `openClawChat()` in `index.js` uses `fetch()` to `http://localhost:18790/v1/chat/completions`, not WebSocket. Then restart: `pm2 restart xefe-api`.
 
 ### "EACCES: permission denied, mkdir agents/main"
 
 Docker volume owned by root instead of node (uid 1000).
 
 ```bash
-cd /opt/openclaw-meza
-docker compose stop openclaw-meza
-docker run --rm -v openclaw-meza_openclaw-meza-agents:/data alpine chown -R 1000:1000 /data
-docker compose start openclaw-meza
+cd /opt/openclaw-xefe
+docker compose stop openclaw-xefe
+docker run --rm -v openclaw-xefe_openclaw-xefe-agents:/data alpine chown -R 1000:1000 /data
+docker compose start openclaw-xefe
 ```
 
 ### Plugin not loading
 
 ```bash
-docker exec openclaw-meza ls -la /home/node/.openclaw/extensions/meza-hr/
-docker logs openclaw-meza 2>&1 | grep -i "plugin\|error"
+docker exec openclaw-xefe ls -la /home/node/.openclaw/extensions/xefe-hr/
+docker logs openclaw-xefe 2>&1 | grep -i "plugin\|error"
 ```
 
 Rebuild if needed: `./deploy.sh --rebuild`
@@ -489,14 +489,14 @@ Rebuild if needed: `./deploy.sh --rebuild`
 ### WhatsApp not connected
 
 ```bash
-docker exec openclaw-meza openclaw channels status
-docker exec -it openclaw-meza openclaw channels login   # QR scan
+docker exec openclaw-xefe openclaw channels status
+docker exec -it openclaw-xefe openclaw channels login   # QR scan
 ```
 
 ### API not responding
 
 ```bash
-ssh hetzner 'pm2 status meza-api && pm2 logs meza-api --lines 20 --nostream'
+ssh hetzner 'pm2 status xefe-api && pm2 logs xefe-api --lines 20 --nostream'
 ```
 
 ### Nginx 502 errors
@@ -511,13 +511,13 @@ ssh hetzner 'nginx -t && curl -s http://localhost:3201/api/health && curl -s -o 
 
 ```
 server/
-  meza-api/
+  xefe-api/
     index.js              # Express API (27 data routes + chat endpoint)
     chatUtils.js          # Intent classification, action detection
     package.json          # Dependencies (express, firebase-admin, etc.)
     .env.example          # Environment template
     .gitignore            # Excludes .env, serviceAccountKey.json
-  openclaw-meza/
+  openclaw-xefe/
     docker-compose.yml    # Docker config (security-hardened, host networking)
     Dockerfile            # Build: node:22-slim + openclaw@latest + plugin
     deploy.sh             # Automated Hetzner deployment script
@@ -525,7 +525,7 @@ server/
     .env.example          # ANTHROPIC_API_KEY, OPENCLAW_GATEWAY_TOKEN
     .gitignore            # Excludes .env, openclaw.json
     extensions/
-      meza-hr/
+      xefe-hr/
         index.ts          # Plugin: 29 tools + 5 commands
         openclaw.plugin.json  # Plugin manifest + config schema
         package.json      # @sinclair/typebox dependency

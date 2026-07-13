@@ -346,7 +346,7 @@ Market-dependent. Build based on traction and partnerships.
 **Why TL:** Not everyone will install the app. WhatsApp is universal. Meets workers where they are.
 **Inspired by:** PaySpace/Pacey
 **Ties to payroll:** Same data, different channel.
-**Already started:** Meza bot infrastructure exists (`server/openclaw-meza/`). Extend with employee-facing commands.
+**Already started:** Meza bot infrastructure exists (`server/openclaw-xefe/`). Extend with employee-facing commands.
 
 ### 4.3 Training & Learning Modules
 **What:** Short, visual training courses on mobile.

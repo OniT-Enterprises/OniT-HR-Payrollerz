@@ -1,5 +1,5 @@
 /**
- * Meza HR/Payroll API
+ * Xefe HR/Payroll API
  * REST API for OpenClaw bot integration with OniT HR system
  *
  * All Firestore collections are tenant subcollections under tenants/{tid}/
@@ -48,10 +48,10 @@ try {
 
   db = admin.firestore();
   firebaseInitialized = true;
-  console.log('[meza-api] Firebase Admin initialized successfully');
+  console.log('[xefe-api] Firebase Admin initialized successfully');
 } catch (error) {
-  console.error('[meza-api] Firebase initialization failed:', error.message);
-  console.error('[meza-api] API will start but Firebase-dependent endpoints will not work.');
+  console.error('[xefe-api] Firebase initialization failed:', error.message);
+  console.error('[xefe-api] API will start but Firebase-dependent endpoints will not work.');
 }
 
 // ============================================================================
@@ -61,7 +61,7 @@ try {
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: function (origin, callback) {
-    const allowed = ['https://payroll.naroman.tl', 'https://meza.naroman.tl'];
+    const allowed = ['https://xefe.tl', 'https://www.xefe.tl', 'https://payroll.naroman.tl', 'https://meza.naroman.tl'];
     if (!origin || allowed.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true);
     } else {
@@ -236,9 +236,9 @@ const OPENCLAW_WS_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18790';
 const OPENCLAW_HTTP_URL = OPENCLAW_WS_URL.replace(/^ws/, 'http');
 const OPENCLAW_PASSWORD = process.env.OPENCLAW_PASSWORD || '';
 if (OPENCLAW_PASSWORD) {
-  console.log(`[meza-api] OpenClaw gateway configured at ${OPENCLAW_HTTP_URL}`);
+  console.log(`[xefe-api] OpenClaw gateway configured at ${OPENCLAW_HTTP_URL}`);
 } else {
-  console.log('[meza-api] OPENCLAW_PASSWORD not set — chat endpoint will be unavailable');
+  console.log('[xefe-api] OPENCLAW_PASSWORD not set — chat endpoint will be unavailable');
 }
 
 function genId() {
@@ -365,7 +365,7 @@ async function queryGLDelta(tenantId, afterDate, upToDate) {
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    service: 'meza-api',
+    service: 'xefe-api',
     version: '1.0.0',
     firebase: firebaseInitialized,
     timestamp: new Date().toISOString(),
@@ -3069,7 +3069,7 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
 });
 
 // ── BOT WRITE ENDPOINTS (Phase 2) ─────────────────────────────────────────
-// Minimal-field creation endpoints exposed to the Meza HR bot plugin.
+// Minimal-field creation endpoints exposed to the Xefe HR bot plugin.
 
 /**
  * POST /api/tenants/:tenantId/employees
@@ -3157,7 +3157,7 @@ router.post('/employees', async (req, res) => {
  * Upsert an employee from an external system (e.g. Rezerva PMS staff).
  * Matches on externalRef.system + externalRef.id. On update only ops fields
  * (name, contact, position, department, status) are touched — compensation,
- * documents and other HR fields stay owned by Meza.
+ * documents and other HR fields stay owned by Xefe.
  * Body: { externalRef: { system, hotelId?, id }, firstName, lastName,
  *         email?, phone?, jobTitle?, department?, startDate?, isActive? }
  */
@@ -4465,7 +4465,7 @@ function buildChatSystemPrefix(user, options = {}) {
   const pageContext = getPageContext(options.currentRoute);
 
   let prefix = `[SYSTEM — IN-APP CHAT CONTEXT]
-This is the Meza HR/Payroll management app (in-app chat widget), NOT WhatsApp.
+This is the Xefe HR/Payroll management app (in-app chat widget), NOT WhatsApp.
 User: ${userName}${user.name && user.email ? ` (${user.email})` : ''}.
 Role: ${options.role || 'viewer'}.
 Current tenantId: ${tenantId}. Operate only on this tenant.
@@ -5008,7 +5008,7 @@ app.use((req, res) => {
 // ============================================================================
 
 app.use((err, req, res, _next) => {
-  console.error('[meza-api] Unhandled error:', err);
+  console.error('[xefe-api] Unhandled error:', err);
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
@@ -5017,6 +5017,6 @@ app.use((err, req, res, _next) => {
 // ============================================================================
 
 app.listen(PORT, '127.0.0.1', () => {
-  console.log(`[meza-api] Listening on 127.0.0.1:${PORT}`);
-  console.log(`[meza-api] Health check: http://127.0.0.1:${PORT}/api/health`);
+  console.log(`[xefe-api] Listening on 127.0.0.1:${PORT}`);
+  console.log(`[xefe-api] Health check: http://127.0.0.1:${PORT}/api/health`);
 });

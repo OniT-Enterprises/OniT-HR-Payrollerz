@@ -7,7 +7,7 @@
 
 import { auth } from "@/lib/firebase";
 
-const API_BASE = import.meta.env.VITE_MEZA_API_URL || "https://meza.naroman.tl";
+const API_BASE = import.meta.env.VITE_XEFE_API_URL || import.meta.env.VITE_MEZA_API_URL || "https://xefe.tl";
 
 async function callComposeEndpoint(params: {
   tenantId: string;

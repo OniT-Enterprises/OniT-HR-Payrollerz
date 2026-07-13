@@ -1,4 +1,4 @@
-# OpenClaw Gateway - Docker image for Meza HR assistant
+# OpenClaw Gateway - Docker image for Xefe HR assistant
 # Runs as non-root with tini for proper signal handling
 
 FROM node:22-slim AS base
@@ -14,7 +14,7 @@ RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.co
 RUN npm install -g openclaw@latest
 
 # Create workspace directory for the non-root user
-RUN mkdir -p /home/node/.openclaw/extensions/meza-hr \
+RUN mkdir -p /home/node/.openclaw/extensions/xefe-hr \
     && mkdir -p /home/node/.openclaw/workspace \
     && mkdir -p /home/node/.openclaw/state \
     && mkdir -p /home/node/.openclaw/credentials \
@@ -25,8 +25,8 @@ RUN mkdir -p /home/node/.openclaw/extensions/meza-hr \
     && chown -R node:node /home/node/.openclaw
 
 # Copy plugin files and install dependencies
-COPY --chown=node:node extensions/meza-hr/ /home/node/.openclaw/extensions/meza-hr/
-WORKDIR /home/node/.openclaw/extensions/meza-hr
+COPY --chown=node:node extensions/xefe-hr/ /home/node/.openclaw/extensions/xefe-hr/
+WORKDIR /home/node/.openclaw/extensions/xefe-hr
 RUN npm install --omit=dev
 
 # Switch to non-root user

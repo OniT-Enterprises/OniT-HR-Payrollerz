@@ -1,5 +1,5 @@
 /**
- * Chat utility functions for Meza HR bot — intent classification, action detection.
+ * Chat utility functions for Xefe HR bot — intent classification, action detection.
  * Adapted from Rezerva hotel chatUtils for the HR/payroll domain.
  */
 

@@ -1,13 +1,13 @@
-// pm2 declaration for meza-api. Apply on server:
+// pm2 declaration for xefe-api. Apply on server:
 //   pm2 startOrReload ecosystem.config.js --update-env && pm2 save
 //
-// Deploy path on the Hetzner box is /opt/meza-api (not the git tree),
+// Deploy path on the Hetzner box is /opt/xefe-api (not the git tree),
 // so this file ships with the rsync bundle.
 
 module.exports = {
   apps: [
     {
-      name: "meza-api",
+      name: "xefe-api",
       cwd: __dirname,
       script: "index.js",
       interpreter: "node",

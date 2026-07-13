@@ -1,7 +1,7 @@
 services:
-  openclaw-meza:
+  openclaw-xefe:
     build: .
-    container_name: openclaw-meza
+    container_name: openclaw-xefe
     restart: unless-stopped
 
     # --- Security hardening ---
@@ -32,14 +32,14 @@ services:
       # Config (read-only bind mount)
       - ./openclaw.json:/home/node/.openclaw/openclaw.json:ro
       # Persistent state (credentials, WhatsApp session, agent state)
-      - openclaw-meza-credentials:/home/node/.openclaw/credentials
-      - openclaw-meza-state:/home/node/.openclaw/state
-      - openclaw-meza-agents:/home/node/.openclaw/agents
-      - openclaw-meza-canvas:/home/node/.openclaw/canvas
-      - openclaw-meza-cron:/home/node/.openclaw/cron
-      - openclaw-meza-devices:/home/node/.openclaw/devices
-      - openclaw-meza-identity:/home/node/.openclaw/identity
-      - openclaw-meza-workspace:/home/node/.openclaw/workspace
+      - openclaw-xefe-credentials:/home/node/.openclaw/credentials
+      - openclaw-xefe-state:/home/node/.openclaw/state
+      - openclaw-xefe-agents:/home/node/.openclaw/agents
+      - openclaw-xefe-canvas:/home/node/.openclaw/canvas
+      - openclaw-xefe-cron:/home/node/.openclaw/cron
+      - openclaw-xefe-devices:/home/node/.openclaw/devices
+      - openclaw-xefe-identity:/home/node/.openclaw/identity
+      - openclaw-xefe-workspace:/home/node/.openclaw/workspace
 
     # --- Environment ---
     env_file:
@@ -56,11 +56,11 @@ services:
         max-file: "3"
 
 volumes:
-  openclaw-meza-credentials:
-  openclaw-meza-state:
-  openclaw-meza-agents:
-  openclaw-meza-canvas:
-  openclaw-meza-cron:
-  openclaw-meza-devices:
-  openclaw-meza-identity:
-  openclaw-meza-workspace:
+  openclaw-xefe-credentials:
+  openclaw-xefe-state:
+  openclaw-xefe-agents:
+  openclaw-xefe-canvas:
+  openclaw-xefe-cron:
+  openclaw-xefe-devices:
+  openclaw-xefe-identity:
+  openclaw-xefe-workspace:

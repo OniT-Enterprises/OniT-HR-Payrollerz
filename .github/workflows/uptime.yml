@@ -17,13 +17,13 @@ jobs:
     steps:
       - name: Site serves 200
         run: |
-          code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 30 --retry 2 https://meza.naroman.tl/)
+          code=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 30 --retry 2 https://xefe.tl/)
           echo "status: $code"
           test "$code" = "200"
 
       - name: API healthy
         run: |
-          body=$(curl -sL --max-time 30 --retry 2 https://meza.naroman.tl/api/health)
+          body=$(curl -sL --max-time 30 --retry 2 https://xefe.tl/api/health)
           echo "$body"
           echo "$body" | grep -q '"success":true'
 
@@ -37,6 +37,6 @@ jobs:
           chmod 600 ~/.ssh/uptime_key
           fails=$(ssh -i ~/.ssh/uptime_key -o StrictHostKeyChecking=accept-new \
             "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
-            'docker logs openclaw-meza --since 30m 2>&1 | grep -c "Connection Failure" || true')
+            'docker logs openclaw-xefe --since 30m 2>&1 | grep -c "Connection Failure" || true')
           echo "WhatsApp connection failures in last 30m: $fails"
           test "$fails" -lt 5

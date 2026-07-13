@@ -1,5 +1,5 @@
 # Xefe - Robots.txt
-# https://meza.naroman.tl
+# https://xefe.tl
 
 User-agent: Googlebot
 Allow: /
@@ -47,4 +47,4 @@ Disallow: /dashboard
 Disallow: /settings
 
 # Sitemap
-Sitemap: https://meza.naroman.tl/sitemap.xml
+Sitemap: https://xefe.tl/sitemap.xml

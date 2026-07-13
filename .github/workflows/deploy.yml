@@ -78,15 +78,15 @@ jobs:
         env:
           FIREBASE_ADMINSDK_JSON: ${{ secrets.FIREBASE_ADMINSDK_JSON }}
 
-      - name: Deploy to Hetzner (payroll.naroman.tl)
+      - name: Deploy to Hetzner (xefe.tl)
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HETZNER_HOST }}
           REMOTE_USER: ${{ secrets.HETZNER_USER }}
           SOURCE: "dist/spa/"
-          TARGET: "/var/www/payroll.naroman.tl/dist/spa/"
+          TARGET: "/var/www/xefe.tl/dist/spa/"
           ARGS: "-avz --delete"
           SCRIPT_AFTER: |
-            sudo chown -R www-data:www-data /var/www/payroll.naroman.tl/
+            sudo chown -R www-data:www-data /var/www/xefe.tl/
             sudo systemctl reload nginx

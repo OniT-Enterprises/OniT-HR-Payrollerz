@@ -1,7 +1,7 @@
 {
-  "name": "meza-hr",
+  "name": "xefe-hr",
   "version": "1.0.0",
-  "description": "HR/Payroll management plugin for Meza system via OpenClaw",
+  "description": "HR/Payroll management plugin for Xefe system via OpenClaw",
   "main": "index.ts",
   "type": "module",
   "scripts": {
@@ -11,7 +11,7 @@
     "openclaw",
     "hr",
     "payroll",
-    "meza",
+    "xefe",
     "whatsapp"
   ],
   "author": "OniT Enterprises",

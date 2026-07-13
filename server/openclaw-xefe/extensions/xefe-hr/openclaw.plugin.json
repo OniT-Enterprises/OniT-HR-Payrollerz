@@ -1,7 +1,7 @@
 {
-  "id": "meza-hr",
-  "name": "Meza HR Management",
-  "description": "HR/Payroll management tools for OniT Meza system - query employees, payroll, leave, interviews, and financials",
+  "id": "xefe-hr",
+  "name": "Xefe HR Management",
+  "description": "HR/Payroll management tools for OniT Xefe system - query employees, payroll, leave, interviews, and financials",
   "version": "1.0.0",
   "configSchema": {
     "type": "object",
@@ -9,7 +9,7 @@
       "apiBaseUrl": {
         "type": "string",
         "default": "http://localhost:3201",
-        "description": "Base URL of the Meza HR API"
+        "description": "Base URL of the Xefe HR API"
       },
       "apiKey": {
         "type": "string",
@@ -24,9 +24,9 @@
   },
   "uiHints": {
     "apiKey": {
-      "label": "Meza API Key",
+      "label": "Xefe API Key",
       "sensitive": true,
-      "placeholder": "Enter your Meza API key"
+      "placeholder": "Enter your Xefe API key"
     },
     "apiBaseUrl": {
       "label": "API Base URL",

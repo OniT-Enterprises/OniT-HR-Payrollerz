@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://meza.naroman.tl/</loc>
+    <loc>https://xefe.tl/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://meza.naroman.tl/features</loc>
+    <loc>https://xefe.tl/features</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://meza.naroman.tl/auth/signup</loc>
+    <loc>https://xefe.tl/auth/signup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://meza.naroman.tl/privacy</loc>
+    <loc>https://xefe.tl/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://meza.naroman.tl/terms</loc>
+    <loc>https://xefe.tl/terms</loc>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>

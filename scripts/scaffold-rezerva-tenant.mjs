@@ -55,7 +55,7 @@ function getCredentials() {
   const paths = [
     join(process.cwd(), 'service-account.json'),
     join(process.cwd(), 'serviceAccountKey.json'),
-    join(process.cwd(), 'server', 'meza-api', 'serviceAccountKey.json'),
+    join(process.cwd(), 'server', 'xefe-api', 'serviceAccountKey.json'),
     join(homedir(), '.config', 'firebase', `${PROJECT_ID}-firebase-adminsdk.json`),
   ];
   try {
@@ -177,7 +177,7 @@ async function run() {
     console.log('  ✓ owner member + user profile + hrAdminIds');
 
     console.log('\n=== OWNER LOGIN ===');
-    console.log(`  URL:      https://meza.naroman.tl/auth/login`);
+    console.log(`  URL:      https://xefe.tl/auth/login`);
     console.log(`  Email:    ${OWNER_EMAIL}`);
     console.log(`  Password: ${tempPassword}   (change on first sign-in)`);
     console.log(`  UID:      ${uid}`);

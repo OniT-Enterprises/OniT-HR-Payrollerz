@@ -6,8 +6,8 @@
 - **Roadmap**: See `docs/IMPLEMENTATION_ROADMAP.md` for feature plans and TL legal requirements.
 - **Code quality**: See `docs/CODE_REVIEW_JAN2026.md` for technical debt and pending items.
 - **Launch ops**: See `docs/LAUNCH_OPS_TODO.md` for remaining manual/console items (backups, Sentry, icons) and deploy notes.
-- **Bot integration**: See `OPENCLAW_MEZA_INTEGRATION.md` for the Meza AI assistant (WhatsApp + web dashboard).
-- **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Internal infra keeps meza-* names.
+- **Bot integration**: See `OPENCLAW_XEFE_INTEGRATION.md` for the Xefe AI assistant (WhatsApp + web dashboard).
+- **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Infra was renamed meza-* → xefe-* on 2026-07-13 (`server/xefe-api`, `openclaw-xefe`, PM2/Docker `xefe-*`); the canonical public domain is **xefe.tl** (was meza.naroman.tl, which now 301s to it). The `onit-hr-payroll` Firebase project ID is unchanged.
 
 ## Project Overview
 OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, time tracking, performance, payroll, reporting) targeting Timor-Leste market.
@@ -17,7 +17,7 @@ OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, 
 - **UI**: Tailwind CSS, shadcn/ui, Radix UI
 - **State**: React Context + TanStack React Query
 - **Backend**: Firebase (Firestore/Auth)
-- **Server**: Express.js REST API (Meza API) + OpenClaw bot gateway
+- **Server**: Express.js REST API (Xefe API) + OpenClaw bot gateway
 - **Deployment**: Firebase Hosting + Hetzner VPS
 
 ## Firebase Configuration
@@ -68,10 +68,10 @@ client/
 └── types/          # TypeScript definitions
 
 server/
-├── meza-api/       # Express REST API for bot (port 3201, PM2)
+├── xefe-api/       # Express REST API for bot (port 3201, PM2)
 │   └── index.js    # 26 read-only Firestore endpoints
-└── openclaw-meza/  # OpenClaw Docker gateway (port 18790)
-    ├── extensions/meza-hr/  # Plugin: 29 tools + 5 commands
+└── openclaw-xefe/  # OpenClaw Docker gateway (port 18790)
+    ├── extensions/xefe-hr/  # Plugin: 29 tools + 5 commands
     ├── docker-compose.yml
     ├── Dockerfile
     └── deploy.sh
@@ -115,38 +115,38 @@ cd mobile/ekipa && eas build --platform android --profile preview
 cd mobile/ekipa && eas build --platform android --profile production
 ```
 
-## Meza Bot (Server)
+## Xefe Bot (Server)
 
-The Meza AI assistant lets HR managers query company data via WhatsApp and a web dashboard.
+The Xefe AI assistant lets HR managers query company data via WhatsApp and a web dashboard.
 
 ```bash
-# Meza API (local dev)
-cd server/meza-api && npm install && npm run dev
+# Xefe API (local dev)
+cd server/xefe-api && npm install && npm run dev
 
-# Deploy Meza API to Hetzner (PM2)
-rsync -avz --delete server/meza-api/ hetzner:/opt/meza-api/
-ssh hetzner 'cd /opt/meza-api && npm install && pm2 restart meza-api'
+# Deploy Xefe API to Hetzner (PM2)
+rsync -avz --delete server/xefe-api/ hetzner:/opt/xefe-api/
+ssh hetzner 'cd /opt/xefe-api && npm install && pm2 restart xefe-api'
 
 # Deploy OpenClaw bot
-cd server/openclaw-meza && ./deploy.sh
+cd server/openclaw-xefe && ./deploy.sh
 
 # Pair WhatsApp (on server)
-docker exec -it openclaw-meza openclaw channels login
+docker exec -it openclaw-xefe openclaw channels login
 ```
 
 **Ports on Hetzner:**
 | Service | Port | Process |
 |---------|------|---------|
-| Meza API | 3201 | PM2 |
-| OpenClaw Meza | 18790 | Docker |
+| Xefe API | 3201 | PM2 |
+| OpenClaw Xefe | 18790 | Docker |
 | Hotel API | 3100 | PM2 |
 | OpenClaw Hotel | 18789 | Docker |
 
 **Sensitive files (never commit):**
-- `server/meza-api/.env` — API key, tenant ID
-- `server/meza-api/serviceAccountKey.json` — Firebase Admin credentials
-- `server/openclaw-meza/.env` — Anthropic API key
-- `server/openclaw-meza/openclaw.json` — Bot config with API keys
+- `server/xefe-api/.env` — API key, tenant ID
+- `server/xefe-api/serviceAccountKey.json` — Firebase Admin credentials
+- `server/openclaw-xefe/.env` — Anthropic API key
+- `server/openclaw-xefe/openclaw.json` — Bot config with API keys
 
 ## Firestore Timestamps
 Always handle Firestore Timestamps properly:
