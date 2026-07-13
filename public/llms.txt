@@ -9,7 +9,7 @@
 
 ## Product
 
-- [Landing page](https://xefe.tl/landing): product overview and Timor-Leste compliance details
+- [Landing page](https://xefe.tl/): product overview and Timor-Leste compliance details
 - [Features](https://xefe.tl/features): full feature list across the nine modules
 - [Sign up](https://xefe.tl/auth/signup): self-serve organization creation with a free trial
 

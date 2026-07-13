@@ -70,9 +70,9 @@ export function SEO({
 export const seoConfig = {
   // Landing & Auth
   landing: {
-    title: 'Modern HR Management System',
-    description: 'Transform your HR operations with Xefe. All-in-one solution for hiring, employee management, time tracking, payroll, and more.',
-    keywords: 'HR software, payroll system, human resources, employee management, HRIS, HR platform',
+    title: 'HR, Payroll & Accounting for Timor-Leste',
+    description: 'Xefe is HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual and Lei Trabalho compliance, bank payroll files, and double-entry accounting. In Tetun, English and Portuguese.',
+    keywords: 'HR software Timor-Leste, payroll software Timor-Leste, sistema folha de pagamento, INSS, WIT, subsidio anual, Lei Trabalho, accounting software Timor-Leste, Tetun payroll',
     url: '/',
   },
   login: {

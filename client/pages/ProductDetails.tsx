@@ -577,8 +577,10 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
       <SEO
-        title="Xefe - Complete Platform Overview"
-        description="Comprehensive HR and Payroll system built for Timor-Leste. Full details on features, modules, and TL-specific capabilities."
+        title="Features & Modules"
+        description="HR, payroll & accounting built for Timor-Leste — INSS, WIT, subsídio anual, Lei Trabalho compliance, bank payroll files (BNU, BNCTL, Mandiri, ANZ), and double-entry accounting. Full feature and module breakdown."
+        keywords="HR software Timor-Leste, payroll software Timor-Leste, INSS, WIT, subsidio anual, Lei Trabalho, sistema folha de pagamento, accounting software Timor-Leste"
+        url="/features"
       />
 
       {/* Navigation */}

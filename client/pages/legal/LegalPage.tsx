@@ -27,7 +27,7 @@ export default function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title={t(`${base}.title`)} description={t(`${base}.intro`)} />
+      <SEO title={t(`${base}.title`)} description={t(`${base}.intro`)} url={`/${kind}`} />
       <div className="max-w-2xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <Link to="/" className="flex items-center gap-3">
