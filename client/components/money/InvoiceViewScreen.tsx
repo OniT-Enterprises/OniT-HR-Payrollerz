@@ -20,6 +20,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
@@ -35,6 +52,7 @@ import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { InvoicePaper } from '@/components/money/InvoicePaper';
 import { INVOICE_TEMPLATES, paymentMethodLabel, formatInvoiceDate } from '@/lib/invoiceTemplates';
 import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
+import { buildInvoiceWhatsAppUrl } from '@/lib/publicInvoice';
 import type { Invoice, InvoiceSettings, InvoiceStatus, InvoiceTemplateId } from '@/types/money';
 import {
   FileText,
@@ -42,7 +60,11 @@ import {
   Download,
   Share2,
   DollarSign,
+  ExternalLink,
+  Link2,
   Loader2,
+  MessageCircle,
+  RefreshCw,
   Send,
   Copy,
   Palette,
@@ -87,6 +109,9 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
+  const [resettingLink, setResettingLink] = useState(false);
   const sendInFlight = useRef(false);
 
   const { data: payments = [] } = useInvoicePayments(invoice.id);
@@ -137,15 +162,73 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
     }
   };
 
-  const handleShare = async () => {
+  // Publishes (or refreshes) the hosted page and returns its public URL
+  const ensureShareUrl = async (): Promise<string | null> => {
     try {
-      await navigator.clipboard.writeText(invoiceService.getShareUrl(invoice));
+      setSharing(true);
+      const { url } = await invoiceService.ensureShareLink(tenantId, invoice, settings);
+      return url;
+    } catch (error) {
+      console.error('Error creating invoice link:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.shareError') || 'Failed to share invoice',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const url = await ensureShareUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.linkCopied') || 'Invoice link copied to clipboard',
       });
     } catch (error) {
       console.error('Error sharing:', error);
+    }
+  };
+
+  const handleWhatsApp = async () => {
+    const url = await ensureShareUrl();
+    if (!url) return;
+    window.open(buildInvoiceWhatsAppUrl(invoice, url, settings.companyName), '_blank', 'noopener');
+  };
+
+  const handleOpenPublicPage = async () => {
+    const url = await ensureShareUrl();
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
+  };
+
+  const handleResetLink = async () => {
+    try {
+      setResettingLink(true);
+      const { url } = await invoiceService.regenerateShareLink(tenantId, invoice.id);
+      await navigator.clipboard.writeText(url).catch(() => undefined);
+      invalidateInvoice();
+      toast({
+        title: t('common.success') || 'Success',
+        description:
+          t('money.invoices.linkReset') ||
+          'Old link disabled. New link copied to clipboard.',
+      });
+    } catch (error) {
+      console.error('Error resetting invoice link:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.linkResetError') || 'Failed to reset link',
+        variant: 'destructive',
+      });
+    } finally {
+      setResettingLink(false);
+      setShowResetLinkDialog(false);
     }
   };
 
@@ -226,10 +309,39 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
                 )}
                 {t('money.invoices.downloadPdf') || 'Download PDF'}
               </Button>
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                {t('money.invoices.share') || 'Share'}
-              </Button>
+              {canManageTenant && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" disabled={sharing}>
+                      {sharing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Share2 className="h-4 w-4 mr-2" />
+                      )}
+                      {t('money.invoices.share') || 'Share'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleCopyLink}>
+                      <Link2 className="h-4 w-4 mr-2" />
+                      {t('money.invoices.copyLink') || 'Copy link'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleWhatsApp}>
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      {t('money.invoices.shareWhatsApp') || 'Send by WhatsApp'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleOpenPublicPage}>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      {t('money.invoices.openPublicPage') || 'Open customer page'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setShowResetLinkDialog(true)}>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {t('money.invoices.resetLink') || 'Reset link…'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {canManageTenant && invoice.status === 'draft' && (
                 <Button
                   onClick={handleSend}
@@ -396,6 +508,39 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
           }}
         />
       )}
+
+      <AlertDialog open={showResetLinkDialog} onOpenChange={setShowResetLinkDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('money.invoices.resetLinkTitle') || 'Reset the invoice link?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('money.invoices.resetLinkDescription') ||
+                'The current link will stop working immediately and a new one will be created. Use this if the link was shared with the wrong person.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resettingLink}>
+              {t('common.cancel') || 'Cancel'}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleResetLink();
+              }}
+              disabled={resettingLink}
+            >
+              {resettingLink ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              {t('money.invoices.resetLink') || 'Reset link'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

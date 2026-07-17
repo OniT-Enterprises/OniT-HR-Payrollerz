@@ -72,6 +72,7 @@ const Interviews = lazyWithRetry(() => import("@/pages/hiring/Interviews"));
 const Onboarding = lazyWithRetry(() => import("@/pages/hiring/Onboarding"));
 const Offboarding = lazyWithRetry(() => import("@/pages/hiring/Offboarding"));
 const PublicApply = lazyWithRetry(() => import("@/pages/hiring/PublicApply"));
+const PublicInvoice = lazyWithRetry(() => import("@/pages/money/PublicInvoice"));
 const LegalPage = lazyWithRetry(() => import("@/pages/legal/LegalPage"));
 const JobApplicationsReview = lazyWithRetry(() => import("@/pages/hiring/JobApplicationsReview"));
 
@@ -173,6 +174,8 @@ export const authRoutes = (
     <Route path="/auth/onboarding" element={<AuthOnboarding />} />
     {/* Public candidate apply page — no auth required */}
     <Route path="/apply/:jobId" element={<PublicApply />} />
+    {/* Public hosted invoice page — no auth required */}
+    <Route path="/i/:token" element={<PublicInvoice />} />
     <Route path="/privacy" element={<LegalPage kind="privacy" />} />
     <Route path="/terms" element={<LegalPage kind="terms" />} />
     <Route

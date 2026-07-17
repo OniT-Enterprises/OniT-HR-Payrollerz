@@ -45,6 +45,7 @@ import { SendReminderDialog } from '@/components/money/SendReminderDialog';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
 import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
+import { buildInvoiceWhatsAppUrl } from '@/lib/publicInvoice';
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import {
   FileText,
@@ -61,6 +62,7 @@ import {
   Download,
   Share2,
   Loader2,
+  MessageCircle,
   Settings,
   XCircle,
   Bell,
@@ -204,26 +206,44 @@ export default function Invoices() {
     }
   };
 
-  const handleShare = async (invoice: Invoice) => {
+  // Publishes (or refreshes) the hosted page and returns its public URL
+  const ensureShareUrl = async (invoice: Invoice): Promise<string | null> => {
     try {
-      // Get share URL
-      const shareUrl = invoiceService.getShareUrl(invoice);
+      const { url } = await invoiceService.ensureShareLink(tenantId, invoice, invoiceSettings);
+      return url;
+    } catch (error) {
+      console.error('Error creating invoice link:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.shareError') || 'Failed to share invoice',
+        variant: 'destructive',
+      });
+      return null;
+    }
+  };
 
-      // Copy to clipboard
+  const handleShare = async (invoice: Invoice) => {
+    const shareUrl = await ensureShareUrl(invoice);
+    if (!shareUrl) return;
+    try {
       await navigator.clipboard.writeText(shareUrl);
-
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.linkCopied') || 'Invoice link copied to clipboard',
       });
     } catch (error) {
       console.error('Error sharing invoice:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.shareError') || 'Failed to share invoice',
-        variant: 'destructive',
-      });
     }
+  };
+
+  const handleWhatsApp = async (invoice: Invoice) => {
+    const shareUrl = await ensureShareUrl(invoice);
+    if (!shareUrl) return;
+    window.open(
+      buildInvoiceWhatsAppUrl(invoice, shareUrl, invoiceSettings.companyName),
+      '_blank',
+      'noopener',
+    );
   };
 
   const handleDuplicate = async (invoice: Invoice) => {
@@ -532,10 +552,18 @@ export default function Invoices() {
                               {t('money.invoices.markSent') || 'Mark as Sent'}
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem onClick={() => handleShare(invoice)}>
-                            <Share2 className="h-4 w-4 mr-2" />
-                            {t('money.invoices.share') || 'Share Link'}
-                          </DropdownMenuItem>
+                          {canManageTenant && invoice.status !== 'draft' && (
+                            <DropdownMenuItem onClick={() => handleShare(invoice)}>
+                              <Share2 className="h-4 w-4 mr-2" />
+                              {t('money.invoices.share') || 'Share Link'}
+                            </DropdownMenuItem>
+                          )}
+                          {canManageTenant && invoice.status !== 'draft' && (
+                            <DropdownMenuItem onClick={() => handleWhatsApp(invoice)}>
+                              <MessageCircle className="h-4 w-4 mr-2" />
+                              {t('money.invoices.shareWhatsApp') || 'Send by WhatsApp'}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => handleDownloadPDF(invoice)}
                             disabled={

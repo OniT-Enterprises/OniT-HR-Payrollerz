@@ -184,6 +184,11 @@ export const paths = {
   // Money module settings
   invoiceSettings: (tid: string) => `tenants/${tid}/settings/invoice_settings`,
 
+  // Public hosted invoice links (top-level, doc id = unguessable share token,
+  // keyed back to the tenant by a tenantId FIELD — sweep on tenant delete)
+  invoiceLinks: () => 'invoice_links',
+  invoiceLink: (token: string) => `invoice_links/${token}`,
+
   // VAT
   vatConfig: () => 'platform/vatConfig',
   vatSettings: (tid: string) => `tenants/${tid}/settings/vat`,

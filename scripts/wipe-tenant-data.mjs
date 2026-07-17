@@ -48,7 +48,7 @@ const ROOT_COLLECTIONS = [
   'payments_received', 'vendors', 'bills', 'bill_payments', 'expenses',
   'holidays', 'payrollRuns', 'payrollRecords', 'benefitEnrollments',
   'recurringDeductions', 'taxReports', 'taxFilings', 'bankTransfers',
-  'attendance', 'attendanceImports',
+  'attendance', 'attendanceImports', 'invoice_links',
 ];
 
 function getCredentials() {

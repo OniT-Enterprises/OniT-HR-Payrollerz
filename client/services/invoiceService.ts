@@ -10,6 +10,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -62,6 +63,7 @@ import {
   formatInvoiceDate,
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
+import { publicInvoiceUrl } from '@/lib/publicInvoice';
 
 // ============================================
 // FILTER INTERFACES
@@ -585,6 +587,199 @@ class InvoiceService {
     return mapInvoice(querySnapshot.docs[0]);
   }
 
+  // ----------------------------------------
+  // Public hosted invoice links (/i/:token)
+  // ----------------------------------------
+
+  private publicLinkRef(token: string) {
+    return doc(db, paths.invoiceLink(token));
+  }
+
+  /**
+   * Sanitized snapshot written to the public invoice_links doc. Everything
+   * here is visible to anyone holding the link, so internal accounting and
+   * reminder fields (and the customer's email/phone) stay out.
+   */
+  private buildPublicLinkPayload(
+    tenantId: string,
+    invoice: Invoice,
+    settings: Partial<InvoiceSettings>
+  ) {
+    const publicInvoice = {
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      customerName: invoice.customerName,
+      customerAddress: invoice.customerAddress,
+      issueDate: invoice.issueDate,
+      dueDate: invoice.dueDate,
+      items: invoice.items,
+      projectName: invoice.projectName,
+      poNumber: invoice.poNumber,
+      subtotal: invoice.subtotal,
+      discountTotal: invoice.discountTotal,
+      taxRate: invoice.taxRate,
+      taxAmount: invoice.taxAmount,
+      total: invoice.total,
+      status: invoice.status,
+      amountPaid: invoice.amountPaid,
+      balanceDue: invoice.balanceDue,
+      vatBreakdown: invoice.vatBreakdown,
+      isVATInvoice: invoice.isVATInvoice,
+      supplierVatId: invoice.supplierVatId,
+      customerVatId: invoice.customerVatId,
+      notes: invoice.notes,
+      terms: invoice.terms,
+      templateId: invoice.templateId,
+      accentColor: invoice.accentColor,
+      paymentTermsDays: invoice.paymentTermsDays,
+      paymentMethods: invoice.paymentMethods,
+      paymentAccount: invoice.paymentAccount,
+      currency: invoice.currency,
+    };
+
+    const publicSettings = {
+      companyName: settings.companyName,
+      companyAddress: settings.companyAddress,
+      companyPhone: settings.companyPhone,
+      companyEmail: settings.companyEmail,
+      companyTin: settings.companyTin,
+      logoUrl: settings.logoUrl,
+      accentColor: settings.accentColor,
+      footerMessage: settings.footerMessage,
+      vatRegistrationNumber: settings.vatRegistrationNumber,
+      pricesIncludeVAT: settings.pricesIncludeVAT,
+    };
+
+    // JSON round-trip drops `undefined` values, which Firestore rejects.
+    return JSON.parse(
+      JSON.stringify({
+        tenantId,
+        invoiceId: invoice.id,
+        invoice: publicInvoice,
+        settings: publicSettings,
+      })
+    ) as Record<string, unknown>;
+  }
+
+  /**
+   * Make sure the invoice has a share token AND a live invoice_links doc,
+   * refreshing the public snapshot. Returns the public URL.
+   */
+  async ensureShareLink(
+    tenantId: string,
+    invoice: Invoice,
+    settingsArg?: Partial<InvoiceSettings>
+  ): Promise<{ token: string; url: string }> {
+    let token = invoice.shareToken;
+    if (!token) {
+      token = this.generateShareToken();
+      await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
+        shareToken: token,
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    const settings =
+      settingsArg ?? (await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)));
+    const payload = this.buildPublicLinkPayload(tenantId, { ...invoice, shareToken: token }, settings);
+
+    const ref = this.publicLinkRef(token);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      await updateDoc(ref, { ...payload, updatedAt: serverTimestamp() });
+    } else {
+      await setDoc(ref, {
+        ...payload,
+        revoked: false,
+        viewedAt: null,
+        pdfUrl: invoice.sentPdfUrl || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    return { token, url: publicInvoiceUrl(token) };
+  }
+
+  /**
+   * Refresh the public snapshot after a state change (payment, cancel,
+   * template switch). No-op when the invoice was never shared.
+   */
+  private async syncPublicLink(tenantId: string, invoiceId: string): Promise<void> {
+    try {
+      const invoice = await this.getInvoiceById(tenantId, invoiceId);
+      if (!invoice?.shareToken) return;
+
+      const ref = this.publicLinkRef(invoice.shareToken);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+
+      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      await updateDoc(ref, {
+        ...this.buildPublicLinkPayload(tenantId, invoice, settings),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      // The public page just shows a slightly stale snapshot — never fail
+      // the payment/cancel that triggered the sync.
+      console.error('Failed to sync public invoice link:', error);
+    }
+  }
+
+  /**
+   * Kill the current link and issue a fresh one (old URL stops working
+   * immediately). For when a link was forwarded further than intended.
+   */
+  async regenerateShareLink(tenantId: string, invoiceId: string): Promise<{ token: string; url: string }> {
+    const invoice = await this.getInvoiceById(tenantId, invoiceId);
+    if (!invoice) throw new Error('Invoice not found');
+
+    if (invoice.shareToken) {
+      await deleteDoc(this.publicLinkRef(invoice.shareToken)).catch(() => undefined);
+    }
+
+    const token = this.generateShareToken();
+    await updateDoc(doc(db, paths.invoice(tenantId, invoiceId)), {
+      shareToken: token,
+      updatedAt: serverTimestamp(),
+    });
+
+    return this.ensureShareLink(tenantId, { ...invoice, shareToken: token });
+  }
+
+  /**
+   * Freeze the as-sent PDF to Storage (the invoice a customer received must
+   * stay reproducible even after branding/template changes — TL tax records
+   * keep for 5 years). Returns the download URL, or undefined on failure.
+   */
+  private async freezeSentPdf(
+    tenantId: string,
+    invoice: Invoice,
+    settings: Partial<InvoiceSettings>,
+    token?: string
+  ): Promise<string | undefined> {
+    try {
+      const [{ generateInvoiceBlob }, { fileUploadService }] = await Promise.all([
+        import('@/components/money/InvoicePDF'),
+        import('@/services/fileUploadService'),
+      ]);
+      const blob = await generateInvoiceBlob(invoice, settings);
+      const pdfUrl = await fileUploadService.uploadInvoicePdf(blob, tenantId, invoice.id, invoice.invoiceNumber);
+
+      await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
+        sentPdfUrl: pdfUrl,
+        updatedAt: serverTimestamp(),
+      });
+      if (token) {
+        await updateDoc(this.publicLinkRef(token), { pdfUrl }).catch(() => undefined);
+      }
+      return pdfUrl;
+    } catch (error) {
+      console.error('Failed to freeze sent invoice PDF:', error);
+      return undefined;
+    }
+  }
+
   /**
    * Resolve the PaymentAccount snapshot to store on an invoice.
    * 'none' hides payment details; undefined falls back to the tenant default.
@@ -853,13 +1048,30 @@ class InvoiceService {
       return isFirstSend;
     });
 
-    // Email the invoice to the customer on the first send (draft -> sent).
-    // Failure to queue the email must not fail the send itself.
-    if (sentNow && invoice.customerEmail) {
+    // First send (draft -> sent): publish the hosted page, freeze the as-sent
+    // PDF, and email the customer. None of these may fail the send itself.
+    if (sentNow) {
+      const sentInvoice: Invoice = { ...invoice, status: 'sent' };
+      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+
+      let publicUrl: string | undefined;
+      let token: string | undefined;
       try {
-        await this.queueInvoiceEmail(tenantId, invoice);
+        const link = await this.ensureShareLink(tenantId, sentInvoice, settings);
+        publicUrl = link.url;
+        token = link.token;
       } catch (error) {
-        console.error('Failed to queue invoice email:', error);
+        console.error('Failed to create public invoice link:', error);
+      }
+
+      const pdfUrl = await this.freezeSentPdf(tenantId, sentInvoice, settings, token);
+
+      if (invoice.customerEmail) {
+        try {
+          await this.queueInvoiceEmail(tenantId, sentInvoice, settings, { publicUrl, pdfUrl });
+        } catch (error) {
+          console.error('Failed to queue invoice email:', error);
+        }
       }
     }
 
@@ -871,10 +1083,16 @@ class InvoiceService {
    * collection -> Resend). The email body mirrors the invoice so the
    * customer needs no login to see line items, totals, and how to pay.
    */
-  private async queueInvoiceEmail(tenantId: string, invoice: Invoice): Promise<void> {
+  private async queueInvoiceEmail(
+    tenantId: string,
+    invoice: Invoice,
+    settingsArg?: Partial<InvoiceSettings>,
+    opts: { publicUrl?: string; pdfUrl?: string } = {}
+  ): Promise<void> {
     if (!invoice.customerEmail) return;
 
-    const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+    const settings =
+      settingsArg ?? (await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)));
     const companyName = settings.companyName || 'Your supplier';
     const accent = resolveAccentColor(invoice, settings);
     const account = resolveInvoicePaymentAccount(invoice, settings);
@@ -945,6 +1163,12 @@ class InvoiceService {
             </table>
           </div>
 
+          ${opts.publicUrl ? `
+          <div style="text-align:center;margin:0 0 24px;">
+            <a href="${esc(opts.publicUrl)}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 32px;border-radius:8px;">View invoice online</a>
+            <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;">You can view and download this invoice anytime at the link above.</p>
+          </div>` : ''}
+
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
             <thead>
               <tr style="background:${accent};color:#ffffff;">
@@ -997,6 +1221,7 @@ class InvoiceService {
       '',
       `Amount due: ${formatInvoiceMoney(invoice.balanceDue ?? invoice.total)}`,
       `Due date: ${formatInvoiceDate(invoice.dueDate)}`,
+      ...(opts.publicUrl ? ['', `View invoice online: ${opts.publicUrl}`] : []),
       '',
       ...invoice.items.map(
         (item) => `${item.description}${item.discount ? ` (-${item.discount}%)` : ''} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(lineNetAmount(item))}`
@@ -1023,9 +1248,21 @@ class InvoiceService {
       tenantId,
       to: invoice.customerEmail,
       replyTo: settings.companyEmail || undefined,
+      fromName: settings.companyName || undefined,
       subject: `Invoice ${invoice.invoiceNumber} from ${companyName} — ${formatInvoiceMoney(invoice.total)} due ${formatInvoiceDate(invoice.dueDate)}`,
       html,
       text: textLines.join('\n'),
+      ...(opts.pdfUrl
+        ? {
+            attachments: [
+              {
+                filename: `${invoice.invoiceNumber}.pdf`,
+                url: opts.pdfUrl,
+                contentType: 'application/pdf',
+              },
+            ],
+          }
+        : {}),
       purpose: 'invoice',
       relatedId: invoice.id,
     });
@@ -1045,24 +1282,7 @@ class InvoiceService {
       templateId,
       updatedAt: serverTimestamp(),
     });
-    return true;
-  }
-
-  /**
-   * Mark invoice as viewed (when customer opens share link)
-   */
-  async markAsViewed(tenantId: string, id: string): Promise<boolean> {
-    const invoice = await this.getInvoiceById(tenantId, id);
-    if (!invoice || invoice.status === 'draft' || invoice.viewedAt) {
-      return false;
-    }
-
-    const docRef = doc(db, paths.invoice(tenantId, id));
-    await updateDoc(docRef, {
-      status: invoice.status === 'sent' ? 'viewed' : invoice.status,
-      viewedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await this.syncPublicLink(tenantId, id);
     return true;
   }
 
@@ -1176,6 +1396,9 @@ class InvoiceService {
       }
     });
 
+    // The hosted page must stop presenting a cancelled invoice as payable.
+    await this.syncPublicLink(tenantId, id);
+
     return true;
   }
 
@@ -1220,9 +1443,19 @@ class InvoiceService {
 
     // Queue reminder email via the shared notification service
     if (invoice.customerEmail) {
+      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      let publicUrl: string | undefined;
+      try {
+        publicUrl = (await this.ensureShareLink(tenantId, invoice, settings)).url;
+      } catch (error) {
+        console.error('Failed to ensure public invoice link for reminder:', error);
+      }
+
       await notificationService.queueEmail({
         tenantId,
         to: invoice.customerEmail,
+        replyTo: settings.companyEmail || undefined,
+        fromName: settings.companyName || undefined,
         subject: `Payment Reminder: Invoice ${invoice.invoiceNumber}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1234,13 +1467,17 @@ class InvoiceService {
               <li>Due Date: ${invoice.dueDate}</li>
               <li>Amount Due: $${invoice.balanceDue.toFixed(2)}</li>
             </ul>
+            ${publicUrl ? `
+            <p style="margin: 20px 0;">
+              <a href="${publicUrl}" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View invoice online</a>
+            </p>` : ''}
             <p>Please arrange payment at your earliest convenience.</p>
             <p style="color: #666; font-size: 12px; margin-top: 20px;">
               This is an automated reminder. If you have already made payment, please disregard this message.
             </p>
           </div>
         `,
-        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${invoice.balanceDue.toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
+        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${invoice.balanceDue.toFixed(2)}\nDue Date: ${invoice.dueDate}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ''}\nPlease arrange payment at your earliest convenience.`,
         purpose: 'invoice-reminder',
         relatedId: id,
       });
@@ -1324,6 +1561,11 @@ class InvoiceService {
       }
     }
 
+    // Captured from inside the transaction for the post-commit receipt email
+    let paidInFull = false;
+    let paidInvoice: Invoice | null = null;
+    let receiptAmount = 0;
+
     // Atomic: payment + invoice update + journal entry in one transaction
     const paymentId = await runTransaction(db, async (transaction) => {
       // Read invoice within transaction
@@ -1373,6 +1615,10 @@ class InvoiceService {
         updatedAt: serverTimestamp(),
       });
 
+      paidInFull = nextPayment.status === 'paid';
+      receiptAmount = nextPayment.amount;
+      paidInvoice = invoice;
+
       // Create journal entry within same transaction
       if (resolvedAccounts) {
         await journalEntryService.createFromInvoicePayment(
@@ -1395,7 +1641,92 @@ class InvoiceService {
       return paymentDocRef.id;
     });
 
+    // Post-commit: refresh the hosted page (shows PAID / new balance) and
+    // send a receipt when the invoice is settled. Never fail the payment.
+    await this.syncPublicLink(tenantId, invoiceId);
+    if (paidInFull && paidInvoice) {
+      try {
+        await this.queueReceiptEmail(tenantId, paidInvoice, payment, receiptAmount);
+      } catch (error) {
+        console.error('Failed to queue receipt email:', error);
+      }
+    }
+
     return paymentId;
+  }
+
+  /**
+   * Simple receipt email when an invoice is fully settled. The hosted page
+   * doubles as the receipt (it shows the PAID state and payment history).
+   */
+  private async queueReceiptEmail(
+    tenantId: string,
+    invoice: Invoice,
+    payment: PaymentFormData,
+    amount: number
+  ): Promise<void> {
+    if (!invoice.customerEmail) return;
+
+    const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+    const companyName = settings.companyName || 'Your supplier';
+    const accent = resolveAccentColor(invoice, settings);
+
+    // The captured invoice predates the payment write — re-fetch so the
+    // hosted-page snapshot reflects the settled state, not the stale one.
+    let publicUrl: string | undefined;
+    try {
+      const fresh =
+        (await this.getInvoiceById(tenantId, invoice.id)) ??
+        ({ ...invoice, status: 'paid', amountPaid: invoice.total, balanceDue: 0 } as Invoice);
+      publicUrl = (await this.ensureShareLink(tenantId, fresh, settings)).url;
+    } catch (error) {
+      console.error('Failed to ensure public invoice link for receipt:', error);
+    }
+
+    const esc = (value: string | undefined | null) =>
+      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;">
+        <div style="background:${accent};border-radius:8px 8px 0 0;padding:24px 28px;color:#ffffff;">
+          <p style="margin:0;font-size:13px;opacity:0.85;">${esc(companyName)}</p>
+          <h1 style="margin:6px 0 0;font-size:22px;">Payment received — thank you!</h1>
+        </div>
+        <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:28px;">
+          <p style="margin:0 0 16px;">Dear ${esc(invoice.customerName)},</p>
+          <p style="margin:0 0 20px;">We received your payment of <strong>${formatInvoiceMoney(amount)}</strong> on ${esc(formatInvoiceDate(payment.date))}. Invoice <strong>${esc(invoice.invoiceNumber)}</strong> is now fully paid.</p>
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin-bottom:20px;font-weight:700;color:#15803d;">
+            PAID — ${formatInvoiceMoney(invoice.total)} · Balance due: ${formatInvoiceMoney(0)}
+          </div>
+          ${publicUrl ? `
+          <p style="margin:0 0 20px;">
+            <a href="${esc(publicUrl)}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View receipt online</a>
+          </p>` : ''}
+          <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
+            ${settings.companyEmail ? `Questions? Contact us at ${esc(settings.companyEmail)}.` : 'Questions? Reply to this email.'}
+          </p>
+        </div>
+      </div>`;
+
+    const text = [
+      `Payment received — thank you!`,
+      '',
+      `We received your payment of ${formatInvoiceMoney(amount)} on ${formatInvoiceDate(payment.date)}.`,
+      `Invoice ${invoice.invoiceNumber} from ${companyName} is now fully paid (${formatInvoiceMoney(invoice.total)}).`,
+      ...(publicUrl ? ['', `View receipt online: ${publicUrl}`] : []),
+    ].join('\n');
+
+    await notificationService.queueEmail({
+      tenantId,
+      to: invoice.customerEmail,
+      replyTo: settings.companyEmail || undefined,
+      fromName: settings.companyName || undefined,
+      subject: `Payment received — Invoice ${invoice.invoiceNumber} is paid`,
+      html,
+      text,
+      purpose: 'receipt',
+      relatedId: invoice.id,
+    });
   }
 
   /**
@@ -1689,11 +2020,11 @@ class InvoiceService {
   }
 
   /**
-   * Get share URL for an invoice
+   * Public hosted-page URL for an invoice that already has a share token.
+   * Prefer ensureShareLink() — it also creates/refreshes the public doc.
    */
-  getShareUrl(invoice: Invoice): string {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/money/invoices/${invoice.id}`;
+  getShareUrl(invoice: Invoice): string | null {
+    return invoice.shareToken ? publicInvoiceUrl(invoice.shareToken) : null;
   }
 
   /**

@@ -1646,6 +1646,47 @@ service cloud.firestore {
     }
 
     // ============================================
+    // PUBLIC INVOICE LINKS (hosted invoice pages, /i/:token)
+    // Doc id IS the unguessable share token; docs hold a sanitized
+    // invoice + branding snapshot written by the tenant admin's client.
+    // Public access is get-only (no list), so links can't be enumerated.
+    // ============================================
+    match /invoice_links/{token} {
+      allow get: if resource.data.revoked == false ||
+        isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+      allow list: if isSuperAdmin();
+
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null &&
+        isTenantAdmin(request.resource.data.tenantId) &&
+        request.resource.data.keys().hasAll(['tenantId', 'invoiceId', 'invoice', 'settings', 'revoked', 'viewedAt']) &&
+        request.resource.data.revoked == false
+      );
+
+      // Two update paths:
+      //  1. Tenant admins refresh the snapshot (payment recorded, cancel,
+      //     template change) — tenant binding must not change.
+      //  2. The customer's (unauthenticated) device stamps viewedAt exactly
+      //     once, with the server time, touching nothing else.
+      allow update: if isSuperAdmin() || (
+          resource.data.tenantId != null &&
+          request.resource.data.tenantId == resource.data.tenantId &&
+          isTenantAdmin(resource.data.tenantId)
+        ) || (
+          resource.data.revoked == false &&
+          resource.data.viewedAt == null &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewedAt']) &&
+          request.resource.data.viewedAt == request.time
+        );
+
+      // Deletes have no request.resource — never reference it here
+      // (see tests/rules/legacy-collection-deletes.test.ts).
+      allow delete: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+    }
+
+    // ============================================
     // PUBLIC JOB APPLICATIONS
     // Candidates submit via /apply/:jobId (unauthenticated).
     // Create is public but heavily constrained. Read/update/delete is

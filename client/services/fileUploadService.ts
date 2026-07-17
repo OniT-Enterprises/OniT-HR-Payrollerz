@@ -163,6 +163,24 @@ class FileUploadService {
   }
 
   /**
+   * Upload the as-sent invoice PDF (frozen at send time). The download URL
+   * carries its own access token, so the hosted invoice page and the email
+   * attachment can use it without extra Storage rules.
+   */
+  async uploadInvoicePdf(
+    blob: Blob,
+    tenantId: string,
+    invoiceId: string,
+    invoiceNumber: string,
+  ): Promise<string> {
+    const safeName = invoiceNumber.replace(/[^A-Za-z0-9_-]/g, '-') || 'invoice';
+    const file = new File([blob], `${safeName}.pdf`, { type: 'application/pdf' });
+    const path = `tenants/${tenantId}/invoices/${invoiceId}/${safeName}.pdf`;
+
+    return this.uploadFile(file, path, { contentType: 'application/pdf' });
+  }
+
+  /**
    * Validate receipt file (images and PDFs, max 10MB)
    */
   validateReceiptFile(file: File): { valid: boolean; error?: string } {

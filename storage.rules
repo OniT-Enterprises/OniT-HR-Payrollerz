@@ -137,6 +137,14 @@ service firebase.storage {
       allow write: if isTenantMember(tenantId) && isUnderSizeLimit() && isAllowedDocType();
     }
 
+    // As-sent customer invoice PDFs, frozen at send time. Customers reach
+    // them through the tokenized download URL stored on invoice_links docs.
+    match /tenants/{tenantId}/invoices/{invoiceId}/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() &&
+        request.resource.contentType == 'application/pdf';
+    }
+
     // Payslip PDFs
     match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
       allow read: if isTenantMember(tenantId);

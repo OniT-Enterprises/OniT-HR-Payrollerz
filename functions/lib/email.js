@@ -9,7 +9,11 @@ exports.sendQueuedEmail = void 0;
  * the delivery status back onto the doc.
  *
  * Mail doc shape (Trigger-Email compatible):
- *   { to: string | string[], subject, html?, text?, from?, replyTo?, status }
+ *   { to: string | string[], subject, html?, text?, from?, replyTo?, status,
+ *     fromName?, attachments?: [{ filename, url? | content?, contentType? }] }
+ *
+ * `fromName` renders as "{fromName} via Xefe <invoices@xefe.tl>" — the
+ * address itself is fixed here so tenants can brand but never spoof.
  *
  * Secret (set with `firebase functions:secrets:set`):
  *   RESEND_API_KEY — Resend API key (re_...)
@@ -21,6 +25,18 @@ const RESEND_API_KEY = (0, params_1.defineSecret)("RESEND_API_KEY");
 // xefe.tl is verified in Resend (account-level), so all queued mail sends from
 // the branded Xefe address. Per-message `from` overrides still win when set.
 const DEFAULT_FROM = "Xefe <noreply@xefe.tl>";
+// Customer-facing business mail (invoices, reminders, receipts) sends as
+// "{Business} via Xefe" from this address.
+const BUSINESS_FROM_ADDRESS = "invoices@xefe.tl";
+/** "Lele Café" -> "Lele Café via Xefe <invoices@xefe.tl>" (header-safe). */
+function businessFrom(fromName) {
+    if (typeof fromName !== "string")
+        return null;
+    const name = fromName.replace(/[<>"\r\n]/g, "").trim().slice(0, 80);
+    if (!name)
+        return null;
+    return `${name} via Xefe <${BUSINESS_FROM_ADDRESS}>`;
+}
 exports.sendQueuedEmail = (0, firestore_1.onDocumentCreated)({ document: "mail/{mailId}", secrets: [RESEND_API_KEY] }, async (event) => {
     var _a;
     const snap = event.data;
@@ -46,7 +62,7 @@ exports.sendQueuedEmail = (0, firestore_1.onDocumentCreated)({ document: "mail/{
         return;
     }
     const payload = {
-        from: data.from || DEFAULT_FROM,
+        from: data.from || businessFrom(data.fromName) || DEFAULT_FROM,
         to,
         subject: data.subject || "(no subject)",
     };

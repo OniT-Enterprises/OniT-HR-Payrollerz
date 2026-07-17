@@ -61,6 +61,12 @@ export interface QueueEmailInput {
   text?: string;
   html?: string;
   replyTo?: string;
+  /**
+   * Business display name for the From header. The sender composes
+   * "{fromName} via Xefe <invoices@xefe.tl>" — the address itself is never
+   * client-controlled.
+   */
+  fromName?: string;
   attachments?: EmailAttachment[];
   purpose: EmailPurpose;
   relatedId?: string;
@@ -102,6 +108,7 @@ export const notificationService = {
       ...(input.text ? { text: input.text } : {}),
       ...(input.html ? { html: input.html } : {}),
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      ...(input.fromName ? { fromName: input.fromName } : {}),
       ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       ...(input.relatedId ? { relatedId: input.relatedId } : {}),
       ...(input.createdBy ? { createdBy: input.createdBy } : {}),

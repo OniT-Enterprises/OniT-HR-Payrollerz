@@ -158,9 +158,30 @@ export interface Invoice {
 
   // For sharing
   shareToken?: string;             // Random token for public link
+  sentPdfUrl?: string;             // As-sent PDF frozen to Storage on first send
 
   // Payments received (populated by service)
   payments?: PaymentReceived[];
+}
+
+/**
+ * Public hosted-invoice link — top-level `invoice_links/{token}` doc.
+ * Holds a sanitized snapshot of the invoice + branding so an unauthenticated
+ * customer can view it at /i/:token without any access to tenant data.
+ */
+export interface PublicInvoiceLink {
+  tenantId: string;
+  invoiceId: string;
+  /** Sanitized invoice snapshot (no journal/reminder/internal fields). */
+  invoice: Invoice;
+  /** Branding subset of InvoiceSettings used to render the invoice paper. */
+  settings: Partial<InvoiceSettings>;
+  /** As-sent PDF in Storage (download URL), when frozen at send time. */
+  pdfUrl?: string | null;
+  revoked: boolean;
+  viewedAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface InvoiceFormData {
