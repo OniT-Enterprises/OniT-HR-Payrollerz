@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stripeWebhook = exports.syncSubscriptionQuantities = exports.createBillingPortalSession = exports.createCheckoutSession = void 0;
+exports.stripeWebhook = exports.sendRenewalReminders = exports.syncSubscriptionQuantities = exports.createBillingPortalSession = exports.createCheckoutSession = void 0;
 /**
  * Stripe billing — one flat per-employee subscription.
  *
@@ -218,6 +218,113 @@ exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
         catch (error) {
             // One bad tenant must not block the rest of the sweep.
             console.error(`Quantity sync failed for tenant ${tenantId}:`, error);
+        }
+    }
+});
+// Where renewal-reminder ops copies (and tenant replies) go.
+const BILLING_OPS_EMAIL = "info@naroman.tl";
+/**
+ * Daily renewal reminders for MANUAL (bank transfer / cash) subscriptions.
+ * Stripe subs auto-renew and get Stripe's own emails; manual subs have a hard
+ * subscriptionPaidUntil, so we remind the tenant (and ops) at 7 days out,
+ * 1 day out, and once after lapsing. Idempotent per stage per paid-until
+ * value: sending marks renewalReminders.{stage} = paidUntilMillis on the
+ * tenant doc, and recording a new payment moves paidUntil, which re-arms all
+ * stages automatically.
+ */
+exports.sendRenewalReminders = (0, scheduler_1.onSchedule)({
+    schedule: "0 8 * * *", // daily at 08:00 Dili time — lands in the morning
+    timeZone: "Asia/Dili",
+}, async () => {
+    var _a, _b;
+    const db = (0, firestore_1.getFirestore)();
+    const snapshot = await db
+        .collection("tenants")
+        .where("manualSubscription", "==", true)
+        .get();
+    for (const tenantDoc of snapshot.docs) {
+        const tenantId = tenantDoc.id;
+        try {
+            const data = tenantDoc.data();
+            // A live Stripe subscription supersedes the manual one — skip.
+            if (data.stripeSubscriptionId)
+                continue;
+            const paidUntilTs = data.subscriptionPaidUntil;
+            if (!paidUntilTs || typeof paidUntilTs.toMillis !== "function")
+                continue;
+            const paidUntilMs = paidUntilTs.toMillis();
+            const daysLeft = (paidUntilMs - Date.now()) / (24 * 60 * 60 * 1000);
+            const stage = daysLeft < 0 ? "lapsed" : daysLeft <= 1 ? "d1" : daysLeft <= 7 ? "d7" : null;
+            if (!stage)
+                continue;
+            const sentFor = ((_a = data.renewalReminders) !== null && _a !== void 0 ? _a : {});
+            if (sentFor[stage] === paidUntilMs)
+                continue; // already sent this period
+            const name = data.name || tenantId;
+            const paidUntilStr = new Date(paidUntilMs).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                timeZone: "Asia/Dili",
+            });
+            const daysLeftLabel = Math.max(0, Math.ceil(daysLeft));
+            const tenantEmail = data.billingEmail || data.ownerEmail || null;
+            const subject = stage === "lapsed"
+                ? `Your Xefe subscription expired on ${paidUntilStr}`
+                : stage === "d1"
+                    ? "Your Xefe subscription expires tomorrow"
+                    : `Your Xefe subscription expires on ${paidUntilStr}`;
+            const tenantText = [
+                `Hi ${name},`,
+                "",
+                stage === "lapsed"
+                    ? `Your Xefe subscription expired on ${paidUntilStr}, so finalizing payroll runs is locked until it's renewed.`
+                    : `Your Xefe subscription is paid until ${paidUntilStr}. After that date, finalizing payroll runs is locked until it's renewed.`,
+                "",
+                "To renew by bank transfer or cash:",
+                "- Request an invoice from your Billing page: https://xefe.tl/billing",
+                "- Or simply reply to this email and we'll send payment details.",
+                "",
+                "Everything else in Xefe stays free to use.",
+                "",
+                "— The Xefe team",
+            ].join("\n");
+            const mail = db.collection("mail");
+            if (tenantEmail) {
+                await mail.add({
+                    tenantId,
+                    to: [tenantEmail],
+                    replyTo: BILLING_OPS_EMAIL,
+                    subject,
+                    text: tenantText,
+                    status: "pending",
+                    purpose: "billing-renewal-reminder",
+                    createdAt: firestore_1.FieldValue.serverTimestamp(),
+                });
+            }
+            await mail.add({
+                tenantId,
+                to: [BILLING_OPS_EMAIL],
+                subject: stage === "lapsed"
+                    ? `[Xefe ops] ${name}: manual subscription LAPSED (${paidUntilStr})`
+                    : `[Xefe ops] ${name}: manual subscription expires in ${daysLeftLabel}d (${paidUntilStr})`,
+                text: [
+                    `Tenant: ${name} (${tenantId})`,
+                    `Paid until: ${paidUntilStr}`,
+                    `Monthly amount: $${Number((_b = data.monthlySubscriptionAmount) !== null && _b !== void 0 ? _b : 0)}`,
+                    `Tenant contact: ${tenantEmail !== null && tenantEmail !== void 0 ? tenantEmail : "NO EMAIL ON FILE — contact them another way"}`,
+                    "",
+                    "Once payment arrives, record it in Admin -> Tenants -> Record offline payment.",
+                ].join("\n"),
+                status: "pending",
+                purpose: "billing-renewal-reminder-ops",
+                createdAt: firestore_1.FieldValue.serverTimestamp(),
+            });
+            await tenantDoc.ref.set({ renewalReminders: { [stage]: paidUntilMs } }, { merge: true });
+        }
+        catch (error) {
+            // One bad tenant must not block the rest of the sweep.
+            console.error(`Renewal reminder failed for tenant ${tenantId}:`, error);
         }
     }
 });
