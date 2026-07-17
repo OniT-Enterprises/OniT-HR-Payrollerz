@@ -4,7 +4,6 @@
  */
 
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -26,6 +25,7 @@ import {
   isTenantSubscribed,
   normalizeBillingPackagesConfig,
 } from "@/lib/packagePricing";
+import { notificationService } from "@/services/notificationService";
 import { paths } from "@/lib/paths";
 import {
   PackagesConfig,
@@ -311,16 +311,16 @@ async function queuePlatformEmail(params: {
   if (!db || params.to.length === 0) return;
 
   try {
-    await addDoc(collection(db, "mail"), {
+    // Internal admin recipients — a shared "to" is fine here (perRecipient: false)
+    await notificationService.queueEmail({
       tenantId: "platform",
       to: params.to,
       subject: params.subject,
       html: params.html,
-      status: "pending",
-      createdAt: serverTimestamp(),
       createdBy: params.createdBy,
       purpose: "notification",
       relatedId: params.relatedId,
+      perRecipient: false,
     });
   } catch (error) {
     console.warn("Admin notification email could not be queued:", error);

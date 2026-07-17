@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { CheckCircle2, CreditCard, Landmark, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { db } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { usePackagesConfig } from "@/hooks/useAdmin";
@@ -15,6 +13,7 @@ import { useTenantBilling } from "@/hooks/useBilling";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { ALL_FEATURES, isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { billingService } from "@/services/billingService";
+import { notificationService } from "@/services/notificationService";
 import { toast } from "sonner";
 
 // Where offline-payment (bank transfer / cash) invoice requests are sent.
@@ -89,10 +88,10 @@ export default function Billing() {
     try {
       const companyName = session?.config?.name || tenantId;
       const contactEmail = user?.email || "unknown";
-      await addDoc(collection(db, "mail"), {
+      await notificationService.queueEmail({
         tenantId,
-        to: [BILLING_SUPPORT_EMAIL],
-        ...(user?.email ? { replyTo: user.email } : {}),
+        to: BILLING_SUPPORT_EMAIL,
+        replyTo: user?.email || undefined,
         subject: `Xefe invoice request — ${companyName} (${employees} employees, ${formatMoney(projected)}/mo)`,
         text: [
           `Tenant: ${companyName} (${tenantId})`,
@@ -104,9 +103,7 @@ export default function Billing() {
           "The tenant wants to subscribe by bank transfer or cash.",
           "Send them an invoice, then record the payment in Admin → Tenants once it arrives.",
         ].join("\n"),
-        status: "pending",
         purpose: "billing-invoice-request",
-        createdAt: serverTimestamp(),
       });
       setInvoiceRequestState("sent");
       toast.success("Request sent — we'll email your invoice with payment details.");

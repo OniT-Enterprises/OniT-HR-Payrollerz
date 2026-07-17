@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
+import { notificationService } from '@/services/notificationService';
 
 // ============================================
 // Types
@@ -342,12 +343,7 @@ class LeaveService {
     decision: 'approved' | 'rejected',
     opts: { approverName: string; reason?: string },
   ): Promise<boolean> {
-    const empSnap = await getDoc(
-      doc(db, `tenants/${tenantId}/employees/${request.employeeId}`),
-    );
-    const email = (
-      empSnap.data()?.personalInfo?.email as string | undefined
-    )?.trim();
+    const email = await notificationService.getEmployeeEmail(tenantId, request.employeeId);
     if (!email) return false;
 
     const period =
@@ -373,18 +369,16 @@ class LeaveService {
         : `Ita-nia pedidu lisensa (${label}) ba ${period} (loron ${request.duration}) LA APROVA husi ${opts.approverName}.`,
       ...(!approved && opts.reason ? [`Razaun: ${opts.reason}`] : []),
       '',
-      '— Xefe / Ekipa',
+      notificationService.bilingualFooter(),
     ].join('\n');
 
-    await addDoc(collection(db, 'mail'), {
+    await notificationService.queueEmail({
       tenantId,
-      to: [email],
+      to: email,
       subject,
       text,
-      status: 'pending',
       purpose: 'leave-decision',
-      ...(request.id ? { relatedId: request.id } : {}),
-      createdAt: serverTimestamp(),
+      relatedId: request.id,
     });
     return true;
   }

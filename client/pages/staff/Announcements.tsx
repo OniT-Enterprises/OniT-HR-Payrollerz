@@ -57,11 +57,10 @@ import {
   getDocs,
   query,
   orderBy,
-  where,
-  writeBatch,
   Timestamp,
   serverTimestamp,
 } from "firebase/firestore";
+import { notificationService } from "@/services/notificationService";
 import {
   Megaphone,
   Plus,
@@ -152,49 +151,23 @@ export default function Announcements() {
   };
 
   /**
-   * Queue one email per active employee with an address on file (one doc per
-   * recipient — the mail sender has no BCC, and a shared "to" would leak
-   * everyone's address). Returns how many were queued.
+   * Email the announcement to all active staff via the shared notification
+   * service (per-recipient fan-out — addresses never leak). Returns count.
    */
   const emailAnnouncementToStaff = async (title: string, body: string): Promise<number> => {
-    const employeesSnap = await getDocs(
-      query(collection(db, `tenants/${tenantId}/employees`), where("status", "==", "active")),
-    );
-    const emails = [
-      ...new Set(
-        employeesSnap.docs
-          .map((d) => (d.data()?.personalInfo?.email as string | undefined)?.trim())
-          .filter((e): e is string => Boolean(e)),
-      ),
-    ];
+    const emails = await notificationService.getActiveStaffEmails(tenantId);
     if (emails.length === 0) return 0;
 
     const companyName = session?.config?.name || "Xefe";
     const senderName = user?.displayName || user?.email || t("announcements.createdByFallback");
-    const text = [
-      body,
-      "",
-      `— ${senderName}, ${companyName}`,
-      "(Announcement via Xefe — also in your Ekipa app / Avizu liuhusi Xefe — haree mós iha Ekipa)",
-    ].join("\n");
 
-    // Batched writes; Firestore caps batches at 500 ops
-    for (let i = 0; i < emails.length; i += 400) {
-      const batch = writeBatch(db);
-      for (const email of emails.slice(i, i + 400)) {
-        batch.set(doc(collection(db, "mail")), {
-          tenantId,
-          to: [email],
-          subject: `📢 ${companyName}: ${title}`,
-          text,
-          status: "pending",
-          purpose: "announcement",
-          createdAt: serverTimestamp(),
-        });
-      }
-      await batch.commit();
-    }
-    return emails.length;
+    return notificationService.queueEmail({
+      tenantId,
+      to: emails,
+      subject: `📢 ${companyName}: ${title}`,
+      text: [body, "", notificationService.bilingualFooter({ senderName, companyName })].join("\n"),
+      purpose: "announcement",
+    });
   };
 
   const openCreateDialog = () => {

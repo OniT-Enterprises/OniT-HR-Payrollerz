@@ -26,6 +26,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { notificationService } from '@/services/notificationService';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
 import { addMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
 import {
@@ -1018,17 +1019,15 @@ class InvoiceService {
         : []),
     ];
 
-    await addDoc(collection(db, 'mail'), {
+    await notificationService.queueEmail({
       tenantId,
-      to: [invoice.customerEmail],
-      ...(settings.companyEmail ? { replyTo: settings.companyEmail } : {}),
+      to: invoice.customerEmail,
+      replyTo: settings.companyEmail || undefined,
       subject: `Invoice ${invoice.invoiceNumber} from ${companyName} — ${formatInvoiceMoney(invoice.total)} due ${formatInvoiceDate(invoice.dueDate)}`,
       html,
       text: textLines.join('\n'),
-      status: 'pending',
       purpose: 'invoice',
       relatedId: invoice.id,
-      createdAt: serverTimestamp(),
     });
   }
 
@@ -1219,12 +1218,11 @@ class InvoiceService {
       updatedAt: serverTimestamp(),
     });
 
-    // Queue reminder email via Firestore mail collection
+    // Queue reminder email via the shared notification service
     if (invoice.customerEmail) {
-      const mailRef = collection(db, 'mail');
-      await addDoc(mailRef, {
+      await notificationService.queueEmail({
         tenantId,
-        to: [invoice.customerEmail],
+        to: invoice.customerEmail,
         subject: `Payment Reminder: Invoice ${invoice.invoiceNumber}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1243,10 +1241,8 @@ class InvoiceService {
           </div>
         `,
         text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${invoice.balanceDue.toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
-        status: 'pending',
-        purpose: 'notification',
+        purpose: 'invoice-reminder',
         relatedId: id,
-        createdAt: serverTimestamp(),
       });
     }
 
