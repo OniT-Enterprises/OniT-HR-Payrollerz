@@ -32,7 +32,7 @@ import {
   PieChart,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { exportToCSV } from "@/lib/csvExport";
 
 interface DepartmentStats {
@@ -46,7 +46,9 @@ interface DepartmentStats {
 
 export default function DepartmentReports() {
   const navigate = useNavigate();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
+  const canManageTenant = canManage();
   const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(tenantId, 100);
   const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
   const [dateRange, setDateRange] = useState("30");
@@ -413,10 +415,12 @@ export default function DepartmentReports() {
                 <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{t("reports.department.table.empty")}</p>
                 <p className="text-sm mb-4">{t("reports.department.table.emptyDescription")}</p>
-                <Button variant="outline" onClick={() => navigate("/settings/departments")}>
-                  <Building className="h-4 w-4 mr-2" />
-                  {t("reports.department.table.goToDepartments")}
-                </Button>
+                {canManageTenant && (
+                  <Button variant="outline" onClick={() => navigate("/settings/departments")}>
+                    <Building className="h-4 w-4 mr-2" />
+                    {t("reports.department.table.goToDepartments")}
+                  </Button>
+                )}
               </div>
             ) : (
               <>

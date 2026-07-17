@@ -84,6 +84,8 @@ const messages = {
     "moreActions": "Asaun tan",
     "openMenu": "Loke menu",
     "closeMenu": "Taka menu",
+    "mainNavigation": "Navigasaun prinsipál",
+    "skipToContent": "Ba diretamente ba konteúdu",
     "accountMenu": "Menu konta",
     "switchToLight": "Muda ba tema naroman",
     "switchToDark": "Muda ba tema nakukun",
@@ -103,6 +105,8 @@ const messages = {
     "retry": "Koko fali",
     "connectionIssueTitle": "Problema ligasaun",
     "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
+    "accountRecoveryTitle": "La konsege loke ita-nia konta",
+    "accountRecoveryDesc": "Ami la konsege karrega konta ida-ne'e. Koko fali, ka uza konta seluk.",
     "offlineTitle": "Agora laiha ligasaun",
     "offlineDesc": "Mudansa sira bele seidauk rai to'o internet fila fali.",
     "months": {
@@ -499,7 +503,8 @@ const messages = {
     "onboarding": {
       "title": "Kria Ita-nia Organizasaun",
       "subtitle": "Konfigura Ita-nia kompanhia atu komesa uza Xefe",
-      "createButton": "Kria Organizasaun"
+      "createButton": "Kria Organizasaun",
+      "useAnotherAccount": "Uza konta seluk"
     },
     "demoCredentials": "Kredensial demonstrasaun:",
     "demoEmail": "Email: {{email}}",
@@ -517,12 +522,13 @@ const messages = {
       "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
       "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
       "invalidEmail": "Enderesu email invállidu.",
-      "resetFailed": "La konsege haruka email reset. Favór koko fali."
+      "resetFailed": "La konsege haruka email reset. Favór koko fali.",
+      "signOutFailed": "La konsege sai. Favór koko fali."
     },
     "signup": {
       "titleAccount": "Kria Ita-nia Konta",
       "titleOrganization": "Konfigura Ita-nia Organizasaun",
-      "subtitleAccount": "Hahu trial grátis. La presiza kartaun kreditu.",
+      "subtitleAccount": "Planu gratuitu ba empregadu to'o 5. La presiza kartaun.",
       "subtitleOrganization": "Hatete mai kona-ba ita-nia kompanhia",
       "stepAccount": "Konta",
       "stepOrganization": "Organizasaun",
@@ -544,7 +550,7 @@ const messages = {
       "creating": "Kria hela...",
       "createAccount": "Kria Konta",
       "trialLabel": "Grátis",
-      "trialValue": "Trial loron 14",
+      "trialValue": "Empregadu to'o 5",
       "employeesLabel": "Empregadu",
       "featuresLabel": "Fitur",
       "allValue": "Hotu"
@@ -1153,7 +1159,7 @@ const messages = {
         "cheque": "Cheque",
         "other": "Seluk"
       },
-      "bankAccounts": "Konta Banku",
+      "bankAccounts": "Pagamentu Saláriu",
       "bankAccountsHint": "Tau konta ba folha, impostu no seguransa sosial",
       "addAccount": "Tau Konta",
       "noAccounts": "Laiha konta banku",
@@ -1168,6 +1174,10 @@ const messages = {
       "accountNumber": "Numero Konta",
       "branchCode": "Kodigo Balkao (opcional)",
       "payrollFrequency": "Frequensia Folha",
+      "validationTitle": "Verifika konfigurasaun pagamentu",
+      "selectMethodError": "Hili pelumenus métodu ida atu selu saláriu.",
+      "selectFrequencyError": "Hili pelumenus frekuénsia payroll ida.",
+      "bankDetailsError": "Kompleta naran banku no númeru konta, ka hasai konta mamuk.",
       "frequencyLabels": {
         "hourly": "Hora",
         "daily": "Loron",
@@ -1197,6 +1207,7 @@ const messages = {
       "paidPercentage": "Percentajen Paga",
       "requiresMedicalCert": "Presiza sertifikadu mediku",
       "maternityDaysHint": "Loron (12 semana = 84 loron)",
+      "invalidValues": "Uza loron no persentajen válidu. Persentajen tenke 0–100 no períodu esperiénsia 0–12 fulan.",
       "save": "Rai Politika Lisensa"
     },
     "payroll": {
@@ -1229,6 +1240,7 @@ const messages = {
       "paymentDeadline": "Prazu Pagamentu",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Formatu: MM-DD (ez.: 12-20 ba 20 Desembru)",
+      "invalidValues": "Verifika taxa, oras no prazu pagamentu. Persentajen tenke 0–100 no prazu MM-DD.",
       "prorataHint": "Pro-rata ba empregadu ho menus de 12 fulan",
       "save": "Rai Konfigurasaun Folha"
     },
@@ -2697,7 +2709,13 @@ const messages = {
         "savedDesc": "Konfigurasaun exportasaun QuickBooks atualiza ona.",
         "saveFailed": "La konsege rai. Favor koko fali.",
         "resetTitle": "Reset Konklui",
-        "resetDesc": "Mapeamentu konta reset ba padraun."
+        "resetDesc": "Mapeamentu konta reset ba padraun.",
+        "readyMappings": "Exportasaun QuickBooks prontu ho mapeamentu konta {{count}}.",
+        "accountCount": "konta {{count}}",
+        "status": "Estadu",
+        "default": "Padraun",
+        "custom": "Personalizadu",
+        "accountPlaceholder": "Hatama naran konta QuickBooks"
       }
     }
   },
@@ -2822,6 +2840,11 @@ const messages = {
     "setupComplete": "Konfigurasaun Kompletu",
     "accountReady": "Ita-nia konta prontu atu uza!",
     "failedComplete": "La konsege kompleta konfigurasaun.",
+    "loadFailedTitle": "Ami la konsege karrega konfigurasaun",
+    "loadFailedDesc": "Verifika ligasaun no koko fali. Konfigurasaun ezistente seidauk muda.",
+    "stepAlreadySaved": "Etapa ida-ne'e rai tiha ona",
+    "stepAlreadySavedDesc": "Kontinua ba etapa tuirmai ne'ebé seidauk remata. Troka detallu ne'ebé rai ona iha Definisaun.",
+    "payDayRange": "Loron pagamentu tenke entre 1 no 28.",
     "legalName": "Naran Legál *",
     "legalNamePlaceholder": "Ita-nia Empreza Lda.",
     "tradingName": "Naran Komersial",
@@ -2840,7 +2863,11 @@ const messages = {
     "phonePlaceholder": "+670 ...",
     "email": "Email",
     "emailPlaceholder": "info@empreza.tl",
-    "bankIntro": "Hatama ita-nia konta banku prinsipál ba pagamentu saláriu. Bele hatama konta seluk iha Konfigurasaun depois.",
+    "bankIntro": "Hili oinsá Ita normalmente selu saláriu. Ita bele muda ida-ne'e iha Konfigurasaun.",
+    "paymentMethod": "Métodu pagamentu saláriu",
+    "cash": "Osan",
+    "bankTransfer": "Transferénsia bankária",
+    "cashInfo": "La presiza detallu banku. Ita bele aumenta konta banku depois se prosesu muda.",
     "bankName": "Naran Banku *",
     "selectBank": "Hili banku",
     "accountName": "Naran Konta",
@@ -3041,7 +3068,9 @@ const messages = {
       "sourceManual": "Manual",
       "sourcePayroll": "Saláriu",
       "sourceInvoice": "Fatura",
+      "sourceBill": "Kontas selu",
       "sourceAdjustment": "Ajustamentu",
+      "sourceClosing": "Taka",
       "sourceOpening": "Abertura",
       "sourceExpense": "Despeza",
       "sourceRevenue": "Rendimentu",
@@ -3784,6 +3813,12 @@ const messages = {
     "setup": {
       "title": "Relatoriu Konfigurasaun",
       "subtitle": "Konfigurasaun sistema no analize setup",
+      "missing": {
+        "title": "Konfigurasaun kompania seidauk hahú",
+        "managerDescription": "Kompleta konfigurasaun badak kompania nian molok uza relatoriu ida-ne'e.",
+        "viewerDescription": "Administradór tenke kompleta konfigurasaun kompania molok relatoriu ida-ne'e disponivel.",
+        "action": "Hahú konfigurasaun kompania"
+      },
       "stats": {
         "setupProgress": "Progresu Setup",
         "stepsComplete": "{{completed}} husi etapa {{total}}",
@@ -3905,7 +3940,95 @@ const messages = {
     },
     "custom": {
       "title": "Relatoriu personalizadu",
-      "subtitle": "Kria no personaliza relatoriu rasik"
+      "subtitle": "Kria no personaliza relatoriu rasik",
+      "noDataTitle": "Dadus ba relatoriu seidauk disponivel",
+      "noDataDescription": "Husu administradór atu fó asesu ba Ema ka Oras no Lisensa molok kria relatoriu personalizadu.",
+      "buildReport": "Kria relatoriu",
+      "templatesTitle": "Modelu",
+      "templatesDescription": "Hahu ho relatoriu ne'ebé prontu, ka kria ida ba sesaun ida-ne'e.",
+      "noTemplates": "La iha modelu disponivel ba ita-nia modulu.",
+      "columnCount": "Koluna {{count}}",
+      "noDescription": "La iha deskrisaun",
+      "template": "Modelu",
+      "lastRun": "Hala'o ikus {{date}}",
+      "run": "Hala'o",
+      "previewTitle": "Haree relatoriu",
+      "recordsFound": "Hetan rejistu {{count}}",
+      "exportCsv": "Exporta CSV",
+      "clearPreview": "Hamoos haree relatoriu",
+      "noMatches": "La iha dadus ne'ebé hanesan ho kritériu",
+      "showingLimited": "Hatudu rejistu 20 husi {{count}}. Exporta atu haree hotu.",
+      "builder": {
+        "title": "Kria relatoriu personalizadu",
+        "description": "Hili fonte dadus, koluna ne'ebé presiza no filtru opsionál.",
+        "name": "Naran relatoriu",
+        "namePlaceholder": "Ezemplu, Empregadu ativu tuir departamentu",
+        "optionalDescription": "Deskrisaun (opsionál)",
+        "descriptionPlaceholder": "Deskrisaun badak kona-ba relatoriu",
+        "dataSource": "Fonte dadus",
+        "employees": "Empregadu",
+        "attendance": "Rejistu prezensa",
+        "departments": "Departamentu",
+        "selectColumns": "Hili koluna ({{count}} hili ona)",
+        "filters": "Filtru",
+        "department": "Departamentu",
+        "allDepartments": "Departamentu hotu",
+        "status": "Estadu",
+        "allStatuses": "Estadu hotu",
+        "active": "Ativu",
+        "inactive": "Inativu",
+        "onboarding": "Integrasaun",
+        "dateRange": "Intervalu data",
+        "running": "Hala'o hela…",
+        "runReport": "Hala'o relatoriu"
+      },
+      "columns": {
+        "firstName": "Naran primeiru",
+        "lastName": "Apelidu",
+        "email": "Email",
+        "phone": "Telefone",
+        "employeeId": "ID empregadu",
+        "department": "Departamentu",
+        "position": "Pozisaun",
+        "hireDate": "Data kontrata",
+        "employmentType": "Tipu empregu",
+        "salary": "Saláriu fulan",
+        "status": "Estadu",
+        "date": "Data",
+        "employeeName": "Naran empregadu",
+        "clockIn": "Tama",
+        "clockOut": "Sai",
+        "regularHours": "Oras regulár",
+        "overtimeHours": "Oras estra",
+        "lateMinutes": "Minutu tarde",
+        "departmentName": "Naran departamentu",
+        "director": "Diretór",
+        "manager": "Jestór"
+      },
+      "templates": {
+        "activeEmployees": {
+          "name": "Lista empregadu ativu",
+          "description": "Empregadu ativu no sira-nia informasaun kontaktu"
+        },
+        "monthlyAttendance": {
+          "name": "Rezumu prezensa mensal",
+          "description": "Rejistu prezensa ba fulan agora"
+        },
+        "departmentHeadcount": {
+          "name": "Númeru empregadu tuir departamentu",
+          "description": "Númeru empregadu iha kada departamentu"
+        }
+      },
+      "toast": {
+        "generated": "Relatoriu kria ona",
+        "generatedDescription": "Hetan rejistu {{count}}",
+        "error": "La bele hala'o relatoriu",
+        "generateFailed": "La bele kria relatoriu. Koko fali.",
+        "validationError": "Dadus relatoriu seidauk kompletu",
+        "validationDescription": "Hatama naran relatoriu no hili pelumenus koluna ida.",
+        "exported": "Exportasaun remata",
+        "exportedDescription": "Relatoriu exporta ona ba CSV."
+      }
     },
     "employee": {
       "title": "Relatoriu Empregadu",
@@ -4244,6 +4367,7 @@ const messages = {
       },
       "actions": {
         "export": "Exporta CSV",
+        "exportDr": "Excel DR (portál INSS)",
         "view": "Haree",
         "markStatement": "Marka deklarasaun",
         "markPayment": "Marka pagamentu"
@@ -4283,6 +4407,8 @@ const messages = {
         "noDataDescription": "Laiha dadus folha ba {{period}}. Hala'o folha uluk, depois kria deklarasaun.",
         "exportedTitle": "Exporta ona",
         "exportedDescription": "Deklarasaun INSS exporta ona ba CSV.",
+        "drExportedDescription": "Excel DR INSS download ona — koluna sira tuir modelu ofisiál portál.",
+        "drExportError": "La konsege exporta ficheiru Excel DR.",
         "savedTitle": "Rai ona",
         "savedDescription": "{{task}} INSS marka ona hanesan hatama ona.",
         "updateErrorTitle": "Erru",
@@ -4456,6 +4582,21 @@ const messages = {
         "view": "Haree",
         "markFiled": "Marka hatama"
       },
+      "etax": {
+        "title": "Preenxe iha e-Tax (asistidu)",
+        "description": "Formuláriu Impostu Rendimentu Saláriu Mensál husu de'it totál rua-ne'e. Kopia ba portál e-Tax no submete iha ne'ebá — Xefe nunka submete hodi ita.",
+        "residentAccount": "Impostu Rendimentu Saláriu Mensál Doméstiku ba Rezidente",
+        "nonResidentAccount": "Impostu Rendimentu Saláriu Mensál Doméstiku ba La'ós Rezidente",
+        "line1": "Totál saláriu brutu ne'ebé selu durante fulan",
+        "line2": "Totál impostu rendimentu saláriu ne'ebé reten durante fulan"
+      },
+      "payment": {
+        "title": "Oinsá atu selu (ATTL)",
+        "description": "Entrega kópia tolu hosi Formuláriu Impostu Mensál ho pagamentu iha filíál BNU ida, ka selu ho transferénsia bankária ho marka \"pagamentu eletróniku\". Data limite mak loron 15 fulan tuir mai.",
+        "beneficiary": "Benefisiáriu",
+        "bank": "Banku",
+        "account": "Konta impostu rendimentu saláriu (IBAN)"
+      },
       "alerts": {
         "overdueTitle": "Arkivu tarde ona",
         "overdueDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}}. Favór submete lalais atu evita multa.",
@@ -4587,6 +4728,26 @@ const messages = {
         "employer": "Empregadór",
         "period": "Períodu"
       }
+    },
+    "profitLoss": {
+      "etax": {
+        "title": "Preenxe impostu prestasaun iha e-Tax (asistidu)",
+        "description": "Impostu prestasaun mensál mak 0,5% hosi volume negósiu brutu. Verifika rendimentu períodu nian, depois submete iha portál e-Tax — Xefe nunka submete hodi ita.",
+        "account": "Impostu Prestasaun Doméstiku",
+        "revenue": "Rendimentu ba Períodu",
+        "rate": "Taxa Impostu",
+        "taxToPay": "Impostu atu Selu"
+      }
+    },
+    "etaxFiling": {
+      "copied": "Kopia ona",
+      "copy": "Kopia valor",
+      "copyFailed": "La konsege kopia. Hili no kopia valor manualmente.",
+      "employeeCount": "Empregadu: {{count}}",
+      "openPortal": "Loke portál e-Tax",
+      "step1": "Loke portál e-Tax no tama.",
+      "step2": "Iha Deklarasaun, hili konta ne'ebé loos no períodu ida-ne'e.",
+      "step3": "Hatama valor sira iha leten, reviza no submete iha portál."
     }
   },
   "people": {
@@ -4905,6 +5066,8 @@ const messages = {
       "showing": "Hatudu",
       "customer": "kliente",
       "customers": "kliente",
+      "phone": "Telefone",
+      "email": "Email",
       "business": "Negosiu",
       "individual": "Individuál",
       "name": "Naran",
@@ -4932,6 +5095,12 @@ const messages = {
       "subtitle": "Kria no jere fatura",
       "new": "Fatura Foun",
       "newInvoice": "Fatura Foun",
+      "newCustomer": "Kliente foun…",
+      "newCustomerTitle": "Kliente Foun",
+      "newCustomerDesc": "Hatama informasaun kliente. Ita bele kompleta tan depois.",
+      "addCustomer": "Tau Kliente",
+      "customerAdded": "Kliente tau ona",
+      "customerAddError": "La konsege tau kliente",
       "editInvoice": "Edita Fatura",
       "searchPlaceholder": "Buka fatura...",
       "noResults": "Fatura la hetan",
@@ -5643,6 +5812,7 @@ const messages = {
     "deductions": "Dedusaun",
     "netPay": "Líkidu",
     "noEmployeesFound": "Laiha trabalhador",
+    "noEmployeesAdminHelp": "Laiha trabalhador ativu. Husu ba jestór ho asesu ba Ema atu aumenta ida.",
     "tryAdjustSearch": "Koko ajusta termu buka ka hamoos filtru",
     "payrollWarnings": "Avizu Saláriu {{count}}",
     "warningBelowMinWage": "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
@@ -6040,7 +6210,13 @@ const messages = {
     "toastSelectRunAndBank": "Favór hili folha pagamentu no banku ida pelumenus.",
     "toastRunNotFound": "Folha pagamentu hili tiha la hetan.",
     "toastBankFilesSuccess": "Kria {{count}} ficheiro banku ho susesu.",
+    "toastBankFilesSuccessWithExcluded": "Kria ficheiro banku {{count}}. Empregadu {{excluded}} ne'ebé simu osan ka uza banku ne'ebé seidauk suporta la tama.",
     "toastBankFilesError": "La konsege kria ficheiro banku. Favór koko fali.",
+    "toastBankDetailsError": "Verifika dadus banku kompania no empregadu nian, depois koko fali.",
+    "toastPayrollDataError": "La bele karrega rejistu empregadu folha pagamentu balu. Atualiza pájina molok kria ficheiro.",
+    "bankDetailsRequired": "Hatama konta banku saláriu kompania ne'ebé válidu no kompleta dadus banku empregadu nian.",
+    "missingEmployeeRecordsNotice": "La bele karrega rejistu empregadu folha pagamentu {{count}}. Atualiza molok kria ficheiro banku.",
+    "excludedEmployeesNotice": "Empregadu {{count}} simu osan ka uza banku ne'ebé seidauk iha formatu suporta, nune'e sira la tama.",
     "toastValidationError": "Erru Validasaun",
     "toastValidationDesc": "Favór prenxe kampu obrigatóriu hotu.",
     "toastTransferSuccess": "Susesu",
@@ -6099,6 +6275,203 @@ const messages = {
     "accountingBody": "Ida ne’e ita-nia livru razãu formál — lansamantu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamantu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
     "reportsTitle": "Bemvindu ba Relatóriu.",
     "reportsBody": "Kria no reviza relatóriu husi ita-nia operasaun tomak — sumáriu folha pagamentu, lista empregádu, relatóriu finanseiru, no dokumentu konformidade. Hili tipu relatóriu iha kraik atu hahú."
+  },
+  "moduleDashboards": {
+    "common": {
+      "needsAttention": "Presiza Ita-nia atensaun",
+      "day": "loron",
+      "days": "loron"
+    },
+    "people": {
+      "title": "Ema",
+      "seoDescription": "Ferramenta ba staf, rekrutamentu, lisensa no dezempénhu iha fatin ida.",
+      "subtitle": "Staf ativu {{count}}. Buka ema ida, ka ba buat ne'ebé presiza Ita.",
+      "subtitleNoStaff": "Ba ferramenta ba ema ne'ebé Ita-nia ekipa uza.",
+      "addEmployee": "Aumenta funsionáriu",
+      "searchPlaceholder": "Buka ema — naran, kargu, ka númeru ID…",
+      "searchAria": "Buka funsionáriu",
+      "allGood": "Hotu remata ona — agora laiha buat ne'ebé presiza atensaun.",
+      "recentlyAdded": "Aumenta foin lalais",
+      "unnamed": "Laiha naran",
+      "attention": {
+        "leaveRequest": "pedidu lisensa ida hein aprovasaun",
+        "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+        "employeeMissingInfo": "funsionáriu ida falta informasaun obrigatóriu",
+        "employeesMissingInfo": "funsionáriu sira falta informasaun obrigatóriu",
+        "certificateExpiring": "sertifikadu ida sei expira iha loron 30 nia laran",
+        "certificatesExpiring": "sertifikadu sira sei expira iha loron 30 nia laran",
+        "openCase": "kazu funsionáriu ida sei nakloke",
+        "openCases": "kazu funsionáriu sira sei nakloke"
+      },
+      "cards": {
+        "staff": "Staf",
+        "active": "{{count}} ativu",
+        "hiring": "Rekrutamentu",
+        "interviewScheduled": "entrevista {{count}} planeadu",
+        "interviewsScheduled": "entrevista {{count}} planeadu",
+        "timeLeave": "Tempu & Lisensa",
+        "onLeaveToday": "{{count}} iha lisensa ohin",
+        "performance": "Dezempénhu",
+        "activeGoal": "objetivu ativu {{count}}",
+        "activeGoals": "objetivu ativu {{count}}"
+      }
+    },
+    "scheduling": {
+      "title": "Tempu & Lisensa",
+      "seoDescription": "Kobertura, prezensa, aprovasaun lisensa no planeamentu turnu iha fatin ida.",
+      "subtitle": "Staf {{available}} husi {{total}} disponível ohin (kobertura {{rate}}%).",
+      "subtitleEmpty": "Aprova lisensa, kontrola prezensa no planeia turnu.",
+      "attendanceAction": "Prezensa",
+      "shiftsAction": "Oráriu turnu",
+      "allGood": "Kobertura di'ak — agora laiha buat ne'ebé presiza atensaun.",
+      "attention": {
+        "leaveRequest": "pedidu lisensa ida hein aprovasaun",
+        "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+        "lateArrival": "to'o tarde ohin",
+        "lateArrivals": "to'o tarde ohin",
+        "absentToday": "ausente ohin"
+      },
+      "cards": {
+        "attendance": "Prezensa",
+        "availableToday": "{{rate}}% disponível ohin",
+        "leave": "Lisensa",
+        "onLeaveToday": "{{count}} iha lisensa ohin",
+        "timeTracking": "Kontrola Tempu",
+        "timeTrackingMeta": "Rejistu tama no oras servisu",
+        "shifts": "Turnu",
+        "shiftsMeta": "Planeia lista turnu semanal"
+      }
+    },
+    "payroll": {
+      "title": "Saláriu",
+      "seoDescription": "Prosesu saláriu, jere pagamentu no akompaña prazu WIT no INSS.",
+      "estimatedGross": "estimasaun brutu {{amount}}",
+      "nextPaydayIn": "loron pagamentu tuir mai iha",
+      "historyAction": "Istória",
+      "runAction": "Halo saláriu",
+      "allGood": "Saláriu lao tuir planu — laiha buat ne'ebé presiza atensaun molok loron pagamentu.",
+      "attention": {
+        "employeeBlocking": "funsionáriu falta informasaun ne'ebé taka prosesu saláriu",
+        "employeesBlocking": "funsionáriu sira falta informasaun ne'ebé taka prosesu saláriu",
+        "leaveRequest": "pedidu lisensa hein aprovasaun",
+        "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+        "monthlyWitDueIn": "WIT mensál tenke selu iha",
+        "inssDueIn": "Pagamentu INSS tenke selu iha"
+      },
+      "cards": {
+        "runPayroll": "Halo saláriu",
+        "staffInCycle": "staf {{count}} iha siklu",
+        "history": "Istória",
+        "recentRun": "prosesu foin lalais {{count}}",
+        "recentRuns": "prosesu foin lalais {{count}}",
+        "noRuns": "Seidauk iha prosesu",
+        "bankTransfers": "Transferénsia bankária",
+        "readyToPay": "{{count}} prontu atu selu",
+        "exportPay": "Esporta & selu",
+        "taxInss": "Impostu & INSS",
+        "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron"
+      }
+    },
+    "money": {
+      "title": "Osan",
+      "seoDescription": "Fatura, konta, despeza no relatóriu finanseiru iha fatin ida.",
+      "summary": "{{collected}} simu fulan ida-ne'e · {{outstanding}} seidauk simu.",
+      "viewBills": "Haree konta",
+      "newInvoice": "Fatura foun",
+      "allGood": "Fluxu osan di'ak — laiha item atrasu ka konta ne'ebé tenke selu semana ida-ne'e.",
+      "attention": {
+        "overdueInvoice": "Kontaktu fali kona-ba fatura atrasu {{count}} — {{amount}} atrasu",
+        "overdueInvoices": "Kontaktu fali kona-ba fatura atrasu {{count}} — {{amount}} atrasu",
+        "overdueBill": "Selu konta atrasu {{count}} — {{amount}}",
+        "overdueBills": "Selu konta atrasu {{count}} — {{amount}}",
+        "billDueThisWeek": "Konta {{count}} tenke selu semana ida-ne'e — {{amount}}",
+        "billsDueThisWeek": "Konta {{count}} tenke selu semana ida-ne'e — {{amount}}",
+        "draftInvoice": "Haruka rascunhu fatura {{count}}",
+        "draftInvoices": "Haruka rascunhu fatura {{count}}"
+      },
+      "cards": {
+        "invoices": "Fatura",
+        "outstanding": "{{amount}} seidauk simu",
+        "bills": "Konta",
+        "overdue": "{{count}} atrasu",
+        "dueThisWeek": "{{amount}} tenke selu semana ida-ne'e",
+        "expenses": "Despeza",
+        "expensesMeta": "Kontrola gastu",
+        "financialReports": "Relatóriu Finanseiru",
+        "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT"
+      }
+    },
+    "accounting": {
+      "title": "Kontabilidade",
+      "seoDescription": "Lansu jornál, estrutura konta no demonstrasaun finanseira iha fatin ida.",
+      "summaryPosted": "Saláriu ikus lança ona iha {{date}} · {{amount}}.",
+      "summaryNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade.",
+      "summaryNoPayroll": "Reviza lansu jornál no mantén balansu tentativa loos.",
+      "newEntry": "Lansu foun",
+      "reviewPayroll": "Reviza lansu jornál saláriu",
+      "allGoodWithPayroll": "Kontas balansu ona no saláriu lança ona — laiha buat ne'ebé presiza atensaun.",
+      "allGood": "Kontas balansu ona — laiha buat ne'ebé presiza atensaun.",
+      "attention": {
+        "trialBalance": "Balansu tentativa la balansu",
+        "draftEntry": "Rascunhu lansu jornál {{count}} atu reviza",
+        "draftEntries": "Rascunhu lansu jornál {{count}} atu reviza",
+        "payrollNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade"
+      },
+      "cards": {
+        "chartOfAccounts": "Planu Konta",
+        "ledgerStructure": "Estrutura livru kontabilidade",
+        "journalEntries": "Lansu Jornál",
+        "pending": "{{count}} hein",
+        "trialBalance": "Balansu Tentativa",
+        "balanced": "Balansu",
+        "outOfBalance": "La balansu",
+        "balanceSheet": "Balansu",
+        "live": "Ativu",
+        "pendingPayroll": "Hein saláriu",
+        "financialPosition": "Pozisaun finanseira"
+      }
+    },
+    "reports": {
+      "title": "Relatóriu",
+      "seoDescription": "Relatóriu saláriu, ema, prezensa, departamentu no kompliansia iha fatin ida.",
+      "summarySingle": "Família relatóriu {{count}} · {{compliance}}.",
+      "summaryPlural": "Família relatóriu {{count}} · {{compliance}}.",
+      "summaryReadOnlySingle": "Família relatóriu {{count}} disponivel.",
+      "summaryReadOnlyPlural": "Família relatóriu {{count}} disponivel.",
+      "reportSetup": "Konfigura relatóriu",
+      "customReports": "Relatóriu personalizadu",
+      "filingRunway": "Prazu deklarasaun",
+      "allGood": "Laiha deklarasaun impostu atu entrega — prazu hotu klaru.",
+      "browseReports": "Buka relatóriu",
+      "compliance": {
+        "filingOverdue": "deklarasaun {{count}} atrasu",
+        "filingsOverdue": "deklarasaun {{count}} atrasu",
+        "filingDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
+        "filingsDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
+        "noneDue": "laiha deklarasaun atu entrega"
+      },
+      "filings": {
+        "monthlyWit": "WIT {{period}}",
+        "annualWit": "WIT anuál {{period}}",
+        "inssPayment": "Pagamentu INSS {{period}}",
+        "inssStatement": "Deklarasaun INSS {{period}}",
+        "overdue": "atrasu loron {{days}}",
+        "dueToday": "tenke entrega ohin",
+        "dueTomorrow": "tenke entrega aban",
+        "daysLeft": "falta loron {{days}}",
+        "line": "{{label}} — {{descriptor}} (prazu {{date}})"
+      },
+      "families": {
+        "payroll-reports": "Payslip, vista impostu, detallu tinan no rezumu saláriu.",
+        "employee-reports": "Númeru staf, movimentu, estrutura ekipa no relatóriu funsionáriu.",
+        "attendance-reports": "Ausénsia, oras estra, pontualidade no tendénsia tempu.",
+        "department-reports": "Kompara kustu, alokasaun no relatóriu organizasaun.",
+        "ngo": "Pakote alokasaun no exportasaun ba doador husi fundu restritu.",
+        "custom": "Kria relatóriu, rai relatóriu no kontrola nia konfigurasaun.",
+        "fallbackSingle": "Relatóriu {{count}} iha área ida-ne'e.",
+        "fallbackPlural": "Relatóriu {{count}} iha área ida-ne'e."
+      }
+    }
   },
   "locale": {
     "en": "English",

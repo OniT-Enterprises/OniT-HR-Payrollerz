@@ -5,7 +5,7 @@
  * Mobile: slide-over drawer with backdrop.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModulePermission } from "@/types/tenant";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 // --- Module definitions (matches MainNavigation's NAV_ITEMS) ---
 
@@ -229,6 +230,8 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
           <button
             onMouseEnter={() => prefetchRoute(path)}
             onClick={() => onNavigate(path)}
+            aria-label={displayLabel}
+            aria-current={active ? "page" : undefined}
             className={`
               w-full flex items-center justify-center h-10 rounded-lg transition-all
               ${active
@@ -254,6 +257,7 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
       key={path}
       onMouseEnter={() => prefetchRoute(path)}
       onClick={() => onNavigate(path)}
+      aria-current={active ? "page" : undefined}
       className={`
         w-full flex items-center gap-3 h-9 ${pl} pr-3 text-sm transition-all relative
         ${indent > 0 ? "rounded-r-lg" : "rounded-lg"}
@@ -283,13 +287,13 @@ interface SubSectionProps {
 
 function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection, collapsed, pathname, onNavigate, t }: SubSectionProps) {
   const sectionKey = `${mod.id}:${section.id}`;
+  const contentId = `sidebar-section-${mod.id}-${section.id}`;
   const sectionActive = section.matchPaths.some((mp) => isPathActive(pathname, mp));
   const SectionIcon = section.icon;
 
   return (
     <div key={sectionKey} className="space-y-0.5">
-      <button
-        onClick={() => onToggleSection(sectionKey)}
+      <div
         className={`
           w-full flex items-center gap-3 h-9 pl-4 pr-3 rounded-r-lg text-sm transition-colors
           ${sectionActive
@@ -298,12 +302,29 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
           }
         `}
       >
-        <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
-        <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
-        <ChevronRight className={`h-3 w-3 ml-auto shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
-      </button>
+        <button
+          onClick={() => onNavigate(section.path)}
+          aria-current={pathname === section.path ? "page" : undefined}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
+          <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
+        </button>
+        <button
+          onClick={() => onToggleSection(sectionKey)}
+          aria-label={`${sectionExpanded ? t("common.collapse") : t("common.more")} ${section.labelKey ? t(`nav.${section.labelKey}`) || section.label : section.label}`}
+          aria-expanded={sectionExpanded}
+          aria-controls={contentId}
+          className="-mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-sidebar-accent"
+        >
+          <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
+        </button>
+      </div>
       {sectionExpanded && (
-        <div className={`relative ml-[2.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
+        <div
+          id={contentId}
+          className={`relative ml-[2.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}
+        >
           {section.subPages.map((page) => (
             <NavLink
               key={page.path}
@@ -342,6 +363,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
   const Icon = mod.icon;
   const iconColor = navColors[mod.id];
   const dashboardPath = mod.config.overview?.path || mod.config.sections[0]?.path || "/";
+  const contentId = `sidebar-module-${mod.id}`;
 
   if (collapsed) {
     return (
@@ -349,6 +371,8 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         <TooltipTrigger asChild>
           <button
             onClick={() => onNavigate(dashboardPath)}
+            aria-label={t(mod.labelKey)}
+            aria-current={pathname === dashboardPath ? "page" : undefined}
             className={`
               w-full flex items-center justify-center h-10 rounded-lg transition-colors
               ${moduleActive
@@ -380,6 +404,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
       >
         <button
           onClick={() => onNavigate(dashboardPath)}
+          aria-current={pathname === dashboardPath ? "page" : undefined}
           className="flex min-w-0 flex-1 items-center gap-3 pl-3 pr-2 text-left"
         >
           <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
@@ -388,13 +413,18 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         <button
           onClick={() => onToggleModule(mod.id)}
           className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          aria-label={`Toggle ${t(mod.labelKey)} menu`}
+          aria-label={`${isExpanded ? t("common.collapse") : t("common.more")} ${t(mod.labelKey)}`}
+          aria-expanded={isExpanded}
+          aria-controls={contentId}
         >
           <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
         </button>
       </div>
       {isExpanded && (
-        <div className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
+        <div
+          id={contentId}
+          className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}
+        >
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (
@@ -440,9 +470,10 @@ interface SidebarHeaderProps {
   isMobile: boolean;
   onNavigate: (path: string) => void;
   onClose: () => void;
+  closeLabel: string;
 }
 
-function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: SidebarHeaderProps) {
+function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose, closeLabel }: SidebarHeaderProps) {
   return (
     <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
       <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
@@ -463,8 +494,9 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: Sid
       {isMobile && (
         <button
           onClick={onClose}
+          data-sidebar-close
           className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-          aria-label="Close menu"
+          aria-label={closeLabel}
         >
           <X className="h-5 w-5" />
         </button>
@@ -480,23 +512,26 @@ interface SidebarFooterProps {
   onToggleCollapsed: () => void;
   pathname: string;
   t: (key: string) => string;
+  showSettings: boolean;
 }
 
-function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pathname, t }: SidebarFooterProps) {
+function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pathname, t, showSettings }: SidebarFooterProps) {
   return (
     <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
       <div className="flex items-center gap-1">
-        <div className="flex-1">
-          <NavLink
-            label={t("common.settings")}
-            path="/settings"
-            Icon={Settings}
-            collapsed={collapsed}
-            pathname={pathname}
-            onNavigate={onNavigate}
-            t={t}
-          />
-        </div>
+        {showSettings && (
+          <div className="flex-1">
+            <NavLink
+              label={t("common.settings")}
+              path="/settings"
+              Icon={Settings}
+              collapsed={collapsed}
+              pathname={pathname}
+              onNavigate={onNavigate}
+              t={t}
+            />
+          </div>
+        )}
         {!isMobile && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -534,12 +569,13 @@ interface SidebarContentProps {
   onToggleSection: (key: string) => void;
   onToggleCollapsed: () => void;
   t: (key: string) => string;
+  showSettings: boolean;
 }
 
 function SidebarContent({
   collapsed, isDark, isMobile, pathname, visibleModules,
   expandedModules, expandedSections, onNavigate, onClose,
-  onToggleModule, onToggleSection, onToggleCollapsed, t,
+  onToggleModule, onToggleSection, onToggleCollapsed, t, showSettings,
 }: SidebarContentProps) {
   return (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
@@ -549,6 +585,7 @@ function SidebarContent({
         isMobile={isMobile}
         onNavigate={onNavigate}
         onClose={onClose}
+        closeLabel={t("common.closeMenu")}
       />
 
       <ScrollArea className="flex-1 py-3">
@@ -590,12 +627,78 @@ function SidebarContent({
         onToggleCollapsed={onToggleCollapsed}
         pathname={pathname}
         t={t}
+        showSettings={showSettings}
       />
     </div>
   );
 }
 
-function MobileSidebar({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+function MobileSidebar({
+  open,
+  onClose,
+  label,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  const panelRef = useRef<HTMLElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusTimer = window.requestAnimationFrame(() => {
+      panelRef.current
+        ?.querySelector<HTMLElement>("[data-sidebar-close]")
+        ?.focus();
+    });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) return;
+      const focusable = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [open]);
+
   return (
     <>
       {open && (
@@ -605,6 +708,13 @@ function MobileSidebar({ open, onClose, children }: { open: boolean; onClose: ()
         />
       )}
       <aside
+        id="app-mobile-sidebar"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        aria-hidden={!open}
+        inert={!open}
         className={`
           fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out
           ${open ? "translate-x-0" : "-translate-x-full"}
@@ -622,21 +732,68 @@ export default function AppSidebar() {
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
   const isMobile = useIsMobile();
   const { isDark } = useTheme();
-  const { hasModule } = useTenant();
+  const { hasModule, canManage, session } = useTenant();
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const visibleModules = useMemo(
-    () =>
-      MODULES.flatMap((module) => {
-        if (!module.visibilityCheck(hasModule)) return [];
-        const filteredConfig = filterModuleNavConfigByPermissions(module.config, hasModule);
-        if (filteredConfig.sections.length === 0) return [];
-        return [{ ...module, config: filteredConfig }];
-      }),
-    [hasModule]
-  );
+  const canManageTenant = canManage();
+  const canManageTeam = canManageTenant || session?.role === "manager";
+
+  const visibleModules = useMemo(() => {
+    const hasReports = hasModule("reports");
+    const ngoReportingEnabled = canUseNgoReporting(session, hasReports);
+    const donorExportEnabled = canUseDonorExport(
+      session,
+      hasReports,
+      canManageTenant
+    );
+
+    return MODULES.flatMap((module) => {
+      if (!module.visibilityCheck(hasModule)) return [];
+      let filteredConfig = filterModuleNavConfigByPermissions(
+        module.config,
+        hasModule,
+        canManageTenant,
+        canManageTeam,
+      );
+
+      if (!canManageTenant) {
+        filteredConfig = {
+          ...filteredConfig,
+          sections: filteredConfig.sections
+            .filter((section) => !section.path.includes("/settings"))
+            .map((section) => ({
+              ...section,
+              subPages: section.subPages.filter(
+                (page) => !page.path.includes("/settings")
+              ),
+            })),
+        };
+      }
+
+      if (module.id === "reports") {
+        filteredConfig = {
+          ...filteredConfig,
+          sections: filteredConfig.sections
+            .filter((section) => section.id !== "ngo" || ngoReportingEnabled)
+            .map((section) =>
+              section.id === "ngo" && !donorExportEnabled
+                ? {
+                    ...section,
+                    subPages: section.subPages.filter(
+                      (page) => page.path !== "/reports/donor-export"
+                    ),
+                  }
+                : section
+            ),
+        };
+      }
+
+      if (filteredConfig.sections.length === 0) return [];
+      return [{ ...module, config: filteredConfig }];
+    });
+  }, [canManageTeam, canManageTenant, hasModule, session]);
 
   const { expandedModules, expandedSections, toggleModule, toggleSection } = useSidebarExpansion(visibleModules);
 
@@ -654,11 +811,16 @@ export default function AppSidebar() {
     onNavigate: handleNavigate, onClose: () => setSidebarOpen(false),
     onToggleModule: toggleModule, onToggleSection: toggleSection,
     onToggleCollapsed: toggleCollapsed, t,
+    showSettings: canManageTenant,
   };
 
   if (isMobile) {
     return (
-      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+      <MobileSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        label={t("common.mainNavigation")}
+      >
         <SidebarContent {...contentProps} />
       </MobileSidebar>
     );

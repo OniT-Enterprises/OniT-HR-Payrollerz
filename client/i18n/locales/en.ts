@@ -84,6 +84,8 @@ const messages = {
     "moreActions": "More actions",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
+    "mainNavigation": "Main navigation",
+    "skipToContent": "Skip to content",
     "accountMenu": "Account menu",
     "switchToLight": "Switch to light theme",
     "switchToDark": "Switch to dark theme",
@@ -103,6 +105,8 @@ const messages = {
     "retry": "Retry",
     "connectionIssueTitle": "Connection problem",
     "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
+    "accountRecoveryTitle": "Couldn't open your account",
+    "accountRecoveryDesc": "We couldn't load this account. Try again, or use another account.",
     "offlineTitle": "You are offline",
     "offlineDesc": "Changes may not save until your internet returns.",
     "months": {
@@ -499,7 +503,8 @@ const messages = {
     "onboarding": {
       "title": "Create your organization",
       "subtitle": "Set up your company to start using Xefe",
-      "createButton": "Create organization"
+      "createButton": "Create organization",
+      "useAnotherAccount": "Use another account"
     },
     "demoCredentials": "Demo Credentials:",
     "demoEmail": "Email: {{email}}",
@@ -517,12 +522,13 @@ const messages = {
       "accountExists": "An account with this email already exists. Please log in instead.",
       "weakPassword": "Password is too weak. Please use a stronger password.",
       "invalidEmail": "Invalid email address.",
-      "resetFailed": "Could not send the reset email. Please try again."
+      "resetFailed": "Could not send the reset email. Please try again.",
+      "signOutFailed": "Could not sign out. Please try again."
     },
     "signup": {
       "titleAccount": "Create Your Account",
       "titleOrganization": "Set Up Your Organization",
-      "subtitleAccount": "Start your free trial. No credit card required.",
+      "subtitleAccount": "Free plan for up to 5 employees. No card required.",
       "subtitleOrganization": "Tell us about your company",
       "stepAccount": "Account",
       "stepOrganization": "Organization",
@@ -544,7 +550,7 @@ const messages = {
       "creating": "Creating...",
       "createAccount": "Create Account",
       "trialLabel": "Free",
-      "trialValue": "14-day trial",
+      "trialValue": "Up to 5 employees",
       "employeesLabel": "Employees",
       "featuresLabel": "Features",
       "allValue": "All"
@@ -1153,7 +1159,7 @@ const messages = {
         "cheque": "Cheque",
         "other": "Other"
       },
-      "bankAccounts": "Bank Accounts",
+      "bankAccounts": "Salary Payment",
       "bankAccountsHint": "Add accounts for payroll, tax, and social security payments",
       "addAccount": "Add Account",
       "noAccounts": "No bank accounts configured",
@@ -1168,6 +1174,10 @@ const messages = {
       "accountNumber": "Account Number",
       "branchCode": "Branch Code (optional)",
       "payrollFrequency": "Payroll Frequency",
+      "validationTitle": "Check your payment settings",
+      "selectMethodError": "Choose at least one salary payment method.",
+      "selectFrequencyError": "Choose at least one payroll frequency.",
+      "bankDetailsError": "Complete the bank name and account number, or remove the blank account.",
       "frequencyLabels": {
         "hourly": "Hourly",
         "daily": "Daily",
@@ -1197,6 +1207,7 @@ const messages = {
       "paidPercentage": "Paid Percentage",
       "requiresMedicalCert": "Requires medical certificate",
       "maternityDaysHint": "Days (12 weeks = 84 days)",
+      "invalidValues": "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
       "save": "Save Time Off Policies"
     },
     "payroll": {
@@ -1229,6 +1240,7 @@ const messages = {
       "paymentDeadline": "Payment Deadline",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Format: MM-DD (e.g., 12-20 for December 20)",
+      "invalidValues": "Check the rates, hours, and payment deadline. Percentages must be 0–100 and the deadline MM-DD.",
       "prorataHint": "Pro-rata for employees with less than 12 months",
       "save": "Save Payroll Configuration"
     },
@@ -2857,6 +2869,12 @@ const messages = {
     "setup": {
       "title": "Setup Reports",
       "subtitle": "System configuration and setup analytics",
+      "missing": {
+        "title": "Company setup has not started",
+        "managerDescription": "Complete the short company setup before using this report.",
+        "viewerDescription": "An administrator needs to complete company setup before this report is available.",
+        "action": "Start company setup"
+      },
       "stats": {
         "setupProgress": "Setup Progress",
         "stepsComplete": "{{completed}} of {{total}} steps",
@@ -2978,7 +2996,95 @@ const messages = {
     },
     "custom": {
       "title": "Custom Reports",
-      "subtitle": "Build and customize your own reports"
+      "subtitle": "Build and customize your own reports",
+      "noDataTitle": "No report data is available",
+      "noDataDescription": "Ask an administrator for access to People or Time & Leave to build a custom report.",
+      "buildReport": "Build report",
+      "templatesTitle": "Templates",
+      "templatesDescription": "Start with a ready-made report, or build one for this session.",
+      "noTemplates": "No templates are available for your modules.",
+      "columnCount": "{{count}} columns",
+      "noDescription": "No description",
+      "template": "Template",
+      "lastRun": "Last run {{date}}",
+      "run": "Run",
+      "previewTitle": "Report preview",
+      "recordsFound": "{{count}} records found",
+      "exportCsv": "Export CSV",
+      "clearPreview": "Clear report preview",
+      "noMatches": "No data matched your criteria",
+      "showingLimited": "Showing 20 of {{count}} records. Export to see all.",
+      "builder": {
+        "title": "Create custom report",
+        "description": "Choose a data source, the columns you need, and optional filters.",
+        "name": "Report name",
+        "namePlaceholder": "For example, Active employees by department",
+        "optionalDescription": "Description (optional)",
+        "descriptionPlaceholder": "Brief description of the report",
+        "dataSource": "Data source",
+        "employees": "Employees",
+        "attendance": "Attendance records",
+        "departments": "Departments",
+        "selectColumns": "Select columns ({{count}} selected)",
+        "filters": "Filters",
+        "department": "Department",
+        "allDepartments": "All departments",
+        "status": "Status",
+        "allStatuses": "All statuses",
+        "active": "Active",
+        "inactive": "Inactive",
+        "onboarding": "Onboarding",
+        "dateRange": "Date range",
+        "running": "Running…",
+        "runReport": "Run report"
+      },
+      "columns": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "phone": "Phone",
+        "employeeId": "Employee ID",
+        "department": "Department",
+        "position": "Position",
+        "hireDate": "Hire date",
+        "employmentType": "Employment type",
+        "salary": "Monthly salary",
+        "status": "Status",
+        "date": "Date",
+        "employeeName": "Employee name",
+        "clockIn": "Clock in",
+        "clockOut": "Clock out",
+        "regularHours": "Regular hours",
+        "overtimeHours": "Overtime hours",
+        "lateMinutes": "Late minutes",
+        "departmentName": "Department name",
+        "director": "Director",
+        "manager": "Manager"
+      },
+      "templates": {
+        "activeEmployees": {
+          "name": "Active employees directory",
+          "description": "Active employees and their contact information"
+        },
+        "monthlyAttendance": {
+          "name": "Monthly attendance summary",
+          "description": "Attendance records for the current month"
+        },
+        "departmentHeadcount": {
+          "name": "Department headcount",
+          "description": "Employee count by department"
+        }
+      },
+      "toast": {
+        "generated": "Report generated",
+        "generatedDescription": "Found {{count}} records",
+        "error": "Could not run report",
+        "generateFailed": "The report could not be generated. Try again.",
+        "validationError": "Report details needed",
+        "validationDescription": "Enter a report name and select at least one column.",
+        "exported": "Export complete",
+        "exportedDescription": "The report was exported to CSV."
+      }
     },
     "employee": {
       "title": "Employee Reports",
@@ -3317,6 +3423,7 @@ const messages = {
       },
       "actions": {
         "export": "Export CSV",
+        "exportDr": "DR Excel (INSS portal)",
         "view": "View",
         "markStatement": "Mark Statement",
         "markPayment": "Mark Payment"
@@ -3356,6 +3463,8 @@ const messages = {
         "noDataDescription": "No payroll data found for {{period}}. Run payroll first, then generate the return.",
         "exportedTitle": "Exported",
         "exportedDescription": "INSS return exported to CSV.",
+        "drExportedDescription": "INSS DR Excel downloaded — its columns match the official portal template.",
+        "drExportError": "Could not export the DR Excel file.",
         "savedTitle": "Saved",
         "savedDescription": "INSS {{task}} marked as filed.",
         "updateErrorTitle": "Error",
@@ -3529,6 +3638,21 @@ const messages = {
         "view": "View",
         "markFiled": "Mark Filed"
       },
+      "etax": {
+        "title": "File on e-Tax (assisted)",
+        "description": "The Monthly Wages Income Tax form asks for just these two totals. Copy them into the e-Tax portal and submit there — Xefe never files on your behalf.",
+        "residentAccount": "Domestic Monthly Wages Income Tax for Resident",
+        "nonResidentAccount": "Domestic Monthly Wages Income Tax for Non-Resident",
+        "line1": "Total gross wages paid during the month",
+        "line2": "Total wages income tax withheld during the month"
+      },
+      "payment": {
+        "title": "How to pay (ATTL)",
+        "description": "Deliver three copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked \"electronic payment\". Payment is due by the 15th of the following month.",
+        "beneficiary": "Beneficiary",
+        "bank": "Bank",
+        "account": "Wage income tax account (IBAN)"
+      },
       "alerts": {
         "overdueTitle": "Overdue filing",
         "overdueDescription": "WIT return for {{period}} was due on {{dueDate}}. Please file immediately to avoid penalties.",
@@ -3660,6 +3784,26 @@ const messages = {
         "employer": "Employer",
         "period": "Period"
       }
+    },
+    "profitLoss": {
+      "etax": {
+        "title": "File installment tax on e-Tax (assisted)",
+        "description": "Monthly installment tax is 0.5% of gross turnover. Check the period's revenue, then file in the e-Tax portal — Xefe never files on your behalf.",
+        "account": "Domestic Installment Tax",
+        "revenue": "Revenue for Period",
+        "rate": "Tax Rate",
+        "taxToPay": "Tax to Pay"
+      }
+    },
+    "etaxFiling": {
+      "copied": "Copied",
+      "copy": "Copy value",
+      "copyFailed": "Could not copy. Select and copy the value manually.",
+      "employeeCount": "Employees: {{count}}",
+      "openPortal": "Open e-Tax portal",
+      "step1": "Open the e-Tax portal and log in.",
+      "step2": "Under Declarations, choose the matching account and this period.",
+      "step3": "Enter the values above, review them, and submit in the portal."
     }
   },
   "people": {
@@ -3924,7 +4068,13 @@ const messages = {
         "savedDesc": "QuickBooks export settings have been updated.",
         "saveFailed": "Failed to save settings. Please try again.",
         "resetTitle": "Reset Complete",
-        "resetDesc": "Account mappings have been reset to defaults."
+        "resetDesc": "Account mappings have been reset to defaults.",
+        "readyMappings": "QuickBooks export is ready with {{count}} account mappings.",
+        "accountCount": "{{count}} accounts",
+        "status": "Status",
+        "default": "Default",
+        "custom": "Custom",
+        "accountPlaceholder": "Enter QuickBooks account name"
       }
     }
   },
@@ -4049,6 +4199,11 @@ const messages = {
     "setupComplete": "Setup Complete",
     "accountReady": "Your account is ready to use!",
     "failedComplete": "Failed to complete setup.",
+    "loadFailedTitle": "We couldn't load your setup",
+    "loadFailedDesc": "Check your connection and try again. Your existing settings have not been changed.",
+    "stepAlreadySaved": "This step is already saved",
+    "stepAlreadySavedDesc": "Continue to the next unfinished step. Change saved details later in Settings.",
+    "payDayRange": "Pay day must be between 1 and 28.",
     "legalName": "Legal Name *",
     "legalNamePlaceholder": "Your Company Lda.",
     "tradingName": "Trading Name",
@@ -4067,7 +4222,11 @@ const messages = {
     "phonePlaceholder": "+670 ...",
     "email": "Email",
     "emailPlaceholder": "info@company.tl",
-    "bankIntro": "Add your primary bank account for salary payments. You can add more accounts later in Settings.",
+    "bankIntro": "Choose how you usually pay salaries. You can change this later in Settings.",
+    "paymentMethod": "Salary payment method",
+    "cash": "Cash",
+    "bankTransfer": "Bank transfer",
+    "cashInfo": "No bank details are needed. You can add a bank account later if your process changes.",
     "bankName": "Bank Name *",
     "selectBank": "Select bank",
     "accountName": "Account Name",
@@ -4268,7 +4427,9 @@ const messages = {
       "sourceManual": "Manual",
       "sourcePayroll": "Payroll",
       "sourceInvoice": "Invoice",
+      "sourceBill": "Bill",
       "sourceAdjustment": "Adjustment",
+      "sourceClosing": "Closing",
       "sourceOpening": "Opening",
       "sourceExpense": "Expense",
       "sourceRevenue": "Revenue",
@@ -4907,6 +5068,8 @@ const messages = {
       "customer": "customer",
       "customers": "customers",
       "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
       "namePlaceholder": "Company or person name",
       "type": "Type",
       "business": "Business",
@@ -4932,6 +5095,12 @@ const messages = {
       "subtitle": "Create and manage invoices",
       "new": "New Invoice",
       "newInvoice": "New Invoice",
+      "newCustomer": "New customer…",
+      "newCustomerTitle": "New Customer",
+      "newCustomerDesc": "Enter the customer's details. You can add more later.",
+      "addCustomer": "Add Customer",
+      "customerAdded": "Customer added",
+      "customerAddError": "Could not add customer",
       "editInvoice": "Edit Invoice",
       "invoice": "INVOICE",
       "invoices": "Invoices",
@@ -5643,6 +5812,7 @@ const messages = {
     "deductions": "Deductions",
     "netPay": "Net Pay",
     "noEmployeesFound": "No employees found",
+    "noEmployeesAdminHelp": "No active employees are available. Ask a manager with People access to add one.",
     "tryAdjustSearch": "Try adjusting your search term or clear the filter",
     "payrollWarnings": "{{count}} Payroll Warning(s)",
     "warningBelowMinWage": "Salary ${{salary}} is below minimum wage (${{min}}/month)",
@@ -6040,7 +6210,13 @@ const messages = {
     "toastSelectRunAndBank": "Please select a payroll run and at least one bank.",
     "toastRunNotFound": "Selected payroll run not found.",
     "toastBankFilesSuccess": "Generated {{count}} bank file(s) successfully.",
+    "toastBankFilesSuccessWithExcluded": "Generated {{count}} bank file(s). {{excluded}} employee(s) using cash or an unsupported bank were not included.",
     "toastBankFilesError": "Failed to generate bank files. Please try again.",
+    "toastBankDetailsError": "Check the company and employee bank details, then try again.",
+    "toastPayrollDataError": "Some payroll employee records could not be loaded. Refresh the page before generating files.",
+    "bankDetailsRequired": "Add a valid company payroll bank account and complete employee bank details first.",
+    "missingEmployeeRecordsNotice": "{{count}} payroll employee record(s) could not be loaded. Refresh before generating bank files.",
+    "excludedEmployeesNotice": "{{count}} employee(s) use cash or a bank without a supported file format, so they will not be included.",
     "toastValidationError": "Validation Error",
     "toastValidationDesc": "Please fill in all required fields.",
     "toastTransferSuccess": "Success",
@@ -6099,6 +6275,203 @@ const messages = {
     "accountingBody": "This is your formal ledger — journal entries, chart of accounts, and financial statements. Every payroll run and invoice automatically creates entries here. Use this section to reconcile, adjust, and report.",
     "reportsTitle": "Welcome to Reports.",
     "reportsBody": "Generate and review reports across your entire operation — payroll summaries, employee rosters, financial statements, and compliance documents. Pick a report type below to get started."
+  },
+  "moduleDashboards": {
+    "common": {
+      "needsAttention": "Needs your attention",
+      "day": "day",
+      "days": "days"
+    },
+    "people": {
+      "title": "People",
+      "seoDescription": "Staff, hiring, leave, and performance tools in one place.",
+      "subtitle": "{{count}} active staff. Find anyone, or jump to what needs you.",
+      "subtitleNoStaff": "Jump to the people tools your team uses.",
+      "addEmployee": "Add employee",
+      "searchPlaceholder": "Find anyone — name, role, or ID number…",
+      "searchAria": "Search employees",
+      "allGood": "You're all caught up — nothing needs attention right now.",
+      "recentlyAdded": "Recently added",
+      "unnamed": "Unnamed",
+      "attention": {
+        "leaveRequest": "leave request waiting for approval",
+        "leaveRequests": "leave requests waiting for approval",
+        "employeeMissingInfo": "employee missing required info",
+        "employeesMissingInfo": "employees missing required info",
+        "certificateExpiring": "certificate expiring within 30 days",
+        "certificatesExpiring": "certificates expiring within 30 days",
+        "openCase": "open employee case",
+        "openCases": "open employee cases"
+      },
+      "cards": {
+        "staff": "Staff",
+        "active": "{{count}} active",
+        "hiring": "Hiring",
+        "interviewScheduled": "{{count}} interview scheduled",
+        "interviewsScheduled": "{{count}} interviews scheduled",
+        "timeLeave": "Time & Leave",
+        "onLeaveToday": "{{count}} on leave today",
+        "performance": "Performance",
+        "activeGoal": "{{count}} active goal",
+        "activeGoals": "{{count}} active goals"
+      }
+    },
+    "scheduling": {
+      "title": "Time & Leave",
+      "seoDescription": "Coverage, attendance, leave approvals, and shift planning in one place.",
+      "subtitle": "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
+      "subtitleEmpty": "Approve leave, track attendance, and plan shifts.",
+      "attendanceAction": "Attendance",
+      "shiftsAction": "Shift schedules",
+      "allGood": "Coverage looks steady — nothing needs attention right now.",
+      "attention": {
+        "leaveRequest": "leave request waiting for approval",
+        "leaveRequests": "leave requests waiting for approval",
+        "lateArrival": "late arrival today",
+        "lateArrivals": "late arrivals today",
+        "absentToday": "absent today"
+      },
+      "cards": {
+        "attendance": "Attendance",
+        "availableToday": "{{rate}}% available today",
+        "leave": "Leave",
+        "onLeaveToday": "{{count}} on leave today",
+        "timeTracking": "Time Tracking",
+        "timeTrackingMeta": "Clock-ins & hours",
+        "shifts": "Shifts",
+        "shiftsMeta": "Plan weekly rosters"
+      }
+    },
+    "payroll": {
+      "title": "Payroll",
+      "seoDescription": "Run payroll, manage payments, and stay ahead of tax and INSS deadlines.",
+      "estimatedGross": "{{amount}} estimated gross",
+      "nextPaydayIn": "next payday in",
+      "historyAction": "History",
+      "runAction": "Run payroll",
+      "allGood": "Payroll is on track — nothing needs attention before payday.",
+      "attention": {
+        "employeeBlocking": "employee missing info that blocks payroll",
+        "employeesBlocking": "employees missing info that blocks payroll",
+        "leaveRequest": "leave request awaiting approval",
+        "leaveRequests": "leave requests awaiting approval",
+        "monthlyWitDueIn": "Monthly WIT due in",
+        "inssDueIn": "INSS payment due in"
+      },
+      "cards": {
+        "runPayroll": "Run payroll",
+        "staffInCycle": "{{count}} staff in cycle",
+        "history": "History",
+        "recentRun": "{{count}} recent run",
+        "recentRuns": "{{count}} recent runs",
+        "noRuns": "No runs yet",
+        "bankTransfers": "Bank transfers",
+        "readyToPay": "{{count}} ready to pay",
+        "exportPay": "Export & pay",
+        "taxInss": "Tax & INSS",
+        "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d"
+      }
+    },
+    "money": {
+      "title": "Money",
+      "seoDescription": "Invoices, bills, expenses, and financial reports in one place.",
+      "summary": "{{collected}} collected this month · {{outstanding}} outstanding.",
+      "viewBills": "View bills",
+      "newInvoice": "New invoice",
+      "allGood": "Cash flow looks calm — no overdue items or bills due this week.",
+      "attention": {
+        "overdueInvoice": "Follow up {{count}} overdue invoice — {{amount}} late",
+        "overdueInvoices": "Follow up {{count}} overdue invoices — {{amount}} late",
+        "overdueBill": "Pay {{count}} overdue bill — {{amount}}",
+        "overdueBills": "Pay {{count}} overdue bills — {{amount}}",
+        "billDueThisWeek": "{{count}} bill due this week — {{amount}}",
+        "billsDueThisWeek": "{{count}} bills due this week — {{amount}}",
+        "draftInvoice": "Send {{count}} draft invoice",
+        "draftInvoices": "Send {{count}} draft invoices"
+      },
+      "cards": {
+        "invoices": "Invoices",
+        "outstanding": "{{amount}} outstanding",
+        "bills": "Bills",
+        "overdue": "{{count}} overdue",
+        "dueThisWeek": "{{amount}} due this week",
+        "expenses": "Expenses",
+        "expensesMeta": "Track spending",
+        "financialReports": "Financial Reports",
+        "financialReportsMeta": "P&L · cashflow · VAT"
+      }
+    },
+    "accounting": {
+      "title": "Accounting",
+      "seoDescription": "Journal entries, account structure, and financial statements in one place.",
+      "summaryPosted": "Last payroll posted {{date}} · {{amount}}.",
+      "summaryNotPosted": "Latest payroll has not yet posted to the ledger.",
+      "summaryNoPayroll": "Review journals and keep the trial balance in order.",
+      "newEntry": "New entry",
+      "reviewPayroll": "Review payroll journals",
+      "allGoodWithPayroll": "The books are balanced and payroll has posted — nothing needs attention.",
+      "allGood": "The books are balanced — nothing needs attention.",
+      "attention": {
+        "trialBalance": "Trial balance is out of balance",
+        "draftEntry": "{{count}} draft journal entry to review",
+        "draftEntries": "{{count}} draft journal entries to review",
+        "payrollNotPosted": "Latest payroll is not yet posted to the ledger"
+      },
+      "cards": {
+        "chartOfAccounts": "Chart of Accounts",
+        "ledgerStructure": "Ledger structure",
+        "journalEntries": "Journal Entries",
+        "pending": "{{count}} pending",
+        "trialBalance": "Trial Balance",
+        "balanced": "Balanced",
+        "outOfBalance": "Out of balance",
+        "balanceSheet": "Balance Sheet",
+        "live": "Live",
+        "pendingPayroll": "Pending payroll",
+        "financialPosition": "Financial position"
+      }
+    },
+    "reports": {
+      "title": "Reports",
+      "seoDescription": "Payroll, people, attendance, department, and compliance reports in one place.",
+      "summarySingle": "{{count}} report family · {{compliance}}.",
+      "summaryPlural": "{{count}} report families · {{compliance}}.",
+      "summaryReadOnlySingle": "{{count}} report family available.",
+      "summaryReadOnlyPlural": "{{count}} report families available.",
+      "reportSetup": "Report setup",
+      "customReports": "Custom reports",
+      "filingRunway": "Filing runway",
+      "allGood": "No tax filings due — the reporting runway is clear.",
+      "browseReports": "Browse reports",
+      "compliance": {
+        "filingOverdue": "{{count}} filing overdue",
+        "filingsOverdue": "{{count}} filings overdue",
+        "filingDueThisWeek": "{{count}} filing due this week",
+        "filingsDueThisWeek": "{{count}} filings due this week",
+        "noneDue": "no filings due"
+      },
+      "filings": {
+        "monthlyWit": "WIT {{period}}",
+        "annualWit": "Annual WIT {{period}}",
+        "inssPayment": "INSS payment {{period}}",
+        "inssStatement": "INSS statement {{period}}",
+        "overdue": "{{days}}d overdue",
+        "dueToday": "due today",
+        "dueTomorrow": "due tomorrow",
+        "daysLeft": "{{days}}d left",
+        "line": "{{label}} — {{descriptor}} (due {{date}})"
+      },
+      "families": {
+        "payroll-reports": "Payslips, tax views, year-to-date detail, and payroll summaries.",
+        "employee-reports": "Headcount, movement, workforce structure, and staff reporting.",
+        "attendance-reports": "Absence, overtime, punctuality, and time trend reporting.",
+        "department-reports": "Cost comparisons, allocation views, and org-level reporting.",
+        "ngo": "Allocation packs and donor-facing exports for restricted funds.",
+        "custom": "Builder surfaces, saved reports, and reporting setup controls.",
+        "fallbackSingle": "{{count}} report in this area.",
+        "fallbackPlural": "{{count}} reports in this area."
+      }
+    }
   },
   "locale": {
     "en": "English",

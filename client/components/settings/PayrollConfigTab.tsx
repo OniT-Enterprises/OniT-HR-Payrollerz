@@ -35,6 +35,36 @@ interface PayrollConfigTabProps extends SettingsTabProps {
   initialData: PayrollConfig;
 }
 
+function isInRange(value: number, minimum: number, maximum: number): boolean {
+  return Number.isFinite(value) && value >= minimum && value <= maximum;
+}
+
+function isValidMonthDay(value: string): boolean {
+  const match = /^(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  if (!isInRange(month, 1, 12)) return false;
+  return isInRange(day, 1, new Date(Date.UTC(2024, month, 0)).getUTCDate());
+}
+
+function isValidPayrollConfig(config: PayrollConfig): boolean {
+  return (
+    isInRange(config.tax.residentThreshold, 0, 1_000_000) &&
+    isInRange(config.tax.residentRate, 0, 100) &&
+    isInRange(config.tax.nonResidentRate, 0, 100) &&
+    isInRange(config.tax.paymentDueDay, 1, 28) &&
+    isInRange(config.socialSecurity.employeeRate, 0, 100) &&
+    isInRange(config.socialSecurity.employerRate, 0, 100) &&
+    isInRange(config.socialSecurity.paymentDueDay, 1, 28) &&
+    isInRange(config.minimumWage, 0, 1_000_000) &&
+    isInRange(config.maxWorkHoursPerWeek, 1, 168) &&
+    isInRange(config.overtimeRates.standard, 1, 10) &&
+    isInRange(config.overtimeRates.sundayHoliday, 1, 10) &&
+    (!config.subsidioAnual.enabled || isValidMonthDay(config.subsidioAnual.payByDate))
+  );
+}
+
 export function PayrollConfigTab({
   tenantId,
   saving,
@@ -47,9 +77,18 @@ export function PayrollConfigTab({
   const { session } = useTenant();
   const isOwner = session?.role === 'owner';
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig>(initialData);
+  const configIsValid = isValidPayrollConfig(payrollConfig);
 
   const save = async () => {
     if (!tenantId) return;
+    if (!configIsValid) {
+      toast({
+        title: t('settings.notifications.errorTitle'),
+        description: t('settings.payroll.invalidValues'),
+        variant: 'destructive',
+      });
+      return;
+    }
     setSaving(true);
     try {
       await settingsService.updatePayrollConfig(tenantId, payrollConfig);
@@ -409,15 +448,22 @@ export function PayrollConfigTab({
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={save} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {t('settings.payroll.save')}
-          </Button>
+        <div className="space-y-3 pt-4">
+          {!configIsValid && (
+            <p role="alert" className="text-sm text-destructive">
+              {t('settings.payroll.invalidValues')}
+            </p>
+          )}
+          <div className="flex justify-end">
+            <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {t('settings.payroll.save')}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

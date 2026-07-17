@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,7 +95,13 @@ export default function InvoiceSettingsPage() {
   const [accountForm, setAccountForm] = useState(EMPTY_ACCOUNT_FORM);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: loadedSettings, isLoading: loading } = useInvoiceSettings();
+  const {
+    data: loadedSettings,
+    isLoading: loading,
+    isError: loadError,
+    isFetching,
+    refetch,
+  } = useInvoiceSettings();
 
   useEffect(() => {
     if (!loadedSettings || hasLocalChanges) {
@@ -278,6 +285,15 @@ export default function InvoiceSettingsPage() {
             <Skeleton className="h-48" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (loadError && loadedSettings === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
       </div>
     );
   }

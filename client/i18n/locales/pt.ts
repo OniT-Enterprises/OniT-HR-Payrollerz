@@ -84,6 +84,8 @@ const messages = {
     "moreActions": "Mais ações",
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
+    "mainNavigation": "Navegação principal",
+    "skipToContent": "Ir para o conteúdo",
     "accountMenu": "Menu de conta",
     "switchToLight": "Mudar para tema claro",
     "switchToDark": "Mudar para tema escuro",
@@ -103,6 +105,8 @@ const messages = {
     "retry": "Tentar novamente",
     "connectionIssueTitle": "Problema de conexão",
     "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
+    "accountRecoveryTitle": "Não foi possível abrir a sua conta",
+    "accountRecoveryDesc": "Não foi possível carregar esta conta. Tente novamente ou use outra conta.",
     "offlineTitle": "Está offline",
     "offlineDesc": "As alterações podem não guardar até a internet voltar.",
     "months": {
@@ -499,7 +503,8 @@ const messages = {
     "onboarding": {
       "title": "Crie a sua organização",
       "subtitle": "Configure a sua empresa para começar a usar o Xefe",
-      "createButton": "Criar organização"
+      "createButton": "Criar organização",
+      "useAnotherAccount": "Usar outra conta"
     },
     "demoCredentials": "Credenciais de Demonstração:",
     "demoEmail": "Email: {{email}}",
@@ -517,12 +522,13 @@ const messages = {
       "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
       "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
       "invalidEmail": "Endereço de email inválido.",
-      "resetFailed": "Não foi possível enviar o email de reposição. Tente novamente."
+      "resetFailed": "Não foi possível enviar o email de reposição. Tente novamente.",
+      "signOutFailed": "Não foi possível terminar a sessão. Tente novamente."
     },
     "signup": {
       "titleAccount": "Criar a Sua Conta",
       "titleOrganization": "Configurar a Sua Organização",
-      "subtitleAccount": "Comece o seu teste gratuito. Sem cartão de crédito.",
+      "subtitleAccount": "Plano grátis para até 5 funcionários. Sem cartão.",
       "subtitleOrganization": "Fale-nos sobre a sua empresa",
       "stepAccount": "Conta",
       "stepOrganization": "Organização",
@@ -544,7 +550,7 @@ const messages = {
       "creating": "A criar...",
       "createAccount": "Criar Conta",
       "trialLabel": "Grátis",
-      "trialValue": "Teste de 14 dias",
+      "trialValue": "Até 5 funcionários",
       "employeesLabel": "Funcionários",
       "featuresLabel": "Funcionalidades",
       "allValue": "Todas"
@@ -1153,7 +1159,7 @@ const messages = {
         "cheque": "Cheque",
         "other": "Outro"
       },
-      "bankAccounts": "Contas Bancárias",
+      "bankAccounts": "Pagamento Salarial",
       "bankAccountsHint": "Adicione contas para pagamentos de folha, impostos e segurança social",
       "addAccount": "Adicionar Conta",
       "noAccounts": "Nenhuma conta bancária configurada",
@@ -1168,6 +1174,10 @@ const messages = {
       "accountNumber": "Número da Conta",
       "branchCode": "Código da Agência (opcional)",
       "payrollFrequency": "Frequência da Folha",
+      "validationTitle": "Verifique as definições de pagamento",
+      "selectMethodError": "Escolha pelo menos um método de pagamento salarial.",
+      "selectFrequencyError": "Escolha pelo menos uma frequência da folha.",
+      "bankDetailsError": "Preencha o banco e o número da conta, ou remova a conta vazia.",
       "frequencyLabels": {
         "hourly": "À Hora",
         "daily": "Diária",
@@ -1197,6 +1207,7 @@ const messages = {
       "paidPercentage": "Percentagem Paga",
       "requiresMedicalCert": "Requer certificado médico",
       "maternityDaysHint": "Dias (12 semanas = 84 dias)",
+      "invalidValues": "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
       "save": "Guardar Políticas de Licenças"
     },
     "payroll": {
@@ -1229,6 +1240,7 @@ const messages = {
       "paymentDeadline": "Prazo de Pagamento",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Formato: MM-DD (ex., 12-20 para 20 de Dezembro)",
+      "invalidValues": "Verifique taxas, horas e prazo. As percentagens devem ser 0–100 e o prazo no formato MM-DD.",
       "prorataHint": "Pro-rata para funcionários com menos de 12 meses",
       "save": "Guardar Configuração da Folha"
     },
@@ -2857,6 +2869,12 @@ const messages = {
     "setup": {
       "title": "Relatórios de Configuração",
       "subtitle": "Configuração do sistema e análises de setup",
+      "missing": {
+        "title": "A configuração da empresa ainda não começou",
+        "managerDescription": "Conclua a configuração breve da empresa antes de usar este relatório.",
+        "viewerDescription": "Um administrador precisa concluir a configuração da empresa antes de este relatório ficar disponível.",
+        "action": "Iniciar configuração da empresa"
+      },
       "stats": {
         "setupProgress": "Progresso da Configuração",
         "stepsComplete": "{{completed}} de {{total}} passos",
@@ -2978,7 +2996,95 @@ const messages = {
     },
     "custom": {
       "title": "Relatórios Personalizados",
-      "subtitle": "Construa e personalize os seus próprios relatórios"
+      "subtitle": "Construa e personalize os seus próprios relatórios",
+      "noDataTitle": "Não há dados disponíveis para relatórios",
+      "noDataDescription": "Peça a um administrador acesso a Pessoas ou Tempo e Licenças para criar um relatório personalizado.",
+      "buildReport": "Criar relatório",
+      "templatesTitle": "Modelos",
+      "templatesDescription": "Comece com um relatório pronto ou crie um para esta sessão.",
+      "noTemplates": "Não há modelos disponíveis para os seus módulos.",
+      "columnCount": "{{count}} colunas",
+      "noDescription": "Sem descrição",
+      "template": "Modelo",
+      "lastRun": "Última execução {{date}}",
+      "run": "Executar",
+      "previewTitle": "Pré-visualização do relatório",
+      "recordsFound": "{{count}} registos encontrados",
+      "exportCsv": "Exportar CSV",
+      "clearPreview": "Limpar pré-visualização",
+      "noMatches": "Nenhum dado corresponde aos critérios",
+      "showingLimited": "A mostrar 20 de {{count}} registos. Exporte para ver todos.",
+      "builder": {
+        "title": "Criar relatório personalizado",
+        "description": "Escolha a fonte de dados, as colunas necessárias e filtros opcionais.",
+        "name": "Nome do relatório",
+        "namePlaceholder": "Por exemplo, Funcionários ativos por departamento",
+        "optionalDescription": "Descrição (opcional)",
+        "descriptionPlaceholder": "Descrição breve do relatório",
+        "dataSource": "Fonte de dados",
+        "employees": "Funcionários",
+        "attendance": "Registos de presença",
+        "departments": "Departamentos",
+        "selectColumns": "Selecionar colunas ({{count}} selecionadas)",
+        "filters": "Filtros",
+        "department": "Departamento",
+        "allDepartments": "Todos os departamentos",
+        "status": "Estado",
+        "allStatuses": "Todos os estados",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "onboarding": "Integração",
+        "dateRange": "Período",
+        "running": "A executar…",
+        "runReport": "Executar relatório"
+      },
+      "columns": {
+        "firstName": "Nome",
+        "lastName": "Apelido",
+        "email": "Email",
+        "phone": "Telefone",
+        "employeeId": "ID do funcionário",
+        "department": "Departamento",
+        "position": "Cargo",
+        "hireDate": "Data de contratação",
+        "employmentType": "Tipo de emprego",
+        "salary": "Salário mensal",
+        "status": "Estado",
+        "date": "Data",
+        "employeeName": "Nome do funcionário",
+        "clockIn": "Entrada",
+        "clockOut": "Saída",
+        "regularHours": "Horas regulares",
+        "overtimeHours": "Horas extra",
+        "lateMinutes": "Minutos de atraso",
+        "departmentName": "Nome do departamento",
+        "director": "Diretor",
+        "manager": "Gestor"
+      },
+      "templates": {
+        "activeEmployees": {
+          "name": "Diretório de funcionários ativos",
+          "description": "Funcionários ativos e respetivos contactos"
+        },
+        "monthlyAttendance": {
+          "name": "Resumo mensal de presenças",
+          "description": "Registos de presença do mês atual"
+        },
+        "departmentHeadcount": {
+          "name": "Efetivo por departamento",
+          "description": "Número de funcionários por departamento"
+        }
+      },
+      "toast": {
+        "generated": "Relatório gerado",
+        "generatedDescription": "{{count}} registos encontrados",
+        "error": "Não foi possível executar o relatório",
+        "generateFailed": "Não foi possível gerar o relatório. Tente novamente.",
+        "validationError": "Faltam dados do relatório",
+        "validationDescription": "Introduza um nome e selecione pelo menos uma coluna.",
+        "exported": "Exportação concluída",
+        "exportedDescription": "O relatório foi exportado para CSV."
+      }
     },
     "employee": {
       "title": "Relatórios de Funcionários",
@@ -3317,6 +3423,7 @@ const messages = {
       },
       "actions": {
         "export": "Exportar CSV",
+        "exportDr": "Excel DR (portal INSS)",
         "view": "Ver",
         "markStatement": "Marcar Declaração",
         "markPayment": "Marcar Pagamento"
@@ -3356,6 +3463,8 @@ const messages = {
         "noDataDescription": "Não foram encontrados dados de folha para {{period}}. Execute a folha primeiro e depois gere a declaração.",
         "exportedTitle": "Exportado",
         "exportedDescription": "Declaração do INSS exportada para CSV.",
+        "drExportedDescription": "Excel DR do INSS transferido — as colunas correspondem ao modelo oficial do portal.",
+        "drExportError": "Não foi possível exportar o ficheiro Excel DR.",
         "savedTitle": "Guardado",
         "savedDescription": "{{task}} do INSS marcado como entregue.",
         "updateErrorTitle": "Erro",
@@ -3529,6 +3638,21 @@ const messages = {
         "view": "Ver",
         "markFiled": "Marcar Entregue"
       },
+      "etax": {
+        "title": "Preencher no e-Tax (assistido)",
+        "description": "A declaração mensal do imposto sobre salários pede apenas estes dois totais. Copie-os para o portal e-Tax e submeta lá — o Xefe nunca submete por si.",
+        "residentAccount": "Imposto Mensal sobre Rendimentos do Trabalho — Residentes",
+        "nonResidentAccount": "Imposto Mensal sobre Rendimentos do Trabalho — Não Residentes",
+        "line1": "Total de salários brutos pagos durante o mês",
+        "line2": "Total de imposto sobre salários retido durante o mês"
+      },
+      "payment": {
+        "title": "Como pagar (ATTL)",
+        "description": "Entregue três cópias do Formulário de Impostos Mensais com o pagamento numa agência BNU, ou pague por transferência bancária marcada \"pagamento eletrónico\". O prazo é o dia 15 do mês seguinte.",
+        "beneficiary": "Beneficiário",
+        "bank": "Banco",
+        "account": "Conta do imposto sobre salários (IBAN)"
+      },
       "alerts": {
         "overdueTitle": "Entrega em atraso",
         "overdueDescription": "A declaração de IRT de {{period}} devia ter sido entregue em {{dueDate}}. Entregue-a imediatamente para evitar penalizações.",
@@ -3660,6 +3784,26 @@ const messages = {
         "employer": "Empregador",
         "period": "Período"
       }
+    },
+    "profitLoss": {
+      "etax": {
+        "title": "Preencher imposto prestacional no e-Tax (assistido)",
+        "description": "O imposto prestacional mensal é 0,5% do volume de negócios bruto. Confirme a receita do período e submeta no portal e-Tax — o Xefe nunca submete por si.",
+        "account": "Imposto Prestacional Doméstico",
+        "revenue": "Receita do período",
+        "rate": "Taxa de imposto",
+        "taxToPay": "Imposto a pagar"
+      }
+    },
+    "etaxFiling": {
+      "copied": "Copiado",
+      "copy": "Copiar valor",
+      "copyFailed": "Não foi possível copiar. Selecione e copie o valor manualmente.",
+      "employeeCount": "Trabalhadores: {{count}}",
+      "openPortal": "Abrir portal e-Tax",
+      "step1": "Abra o portal e-Tax e inicie sessão.",
+      "step2": "Em Declarações, escolha a conta correspondente e este período.",
+      "step3": "Introduza os valores acima, reveja-os e submeta no portal."
     }
   },
   "people": {
@@ -3924,7 +4068,13 @@ const messages = {
         "savedDesc": "As definições de exportação QuickBooks foram atualizadas.",
         "saveFailed": "Falha ao guardar definições. Por favor tente novamente.",
         "resetTitle": "Reposição Concluída",
-        "resetDesc": "Os mapeamentos de contas foram repostos para os padrões."
+        "resetDesc": "Os mapeamentos de contas foram repostos para os padrões.",
+        "readyMappings": "A exportação do QuickBooks está pronta com {{count}} mapeamentos de contas.",
+        "accountCount": "{{count}} contas",
+        "status": "Estado",
+        "default": "Predefinido",
+        "custom": "Personalizado",
+        "accountPlaceholder": "Introduza o nome da conta do QuickBooks"
       }
     }
   },
@@ -4049,6 +4199,11 @@ const messages = {
     "setupComplete": "Configuração Completa",
     "accountReady": "A sua conta está pronta a usar!",
     "failedComplete": "Falha ao completar a configuração.",
+    "loadFailedTitle": "Não foi possível carregar a configuração",
+    "loadFailedDesc": "Verifique a ligação e tente novamente. As definições existentes não foram alteradas.",
+    "stepAlreadySaved": "Este passo já está guardado",
+    "stepAlreadySavedDesc": "Continue para o próximo passo por concluir. Altere os dados guardados mais tarde nas Definições.",
+    "payDayRange": "O dia de pagamento deve estar entre 1 e 28.",
     "legalName": "Nome Legal *",
     "legalNamePlaceholder": "Sua Empresa Lda.",
     "tradingName": "Nome Comercial",
@@ -4067,7 +4222,11 @@ const messages = {
     "phonePlaceholder": "+670 ...",
     "email": "Email",
     "emailPlaceholder": "info@empresa.tl",
-    "bankIntro": "Adicione a sua conta bancária principal para pagamentos de salários. Pode adicionar mais contas depois nas Definições.",
+    "bankIntro": "Escolha como paga normalmente os salários. Pode alterar isto mais tarde nas Definições.",
+    "paymentMethod": "Método de pagamento salarial",
+    "cash": "Dinheiro",
+    "bankTransfer": "Transferência bancária",
+    "cashInfo": "Não são necessários dados bancários. Pode adicionar uma conta mais tarde se o processo mudar.",
     "bankName": "Nome do Banco *",
     "selectBank": "Selecionar banco",
     "accountName": "Nome da Conta",
@@ -4268,7 +4427,9 @@ const messages = {
       "sourceManual": "Manual",
       "sourcePayroll": "Folha",
       "sourceInvoice": "Fatura",
+      "sourceBill": "Conta a pagar",
       "sourceAdjustment": "Ajustamento",
+      "sourceClosing": "Fecho",
       "sourceOpening": "Abertura",
       "sourceExpense": "Despesa",
       "sourceRevenue": "Receita",
@@ -4907,6 +5068,8 @@ const messages = {
       "customer": "cliente",
       "customers": "clientes",
       "name": "Nome",
+      "phone": "Telefone",
+      "email": "Email",
       "namePlaceholder": "Nome da empresa ou pessoa",
       "type": "Tipo",
       "business": "Empresa",
@@ -4932,6 +5095,12 @@ const messages = {
       "subtitle": "Criar e gerir faturas",
       "new": "Nova Fatura",
       "newInvoice": "Nova Fatura",
+      "newCustomer": "Novo cliente…",
+      "newCustomerTitle": "Novo cliente",
+      "newCustomerDesc": "Introduza os dados do cliente. Pode completar mais tarde.",
+      "addCustomer": "Adicionar cliente",
+      "customerAdded": "Cliente adicionado",
+      "customerAddError": "Não foi possível adicionar o cliente",
       "editInvoice": "Editar Fatura",
       "invoice": "FATURA",
       "invoices": "Faturas",
@@ -5643,6 +5812,7 @@ const messages = {
     "deductions": "Deduções",
     "netPay": "Líquido",
     "noEmployeesFound": "Nenhum funcionário encontrado",
+    "noEmployeesAdminHelp": "Não há funcionários ativos. Peça a um gestor com acesso a Pessoas para adicionar um.",
     "tryAdjustSearch": "Tente ajustar o termo de pesquisa ou limpe o filtro",
     "payrollWarnings": "{{count}} Aviso(s) da Folha",
     "warningBelowMinWage": "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
@@ -6040,7 +6210,13 @@ const messages = {
     "toastSelectRunAndBank": "Por favor selecione um processamento e pelo menos um banco.",
     "toastRunNotFound": "Processamento selecionado não encontrado.",
     "toastBankFilesSuccess": "Gerados {{count}} ficheiro(s) bancário(s) com sucesso.",
+    "toastBankFilesSuccessWithExcluded": "Gerados {{count}} ficheiro(s) bancário(s). {{excluded}} funcionário(s) pagos em dinheiro ou por um banco não suportado não foram incluídos.",
     "toastBankFilesError": "Falha ao gerar ficheiros bancários. Por favor tente novamente.",
+    "toastBankDetailsError": "Verifique os dados bancários da empresa e dos funcionários e tente novamente.",
+    "toastPayrollDataError": "Não foi possível carregar alguns registos de funcionários da folha. Atualize a página antes de gerar ficheiros.",
+    "bankDetailsRequired": "Adicione uma conta bancária válida para salários e complete os dados bancários dos funcionários.",
+    "missingEmployeeRecordsNotice": "Não foi possível carregar {{count}} registo(s) de funcionários da folha. Atualize antes de gerar ficheiros bancários.",
+    "excludedEmployeesNotice": "{{count}} funcionário(s) recebem em dinheiro ou usam um banco sem formato suportado e não serão incluídos.",
     "toastValidationError": "Erro de Validação",
     "toastValidationDesc": "Por favor preencha todos os campos obrigatórios.",
     "toastTransferSuccess": "Sucesso",
@@ -6099,6 +6275,203 @@ const messages = {
     "accountingBody": "Este é o seu livro formal — lançamentos contabilísticos, plano de contas e demonstrações financeiras. Cada processamento de folha e fatura cria automaticamente lançamentos aqui. Use esta secção para reconciliar, ajustar e reportar.",
     "reportsTitle": "Bem-vindo aos Relatórios.",
     "reportsBody": "Gere e reveja relatórios de toda a sua operação — resumos de folha, listas de funcionários, demonstrações financeiras e documentos de conformidade. Escolha um tipo de relatório abaixo para começar."
+  },
+  "moduleDashboards": {
+    "common": {
+      "needsAttention": "Precisa da sua atenção",
+      "day": "dia",
+      "days": "dias"
+    },
+    "people": {
+      "title": "Pessoas",
+      "seoDescription": "Funcionários, recrutamento, licenças e desempenho num só lugar.",
+      "subtitle": "{{count}} funcionários ativos. Encontre alguém ou veja o que precisa de si.",
+      "subtitleNoStaff": "Aceda às ferramentas de pessoas usadas pela sua equipa.",
+      "addEmployee": "Adicionar funcionário",
+      "searchPlaceholder": "Encontre alguém — nome, função ou número de identificação…",
+      "searchAria": "Pesquisar funcionários",
+      "allGood": "Está tudo em dia — nada precisa da sua atenção agora.",
+      "recentlyAdded": "Adicionados recentemente",
+      "unnamed": "Sem nome",
+      "attention": {
+        "leaveRequest": "pedido de licença à espera de aprovação",
+        "leaveRequests": "pedidos de licença à espera de aprovação",
+        "employeeMissingInfo": "funcionário sem informação obrigatória",
+        "employeesMissingInfo": "funcionários sem informação obrigatória",
+        "certificateExpiring": "certificado a expirar nos próximos 30 dias",
+        "certificatesExpiring": "certificados a expirar nos próximos 30 dias",
+        "openCase": "processo de funcionário em aberto",
+        "openCases": "processos de funcionários em aberto"
+      },
+      "cards": {
+        "staff": "Funcionários",
+        "active": "{{count}} ativos",
+        "hiring": "Recrutamento",
+        "interviewScheduled": "{{count}} entrevista agendada",
+        "interviewsScheduled": "{{count}} entrevistas agendadas",
+        "timeLeave": "Tempo & Licença",
+        "onLeaveToday": "{{count}} de licença hoje",
+        "performance": "Desempenho",
+        "activeGoal": "{{count}} objetivo ativo",
+        "activeGoals": "{{count}} objetivos ativos"
+      }
+    },
+    "scheduling": {
+      "title": "Tempo & Licença",
+      "seoDescription": "Cobertura, presença, aprovações de licença e planeamento de turnos num só lugar.",
+      "subtitle": "{{available}} de {{total}} funcionários disponíveis hoje ({{rate}}% de cobertura).",
+      "subtitleEmpty": "Aprove licenças, acompanhe a presença e planeie turnos.",
+      "attendanceAction": "Presença",
+      "shiftsAction": "Horários de turnos",
+      "allGood": "A cobertura está estável — nada precisa da sua atenção agora.",
+      "attention": {
+        "leaveRequest": "pedido de licença à espera de aprovação",
+        "leaveRequests": "pedidos de licença à espera de aprovação",
+        "lateArrival": "chegada tardia hoje",
+        "lateArrivals": "chegadas tardias hoje",
+        "absentToday": "ausentes hoje"
+      },
+      "cards": {
+        "attendance": "Presença",
+        "availableToday": "{{rate}}% disponíveis hoje",
+        "leave": "Licença",
+        "onLeaveToday": "{{count}} de licença hoje",
+        "timeTracking": "Controlo de Horas",
+        "timeTrackingMeta": "Entradas e horas",
+        "shifts": "Turnos",
+        "shiftsMeta": "Planear escalas semanais"
+      }
+    },
+    "payroll": {
+      "title": "Folha de Pagamento",
+      "seoDescription": "Processe a folha, faça pagamentos e acompanhe os prazos de WIT e INSS.",
+      "estimatedGross": "{{amount}} de bruto estimado",
+      "nextPaydayIn": "próximo pagamento dentro de",
+      "historyAction": "Histórico",
+      "runAction": "Processar folha",
+      "allGood": "A folha está em dia — nada precisa de atenção antes do pagamento.",
+      "attention": {
+        "employeeBlocking": "funcionário sem informação necessária para processar a folha",
+        "employeesBlocking": "funcionários sem informação necessária para processar a folha",
+        "leaveRequest": "pedido de licença à espera de aprovação",
+        "leaveRequests": "pedidos de licença à espera de aprovação",
+        "monthlyWitDueIn": "WIT mensal vence dentro de",
+        "inssDueIn": "Pagamento de INSS vence dentro de"
+      },
+      "cards": {
+        "runPayroll": "Processar folha",
+        "staffInCycle": "{{count}} funcionários no ciclo",
+        "history": "Histórico",
+        "recentRun": "{{count}} processamento recente",
+        "recentRuns": "{{count}} processamentos recentes",
+        "noRuns": "Ainda sem processamentos",
+        "bankTransfers": "Transferências bancárias",
+        "readyToPay": "{{count}} prontos para pagar",
+        "exportPay": "Exportar e pagar",
+        "taxInss": "Imposto & INSS",
+        "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d"
+      }
+    },
+    "money": {
+      "title": "Dinheiro",
+      "seoDescription": "Faturas, contas, despesas e relatórios financeiros num só lugar.",
+      "summary": "{{collected}} recebidos este mês · {{outstanding}} por receber.",
+      "viewBills": "Ver contas",
+      "newInvoice": "Nova fatura",
+      "allGood": "O fluxo de caixa está tranquilo — não há valores em atraso nem contas a vencer esta semana.",
+      "attention": {
+        "overdueInvoice": "Cobrar {{count}} fatura em atraso — {{amount}} atrasados",
+        "overdueInvoices": "Cobrar {{count}} faturas em atraso — {{amount}} atrasados",
+        "overdueBill": "Pagar {{count}} conta em atraso — {{amount}}",
+        "overdueBills": "Pagar {{count}} contas em atraso — {{amount}}",
+        "billDueThisWeek": "{{count}} conta vence esta semana — {{amount}}",
+        "billsDueThisWeek": "{{count}} contas vencem esta semana — {{amount}}",
+        "draftInvoice": "Enviar {{count}} fatura em rascunho",
+        "draftInvoices": "Enviar {{count}} faturas em rascunho"
+      },
+      "cards": {
+        "invoices": "Faturas",
+        "outstanding": "{{amount}} por receber",
+        "bills": "Contas",
+        "overdue": "{{count}} em atraso",
+        "dueThisWeek": "{{amount}} a vencer esta semana",
+        "expenses": "Despesas",
+        "expensesMeta": "Acompanhar gastos",
+        "financialReports": "Relatórios Financeiros",
+        "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA"
+      }
+    },
+    "accounting": {
+      "title": "Contabilidade",
+      "seoDescription": "Lançamentos, estrutura de contas e demonstrações financeiras num só lugar.",
+      "summaryPosted": "Última folha lançada em {{date}} · {{amount}}.",
+      "summaryNotPosted": "A última folha ainda não foi lançada no razão.",
+      "summaryNoPayroll": "Reveja os lançamentos e mantenha o balancete em ordem.",
+      "newEntry": "Novo lançamento",
+      "reviewPayroll": "Rever lançamentos da folha",
+      "allGoodWithPayroll": "As contas estão equilibradas e a folha foi lançada — nada precisa de atenção.",
+      "allGood": "As contas estão equilibradas — nada precisa de atenção.",
+      "attention": {
+        "trialBalance": "O balancete está desequilibrado",
+        "draftEntry": "{{count}} lançamento em rascunho para rever",
+        "draftEntries": "{{count}} lançamentos em rascunho para rever",
+        "payrollNotPosted": "A última folha ainda não foi lançada no razão"
+      },
+      "cards": {
+        "chartOfAccounts": "Plano de Contas",
+        "ledgerStructure": "Estrutura do razão",
+        "journalEntries": "Lançamentos",
+        "pending": "{{count}} pendentes",
+        "trialBalance": "Balancete",
+        "balanced": "Equilibrado",
+        "outOfBalance": "Desequilibrado",
+        "balanceSheet": "Balanço",
+        "live": "Atualizado",
+        "pendingPayroll": "Folha pendente",
+        "financialPosition": "Posição financeira"
+      }
+    },
+    "reports": {
+      "title": "Relatórios",
+      "seoDescription": "Relatórios de folha, pessoas, presença, departamentos e conformidade num só lugar.",
+      "summarySingle": "{{count}} família de relatórios · {{compliance}}.",
+      "summaryPlural": "{{count}} famílias de relatórios · {{compliance}}.",
+      "summaryReadOnlySingle": "{{count}} família de relatórios disponível.",
+      "summaryReadOnlyPlural": "{{count}} famílias de relatórios disponíveis.",
+      "reportSetup": "Configurar relatórios",
+      "customReports": "Relatórios personalizados",
+      "filingRunway": "Próximas declarações",
+      "allGood": "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
+      "browseReports": "Explorar relatórios",
+      "compliance": {
+        "filingOverdue": "{{count}} declaração em atraso",
+        "filingsOverdue": "{{count}} declarações em atraso",
+        "filingDueThisWeek": "{{count}} declaração vence esta semana",
+        "filingsDueThisWeek": "{{count}} declarações vencem esta semana",
+        "noneDue": "sem declarações a vencer"
+      },
+      "filings": {
+        "monthlyWit": "WIT {{period}}",
+        "annualWit": "WIT anual {{period}}",
+        "inssPayment": "Pagamento de INSS {{period}}",
+        "inssStatement": "Declaração de INSS {{period}}",
+        "overdue": "{{days}}d em atraso",
+        "dueToday": "vence hoje",
+        "dueTomorrow": "vence amanhã",
+        "daysLeft": "faltam {{days}}d",
+        "line": "{{label}} — {{descriptor}} (vence em {{date}})"
+      },
+      "families": {
+        "payroll-reports": "Recibos, impostos, detalhe anual e resumos da folha de pagamento.",
+        "employee-reports": "Número, movimento e estrutura dos funcionários.",
+        "attendance-reports": "Ausências, horas extra, pontualidade e tendências de tempo.",
+        "department-reports": "Comparações de custos, alocações e relatórios da organização.",
+        "ngo": "Pacotes de alocação e exportações para doadores de fundos restritos.",
+        "custom": "Criação, relatórios guardados e controlos de configuração.",
+        "fallbackSingle": "{{count}} relatório nesta área.",
+        "fallbackPlural": "{{count}} relatórios nesta área."
+      }
+    }
   },
   "locale": {
     "en": "English",

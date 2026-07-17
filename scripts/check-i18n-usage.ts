@@ -39,6 +39,10 @@ const extractKeys = (content: string) => {
   const regex = /\bt\(\s*(['"`])((?:\\.|(?!\1).)*?)\1/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(content))) {
+    const lineStart = content.lastIndexOf("\n", match.index) + 1;
+    const beforeMatch = content.slice(lineStart, match.index).trimStart();
+    if (beforeMatch.startsWith("//")) continue;
+
     const key = match[2];
     if (match[1] === "`" && key.includes("${")) {
       dynamic.push(key);

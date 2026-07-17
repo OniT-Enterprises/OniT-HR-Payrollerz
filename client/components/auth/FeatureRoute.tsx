@@ -12,6 +12,7 @@ interface FeatureRouteProps {
   requiredAnyModules?: ModulePermission[];
   requiredAllModules?: ModulePermission[];
   requireManage?: boolean;
+  requireManager?: boolean;
   requireNgoReporting?: boolean;
   fallbackPath?: string;
 }
@@ -22,6 +23,7 @@ export function FeatureRoute({
   requiredAnyModules,
   requiredAllModules,
   requireManage = false,
+  requireManager = false,
   requireNgoReporting = false,
   fallbackPath,
 }: FeatureRouteProps) {
@@ -33,14 +35,18 @@ export function FeatureRoute({
   // otherwise denied users land on /unauthorized so they know why.
   const deniedPath = fallbackPath ?? "/unauthorized";
 
-  // A cold page load can have loading=false (cached profile) while Firebase is
-  // still restoring the session — don't bounce to login until auth resolves.
-  if (authLoading || tenantLoading || (!user && !authResolved)) {
+  // Wait for the latest auth transition unconditionally. During an account
+  // switch `user` can already be non-null while the new profile is unresolved.
+  if (authLoading || !authResolved) {
     return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
   if (!user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  if (tenantLoading) {
+    return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
   // Session may still be restoring on a cold deep-link even when loading=false
@@ -67,6 +73,10 @@ export function FeatureRoute({
   }
 
   if (requireManage && !canManage()) {
+    return <Navigate to={deniedPath} replace />;
+  }
+
+  if (requireManager && !canManage() && session.role !== "manager") {
     return <Navigate to={deniedPath} replace />;
   }
 

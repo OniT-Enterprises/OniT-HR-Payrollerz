@@ -4,12 +4,13 @@
  * Uses react-hook-form + Zod for form management and validation
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,11 +76,30 @@ export default function RecurringInvoiceForm() {
   }));
 
   const [saving, setSaving] = useState(false);
+  const submitInFlight = useRef(false);
 
   // React Query hooks for data loading
-  const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
-  const { data: invoiceSettings, isLoading: settingsLoading } = useInvoiceSettings();
-  const { data: recurringInvoice, isLoading: recurringLoading } = useRecurringInvoice(id);
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+    isError: customersLoadError,
+    isFetching: customersFetching,
+    refetch: retryCustomers,
+  } = useActiveCustomers();
+  const {
+    data: invoiceSettings,
+    isLoading: settingsLoading,
+    isError: settingsLoadError,
+    isFetching: settingsFetching,
+    refetch: retrySettings,
+  } = useInvoiceSettings();
+  const {
+    data: recurringInvoice,
+    isLoading: recurringLoading,
+    isError: recurringLoadError,
+    isFetching: recurringFetching,
+    refetch: retryRecurring,
+  } = useRecurringInvoice(id);
   const createMutation = useCreateRecurringInvoice();
   const updateMutation = useUpdateRecurringInvoice();
 
@@ -193,17 +213,21 @@ export default function RecurringInvoiceForm() {
   };
 
   const onSubmit = async (formValues: RecurringInvoiceFormSchemaData) => {
+    if (submitInFlight.current) return;
+    submitInFlight.current = true;
     try {
       setSaving(true);
 
       // Filter valid items and prepare data
       const validItems = formValues.items
-        .filter((item) => item.description && (Number(item.quantity) * Number(item.unitPrice)) > 0)
+        .filter((item) =>
+          item.description && multiplyMoney(Number(item.quantity), Number(item.unitPrice)) > 0
+        )
         .map(({ id: _id, ...item }) => ({
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unitPrice),
-          amount: Number(item.quantity) * Number(item.unitPrice),
+          amount: multiplyMoney(Number(item.quantity), Number(item.unitPrice)),
         }));
 
       const data = {
@@ -236,6 +260,7 @@ export default function RecurringInvoiceForm() {
         variant: 'destructive',
       });
     } finally {
+      submitInFlight.current = false;
       setSaving(false);
     }
   };
@@ -261,6 +286,37 @@ export default function RecurringInvoiceForm() {
             <Skeleton className="h-48" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (settingsLoadError && invoiceSettings === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={settingsFetching}
+          onRetry={() => retrySettings()}
+        />
+      </div>
+    );
+  }
+
+  const customersUnavailable = customersLoadError && customers.length === 0;
+  const recurringUnavailable =
+    isEditMode && recurringLoadError && recurringInvoice === undefined;
+
+  if (customersUnavailable || recurringUnavailable) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={customersFetching || recurringFetching}
+          onRetry={() => Promise.all([
+            ...(customersUnavailable ? [retryCustomers()] : []),
+            ...(recurringUnavailable ? [retryRecurring()] : []),
+          ])}
+        />
       </div>
     );
   }

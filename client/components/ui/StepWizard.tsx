@@ -23,7 +23,7 @@ interface StepWizardProps {
   currentStep: number;
   onStepChange: (step: number) => void;
   children: React.ReactNode;
-  onComplete?: () => void;
+  onComplete?: () => void | Promise<void>;
   onCancel?: () => void;
   /** Called before advancing to the next step. Return false to block navigation. */
   onBeforeNext?: () => boolean | Promise<boolean>;
@@ -52,31 +52,45 @@ export function StepWizard({
   contentClassName,
 }: StepWizardProps) {
   const { t } = useI18n();
+  const actionInFlight = React.useRef(false);
+  const [actionPending, setActionPending] = React.useState(false);
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
   const currentStepData = steps[currentStep];
+  const busy = isSubmitting || actionPending;
 
   const handleNext = async () => {
-    if (onBeforeNext) {
-      const ok = await onBeforeNext();
-      if (!ok) return;
-    }
-    if (isLastStep) {
-      onComplete?.();
-    } else {
-      onStepChange(currentStep + 1);
+    // React state alone cannot block a second click before the next render.
+    // Keep a synchronous guard so slow validations/submissions only run once.
+    if (actionInFlight.current || isSubmitting || !canProceed) return;
+    actionInFlight.current = true;
+    setActionPending(true);
+
+    try {
+      if (onBeforeNext) {
+        const ok = await onBeforeNext();
+        if (!ok) return;
+      }
+      if (isLastStep) {
+        await onComplete?.();
+      } else {
+        onStepChange(currentStep + 1);
+      }
+    } finally {
+      actionInFlight.current = false;
+      setActionPending(false);
     }
   };
 
   const handleBack = () => {
-    if (!isFirstStep) {
+    if (!isFirstStep && !busy) {
       onStepChange(currentStep - 1);
     }
   };
 
   const handleStepClick = (stepIndex: number) => {
     // Only allow clicking on completed steps or the next step
-    if (stepIndex <= currentStep) {
+    if (stepIndex <= currentStep && !busy) {
       onStepChange(stepIndex);
     }
   };
@@ -99,7 +113,7 @@ export function StepWizard({
             const StepIcon = step.icon;
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
-            const isClickable = index <= currentStep;
+            const isClickable = index <= currentStep && !busy;
 
             return (
               <button
@@ -178,7 +192,7 @@ export function StepWizard({
         <div className="flex items-center justify-between">
           <div>
             {onCancel && (
-              <Button type="button" variant="ghost" onClick={onCancel}>
+              <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
                 {t("common.cancel")}
               </Button>
             )}
@@ -192,7 +206,7 @@ export function StepWizard({
               type="button"
               variant="outline"
               onClick={handleBack}
-              disabled={isFirstStep || isSubmitting}
+              disabled={isFirstStep || busy}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               {t("common.back")}
@@ -201,9 +215,9 @@ export function StepWizard({
             <Button
               type="button"
               onClick={handleNext}
-              disabled={!canProceed || isSubmitting}
+              disabled={!canProceed || busy}
             >
-              {isSubmitting ? (
+              {busy ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t("common.saving")}
@@ -238,4 +252,3 @@ export function StepContent({ stepId, currentStepId, children }: StepContentProp
   if (stepId !== currentStepId) return null;
   return <>{children}</>;
 }
-

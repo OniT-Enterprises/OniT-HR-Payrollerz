@@ -88,6 +88,8 @@ export const translations = {
       "moreActions": "More actions",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
+      "mainNavigation": "Main navigation",
+      "skipToContent": "Skip to content",
       "accountMenu": "Account menu",
       "switchToLight": "Switch to light theme",
       "switchToDark": "Switch to dark theme",
@@ -107,6 +109,8 @@ export const translations = {
       "retry": "Retry",
       "connectionIssueTitle": "Connection problem",
       "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
+      "accountRecoveryTitle": "Couldn't open your account",
+      "accountRecoveryDesc": "We couldn't load this account. Try again, or use another account.",
       "offlineTitle": "You are offline",
       "offlineDesc": "Changes may not save until your internet returns.",
       "months": {
@@ -503,7 +507,8 @@ export const translations = {
       "onboarding": {
         "title": "Create your organization",
         "subtitle": "Set up your company to start using Xefe",
-        "createButton": "Create organization"
+        "createButton": "Create organization",
+        "useAnotherAccount": "Use another account"
       },
       "demoCredentials": "Demo Credentials:",
       "demoEmail": "Email: {{email}}",
@@ -521,12 +526,13 @@ export const translations = {
         "accountExists": "An account with this email already exists. Please log in instead.",
         "weakPassword": "Password is too weak. Please use a stronger password.",
         "invalidEmail": "Invalid email address.",
-        "resetFailed": "Could not send the reset email. Please try again."
+        "resetFailed": "Could not send the reset email. Please try again.",
+        "signOutFailed": "Could not sign out. Please try again."
       },
       "signup": {
         "titleAccount": "Create Your Account",
         "titleOrganization": "Set Up Your Organization",
-        "subtitleAccount": "Start your free trial. No credit card required.",
+        "subtitleAccount": "Free plan for up to 5 employees. No card required.",
         "subtitleOrganization": "Tell us about your company",
         "stepAccount": "Account",
         "stepOrganization": "Organization",
@@ -548,7 +554,7 @@ export const translations = {
         "creating": "Creating...",
         "createAccount": "Create Account",
         "trialLabel": "Free",
-        "trialValue": "14-day trial",
+        "trialValue": "Up to 5 employees",
         "employeesLabel": "Employees",
         "featuresLabel": "Features",
         "allValue": "All"
@@ -763,6 +769,12 @@ export const translations = {
           "net": "Net Pay",
           "badge": "Auto-calculated"
         }
+      },
+      "payslip": {
+        "eyebrow": "Payslips",
+        "title": "A payslip your team can",
+        "titleAccent": "actually read",
+        "subtitle": "Every payroll run produces a compliant payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa."
       },
       "cta": {
         "title": "Ready to Start?",
@@ -1151,7 +1163,7 @@ export const translations = {
           "cheque": "Cheque",
           "other": "Other"
         },
-        "bankAccounts": "Bank Accounts",
+        "bankAccounts": "Salary Payment",
         "bankAccountsHint": "Add accounts for payroll, tax, and social security payments",
         "addAccount": "Add Account",
         "noAccounts": "No bank accounts configured",
@@ -1166,6 +1178,10 @@ export const translations = {
         "accountNumber": "Account Number",
         "branchCode": "Branch Code (optional)",
         "payrollFrequency": "Payroll Frequency",
+        "validationTitle": "Check your payment settings",
+        "selectMethodError": "Choose at least one salary payment method.",
+        "selectFrequencyError": "Choose at least one payroll frequency.",
+        "bankDetailsError": "Complete the bank name and account number, or remove the blank account.",
         "frequencyLabels": {
           "hourly": "Hourly",
           "daily": "Daily",
@@ -1195,6 +1211,7 @@ export const translations = {
         "paidPercentage": "Paid Percentage",
         "requiresMedicalCert": "Requires medical certificate",
         "maternityDaysHint": "Days (12 weeks = 84 days)",
+        "invalidValues": "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
         "save": "Save Time Off Policies"
       },
       "payroll": {
@@ -1227,6 +1244,7 @@ export const translations = {
         "paymentDeadline": "Payment Deadline",
         "paymentDeadlinePlaceholder": "MM-DD",
         "paymentDeadlineHint": "Format: MM-DD (e.g., 12-20 for December 20)",
+        "invalidValues": "Check the rates, hours, and payment deadline. Percentages must be 0–100 and the deadline MM-DD.",
         "prorataHint": "Pro-rata for employees with less than 12 months",
         "save": "Save Payroll Configuration"
       },
@@ -2855,6 +2873,12 @@ export const translations = {
       "setup": {
         "title": "Setup Reports",
         "subtitle": "System configuration and setup analytics",
+        "missing": {
+          "title": "Company setup has not started",
+          "managerDescription": "Complete the short company setup before using this report.",
+          "viewerDescription": "An administrator needs to complete company setup before this report is available.",
+          "action": "Start company setup"
+        },
         "stats": {
           "setupProgress": "Setup Progress",
           "stepsComplete": "{{completed}} of {{total}} steps",
@@ -2976,7 +3000,95 @@ export const translations = {
       },
       "custom": {
         "title": "Custom Reports",
-        "subtitle": "Build and customize your own reports"
+        "subtitle": "Build and customize your own reports",
+        "noDataTitle": "No report data is available",
+        "noDataDescription": "Ask an administrator for access to People or Time & Leave to build a custom report.",
+        "buildReport": "Build report",
+        "templatesTitle": "Templates",
+        "templatesDescription": "Start with a ready-made report, or build one for this session.",
+        "noTemplates": "No templates are available for your modules.",
+        "columnCount": "{{count}} columns",
+        "noDescription": "No description",
+        "template": "Template",
+        "lastRun": "Last run {{date}}",
+        "run": "Run",
+        "previewTitle": "Report preview",
+        "recordsFound": "{{count}} records found",
+        "exportCsv": "Export CSV",
+        "clearPreview": "Clear report preview",
+        "noMatches": "No data matched your criteria",
+        "showingLimited": "Showing 20 of {{count}} records. Export to see all.",
+        "builder": {
+          "title": "Create custom report",
+          "description": "Choose a data source, the columns you need, and optional filters.",
+          "name": "Report name",
+          "namePlaceholder": "For example, Active employees by department",
+          "optionalDescription": "Description (optional)",
+          "descriptionPlaceholder": "Brief description of the report",
+          "dataSource": "Data source",
+          "employees": "Employees",
+          "attendance": "Attendance records",
+          "departments": "Departments",
+          "selectColumns": "Select columns ({{count}} selected)",
+          "filters": "Filters",
+          "department": "Department",
+          "allDepartments": "All departments",
+          "status": "Status",
+          "allStatuses": "All statuses",
+          "active": "Active",
+          "inactive": "Inactive",
+          "onboarding": "Onboarding",
+          "dateRange": "Date range",
+          "running": "Running…",
+          "runReport": "Run report"
+        },
+        "columns": {
+          "firstName": "First name",
+          "lastName": "Last name",
+          "email": "Email",
+          "phone": "Phone",
+          "employeeId": "Employee ID",
+          "department": "Department",
+          "position": "Position",
+          "hireDate": "Hire date",
+          "employmentType": "Employment type",
+          "salary": "Monthly salary",
+          "status": "Status",
+          "date": "Date",
+          "employeeName": "Employee name",
+          "clockIn": "Clock in",
+          "clockOut": "Clock out",
+          "regularHours": "Regular hours",
+          "overtimeHours": "Overtime hours",
+          "lateMinutes": "Late minutes",
+          "departmentName": "Department name",
+          "director": "Director",
+          "manager": "Manager"
+        },
+        "templates": {
+          "activeEmployees": {
+            "name": "Active employees directory",
+            "description": "Active employees and their contact information"
+          },
+          "monthlyAttendance": {
+            "name": "Monthly attendance summary",
+            "description": "Attendance records for the current month"
+          },
+          "departmentHeadcount": {
+            "name": "Department headcount",
+            "description": "Employee count by department"
+          }
+        },
+        "toast": {
+          "generated": "Report generated",
+          "generatedDescription": "Found {{count}} records",
+          "error": "Could not run report",
+          "generateFailed": "The report could not be generated. Try again.",
+          "validationError": "Report details needed",
+          "validationDescription": "Enter a report name and select at least one column.",
+          "exported": "Export complete",
+          "exportedDescription": "The report was exported to CSV."
+        }
       },
       "employee": {
         "title": "Employee Reports",
@@ -3315,6 +3427,7 @@ export const translations = {
         },
         "actions": {
           "export": "Export CSV",
+          "exportDr": "DR Excel (INSS portal)",
           "view": "View",
           "markStatement": "Mark Statement",
           "markPayment": "Mark Payment"
@@ -3354,6 +3467,8 @@ export const translations = {
           "noDataDescription": "No payroll data found for {{period}}. Run payroll first, then generate the return.",
           "exportedTitle": "Exported",
           "exportedDescription": "INSS return exported to CSV.",
+          "drExportedDescription": "INSS DR Excel downloaded — its columns match the official portal template.",
+          "drExportError": "Could not export the DR Excel file.",
           "savedTitle": "Saved",
           "savedDescription": "INSS {{task}} marked as filed.",
           "updateErrorTitle": "Error",
@@ -3527,6 +3642,21 @@ export const translations = {
           "view": "View",
           "markFiled": "Mark Filed"
         },
+        "etax": {
+          "title": "File on e-Tax (assisted)",
+          "description": "The Monthly Wages Income Tax form asks for just these two totals. Copy them into the e-Tax portal and submit there — Xefe never files on your behalf.",
+          "residentAccount": "Domestic Monthly Wages Income Tax for Resident",
+          "nonResidentAccount": "Domestic Monthly Wages Income Tax for Non-Resident",
+          "line1": "Total gross wages paid during the month",
+          "line2": "Total wages income tax withheld during the month"
+        },
+        "payment": {
+          "title": "How to pay (ATTL)",
+          "description": "Deliver three copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked \"electronic payment\". Payment is due by the 15th of the following month.",
+          "beneficiary": "Beneficiary",
+          "bank": "Bank",
+          "account": "Wage income tax account (IBAN)"
+        },
         "alerts": {
           "overdueTitle": "Overdue filing",
           "overdueDescription": "WIT return for {{period}} was due on {{dueDate}}. Please file immediately to avoid penalties.",
@@ -3658,6 +3788,26 @@ export const translations = {
           "employer": "Employer",
           "period": "Period"
         }
+      },
+      "profitLoss": {
+        "etax": {
+          "title": "File installment tax on e-Tax (assisted)",
+          "description": "Monthly installment tax is 0.5% of gross turnover. Check the period's revenue, then file in the e-Tax portal — Xefe never files on your behalf.",
+          "account": "Domestic Installment Tax",
+          "revenue": "Revenue for Period",
+          "rate": "Tax Rate",
+          "taxToPay": "Tax to Pay"
+        }
+      },
+      "etaxFiling": {
+        "copied": "Copied",
+        "copy": "Copy value",
+        "copyFailed": "Could not copy. Select and copy the value manually.",
+        "employeeCount": "Employees: {{count}}",
+        "openPortal": "Open e-Tax portal",
+        "step1": "Open the e-Tax portal and log in.",
+        "step2": "Under Declarations, choose the matching account and this period.",
+        "step3": "Enter the values above, review them, and submit in the portal."
       }
     },
     "people": {
@@ -3922,7 +4072,13 @@ export const translations = {
           "savedDesc": "QuickBooks export settings have been updated.",
           "saveFailed": "Failed to save settings. Please try again.",
           "resetTitle": "Reset Complete",
-          "resetDesc": "Account mappings have been reset to defaults."
+          "resetDesc": "Account mappings have been reset to defaults.",
+          "readyMappings": "QuickBooks export is ready with {{count}} account mappings.",
+          "accountCount": "{{count}} accounts",
+          "status": "Status",
+          "default": "Default",
+          "custom": "Custom",
+          "accountPlaceholder": "Enter QuickBooks account name"
         }
       }
     },
@@ -4047,6 +4203,11 @@ export const translations = {
       "setupComplete": "Setup Complete",
       "accountReady": "Your account is ready to use!",
       "failedComplete": "Failed to complete setup.",
+      "loadFailedTitle": "We couldn't load your setup",
+      "loadFailedDesc": "Check your connection and try again. Your existing settings have not been changed.",
+      "stepAlreadySaved": "This step is already saved",
+      "stepAlreadySavedDesc": "Continue to the next unfinished step. Change saved details later in Settings.",
+      "payDayRange": "Pay day must be between 1 and 28.",
       "legalName": "Legal Name *",
       "legalNamePlaceholder": "Your Company Lda.",
       "tradingName": "Trading Name",
@@ -4065,7 +4226,11 @@ export const translations = {
       "phonePlaceholder": "+670 ...",
       "email": "Email",
       "emailPlaceholder": "info@company.tl",
-      "bankIntro": "Add your primary bank account for salary payments. You can add more accounts later in Settings.",
+      "bankIntro": "Choose how you usually pay salaries. You can change this later in Settings.",
+      "paymentMethod": "Salary payment method",
+      "cash": "Cash",
+      "bankTransfer": "Bank transfer",
+      "cashInfo": "No bank details are needed. You can add a bank account later if your process changes.",
       "bankName": "Bank Name *",
       "selectBank": "Select bank",
       "accountName": "Account Name",
@@ -4266,7 +4431,9 @@ export const translations = {
         "sourceManual": "Manual",
         "sourcePayroll": "Payroll",
         "sourceInvoice": "Invoice",
+        "sourceBill": "Bill",
         "sourceAdjustment": "Adjustment",
+        "sourceClosing": "Closing",
         "sourceOpening": "Opening",
         "sourceExpense": "Expense",
         "sourceRevenue": "Revenue",
@@ -4905,6 +5072,8 @@ export const translations = {
         "customer": "customer",
         "customers": "customers",
         "name": "Name",
+        "phone": "Phone",
+        "email": "Email",
         "namePlaceholder": "Company or person name",
         "type": "Type",
         "business": "Business",
@@ -4930,6 +5099,12 @@ export const translations = {
         "subtitle": "Create and manage invoices",
         "new": "New Invoice",
         "newInvoice": "New Invoice",
+        "newCustomer": "New customer…",
+        "newCustomerTitle": "New Customer",
+        "newCustomerDesc": "Enter the customer's details. You can add more later.",
+        "addCustomer": "Add Customer",
+        "customerAdded": "Customer added",
+        "customerAddError": "Could not add customer",
         "editInvoice": "Edit Invoice",
         "invoice": "INVOICE",
         "invoices": "Invoices",
@@ -5031,7 +5206,16 @@ export const translations = {
         "termsNet60": "Net 60 days",
         "termsCustom": "Custom due date",
         "dueDateAuto": "Set automatically from payment terms.",
-        "received": "Received"
+        "received": "Received",
+        "discountShort": "Disc %",
+        "vatShort": "VAT %",
+        "discountTitle": "Discount %",
+        "vatTitle": "VAT %",
+        "projectName": "Project / Service",
+        "projectPlaceholder": "e.g., Website redesign",
+        "poNumber": "Reference / PO",
+        "poPlaceholder": "Customer PO number",
+        "includesDiscount": "Includes discount of"
       },
       "payments": {
         "title": "Payments",
@@ -5119,7 +5303,7 @@ export const translations = {
         "uploadLogo": "Upload Logo",
         "changeLogo": "Change Logo",
         "logoHint": "PNG or JPG recommended, max 5MB. Shown on invoices and PDFs.",
-        "logoUploaded": "Logo uploaded — remember to save",
+        "logoUploaded": "Logo uploaded",
         "logoUploadError": "Failed to upload logo",
         "invoiceTemplate": "Invoice Template",
         "invoiceTemplateDesc": "How your invoices look on screen, in PDFs, and in emails",
@@ -5132,7 +5316,12 @@ export const translations = {
         "swiftCode": "SWIFT Code",
         "accountRequired": "Bank and account number are required",
         "defaultMethods": "Payment methods you accept by default",
-        "defaultMethodsHint": "Pre-selected on new invoices; you can change them per invoice."
+        "defaultMethodsHint": "Pre-selected on new invoices; you can change them per invoice.",
+        "footerMessage": "Footer Message",
+        "footerPlaceholder": "Thank you for your business!",
+        "footerHelp": "Closing line at the bottom of invoices, PDFs, and emails — e.g., \"Thank you for choosing Onit Enterprises Lda.\"",
+        "bin": "BIN",
+        "binPlaceholder": "Bank identification number"
       },
       "recurring": {
         "title": "Recurring Invoices",
@@ -5627,6 +5816,7 @@ export const translations = {
       "deductions": "Deductions",
       "netPay": "Net Pay",
       "noEmployeesFound": "No employees found",
+      "noEmployeesAdminHelp": "No active employees are available. Ask a manager with People access to add one.",
       "tryAdjustSearch": "Try adjusting your search term or clear the filter",
       "payrollWarnings": "{{count}} Payroll Warning(s)",
       "warningBelowMinWage": "Salary ${{salary}} is below minimum wage (${{min}}/month)",
@@ -6024,7 +6214,13 @@ export const translations = {
       "toastSelectRunAndBank": "Please select a payroll run and at least one bank.",
       "toastRunNotFound": "Selected payroll run not found.",
       "toastBankFilesSuccess": "Generated {{count}} bank file(s) successfully.",
+      "toastBankFilesSuccessWithExcluded": "Generated {{count}} bank file(s). {{excluded}} employee(s) using cash or an unsupported bank were not included.",
       "toastBankFilesError": "Failed to generate bank files. Please try again.",
+      "toastBankDetailsError": "Check the company and employee bank details, then try again.",
+      "toastPayrollDataError": "Some payroll employee records could not be loaded. Refresh the page before generating files.",
+      "bankDetailsRequired": "Add a valid company payroll bank account and complete employee bank details first.",
+      "missingEmployeeRecordsNotice": "{{count}} payroll employee record(s) could not be loaded. Refresh before generating bank files.",
+      "excludedEmployeesNotice": "{{count}} employee(s) use cash or a bank without a supported file format, so they will not be included.",
       "toastValidationError": "Validation Error",
       "toastValidationDesc": "Please fill in all required fields.",
       "toastTransferSuccess": "Success",
@@ -6083,6 +6279,203 @@ export const translations = {
       "accountingBody": "This is your formal ledger — journal entries, chart of accounts, and financial statements. Every payroll run and invoice automatically creates entries here. Use this section to reconcile, adjust, and report.",
       "reportsTitle": "Welcome to Reports.",
       "reportsBody": "Generate and review reports across your entire operation — payroll summaries, employee rosters, financial statements, and compliance documents. Pick a report type below to get started."
+    },
+    "moduleDashboards": {
+      "common": {
+        "needsAttention": "Needs your attention",
+        "day": "day",
+        "days": "days"
+      },
+      "people": {
+        "title": "People",
+        "seoDescription": "Staff, hiring, leave, and performance tools in one place.",
+        "subtitle": "{{count}} active staff. Find anyone, or jump to what needs you.",
+        "subtitleNoStaff": "Jump to the people tools your team uses.",
+        "addEmployee": "Add employee",
+        "searchPlaceholder": "Find anyone — name, role, or ID number…",
+        "searchAria": "Search employees",
+        "allGood": "You're all caught up — nothing needs attention right now.",
+        "recentlyAdded": "Recently added",
+        "unnamed": "Unnamed",
+        "attention": {
+          "leaveRequest": "leave request waiting for approval",
+          "leaveRequests": "leave requests waiting for approval",
+          "employeeMissingInfo": "employee missing required info",
+          "employeesMissingInfo": "employees missing required info",
+          "certificateExpiring": "certificate expiring within 30 days",
+          "certificatesExpiring": "certificates expiring within 30 days",
+          "openCase": "open employee case",
+          "openCases": "open employee cases"
+        },
+        "cards": {
+          "staff": "Staff",
+          "active": "{{count}} active",
+          "hiring": "Hiring",
+          "interviewScheduled": "{{count}} interview scheduled",
+          "interviewsScheduled": "{{count}} interviews scheduled",
+          "timeLeave": "Time & Leave",
+          "onLeaveToday": "{{count}} on leave today",
+          "performance": "Performance",
+          "activeGoal": "{{count}} active goal",
+          "activeGoals": "{{count}} active goals"
+        }
+      },
+      "scheduling": {
+        "title": "Time & Leave",
+        "seoDescription": "Coverage, attendance, leave approvals, and shift planning in one place.",
+        "subtitle": "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
+        "subtitleEmpty": "Approve leave, track attendance, and plan shifts.",
+        "attendanceAction": "Attendance",
+        "shiftsAction": "Shift schedules",
+        "allGood": "Coverage looks steady — nothing needs attention right now.",
+        "attention": {
+          "leaveRequest": "leave request waiting for approval",
+          "leaveRequests": "leave requests waiting for approval",
+          "lateArrival": "late arrival today",
+          "lateArrivals": "late arrivals today",
+          "absentToday": "absent today"
+        },
+        "cards": {
+          "attendance": "Attendance",
+          "availableToday": "{{rate}}% available today",
+          "leave": "Leave",
+          "onLeaveToday": "{{count}} on leave today",
+          "timeTracking": "Time Tracking",
+          "timeTrackingMeta": "Clock-ins & hours",
+          "shifts": "Shifts",
+          "shiftsMeta": "Plan weekly rosters"
+        }
+      },
+      "payroll": {
+        "title": "Payroll",
+        "seoDescription": "Run payroll, manage payments, and stay ahead of tax and INSS deadlines.",
+        "estimatedGross": "{{amount}} estimated gross",
+        "nextPaydayIn": "next payday in",
+        "historyAction": "History",
+        "runAction": "Run payroll",
+        "allGood": "Payroll is on track — nothing needs attention before payday.",
+        "attention": {
+          "employeeBlocking": "employee missing info that blocks payroll",
+          "employeesBlocking": "employees missing info that blocks payroll",
+          "leaveRequest": "leave request awaiting approval",
+          "leaveRequests": "leave requests awaiting approval",
+          "monthlyWitDueIn": "Monthly WIT due in",
+          "inssDueIn": "INSS payment due in"
+        },
+        "cards": {
+          "runPayroll": "Run payroll",
+          "staffInCycle": "{{count}} staff in cycle",
+          "history": "History",
+          "recentRun": "{{count}} recent run",
+          "recentRuns": "{{count}} recent runs",
+          "noRuns": "No runs yet",
+          "bankTransfers": "Bank transfers",
+          "readyToPay": "{{count}} ready to pay",
+          "exportPay": "Export & pay",
+          "taxInss": "Tax & INSS",
+          "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d"
+        }
+      },
+      "money": {
+        "title": "Money",
+        "seoDescription": "Invoices, bills, expenses, and financial reports in one place.",
+        "summary": "{{collected}} collected this month · {{outstanding}} outstanding.",
+        "viewBills": "View bills",
+        "newInvoice": "New invoice",
+        "allGood": "Cash flow looks calm — no overdue items or bills due this week.",
+        "attention": {
+          "overdueInvoice": "Follow up {{count}} overdue invoice — {{amount}} late",
+          "overdueInvoices": "Follow up {{count}} overdue invoices — {{amount}} late",
+          "overdueBill": "Pay {{count}} overdue bill — {{amount}}",
+          "overdueBills": "Pay {{count}} overdue bills — {{amount}}",
+          "billDueThisWeek": "{{count}} bill due this week — {{amount}}",
+          "billsDueThisWeek": "{{count}} bills due this week — {{amount}}",
+          "draftInvoice": "Send {{count}} draft invoice",
+          "draftInvoices": "Send {{count}} draft invoices"
+        },
+        "cards": {
+          "invoices": "Invoices",
+          "outstanding": "{{amount}} outstanding",
+          "bills": "Bills",
+          "overdue": "{{count}} overdue",
+          "dueThisWeek": "{{amount}} due this week",
+          "expenses": "Expenses",
+          "expensesMeta": "Track spending",
+          "financialReports": "Financial Reports",
+          "financialReportsMeta": "P&L · cashflow · VAT"
+        }
+      },
+      "accounting": {
+        "title": "Accounting",
+        "seoDescription": "Journal entries, account structure, and financial statements in one place.",
+        "summaryPosted": "Last payroll posted {{date}} · {{amount}}.",
+        "summaryNotPosted": "Latest payroll has not yet posted to the ledger.",
+        "summaryNoPayroll": "Review journals and keep the trial balance in order.",
+        "newEntry": "New entry",
+        "reviewPayroll": "Review payroll journals",
+        "allGoodWithPayroll": "The books are balanced and payroll has posted — nothing needs attention.",
+        "allGood": "The books are balanced — nothing needs attention.",
+        "attention": {
+          "trialBalance": "Trial balance is out of balance",
+          "draftEntry": "{{count}} draft journal entry to review",
+          "draftEntries": "{{count}} draft journal entries to review",
+          "payrollNotPosted": "Latest payroll is not yet posted to the ledger"
+        },
+        "cards": {
+          "chartOfAccounts": "Chart of Accounts",
+          "ledgerStructure": "Ledger structure",
+          "journalEntries": "Journal Entries",
+          "pending": "{{count}} pending",
+          "trialBalance": "Trial Balance",
+          "balanced": "Balanced",
+          "outOfBalance": "Out of balance",
+          "balanceSheet": "Balance Sheet",
+          "live": "Live",
+          "pendingPayroll": "Pending payroll",
+          "financialPosition": "Financial position"
+        }
+      },
+      "reports": {
+        "title": "Reports",
+        "seoDescription": "Payroll, people, attendance, department, and compliance reports in one place.",
+        "summarySingle": "{{count}} report family · {{compliance}}.",
+        "summaryPlural": "{{count}} report families · {{compliance}}.",
+        "summaryReadOnlySingle": "{{count}} report family available.",
+        "summaryReadOnlyPlural": "{{count}} report families available.",
+        "reportSetup": "Report setup",
+        "customReports": "Custom reports",
+        "filingRunway": "Filing runway",
+        "allGood": "No tax filings due — the reporting runway is clear.",
+        "browseReports": "Browse reports",
+        "compliance": {
+          "filingOverdue": "{{count}} filing overdue",
+          "filingsOverdue": "{{count}} filings overdue",
+          "filingDueThisWeek": "{{count}} filing due this week",
+          "filingsDueThisWeek": "{{count}} filings due this week",
+          "noneDue": "no filings due"
+        },
+        "filings": {
+          "monthlyWit": "WIT {{period}}",
+          "annualWit": "Annual WIT {{period}}",
+          "inssPayment": "INSS payment {{period}}",
+          "inssStatement": "INSS statement {{period}}",
+          "overdue": "{{days}}d overdue",
+          "dueToday": "due today",
+          "dueTomorrow": "due tomorrow",
+          "daysLeft": "{{days}}d left",
+          "line": "{{label}} — {{descriptor}} (due {{date}})"
+        },
+        "families": {
+          "payroll-reports": "Payslips, tax views, year-to-date detail, and payroll summaries.",
+          "employee-reports": "Headcount, movement, workforce structure, and staff reporting.",
+          "attendance-reports": "Absence, overtime, punctuality, and time trend reporting.",
+          "department-reports": "Cost comparisons, allocation views, and org-level reporting.",
+          "ngo": "Allocation packs and donor-facing exports for restricted funds.",
+          "custom": "Builder surfaces, saved reports, and reporting setup controls.",
+          "fallbackSingle": "{{count}} report in this area.",
+          "fallbackPlural": "{{count}} reports in this area."
+        }
+      }
     }
   },
   "tet": {
@@ -6171,6 +6564,8 @@ export const translations = {
       "moreActions": "Asaun tan",
       "openMenu": "Loke menu",
       "closeMenu": "Taka menu",
+      "mainNavigation": "Navigasaun prinsipál",
+      "skipToContent": "Ba diretamente ba konteúdu",
       "accountMenu": "Menu konta",
       "switchToLight": "Muda ba tema naroman",
       "switchToDark": "Muda ba tema nakukun",
@@ -6190,6 +6585,8 @@ export const translations = {
       "retry": "Koko fali",
       "connectionIssueTitle": "Problema ligasaun",
       "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
+      "accountRecoveryTitle": "La konsege loke ita-nia konta",
+      "accountRecoveryDesc": "Ami la konsege karrega konta ida-ne'e. Koko fali, ka uza konta seluk.",
       "offlineTitle": "Agora laiha ligasaun",
       "offlineDesc": "Mudansa sira bele seidauk rai to'o internet fila fali.",
       "months": {
@@ -6586,7 +6983,8 @@ export const translations = {
       "onboarding": {
         "title": "Kria Ita-nia Organizasaun",
         "subtitle": "Konfigura Ita-nia kompanhia atu komesa uza Xefe",
-        "createButton": "Kria Organizasaun"
+        "createButton": "Kria Organizasaun",
+        "useAnotherAccount": "Uza konta seluk"
       },
       "demoCredentials": "Kredensial demonstrasaun:",
       "demoEmail": "Email: {{email}}",
@@ -6604,12 +7002,13 @@ export const translations = {
         "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
         "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
         "invalidEmail": "Enderesu email invállidu.",
-        "resetFailed": "La konsege haruka email reset. Favór koko fali."
+        "resetFailed": "La konsege haruka email reset. Favór koko fali.",
+        "signOutFailed": "La konsege sai. Favór koko fali."
       },
       "signup": {
         "titleAccount": "Kria Ita-nia Konta",
         "titleOrganization": "Konfigura Ita-nia Organizasaun",
-        "subtitleAccount": "Hahu trial grátis. La presiza kartaun kreditu.",
+        "subtitleAccount": "Planu gratuitu ba empregadu to'o 5. La presiza kartaun.",
         "subtitleOrganization": "Hatete mai kona-ba ita-nia kompanhia",
         "stepAccount": "Konta",
         "stepOrganization": "Organizasaun",
@@ -6631,7 +7030,7 @@ export const translations = {
         "creating": "Kria hela...",
         "createAccount": "Kria Konta",
         "trialLabel": "Grátis",
-        "trialValue": "Trial loron 14",
+        "trialValue": "Empregadu to'o 5",
         "employeesLabel": "Empregadu",
         "featuresLabel": "Fitur",
         "allValue": "Hotu"
@@ -6846,6 +7245,12 @@ export const translations = {
           "net": "Saláriu Liquidu",
           "badge": "Auto-kalkuladu"
         }
+      },
+      "payslip": {
+        "eyebrow": "Resibu Pagamentu",
+        "title": "Resibu pagamentu ne'ebé ita-nia ekipa",
+        "titleAccent": "bele lee duni",
+        "subtitle": "Kada prosesu folha pagamentu prodús resibu ne'ebé tuir lei — WIT, INSS no subsídiu anuál fahe liña ba liña, iha Tetun, Inglés ka Portugés. Trabalhador sira simu sira-nian iha telefone liuhusi Ekipa."
       },
       "cta": {
         "title": "Prontu atu hahu?",
@@ -7234,7 +7639,7 @@ export const translations = {
           "cheque": "Cheque",
           "other": "Seluk"
         },
-        "bankAccounts": "Konta Banku",
+        "bankAccounts": "Pagamentu Saláriu",
         "bankAccountsHint": "Tau konta ba folha, impostu no seguransa sosial",
         "addAccount": "Tau Konta",
         "noAccounts": "Laiha konta banku",
@@ -7249,6 +7654,10 @@ export const translations = {
         "accountNumber": "Numero Konta",
         "branchCode": "Kodigo Balkao (opcional)",
         "payrollFrequency": "Frequensia Folha",
+        "validationTitle": "Verifika konfigurasaun pagamentu",
+        "selectMethodError": "Hili pelumenus métodu ida atu selu saláriu.",
+        "selectFrequencyError": "Hili pelumenus frekuénsia payroll ida.",
+        "bankDetailsError": "Kompleta naran banku no númeru konta, ka hasai konta mamuk.",
         "frequencyLabels": {
           "hourly": "Hora",
           "daily": "Loron",
@@ -7278,6 +7687,7 @@ export const translations = {
         "paidPercentage": "Percentajen Paga",
         "requiresMedicalCert": "Presiza sertifikadu mediku",
         "maternityDaysHint": "Loron (12 semana = 84 loron)",
+        "invalidValues": "Uza loron no persentajen válidu. Persentajen tenke 0–100 no períodu esperiénsia 0–12 fulan.",
         "save": "Rai Politika Lisensa"
       },
       "payroll": {
@@ -7310,6 +7720,7 @@ export const translations = {
         "paymentDeadline": "Prazu Pagamentu",
         "paymentDeadlinePlaceholder": "MM-DD",
         "paymentDeadlineHint": "Formatu: MM-DD (ez.: 12-20 ba 20 Desembru)",
+        "invalidValues": "Verifika taxa, oras no prazu pagamentu. Persentajen tenke 0–100 no prazu MM-DD.",
         "prorataHint": "Pro-rata ba empregadu ho menus de 12 fulan",
         "save": "Rai Konfigurasaun Folha"
       },
@@ -8778,7 +9189,13 @@ export const translations = {
           "savedDesc": "Konfigurasaun exportasaun QuickBooks atualiza ona.",
           "saveFailed": "La konsege rai. Favor koko fali.",
           "resetTitle": "Reset Konklui",
-          "resetDesc": "Mapeamentu konta reset ba padraun."
+          "resetDesc": "Mapeamentu konta reset ba padraun.",
+          "readyMappings": "Exportasaun QuickBooks prontu ho mapeamentu konta {{count}}.",
+          "accountCount": "konta {{count}}",
+          "status": "Estadu",
+          "default": "Padraun",
+          "custom": "Personalizadu",
+          "accountPlaceholder": "Hatama naran konta QuickBooks"
         }
       }
     },
@@ -8903,6 +9320,11 @@ export const translations = {
       "setupComplete": "Konfigurasaun Kompletu",
       "accountReady": "Ita-nia konta prontu atu uza!",
       "failedComplete": "La konsege kompleta konfigurasaun.",
+      "loadFailedTitle": "Ami la konsege karrega konfigurasaun",
+      "loadFailedDesc": "Verifika ligasaun no koko fali. Konfigurasaun ezistente seidauk muda.",
+      "stepAlreadySaved": "Etapa ida-ne'e rai tiha ona",
+      "stepAlreadySavedDesc": "Kontinua ba etapa tuirmai ne'ebé seidauk remata. Troka detallu ne'ebé rai ona iha Definisaun.",
+      "payDayRange": "Loron pagamentu tenke entre 1 no 28.",
       "legalName": "Naran Legál *",
       "legalNamePlaceholder": "Ita-nia Empreza Lda.",
       "tradingName": "Naran Komersial",
@@ -8921,7 +9343,11 @@ export const translations = {
       "phonePlaceholder": "+670 ...",
       "email": "Email",
       "emailPlaceholder": "info@empreza.tl",
-      "bankIntro": "Hatama ita-nia konta banku prinsipál ba pagamentu saláriu. Bele hatama konta seluk iha Konfigurasaun depois.",
+      "bankIntro": "Hili oinsá Ita normalmente selu saláriu. Ita bele muda ida-ne'e iha Konfigurasaun.",
+      "paymentMethod": "Métodu pagamentu saláriu",
+      "cash": "Osan",
+      "bankTransfer": "Transferénsia bankária",
+      "cashInfo": "La presiza detallu banku. Ita bele aumenta konta banku depois se prosesu muda.",
       "bankName": "Naran Banku *",
       "selectBank": "Hili banku",
       "accountName": "Naran Konta",
@@ -9122,7 +9548,9 @@ export const translations = {
         "sourceManual": "Manual",
         "sourcePayroll": "Saláriu",
         "sourceInvoice": "Fatura",
+        "sourceBill": "Kontas selu",
         "sourceAdjustment": "Ajustamentu",
+        "sourceClosing": "Taka",
         "sourceOpening": "Abertura",
         "sourceExpense": "Despeza",
         "sourceRevenue": "Rendimentu",
@@ -9865,6 +10293,12 @@ export const translations = {
       "setup": {
         "title": "Relatoriu Konfigurasaun",
         "subtitle": "Konfigurasaun sistema no analize setup",
+        "missing": {
+          "title": "Konfigurasaun kompania seidauk hahú",
+          "managerDescription": "Kompleta konfigurasaun badak kompania nian molok uza relatoriu ida-ne'e.",
+          "viewerDescription": "Administradór tenke kompleta konfigurasaun kompania molok relatoriu ida-ne'e disponivel.",
+          "action": "Hahú konfigurasaun kompania"
+        },
         "stats": {
           "setupProgress": "Progresu Setup",
           "stepsComplete": "{{completed}} husi etapa {{total}}",
@@ -9986,7 +10420,95 @@ export const translations = {
       },
       "custom": {
         "title": "Relatoriu personalizadu",
-        "subtitle": "Kria no personaliza relatoriu rasik"
+        "subtitle": "Kria no personaliza relatoriu rasik",
+        "noDataTitle": "Dadus ba relatoriu seidauk disponivel",
+        "noDataDescription": "Husu administradór atu fó asesu ba Ema ka Oras no Lisensa molok kria relatoriu personalizadu.",
+        "buildReport": "Kria relatoriu",
+        "templatesTitle": "Modelu",
+        "templatesDescription": "Hahu ho relatoriu ne'ebé prontu, ka kria ida ba sesaun ida-ne'e.",
+        "noTemplates": "La iha modelu disponivel ba ita-nia modulu.",
+        "columnCount": "Koluna {{count}}",
+        "noDescription": "La iha deskrisaun",
+        "template": "Modelu",
+        "lastRun": "Hala'o ikus {{date}}",
+        "run": "Hala'o",
+        "previewTitle": "Haree relatoriu",
+        "recordsFound": "Hetan rejistu {{count}}",
+        "exportCsv": "Exporta CSV",
+        "clearPreview": "Hamoos haree relatoriu",
+        "noMatches": "La iha dadus ne'ebé hanesan ho kritériu",
+        "showingLimited": "Hatudu rejistu 20 husi {{count}}. Exporta atu haree hotu.",
+        "builder": {
+          "title": "Kria relatoriu personalizadu",
+          "description": "Hili fonte dadus, koluna ne'ebé presiza no filtru opsionál.",
+          "name": "Naran relatoriu",
+          "namePlaceholder": "Ezemplu, Empregadu ativu tuir departamentu",
+          "optionalDescription": "Deskrisaun (opsionál)",
+          "descriptionPlaceholder": "Deskrisaun badak kona-ba relatoriu",
+          "dataSource": "Fonte dadus",
+          "employees": "Empregadu",
+          "attendance": "Rejistu prezensa",
+          "departments": "Departamentu",
+          "selectColumns": "Hili koluna ({{count}} hili ona)",
+          "filters": "Filtru",
+          "department": "Departamentu",
+          "allDepartments": "Departamentu hotu",
+          "status": "Estadu",
+          "allStatuses": "Estadu hotu",
+          "active": "Ativu",
+          "inactive": "Inativu",
+          "onboarding": "Integrasaun",
+          "dateRange": "Intervalu data",
+          "running": "Hala'o hela…",
+          "runReport": "Hala'o relatoriu"
+        },
+        "columns": {
+          "firstName": "Naran primeiru",
+          "lastName": "Apelidu",
+          "email": "Email",
+          "phone": "Telefone",
+          "employeeId": "ID empregadu",
+          "department": "Departamentu",
+          "position": "Pozisaun",
+          "hireDate": "Data kontrata",
+          "employmentType": "Tipu empregu",
+          "salary": "Saláriu fulan",
+          "status": "Estadu",
+          "date": "Data",
+          "employeeName": "Naran empregadu",
+          "clockIn": "Tama",
+          "clockOut": "Sai",
+          "regularHours": "Oras regulár",
+          "overtimeHours": "Oras estra",
+          "lateMinutes": "Minutu tarde",
+          "departmentName": "Naran departamentu",
+          "director": "Diretór",
+          "manager": "Jestór"
+        },
+        "templates": {
+          "activeEmployees": {
+            "name": "Lista empregadu ativu",
+            "description": "Empregadu ativu no sira-nia informasaun kontaktu"
+          },
+          "monthlyAttendance": {
+            "name": "Rezumu prezensa mensal",
+            "description": "Rejistu prezensa ba fulan agora"
+          },
+          "departmentHeadcount": {
+            "name": "Númeru empregadu tuir departamentu",
+            "description": "Númeru empregadu iha kada departamentu"
+          }
+        },
+        "toast": {
+          "generated": "Relatoriu kria ona",
+          "generatedDescription": "Hetan rejistu {{count}}",
+          "error": "La bele hala'o relatoriu",
+          "generateFailed": "La bele kria relatoriu. Koko fali.",
+          "validationError": "Dadus relatoriu seidauk kompletu",
+          "validationDescription": "Hatama naran relatoriu no hili pelumenus koluna ida.",
+          "exported": "Exportasaun remata",
+          "exportedDescription": "Relatoriu exporta ona ba CSV."
+        }
       },
       "employee": {
         "title": "Relatoriu Empregadu",
@@ -10325,6 +10847,7 @@ export const translations = {
         },
         "actions": {
           "export": "Exporta CSV",
+          "exportDr": "Excel DR (portál INSS)",
           "view": "Haree",
           "markStatement": "Marka deklarasaun",
           "markPayment": "Marka pagamentu"
@@ -10364,6 +10887,8 @@ export const translations = {
           "noDataDescription": "Laiha dadus folha ba {{period}}. Hala'o folha uluk, depois kria deklarasaun.",
           "exportedTitle": "Exporta ona",
           "exportedDescription": "Deklarasaun INSS exporta ona ba CSV.",
+          "drExportedDescription": "Excel DR INSS download ona — koluna sira tuir modelu ofisiál portál.",
+          "drExportError": "La konsege exporta ficheiru Excel DR.",
           "savedTitle": "Rai ona",
           "savedDescription": "{{task}} INSS marka ona hanesan hatama ona.",
           "updateErrorTitle": "Erru",
@@ -10537,6 +11062,21 @@ export const translations = {
           "view": "Haree",
           "markFiled": "Marka hatama"
         },
+        "etax": {
+          "title": "Preenxe iha e-Tax (asistidu)",
+          "description": "Formuláriu Impostu Rendimentu Saláriu Mensál husu de'it totál rua-ne'e. Kopia ba portál e-Tax no submete iha ne'ebá — Xefe nunka submete hodi ita.",
+          "residentAccount": "Impostu Rendimentu Saláriu Mensál Doméstiku ba Rezidente",
+          "nonResidentAccount": "Impostu Rendimentu Saláriu Mensál Doméstiku ba La'ós Rezidente",
+          "line1": "Totál saláriu brutu ne'ebé selu durante fulan",
+          "line2": "Totál impostu rendimentu saláriu ne'ebé reten durante fulan"
+        },
+        "payment": {
+          "title": "Oinsá atu selu (ATTL)",
+          "description": "Entrega kópia tolu hosi Formuláriu Impostu Mensál ho pagamentu iha filíál BNU ida, ka selu ho transferénsia bankária ho marka \"pagamentu eletróniku\". Data limite mak loron 15 fulan tuir mai.",
+          "beneficiary": "Benefisiáriu",
+          "bank": "Banku",
+          "account": "Konta impostu rendimentu saláriu (IBAN)"
+        },
         "alerts": {
           "overdueTitle": "Arkivu tarde ona",
           "overdueDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}}. Favór submete lalais atu evita multa.",
@@ -10668,6 +11208,26 @@ export const translations = {
           "employer": "Empregadór",
           "period": "Períodu"
         }
+      },
+      "profitLoss": {
+        "etax": {
+          "title": "Preenxe impostu prestasaun iha e-Tax (asistidu)",
+          "description": "Impostu prestasaun mensál mak 0,5% hosi volume negósiu brutu. Verifika rendimentu períodu nian, depois submete iha portál e-Tax — Xefe nunka submete hodi ita.",
+          "account": "Impostu Prestasaun Doméstiku",
+          "revenue": "Rendimentu ba Períodu",
+          "rate": "Taxa Impostu",
+          "taxToPay": "Impostu atu Selu"
+        }
+      },
+      "etaxFiling": {
+        "copied": "Kopia ona",
+        "copy": "Kopia valor",
+        "copyFailed": "La konsege kopia. Hili no kopia valor manualmente.",
+        "employeeCount": "Empregadu: {{count}}",
+        "openPortal": "Loke portál e-Tax",
+        "step1": "Loke portál e-Tax no tama.",
+        "step2": "Iha Deklarasaun, hili konta ne'ebé loos no períodu ida-ne'e.",
+        "step3": "Hatama valor sira iha leten, reviza no submete iha portál."
       }
     },
     "people": {
@@ -10986,6 +11546,8 @@ export const translations = {
         "showing": "Hatudu",
         "customer": "kliente",
         "customers": "kliente",
+        "phone": "Telefone",
+        "email": "Email",
         "business": "Negosiu",
         "individual": "Individuál",
         "name": "Naran",
@@ -11013,6 +11575,12 @@ export const translations = {
         "subtitle": "Kria no jere fatura",
         "new": "Fatura Foun",
         "newInvoice": "Fatura Foun",
+        "newCustomer": "Kliente foun…",
+        "newCustomerTitle": "Kliente Foun",
+        "newCustomerDesc": "Hatama informasaun kliente. Ita bele kompleta tan depois.",
+        "addCustomer": "Tau Kliente",
+        "customerAdded": "Kliente tau ona",
+        "customerAddError": "La konsege tau kliente",
         "editInvoice": "Edita Fatura",
         "searchPlaceholder": "Buka fatura...",
         "noResults": "Fatura la hetan",
@@ -11114,7 +11682,16 @@ export const translations = {
         "termsNet60": "Loron 60",
         "termsCustom": "Data rasik",
         "dueDateAuto": "Define automátiku husi kondisaun pagamentu.",
-        "received": "Simu ona"
+        "received": "Simu ona",
+        "discountShort": "Desk %",
+        "vatShort": "IVA %",
+        "discountTitle": "Deskontu %",
+        "vatTitle": "IVA %",
+        "projectName": "Projetu / Servisu",
+        "projectPlaceholder": "ex., Redesenhu website",
+        "poNumber": "Referénsia / PO",
+        "poPlaceholder": "Númeru PO kliente nian",
+        "includesDiscount": "Inklui deskontu"
       },
       "payments": {
         "title": "Pagamentu",
@@ -11202,7 +11779,7 @@ export const translations = {
         "uploadLogo": "Upload Logotipu",
         "changeLogo": "Muda Logotipu",
         "logoHint": "PNG ka JPG di'ak liu, másimu 5MB. Mosu iha fatura no PDF.",
-        "logoUploaded": "Logotipu upload tiha ona — keta haluha rai",
+        "logoUploaded": "Logotipu upload tiha ona",
         "logoUploadError": "Falha upload logotipu",
         "invoiceTemplate": "Modelu Fatura",
         "invoiceTemplateDesc": "Oinsá ita-nia fatura mosu iha ekrã, PDF no email",
@@ -11215,7 +11792,12 @@ export const translations = {
         "swiftCode": "Kódigu SWIFT",
         "accountRequired": "Banku no númeru konta presiza",
         "defaultMethods": "Metodu pagamentu padraun ne'ebé ita simu",
-        "defaultMethodsHint": "Pre-hili ona iha fatura foun; bele muda ba kada fatura."
+        "defaultMethodsHint": "Pre-hili ona iha fatura foun; bele muda ba kada fatura.",
+        "footerMessage": "Mensajen Rodapé",
+        "footerPlaceholder": "Obrigadu ba ita-nia negósiu!",
+        "footerHelp": "Liña ikus iha fatura, PDF no email nia okos — ex., \"Obrigadu tanba hili Onit Enterprises Lda.\"",
+        "bin": "BIN",
+        "binPlaceholder": "Númeru identifikasaun banku"
       },
       "recurring": {
         "title": "Fatura Rekorrente",
@@ -11710,6 +12292,7 @@ export const translations = {
       "deductions": "Dedusaun",
       "netPay": "Líkidu",
       "noEmployeesFound": "Laiha trabalhador",
+      "noEmployeesAdminHelp": "Laiha trabalhador ativu. Husu ba jestór ho asesu ba Ema atu aumenta ida.",
       "tryAdjustSearch": "Koko ajusta termu buka ka hamoos filtru",
       "payrollWarnings": "Avizu Saláriu {{count}}",
       "warningBelowMinWage": "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
@@ -12107,7 +12690,13 @@ export const translations = {
       "toastSelectRunAndBank": "Favór hili folha pagamentu no banku ida pelumenus.",
       "toastRunNotFound": "Folha pagamentu hili tiha la hetan.",
       "toastBankFilesSuccess": "Kria {{count}} ficheiro banku ho susesu.",
+      "toastBankFilesSuccessWithExcluded": "Kria ficheiro banku {{count}}. Empregadu {{excluded}} ne'ebé simu osan ka uza banku ne'ebé seidauk suporta la tama.",
       "toastBankFilesError": "La konsege kria ficheiro banku. Favór koko fali.",
+      "toastBankDetailsError": "Verifika dadus banku kompania no empregadu nian, depois koko fali.",
+      "toastPayrollDataError": "La bele karrega rejistu empregadu folha pagamentu balu. Atualiza pájina molok kria ficheiro.",
+      "bankDetailsRequired": "Hatama konta banku saláriu kompania ne'ebé válidu no kompleta dadus banku empregadu nian.",
+      "missingEmployeeRecordsNotice": "La bele karrega rejistu empregadu folha pagamentu {{count}}. Atualiza molok kria ficheiro banku.",
+      "excludedEmployeesNotice": "Empregadu {{count}} simu osan ka uza banku ne'ebé seidauk iha formatu suporta, nune'e sira la tama.",
       "toastValidationError": "Erru Validasaun",
       "toastValidationDesc": "Favór prenxe kampu obrigatóriu hotu.",
       "toastTransferSuccess": "Susesu",
@@ -12166,6 +12755,203 @@ export const translations = {
       "accountingBody": "Ida ne’e ita-nia livru razãu formál — lansamantu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamantu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
       "reportsTitle": "Bemvindu ba Relatóriu.",
       "reportsBody": "Kria no reviza relatóriu husi ita-nia operasaun tomak — sumáriu folha pagamentu, lista empregádu, relatóriu finanseiru, no dokumentu konformidade. Hili tipu relatóriu iha kraik atu hahú."
+    },
+    "moduleDashboards": {
+      "common": {
+        "needsAttention": "Presiza Ita-nia atensaun",
+        "day": "loron",
+        "days": "loron"
+      },
+      "people": {
+        "title": "Ema",
+        "seoDescription": "Ferramenta ba staf, rekrutamentu, lisensa no dezempénhu iha fatin ida.",
+        "subtitle": "Staf ativu {{count}}. Buka ema ida, ka ba buat ne'ebé presiza Ita.",
+        "subtitleNoStaff": "Ba ferramenta ba ema ne'ebé Ita-nia ekipa uza.",
+        "addEmployee": "Aumenta funsionáriu",
+        "searchPlaceholder": "Buka ema — naran, kargu, ka númeru ID…",
+        "searchAria": "Buka funsionáriu",
+        "allGood": "Hotu remata ona — agora laiha buat ne'ebé presiza atensaun.",
+        "recentlyAdded": "Aumenta foin lalais",
+        "unnamed": "Laiha naran",
+        "attention": {
+          "leaveRequest": "pedidu lisensa ida hein aprovasaun",
+          "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+          "employeeMissingInfo": "funsionáriu ida falta informasaun obrigatóriu",
+          "employeesMissingInfo": "funsionáriu sira falta informasaun obrigatóriu",
+          "certificateExpiring": "sertifikadu ida sei expira iha loron 30 nia laran",
+          "certificatesExpiring": "sertifikadu sira sei expira iha loron 30 nia laran",
+          "openCase": "kazu funsionáriu ida sei nakloke",
+          "openCases": "kazu funsionáriu sira sei nakloke"
+        },
+        "cards": {
+          "staff": "Staf",
+          "active": "{{count}} ativu",
+          "hiring": "Rekrutamentu",
+          "interviewScheduled": "entrevista {{count}} planeadu",
+          "interviewsScheduled": "entrevista {{count}} planeadu",
+          "timeLeave": "Tempu & Lisensa",
+          "onLeaveToday": "{{count}} iha lisensa ohin",
+          "performance": "Dezempénhu",
+          "activeGoal": "objetivu ativu {{count}}",
+          "activeGoals": "objetivu ativu {{count}}"
+        }
+      },
+      "scheduling": {
+        "title": "Tempu & Lisensa",
+        "seoDescription": "Kobertura, prezensa, aprovasaun lisensa no planeamentu turnu iha fatin ida.",
+        "subtitle": "Staf {{available}} husi {{total}} disponível ohin (kobertura {{rate}}%).",
+        "subtitleEmpty": "Aprova lisensa, kontrola prezensa no planeia turnu.",
+        "attendanceAction": "Prezensa",
+        "shiftsAction": "Oráriu turnu",
+        "allGood": "Kobertura di'ak — agora laiha buat ne'ebé presiza atensaun.",
+        "attention": {
+          "leaveRequest": "pedidu lisensa ida hein aprovasaun",
+          "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+          "lateArrival": "to'o tarde ohin",
+          "lateArrivals": "to'o tarde ohin",
+          "absentToday": "ausente ohin"
+        },
+        "cards": {
+          "attendance": "Prezensa",
+          "availableToday": "{{rate}}% disponível ohin",
+          "leave": "Lisensa",
+          "onLeaveToday": "{{count}} iha lisensa ohin",
+          "timeTracking": "Kontrola Tempu",
+          "timeTrackingMeta": "Rejistu tama no oras servisu",
+          "shifts": "Turnu",
+          "shiftsMeta": "Planeia lista turnu semanal"
+        }
+      },
+      "payroll": {
+        "title": "Saláriu",
+        "seoDescription": "Prosesu saláriu, jere pagamentu no akompaña prazu WIT no INSS.",
+        "estimatedGross": "estimasaun brutu {{amount}}",
+        "nextPaydayIn": "loron pagamentu tuir mai iha",
+        "historyAction": "Istória",
+        "runAction": "Halo saláriu",
+        "allGood": "Saláriu lao tuir planu — laiha buat ne'ebé presiza atensaun molok loron pagamentu.",
+        "attention": {
+          "employeeBlocking": "funsionáriu falta informasaun ne'ebé taka prosesu saláriu",
+          "employeesBlocking": "funsionáriu sira falta informasaun ne'ebé taka prosesu saláriu",
+          "leaveRequest": "pedidu lisensa hein aprovasaun",
+          "leaveRequests": "pedidu lisensa sira hein aprovasaun",
+          "monthlyWitDueIn": "WIT mensál tenke selu iha",
+          "inssDueIn": "Pagamentu INSS tenke selu iha"
+        },
+        "cards": {
+          "runPayroll": "Halo saláriu",
+          "staffInCycle": "staf {{count}} iha siklu",
+          "history": "Istória",
+          "recentRun": "prosesu foin lalais {{count}}",
+          "recentRuns": "prosesu foin lalais {{count}}",
+          "noRuns": "Seidauk iha prosesu",
+          "bankTransfers": "Transferénsia bankária",
+          "readyToPay": "{{count}} prontu atu selu",
+          "exportPay": "Esporta & selu",
+          "taxInss": "Impostu & INSS",
+          "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron"
+        }
+      },
+      "money": {
+        "title": "Osan",
+        "seoDescription": "Fatura, konta, despeza no relatóriu finanseiru iha fatin ida.",
+        "summary": "{{collected}} simu fulan ida-ne'e · {{outstanding}} seidauk simu.",
+        "viewBills": "Haree konta",
+        "newInvoice": "Fatura foun",
+        "allGood": "Fluxu osan di'ak — laiha item atrasu ka konta ne'ebé tenke selu semana ida-ne'e.",
+        "attention": {
+          "overdueInvoice": "Kontaktu fali kona-ba fatura atrasu {{count}} — {{amount}} atrasu",
+          "overdueInvoices": "Kontaktu fali kona-ba fatura atrasu {{count}} — {{amount}} atrasu",
+          "overdueBill": "Selu konta atrasu {{count}} — {{amount}}",
+          "overdueBills": "Selu konta atrasu {{count}} — {{amount}}",
+          "billDueThisWeek": "Konta {{count}} tenke selu semana ida-ne'e — {{amount}}",
+          "billsDueThisWeek": "Konta {{count}} tenke selu semana ida-ne'e — {{amount}}",
+          "draftInvoice": "Haruka rascunhu fatura {{count}}",
+          "draftInvoices": "Haruka rascunhu fatura {{count}}"
+        },
+        "cards": {
+          "invoices": "Fatura",
+          "outstanding": "{{amount}} seidauk simu",
+          "bills": "Konta",
+          "overdue": "{{count}} atrasu",
+          "dueThisWeek": "{{amount}} tenke selu semana ida-ne'e",
+          "expenses": "Despeza",
+          "expensesMeta": "Kontrola gastu",
+          "financialReports": "Relatóriu Finanseiru",
+          "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT"
+        }
+      },
+      "accounting": {
+        "title": "Kontabilidade",
+        "seoDescription": "Lansu jornál, estrutura konta no demonstrasaun finanseira iha fatin ida.",
+        "summaryPosted": "Saláriu ikus lança ona iha {{date}} · {{amount}}.",
+        "summaryNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade.",
+        "summaryNoPayroll": "Reviza lansu jornál no mantén balansu tentativa loos.",
+        "newEntry": "Lansu foun",
+        "reviewPayroll": "Reviza lansu jornál saláriu",
+        "allGoodWithPayroll": "Kontas balansu ona no saláriu lança ona — laiha buat ne'ebé presiza atensaun.",
+        "allGood": "Kontas balansu ona — laiha buat ne'ebé presiza atensaun.",
+        "attention": {
+          "trialBalance": "Balansu tentativa la balansu",
+          "draftEntry": "Rascunhu lansu jornál {{count}} atu reviza",
+          "draftEntries": "Rascunhu lansu jornál {{count}} atu reviza",
+          "payrollNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade"
+        },
+        "cards": {
+          "chartOfAccounts": "Planu Konta",
+          "ledgerStructure": "Estrutura livru kontabilidade",
+          "journalEntries": "Lansu Jornál",
+          "pending": "{{count}} hein",
+          "trialBalance": "Balansu Tentativa",
+          "balanced": "Balansu",
+          "outOfBalance": "La balansu",
+          "balanceSheet": "Balansu",
+          "live": "Ativu",
+          "pendingPayroll": "Hein saláriu",
+          "financialPosition": "Pozisaun finanseira"
+        }
+      },
+      "reports": {
+        "title": "Relatóriu",
+        "seoDescription": "Relatóriu saláriu, ema, prezensa, departamentu no kompliansia iha fatin ida.",
+        "summarySingle": "Família relatóriu {{count}} · {{compliance}}.",
+        "summaryPlural": "Família relatóriu {{count}} · {{compliance}}.",
+        "summaryReadOnlySingle": "Família relatóriu {{count}} disponivel.",
+        "summaryReadOnlyPlural": "Família relatóriu {{count}} disponivel.",
+        "reportSetup": "Konfigura relatóriu",
+        "customReports": "Relatóriu personalizadu",
+        "filingRunway": "Prazu deklarasaun",
+        "allGood": "Laiha deklarasaun impostu atu entrega — prazu hotu klaru.",
+        "browseReports": "Buka relatóriu",
+        "compliance": {
+          "filingOverdue": "deklarasaun {{count}} atrasu",
+          "filingsOverdue": "deklarasaun {{count}} atrasu",
+          "filingDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
+          "filingsDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
+          "noneDue": "laiha deklarasaun atu entrega"
+        },
+        "filings": {
+          "monthlyWit": "WIT {{period}}",
+          "annualWit": "WIT anuál {{period}}",
+          "inssPayment": "Pagamentu INSS {{period}}",
+          "inssStatement": "Deklarasaun INSS {{period}}",
+          "overdue": "atrasu loron {{days}}",
+          "dueToday": "tenke entrega ohin",
+          "dueTomorrow": "tenke entrega aban",
+          "daysLeft": "falta loron {{days}}",
+          "line": "{{label}} — {{descriptor}} (prazu {{date}})"
+        },
+        "families": {
+          "payroll-reports": "Payslip, vista impostu, detallu tinan no rezumu saláriu.",
+          "employee-reports": "Númeru staf, movimentu, estrutura ekipa no relatóriu funsionáriu.",
+          "attendance-reports": "Ausénsia, oras estra, pontualidade no tendénsia tempu.",
+          "department-reports": "Kompara kustu, alokasaun no relatóriu organizasaun.",
+          "ngo": "Pakote alokasaun no exportasaun ba doador husi fundu restritu.",
+          "custom": "Kria relatóriu, rai relatóriu no kontrola nia konfigurasaun.",
+          "fallbackSingle": "Relatóriu {{count}} iha área ida-ne'e.",
+          "fallbackPlural": "Relatóriu {{count}} iha área ida-ne'e."
+        }
+      }
     }
   },
   "pt": {
@@ -12254,6 +13040,8 @@ export const translations = {
       "moreActions": "Mais ações",
       "openMenu": "Abrir menu",
       "closeMenu": "Fechar menu",
+      "mainNavigation": "Navegação principal",
+      "skipToContent": "Ir para o conteúdo",
       "accountMenu": "Menu de conta",
       "switchToLight": "Mudar para tema claro",
       "switchToDark": "Mudar para tema escuro",
@@ -12273,6 +13061,8 @@ export const translations = {
       "retry": "Tentar novamente",
       "connectionIssueTitle": "Problema de conexão",
       "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
+      "accountRecoveryTitle": "Não foi possível abrir a sua conta",
+      "accountRecoveryDesc": "Não foi possível carregar esta conta. Tente novamente ou use outra conta.",
       "offlineTitle": "Está offline",
       "offlineDesc": "As alterações podem não guardar até a internet voltar.",
       "months": {
@@ -12669,7 +13459,8 @@ export const translations = {
       "onboarding": {
         "title": "Crie a sua organização",
         "subtitle": "Configure a sua empresa para começar a usar o Xefe",
-        "createButton": "Criar organização"
+        "createButton": "Criar organização",
+        "useAnotherAccount": "Usar outra conta"
       },
       "demoCredentials": "Credenciais de Demonstração:",
       "demoEmail": "Email: {{email}}",
@@ -12687,12 +13478,13 @@ export const translations = {
         "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
         "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
         "invalidEmail": "Endereço de email inválido.",
-        "resetFailed": "Não foi possível enviar o email de reposição. Tente novamente."
+        "resetFailed": "Não foi possível enviar o email de reposição. Tente novamente.",
+        "signOutFailed": "Não foi possível terminar a sessão. Tente novamente."
       },
       "signup": {
         "titleAccount": "Criar a Sua Conta",
         "titleOrganization": "Configurar a Sua Organização",
-        "subtitleAccount": "Comece o seu teste gratuito. Sem cartão de crédito.",
+        "subtitleAccount": "Plano grátis para até 5 funcionários. Sem cartão.",
         "subtitleOrganization": "Fale-nos sobre a sua empresa",
         "stepAccount": "Conta",
         "stepOrganization": "Organização",
@@ -12714,7 +13506,7 @@ export const translations = {
         "creating": "A criar...",
         "createAccount": "Criar Conta",
         "trialLabel": "Grátis",
-        "trialValue": "Teste de 14 dias",
+        "trialValue": "Até 5 funcionários",
         "employeesLabel": "Funcionários",
         "featuresLabel": "Funcionalidades",
         "allValue": "Todas"
@@ -12929,6 +13721,12 @@ export const translations = {
           "net": "Salário Líquido",
           "badge": "Calculado automaticamente"
         }
+      },
+      "payslip": {
+        "eyebrow": "Recibos de Vencimento",
+        "title": "Um recibo que a sua equipa",
+        "titleAccent": "consegue mesmo ler",
+        "subtitle": "Cada processamento gera um recibo conforme a lei — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa."
       },
       "cta": {
         "title": "Pronto para Começar?",
@@ -13317,7 +14115,7 @@ export const translations = {
           "cheque": "Cheque",
           "other": "Outro"
         },
-        "bankAccounts": "Contas Bancárias",
+        "bankAccounts": "Pagamento Salarial",
         "bankAccountsHint": "Adicione contas para pagamentos de folha, impostos e segurança social",
         "addAccount": "Adicionar Conta",
         "noAccounts": "Nenhuma conta bancária configurada",
@@ -13332,6 +14130,10 @@ export const translations = {
         "accountNumber": "Número da Conta",
         "branchCode": "Código da Agência (opcional)",
         "payrollFrequency": "Frequência da Folha",
+        "validationTitle": "Verifique as definições de pagamento",
+        "selectMethodError": "Escolha pelo menos um método de pagamento salarial.",
+        "selectFrequencyError": "Escolha pelo menos uma frequência da folha.",
+        "bankDetailsError": "Preencha o banco e o número da conta, ou remova a conta vazia.",
         "frequencyLabels": {
           "hourly": "À Hora",
           "daily": "Diária",
@@ -13361,6 +14163,7 @@ export const translations = {
         "paidPercentage": "Percentagem Paga",
         "requiresMedicalCert": "Requer certificado médico",
         "maternityDaysHint": "Dias (12 semanas = 84 dias)",
+        "invalidValues": "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
         "save": "Guardar Políticas de Licenças"
       },
       "payroll": {
@@ -13393,6 +14196,7 @@ export const translations = {
         "paymentDeadline": "Prazo de Pagamento",
         "paymentDeadlinePlaceholder": "MM-DD",
         "paymentDeadlineHint": "Formato: MM-DD (ex., 12-20 para 20 de Dezembro)",
+        "invalidValues": "Verifique taxas, horas e prazo. As percentagens devem ser 0–100 e o prazo no formato MM-DD.",
         "prorataHint": "Pro-rata para funcionários com menos de 12 meses",
         "save": "Guardar Configuração da Folha"
       },
@@ -15021,6 +15825,12 @@ export const translations = {
       "setup": {
         "title": "Relatórios de Configuração",
         "subtitle": "Configuração do sistema e análises de setup",
+        "missing": {
+          "title": "A configuração da empresa ainda não começou",
+          "managerDescription": "Conclua a configuração breve da empresa antes de usar este relatório.",
+          "viewerDescription": "Um administrador precisa concluir a configuração da empresa antes de este relatório ficar disponível.",
+          "action": "Iniciar configuração da empresa"
+        },
         "stats": {
           "setupProgress": "Progresso da Configuração",
           "stepsComplete": "{{completed}} de {{total}} passos",
@@ -15142,7 +15952,95 @@ export const translations = {
       },
       "custom": {
         "title": "Relatórios Personalizados",
-        "subtitle": "Construa e personalize os seus próprios relatórios"
+        "subtitle": "Construa e personalize os seus próprios relatórios",
+        "noDataTitle": "Não há dados disponíveis para relatórios",
+        "noDataDescription": "Peça a um administrador acesso a Pessoas ou Tempo e Licenças para criar um relatório personalizado.",
+        "buildReport": "Criar relatório",
+        "templatesTitle": "Modelos",
+        "templatesDescription": "Comece com um relatório pronto ou crie um para esta sessão.",
+        "noTemplates": "Não há modelos disponíveis para os seus módulos.",
+        "columnCount": "{{count}} colunas",
+        "noDescription": "Sem descrição",
+        "template": "Modelo",
+        "lastRun": "Última execução {{date}}",
+        "run": "Executar",
+        "previewTitle": "Pré-visualização do relatório",
+        "recordsFound": "{{count}} registos encontrados",
+        "exportCsv": "Exportar CSV",
+        "clearPreview": "Limpar pré-visualização",
+        "noMatches": "Nenhum dado corresponde aos critérios",
+        "showingLimited": "A mostrar 20 de {{count}} registos. Exporte para ver todos.",
+        "builder": {
+          "title": "Criar relatório personalizado",
+          "description": "Escolha a fonte de dados, as colunas necessárias e filtros opcionais.",
+          "name": "Nome do relatório",
+          "namePlaceholder": "Por exemplo, Funcionários ativos por departamento",
+          "optionalDescription": "Descrição (opcional)",
+          "descriptionPlaceholder": "Descrição breve do relatório",
+          "dataSource": "Fonte de dados",
+          "employees": "Funcionários",
+          "attendance": "Registos de presença",
+          "departments": "Departamentos",
+          "selectColumns": "Selecionar colunas ({{count}} selecionadas)",
+          "filters": "Filtros",
+          "department": "Departamento",
+          "allDepartments": "Todos os departamentos",
+          "status": "Estado",
+          "allStatuses": "Todos os estados",
+          "active": "Ativo",
+          "inactive": "Inativo",
+          "onboarding": "Integração",
+          "dateRange": "Período",
+          "running": "A executar…",
+          "runReport": "Executar relatório"
+        },
+        "columns": {
+          "firstName": "Nome",
+          "lastName": "Apelido",
+          "email": "Email",
+          "phone": "Telefone",
+          "employeeId": "ID do funcionário",
+          "department": "Departamento",
+          "position": "Cargo",
+          "hireDate": "Data de contratação",
+          "employmentType": "Tipo de emprego",
+          "salary": "Salário mensal",
+          "status": "Estado",
+          "date": "Data",
+          "employeeName": "Nome do funcionário",
+          "clockIn": "Entrada",
+          "clockOut": "Saída",
+          "regularHours": "Horas regulares",
+          "overtimeHours": "Horas extra",
+          "lateMinutes": "Minutos de atraso",
+          "departmentName": "Nome do departamento",
+          "director": "Diretor",
+          "manager": "Gestor"
+        },
+        "templates": {
+          "activeEmployees": {
+            "name": "Diretório de funcionários ativos",
+            "description": "Funcionários ativos e respetivos contactos"
+          },
+          "monthlyAttendance": {
+            "name": "Resumo mensal de presenças",
+            "description": "Registos de presença do mês atual"
+          },
+          "departmentHeadcount": {
+            "name": "Efetivo por departamento",
+            "description": "Número de funcionários por departamento"
+          }
+        },
+        "toast": {
+          "generated": "Relatório gerado",
+          "generatedDescription": "{{count}} registos encontrados",
+          "error": "Não foi possível executar o relatório",
+          "generateFailed": "Não foi possível gerar o relatório. Tente novamente.",
+          "validationError": "Faltam dados do relatório",
+          "validationDescription": "Introduza um nome e selecione pelo menos uma coluna.",
+          "exported": "Exportação concluída",
+          "exportedDescription": "O relatório foi exportado para CSV."
+        }
       },
       "employee": {
         "title": "Relatórios de Funcionários",
@@ -15481,6 +16379,7 @@ export const translations = {
         },
         "actions": {
           "export": "Exportar CSV",
+          "exportDr": "Excel DR (portal INSS)",
           "view": "Ver",
           "markStatement": "Marcar Declaração",
           "markPayment": "Marcar Pagamento"
@@ -15520,6 +16419,8 @@ export const translations = {
           "noDataDescription": "Não foram encontrados dados de folha para {{period}}. Execute a folha primeiro e depois gere a declaração.",
           "exportedTitle": "Exportado",
           "exportedDescription": "Declaração do INSS exportada para CSV.",
+          "drExportedDescription": "Excel DR do INSS transferido — as colunas correspondem ao modelo oficial do portal.",
+          "drExportError": "Não foi possível exportar o ficheiro Excel DR.",
           "savedTitle": "Guardado",
           "savedDescription": "{{task}} do INSS marcado como entregue.",
           "updateErrorTitle": "Erro",
@@ -15693,6 +16594,21 @@ export const translations = {
           "view": "Ver",
           "markFiled": "Marcar Entregue"
         },
+        "etax": {
+          "title": "Preencher no e-Tax (assistido)",
+          "description": "A declaração mensal do imposto sobre salários pede apenas estes dois totais. Copie-os para o portal e-Tax e submeta lá — o Xefe nunca submete por si.",
+          "residentAccount": "Imposto Mensal sobre Rendimentos do Trabalho — Residentes",
+          "nonResidentAccount": "Imposto Mensal sobre Rendimentos do Trabalho — Não Residentes",
+          "line1": "Total de salários brutos pagos durante o mês",
+          "line2": "Total de imposto sobre salários retido durante o mês"
+        },
+        "payment": {
+          "title": "Como pagar (ATTL)",
+          "description": "Entregue três cópias do Formulário de Impostos Mensais com o pagamento numa agência BNU, ou pague por transferência bancária marcada \"pagamento eletrónico\". O prazo é o dia 15 do mês seguinte.",
+          "beneficiary": "Beneficiário",
+          "bank": "Banco",
+          "account": "Conta do imposto sobre salários (IBAN)"
+        },
         "alerts": {
           "overdueTitle": "Entrega em atraso",
           "overdueDescription": "A declaração de IRT de {{period}} devia ter sido entregue em {{dueDate}}. Entregue-a imediatamente para evitar penalizações.",
@@ -15824,6 +16740,26 @@ export const translations = {
           "employer": "Empregador",
           "period": "Período"
         }
+      },
+      "profitLoss": {
+        "etax": {
+          "title": "Preencher imposto prestacional no e-Tax (assistido)",
+          "description": "O imposto prestacional mensal é 0,5% do volume de negócios bruto. Confirme a receita do período e submeta no portal e-Tax — o Xefe nunca submete por si.",
+          "account": "Imposto Prestacional Doméstico",
+          "revenue": "Receita do período",
+          "rate": "Taxa de imposto",
+          "taxToPay": "Imposto a pagar"
+        }
+      },
+      "etaxFiling": {
+        "copied": "Copiado",
+        "copy": "Copiar valor",
+        "copyFailed": "Não foi possível copiar. Selecione e copie o valor manualmente.",
+        "employeeCount": "Trabalhadores: {{count}}",
+        "openPortal": "Abrir portal e-Tax",
+        "step1": "Abra o portal e-Tax e inicie sessão.",
+        "step2": "Em Declarações, escolha a conta correspondente e este período.",
+        "step3": "Introduza os valores acima, reveja-os e submeta no portal."
       }
     },
     "people": {
@@ -16088,7 +17024,13 @@ export const translations = {
           "savedDesc": "As definições de exportação QuickBooks foram atualizadas.",
           "saveFailed": "Falha ao guardar definições. Por favor tente novamente.",
           "resetTitle": "Reposição Concluída",
-          "resetDesc": "Os mapeamentos de contas foram repostos para os padrões."
+          "resetDesc": "Os mapeamentos de contas foram repostos para os padrões.",
+          "readyMappings": "A exportação do QuickBooks está pronta com {{count}} mapeamentos de contas.",
+          "accountCount": "{{count}} contas",
+          "status": "Estado",
+          "default": "Predefinido",
+          "custom": "Personalizado",
+          "accountPlaceholder": "Introduza o nome da conta do QuickBooks"
         }
       }
     },
@@ -16213,6 +17155,11 @@ export const translations = {
       "setupComplete": "Configuração Completa",
       "accountReady": "A sua conta está pronta a usar!",
       "failedComplete": "Falha ao completar a configuração.",
+      "loadFailedTitle": "Não foi possível carregar a configuração",
+      "loadFailedDesc": "Verifique a ligação e tente novamente. As definições existentes não foram alteradas.",
+      "stepAlreadySaved": "Este passo já está guardado",
+      "stepAlreadySavedDesc": "Continue para o próximo passo por concluir. Altere os dados guardados mais tarde nas Definições.",
+      "payDayRange": "O dia de pagamento deve estar entre 1 e 28.",
       "legalName": "Nome Legal *",
       "legalNamePlaceholder": "Sua Empresa Lda.",
       "tradingName": "Nome Comercial",
@@ -16231,7 +17178,11 @@ export const translations = {
       "phonePlaceholder": "+670 ...",
       "email": "Email",
       "emailPlaceholder": "info@empresa.tl",
-      "bankIntro": "Adicione a sua conta bancária principal para pagamentos de salários. Pode adicionar mais contas depois nas Definições.",
+      "bankIntro": "Escolha como paga normalmente os salários. Pode alterar isto mais tarde nas Definições.",
+      "paymentMethod": "Método de pagamento salarial",
+      "cash": "Dinheiro",
+      "bankTransfer": "Transferência bancária",
+      "cashInfo": "Não são necessários dados bancários. Pode adicionar uma conta mais tarde se o processo mudar.",
       "bankName": "Nome do Banco *",
       "selectBank": "Selecionar banco",
       "accountName": "Nome da Conta",
@@ -16432,7 +17383,9 @@ export const translations = {
         "sourceManual": "Manual",
         "sourcePayroll": "Folha",
         "sourceInvoice": "Fatura",
+        "sourceBill": "Conta a pagar",
         "sourceAdjustment": "Ajustamento",
+        "sourceClosing": "Fecho",
         "sourceOpening": "Abertura",
         "sourceExpense": "Despesa",
         "sourceRevenue": "Receita",
@@ -17071,6 +18024,8 @@ export const translations = {
         "customer": "cliente",
         "customers": "clientes",
         "name": "Nome",
+        "phone": "Telefone",
+        "email": "Email",
         "namePlaceholder": "Nome da empresa ou pessoa",
         "type": "Tipo",
         "business": "Empresa",
@@ -17096,6 +18051,12 @@ export const translations = {
         "subtitle": "Criar e gerir faturas",
         "new": "Nova Fatura",
         "newInvoice": "Nova Fatura",
+        "newCustomer": "Novo cliente…",
+        "newCustomerTitle": "Novo cliente",
+        "newCustomerDesc": "Introduza os dados do cliente. Pode completar mais tarde.",
+        "addCustomer": "Adicionar cliente",
+        "customerAdded": "Cliente adicionado",
+        "customerAddError": "Não foi possível adicionar o cliente",
         "editInvoice": "Editar Fatura",
         "invoice": "FATURA",
         "invoices": "Faturas",
@@ -17197,7 +18158,16 @@ export const translations = {
         "termsNet60": "60 dias",
         "termsCustom": "Data personalizada",
         "dueDateAuto": "Definida automaticamente pelas condições de pagamento.",
-        "received": "Recebido"
+        "received": "Recebido",
+        "discountShort": "Desc %",
+        "vatShort": "IVA %",
+        "discountTitle": "Desconto %",
+        "vatTitle": "IVA %",
+        "projectName": "Projeto / Serviço",
+        "projectPlaceholder": "ex., Redesenho do website",
+        "poNumber": "Referência / PO",
+        "poPlaceholder": "Número de PO do cliente",
+        "includesDiscount": "Inclui desconto de"
       },
       "payments": {
         "title": "Pagamentos",
@@ -17285,7 +18255,7 @@ export const translations = {
         "uploadLogo": "Carregar Logótipo",
         "changeLogo": "Mudar Logótipo",
         "logoHint": "PNG ou JPG recomendado, máx. 5MB. Aparece nas faturas e PDFs.",
-        "logoUploaded": "Logótipo carregado — não se esqueça de guardar",
+        "logoUploaded": "Logótipo carregado",
         "logoUploadError": "Falha ao carregar o logótipo",
         "invoiceTemplate": "Modelo de Fatura",
         "invoiceTemplateDesc": "O aspeto das suas faturas no ecrã, em PDF e por email",
@@ -17298,7 +18268,12 @@ export const translations = {
         "swiftCode": "Código SWIFT",
         "accountRequired": "Banco e número de conta são obrigatórios",
         "defaultMethods": "Métodos de pagamento aceites por defeito",
-        "defaultMethodsHint": "Pré-selecionados em novas faturas; pode alterar por fatura."
+        "defaultMethodsHint": "Pré-selecionados em novas faturas; pode alterar por fatura.",
+        "footerMessage": "Mensagem de Rodapé",
+        "footerPlaceholder": "Obrigado pela sua preferência!",
+        "footerHelp": "Linha final no fundo das faturas, PDFs e emails — ex., \"Obrigado por escolher a Onit Enterprises Lda.\"",
+        "bin": "BIN",
+        "binPlaceholder": "Número de identificação bancária"
       },
       "recurring": {
         "title": "Faturas Recorrentes",
@@ -17793,6 +18768,7 @@ export const translations = {
       "deductions": "Deduções",
       "netPay": "Líquido",
       "noEmployeesFound": "Nenhum funcionário encontrado",
+      "noEmployeesAdminHelp": "Não há funcionários ativos. Peça a um gestor com acesso a Pessoas para adicionar um.",
       "tryAdjustSearch": "Tente ajustar o termo de pesquisa ou limpe o filtro",
       "payrollWarnings": "{{count}} Aviso(s) da Folha",
       "warningBelowMinWage": "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
@@ -18190,7 +19166,13 @@ export const translations = {
       "toastSelectRunAndBank": "Por favor selecione um processamento e pelo menos um banco.",
       "toastRunNotFound": "Processamento selecionado não encontrado.",
       "toastBankFilesSuccess": "Gerados {{count}} ficheiro(s) bancário(s) com sucesso.",
+      "toastBankFilesSuccessWithExcluded": "Gerados {{count}} ficheiro(s) bancário(s). {{excluded}} funcionário(s) pagos em dinheiro ou por um banco não suportado não foram incluídos.",
       "toastBankFilesError": "Falha ao gerar ficheiros bancários. Por favor tente novamente.",
+      "toastBankDetailsError": "Verifique os dados bancários da empresa e dos funcionários e tente novamente.",
+      "toastPayrollDataError": "Não foi possível carregar alguns registos de funcionários da folha. Atualize a página antes de gerar ficheiros.",
+      "bankDetailsRequired": "Adicione uma conta bancária válida para salários e complete os dados bancários dos funcionários.",
+      "missingEmployeeRecordsNotice": "Não foi possível carregar {{count}} registo(s) de funcionários da folha. Atualize antes de gerar ficheiros bancários.",
+      "excludedEmployeesNotice": "{{count}} funcionário(s) recebem em dinheiro ou usam um banco sem formato suportado e não serão incluídos.",
       "toastValidationError": "Erro de Validação",
       "toastValidationDesc": "Por favor preencha todos os campos obrigatórios.",
       "toastTransferSuccess": "Sucesso",
@@ -18249,6 +19231,203 @@ export const translations = {
       "accountingBody": "Este é o seu livro formal — lançamentos contabilísticos, plano de contas e demonstrações financeiras. Cada processamento de folha e fatura cria automaticamente lançamentos aqui. Use esta secção para reconciliar, ajustar e reportar.",
       "reportsTitle": "Bem-vindo aos Relatórios.",
       "reportsBody": "Gere e reveja relatórios de toda a sua operação — resumos de folha, listas de funcionários, demonstrações financeiras e documentos de conformidade. Escolha um tipo de relatório abaixo para começar."
+    },
+    "moduleDashboards": {
+      "common": {
+        "needsAttention": "Precisa da sua atenção",
+        "day": "dia",
+        "days": "dias"
+      },
+      "people": {
+        "title": "Pessoas",
+        "seoDescription": "Funcionários, recrutamento, licenças e desempenho num só lugar.",
+        "subtitle": "{{count}} funcionários ativos. Encontre alguém ou veja o que precisa de si.",
+        "subtitleNoStaff": "Aceda às ferramentas de pessoas usadas pela sua equipa.",
+        "addEmployee": "Adicionar funcionário",
+        "searchPlaceholder": "Encontre alguém — nome, função ou número de identificação…",
+        "searchAria": "Pesquisar funcionários",
+        "allGood": "Está tudo em dia — nada precisa da sua atenção agora.",
+        "recentlyAdded": "Adicionados recentemente",
+        "unnamed": "Sem nome",
+        "attention": {
+          "leaveRequest": "pedido de licença à espera de aprovação",
+          "leaveRequests": "pedidos de licença à espera de aprovação",
+          "employeeMissingInfo": "funcionário sem informação obrigatória",
+          "employeesMissingInfo": "funcionários sem informação obrigatória",
+          "certificateExpiring": "certificado a expirar nos próximos 30 dias",
+          "certificatesExpiring": "certificados a expirar nos próximos 30 dias",
+          "openCase": "processo de funcionário em aberto",
+          "openCases": "processos de funcionários em aberto"
+        },
+        "cards": {
+          "staff": "Funcionários",
+          "active": "{{count}} ativos",
+          "hiring": "Recrutamento",
+          "interviewScheduled": "{{count}} entrevista agendada",
+          "interviewsScheduled": "{{count}} entrevistas agendadas",
+          "timeLeave": "Tempo & Licença",
+          "onLeaveToday": "{{count}} de licença hoje",
+          "performance": "Desempenho",
+          "activeGoal": "{{count}} objetivo ativo",
+          "activeGoals": "{{count}} objetivos ativos"
+        }
+      },
+      "scheduling": {
+        "title": "Tempo & Licença",
+        "seoDescription": "Cobertura, presença, aprovações de licença e planeamento de turnos num só lugar.",
+        "subtitle": "{{available}} de {{total}} funcionários disponíveis hoje ({{rate}}% de cobertura).",
+        "subtitleEmpty": "Aprove licenças, acompanhe a presença e planeie turnos.",
+        "attendanceAction": "Presença",
+        "shiftsAction": "Horários de turnos",
+        "allGood": "A cobertura está estável — nada precisa da sua atenção agora.",
+        "attention": {
+          "leaveRequest": "pedido de licença à espera de aprovação",
+          "leaveRequests": "pedidos de licença à espera de aprovação",
+          "lateArrival": "chegada tardia hoje",
+          "lateArrivals": "chegadas tardias hoje",
+          "absentToday": "ausentes hoje"
+        },
+        "cards": {
+          "attendance": "Presença",
+          "availableToday": "{{rate}}% disponíveis hoje",
+          "leave": "Licença",
+          "onLeaveToday": "{{count}} de licença hoje",
+          "timeTracking": "Controlo de Horas",
+          "timeTrackingMeta": "Entradas e horas",
+          "shifts": "Turnos",
+          "shiftsMeta": "Planear escalas semanais"
+        }
+      },
+      "payroll": {
+        "title": "Folha de Pagamento",
+        "seoDescription": "Processe a folha, faça pagamentos e acompanhe os prazos de WIT e INSS.",
+        "estimatedGross": "{{amount}} de bruto estimado",
+        "nextPaydayIn": "próximo pagamento dentro de",
+        "historyAction": "Histórico",
+        "runAction": "Processar folha",
+        "allGood": "A folha está em dia — nada precisa de atenção antes do pagamento.",
+        "attention": {
+          "employeeBlocking": "funcionário sem informação necessária para processar a folha",
+          "employeesBlocking": "funcionários sem informação necessária para processar a folha",
+          "leaveRequest": "pedido de licença à espera de aprovação",
+          "leaveRequests": "pedidos de licença à espera de aprovação",
+          "monthlyWitDueIn": "WIT mensal vence dentro de",
+          "inssDueIn": "Pagamento de INSS vence dentro de"
+        },
+        "cards": {
+          "runPayroll": "Processar folha",
+          "staffInCycle": "{{count}} funcionários no ciclo",
+          "history": "Histórico",
+          "recentRun": "{{count}} processamento recente",
+          "recentRuns": "{{count}} processamentos recentes",
+          "noRuns": "Ainda sem processamentos",
+          "bankTransfers": "Transferências bancárias",
+          "readyToPay": "{{count}} prontos para pagar",
+          "exportPay": "Exportar e pagar",
+          "taxInss": "Imposto & INSS",
+          "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d"
+        }
+      },
+      "money": {
+        "title": "Dinheiro",
+        "seoDescription": "Faturas, contas, despesas e relatórios financeiros num só lugar.",
+        "summary": "{{collected}} recebidos este mês · {{outstanding}} por receber.",
+        "viewBills": "Ver contas",
+        "newInvoice": "Nova fatura",
+        "allGood": "O fluxo de caixa está tranquilo — não há valores em atraso nem contas a vencer esta semana.",
+        "attention": {
+          "overdueInvoice": "Cobrar {{count}} fatura em atraso — {{amount}} atrasados",
+          "overdueInvoices": "Cobrar {{count}} faturas em atraso — {{amount}} atrasados",
+          "overdueBill": "Pagar {{count}} conta em atraso — {{amount}}",
+          "overdueBills": "Pagar {{count}} contas em atraso — {{amount}}",
+          "billDueThisWeek": "{{count}} conta vence esta semana — {{amount}}",
+          "billsDueThisWeek": "{{count}} contas vencem esta semana — {{amount}}",
+          "draftInvoice": "Enviar {{count}} fatura em rascunho",
+          "draftInvoices": "Enviar {{count}} faturas em rascunho"
+        },
+        "cards": {
+          "invoices": "Faturas",
+          "outstanding": "{{amount}} por receber",
+          "bills": "Contas",
+          "overdue": "{{count}} em atraso",
+          "dueThisWeek": "{{amount}} a vencer esta semana",
+          "expenses": "Despesas",
+          "expensesMeta": "Acompanhar gastos",
+          "financialReports": "Relatórios Financeiros",
+          "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA"
+        }
+      },
+      "accounting": {
+        "title": "Contabilidade",
+        "seoDescription": "Lançamentos, estrutura de contas e demonstrações financeiras num só lugar.",
+        "summaryPosted": "Última folha lançada em {{date}} · {{amount}}.",
+        "summaryNotPosted": "A última folha ainda não foi lançada no razão.",
+        "summaryNoPayroll": "Reveja os lançamentos e mantenha o balancete em ordem.",
+        "newEntry": "Novo lançamento",
+        "reviewPayroll": "Rever lançamentos da folha",
+        "allGoodWithPayroll": "As contas estão equilibradas e a folha foi lançada — nada precisa de atenção.",
+        "allGood": "As contas estão equilibradas — nada precisa de atenção.",
+        "attention": {
+          "trialBalance": "O balancete está desequilibrado",
+          "draftEntry": "{{count}} lançamento em rascunho para rever",
+          "draftEntries": "{{count}} lançamentos em rascunho para rever",
+          "payrollNotPosted": "A última folha ainda não foi lançada no razão"
+        },
+        "cards": {
+          "chartOfAccounts": "Plano de Contas",
+          "ledgerStructure": "Estrutura do razão",
+          "journalEntries": "Lançamentos",
+          "pending": "{{count}} pendentes",
+          "trialBalance": "Balancete",
+          "balanced": "Equilibrado",
+          "outOfBalance": "Desequilibrado",
+          "balanceSheet": "Balanço",
+          "live": "Atualizado",
+          "pendingPayroll": "Folha pendente",
+          "financialPosition": "Posição financeira"
+        }
+      },
+      "reports": {
+        "title": "Relatórios",
+        "seoDescription": "Relatórios de folha, pessoas, presença, departamentos e conformidade num só lugar.",
+        "summarySingle": "{{count}} família de relatórios · {{compliance}}.",
+        "summaryPlural": "{{count}} famílias de relatórios · {{compliance}}.",
+        "summaryReadOnlySingle": "{{count}} família de relatórios disponível.",
+        "summaryReadOnlyPlural": "{{count}} famílias de relatórios disponíveis.",
+        "reportSetup": "Configurar relatórios",
+        "customReports": "Relatórios personalizados",
+        "filingRunway": "Próximas declarações",
+        "allGood": "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
+        "browseReports": "Explorar relatórios",
+        "compliance": {
+          "filingOverdue": "{{count}} declaração em atraso",
+          "filingsOverdue": "{{count}} declarações em atraso",
+          "filingDueThisWeek": "{{count}} declaração vence esta semana",
+          "filingsDueThisWeek": "{{count}} declarações vencem esta semana",
+          "noneDue": "sem declarações a vencer"
+        },
+        "filings": {
+          "monthlyWit": "WIT {{period}}",
+          "annualWit": "WIT anual {{period}}",
+          "inssPayment": "Pagamento de INSS {{period}}",
+          "inssStatement": "Declaração de INSS {{period}}",
+          "overdue": "{{days}}d em atraso",
+          "dueToday": "vence hoje",
+          "dueTomorrow": "vence amanhã",
+          "daysLeft": "faltam {{days}}d",
+          "line": "{{label}} — {{descriptor}} (vence em {{date}})"
+        },
+        "families": {
+          "payroll-reports": "Recibos, impostos, detalhe anual e resumos da folha de pagamento.",
+          "employee-reports": "Número, movimento e estrutura dos funcionários.",
+          "attendance-reports": "Ausências, horas extra, pontualidade e tendências de tempo.",
+          "department-reports": "Comparações de custos, alocações e relatórios da organização.",
+          "ngo": "Pacotes de alocação e exportações para doadores de fundos restritos.",
+          "custom": "Criação, relatórios guardados e controlos de configuração.",
+          "fallbackSingle": "{{count}} relatório nesta área.",
+          "fallbackPlural": "{{count}} relatórios nesta área."
+        }
+      }
     }
   }
 } as const;

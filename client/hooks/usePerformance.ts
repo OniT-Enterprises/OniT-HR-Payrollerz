@@ -193,12 +193,13 @@ export function useGoals(filters?: GoalFilters) {
   });
 }
 
-export function useGoalStats(year?: number) {
+export function useGoalStats(year?: number, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: goalKeys.stats(tenantId, year),
     queryFn: () => goalsService.getGoalStats(tenantId, year),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 

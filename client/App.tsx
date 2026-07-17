@@ -7,13 +7,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
 import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { GuidanceProvider } from "@/contexts/GuidanceContext";
-import { I18nProvider } from "@/i18n/I18nProvider";
+import { I18nProvider, useI18n } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Button } from "@/components/ui/button";
 
 import ChatWidget from "@/components/chat/ChatWidget";
 import AppLayout from "@/components/layout/AppLayout";
@@ -35,20 +37,163 @@ import {
   notFoundRoute,
 } from "./routes";
 
+function SessionRecovery({
+  onRetry,
+  onUseAnotherAccount,
+}: {
+  onRetry: () => void | Promise<void>;
+  onUseAnotherAccount: () => void | Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [activeAction, setActiveAction] = React.useState<"retry" | "signout" | null>(null);
+  const [actionError, setActionError] = React.useState<string | null>(null);
+
+  const handleRetry = async () => {
+    if (activeAction) return;
+    setActionError(null);
+    setActiveAction("retry");
+    try {
+      await onRetry();
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  const handleUseAnotherAccount = async () => {
+    if (activeAction) return;
+    setActionError(null);
+    setActiveAction("signout");
+    try {
+      await onUseAnotherAccount();
+    } catch {
+      setActionError(t("auth.errors.signOutFailed"));
+    } finally {
+      setActiveAction(null);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div
+        className="w-full max-w-md rounded-2xl border border-amber-200 bg-card p-5 shadow-sm dark:border-amber-900/60"
+        role="alert"
+      >
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+            <AlertTriangle className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base font-semibold">
+              {t("common.accountRecoveryTitle")}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("common.accountRecoveryDesc")}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={activeAction !== null}
+                onClick={() => { void handleRetry(); }}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${activeAction === "retry" ? "animate-spin" : ""}`} />
+                {t("common.retry")}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={activeAction !== null}
+                onClick={() => { void handleUseAnotherAccount(); }}
+              >
+                {t("auth.onboarding.useAnotherAccount")}
+              </Button>
+            </div>
+            {actionError && (
+              <p className="mt-2 text-sm text-destructive">{actionError}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
-  const { user, userProfile, loading, authResolved, isSuperAdmin } = useAuth();
-  const { session, loading: tenantLoading, tenantResolved, availableTenants, isImpersonating } = useTenant();
+  const {
+    user,
+    userProfile,
+    profileStatus,
+    profileError,
+    loading,
+    authResolved,
+    isSuperAdmin,
+    refreshUserProfile,
+    signOut,
+  } = useAuth();
+  const {
+    session,
+    availableTenants,
+    loading: tenantLoading,
+    tenantResolved,
+    error: tenantError,
+    isImpersonating,
+    retryInitialization,
+  } = useTenant();
 
-  // A cold load / fresh sign-in can have loading=false (cached) while Firebase
-  // is still restoring the session — don't decide anything until auth resolves.
-  if (loading || tenantLoading || (!user && !authResolved)) {
+  // Never make a redirect decision until Firebase has resolved the latest auth
+  // transition and a profile read has a definite outcome.
+  if (loading || !authResolved) {
     return <PageLoader />;
   }
 
   // Not logged in - show landing page
   if (!user) {
     return <Landing />;
+  }
+
+  if (profileStatus === "idle" || profileStatus === "loading") {
+    return <PageLoader />;
+  }
+
+  const profileReadFailed = profileStatus === "error" || profileError !== null;
+  if (profileReadFailed && !isSuperAdmin) {
+    return (
+      <SessionRecovery
+        onRetry={refreshUserProfile}
+        onUseAnotherAccount={signOut}
+      />
+    );
+  }
+
+  const hasTenants =
+    (userProfile?.tenantIds?.length ?? 0) > 0 ||
+    Object.keys(userProfile?.tenantAccess ?? {}).length > 0 ||
+    availableTenants.length > 0 ||
+    Boolean(session);
+
+  // Membership restoration can discover legacy or claim-based access that is
+  // not yet denormalized onto the user profile. Let it finish before deciding
+  // that this user needs a new organization.
+  if (tenantLoading || (!tenantResolved && !session)) {
+    return <PageLoader />;
+  }
+
+  // A failed membership/claims read is an unknown state, never evidence that
+  // the user needs to create a new organization.
+  if (!session && tenantError) {
+    return (
+      <SessionRecovery
+        onRetry={retryInitialization}
+        onUseAnotherAccount={signOut}
+      />
+    );
+  }
+
+  // Claim/member-based access can legitimately predate the user profile. A
+  // missing profile must not bounce an already-restored member into onboarding.
+  if (!isSuperAdmin && !hasTenants) {
+    return <Navigate to="/auth/onboarding" replace />;
   }
 
   // While impersonating a tenant, "/" is that tenant's dashboard — not the
@@ -59,22 +204,11 @@ function HomeRoute() {
     return <Dashboard />;
   }
 
-  // User without a user profile - needs to create their organization.
-  // Superadmins (token claim, no profile doc) go to the admin dashboard.
-  if (user && !userProfile) {
-    return <Navigate to={isSuperAdmin ? "/admin" : "/auth/onboarding"} replace />;
-  }
-
-  // Check if user has any tenants
-  const hasTenants = userProfile?.tenantIds && userProfile.tenantIds.length > 0;
-
-  if (!hasTenants) {
-    // Superadmin without tenants goes to admin dashboard
+  // Superadmins may intentionally have no profile or tenant of their own.
+  if (profileReadFailed || profileStatus === "missing" || !hasTenants) {
     if (isSuperAdmin) {
       return <Navigate to="/admin" replace />;
     }
-    // Regular user without tenants needs to create their organization
-    return <Navigate to="/auth/onboarding" replace />;
   }
 
   // The tenant session can still be resolving even with tenantLoading=false
@@ -89,14 +223,12 @@ function HomeRoute() {
     if (isSuperAdmin) {
       return <Navigate to="/admin" replace />;
     }
-    // The profile lists tenants the resolution hasn't seen (fresh signup /
-    // onboarding: it resolved before provisioning finished, and the profile
-    // change re-triggers the init effect only after this render). Wait for
-    // the re-run instead of bouncing a valid user to the marketing page.
-    if (availableTenants.length === 0) {
-      return <PageLoader />;
-    }
-    return <Navigate to="/landing" replace />;
+    return (
+      <SessionRecovery
+        onRetry={retryInitialization}
+        onUseAnotherAccount={signOut}
+      />
+    );
   }
 
   // User with tenants - show regular dashboard

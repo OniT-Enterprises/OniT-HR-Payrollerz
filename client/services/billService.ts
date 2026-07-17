@@ -52,9 +52,10 @@ import { firestoreBillSchema } from '@/lib/validations';
  */
 export interface BillFilters {
   // Server-side filters
-  status?: BillStatus;
+  status?: BillStatus | BillStatus[];
   vendorId?: string;
   category?: ExpenseCategory;
+  dueBefore?: string;
   dateFrom?: string;
   dateTo?: string;
 
@@ -131,6 +132,7 @@ class BillService {
       status,
       vendorId,
       category,
+      dueBefore,
       dateFrom,
       dateTo,
       pageSize = 100,
@@ -143,8 +145,12 @@ class BillService {
     const constraints: QueryConstraint[] = [];
 
     // Server-side filters
-    if (status && status !== 'all' as unknown as BillStatus) {
-      constraints.push(where('status', '==', status));
+    if (status) {
+      if (Array.isArray(status)) {
+        constraints.push(where('status', 'in', status));
+      } else {
+        constraints.push(where('status', '==', status));
+      }
     }
     if (vendorId) {
       constraints.push(where('vendorId', '==', vendorId));
@@ -158,9 +164,14 @@ class BillService {
     if (dateTo) {
       constraints.push(where('billDate', '<=', dateTo));
     }
+    if (dueBefore) {
+      constraints.push(where('dueDate', '<', dueBefore));
+    }
 
     // Ordering and pagination
-    constraints.push(orderBy('billDate', 'desc'));
+    constraints.push(
+      dueBefore ? orderBy('dueDate', 'asc') : orderBy('billDate', 'desc'),
+    );
 
     if (startAfterDoc) {
       constraints.push(startAfter(startAfterDoc));
@@ -425,6 +436,8 @@ class BillService {
     const today = getTodayTL();
     const q = query(
       this.collectionRef(tenantId),
+      // This helper feeds the status updater, so exclude records that have
+      // already been marked overdue to avoid rewriting them every run.
       where('status', 'in', ['pending', 'partial']),
       where('dueDate', '<', today)
     );

@@ -3,7 +3,7 @@
  * Confirmation dialog with reason input for voiding invoices
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,12 +72,14 @@ export function VoidInvoiceDialog({
   onVoided,
 }: VoidInvoiceDialogProps) {
   const { toast } = useToast();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState('');
+  const submitInFlight = useRef(false);
 
   const handleVoid = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManage() || submitInFlight.current) return;
+    submitInFlight.current = true;
     try {
       setLoading(true);
       await invoiceService.cancelInvoice(session.tid, invoice.id, reason || "");
@@ -88,6 +90,7 @@ export function VoidInvoiceDialog({
       console.error('Error voiding invoice:', error);
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to void invoice', variant: 'destructive' });
     } finally {
+      submitInFlight.current = false;
       setLoading(false);
     }
   };
@@ -137,4 +140,3 @@ export function VoidInvoiceDialog({
     </AlertDialog>
   );
 }
-

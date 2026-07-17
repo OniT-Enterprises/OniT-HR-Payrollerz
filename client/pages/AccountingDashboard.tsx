@@ -2,10 +2,13 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useAccountingBalanceHealth, useAccountingDashboard } from "@/hooks/useAccounting";
+import { useTenant } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { formatDateTL } from "@/lib/dateUtils";
 import {
@@ -42,12 +45,36 @@ const AMBER = "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-
 
 export default function AccountingDashboard() {
   const navigate = useNavigate();
-  const { data: dashboardData, isLoading: summaryLoading } = useAccountingDashboard();
-  const { data: balanceHealth, isLoading: balanceLoading } = useAccountingBalanceHealth();
+  const { t } = useI18n();
+  const { hasModule, canManage } = useTenant();
+  const canManageTenant = canManage();
+  const hasPayroll = hasModule("payroll");
+  const summaryQuery = useAccountingDashboard();
+  const balanceQuery = useAccountingBalanceHealth();
+  const dashboardQueries = [summaryQuery, balanceQuery];
 
-  if (summaryLoading || balanceLoading || !dashboardData || !balanceHealth) {
+  if (dashboardQueries.some((query) => query.isLoading)) {
     return <AccountingDashboardSkeleton />;
   }
+
+  if (dashboardQueries.some((query) => query.data === undefined)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("moduleDashboards.accounting.title")}
+          description={t("moduleDashboards.accounting.seoDescription")}
+        />
+        <ModuleSectionNav config={accountingNavConfig} />
+        <DashboardLoadError
+          isRetrying={dashboardQueries.some((query) => query.isFetching)}
+          onRetry={() => Promise.all(dashboardQueries.map((query) => query.refetch()))}
+        />
+      </div>
+    );
+  }
+
+  const dashboardData = summaryQuery.data!;
+  const balanceHealth = balanceQuery.data!;
 
   const lastPayrollDate = dashboardData.lastPayrollDate
     ? formatDateTL(new Date(dashboardData.lastPayrollDate), { year: "numeric", month: "short", day: "numeric" })
@@ -56,22 +83,27 @@ export default function AccountingDashboard() {
   // Triage: confidence gaps standing between now and a clean close
   const attention = [
     {
-      show: dashboardData.pendingEntries > 0,
-      text: `${dashboardData.pendingEntries} draft journal entr${dashboardData.pendingEntries === 1 ? "y" : "ies"} to review`,
-      path: "/accounting/journal",
-      icon: FileSpreadsheet,
-      tone: AMBER,
-    },
-    {
       show: !balanceHealth.trialBalanced,
-      text: "Trial balance is out of balance",
+      text: t("moduleDashboards.accounting.attention.trialBalance"),
       path: "/accounting/statements/trial-balance",
       icon: Scale,
       tone: RED,
     },
     {
-      show: !dashboardData.payrollPosted,
-      text: "Latest payroll is not yet posted to the ledger",
+      show: dashboardData.pendingEntries > 0,
+      text: t(
+        dashboardData.pendingEntries === 1
+          ? "moduleDashboards.accounting.attention.draftEntry"
+          : "moduleDashboards.accounting.attention.draftEntries",
+        { count: dashboardData.pendingEntries },
+      ),
+      path: "/accounting/journal",
+      icon: FileSpreadsheet,
+      tone: AMBER,
+    },
+    {
+      show: hasPayroll && !dashboardData.payrollPosted,
+      text: t("moduleDashboards.accounting.attention.payrollNotPosted"),
       path: "/accounting/journal?filter=payroll",
       icon: Landmark,
       tone: AMBER,
@@ -80,30 +112,38 @@ export default function AccountingDashboard() {
 
   const hubCards = [
     {
-      title: "Chart of Accounts",
+      title: t("moduleDashboards.accounting.cards.chartOfAccounts"),
       art: "/images/illustrations/xefe-card-ac-chart.webp",
-      meta: "Ledger structure",
+      meta: t("moduleDashboards.accounting.cards.ledgerStructure"),
       path: "/accounting/chart",
       icon: BookOpen,
     },
     {
-      title: "Journal Entries",
+      title: t("moduleDashboards.accounting.cards.journalEntries"),
       art: "/images/illustrations/xefe-card-ac-journal.webp",
-      meta: `${dashboardData.pendingEntries} pending`,
+      meta: t("moduleDashboards.accounting.cards.pending", {
+        count: dashboardData.pendingEntries,
+      }),
       path: "/accounting/journal",
       icon: FileSpreadsheet,
     },
     {
-      title: "Trial Balance",
+      title: t("moduleDashboards.accounting.cards.trialBalance"),
       art: "/images/illustrations/xefe-card-accounting.webp",
-      meta: balanceHealth.trialBalanced ? "Balanced" : "Out of balance",
+      meta: balanceHealth.trialBalanced
+        ? t("moduleDashboards.accounting.cards.balanced")
+        : t("moduleDashboards.accounting.cards.outOfBalance"),
       path: "/accounting/statements/trial-balance",
       icon: Scale,
     },
     {
-      title: "Balance Sheet",
+      title: t("moduleDashboards.accounting.cards.balanceSheet"),
       art: "/images/illustrations/xefe-card-ac-balance.webp",
-      meta: dashboardData.payrollPosted ? "Live" : "Pending payroll",
+      meta: hasPayroll
+        ? dashboardData.payrollPosted
+          ? t("moduleDashboards.accounting.cards.live")
+          : t("moduleDashboards.accounting.cards.pendingPayroll")
+        : t("moduleDashboards.accounting.cards.financialPosition"),
       path: "/accounting/statements/balance-sheet",
       icon: Building2,
     },
@@ -111,38 +151,50 @@ export default function AccountingDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.accounting} />
+      <SEO
+        title={t("moduleDashboards.accounting.title")}
+        description={t("moduleDashboards.accounting.seoDescription")}
+      />
       <ModuleSectionNav config={accountingNavConfig} />
 
       <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Accounting</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("moduleDashboards.accounting.title")}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {dashboardData.payrollPosted && lastPayrollDate
-                ? `Last payroll posted ${lastPayrollDate} · ${formatCurrencyTL(dashboardData.lastPayrollAmount)}.`
-                : "Latest payroll has not yet posted to the ledger."}
+              {hasPayroll
+                ? dashboardData.payrollPosted && lastPayrollDate
+                  ? t("moduleDashboards.accounting.summaryPosted", {
+                      date: lastPayrollDate,
+                      amount: formatCurrencyTL(dashboardData.lastPayrollAmount),
+                    })
+                  : t("moduleDashboards.accounting.summaryNotPosted")
+                : t("moduleDashboards.accounting.summaryNoPayroll")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate("/accounting/journal?action=new")}>
-              <FilePlus className="mr-2 h-4 w-4" />
-              New entry
-            </Button>
-            <Button
-              onClick={() => navigate("/accounting/journal?filter=payroll")}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Review payroll journals
-            </Button>
+            {canManageTenant && (
+              <Button variant="outline" onClick={() => navigate("/accounting/journal?action=new")}>
+                <FilePlus className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.accounting.newEntry")}
+              </Button>
+            )}
+            {hasPayroll && (
+              <Button onClick={() => navigate("/accounting/journal?filter=payroll")}>
+                <Eye className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.accounting.reviewPayroll")}
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Needs attention */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Needs your attention
+            {t("moduleDashboards.common.needsAttention")}
           </h2>
           {attention.length > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -165,7 +217,9 @@ export default function AccountingDashboard() {
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
               <CheckCircle2 className="h-5 w-5 text-orange-600" />
-              The books are balanced and payroll has posted — nothing needs attention.
+              {hasPayroll
+                ? t("moduleDashboards.accounting.allGoodWithPayroll")
+                : t("moduleDashboards.accounting.allGood")}
             </div>
           )}
         </section>

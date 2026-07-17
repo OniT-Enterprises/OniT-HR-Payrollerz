@@ -6,6 +6,7 @@
 import {
   doc,
   getDoc,
+  runTransaction,
   setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -103,6 +104,17 @@ function normalizeTenantSettings(
 ): TenantSettings {
   const defaults = buildDefaultTenantSettings(tenantId);
   const data = raw as Partial<TenantSettings>;
+  const rawRecord = raw as Record<string, unknown>;
+  // Older writes used dotted keys with setDoc({ merge: true }), which stores
+  // literal top-level fields instead of updating the nested map. Read those
+  // values during migration so an in-progress setup can still resume.
+  const legacySetupProgress = {
+    companyDetails: rawRecord["setupProgress.companyDetails"] === true,
+    companyStructure: rawRecord["setupProgress.companyStructure"] === true,
+    paymentStructure: rawRecord["setupProgress.paymentStructure"] === true,
+    timeOffPolicies: rawRecord["setupProgress.timeOffPolicies"] === true,
+    payrollConfig: rawRecord["setupProgress.payrollConfig"] === true,
+  };
   const legacyOvertimeRates = data.payrollConfig?.overtimeRates as
     | (Partial<PayrollConfig['overtimeRates']> & { first2Hours?: number })
     | undefined;
@@ -184,15 +196,25 @@ function normalizeTenantSettings(
     openaiApiKey: data.openaiApiKey,
     setupComplete: data.setupComplete ?? defaults.setupComplete,
     setupProgress: {
-      ...defaults.setupProgress,
-      ...(data.setupProgress || {}),
+      companyDetails:
+        data.setupProgress?.companyDetails === true || legacySetupProgress.companyDetails,
+      companyStructure:
+        data.setupProgress?.companyStructure === true || legacySetupProgress.companyStructure,
+      paymentStructure:
+        data.setupProgress?.paymentStructure === true || legacySetupProgress.paymentStructure,
+      timeOffPolicies:
+        data.setupProgress?.timeOffPolicies === true || legacySetupProgress.timeOffPolicies,
+      payrollConfig:
+        data.setupProgress?.payrollConfig === true || legacySetupProgress.payrollConfig,
     },
     createdAt: toDateValue(data.createdAt),
     updatedAt: toDateValue(data.updatedAt),
   };
 }
 
-function toFirestoreSettingsPayload(settings: TenantSettings): Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> {
+function toFirestoreSettingsPayload(
+  settings: TenantSettings,
+): Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> {
   const payload: Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> = {
     tenantId: settings.tenantId,
     companyDetails: settings.companyDetails,
@@ -205,11 +227,34 @@ function toFirestoreSettingsPayload(settings: TenantSettings): Omit<TenantSettin
     setupProgress: settings.setupProgress,
   };
 
-  if (typeof settings.openaiApiKey === 'string' && settings.openaiApiKey.length > 0) {
-    payload.openaiApiKey = settings.openaiApiKey;
-  }
-
+  if (settings.openaiApiKey) payload.openaiApiKey = settings.openaiApiKey;
   return payload;
+}
+
+/**
+ * Persist legacy settings only as part of an authorized settings write. This
+ * keeps ordinary reads safe for viewers while preventing a first partial edit
+ * from replacing untouched legacy sections with defaults.
+ */
+async function ensureScopedSettingsForWrite(tenantId: string): Promise<void> {
+  const scopedRef = doc(db, paths.settings(tenantId));
+  const legacyRef = doc(db, LEGACY_SETTINGS_COLLECTION, tenantId);
+
+  await runTransaction(db, async (transaction) => {
+    const scopedSnap = await transaction.get(scopedRef);
+    if (scopedSnap.exists()) return;
+
+    const legacySnap = await transaction.get(legacyRef);
+    if (!legacySnap.exists()) return;
+
+    const normalized = normalizeTenantSettings(tenantId, legacySnap.data());
+    transaction.set(scopedRef, {
+      ...toFirestoreSettingsPayload(normalized),
+      migratedFromLegacy: true,
+      migratedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
 }
 
 // ============================================
@@ -235,19 +280,10 @@ export const settingsService = {
       const legacySnap = await getDoc(legacyRef);
       if (legacySnap.exists()) {
         const legacy = legacySnap.data();
-        const normalized = normalizeTenantSettings(tenantId, legacy);
-
-        // Best-effort migration: copy legacy settings into tenant-scoped path.
-        await setDoc(docRef, {
-          ...toFirestoreSettingsPayload(normalized),
-          migratedFromLegacy: true,
-          migratedAt: serverTimestamp(),
-        }, { merge: true });
-
-        return normalized;
+        return normalizeTenantSettings(tenantId, legacy);
       }
 
-      return await this.createSettings(tenantId);
+      return null;
     } catch (error) {
       console.error('Error getting settings:', error);
       throw error;
@@ -289,11 +325,12 @@ export const settingsService = {
     audit?: AuditContext
   ): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         companyDetails: omitUndefinedValues(companyDetails),
-        'setupProgress.companyDetails': true,
+        setupProgress: { companyDetails: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
@@ -323,11 +360,12 @@ export const settingsService = {
     companyStructure: CompanyStructure
   ): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         companyStructure: omitUndefinedValues(companyStructure),
-        'setupProgress.companyStructure': true,
+        setupProgress: { companyStructure: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } catch (error) {
@@ -344,11 +382,12 @@ export const settingsService = {
     paymentStructure: Partial<PaymentStructure> | Record<string, unknown>
   ): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         paymentStructure: omitUndefinedValues(paymentStructure),
-        'setupProgress.paymentStructure': true,
+        setupProgress: { paymentStructure: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } catch (error) {
@@ -365,11 +404,12 @@ export const settingsService = {
     timeOffPolicies: Partial<TimeOffPolicies> | Record<string, unknown>
   ): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         timeOffPolicies: omitUndefinedValues(timeOffPolicies),
-        'setupProgress.timeOffPolicies': true,
+        setupProgress: { timeOffPolicies: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } catch (error) {
@@ -387,11 +427,12 @@ export const settingsService = {
     audit?: AuditContext
   ): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         payrollConfig: omitUndefinedValues(payrollConfig),
-        'setupProgress.payrollConfig': true,
+        setupProgress: { payrollConfig: true },
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
@@ -418,10 +459,18 @@ export const settingsService = {
    */
   async completeSetup(tenantId: string): Promise<void> {
     try {
+      await ensureScopedSettingsForWrite(tenantId);
       const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         tenantId,
         setupComplete: true,
+        setupProgress: {
+          companyDetails: true,
+          companyStructure: true,
+          paymentStructure: true,
+          timeOffPolicies: true,
+          payrollConfig: true,
+        },
         updatedAt: serverTimestamp(),
       }, { merge: true });
     } catch (error) {

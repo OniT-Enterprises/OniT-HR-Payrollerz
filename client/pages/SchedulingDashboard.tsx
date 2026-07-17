@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
 import { timeLeaveNavConfig } from "@/lib/moduleNav";
@@ -9,6 +10,8 @@ import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAttendanceByDate } from "@/hooks/useAttendance";
 import { getTodayTL } from "@/lib/dateUtils";
+import { useI18n } from "@/i18n/I18nProvider";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Calendar,
   CalendarCheck,
@@ -38,15 +41,48 @@ function SchedulingDashboardSkeleton() {
 
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+  const { hasModule, canManage, session } = useTenant();
+  const canManageTenant = canManage();
+  const canReadEmployeeDirectory =
+    hasModule("staff") ||
+    hasModule("hiring") ||
+    canManageTenant ||
+    session?.role === "manager";
   const today = getTodayTL();
 
-  const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary();
-  const { data: leaveStats, isLoading: leaveLoading } = useLeaveStats();
-  const { data: todayAttendance } = useAttendanceByDate(today);
+  const employeeSummaryQuery = useActiveEmployeeSummary(canReadEmployeeDirectory);
+  const leaveStatsQuery = useLeaveStats();
+  const attendanceQuery = useAttendanceByDate(today);
+  const dashboardQueries = [
+    ...(canReadEmployeeDirectory ? [employeeSummaryQuery] : []),
+    leaveStatsQuery,
+    attendanceQuery,
+  ];
 
-  if (employeeLoading || leaveLoading) {
+  if (dashboardQueries.some((query) => query.isLoading)) {
     return <SchedulingDashboardSkeleton />;
   }
+
+  if (dashboardQueries.some((query) => query.data === undefined)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("moduleDashboards.scheduling.title")}
+          description={t("moduleDashboards.scheduling.seoDescription")}
+        />
+        <ModuleSectionNav config={timeLeaveNavConfig} />
+        <DashboardLoadError
+          isRetrying={dashboardQueries.some((query) => query.isFetching)}
+          onRetry={() => Promise.all(dashboardQueries.map((query) => query.refetch()))}
+        />
+      </div>
+    );
+  }
+
+  const employeeSummary = employeeSummaryQuery.data;
+  const leaveStats = leaveStatsQuery.data;
+  const todayAttendance = attendanceQuery.data;
 
   const activeEmployees = employeeSummary?.active ?? 0;
   const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
@@ -63,7 +99,11 @@ export default function SchedulingDashboard() {
     {
       show: pendingLeave > 0,
       count: pendingLeave,
-      label: `leave request${pendingLeave === 1 ? "" : "s"} waiting for approval`,
+      label: t(
+        pendingLeave === 1
+          ? "moduleDashboards.scheduling.attention.leaveRequest"
+          : "moduleDashboards.scheduling.attention.leaveRequests",
+      ),
       path: "/time-leave/leave",
       icon: CalendarDays,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
@@ -71,7 +111,11 @@ export default function SchedulingDashboard() {
     {
       show: lateToday > 0,
       count: lateToday,
-      label: `late arrival${lateToday === 1 ? "" : "s"} today`,
+      label: t(
+        lateToday === 1
+          ? "moduleDashboards.scheduling.attention.lateArrival"
+          : "moduleDashboards.scheduling.attention.lateArrivals",
+      ),
       path: "/time-leave/attendance",
       icon: Clock,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
@@ -79,7 +123,7 @@ export default function SchedulingDashboard() {
     {
       show: absentToday > 0,
       count: absentToday,
-      label: `absent today`,
+      label: t("moduleDashboards.scheduling.attention.absentToday"),
       path: "/time-leave/attendance",
       icon: CalendarX2,
       tone: "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300",
@@ -88,67 +132,80 @@ export default function SchedulingDashboard() {
 
   const hubCards = [
     {
-      title: "Attendance",
+      title: t("moduleDashboards.scheduling.cards.attendance"),
       art: "/images/illustrations/xefe-card-tl-attendance.webp",
-      meta: `${coverageRate}% available today`,
+      meta: canReadEmployeeDirectory
+        ? t("moduleDashboards.scheduling.cards.availableToday", { rate: coverageRate })
+        : t("moduleDashboards.scheduling.cards.timeTrackingMeta"),
       path: "/time-leave/attendance",
       icon: CalendarCheck,
     },
     {
       // Pending requests already surface in the attention strip above.
-      title: "Leave",
+      title: t("moduleDashboards.scheduling.cards.leave"),
       art: "/images/illustrations/xefe-card-tl-leave.webp",
-      meta: `${onLeaveToday} on leave today`,
+      meta: t("moduleDashboards.scheduling.cards.onLeaveToday", { count: onLeaveToday }),
       path: "/time-leave/leave",
       icon: CalendarDays,
     },
-    {
-      title: "Time Tracking",
+    ...(canManageTenant ? [{
+      title: t("moduleDashboards.scheduling.cards.timeTracking"),
       art: "/images/illustrations/xefe-card-tl-timetracking.webp",
-      meta: "Clock-ins & hours",
+      meta: t("moduleDashboards.scheduling.cards.timeTrackingMeta"),
       path: "/time-leave/time-tracking",
       icon: Clock,
-    },
-    {
-      title: "Shifts",
+    }] : []),
+    ...(canManageTenant ? [{
+      title: t("moduleDashboards.scheduling.cards.shifts"),
       art: "/images/illustrations/xefe-card-tl-shifts.webp",
-      meta: "Plan weekly rosters",
+      meta: t("moduleDashboards.scheduling.cards.shiftsMeta"),
       path: "/time-leave/shifts",
       icon: Calendar,
-    },
+    }] : []),
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Time & Leave" description="Coverage, attendance, leave approvals, and shift planning in one place." />
+      <SEO
+        title={t("moduleDashboards.scheduling.title")}
+        description={t("moduleDashboards.scheduling.seoDescription")}
+      />
       <ModuleSectionNav config={timeLeaveNavConfig} />
 
       <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Time &amp; Leave</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("moduleDashboards.scheduling.title")}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {activeEmployees > 0
-                ? `${availableToday} of ${activeEmployees} staff available today (${coverageRate}% coverage).`
-                : "Approve leave, track attendance, and plan shifts."}
+              {canReadEmployeeDirectory && activeEmployees > 0
+                ? t("moduleDashboards.scheduling.subtitle", {
+                    available: availableToday,
+                    total: activeEmployees,
+                    rate: coverageRate,
+                  })
+                : t("moduleDashboards.scheduling.subtitleEmpty")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate("/time-leave/attendance")}>
-              Attendance
+              {t("moduleDashboards.scheduling.attendanceAction")}
             </Button>
-            <Button onClick={() => navigate("/time-leave/shifts")}>
-              <Calendar className="mr-2 h-4 w-4" />
-              Shift schedules
-            </Button>
+            {canManageTenant && (
+              <Button onClick={() => navigate("/time-leave/shifts")}>
+                <Calendar className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.scheduling.shiftsAction")}
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Needs attention */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Needs your attention
+            {t("moduleDashboards.common.needsAttention")}
           </h2>
           {attention.length > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -174,7 +231,9 @@ export default function SchedulingDashboard() {
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
               <CheckCircle2 className="h-5 w-5 text-cyan-600" />
-              Coverage looks steady — nothing needs attention right now.
+              {canReadEmployeeDirectory
+                ? t("moduleDashboards.scheduling.allGood")
+                : t("moduleDashboards.scheduling.allGood")}
             </div>
           )}
         </section>

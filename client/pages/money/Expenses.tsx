@@ -3,7 +3,7 @@
  * Track and manage business expenses
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc } from 'firebase/firestore';
@@ -46,6 +46,7 @@ import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
 import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
@@ -101,7 +102,8 @@ export default function Expenses() {
   const preselectedVendorId = searchParams.get('vendor');
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
+  const canManageTenant = canManage();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -124,8 +126,24 @@ export default function Expenses() {
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
-  const { expenses, totalLoaded, isLoading: expensesLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartExpenses(isSearching);
-  const { data: vendors = [], isLoading: vendorsLoading } = useActiveVendors();
+  const {
+    expenses,
+    totalLoaded,
+    isLoading: expensesLoading,
+    isError: expensesError,
+    isFetching: expensesFetching,
+    refetch: refetchExpenses,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSmartExpenses(isSearching);
+  const {
+    data: vendors = [],
+    isLoading: vendorsLoading,
+    isError: vendorsError,
+    isFetching: vendorsFetching,
+    refetch: refetchVendors,
+  } = useActiveVendors();
   const loading = expensesLoading || vendorsLoading;
 
   useEffect(() => {
@@ -203,9 +221,11 @@ export default function Expenses() {
   };
 
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const deletesInFlight = useRef(new Set<string>());
 
   const handleSubmit = async () => {
-    if (!session?.tid || saving) return;
+    if (!session?.tid || saving || saveInFlight.current) return;
     if (!formData.description.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -224,6 +244,7 @@ export default function Expenses() {
       return;
     }
 
+    saveInFlight.current = true;
     setSaving(true);
     try {
       // Pre-generate Firestore doc ID so receipt upload path matches the final document
@@ -278,6 +299,7 @@ export default function Expenses() {
         variant: 'destructive',
       });
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   };
@@ -300,11 +322,12 @@ export default function Expenses() {
   };
 
   const handleDelete = async (expense: Expense) => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManageTenant || deletesInFlight.current.has(expense.id)) return;
     if (!confirm(t('money.expenses.confirmDelete') || 'Delete this expense?')) {
       return;
     }
 
+    deletesInFlight.current.add(expense.id);
     try {
       await expenseService.deleteExpense(session.tid, expense.id);
       toast({
@@ -319,6 +342,8 @@ export default function Expenses() {
         description: t('money.expenses.deleteError') || 'Failed to delete expense',
         variant: 'destructive',
       });
+    } finally {
+      deletesInFlight.current.delete(expense.id);
     }
   };
 
@@ -361,6 +386,18 @@ export default function Expenses() {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if ((expensesError && expenses.length === 0) || (vendorsError && vendors.length === 0)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={expensesFetching || vendorsFetching}
+          onRetry={() => Promise.all([refetchExpenses(), refetchVendors()])}
+        />
       </div>
     );
   }
@@ -537,13 +574,15 @@ export default function Expenses() {
                             <Edit className="h-4 w-4 mr-2" />
                             {t('common.edit') || 'Edit'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(expense)}
-                            className="text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('common.delete') || 'Delete'}
-                          </DropdownMenuItem>
+                          {canManageTenant && (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(expense)}
+                              className="text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('common.delete') || 'Delete'}
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

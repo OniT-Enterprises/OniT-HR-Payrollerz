@@ -3,7 +3,7 @@
  * Confirmation dialog for sending payment reminders
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { invoiceService } from '@/services/invoiceService';
 import { useTenant } from '@/contexts/TenantContext';
 import type { Invoice } from '@/types/money';
-import { formatDateTL } from '@/lib/dateUtils';
+import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
+import { getDaysUntilIso } from '@/lib/payroll/payroll-schedule';
+import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
 import { Loader2, Bell, AlertTriangle } from 'lucide-react';
 
 interface SendReminderDialogProps {
@@ -92,16 +94,19 @@ export function SendReminderDialog({
   onReminderSent,
 }: SendReminderDialogProps) {
   const { toast } = useToast();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
   const [loading, setLoading] = useState(false);
+  const submitInFlight = useRef(false);
 
-  const isOverdue = invoice.status === 'overdue' || new Date(invoice.dueDate) < new Date();
+  const todayIso = getTodayTL();
+  const isOverdue = getEffectiveInvoiceStatus(invoice, todayIso) === 'overdue';
   const daysOverdue = isOverdue
-    ? Math.floor((new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.max(0, -getDaysUntilIso(invoice.dueDate, todayIso))
     : 0;
 
   const handleSendReminder = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManage() || submitInFlight.current) return;
+    submitInFlight.current = true;
     try {
       setLoading(true);
       await invoiceService.sendReminder(session.tid, invoice.id);
@@ -112,6 +117,7 @@ export function SendReminderDialog({
       console.error('Error sending reminder:', error);
       toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to send reminder', variant: 'destructive' });
     } finally {
+      submitInFlight.current = false;
       setLoading(false);
     }
   };
@@ -153,4 +159,3 @@ export function SendReminderDialog({
     </AlertDialog>
   );
 }
-

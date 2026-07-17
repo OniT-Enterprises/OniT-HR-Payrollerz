@@ -3,12 +3,13 @@
  * Create, edit, and view bills
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
@@ -89,10 +90,14 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
+  const canManageTenant = canManage();
 
   const isNew = !id || id === 'new';
-  const isEdit = searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit');
+  const isEdit =
+    canManageTenant &&
+    (searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit'));
   const preselectedVendorId = searchParams.get('vendor');
 
   const [saving, setSaving] = useState(false);
@@ -101,17 +106,35 @@ export default function BillForm() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const writeInFlight = useRef(false);
 
   // React Query hooks
-  const { data: vendors = [] } = useActiveVendors();
+  const {
+    data: vendors = [],
+    isLoading: vendorsLoading,
+    isError: vendorsLoadError,
+    isFetching: vendorsFetching,
+    refetch: retryVendors,
+  } = useActiveVendors();
   const billIdToLoad = !isNew && id ? id : undefined;
-  const { data: bill = null, isLoading: billLoading } = useBill(billIdToLoad);
-  const { data: payments = [] } = useBillPayments(billIdToLoad);
+  const {
+    data: bill = null,
+    isLoading: billLoading,
+    isError: billLoadError,
+    refetch: retryBillLoad,
+  } = useBill(billIdToLoad);
+  const {
+    data: payments = [],
+    isError: paymentsLoadError,
+    isFetching: paymentsFetching,
+    refetch: retryPayments,
+  } = useBillPayments(billIdToLoad);
   const createBillMutation = useCreateBill();
   const updateBillMutation = useUpdateBill();
   const recordPaymentMutation = useRecordBillPayment();
 
-  const loading = !isNew && billLoading;
+  const needsVendors = isNew || isEdit;
+  const loading = (!isNew && billLoading) || (needsVendors && vendorsLoading);
 
   // React Hook Form for better performance (no re-render on every keystroke)
   const {
@@ -164,11 +187,11 @@ export default function BillForm() {
   }, [isNew, bill, reset]);
 
   useEffect(() => {
-    if (searchParams.get('record') === 'payment' && bill) {
+    if (canManageTenant && searchParams.get('record') === 'payment' && bill) {
       setPaymentAmount(bill.balanceDue.toString());
       setShowPaymentDialog(true);
     }
-  }, [searchParams, bill]);
+  }, [canManageTenant, searchParams, bill]);
 
   const calculateTotals = () => {
     return calculateTaxedTotal(formData.amount, formData.taxRate);
@@ -210,6 +233,8 @@ export default function BillForm() {
   };
 
   const onSubmit = async (data: BillFormSchemaData) => {
+    if (!canManageTenant || writeInFlight.current) return;
+    writeInFlight.current = true;
     try {
       setSaving(true);
       // Convert to BillFormData for service
@@ -262,6 +287,7 @@ export default function BillForm() {
         variant: 'destructive',
       });
     } finally {
+      writeInFlight.current = false;
       setSaving(false);
     }
   };
@@ -276,7 +302,7 @@ export default function BillForm() {
   });
 
   const handleRecordPayment = async () => {
-    if (!bill) return;
+    if (!bill || !canManageTenant || writeInFlight.current) return;
 
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -288,6 +314,7 @@ export default function BillForm() {
       return;
     }
 
+    writeInFlight.current = true;
     try {
       setSaving(true);
       await recordPaymentMutation.mutateAsync({
@@ -313,12 +340,13 @@ export default function BillForm() {
         variant: 'destructive',
       });
     } finally {
+      writeInFlight.current = false;
       setSaving(false);
     }
   };
 
-  const isViewMode = !isNew && !isEdit && bill;
-  const canEdit = bill?.status === 'pending';
+  const isViewMode = !isNew && bill && (!isEdit || bill.status !== 'pending');
+  const canEdit = canManageTenant && bill?.status === 'pending';
 
   if (loading) {
     return (
@@ -327,6 +355,59 @@ export default function BillForm() {
         <div className="p-6 max-w-screen-lg mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (needsVendors && vendorsLoadError && vendors.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={vendorsFetching}
+          onRetry={() => retryVendors()}
+        />
+      </div>
+    );
+  }
+
+  if (!isNew && !bill) {
+    const isQueryError = billLoadError;
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title={`${t('money.bills.title') || 'Bills'} - Xefe`} />
+        <MainNavigation />
+        <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
+          <Card className="max-w-xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle>
+                {isQueryError
+                  ? t('common.connectionIssueTitle') || 'Connection problem'
+                  : t('money.bills.noResults') || 'Bill not found'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-sm text-muted-foreground mb-6">
+                {isQueryError
+                  ? t('common.connectionIssueDesc') ||
+                    'Check your connection, then try loading the bill again.'
+                  : t('notFound.message') ||
+                    "The bill you're looking for doesn't exist or is no longer available."}
+              </p>
+              <div className="flex flex-col-reverse sm:flex-row justify-center gap-2">
+                <Button variant="outline" onClick={() => navigate('/money/bills')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('common.back') || 'Back'}
+                </Button>
+                {isQueryError && (
+                  <Button onClick={() => void retryBillLoad()}>
+                    {t('common.retry') || 'Retry'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -359,7 +440,7 @@ export default function BillForm() {
                     {t('common.edit') || 'Edit'}
                   </Button>
                 )}
-                {['pending', 'partial', 'overdue'].includes(bill.status) && (
+                {canManageTenant && ['pending', 'partial', 'overdue'].includes(bill.status) && (
                   <Button
                     onClick={() => setShowPaymentDialog(true)}
                     className="bg-indigo-600 hover:bg-indigo-700"
@@ -516,10 +597,29 @@ export default function BillForm() {
               </CardContent>
             </Card>
           )}
+          {paymentsLoadError && (
+            <div
+              className="mt-6 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
+              role="alert"
+            >
+              <span>{t('common.connectionIssueDesc')}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={paymentsFetching}
+                onClick={() => void retryPayments()}
+              >
+                {t('common.retry')}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Payment Dialog */}
-        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <Dialog
+          open={canManageTenant && showPaymentDialog}
+          onOpenChange={setShowPaymentDialog}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t('money.bills.recordPayment') || 'Record Payment'}</DialogTitle>

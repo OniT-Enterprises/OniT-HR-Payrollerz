@@ -3,7 +3,7 @@
  * List, search, and manage vendors (suppliers)
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import {
   Dialog,
   DialogContent,
@@ -64,13 +65,16 @@ export default function Vendors() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
+  const canManageTenant = canManage();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const deleteInFlight = useRef(false);
   const [formData, setFormData] = useState<VendorFormData>({
     name: '',
     type: 'business',
@@ -83,7 +87,13 @@ export default function Vendors() {
   });
 
   // Use React Query for data fetching
-  const { data: vendors = [], isLoading: loading } = useAllVendors();
+  const {
+    data: vendors = [],
+    isLoading: loading,
+    isError: loadError,
+    isFetching,
+    refetch,
+  } = useAllVendors();
 
   const filteredVendors = vendors.filter((vendor) => {
     const term = searchTerm.toLowerCase();
@@ -95,7 +105,7 @@ export default function Vendors() {
   });
 
   const handleSubmit = async () => {
-    if (!session?.tid || saving) return;
+    if (!session?.tid || !canManageTenant || saveInFlight.current) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -105,6 +115,7 @@ export default function Vendors() {
       return;
     }
 
+    saveInFlight.current = true;
     setSaving(true);
     try {
       if (editingVendor) {
@@ -132,11 +143,13 @@ export default function Vendors() {
         variant: 'destructive',
       });
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   };
 
   const handleEdit = (vendor: Vendor) => {
+    if (!canManageTenant) return;
     setEditingVendor(vendor);
     setFormData({
       name: vendor.name,
@@ -152,11 +165,12 @@ export default function Vendors() {
   };
 
   const handleDelete = async (vendor: Vendor) => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManageTenant || deleteInFlight.current) return;
     if (!confirm(t('money.vendors.confirmDelete') || `Delete vendor "${vendor.name}"?`)) {
       return;
     }
 
+    deleteInFlight.current = true;
     try {
       await vendorService.deactivateVendor(session.tid, vendor.id);
       toast({
@@ -171,6 +185,8 @@ export default function Vendors() {
         description: t('money.vendors.deleteError') || 'Failed to delete vendor',
         variant: 'destructive',
       });
+    } finally {
+      deleteInFlight.current = false;
     }
   };
 
@@ -188,6 +204,7 @@ export default function Vendors() {
   };
 
   const openAddDialog = () => {
+    if (!canManageTenant) return;
     setEditingVendor(null);
     resetForm();
     setShowAddDialog(true);
@@ -210,6 +227,15 @@ export default function Vendors() {
     );
   }
 
+  if (loadError && vendors.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Vendors - Xefe" description="Manage your vendors and suppliers" />
@@ -221,12 +247,12 @@ export default function Vendors() {
           subtitle={t('money.vendors.subtitle') || 'Manage your suppliers'}
           icon={Truck}
           iconColor="text-indigo-500"
-          actions={
+          actions={canManageTenant ? (
             <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
               <Plus className="h-4 w-4 mr-2" />
               {t('money.vendors.add') || 'Add Vendor'}
             </Button>
-          }
+          ) : undefined}
         />
 
         {/* Search */}
@@ -252,7 +278,7 @@ export default function Vendors() {
                   ? t('money.vendors.noResults') || 'No vendors found'
                   : t('money.vendors.empty') || 'No vendors yet'}
               </p>
-              {!searchTerm && (
+              {!searchTerm && canManageTenant && (
                 <Button onClick={openAddDialog} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.vendors.addFirst') || 'Add your first vendor'}
@@ -313,7 +339,7 @@ export default function Vendors() {
                         </div>
                       </div>
                     </div>
-                    <DropdownMenu>
+                    {canManageTenant && <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
@@ -324,7 +350,7 @@ export default function Vendors() {
                           <Receipt className="h-4 w-4 mr-2" />
                           {t('money.vendors.newBill') || 'New Bill'}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/money/expenses/new?vendor=${vendor.id}`)}>
+                        <DropdownMenuItem onClick={() => navigate(`/money/expenses?vendor=${vendor.id}`)}>
                           <FileText className="h-4 w-4 mr-2" />
                           {t('money.vendors.newExpense') || 'New Expense'}
                         </DropdownMenuItem>
@@ -340,7 +366,7 @@ export default function Vendors() {
                           {t('common.delete') || 'Delete'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu>}
                   </div>
                 </CardContent>
               </Card>
@@ -360,7 +386,7 @@ export default function Vendors() {
       </div>
 
       {/* Add/Edit Vendor Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={canManageTenant && showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>

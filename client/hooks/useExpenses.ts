@@ -86,6 +86,8 @@ export function useSmartExpenses(isSearching: boolean) {
     expenses: isSearching ? (allQuery.data ?? []) : paginatedQuery.expenses,
     totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
     isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    isError: isSearching ? allQuery.isError : paginatedQuery.isError,
+    isFetching: isSearching ? allQuery.isFetching : paginatedQuery.isFetching,
     refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
     fetchNextPage: paginatedQuery.fetchNextPage,
     hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),

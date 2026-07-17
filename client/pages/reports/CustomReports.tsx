@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { formatDateTL, toDateStringTL } from "@/lib/dateUtils";
+import React, { useEffect, useState } from "react";
+import { addDaysISO, formatDateTL, getTodayTL } from "@/lib/dateUtils";
 import { exportToCSV as exportCSVFile } from "@/lib/csvExport";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -33,21 +32,17 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { employeeService, type Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
-import { departmentService, Department } from "@/services/departmentService";
-import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { attendanceService } from "@/services/attendanceService";
 import { useAllDepartments } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   BarChart3,
   FileText,
-  TrendingUp,
   Download,
   Plus,
-  Settings,
   Play,
-  Save,
   Trash2,
   Eye,
   Clock,
@@ -74,37 +69,44 @@ interface ReportConfig {
 interface ColumnOption {
   key: string;
   label: string;
+  labelKey: string;
   dataSource: string;
 }
 
 const COLUMN_OPTIONS: ColumnOption[] = [
   // Employee columns
-  { key: "personalInfo.firstName", label: "First Name", dataSource: "employees" },
-  { key: "personalInfo.lastName", label: "Last Name", dataSource: "employees" },
-  { key: "personalInfo.email", label: "Email", dataSource: "employees" },
-  { key: "personalInfo.phone", label: "Phone", dataSource: "employees" },
-  { key: "jobDetails.employeeId", label: "Employee ID", dataSource: "employees" },
-  { key: "jobDetails.department", label: "Department", dataSource: "employees" },
-  { key: "jobDetails.position", label: "Position", dataSource: "employees" },
-  { key: "jobDetails.hireDate", label: "Hire Date", dataSource: "employees" },
-  { key: "jobDetails.employmentType", label: "Employment Type", dataSource: "employees" },
-  { key: "compensation.salary", label: "Salary", dataSource: "employees" },
-  { key: "status", label: "Status", dataSource: "employees" },
+  { key: "personalInfo.firstName", label: "First Name", labelKey: "firstName", dataSource: "employees" },
+  { key: "personalInfo.lastName", label: "Last Name", labelKey: "lastName", dataSource: "employees" },
+  { key: "personalInfo.email", label: "Email", labelKey: "email", dataSource: "employees" },
+  { key: "personalInfo.phone", label: "Phone", labelKey: "phone", dataSource: "employees" },
+  { key: "jobDetails.employeeId", label: "Employee ID", labelKey: "employeeId", dataSource: "employees" },
+  { key: "jobDetails.department", label: "Department", labelKey: "department", dataSource: "employees" },
+  { key: "jobDetails.position", label: "Position", labelKey: "position", dataSource: "employees" },
+  { key: "jobDetails.hireDate", label: "Hire Date", labelKey: "hireDate", dataSource: "employees" },
+  { key: "jobDetails.employmentType", label: "Employment Type", labelKey: "employmentType", dataSource: "employees" },
+  { key: "compensation.monthlySalary", label: "Salary", labelKey: "salary", dataSource: "employees" },
+  { key: "status", label: "Status", labelKey: "status", dataSource: "employees" },
   // Attendance columns
-  { key: "date", label: "Date", dataSource: "attendance" },
-  { key: "employeeName", label: "Employee Name", dataSource: "attendance" },
-  { key: "department", label: "Department", dataSource: "attendance" },
-  { key: "clockIn", label: "Clock In", dataSource: "attendance" },
-  { key: "clockOut", label: "Clock Out", dataSource: "attendance" },
-  { key: "regularHours", label: "Regular Hours", dataSource: "attendance" },
-  { key: "overtimeHours", label: "Overtime Hours", dataSource: "attendance" },
-  { key: "lateMinutes", label: "Late Minutes", dataSource: "attendance" },
-  { key: "status", label: "Status", dataSource: "attendance" },
+  { key: "date", label: "Date", labelKey: "date", dataSource: "attendance" },
+  { key: "employeeName", label: "Employee Name", labelKey: "employeeName", dataSource: "attendance" },
+  { key: "department", label: "Department", labelKey: "department", dataSource: "attendance" },
+  { key: "clockIn", label: "Clock In", labelKey: "clockIn", dataSource: "attendance" },
+  { key: "clockOut", label: "Clock Out", labelKey: "clockOut", dataSource: "attendance" },
+  { key: "regularHours", label: "Regular Hours", labelKey: "regularHours", dataSource: "attendance" },
+  { key: "overtimeHours", label: "Overtime Hours", labelKey: "overtimeHours", dataSource: "attendance" },
+  { key: "lateMinutes", label: "Late Minutes", labelKey: "lateMinutes", dataSource: "attendance" },
+  { key: "status", label: "Status", labelKey: "status", dataSource: "attendance" },
   // Department columns
-  { key: "name", label: "Department Name", dataSource: "departments" },
-  { key: "director", label: "Director", dataSource: "departments" },
-  { key: "manager", label: "Manager", dataSource: "departments" },
+  { key: "name", label: "Department Name", labelKey: "departmentName", dataSource: "departments" },
+  { key: "director", label: "Director", labelKey: "director", dataSource: "departments" },
+  { key: "manager", label: "Manager", labelKey: "manager", dataSource: "departments" },
 ];
+
+const TEMPLATE_KEYS: Record<string, string> = {
+  "active-employees": "activeEmployees",
+  "monthly-attendance": "monthlyAttendance",
+  "dept-headcount": "departmentHeadcount",
+};
 
 const SAMPLE_REPORTS: ReportConfig[] = [
   {
@@ -146,27 +148,67 @@ export default function CustomReports() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const queryClient = useQueryClient();
+  const { hasModule } = useTenant();
+  const hasStaff = hasModule("staff");
+  const hasTimeleave = hasModule("timeleave");
+  const hasAvailableSource = hasStaff || hasTimeleave;
 
-  const [savedReports, setSavedReports] = useState<ReportConfig[]>(SAMPLE_REPORTS);
+  const [savedReports, setSavedReports] = useState<ReportConfig[]>(() =>
+    SAMPLE_REPORTS.filter((report) =>
+      report.dataSource === "attendance" ? hasTimeleave : hasStaff,
+    ),
+  );
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null);
   const [previewColumns, setPreviewColumns] = useState<ColumnOption[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Fetch departments with React Query hook
-  const { data: departments = [] } = useAllDepartments(tenantId, 100);
+  const departmentQuery = useAllDepartments(tenantId, 100, hasStaff);
+  const departments = departmentQuery.data ?? [];
 
   // Builder state
   const [reportName, setReportName] = useState("");
   const [reportDescription, setReportDescription] = useState("");
-  const [dataSource, setDataSource] = useState<"employees" | "attendance" | "departments">("employees");
+  const [dataSource, setDataSource] = useState<"employees" | "attendance" | "departments">(
+    hasStaff ? "employees" : "attendance",
+  );
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [filterDepartment, setFilterDepartment] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterDateRange, setFilterDateRange] = useState<string>("30");
 
-  const availableColumns = COLUMN_OPTIONS.filter((c) => c.dataSource === dataSource);
+  const translateColumn = (column: ColumnOption): ColumnOption => ({
+    ...column,
+    label: t(`reports.custom.columns.${column.labelKey}`) || column.label,
+  });
+  const availableColumns = COLUMN_OPTIONS
+    .filter((c) => c.dataSource === dataSource)
+    .map(translateColumn);
+  const localizedPreviewColumns = previewColumns.map(translateColumn);
+
+  const canUseSource = (source: ReportConfig["dataSource"]) =>
+    source === "attendance" ? hasTimeleave : hasStaff;
+
+  useEffect(() => {
+    setSavedReports(
+      SAMPLE_REPORTS.filter((report) =>
+        report.dataSource === "attendance" ? hasTimeleave : hasStaff,
+      ),
+    );
+  }, [hasStaff, hasTimeleave]);
+
+  useEffect(() => {
+    if (
+      (dataSource === "attendance" && !hasTimeleave) ||
+      (dataSource !== "attendance" && !hasStaff)
+    ) {
+      setDataSource(hasStaff ? "employees" : "attendance");
+      setSelectedColumns([]);
+      setPreviewData(null);
+      setPreviewColumns([]);
+    }
+  }, [dataSource, hasStaff, hasTimeleave]);
 
   const toggleColumn = (columnKey: string) => {
     setSelectedColumns((prev) =>
@@ -176,31 +218,28 @@ export default function CustomReports() {
     );
   };
 
-  const resetBuilder = () => {
+  const resetBuilder = (clearPreview = true) => {
     setReportName("");
     setReportDescription("");
-    setDataSource("employees");
+    setDataSource(hasStaff ? "employees" : "attendance");
     setSelectedColumns([]);
     setFilterDepartment("");
     setFilterStatus("");
     setFilterDateRange("30");
-    setPreviewData(null);
-    setPreviewColumns([]);
+    if (clearPreview) {
+      setPreviewData(null);
+      setPreviewColumns([]);
+    }
   };
 
   const runReport = async (config: ReportConfig) => {
+    if (!canUseSource(config.dataSource)) return;
     setLoading(true);
     try {
       let data: Record<string, unknown>[] = [];
 
       if (config.dataSource === "employees") {
-        // Try React Query cache first, then fetch
-        let employees = queryClient.getQueryData<Employee[]>(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }]);
-        if (!employees) {
-          const result = await employeeService.getEmployees(tenantId, { pageSize: 500 });
-          employees = result.data;
-          queryClient.setQueryData(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }], employees);
-        }
+        const employees: Employee[] = await employeeService.getAllEmployees(tenantId);
         data = employees.filter((e) => {
           if (config.filters.status && e.status !== config.filters.status) return false;
           if (config.filters.department && e.jobDetails?.department !== config.filters.department)
@@ -208,33 +247,28 @@ export default function CustomReports() {
           return true;
         }) as unknown as Record<string, unknown>[];
       } else if (config.dataSource === "attendance") {
-        const today = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(config.filters.dateRange || "30", 10));
-        const startDateStr = toDateStringTL(startDate);
-        const endDateStr = toDateStringTL(today);
-        // Try React Query cache first
-        let attendance = queryClient.getQueryData<AttendanceRecord[]>(['attendance', startDateStr, endDateStr]);
-        if (!attendance) {
-          attendance = await attendanceService.getAttendanceByDateRange(
-            tenantId,
-            startDateStr,
-            endDateStr,
-            config.filters.department || undefined
-          );
-          queryClient.setQueryData(['attendance', startDateStr, endDateStr], attendance);
-        }
+        const endDateStr = getTodayTL();
+        const startDateStr = addDaysISO(
+          endDateStr,
+          -parseInt(config.filters.dateRange || "30", 10),
+        );
+        const attendance = await attendanceService.getAttendanceByDateRange(
+          tenantId,
+          startDateStr,
+          endDateStr,
+          config.filters.department || undefined,
+        );
         data = (config.filters.department
           ? attendance.filter((a) => a.department === config.filters.department)
           : attendance) as unknown as Record<string, unknown>[];
       } else if (config.dataSource === "departments") {
-        // Try React Query cache first
-        let depts = queryClient.getQueryData<Department[]>(['departments', 'list', { maxResults: 100 }]);
-        if (!depts) {
-          depts = await departmentService.getAllDepartments(tenantId);
-          queryClient.setQueryData(['departments', 'list', { maxResults: 100 }], depts);
+        let departmentData = departmentQuery.data;
+        if (departmentData === undefined) {
+          const result = await departmentQuery.refetch();
+          if (result.error) throw result.error;
+          departmentData = result.data ?? [];
         }
-        data = depts as unknown as Record<string, unknown>[];
+        data = departmentData as unknown as Record<string, unknown>[];
       }
 
       const columns = config.columns
@@ -252,26 +286,29 @@ export default function CustomReports() {
       );
 
       toast({
-        title: "Report Generated",
-        description: `Found ${data.length} records`,
+        title: t("reports.custom.toast.generated"),
+        description: t("reports.custom.toast.generatedDescription", { count: data.length }),
       });
+      return true;
     } catch (error) {
       console.error("Error running report:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate report",
+        title: t("reports.custom.toast.error"),
+        description: t("reports.custom.toast.generateFailed"),
         variant: "destructive",
       });
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const saveReport = () => {
+  const runCustomReport = async () => {
+    if (!canUseSource(dataSource)) return;
     if (!reportName || selectedColumns.length === 0) {
       toast({
-        title: "Validation Error",
-        description: "Please enter a report name and select at least one column",
+        title: t("reports.custom.toast.validationError"),
+        description: t("reports.custom.toast.validationDescription"),
         variant: "destructive",
       });
       return;
@@ -291,32 +328,21 @@ export default function CustomReports() {
       createdAt: new Date(),
     };
 
-    setSavedReports((prev) => [newReport, ...prev]);
-    setIsBuilderOpen(false);
-    resetBuilder();
-
-    toast({
-      title: "Report Saved",
-      description: `"${reportName}" has been saved`,
-    });
-  };
-
-  const deleteReport = (id: string) => {
-    setSavedReports((prev) => prev.filter((r) => r.id !== id));
-    if (previewData) setPreviewData(null);
-    toast({
-      title: "Report Deleted",
-      description: "Report has been removed",
-    });
+    const generated = await runReport(newReport);
+    if (generated) {
+      setIsBuilderOpen(false);
+      // Reset the form for next time without erasing the report the user just ran.
+      resetBuilder(false);
+    }
   };
 
   const exportToCSV = () => {
     if (!previewData || !previewColumns.length) return;
 
-    exportCSVFile(previewData, "custom_report", previewColumns);
+    exportCSVFile(previewData, "custom_report", localizedPreviewColumns);
     toast({
-      title: "Export Complete",
-      description: "Report exported to CSV",
+      title: t("reports.custom.toast.exported"),
+      description: t("reports.custom.toast.exportedDescription"),
     });
   };
 
@@ -333,11 +359,49 @@ export default function CustomReports() {
     }
   };
 
+  const getTemplateName = (report: ReportConfig) => {
+    const key = TEMPLATE_KEYS[report.id];
+    return key ? t(`reports.custom.templates.${key}.name`) : report.name;
+  };
+
+  const getTemplateDescription = (report: ReportConfig) => {
+    const key = TEMPLATE_KEYS[report.id];
+    return key
+      ? t(`reports.custom.templates.${key}.description`)
+      : report.description || t("reports.custom.noDescription");
+  };
+
+  if (!hasAvailableSource) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.customReports} />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-lg px-4 py-8 sm:px-6">
+          <PageHeader
+            title={t("reports.custom.title")}
+            subtitle={t("reports.custom.subtitle")}
+            icon={BarChart3}
+            iconColor="text-violet-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+              <h2 className="font-semibold">{t("reports.custom.noDataTitle")}</h2>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                {t("reports.custom.noDataDescription")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.customReports} />
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:px-6">
         <PageHeader
           title={t("reports.custom.title")}
           subtitle={t("reports.custom.subtitle")}
@@ -346,16 +410,16 @@ export default function CustomReports() {
           actions={
             <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
               <DialogTrigger asChild>
-                <Button onClick={resetBuilder}>
+                <Button onClick={() => resetBuilder()}>
                   <Plus className="h-4 w-4 mr-2" />
-                  New Report
+                  {t("reports.custom.buildReport")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create Custom Report</DialogTitle>
+                  <DialogTitle>{t("reports.custom.builder.title")}</DialogTitle>
                   <DialogDescription>
-                    Build a custom report by selecting data source, columns, and filters
+                    {t("reports.custom.builder.description")}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -363,19 +427,19 @@ export default function CustomReports() {
                   {/* Report Details */}
                   <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="name">Report Name</Label>
+                      <Label htmlFor="name">{t("reports.custom.builder.name")}</Label>
                       <Input
                         id="name"
-                        placeholder="e.g., Active Employees by Department"
+                        placeholder={t("reports.custom.builder.namePlaceholder")}
                         value={reportName}
                         onChange={(e) => setReportName(e.target.value)}
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="description">Description (optional)</Label>
+                      <Label htmlFor="description">{t("reports.custom.builder.optionalDescription")}</Label>
                       <Input
                         id="description"
-                        placeholder="Brief description of the report"
+                        placeholder={t("reports.custom.builder.descriptionPlaceholder")}
                         value={reportDescription}
                         onChange={(e) => setReportDescription(e.target.value)}
                       />
@@ -384,7 +448,7 @@ export default function CustomReports() {
 
                   {/* Data Source */}
                   <div className="grid gap-2">
-                    <Label>Data Source</Label>
+                    <Label>{t("reports.custom.builder.dataSource")}</Label>
                     <Select
                       value={dataSource}
                       onValueChange={(v) => {
@@ -396,33 +460,35 @@ export default function CustomReports() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="employees">
+                        {hasStaff && <SelectItem value="employees">
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            Employees
+                            {t("reports.custom.builder.employees")}
                           </div>
-                        </SelectItem>
-                        <SelectItem value="attendance">
+                        </SelectItem>}
+                        {hasTimeleave && <SelectItem value="attendance">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
-                            Attendance Records
+                            {t("reports.custom.builder.attendance")}
                           </div>
-                        </SelectItem>
-                        <SelectItem value="departments">
+                        </SelectItem>}
+                        {hasStaff && <SelectItem value="departments">
                           <div className="flex items-center gap-2">
                             <Building className="h-4 w-4" />
-                            Departments
+                            {t("reports.custom.builder.departments")}
                           </div>
-                        </SelectItem>
+                        </SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Columns */}
                   <div className="grid gap-2">
-                    <Label>Select Columns ({selectedColumns.length} selected)</Label>
+                    <Label>
+                      {t("reports.custom.builder.selectColumns", { count: selectedColumns.length })}
+                    </Label>
                     <div className="border rounded-lg p-3 max-h-48 overflow-y-auto">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {availableColumns.map((col) => (
                           <div
                             key={col.key}
@@ -447,20 +513,22 @@ export default function CustomReports() {
 
                   {/* Filters */}
                   <div className="grid gap-4">
-                    <Label>Filters</Label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <Label>{t("reports.custom.builder.filters")}</Label>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {(dataSource === "employees" || dataSource === "attendance") && (
                         <div className="grid gap-2">
-                          <Label className="text-sm text-muted-foreground">Department</Label>
+                          <Label className="text-sm text-muted-foreground">{t("reports.custom.builder.department")}</Label>
                           <Select
-                            value={filterDepartment}
-                            onValueChange={setFilterDepartment}
+                            value={filterDepartment || "all"}
+                            onValueChange={(value) =>
+                              setFilterDepartment(value === "all" ? "" : value)
+                            }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="All departments" />
+                              <SelectValue placeholder={t("reports.custom.builder.allDepartments")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All Departments</SelectItem>
+                              <SelectItem value="all">{t("reports.custom.builder.allDepartments")}</SelectItem>
                               {departments.map((d) => (
                                 <SelectItem key={d.id} value={d.name}>
                                   {d.name}
@@ -473,16 +541,21 @@ export default function CustomReports() {
 
                       {dataSource === "employees" && (
                         <div className="grid gap-2">
-                          <Label className="text-sm text-muted-foreground">Status</Label>
-                          <Select value={filterStatus} onValueChange={setFilterStatus}>
+                          <Label className="text-sm text-muted-foreground">{t("reports.custom.builder.status")}</Label>
+                          <Select
+                            value={filterStatus || "all"}
+                            onValueChange={(value) =>
+                              setFilterStatus(value === "all" ? "" : value)
+                            }
+                          >
                             <SelectTrigger>
-                              <SelectValue placeholder="All statuses" />
+                              <SelectValue placeholder={t("reports.custom.builder.allStatuses")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">All Statuses</SelectItem>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="onboarding">Onboarding</SelectItem>
+                              <SelectItem value="all">{t("reports.custom.builder.allStatuses")}</SelectItem>
+                              <SelectItem value="active">{t("reports.custom.builder.active")}</SelectItem>
+                              <SelectItem value="inactive">{t("reports.custom.builder.inactive")}</SelectItem>
+                              <SelectItem value="onboarding">{t("reports.custom.builder.onboarding")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -490,16 +563,16 @@ export default function CustomReports() {
 
                       {dataSource === "attendance" && (
                         <div className="grid gap-2">
-                          <Label className="text-sm text-muted-foreground">Date Range</Label>
+                          <Label className="text-sm text-muted-foreground">{t("reports.custom.builder.dateRange")}</Label>
                           <Select value={filterDateRange} onValueChange={setFilterDateRange}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="7">Last 7 days</SelectItem>
-                              <SelectItem value="30">Last 30 days</SelectItem>
-                              <SelectItem value="90">Last 90 days</SelectItem>
-                              <SelectItem value="365">Last year</SelectItem>
+                              <SelectItem value="7">{t("reports.shared.ranges.7")}</SelectItem>
+                              <SelectItem value="30">{t("reports.shared.ranges.30")}</SelectItem>
+                              <SelectItem value="90">{t("reports.shared.ranges.90")}</SelectItem>
+                              <SelectItem value="365">{t("reports.shared.ranges.365")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -510,80 +583,31 @@ export default function CustomReports() {
 
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBuilderOpen(false)}>
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
-                  <Button onClick={saveReport}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Report
+                  <Button onClick={() => { void runCustomReport(); }} disabled={loading}>
+                    <Play className="h-4 w-4 mr-2" />
+                    {loading ? t("reports.custom.builder.running") : t("reports.custom.builder.runReport")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           }
         />
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 -mt-10">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Saved Reports</p>
-                  <p className="text-3xl font-bold">{savedReports.length}</p>
-                  <p className="text-xs text-violet-600">Custom & templates</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
-                  <FileText className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Data Sources</p>
-                  <p className="text-3xl font-bold">3</p>
-                  <p className="text-xs text-blue-600">Employees, Attendance, Depts</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Available Fields</p>
-                  <p className="text-3xl font-bold">{COLUMN_OPTIONS.length}</p>
-                  <p className="text-xs text-green-600">For custom reports</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <Settings className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Saved Reports */}
+        {/* Report templates */}
         <Card className="border-border/50 shadow-lg mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-violet-600" />
-              Saved Reports
+              {t("reports.custom.templatesTitle")}
             </CardTitle>
-            <CardDescription>Your custom reports and templates</CardDescription>
+            <CardDescription>{t("reports.custom.templatesDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {savedReports.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No saved reports yet</p>
-                <p className="text-sm">Create your first custom report</p>
+                <p>{t("reports.custom.noTemplates")}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -596,22 +620,22 @@ export default function CustomReports() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {getDataSourceIcon(report.dataSource)}
-                          <h4 className="font-medium truncate">{report.name}</h4>
+                          <h4 className="font-medium truncate">{getTemplateName(report)}</h4>
                         </div>
                         <Badge variant="outline" className="text-xs">
-                          {report.columns.length} cols
+                          {t("reports.custom.columnCount", { count: report.columns.length })}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {report.description || "No description"}
+                        {getTemplateDescription(report)}
                       </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                         <span>
-                          Created {formatDateTL(report.createdAt)}
+                          {t("reports.custom.template")}
                         </span>
                         {report.lastRun && (
                           <span>
-                            Last run {formatDateTL(report.lastRun)}
+                            {t("reports.custom.lastRun", { date: formatDateTL(report.lastRun) })}
                           </span>
                         )}
                       </div>
@@ -623,14 +647,7 @@ export default function CustomReports() {
                           disabled={loading}
                         >
                           <Play className="h-3 w-3 mr-1" />
-                          Run
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => deleteReport(report.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
+                          {t("reports.custom.run")}
                         </Button>
                       </div>
                     </CardContent>
@@ -645,25 +662,26 @@ export default function CustomReports() {
         {previewData && (
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Eye className="h-5 w-5 text-violet-600" />
-                    Report Preview
+                    {t("reports.custom.previewTitle")}
                   </CardTitle>
                   <CardDescription>
-                    {previewData.length} records found
+                    {t("reports.custom.recordsFound", { count: previewData.length })}
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={exportToCSV}>
+                <div className="flex w-full gap-2 sm:w-auto">
+                  <Button className="flex-1 sm:flex-none" variant="outline" onClick={exportToCSV}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export CSV
+                    {t("reports.custom.exportCsv")}
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setPreviewData(null)}
+                    aria-label={t("reports.custom.clearPreview")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -674,14 +692,14 @@ export default function CustomReports() {
               {previewData.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No data found matching your criteria</p>
+                  <p>{t("reports.custom.noMatches")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        {previewColumns.map((col) => (
+                        {localizedPreviewColumns.map((col) => (
                           <th key={col.key} className="text-left p-3 font-medium">
                             {col.label}
                           </th>
@@ -691,7 +709,7 @@ export default function CustomReports() {
                     <tbody>
                       {previewData.slice(0, 20).map((row, idx) => (
                         <tr key={idx} className="border-b hover:bg-muted/50">
-                          {previewColumns.map((col) => {
+                          {localizedPreviewColumns.map((col) => {
                             const value = col.key
                               .split(".")
                               .reduce<unknown>((obj, key) => (obj as Record<string, unknown>)?.[key], row);
@@ -709,7 +727,7 @@ export default function CustomReports() {
                   </table>
                   {previewData.length > 20 && (
                     <p className="text-center text-sm text-muted-foreground mt-4">
-                      Showing 20 of {previewData.length} records. Export to see all.
+                      {t("reports.custom.showingLimited", { count: previewData.length })}
                     </p>
                   )}
                 </div>

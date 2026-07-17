@@ -3,11 +3,12 @@
  * Loads TenantSettings, renders tab components
  */
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 
 import { useTenantId } from "@/contexts/TenantContext";
 
@@ -37,18 +38,27 @@ export default function Settings() {
   const { t } = useI18n();
 
   const queryClient = useQueryClient();
-  const { data: settings = null, isLoading: settingsLoading } = useSettings();
+  const settingsQuery = useSettings();
+  const { data: settings, isLoading: settingsLoading } = settingsQuery;
 
   const loading = settingsLoading;
 
   const [saving, setSaving] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const VALID_TABS = ["company", "structure", "payment", "integrations"];
   const requestedTab = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(
-    requestedTab && VALID_TABS.includes(requestedTab) ? requestedTab : "company",
-  );
+  const activeTab =
+    requestedTab && VALID_TABS.includes(requestedTab)
+      ? requestedTab
+      : "company";
   const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] = [];
+
+  const handleTabChange = (value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (value === "company") nextParams.delete("tab");
+    else nextParams.set("tab", value);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   // onReload for child tabs — invalidate queries so React Query refetches
   const handleReload = () => {
@@ -59,12 +69,28 @@ export default function Settings() {
     return <SettingsSkeleton />;
   }
 
+  if (settingsQuery.isError && settings === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={settingsQuery.isFetching}
+          onRetry={() => settingsQuery.refetch()}
+        />
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return <Navigate to="/setup" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.settings} />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:p-6">
         <PageHeader
           title={t("settings.headerTitle")}
           subtitle={t("settings.headerSubtitle")}
@@ -105,24 +131,28 @@ export default function Settings() {
         )}
 
         {/* Settings Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="company" className="gap-2">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="mb-6 grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
+            <TabsTrigger value="company" className="gap-2" disabled={saving}>
               <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.company")}</span>
+              <span className="text-xs sm:text-sm">{t("settings.tabs.company")}</span>
             </TabsTrigger>
-            <TabsTrigger value="structure" className="gap-2">
+            <TabsTrigger value="structure" className="gap-2" disabled={saving}>
               <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.structure")}</span>
+              <span className="text-xs sm:text-sm">{t("settings.tabs.structure")}</span>
             </TabsTrigger>
-            <TabsTrigger value="payment" className="gap-2">
+            <TabsTrigger value="payment" className="gap-2" disabled={saving}>
               <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.payment")}</span>
+              <span className="text-xs sm:text-sm">{t("settings.tabs.payment")}</span>
             </TabsTrigger>
             {/* Time Off moved to /time-leave/settings, Payroll to /payroll/settings */}
-            <TabsTrigger value="integrations" className="gap-2">
+            <TabsTrigger
+              value="integrations"
+              className="gap-2"
+              disabled={saving}
+            >
               <Plug className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.integrations")}</span>
+              <span className="text-xs sm:text-sm">{t("settings.tabs.integrations")}</span>
             </TabsTrigger>
           </TabsList>
 

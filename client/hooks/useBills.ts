@@ -22,11 +22,16 @@ export const billKeys = {
   payments: (tenantId: string, billId: string) => [...billKeys.all(tenantId), 'payments', billId] as const,
 };
 
-function useAllBills(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+function useAllBills(
+  maxResults: number = SEARCH_FETCH_LIMIT,
+  enabled: boolean = true,
+  filters: Omit<BillFilters, 'pageSize' | 'startAfterDoc'> = {},
+) {
   const tenantId = useTenantId();
+  const queryFilters = { ...filters, pageSize: maxResults };
   return useQuery({
-    queryKey: billKeys.list(tenantId, { pageSize: maxResults }),
-    queryFn: () => billService.getBills(tenantId, { pageSize: maxResults }),
+    queryKey: billKeys.list(tenantId, queryFilters),
+    queryFn: () => billService.getBills(tenantId, queryFilters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
@@ -84,9 +89,8 @@ export function useUpdateBill() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<BillFormData> }) =>
       billService.updateBill(tenantId, id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: billKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: billKeys.lists(tenantId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billKeys.all(tenantId) });
     },
   });
 }
@@ -98,10 +102,8 @@ export function useRecordBillPayment() {
   return useMutation({
     mutationFn: ({ billId, payment }: { billId: string; payment: BillPaymentFormData }) =>
       billService.recordPayment(tenantId, billId, payment),
-    onSuccess: (_, { billId }) => {
-      queryClient.invalidateQueries({ queryKey: billKeys.detail(tenantId, billId) });
-      queryClient.invalidateQueries({ queryKey: billKeys.payments(tenantId, billId) });
-      queryClient.invalidateQueries({ queryKey: billKeys.lists(tenantId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: billKeys.all(tenantId) });
     },
   });
 }
@@ -151,14 +153,18 @@ function useFlattenedPaginatedBills(
  * Only one query is active at a time (via `enabled`), preventing the memory leak
  * of keeping a 500-item cache mounted alongside an infinite query.
  */
-export function useSmartBills(isSearching: boolean) {
-  const paginatedQuery = useFlattenedPaginatedBills({}, !isSearching);
-  const allQuery = useAllBills(SEARCH_FETCH_LIMIT, isSearching);
+export function useSmartBills(
+  isSearching: boolean,
+  filters: Omit<BillFilters, 'pageSize' | 'startAfterDoc'> = {},
+) {
+  const paginatedQuery = useFlattenedPaginatedBills(filters, !isSearching);
+  const allQuery = useAllBills(SEARCH_FETCH_LIMIT, isSearching, filters);
 
   return {
     bills: isSearching ? (allQuery.data ?? []) : paginatedQuery.bills,
     totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
     isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    error: isSearching ? allQuery.error : paginatedQuery.error,
     refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
     fetchNextPage: paginatedQuery.fetchNextPage,
     hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),

@@ -17,6 +17,7 @@ import {
   orderBy,
   limit,
   serverTimestamp,
+  runTransaction,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -934,14 +935,37 @@ class BankTransferService {
     tenantId: string,
     transfer: Omit<BankTransfer, 'id' | 'tenantId'>
   ): Promise<string> {
-    const docRef = await addDoc(this.collectionRef, {
-      ...transfer,
-      tenantId,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    // Older releases used random document IDs, so check those records before
+    // claiming the canonical tenant/run ID used by current clients.
+    const tenantTransfers = await getDocs(
+      query(this.collectionRef, where('tenantId', '==', tenantId)),
+    );
+    if (
+      tenantTransfers.docs.some(
+        (snapshot) => snapshot.data().payrollRunId === transfer.payrollRunId,
+      )
+    ) {
+      throw new Error('A bank transfer already exists for this payroll run');
+    }
+
+    const transferRef = doc(
+      this.collectionRef,
+      `${tenantId}__${transfer.payrollRunId}`,
+    );
+    await runTransaction(db, async (transaction) => {
+      const existing = await transaction.get(transferRef);
+      if (existing.exists()) {
+        throw new Error('A bank transfer already exists for this payroll run');
+      }
+      transaction.set(transferRef, {
+        ...transfer,
+        tenantId,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
-    return docRef.id;
+    return transferRef.id;
   }
 
   async updateTransferStatus(

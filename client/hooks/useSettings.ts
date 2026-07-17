@@ -11,7 +11,7 @@ export const settingsKeys = {
 };
 
 /** Fetch tenant settings */
-export function useSettings() {
+export function useSettings(enabled = true) {
   const { session, isImpersonating, impersonatedTenantId } = useTenant();
   const tenantId = isImpersonating && impersonatedTenantId ? impersonatedTenantId : session?.tid;
 
@@ -21,9 +21,8 @@ export function useSettings() {
       if (!tenantId) return null;
       return settingsService.getSettings(tenantId);
     },
-    enabled: Boolean(tenantId),
+    enabled: Boolean(tenantId) && enabled,
     staleTime: 10 * 60 * 1000, // Settings change rarely
     gcTime: 60 * 60 * 1000,
   });
 }
-

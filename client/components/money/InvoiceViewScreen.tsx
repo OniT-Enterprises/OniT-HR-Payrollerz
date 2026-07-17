@@ -4,7 +4,7 @@
  * template switching, and payment history.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import {
@@ -34,6 +34,7 @@ import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline'
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { InvoicePaper } from '@/components/money/InvoicePaper';
 import { INVOICE_TEMPLATES, paymentMethodLabel, formatInvoiceDate } from '@/lib/invoiceTemplates';
+import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
 import type { Invoice, InvoiceSettings, InvoiceStatus, InvoiceTemplateId } from '@/types/money';
 import {
   FileText,
@@ -78,28 +79,41 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
+  const canManageTenant = canManage();
   const queryClient = useQueryClient();
 
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [sending, setSending] = useState(false);
+  const sendInFlight = useRef(false);
 
   const { data: payments = [] } = useInvoicePayments(invoice.id);
   const updateTemplateMutation = useUpdateInvoiceTemplate();
+  const displayStatus = getEffectiveInvoiceStatus(invoice);
+  const displayInvoice =
+    displayStatus === invoice.status ? invoice : { ...invoice, status: displayStatus };
+  const canRecordPayment =
+    canManageTenant && PAYABLE_STATUSES.includes(invoice.status);
 
   useEffect(() => {
-    if (searchParams.get('record') === 'payment' && PAYABLE_STATUSES.includes(invoice.status)) {
+    if (
+      canManageTenant &&
+      searchParams.get('record') === 'payment' &&
+      PAYABLE_STATUSES.includes(invoice.status)
+    ) {
       setShowPaymentDialog(true);
     }
-  }, [searchParams, invoice.status]);
+  }, [canManageTenant, searchParams, invoice.status]);
 
   const invalidateInvoice = () => {
-    queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, invoice.id) });
-    queryClient.invalidateQueries({ queryKey: invoiceKeys.lists(tenantId) });
+    queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
   };
 
   const handleSend = async () => {
+    if (!canManageTenant || sendInFlight.current) return;
+    sendInFlight.current = true;
     try {
       setSending(true);
       await invoiceService.markAsSent(tenantId, invoice.id);
@@ -118,6 +132,7 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
         variant: 'destructive',
       });
     } finally {
+      sendInFlight.current = false;
       setSending(false);
     }
   };
@@ -138,7 +153,7 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
     try {
       setDownloadingPdf(true);
       const { downloadInvoicePDF } = await import('@/components/money/InvoicePDF');
-      await downloadInvoicePDF(invoice, settings);
+      await downloadInvoicePDF(displayInvoice, settings);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.pdfDownloaded') || 'Invoice PDF downloaded',
@@ -156,10 +171,12 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
   };
 
   const handleDuplicate = () => {
+    if (!canManageTenant) return;
     navigate(`/money/invoices/new?duplicate=${invoice.id}`);
   };
 
   const handleTemplateChange = (templateId: InvoiceTemplateId) => {
+    if (!canManageTenant || updateTemplateMutation.isPending) return;
     updateTemplateMutation.mutate(
       { id: invoice.id, templateId },
       {
@@ -178,8 +195,6 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
     (updateTemplateMutation.isPending && updateTemplateMutation.variables?.templateId) ||
     invoice.templateId;
 
-  const canRecordPayment = PAYABLE_STATUSES.includes(invoice.status);
-
   return (
     <div className="min-h-screen bg-background">
       <SEO title={`Invoice ${invoice.invoiceNumber} - Xefe`} />
@@ -197,10 +212,12 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('common.back') || 'Back'}
               </Button>
-              <Button variant="outline" onClick={handleDuplicate}>
-                <Copy className="h-4 w-4 mr-2" />
-                {t('money.invoices.duplicate') || 'Duplicate'}
-              </Button>
+              {canManageTenant && (
+                <Button variant="outline" onClick={handleDuplicate}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  {t('money.invoices.duplicate') || 'Duplicate'}
+                </Button>
+              )}
               <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
                 {downloadingPdf ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -213,7 +230,7 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
                 <Share2 className="h-4 w-4 mr-2" />
                 {t('money.invoices.share') || 'Share'}
               </Button>
-              {invoice.status === 'draft' && (
+              {canManageTenant && invoice.status === 'draft' && (
                 <Button
                   onClick={handleSend}
                   disabled={sending}
@@ -250,7 +267,11 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Invoice paper */}
           <div className="lg:col-span-2">
-            <InvoicePaper invoice={invoice} settings={settings} templateId={activeTemplate} />
+            <InvoicePaper
+              invoice={displayInvoice}
+              settings={settings}
+              templateId={activeTemplate}
+            />
           </div>
 
           {/* Side rail */}
@@ -260,8 +281,8 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   {t('money.invoices.balanceDue') || 'Balance Due'}
-                  <Badge className={STATUS_STYLES[invoice.status]} variant="secondary">
-                    {t(`money.status.${invoice.status}`) || invoice.status}
+                  <Badge className={STATUS_STYLES[displayStatus]} variant="secondary">
+                    {t(`money.status.${displayStatus}`) || displayStatus}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -300,7 +321,7 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
             </Card>
 
             {/* Template switcher */}
-            {invoice.status !== 'cancelled' && (
+            {canManageTenant && invoice.status !== 'cancelled' && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -362,17 +383,19 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
         </div>
       </div>
 
-      <RecordPaymentModal
-        invoice={invoice}
-        open={showPaymentDialog}
-        onClose={() => setShowPaymentDialog(false)}
-        onPaymentRecorded={() => {
-          invalidateInvoice();
-          queryClient.invalidateQueries({
-            queryKey: [...invoiceKeys.detail(tenantId, invoice.id), 'payments'],
-          });
-        }}
-      />
+      {canManageTenant && (
+        <RecordPaymentModal
+          invoice={invoice}
+          open={showPaymentDialog}
+          onClose={() => setShowPaymentDialog(false)}
+          onPaymentRecorded={() => {
+            invalidateInvoice();
+            queryClient.invalidateQueries({
+              queryKey: [...invoiceKeys.detail(tenantId, invoice.id), 'payments'],
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

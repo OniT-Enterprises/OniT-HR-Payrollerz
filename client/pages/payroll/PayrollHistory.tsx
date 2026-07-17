@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -98,7 +98,7 @@ import { useQuery } from "@tanstack/react-query";
 import { settingsService } from "@/services/settingsService";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -111,6 +111,8 @@ import { summarizePayrollForAccounting } from "@/lib/payroll/accounting-summary"
 export default function PayrollHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { canManage } = useTenant();
+  const canManageTenant = canManage();
   const tenantId = useTenantId();
   const { user } = useAuth();
   const { t } = useI18n();
@@ -137,23 +139,29 @@ export default function PayrollHistory() {
   const [runRecords, setRunRecords] = useState<PayrollRecord[]>([]);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [loadingRecords, setLoadingRecords] = useState(false);
+  const detailsRecordsRequest = useRef(0);
 
   // QuickBooks export
   const [showQBExportDialog, setShowQBExportDialog] = useState(false);
   const [qbExportRun, setQBExportRun] = useState<PayrollRun | null>(null);
   const [qbExportRecords, setQBExportRecords] = useState<PayrollRecord[]>([]);
+  const qbRecordsRequest = useRef(0);
 
   // Send payslips
   const [showSendPayslipsDialog, setShowSendPayslipsDialog] = useState(false);
   const [sendPayslipsRun, setSendPayslipsRun] = useState<PayrollRun | null>(null);
   const [sendPayslipsRecords, setSendPayslipsRecords] = useState<PayrollRecord[]>([]);
+  const payslipRecordsRequest = useRef(0);
 
   // Approval/Rejection
   const [approveRun, setApproveRun] = useState<PayrollRun | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   // Post-approval guidance ("what's next" dialog)
   const [nextStepsRun, setNextStepsRun] = useState<PayrollRun | null>(null);
-  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({}, showApproveDialog);
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory(
+    {},
+    canManageTenant && showApproveDialog,
+  );
   const [approveRunRecords, setApproveRunRecords] = useState<PayrollRecord[]>([]);
   const [loadingApproveAllocationCheck, setLoadingApproveAllocationCheck] = useState(false);
   const [approveUnassignedEmployeeCount, setApproveUnassignedEmployeeCount] = useState(0);
@@ -165,6 +173,9 @@ export default function PayrollHistory() {
   const approving = approveMutation.isPending || markPaidMutation.isPending || updateRunMutation.isPending;
   const rejecting = rejectMutation.isPending;
   const [activeTab, setActiveTab] = useState("pending");
+  const approvalInFlight = useRef(false);
+  const rejectionInFlight = useRef(false);
+  const repairInFlight = useRef(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -274,6 +285,8 @@ export default function PayrollHistory() {
   }, [payrollRuns]);
 
   const handleRepairRun = async (runId: string) => {
+    if (!canManageTenant || repairInFlight.current) return;
+    repairInFlight.current = true;
     repairMutation.mutate(runId, {
       onSuccess: (result) => {
         if (result === 'repaired') {
@@ -284,6 +297,9 @@ export default function PayrollHistory() {
       },
       onError: () => {
         toast({ title: "Repair Failed", description: "Could not repair the payroll run. Please try again.", variant: "destructive" });
+      },
+      onSettled: () => {
+        repairInFlight.current = false;
       },
     });
   };
@@ -340,12 +356,14 @@ export default function PayrollHistory() {
 
   // Pending approval runs
   const pendingRuns = useMemo(() => {
-    return payrollRuns.filter((run) => run.status === "processing");
-  }, [payrollRuns]);
+    return canManageTenant
+      ? payrollRuns.filter((run) => run.status === "processing")
+      : [];
+  }, [canManageTenant, payrollRuns]);
 
   // Handle approve payroll
   const handleApprovePayroll = async () => {
-    if (!approveRun?.id || !user?.uid) return;
+    if (!canManageTenant || !approveRun?.id || !user?.uid || approvalInFlight.current) return;
     if (approveUnassignedEmployeeCount > 0 && !confirmUnassignedAllocation) {
       toast({
         title: t("payrollHistory.toastApprovalBlocked"),
@@ -355,6 +373,7 @@ export default function PayrollHistory() {
       return;
     }
 
+    approvalInFlight.current = true;
     let approvedThisAttempt = false;
     try {
       // Approve the run (service enforces two-person rule)
@@ -431,14 +450,17 @@ export default function PayrollHistory() {
         description: message,
         variant: "destructive",
       });
+    } finally {
+      approvalInFlight.current = false;
     }
   };
 
   // Handle reject payroll
   const handleRejectPayroll = async () => {
-    if (!rejectRun?.id || !user?.uid) return;
+    if (!canManageTenant || !rejectRun?.id || !user?.uid || rejectionInFlight.current) return;
     if (rejectionReason.trim().length < 10) return;
 
+    rejectionInFlight.current = true;
     try {
       await rejectMutation.mutateAsync({
         id: rejectRun.id,
@@ -462,21 +484,27 @@ export default function PayrollHistory() {
         description: message,
         variant: "destructive",
       });
+    } finally {
+      rejectionInFlight.current = false;
     }
   };
 
   // View payroll run details
   const handleViewDetails = async (run: PayrollRun) => {
+    const requestId = ++detailsRecordsRequest.current;
     setSelectedRun(run);
+    setRunRecords([]);
     setShowDetailsDialog(true);
     setLoadingRecords(true);
 
     try {
       if (run.id) {
         const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
+        if (detailsRecordsRequest.current !== requestId) return;
         setRunRecords(records);
       }
     } catch (error) {
+      if (detailsRecordsRequest.current !== requestId) return;
       console.error("Failed to load payroll records:", error);
       toast({
         title: t("common.error"),
@@ -484,7 +512,7 @@ export default function PayrollHistory() {
         variant: "destructive",
       });
     } finally {
-      setLoadingRecords(false);
+      if (detailsRecordsRequest.current === requestId) setLoadingRecords(false);
     }
   };
 
@@ -508,16 +536,20 @@ export default function PayrollHistory() {
 
   // Export to QuickBooks
   const handleExportToQuickBooks = async (run: PayrollRun) => {
-    setQBExportRun(run);
-    setShowQBExportDialog(true);
+    if (!canManageTenant || !run.id) return;
+    const requestId = ++qbRecordsRequest.current;
+    setShowQBExportDialog(false);
+    setQBExportRun(null);
+    setQBExportRecords([]);
 
-    // Load records for this run
     try {
-      if (run.id) {
-        const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
-        setQBExportRecords(records);
-      }
+      const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
+      if (qbRecordsRequest.current !== requestId) return;
+      setQBExportRecords(records);
+      setQBExportRun(run);
+      setShowQBExportDialog(true);
     } catch (error) {
+      if (qbRecordsRequest.current !== requestId) return;
       console.error("Failed to load payroll records for QB export:", error);
       toast({
         title: t("common.error"),
@@ -529,16 +561,20 @@ export default function PayrollHistory() {
 
   // Send payslips via email
   const handleSendPayslips = async (run: PayrollRun) => {
-    setSendPayslipsRun(run);
-    setShowSendPayslipsDialog(true);
+    if (!canManageTenant || !run.id) return;
+    const requestId = ++payslipRecordsRequest.current;
+    setShowSendPayslipsDialog(false);
+    setSendPayslipsRun(null);
+    setSendPayslipsRecords([]);
 
-    // Load records for this run
     try {
-      if (run.id) {
-        const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
-        setSendPayslipsRecords(records);
-      }
+      const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
+      if (payslipRecordsRequest.current !== requestId) return;
+      setSendPayslipsRecords(records);
+      setSendPayslipsRun(run);
+      setShowSendPayslipsDialog(true);
     } catch (error) {
+      if (payslipRecordsRequest.current !== requestId) return;
       console.error("Failed to load payroll records for email:", error);
       toast({
         title: t("common.error"),
@@ -659,11 +695,11 @@ export default function PayrollHistory() {
           subtitle={t("payrollHistory.subtitle")}
           icon={FileText}
           iconColor="text-primary"
-          actions={
+          actions={canManageTenant ? (
             <Button onClick={() => navigate("/payroll/run")}>
               {t("payrollHistory.runNewPayroll")}
             </Button>
-          }
+          ) : undefined}
         />
 
           {/* Summary — compact inline stats, not 4 big cards */}
@@ -750,7 +786,7 @@ export default function PayrollHistory() {
           </MoreDetailsSection>
 
           {/* Stuck run banner */}
-          {stuckRuns.length > 0 && (
+          {canManageTenant && stuckRuns.length > 0 && (
             <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
               <CardContent className="py-4">
                 <div className="flex items-start gap-3">
@@ -1007,9 +1043,11 @@ export default function PayrollHistory() {
                     <div className="text-center py-12">
                       <img src="/images/illustrations/xefe-card-payroll.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
                       <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
-                      <Button onClick={() => navigate("/payroll/run")}>
-                        {t("payrollHistory.runFirstPayroll")}
-                      </Button>
+                      {canManageTenant && (
+                        <Button onClick={() => navigate("/payroll/run")}>
+                          {t("payrollHistory.runFirstPayroll")}
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <>
@@ -1052,7 +1090,7 @@ export default function PayrollHistory() {
                                   <Download className="h-4 w-4 mr-2" />
                                   {t("payrollHistory.exportCsv")}
                                 </DropdownMenuItem>
-                                {(run.status === "approved" || run.status === "paid") && (
+                                {canManageTenant && (run.status === "approved" || run.status === "paid") && (
                                   <DropdownMenuItem onClick={() => handleSendPayslips(run)}>
                                     <Mail className="h-4 w-4 mr-2" />
                                     {t("payrollHistory.sendPayslips")}
@@ -1117,7 +1155,7 @@ export default function PayrollHistory() {
                                       <Eye className="h-4 w-4 mr-2" />
                                       {t("payrollHistory.viewDetails")}
                                     </DropdownMenuItem>
-                                    {run.status === "processing" && run.createdBy !== user?.uid && (
+                                    {canManageTenant && run.status === "processing" && run.createdBy !== user?.uid && (
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setApproveRun(run);
@@ -1128,7 +1166,7 @@ export default function PayrollHistory() {
                                         {t("payrollHistory.approve")}
                                       </DropdownMenuItem>
                                     )}
-                                    {run.status === "processing" && (
+                                    {canManageTenant && run.status === "processing" && (
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setRejectRun(run);
@@ -1146,13 +1184,15 @@ export default function PayrollHistory() {
                                       <Download className="h-4 w-4 mr-2" />
                                       {t("payrollHistory.exportCsv")}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleExportToQuickBooks(run)}
-                                    >
-                                      <FileText className="h-4 w-4 mr-2" />
-                                      {t("payrollHistory.exportQuickBooks")}
-                                    </DropdownMenuItem>
-                                    {(run.status === "approved" || run.status === "paid") && (
+                                    {canManageTenant && (
+                                      <DropdownMenuItem
+                                        onClick={() => handleExportToQuickBooks(run)}
+                                      >
+                                        <FileText className="h-4 w-4 mr-2" />
+                                        {t("payrollHistory.exportQuickBooks")}
+                                      </DropdownMenuItem>
+                                    )}
+                                    {canManageTenant && (run.status === "approved" || run.status === "paid") && (
                                       <DropdownMenuItem
                                         onClick={() => handleSendPayslips(run)}
                                       >
@@ -1176,7 +1216,7 @@ export default function PayrollHistory() {
         </div>
 
       {/* QuickBooks Export Dialog */}
-      {qbExportRun && (
+      {canManageTenant && qbExportRun && (
         <QuickBooksExportDialog
           open={showQBExportDialog}
           onOpenChange={setShowQBExportDialog}
@@ -1187,7 +1227,7 @@ export default function PayrollHistory() {
       )}
 
       {/* Send Payslips Dialog */}
-      {sendPayslipsRun && (
+      {canManageTenant && sendPayslipsRun && (
         <SendPayslipsDialog
           open={showSendPayslipsDialog}
           onOpenChange={setShowSendPayslipsDialog}
@@ -1249,7 +1289,10 @@ export default function PayrollHistory() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+      <AlertDialog
+        open={canManageTenant && showApproveDialog}
+        onOpenChange={setShowApproveDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -1359,7 +1402,10 @@ export default function PayrollHistory() {
       </AlertDialog>
 
       {/* Reject Dialog */}
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+      <Dialog
+        open={canManageTenant && showRejectDialog}
+        onOpenChange={setShowRejectDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1437,9 +1483,10 @@ export default function PayrollHistory() {
                   {t("payrollHistory.detailsDescription")}
                 </DialogDescription>
               </div>
-              {selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
+              {canManageTenant && selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
                 <Button
                   size="sm"
+                  disabled={loadingRecords || runRecords.length === 0}
                   onClick={() => {
                     setSendPayslipsRun(selectedRun);
                     setSendPayslipsRecords(runRecords);

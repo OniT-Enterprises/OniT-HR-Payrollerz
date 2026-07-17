@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -56,7 +56,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useBankTransfers, usePayrollRuns, usePayrollRecordsByRun, useCreateBankTransfer } from "@/hooks/usePayroll";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
-import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BankTransfer } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,28 +65,38 @@ import {
   generateBankFile,
   groupRecordsByBank,
   downloadBankFile,
+  validateBankTransferRecords,
 } from "@/lib/bank-transfers";
 import { TL_BANKS } from "@/lib/payroll/constants-tl";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 
 export default function BankTransfers() {
   const { toast } = useToast();
   const { user } = useAuth();
   const tenantId = useTenantId();
+  const { canManage } = useTenant();
+  const canManageTenant = canManage();
   const { t } = useI18n();
   // ─── React Query data fetching ──────────────────────────────────
-  const { data: transfers = [], isLoading: loadingTransfers } = useBankTransfers();
-  const { data: payrollRuns = [], isLoading: loadingRuns } = usePayrollRuns();
+  const transferQuery = useBankTransfers();
+  const payrollRunsQuery = usePayrollRuns();
+  const transfers = useMemo(() => transferQuery.data ?? [], [transferQuery.data]);
+  const payrollRuns = useMemo(() => payrollRunsQuery.data ?? [], [payrollRunsQuery.data]);
+  const loadingTransfers = transferQuery.isLoading;
+  const loadingRuns = payrollRunsQuery.isLoading;
   const createTransferMutation = useCreateBankTransfer();
 
-  const { data: companySettings } = useQuery({
+  const settingsQuery = useQuery({
     queryKey: ['tenants', tenantId, 'settings'],
     queryFn: () => settingsService.getSettings(tenantId),
+    enabled: canManageTenant,
     staleTime: 10 * 60 * 1000,
   });
+  const companySettings = settingsQuery.data;
 
   const companyName = companySettings?.companyDetails?.legalName
     || companySettings?.companyDetails?.tradingName
@@ -96,7 +105,7 @@ export default function BankTransfers() {
   const bankAccounts = useMemo(() => {
     if (!companySettings?.paymentStructure?.bankAccounts) return [];
     return companySettings.paymentStructure.bankAccounts
-      .filter((a) => a.isActive)
+      .filter((a) => a.isActive && Boolean(a.accountNumber?.trim()))
       .map((a) => ({
         id: a.id,
         name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
@@ -122,8 +131,15 @@ export default function BankTransfers() {
   const [selectedBankFileRun, setSelectedBankFileRun] = useState<string>("");
   const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
   const [generatingFiles, setGeneratingFiles] = useState(false);
-  const shouldLoadEmployees = showBankFileDialog || !!selectedBankFileRun;
-  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({}, shouldLoadEmployees);
+  const bankFilesInFlight = useRef(false);
+  const shouldLoadEmployees =
+    canManageTenant && (showBankFileDialog || !!selectedBankFileRun);
+  const employeeDirectoryQuery = useEmployeeDirectory({}, shouldLoadEmployees);
+  const employees = useMemo(
+    () => employeeDirectoryQuery.data ?? [],
+    [employeeDirectoryQuery.data],
+  );
+  const loadingEmployees = employeeDirectoryQuery.isLoading;
 
   const [formData, setFormData] = useState({
     payrollRunId: "",
@@ -131,13 +147,21 @@ export default function BankTransfers() {
     transferDate: "",
     notes: "",
   });
+  const transferInFlight = useRef(false);
 
   // ─── Payroll records for bank file generation ──────────────────
-  const { data: bankFileRecords = [] } = usePayrollRecordsByRun(selectedBankFileRun || undefined);
+  const bankFileRecordsQuery = usePayrollRecordsByRun(selectedBankFileRun || undefined);
+  const bankFileRecords = useMemo(
+    () => bankFileRecordsQuery.data ?? [],
+    [bankFileRecordsQuery.data],
+  );
 
   const bankFileSummary = useMemo(() => {
     if (!selectedBankFileRun || employees.length === 0 || bankFileRecords.length === 0) return null;
-    const grouped = groupRecordsByBank(bankFileRecords, employees);
+    const grouped = groupRecordsByBank(
+      bankFileRecords.filter((record) => record.netPay > 0),
+      employees,
+    );
     return {
       BNU: grouped.BNU.length,
       MANDIRI: grouped.MANDIRI.length,
@@ -145,6 +169,40 @@ export default function BankTransfers() {
       BNCTL: grouped.BNCTL.length,
     } as Record<BankCode, number>;
   }, [bankFileRecords, employees, selectedBankFileRun]);
+
+  const bankFileCoverage = useMemo(() => {
+    const payableRecords = bankFileRecords.filter((record) => record.netPay > 0);
+    if (payableRecords.length === 0 || employeeDirectoryQuery.data === undefined) {
+      return { missingEmployeeCount: 0, unsupportedBankCount: 0 };
+    }
+    const employeeIds = new Set(
+      employees.flatMap((employee) => employee.id ? [employee.id] : []),
+    );
+    const missingEmployeeIds = new Set(
+      payableRecords
+        .filter((record) => !employeeIds.has(record.employeeId))
+        .map((record) => record.employeeId),
+    );
+    const knownRecords = payableRecords.filter((record) =>
+      employeeIds.has(record.employeeId),
+    );
+    const grouped = groupRecordsByBank(knownRecords, employees);
+    const supportedEmployeeIds = new Set(
+      Object.values(grouped).flatMap((entries) =>
+        entries.map(({ record }) => record.employeeId),
+      ),
+    );
+    const unsupportedEmployeeIds = new Set(
+      knownRecords
+        .filter((record) => !supportedEmployeeIds.has(record.employeeId))
+        .map((record) => record.employeeId),
+    );
+    return {
+      missingEmployeeCount: missingEmployeeIds.size,
+      unsupportedBankCount: unsupportedEmployeeIds.size,
+    };
+  }, [bankFileRecords, employeeDirectoryQuery.data, employees]);
+  const { missingEmployeeCount, unsupportedBankCount } = bankFileCoverage;
 
   // Pre-select banks that have employees when summary changes
   useEffect(() => {
@@ -156,6 +214,7 @@ export default function BankTransfers() {
 
   // Handle bank file generation
   const handleGenerateBankFiles = async () => {
+    if (!canManageTenant || bankFilesInFlight.current) return;
     if (!selectedBankFileRun || selectedBanks.length === 0) {
       toast({
         title: t("bankTransfers.toastErrorTitle"),
@@ -175,29 +234,64 @@ export default function BankTransfers() {
       return;
     }
 
+    bankFilesInFlight.current = true;
     setGeneratingFiles(true);
     try {
-      if (loadingEmployees) {
-        throw new Error(t("bankTransfers.toastEmployeesLoading") || "Employees are still loading");
+      if (
+        settingsQuery.isFetching ||
+        employeeDirectoryQuery.isFetching ||
+        bankFileRecordsQuery.isFetching
+      ) {
+        throw new Error(t("bankTransfers.toastEmployeesLoading") || "Bank details are still loading");
+      }
+      if (
+        settingsQuery.isError ||
+        employeeDirectoryQuery.isError ||
+        bankFileRecordsQuery.isError
+      ) throw new Error("Required bank-file data could not be loaded");
+      if (!companySettings || !companyAccount.trim()) {
+        throw new Error("A company debit account must be configured first");
       }
 
-      // Use real payroll records (already loaded when run was selected)
-      const records = bankFileRecords.length > 0
-        ? bankFileRecords
-        : await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
+      const records = bankFileRecords;
+      if (records.length === 0) throw new Error("No payroll records were found");
+      const payableRecords = records.filter((record) => record.netPay > 0);
+      if (payableRecords.length === 0) throw new Error("No positive salary payments were found");
+      const employeeIds = new Set(
+        employees.flatMap((employee) => employee.id ? [employee.id] : []),
+      );
+      if (payableRecords.some((record) => !employeeIds.has(record.employeeId))) {
+        throw new Error("One or more payroll employee records could not be loaded");
+      }
+      const grouped = groupRecordsByBank(payableRecords, employees);
+      const selectedEmployeeIds = new Set(
+        selectedBanks.flatMap((bankCode) =>
+          grouped[bankCode].map(({ record }) => record.employeeId),
+        ),
+      );
+      const selectedRecords = payableRecords.filter((record) =>
+        selectedEmployeeIds.has(record.employeeId),
+      );
+      if (selectedRecords.length === 0) {
+        throw new Error("No salary records matched the selected banks");
+      }
+      validateBankTransferRecords(selectedRecords, employees);
 
       const today = getTodayTL();
-
-      for (const bankCode of selectedBanks) {
-        const result = generateBankFile(bankCode, {
+      // Build and validate every selected file before starting any downloads so
+      // a later invalid bank cannot leave the user with a partial set.
+      const results = selectedBanks.map((bankCode) =>
+        generateBankFile(bankCode, {
           payrollRun: selectedRun,
-          records,
+          records: payableRecords,
           employees,
           valueDate: today,
           companyName,
           companyAccountNumber: companyAccount,
-        });
+        }),
+      );
 
+      for (const result of results) {
         downloadBankFile(result);
 
         // Small delay between downloads to prevent browser blocking
@@ -206,7 +300,15 @@ export default function BankTransfers() {
 
       toast({
         title: t("bankTransfers.toastTransferSuccess"),
-        description: t("bankTransfers.toastBankFilesSuccess", { count: String(selectedBanks.length) }),
+        description: t(
+          unsupportedBankCount > 0
+            ? "bankTransfers.toastBankFilesSuccessWithExcluded"
+            : "bankTransfers.toastBankFilesSuccess",
+          {
+            count: String(selectedBanks.length),
+            excluded: String(unsupportedBankCount),
+          },
+        ),
       });
 
       setShowBankFileDialog(false);
@@ -216,10 +318,17 @@ export default function BankTransfers() {
       console.error("Failed to generate bank files:", error);
       toast({
         title: t("bankTransfers.toastErrorTitle"),
-        description: t("bankTransfers.toastBankFilesError"),
+        description: t(
+          error instanceof Error && error.message.includes("employee records")
+            ? "bankTransfers.toastPayrollDataError"
+            : error instanceof Error && error.message.includes("account")
+              ? "bankTransfers.toastBankDetailsError"
+              : "bankTransfers.toastBankFilesError",
+        ),
         variant: "destructive",
       });
     } finally {
+      bankFilesInFlight.current = false;
       setGeneratingFiles(false);
     }
   };
@@ -294,6 +403,7 @@ export default function BankTransfers() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageTenant || transferInFlight.current) return;
 
     if (
       !formData.payrollRunId ||
@@ -321,10 +431,18 @@ export default function BankTransfers() {
 
     // Find the bank account name
     const bankAccount = bankAccounts.find((a) => a.id === formData.bankAccount);
+    if (!bankAccount?.accountNumber.trim()) {
+      toast({
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.bankDetailsRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
 
     // Generate reference number
     const now = new Date();
-    const reference = `TXN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(transfers.length + 1).padStart(3, "0")}`;
+    const reference = `TXN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${selectedRun.id}`;
 
     const newTransfer: Omit<BankTransfer, "id" | "tenantId"> = {
       payrollRunId: formData.payrollRunId,
@@ -340,8 +458,10 @@ export default function BankTransfers() {
       notes: formData.notes || "",
     };
 
+    transferInFlight.current = true;
     createTransferMutation.mutate(newTransfer, {
       onSuccess: () => {
+        transferInFlight.current = false;
         toast({
           title: t("bankTransfers.toastTransferSuccess"),
           description: t("bankTransfers.toastTransferSuccessDesc", { reference }),
@@ -355,6 +475,7 @@ export default function BankTransfers() {
         setShowTransferDialog(false);
       },
       onError: () => {
+        transferInFlight.current = false;
         toast({
           title: t("bankTransfers.toastErrorTitle"),
           description: t("bankTransfers.toastTransferError"),
@@ -492,6 +613,22 @@ export default function BankTransfers() {
     );
   }
 
+  if (
+    (transferQuery.isError && transfers.length === 0) ||
+    (payrollRunsQuery.isError && payrollRuns.length === 0)
+  ) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.bankTransfers} />
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={transferQuery.isFetching || payrollRunsQuery.isFetching}
+          onRetry={() => Promise.all([transferQuery.refetch(), payrollRunsQuery.refetch()])}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.bankTransfers} />
@@ -503,7 +640,7 @@ export default function BankTransfers() {
           subtitle={t("bankTransfers.subtitle")}
           icon={Send}
           iconColor="text-primary"
-          actions={
+          actions={canManageTenant ? (
             <Button
               className="bg-green-600 hover:bg-green-700 text-white"
               disabled={availablePayrollRuns.length === 0}
@@ -512,7 +649,7 @@ export default function BankTransfers() {
               <Plus className="h-4 w-4 mr-2" />
               {t("bankTransfers.newTransfer")}
             </Button>
-          }
+          ) : undefined}
         />
 
           {/* Filters */}
@@ -585,6 +722,7 @@ export default function BankTransfers() {
                     {t("bankTransfers.exportCsv")}
                   </Button>
 
+                  {canManageTenant && <>
                   {/* Bank File Generation Dialog */}
                   <Dialog open={showBankFileDialog} onOpenChange={setShowBankFileDialog}>
                     <DialogTrigger asChild>
@@ -617,9 +755,9 @@ export default function BankTransfers() {
                             </SelectTrigger>
                             <SelectContent>
                               {payrollRuns
-                                .filter(r => r.status === "approved" || r.status === "paid")
+                                .filter(r => (r.status === "approved" || r.status === "paid") && r.id)
                                 .map((run) => (
-                                  <SelectItem key={run.id} value={run.id || ""}>
+                                  <SelectItem key={run.id} value={run.id!}>
                                     {formatDateTL(run.periodStart, {
                                       month: "long",
                                       year: "numeric",
@@ -629,13 +767,31 @@ export default function BankTransfers() {
                                 ))}
                             </SelectContent>
                           </Select>
+                          {bankAccounts.length === 0 && (
+                            <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
+                              <AlertCircle className="h-3 w-3" />
+                              {t("bankTransfers.bankDetailsRequired")}
+                            </p>
+                          )}
                         </div>
 
                         {/* Bank Summary & Selection */}
-                        {selectedBankFileRun && loadingEmployees && (
+                        {selectedBankFileRun && (loadingEmployees || settingsQuery.isFetching || bankFileRecordsQuery.isFetching) && (
                           <div className="flex items-center gap-2 rounded-lg border p-3 text-sm text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>{t("bankTransfers.loadingEmployees") || "Loading employees..."}</span>
+                          </div>
+                        )}
+
+                        {selectedBankFileRun && (
+                          settingsQuery.isError ||
+                          employeeDirectoryQuery.isError ||
+                          bankFileRecordsQuery.isError ||
+                          !companyAccount
+                        ) && (
+                          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200" role="alert">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>{t("bankTransfers.bankDetailsRequired")}</span>
                           </div>
                         )}
 
@@ -662,6 +818,8 @@ export default function BankTransfers() {
                                     <Checkbox
                                       checked={isSelected}
                                       disabled={isDisabled}
+                                      aria-label={`${bank.code} ${bank.name}`}
+                                      onClick={(event) => event.stopPropagation()}
                                       onCheckedChange={() => !isDisabled && toggleBankSelection(bankCode)}
                                     />
                                     <div className="flex-1 min-w-0">
@@ -675,6 +833,28 @@ export default function BankTransfers() {
                                 );
                               })}
                             </div>
+                          </div>
+                        )}
+
+                        {missingEmployeeCount > 0 && (
+                          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-200" role="alert">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>
+                              {t("bankTransfers.missingEmployeeRecordsNotice", {
+                                count: missingEmployeeCount,
+                              })}
+                            </span>
+                          </div>
+                        )}
+
+                        {unsupportedBankCount > 0 && (
+                          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>
+                              {t("bankTransfers.excludedEmployeesNotice", {
+                                count: unsupportedBankCount,
+                              })}
+                            </span>
                           </div>
                         )}
 
@@ -704,7 +884,19 @@ export default function BankTransfers() {
                           </Button>
                           <Button
                             onClick={handleGenerateBankFiles}
-                            disabled={!selectedBankFileRun || selectedBanks.length === 0 || generatingFiles || loadingEmployees}
+                            disabled={
+                              !selectedBankFileRun ||
+                              selectedBanks.length === 0 ||
+                              generatingFiles ||
+                              loadingEmployees ||
+                              settingsQuery.isFetching ||
+                              bankFileRecordsQuery.isFetching ||
+                              settingsQuery.isError ||
+                              employeeDirectoryQuery.isError ||
+                              bankFileRecordsQuery.isError ||
+                              missingEmployeeCount > 0 ||
+                              !companyAccount
+                            }
                             className="flex-1 bg-green-600 hover:bg-green-700"
                           >
                             {generatingFiles ? (
@@ -750,7 +942,7 @@ export default function BankTransfers() {
                             </SelectTrigger>
                             <SelectContent>
                               {availablePayrollRuns.map((run) => (
-                                <SelectItem key={run.id} value={run.id || ""}>
+                                <SelectItem key={run.id} value={run.id!}>
                                   {formatDateTL(run.periodStart, { month: "long", year: "numeric" })}{" "}
                                   - {formatCurrency(run.totalNetPay)}
                                 </SelectItem>
@@ -783,6 +975,12 @@ export default function BankTransfers() {
                               ))}
                             </SelectContent>
                           </Select>
+                          {bankAccounts.length === 0 && (
+                            <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
+                              <AlertCircle className="h-3 w-3" />
+                              {t("bankTransfers.bankDetailsRequired")}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="transfer-date">{t("bankTransfers.transferDateLabel")} *</Label>
@@ -835,6 +1033,7 @@ export default function BankTransfers() {
                       </form>
                     </DialogContent>
                   </Dialog>
+                  </>}
                 </div>
               </div>
             </CardHeader>

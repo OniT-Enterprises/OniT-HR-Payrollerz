@@ -110,6 +110,7 @@ function DesktopEmployeeTable({
   onCreateEkipaAccount,
   onDeleteEmployee,
   duplicateIds,
+  canManageTenant,
   t,
 }: {
   employees: Employee[];
@@ -121,6 +122,7 @@ function DesktopEmployeeTable({
   onCreateEkipaAccount: (emp: Employee) => void;
   onDeleteEmployee: (emp: Employee) => void;
   duplicateIds: Set<string>;
+  canManageTenant: boolean;
   t: (key: string) => string;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -223,21 +225,21 @@ function DesktopEmployeeTable({
                 <Eye className="h-4 w-4 mr-2" />
                 {t("employees.tooltips.viewProfile")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
+              {canManageTenant && <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
                 <Edit className="h-4 w-4 mr-2" />
                 {t("employees.tooltips.editEmployee")}
-              </DropdownMenuItem>
-              {employee.personalInfo?.email && employee.status === 'active' && (
+              </DropdownMenuItem>}
+              {canManageTenant && employee.personalInfo?.email && employee.status === 'active' && (
                 <DropdownMenuItem onClick={() => onCreateEkipaAccount(employee)}>
                   <Smartphone className="h-4 w-4 mr-2" />
                   {t("employees.tooltips.createEkipaAccount")}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDeleteEmployee(employee)} className="text-red-600 focus:text-red-600">
+              {canManageTenant && <DropdownMenuSeparator />}
+              {canManageTenant && <DropdownMenuItem onClick={() => onDeleteEmployee(employee)} className="text-red-600 focus:text-red-600">
                 <UserMinus className="h-4 w-4 mr-2" />
                 {t("employees.tooltips.offboardEmployee")}
-              </DropdownMenuItem>
+              </DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -352,7 +354,8 @@ export default function AllEmployees() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
+  const canManageTenant = canManage();
   // Derive connection error from React Query
   const connectionError = queryError
     ? (queryError instanceof Error ? queryError.message : t("employees.connectionErrorFallback"))
@@ -682,17 +685,20 @@ export default function AllEmployees() {
   };
 
   const handleEditEmployee = (employee: Employee) => {
+    if (!canManageTenant) return;
     // Navigate to edit employee page with employee ID
     // Use /people/add directly (not /staff/add) to preserve query params
     navigate(`/people/add?edit=${employee.id}`);
   };
 
   const handleDeleteEmployee = async (employee: Employee) => {
+    if (!canManageTenant) return;
     // Navigate to offboarding page
     navigate(`/hiring/offboarding?employee=${employee.id}`);
   };
 
   const handleCreateEkipaAccount = (employee: Employee) => {
+    if (!canManageTenant) return;
     if (!employee.personalInfo?.email) {
       toast({ title: t("employees.ekipaAccount.noEmail"), variant: "destructive" });
       return;
@@ -701,7 +707,7 @@ export default function AllEmployees() {
   };
 
   const confirmCreateEkipaAccount = async () => {
-    if (!ekipaTarget) return;
+    if (!ekipaTarget || !canManageTenant) return;
     setEkipaCreating(true);
     const name = `${ekipaTarget.personalInfo.firstName} ${ekipaTarget.personalInfo.lastName}`;
     try {
@@ -854,6 +860,7 @@ export default function AllEmployees() {
   };
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canManageTenant) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -963,7 +970,7 @@ export default function AllEmployees() {
           subtitle={t("employees.subtitle")}
           icon={Users}
           iconColor="text-blue-500"
-          actions={
+          actions={canManageTenant ? (
             <>
               <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                 <Upload className="h-4 w-4 mr-2" />
@@ -974,7 +981,7 @@ export default function AllEmployees() {
                 {t("dashboard.addEmployee")}
               </Button>
             </>
-          }
+          ) : undefined}
         />
         {/* Connection Status */}
         {(connectionError || !isOnline) && (
@@ -1100,7 +1107,7 @@ export default function AllEmployees() {
                   <Download className="h-4 w-4 mr-2" />
                   {t("employees.tooltips.exportCsv")}
                 </DropdownMenuItem>
-                {incompleteEmployees.length > 0 && (
+                {canManageTenant && incompleteEmployees.length > 0 && (
                   <DropdownMenuItem onClick={() => setShowIncompleteProfiles(true)} className="text-amber-600">
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     {t("employees.stats.incomplete", { count: incompleteEmployees.length })}
@@ -1113,7 +1120,7 @@ export default function AllEmployees() {
         </div>
 
         {/* CSV import dialog: template download + file upload in one place */}
-        <Dialog open={showImportDialog} onOpenChange={(open) => !importing && setShowImportDialog(open)}>
+        <Dialog open={canManageTenant && showImportDialog} onOpenChange={(open) => !importing && setShowImportDialog(open)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("employees.importDialog.title")}</DialogTitle>
@@ -1325,6 +1332,7 @@ export default function AllEmployees() {
               onCreateEkipaAccount={handleCreateEkipaAccount}
               onDeleteEmployee={handleDeleteEmployee}
               duplicateIds={duplicateIds}
+              canManageTenant={canManageTenant}
               t={t}
             />
 
@@ -1359,10 +1367,10 @@ export default function AllEmployees() {
                           ? t("employees.empty.noEmployeesSearch")
                           : t("employees.empty.noEmployeesStart")}
                       </p>
-                      <Button onClick={() => navigate("/people/add")}>
+                      {canManageTenant && <Button onClick={() => navigate("/people/add")}>
                         <Plus className="mr-2 h-4 w-4" />
                         {t("employees.buttons.addFirstEmployee")}
-                      </Button>
+                      </Button>}
                     </>
                   )}
                 </div>
@@ -1387,13 +1395,13 @@ export default function AllEmployees() {
         {/* Incomplete Profiles Dialog */}
         <IncompleteProfilesDialog
           employees={employees}
-          open={showIncompleteProfiles}
+          open={canManageTenant && showIncompleteProfiles}
           onOpenChange={setShowIncompleteProfiles}
           onEditEmployee={handleEditEmployee}
         />
 
         {/* Create Ekipa Account Confirmation */}
-        <AlertDialog open={!!ekipaTarget} onOpenChange={(open) => !open && setEkipaTarget(null)}>
+        <AlertDialog open={canManageTenant && !!ekipaTarget} onOpenChange={(open) => !open && setEkipaTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{t("employees.ekipaAccount.confirmTitle")}</AlertDialogTitle>

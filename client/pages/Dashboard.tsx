@@ -1,12 +1,11 @@
 /**
- * Dashboard - Enterprise Command Center
- * Answers: "Is anything wrong, urgent, or blocking payroll?"
- * Structure: Status → Action Required → KPIs → Quick Actions
+ * Dashboard
+ * Answers three questions: what needs attention, what is the key number, and
+ * where should the user go next?
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { useChatStore } from "@/stores/chatStore";
 import { Send } from "lucide-react";
 import {
@@ -15,15 +14,19 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { useActiveEmployeeSummary, useComplianceIssuePreview } from "@/hooks/useEmployees";
-import { getComplianceIssues } from "@/lib/employeeUtils";
+import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { usePayrollRuns } from "@/hooks/usePayroll";
+import { useSettings } from "@/hooks/useSettings";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { getTodayTL } from "@/lib/dateUtils";
+import {
+  getConfiguredPayrollSchedule,
+  getDaysUntilIso,
+  getNextPayDateIso,
+} from "@/lib/payroll/payroll-schedule";
 import {
   getDaysUntilDueIso,
   getNextAnnualAdjustedDeadline,
@@ -31,7 +34,6 @@ import {
   getUrgencyFromDays,
 } from "@/lib/tax/compliance";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
-import { settingsService } from "@/services/settingsService";
 import {
   Users,
   UserPlus,
@@ -41,35 +43,27 @@ import {
   ArrowRight,
   CalendarDays,
   Play,
+  Wallet,
+  BookOpen,
+  FileText,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
-
-function getNextPayDate() {
-  const now = new Date();
-  let nextPay = new Date(now.getFullYear(), now.getMonth(), 25);
-  if (now.getDate() > 25) {
-    nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 25);
-  }
-  return nextPay;
-}
-
-function formatDateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 
 function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
   const { setOpen, setPendingQuery } = useChatStore();
   const [input, setInput] = useState("");
-  const greeting = new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite";
-
-  const quickPrompts = [
-    { label: t("dashboard.botPromptStaff"), query: "How many employees do we have?" },
-    { label: t("dashboard.botPromptPayroll"), query: "When is the next payroll due?" },
-    { label: t("dashboard.botPromptLeave"), query: "Who is on leave today?" },
-  ];
+  const hour = new Date().getHours();
+  const greeting = t(
+    hour < 12
+      ? "common.greetingMorning"
+      : hour < 18
+        ? "common.greetingAfternoon"
+        : "common.greetingEvening",
+  );
 
   const handleSend = useCallback((query: string) => {
     if (!query.trim()) return;
@@ -78,55 +72,13 @@ function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName
     setInput("");
   }, [setPendingQuery, setOpen]);
 
-  const [botIntro] = useState(() => {
-    const intros = [
-      t("dashboard.botGreeting"),
-      t("dashboard.botGreeting2"),
-      t("dashboard.botGreeting3"),
-      t("dashboard.botGreeting4"),
-      t("dashboard.botGreeting5"),
-      t("dashboard.botGreeting6"),
-    ];
-    return intros[Math.floor(Math.random() * intros.length)];
-  });
-  const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${botIntro}`;
-  const [charCount, setCharCount] = useState(0);
-  const displayedText = fullText.slice(0, charCount);
-
-  useEffect(() => {
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setCharCount(i);
-      if (i >= fullText.length) clearInterval(id);
-    }, 25);
-    return () => clearInterval(id);
-     
-  }, [fullText]);
-
-  const greetingEnd = greeting.length + (firstName ? `, ${firstName}` : "").length + 1;
-
   return (
-    <div className="flex-1 min-w-0 space-y-3">
+    <div className="min-w-0 flex-1 space-y-3">
       <div>
         <h2 className="text-lg font-bold tracking-tight">
-          {displayedText.slice(0, greetingEnd)}
-          {displayedText.length < fullText.length && <span className="inline-block w-0.5 h-5 bg-primary align-text-bottom ml-0.5 animate-pulse" />}
+          {greeting}{firstName ? `, ${firstName}` : ""}!
         </h2>
-        {displayedText.length > greetingEnd && (
-          <p className="text-sm text-muted-foreground mt-0.5">{displayedText.slice(greetingEnd + 1)}</p>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {quickPrompts.map((p) => (
-          <button
-            key={p.query}
-            onClick={() => handleSend(p.query)}
-            className="text-xs px-3 py-1.5 rounded-full border border-border bg-muted/50 hover:bg-muted text-foreground transition-colors"
-          >
-            {p.label}
-          </button>
-        ))}
+        <p className="mt-0.5 text-sm text-muted-foreground">{t("dashboard.botIntro")}</p>
       </div>
       <form
         onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
@@ -139,176 +91,15 @@ function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName
           placeholder={t("dashboard.botPlaceholder")}
           className="flex-1 h-9 px-4 rounded-full border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         />
-        <button type="submit" disabled={!input.trim()} className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 disabled:opacity-40 hover:bg-primary/90 transition-colors">
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          aria-label={t("dashboard.botPlaceholder")}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+        >
           <Send className="h-3.5 w-3.5" />
         </button>
       </form>
-    </div>
-  );
-}
-
-const BOT_QUIPS = [
-  "Hey, that tickles!",
-  "I'm a book, not a button!",
-  "Stop poking me, I'm working!",
-  "Beep boop... just kidding.",
-  "You found my secret! ...there is no secret.",
-  "I run on data and good vibes.",
-  "Ask me something, I'm bored!",
-  "Fun fact: I never take sick days.",
-  "I know all the payslips. ALL of them.",
-  "Please don't close the tab, I live here.",
-];
-
-function XefeBotAvatar() {
-  const [wobble, setWobble] = useState(false);
-  const [quip, setQuip] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleClick = useCallback(() => {
-    setWobble(true);
-    setQuip(BOT_QUIPS[Math.floor(Math.random() * BOT_QUIPS.length)]);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => { setWobble(false); setQuip(null); }, 2500);
-  }, []);
-
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
-
-  return (
-    <div className="relative shrink-0">
-      <button
-        type="button"
-        onClick={handleClick}
-        className="focus:outline-none"
-        aria-label="Poke XefeBot"
-      >
-        <img
-          src="/images/illustrations/xefebot.webp"
-          alt="XefeBot"
-          className={`h-20 w-20 object-contain cursor-pointer transition-transform hover:scale-105 ${wobble ? "animate-wiggle" : ""}`}
-        />
-      </button>
-      {quip && (
-        <div className="absolute top-0 left-[85px] bg-card border border-border rounded-lg px-3 py-1.5 text-xs shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-200 z-10">
-          {quip}
-          <div className="absolute top-2.5 -left-1 w-2 h-2 bg-card border-b border-l border-border rotate-45" />
-        </div>
-      )}
-      <style>{`@keyframes wiggle { 0% { transform: rotate(0deg); } 15% { transform: rotate(-12deg); } 30% { transform: rotate(10deg); } 45% { transform: rotate(-8deg); } 60% { transform: rotate(6deg); } 75% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
-.animate-wiggle { animation: wiggle 0.6s ease-in-out; }`}</style>
-    </div>
-  );
-}
-
-function GreetingParticles() {
-  const hour = new Date().getHours();
-  const isNight = hour >= 19 || hour < 6;
-  const isMorning = hour >= 6 && hour < 12;
-
-  if (isNight) {
-    // Twinkling stars
-    return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(8)].map((_, i) => (
-          <span
-            key={i}
-            className="absolute rounded-full bg-white/30 dark:bg-white/40"
-            style={{
-              width: `${2 + (i % 3)}px`,
-              height: `${2 + (i % 3)}px`,
-              left: `${10 + i * 12}%`,
-              top: `${15 + (i * 17) % 60}%`,
-              animation: `twinkle ${2 + (i % 3) * 0.7}s ease-in-out ${i * 0.4}s infinite`,
-            }}
-          />
-        ))}
-        <style>{`@keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.4); } }`}</style>
-      </div>
-    );
-  }
-
-  if (isMorning) {
-    // Sunrise: sun rising with warm glow and spreading rays
-    return (
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Warm horizon gradient */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-1/2"
-          style={{
-            background: "linear-gradient(to top, rgba(251,191,36,0.08), transparent)",
-            animation: "horizon 3s ease-out forwards",
-          }}
-        />
-        {/* Sun orb */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: 60,
-            height: 60,
-            right: "12%",
-            top: "15%",
-            background: "radial-gradient(circle, rgba(251,191,36,0.30) 0%, rgba(251,146,60,0.10) 45%, transparent 70%)",
-            boxShadow: "0 0 40px 15px rgba(251,191,36,0.08)",
-            animation: "sunRise 2.5s ease-out forwards",
-          }}
-        />
-        {/* Radiating rays from sun position */}
-        {[...Array(6)].map((_, i) => {
-          const angle = -150 + i * 25; // fan downward from sun
-          return (
-            <span
-              key={i}
-              className="absolute"
-              style={{
-                ["--r" as string]: `${angle}deg`,
-                width: 1.5,
-                height: `${25 + i * 6}%`,
-                right: "calc(12% + 28px)",
-                top: "calc(15% + 28px)",
-                background: `linear-gradient(to bottom, rgba(251,191,36,${0.12 - i * 0.01}), transparent)`,
-                transformOrigin: "top center",
-                animation: `raySpread 3s ease-out ${0.8 + i * 0.15}s both`,
-              }}
-            />
-          );
-        })}
-        <style>{`
-          @keyframes sunRise {
-            0% { transform: scale(0.3); opacity: 0; }
-            60% { opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          @keyframes horizon {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-          }
-          @keyframes raySpread {
-            0% { opacity: 0; transform: rotate(var(--r)) scaleY(0); }
-            50% { opacity: 0.6; }
-            100% { opacity: 0.4; transform: rotate(var(--r)) scaleY(1); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-
-  // Afternoon — gentle floating warm dots
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {[...Array(5)].map((_, i) => (
-        <span
-          key={i}
-          className="absolute rounded-full bg-primary/10 dark:bg-primary/15"
-          style={{
-            width: `${4 + i * 2}px`,
-            height: `${4 + i * 2}px`,
-            left: `${15 + i * 16}%`,
-            top: `${30 + (i * 23) % 50}%`,
-            animation: `float ${4 + i}s ease-in-out ${i * 0.8}s infinite`,
-          }}
-        />
-      ))}
-      <style>{`@keyframes float { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 50% { transform: translateY(-8px) scale(1.2); opacity: 0.7; } }`}</style>
     </div>
   );
 }
@@ -317,64 +108,36 @@ function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        {/* Greeting */}
-        <div className="flex items-center justify-between mb-6">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-8 w-12" />
-        </div>
-
-        {/* Hero Action Card */}
-        <Card className="mb-6 border-2">
-          <CardContent className="py-5">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-14 w-14 rounded-2xl shrink-0" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-3 w-40" />
-                <Skeleton className="h-6 w-56" />
-              </div>
-              <Skeleton className="h-11 w-32 rounded-md" />
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+        <Card className="mb-6">
+          <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
+            <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-44" />
+              <Skeleton className="h-4 w-64 max-w-full" />
+              <Skeleton className="h-9 w-full max-w-xl rounded-full" />
             </div>
           </CardContent>
         </Card>
 
-        {/* 3 Big Tiles */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
-              <CardContent className="pt-6 pb-5">
-                <div className="flex items-start justify-between mb-3">
-                  <Skeleton className="h-12 w-12 rounded-2xl" />
-                  <div className="text-right space-y-1.5">
-                    <Skeleton className="h-9 w-16 ml-auto" />
-                    <Skeleton className="h-3 w-24 ml-auto" />
-                  </div>
+              <CardContent className="p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-7 w-12" />
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                  <Skeleton className="h-3.5 w-24" />
-                  <Skeleton className="h-3.5 w-20" />
-                </div>
+                <Skeleton className="h-4 w-28" />
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Compliance Strip */}
-        <div className="flex items-center gap-6 mb-6 px-1">
-          <Skeleton className="h-4 w-24" />
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-1.5">
-              <Skeleton className="h-2 w-2 rounded-full" />
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="h-5 w-8 rounded" />
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-[72px] rounded-md" />
+        <Skeleton className="mb-3 h-5 w-24" />
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-[74px] rounded-xl" />
           ))}
         </div>
       </div>
@@ -388,55 +151,57 @@ export default function Dashboard() {
   const setPageHeader = layout?.setPageHeader;
   const clearPageHeader = layout?.clearPageHeader;
   const { user } = useAuth();
-  const { hasModule, canManage } = useTenant();
-  const tenantId = useTenantId();
+  const { hasModule, canManage, session } = useTenant();
+  const canManageTenant = canManage();
   const { t } = useI18n();
   const hasStaff = hasModule("staff");
+  const hasHiring = hasModule("hiring");
+  const hasPerformance = hasModule("performance");
   const hasTimeleave = hasModule("timeleave");
   const hasPayroll = hasModule("payroll");
-  const shouldLoadEmployeeSummary = hasStaff || hasPayroll || hasTimeleave;
-  const { data: employeeSummary, isLoading: employeeSummaryLoading } = useActiveEmployeeSummary(
-    shouldLoadEmployeeSummary
-  );
-  const { data: issuePreviewEmployees = [], isLoading: issuePreviewLoading } = useComplianceIssuePreview(
-    6,
-    hasStaff
-  );
-  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats(hasTimeleave);
-  const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2, hasPayroll);
-  const { data: payrollRuns = [], isLoading: payrollRunsLoading } = usePayrollRuns({ limit: 10 }, hasPayroll);
-  const canManageTenant = canManage();
-  const { isLoading: setupLoading } = useQuery({
-    queryKey: ["tenants", tenantId, "setupProgress"],
-    queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
-    enabled: Boolean(tenantId && canManageTenant),
-    staleTime: 5 * 60 * 1000,
-  });
+  const hasMoney = hasModule("money");
+  const hasAccounting = hasModule("accounting");
+  const hasReports = hasModule("reports");
+  const canReadEmployeeDirectory =
+    hasStaff || hasHiring || canManageTenant || session?.role === "manager";
+  const shouldLoadEmployeeSummary =
+    (hasStaff || hasPayroll || hasTimeleave) && canReadEmployeeDirectory;
+
+  const employeeSummaryQuery = useActiveEmployeeSummary(shouldLoadEmployeeSummary);
+  const leaveStatsQuery = useLeaveStats(hasTimeleave);
+  const dueDatesQuery = useTaxFilingsDueSoon(2, hasPayroll);
+  const payrollRunsQuery = usePayrollRuns({ limit: 10 }, hasPayroll);
+  const settingsQuery = useSettings(hasPayroll);
+
+  const employeeSummary = employeeSummaryQuery.data;
+  const leaveStats = leaveStatsQuery.data;
+  const filingDueDates = dueDatesQuery.data ?? [];
+  const payrollRuns = payrollRunsQuery.data ?? [];
   const loading =
-    employeeSummaryLoading ||
-    (hasStaff && issuePreviewLoading) ||
-    leaveStatsLoading ||
-    dueDatesLoading ||
-    payrollRunsLoading ||
-    setupLoading;
+    (shouldLoadEmployeeSummary && employeeSummaryQuery.isLoading) ||
+    (hasTimeleave && leaveStatsQuery.isLoading) ||
+    (hasPayroll && dueDatesQuery.isLoading) ||
+    (hasPayroll && payrollRunsQuery.isLoading) ||
+    (hasPayroll && settingsQuery.isLoading);
+  const loadError =
+    (shouldLoadEmployeeSummary && employeeSummaryQuery.isError && employeeSummary === undefined) ||
+    (hasTimeleave && leaveStatsQuery.isError && leaveStats === undefined) ||
+    (hasPayroll && dueDatesQuery.isError && dueDatesQuery.data === undefined) ||
+    (hasPayroll && payrollRunsQuery.isError && payrollRunsQuery.data === undefined) ||
+    (hasPayroll && settingsQuery.isError && settingsQuery.data === undefined);
+  const retrying =
+    employeeSummaryQuery.isFetching ||
+    leaveStatsQuery.isFetching ||
+    dueDatesQuery.isFetching ||
+    payrollRunsQuery.isFetching ||
+    (hasPayroll && settingsQuery.isFetching);
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
-  const onLeaveToday = hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0;
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts({
     enabled: true,
     onShowHelp: () => setShowShortcuts(true),
   });
-
-  // Derived data
-  const totalPayroll = employeeSummary?.totalMonthlySalary ?? 0;
-
-  // Calculate days until next payroll (25th)
-  const getDaysUntilPayday = () => {
-    const now = new Date();
-    const nextPay = getNextPayDate();
-    return Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  };
 
   // Compliance deadlines (Timor-Leste specific)
   const getComplianceStatus = () => {
@@ -471,19 +236,17 @@ export default function Dashboard() {
     };
   };
 
-  // Compliance issues — shared utility, single source of truth.
-  // Count employees (not raw issues) so every surface reports the same number.
-  const blockingIssues = hasStaff ? getComplianceIssues(issuePreviewEmployees).slice(0, 6) : [];
   const employeesWithIssues = hasStaff ? (employeeSummary?.employeesWithIssues ?? 0) : 0;
   const activeEmployeeCount = employeeSummary?.active ?? 0;
 
-  const daysUntilPayday = getDaysUntilPayday();
+  const todayIso = getTodayTL();
+  const payrollSchedule = getConfiguredPayrollSchedule(settingsQuery.data?.paymentStructure);
+  const nextPayDateKey = getNextPayDateIso(payrollSchedule, todayIso);
+  const daysUntilPayday = getDaysUntilIso(nextPayDateKey, todayIso);
   // A brand-new org with no staff and no payroll history has no WIT/INSS
   // obligations yet — don't greet it with "overdue" compliance warnings.
   const hasComplianceContext = activeEmployeeCount > 0 || payrollRuns.length > 0;
   const compliance = hasPayroll && hasComplianceContext ? getComplianceStatus() : null;
-  const nextPayDate = getNextPayDate();
-  const nextPayDateKey = formatDateKey(nextPayDate);
   const firstName = user?.displayName?.split(" ")[0] || "";
 
   // Payroll status
@@ -493,6 +256,47 @@ export default function Dashboard() {
       run.status !== "cancelled" &&
       run.status !== "rejected"
   );
+
+  const urgentCompliance = compliance
+    ? [
+        { label: "WIT", ...compliance.wit },
+        { label: "INSS", ...compliance.inss },
+        { label: t("dashboard.thirteenthFull"), ...compliance.subsidio },
+      ]
+        .filter((item) => item.status === "urgent")
+        .sort((a, b) => a.days - b.days)[0] ?? null
+    : null;
+  const shouldRunPayroll =
+    canManageTenant && hasPayroll && !payrollPrepared && activeEmployeeCount > 0;
+  const shouldReviewLeave = hasTimeleave && pendingLeave > 0;
+  const shouldFixEmployees = canManageTenant && hasStaff && employeesWithIssues > 0;
+  const shouldAddEmployee = canManageTenant && hasStaff && activeEmployeeCount === 0;
+  const hasThingsToDo =
+    shouldRunPayroll ||
+    shouldReviewLeave ||
+    shouldFixEmployees ||
+    shouldAddEmployee ||
+    Boolean(canManageTenant && urgentCompliance);
+
+  const retryDashboard = useCallback(async () => {
+    const requests: Array<Promise<unknown>> = [];
+    if (hasPayroll) requests.push(settingsQuery.refetch());
+    if (shouldLoadEmployeeSummary) requests.push(employeeSummaryQuery.refetch());
+    if (hasTimeleave) requests.push(leaveStatsQuery.refetch());
+    if (hasPayroll) {
+      requests.push(dueDatesQuery.refetch(), payrollRunsQuery.refetch());
+    }
+    await Promise.all(requests);
+  }, [
+    settingsQuery,
+    shouldLoadEmployeeSummary,
+    employeeSummaryQuery,
+    hasTimeleave,
+    leaveStatsQuery,
+    hasPayroll,
+    dueDatesQuery,
+    payrollRunsQuery,
+  ]);
 
   useEffect(() => {
     if (!setPageHeader) return;
@@ -513,28 +317,41 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.dashboard} />
+        <MainNavigation />
+        <DashboardLoadError onRetry={retryDashboard} isRetrying={retrying} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl pb-12">
-        {/* ── XefeBot greeting card ── */}
-        <div className="relative mb-8 rounded-2xl bg-card border border-border p-5 overflow-hidden">
-          <GreetingParticles />
-          <div className="relative flex items-start gap-4">
-            <XefeBotAvatar />
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-10 sm:px-6 sm:py-6 sm:pb-12">
+        {/* ── Calm greeting and one direct route into XefeBot ── */}
+        <div className="mb-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <img
+              src="/images/illustrations/xefebot.webp"
+              alt="XefeBot"
+              className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+            />
             <XefeBotInline t={t} firstName={firstName} />
           </div>
         </div>
 
         {/* ── Overview cards ── */}
         {(hasPayroll || hasStaff || hasTimeleave) && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {hasPayroll && (
-              <button onClick={() => navigate("/payroll/run")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all text-left">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <button onClick={() => navigate(canManageTenant ? "/payroll/run" : "/payroll")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-md">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                     <Calculator className="h-4 w-4 text-primary" />
                   </div>
                   {payrollPrepared
@@ -543,114 +360,147 @@ export default function Dashboard() {
                   }
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}{" "}<span className="text-sm font-normal text-muted-foreground">{t("dashboard.days")}</span></p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.untilPayday")} · {formatCurrencyTL(totalPayroll)}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.untilPayday")}</p>
               </button>
             )}
             {hasStaff && (
-              <button onClick={() => navigate("/people/employees")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-blue-400/40 transition-all text-left">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <button onClick={() => navigate("/people/employees")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-blue-400/40 hover:shadow-md">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
                     <Users className="h-4 w-4 text-blue-500" />
                   </div>
-                  {employeesWithIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.issuesBadge", { count: employeesWithIssues })}</span>}
+                  {employeesWithIssues > 0 && <AlertCircle className="h-4 w-4 text-amber-500" />}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{activeEmployeeCount}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.activeEmployees")}</p>
               </button>
             )}
             {hasTimeleave && (
-              <button onClick={() => navigate("/time-leave/leave")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-cyan-400/40 transition-all text-left">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+              <button onClick={() => navigate("/time-leave/leave")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-cyan-400/40 hover:shadow-md">
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10">
                     <CalendarDays className="h-4 w-4 text-cyan-500" />
                   </div>
-                  {pendingLeave > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.pendingBadge", { count: pendingLeave })}</span>}
                 </div>
-                <p className="text-2xl font-bold tabular-nums">{onLeaveToday}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.onLeaveToday")}</p>
-              </button>
-            )}
-            {compliance && (
-              <button onClick={() => navigate("/payroll/tax")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-border transition-all text-left">
-                <div className="mb-3">
-                  <span className="text-xs font-medium text-muted-foreground">{t("dashboard.compliance")}</span>
-                </div>
-                <div className="space-y-2">
-                  {[
-                    { label: "WIT", fullName: t("dashboard.witFull"), ...compliance.wit },
-                    { label: "INSS", fullName: t("dashboard.inssFull"), ...compliance.inss },
-                    { label: "13th", fullName: t("dashboard.thirteenthFull"), ...compliance.subsidio },
-                  ].map((d) => (
-                    <div key={d.label} className="flex items-center justify-between text-xs" title={d.fullName}>
-                      <span className="text-muted-foreground">{d.label}</span>
-                      <span className={`font-semibold tabular-nums ${
-                        d.status === 'ok' ? 'text-emerald-600 dark:text-emerald-400'
-                          : d.status === 'warning' ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {d.days < 0
-                          ? t("dashboard.overdueBy", { days: Math.abs(d.days) })
-                          : t("dashboard.dueIn", { days: d.days })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-2xl font-bold tabular-nums">{pendingLeave}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.pendingRequests")}</p>
               </button>
             )}
           </div>
         )}
 
+        {!hasPayroll &&
+          !hasStaff &&
+          !hasTimeleave &&
+          (hasHiring || hasPerformance || hasMoney || hasAccounting || hasReports) && (
+          <div className="mb-6">
+            <p className="mb-3 text-sm font-semibold">{t("dashboard.quickActions")}</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {(hasHiring || hasPerformance) && (
+                <button onClick={() => navigate("/people")} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span className="flex-1 text-sm font-medium">{t("nav.people")}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+              {hasMoney && (
+                <button onClick={() => navigate("/money")} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30">
+                  <Wallet className="h-5 w-5 text-primary" />
+                  <span className="flex-1 text-sm font-medium">{t("nav.money")}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+              {hasAccounting && (
+                <button onClick={() => navigate("/accounting")} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span className="flex-1 text-sm font-medium">{t("nav.accounting")}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+              {hasReports && (
+                <button onClick={() => navigate("/reports")} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/30">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="flex-1 text-sm font-medium">{t("nav.reports")}</span>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Things to do ── */}
         <div>
-          <p className="text-sm font-semibold mb-3">{t("dashboard.thingsToDo")}</p>
+          <p className="mb-3 text-sm font-semibold">{t("dashboard.thingsToDo")}</p>
           <div className="space-y-2">
-            {hasPayroll && !payrollPrepared && activeEmployeeCount > 0 && (
-              <button onClick={() => navigate("/payroll/run")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-primary/30 transition-all text-left">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            {canManageTenant && urgentCompliance && (
+              <button onClick={() => navigate("/payroll/tax")} className="flex w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-left transition-all hover:shadow-sm dark:border-red-900/40 dark:bg-red-950/20 sm:gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
+                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{t("dashboard.compliance")}: {urgentCompliance.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {urgentCompliance.days < 0
+                      ? t("dashboard.overdueBy", { days: Math.abs(urgentCompliance.days) })
+                      : t("dashboard.dueIn", { days: urgentCompliance.days })}
+                  </p>
+                </div>
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+              </button>
+            )}
+            {shouldRunPayroll && (
+              <button onClick={() => navigate("/payroll/run")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm sm:gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                   <Play className="h-4 w-4 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.todoRunPayrollDesc", { days: daysUntilPayday })}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             )}
-            {hasTimeleave && pendingLeave > 0 && (
-              <button onClick={() => navigate("/time-leave/leave")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-cyan-400/30 transition-all text-left">
-                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
+            {shouldReviewLeave && (
+              <button onClick={() => navigate("/time-leave/leave")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-cyan-400/30 hover:shadow-sm sm:gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/10">
                   <CalendarDays className="h-4 w-4 text-cyan-500" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{t("dashboard.todoLeaveTitle")}</p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.todoLeaveDesc", { count: pendingLeave })}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             )}
-            {(employeesWithIssues > 0 || blockingIssues.length > 0) && (
-              <button onClick={() => navigate("/people/employees?filter=issues")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 hover:shadow-sm transition-all text-left">
-                <div className="h-9 w-9 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
+            {shouldFixEmployees && (
+              <button onClick={() => navigate("/people/employees?filter=issues")} className="flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left transition-all hover:shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20 sm:gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
                   <AlertCircle className="h-4 w-4 text-amber-600" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{t("dashboard.todoBlockingTitle")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: employeesWithIssues || blockingIssues.length })}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: employeesWithIssues })}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             )}
-            {hasStaff && (
-              <button onClick={() => navigate("/people/add")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-blue-400/30 transition-all text-left">
-                <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+            {shouldAddEmployee && (
+              <button onClick={() => navigate("/people/add")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-blue-400/30 hover:shadow-sm sm:gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
                   <UserPlus className="h-4 w-4 text-blue-500" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.todoAddEmployeeDesc")}</p>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
+            )}
+            {!hasThingsToDo && (
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>{t("dashboard.allGood")}</span>
+              </div>
             )}
           </div>
         </div>

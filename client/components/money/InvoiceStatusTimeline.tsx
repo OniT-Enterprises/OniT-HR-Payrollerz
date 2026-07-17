@@ -7,6 +7,7 @@ import { Check, Send, Eye, DollarSign, AlertCircle, Clock, XCircle } from 'lucid
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import { cn } from '@/lib/utils';
 import { formatDateTL } from '@/lib/dateUtils';
+import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
 
 interface StatusStep {
   status: InvoiceStatus;
@@ -144,14 +145,19 @@ function FullTimelineStep({ step, invoice, effectiveOrder }: {
 }
 
 export function InvoiceStatusTimeline({ invoice, className, compact = false }: InvoiceStatusTimelineProps) {
-  const currentOrder = STATUS_ORDER[invoice.status];
-  const isOverdue = invoice.status === 'overdue';
-  const isCancelled = invoice.status === 'cancelled';
-  const isPartial = invoice.status === 'partial';
+  const effectiveStatus = getEffectiveInvoiceStatus(invoice);
+  const displayInvoice =
+    effectiveStatus === invoice.status
+      ? invoice
+      : { ...invoice, status: effectiveStatus };
+  const currentOrder = STATUS_ORDER[effectiveStatus];
+  const isOverdue = effectiveStatus === 'overdue';
+  const isCancelled = effectiveStatus === 'cancelled';
+  const isPartial = effectiveStatus === 'partial';
   const effectiveOrder = isOverdue || isPartial ? 2 : currentOrder;
 
   if (compact) {
-    return <CompactTimeline invoice={invoice} className={className} effectiveOrder={effectiveOrder} />;
+    return <CompactTimeline invoice={displayInvoice} className={className} effectiveOrder={effectiveOrder} />;
   }
 
   if (isCancelled) {
@@ -174,7 +180,7 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
           style={{ width: `${Math.min(100, (effectiveOrder / (MAIN_FLOW.length - 1)) * 100)}%` }}
         />
         {MAIN_FLOW.map((step) => (
-          <FullTimelineStep key={step.status} step={step} invoice={invoice} effectiveOrder={effectiveOrder} />
+          <FullTimelineStep key={step.status} step={step} invoice={displayInvoice} effectiveOrder={effectiveOrder} />
         ))}
       </div>
 
@@ -195,4 +201,3 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
     </div>
   );
 }
-

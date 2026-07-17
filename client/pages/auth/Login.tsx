@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,12 +15,18 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const actionInFlight = useRef(false);
   const { t } = useI18n();
 
   const { signIn, signInWithGoogle, user, authResolved } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+  const requestedLocation = (location.state as {
+    from?: { pathname?: string; search?: string; hash?: string };
+  } | null)?.from;
+  const from = requestedLocation?.pathname
+    ? `${requestedLocation.pathname}${requestedLocation.search || ""}${requestedLocation.hash || ""}`
+    : "/";
 
   // Already signed in (e.g. a deep link landed here while Firebase was still
   // restoring the session) — continue to the page the user actually wanted.
@@ -32,6 +38,9 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (actionInFlight.current) return;
+
+    actionInFlight.current = true;
     setError("");
     setLoading(true);
 
@@ -39,14 +48,26 @@ export default function Login() {
       await signIn(email, password);
       navigate(from, { replace: true });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : t("auth.errors.signInFailed");
-      setError(message);
+      const code = error && typeof error === "object" && "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
+      if (code === "auth/invalid-email") {
+        setError(t("auth.errors.invalidEmail"));
+      } else if (code === "auth/network-request-failed") {
+        setError(t("auth.errors.networkTimeout"));
+      } else {
+        setError(t("auth.errors.signInFailed"));
+      }
     } finally {
+      actionInFlight.current = false;
       setLoading(false);
     }
   };
 
   const handleGoogle = async () => {
+    if (actionInFlight.current) return;
+
+    actionInFlight.current = true;
     setError("");
     setGoogleLoading(true);
     try {
@@ -68,6 +89,7 @@ export default function Login() {
       }
       setError(t("auth.errors.googleSignInFailed"));
     } finally {
+      actionInFlight.current = false;
       setGoogleLoading(false);
     }
   };
@@ -134,7 +156,7 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <div role="alert" className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
@@ -147,7 +169,9 @@ export default function Login() {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder={t("auth.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -165,17 +189,22 @@ export default function Login() {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-10 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-colors text-sm"
+                  className="w-full h-11 pl-10 pr-12 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-colors text-sm"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  aria-label={`${showPassword ? t("common.hide") : t("common.view")} ${t("auth.password").toLocaleLowerCase()}`}
+                  aria-pressed={showPassword}
+                  aria-controls="password"
+                  className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-zinc-500 transition-colors hover:text-zinc-300"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -188,7 +217,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
             >
               {loading ? t("auth.signingIn") : t("auth.signIn")}

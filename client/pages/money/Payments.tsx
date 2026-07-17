@@ -24,6 +24,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 
 import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
 import { sumMoney } from '@/lib/currency';
@@ -59,7 +60,13 @@ export default function Payments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
 
-  const { data: payments = [], isLoading: loading } = useQuery({
+  const {
+    data: payments = [],
+    isLoading: loading,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ['tenants', tenantId, 'payments'],
     queryFn: () => invoiceService.getAllPayments(tenantId),
     staleTime: 5 * 60 * 1000,
@@ -110,6 +117,19 @@ export default function Payments() {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isError && payments.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title="Payments - Xefe" description="View payment history" />
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={isFetching}
+          onRetry={() => refetch()}
+        />
       </div>
     );
   }

@@ -318,9 +318,8 @@ export function useCreateBankTransfer() {
   return useMutation({
     mutationFn: (transfer: Omit<BankTransfer, 'id' | 'tenantId'>) =>
       payrollService.transfers.createTransfer(tenantId, transfer),
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: bankTransferKeys.all(tenantId) });
     },
   });
 }
-

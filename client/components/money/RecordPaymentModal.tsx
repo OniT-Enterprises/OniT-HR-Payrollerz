@@ -4,7 +4,7 @@
  * Supports full and partial payments
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -225,8 +225,9 @@ export function RecordPaymentModal({
   onPaymentRecorded,
 }: RecordPaymentModalProps) {
   const { toast } = useToast();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
   const [saving, setSaving] = useState(false);
+  const submitInFlight = useRef(false);
 
   const remainingBalance = subtractMoney(invoice.total, invoice.amountPaid || 0);
 
@@ -249,12 +250,13 @@ export function RecordPaymentModal({
   };
 
   const handleSubmit = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManage() || submitInFlight.current) return;
 
     const validationError = validatePaymentAmount(amount, remainingBalance);
     if (validationError) { toast(validationError); return; }
 
     const paymentAmount = parseFloat(amount);
+    submitInFlight.current = true;
     try {
       setSaving(true);
       await invoiceService.recordPayment(session.tid, invoice.id, {
@@ -278,6 +280,7 @@ export function RecordPaymentModal({
       console.error('Error recording payment:', error);
       toast({ title: 'Error', description: 'Failed to record payment. Please try again.', variant: 'destructive' });
     } finally {
+      submitInFlight.current = false;
       setSaving(false);
     }
   };
@@ -310,4 +313,3 @@ export function RecordPaymentModal({
     </Dialog>
   );
 }
-

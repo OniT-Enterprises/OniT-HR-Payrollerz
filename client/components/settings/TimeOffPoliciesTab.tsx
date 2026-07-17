@@ -45,6 +45,33 @@ interface TimeOffPoliciesTabProps extends SettingsTabProps {
   userId: string | undefined;
 }
 
+function isInRange(value: number, minimum: number, maximum: number): boolean {
+  return Number.isFinite(value) && value >= minimum && value <= maximum;
+}
+
+function isValidTimeOffPolicies(policies: TimeOffPolicies): boolean {
+  const leaveTypes = [
+    policies.annualLeave,
+    policies.sickLeave,
+    policies.maternityLeave,
+    policies.paternityLeave,
+    policies.unpaidLeave,
+    ...policies.customLeaveTypes,
+  ];
+
+  return (
+    isInRange(policies.probationMonthsBeforeLeave, 0, 12) &&
+    isInRange(policies.maxCarryOverDays, 0, 366) &&
+    leaveTypes.every(
+      (leave) =>
+        isInRange(leave.daysPerYear, 0, 366) &&
+        isInRange(leave.paidPercentage, 0, 100) &&
+        (leave.maxCarryOverDays === undefined ||
+          isInRange(leave.maxCarryOverDays, 0, 366)),
+    )
+  );
+}
+
 export function TimeOffPoliciesTab({
   tenantId,
   saving,
@@ -60,6 +87,7 @@ export function TimeOffPoliciesTab({
   // Local state for time-off policies
   const [timeOffPolicies, setTimeOffPolicies] =
     useState<TimeOffPolicies>(initialTimeOff);
+  const policiesAreValid = isValidTimeOffPolicies(timeOffPolicies);
 
   // Sync local state when parent reloads
   useEffect(() => {
@@ -236,6 +264,14 @@ export function TimeOffPoliciesTab({
 
   const saveTimeOffPolicies = async () => {
     if (!tenantId) return;
+    if (!policiesAreValid) {
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.timeOff.invalidValues"),
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     try {
       await settingsService.updateTimeOffPolicies(tenantId, timeOffPolicies);
@@ -776,18 +812,28 @@ export function TimeOffPoliciesTab({
           </form>
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={saveTimeOffPolicies} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {t("settings.timeOff.save")}
-          </Button>
+        <div className="space-y-3 pt-4">
+          {!policiesAreValid && (
+            <p role="alert" className="text-sm text-destructive">
+              {t("settings.timeOff.invalidValues")}
+            </p>
+          )}
+          <div className="flex justify-end">
+            <Button
+              onClick={saveTimeOffPolicies}
+              disabled={saving}
+              className="w-full sm:w-auto"
+            >
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {t("settings.timeOff.save")}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-

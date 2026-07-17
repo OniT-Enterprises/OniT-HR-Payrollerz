@@ -10,6 +10,7 @@ import { generateBNUFile } from './bnu-format';
 import { generateMandiriFile } from './mandiri-format';
 import { generateANZFile } from './anz-format';
 import { generateBNCTLFile } from './bnctl-format';
+import { sumMoney } from '@/lib/currency';
 
 export type BankCode = 'BNU' | 'MANDIRI' | 'ANZ' | 'BNCTL';
 
@@ -54,6 +55,48 @@ const BANK_NAMES: Record<BankCode, string> = {
   BNCTL: 'Banco Nacional de Comércio de Timor-Leste',
 };
 
+function getEmployeeBankCode(employee: Employee): BankCode | null {
+  const bankName = employee.bankName?.toUpperCase() || '';
+  if (bankName.includes('BNU') || bankName.includes('ULTRAMARINO')) return 'BNU';
+  if (bankName.includes('MANDIRI')) return 'MANDIRI';
+  if (bankName.includes('ANZ')) return 'ANZ';
+  if (bankName.includes('BNCTL') || bankName.includes('COMÉRCIO')) return 'BNCTL';
+  return null;
+}
+
+/** Refuse a partial salary file when any payroll line cannot be paid safely. */
+export function validateBankTransferRecords(
+  records: AnyPayrollRecord[],
+  employees: Employee[],
+): void {
+  const employeesById = new Map(
+    employees.flatMap((employee) => employee.id ? [[employee.id, employee] as const] : []),
+  );
+  const issues: string[] = [];
+
+  for (const record of records) {
+    const employee = employeesById.get(record.employeeId);
+    const label = record.employeeName || record.employeeId;
+    if (!employee) {
+      issues.push(`${label}: employee record not found`);
+      continue;
+    }
+    if (!getEmployeeBankCode(employee)) {
+      issues.push(`${label}: supported bank not configured`);
+    }
+    if (!employee.bankAccountNumber?.trim()) {
+      issues.push(`${label}: bank account number missing`);
+    }
+    if (!Number.isFinite(record.netPay) || record.netPay <= 0) {
+      issues.push(`${label}: net pay must be greater than zero`);
+    }
+  }
+
+  if (issues.length > 0) {
+    throw new Error(`Bank file validation failed: ${issues.slice(0, 5).join('; ')}`);
+  }
+}
+
 /**
  * Group payroll records by bank
  */
@@ -79,19 +122,7 @@ export function groupRecordsByBank(
     const employee = employeesById.get(record.employeeId);
     if (!employee) continue;
 
-    // Get bank name from employee record and normalize
-    const bankName = employee.bankName?.toUpperCase() || '';
-
-    let bankCode: BankCode | null = null;
-    if (bankName.includes('BNU') || bankName.includes('ULTRAMARINO')) {
-      bankCode = 'BNU';
-    } else if (bankName.includes('MANDIRI')) {
-      bankCode = 'MANDIRI';
-    } else if (bankName.includes('ANZ')) {
-      bankCode = 'ANZ';
-    } else if (bankName.includes('BNCTL') || bankName.includes('COMÉRCIO')) {
-      bankCode = 'BNCTL';
-    }
+    const bankCode = getEmployeeBankCode(employee);
 
     if (bankCode) {
       groups[bankCode].push({ record, employee });
@@ -109,10 +140,16 @@ export function generateBankFile(
   input: BankTransferInput
 ): BankFileResult {
   const { payrollRun, records, employees, valueDate, companyName, companyAccountNumber } = input;
+  if (!companyAccountNumber.trim()) {
+    throw new Error('Company debit account number is required');
+  }
 
   // Filter records for this bank
   const grouped = groupRecordsByBank(records, employees);
   const bankRecords = grouped[bankCode];
+  if (bankRecords.length === 0) {
+    throw new Error(`No valid ${bankCode} salary records were found`);
+  }
 
   // Build transfer lines
   const lines: BankTransferLine[] = bankRecords.map(({ record, employee }) => {
@@ -126,11 +163,22 @@ export function generateBankFile(
     };
   });
 
+  const invalidLine = lines.find(
+    (line) =>
+      !line.accountNumber.trim() ||
+      !line.accountName.trim() ||
+      !Number.isFinite(line.amount) ||
+      line.amount <= 0,
+  );
+  if (invalidLine) {
+    throw new Error(`Invalid bank details for employee ${invalidLine.employeeId}`);
+  }
+
   const summary: BankTransferSummary = {
     bankCode,
     bankName: BANK_NAMES[bankCode],
     lines,
-    totalAmount: lines.reduce((sum, line) => sum + line.amount, 0),
+    totalAmount: sumMoney(lines.map((line) => line.amount)),
     transactionCount: lines.length,
     valueDate,
     payrollPeriod: formatPeriod(payrollRun.periodStart, payrollRun.periodEnd),

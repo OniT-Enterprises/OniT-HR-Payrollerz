@@ -11,14 +11,14 @@
  * smart defaults, minimal reading. All functionality preserved.
  */
 
-import { useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useCallback, useRef } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { StepWizard, StepContent } from "@/components/ui/StepWizard";
 import type { WizardStep } from "@/components/ui/StepWizard";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useCreatePayrollRunWithRecords } from "@/hooks/usePayroll";
 import { useQuery } from "@tanstack/react-query";
@@ -33,9 +33,12 @@ import {
 } from "@/components/payroll/wizard";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
+import { Button } from "@/components/ui/button";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL } from "@/lib/dateUtils";
-import { Calculator, Calendar, CheckCircle, Clock, Users } from "lucide-react";
+import { Calculator, Calendar, CheckCircle, Clock, Plus, Users } from "lucide-react";
+import { getConfiguredPayrollSchedule } from "@/lib/payroll/payroll-schedule";
 
 export default function RunPayrollWizard() {
   const navigate = useNavigate();
@@ -49,7 +52,9 @@ export default function RunPayrollWizard() {
     { id: "review", title: t("common.review"), icon: CheckCircle },
   ];
   const { user } = useAuth();
+  const { hasModule, canWrite } = useTenant();
   const tenantId = useTenantId();
+  const canAddEmployees = hasModule("staff") && canWrite();
 
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -58,26 +63,80 @@ export default function RunPayrollWizard() {
   const [complianceOverrideReason, setComplianceOverrideReason] = useState("");
 
   // Data
-  const { data: activeEmployees = [], isLoading: loadingEmployees } =
-    useEmployeeDirectory({ status: "active" });
+  const {
+    data: activeEmployeeData,
+    isLoading: loadingEmployees,
+    isError: employeesError,
+    isFetching: employeesFetching,
+    isSuccess: employeesLoaded,
+    refetch: refetchEmployees,
+  } = useEmployeeDirectory({ status: "active" });
+  const activeEmployees = activeEmployeeData ?? [];
 
   const createPayrollMutation = useCreatePayrollRunWithRecords();
+  const payrollMutationGuardRef = useRef(false);
+  const [payrollMutationAction, setPayrollMutationAction] = useState<
+    "draft" | "submit" | null
+  >(null);
+
+  const beginPayrollMutation = useCallback((action: "draft" | "submit") => {
+    if (payrollMutationGuardRef.current) return false;
+
+    payrollMutationGuardRef.current = true;
+    setPayrollMutationAction(action);
+    return true;
+  }, []);
+
+  const finishPayrollMutation = useCallback(() => {
+    payrollMutationGuardRef.current = false;
+    setPayrollMutationAction(null);
+  }, []);
 
   // Solo-operator mode changes the "what happens next" copy on the review step
-  const { data: tenantSettings, isLoading: loadingSettings } = useQuery({
+  const {
+    data: tenantSettings,
+    isLoading: loadingSettings,
+    isError: settingsError,
+    isFetching: settingsFetching,
+    refetch: refetchSettings,
+  } = useQuery({
     queryKey: ["tenants", tenantId, "settings"],
     queryFn: () => settingsService.getSettings(tenantId),
     enabled: Boolean(tenantId),
     staleTime: 5 * 60 * 1000,
   });
   const selfApprovalAllowed = tenantSettings?.payrollConfig?.allowSelfApproval === true;
+  const configuredSchedule =
+    tenantSettings === undefined
+      ? undefined
+      : getConfiguredPayrollSchedule(tenantSettings?.paymentStructure);
 
   const calc = usePayrollCalculator({
     activeEmployees,
     tenantId,
     userId: user?.uid || "current-user",
     payrollConfig: tenantSettings?.payrollConfig,
+    defaultPayFrequency: configuredSchedule?.frequency,
+    defaultPayDay: configuredSchedule?.payDay,
   });
+  const payrollDataBlocked =
+    activeEmployees.length > 0 &&
+    (calc.isYtdLoading ||
+      calc.isYtdError ||
+      calc.calculationsPending ||
+      calc.attendanceSyncPending);
+  const includedEmployeeCount = calc.getIncludedData().length;
+  const hasIncludedEmployees = includedEmployeeCount > 0;
+  const payrollMutationPending =
+    payrollMutationAction !== null || createPayrollMutation.isPending;
+
+  const notifyNoIncludedEmployees = useCallback(() => {
+    toast({
+      title: t("runPayroll.noEmployeesFound"),
+      description: t("runPayroll.stepEmployeesDesc"),
+      variant: "destructive",
+    });
+  }, [t, toast]);
 
   // ─── Step validation ─────────────────────────────────────────
   const handleBeforeNext = useCallback((): boolean => {
@@ -125,6 +184,11 @@ export default function RunPayrollWizard() {
       return true;
     }
 
+    if (!hasIncludedEmployees) {
+      notifyNoIncludedEmployees();
+      return false;
+    }
+
     if (currentStep === 1) {
       // SEC-7: Compliance override validation
       if (
@@ -170,15 +234,31 @@ export default function RunPayrollWizard() {
     }
 
     return true;
-  }, [currentStep, calc, complianceAcknowledged, complianceOverrideReason, toast, t]);
+  }, [
+    currentStep,
+    calc,
+    complianceAcknowledged,
+    complianceOverrideReason,
+    hasIncludedEmployees,
+    notifyNoIncludedEmployees,
+    toast,
+    t,
+  ]);
 
   // ─── Save draft ────────────────────────────────────────────
   const handleSaveDraft = useCallback(async () => {
+    if (payrollDataBlocked) return;
+
     const includedData = calc.getIncludedData();
-    const payrollRun = calc.buildPayrollRun(includedData);
-    const records = calc.buildPayrollRecords(includedData);
+    if (includedData.length === 0) {
+      notifyNoIncludedEmployees();
+      return;
+    }
+    if (!beginPayrollMutation("draft")) return;
 
     try {
+      const payrollRun = calc.buildPayrollRun(includedData);
+      const records = calc.buildPayrollRecords(includedData);
       await createPayrollMutation.mutateAsync({ payrollRun, records });
       toast({
         title: t("common.success"),
@@ -191,24 +271,43 @@ export default function RunPayrollWizard() {
         description: t("runPayroll.toastSaveFailed"),
         variant: "destructive",
       });
+    } finally {
+      finishPayrollMutation();
     }
-  }, [calc, createPayrollMutation, toast, t, navigate]);
+  }, [
+    payrollDataBlocked,
+    calc,
+    notifyNoIncludedEmployees,
+    beginPayrollMutation,
+    createPayrollMutation,
+    toast,
+    t,
+    navigate,
+    finishPayrollMutation,
+  ]);
 
   // ─── Submit for approval ───────────────────────────────────
   const handleSubmit = useCallback(async () => {
+    if (payrollDataBlocked) return;
+
     const includedData = calc.getIncludedData();
-    const payrollRun = {
-      ...calc.buildPayrollRun(includedData),
-      status: "processing" as const,
-    };
-    const records = calc.buildPayrollRecords(includedData);
-    const audit = {
-      tenantId,
-      userId: user?.uid || "current-user",
-      userEmail: user?.email || "",
-    };
+    if (includedData.length === 0) {
+      notifyNoIncludedEmployees();
+      return;
+    }
+    if (!beginPayrollMutation("submit")) return;
 
     try {
+      const payrollRun = {
+        ...calc.buildPayrollRun(includedData),
+        status: "processing" as const,
+      };
+      const records = calc.buildPayrollRecords(includedData);
+      const audit = {
+        tenantId,
+        userId: user?.uid || "current-user",
+        userEmail: user?.email || "",
+      };
       await createPayrollMutation.mutateAsync({ payrollRun, records, audit });
       toast({
         title: t("runPayroll.toastSubmittedTitle"),
@@ -223,11 +322,111 @@ export default function RunPayrollWizard() {
         description: t("runPayroll.toastErrorDesc"),
         variant: "destructive",
       });
+    } finally {
+      finishPayrollMutation();
     }
-  }, [calc, createPayrollMutation, tenantId, user, toast, t, navigate]);
+  }, [
+    payrollDataBlocked,
+    calc,
+    notifyNoIncludedEmployees,
+    beginPayrollMutation,
+    createPayrollMutation,
+    tenantId,
+    user,
+    toast,
+    t,
+    navigate,
+    finishPayrollMutation,
+  ]);
 
   if (loadingEmployees || loadingSettings) {
     return <PayrollLoadingSkeleton />;
+  }
+
+  if (settingsError && tenantSettings === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={settingsFetching}
+          onRetry={() => refetchSettings()}
+        />
+      </div>
+    );
+  }
+
+  if (tenantSettings === null) {
+    return <Navigate to="/setup" replace />;
+  }
+
+  if (employeesError && activeEmployeeData === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={employeesFetching}
+          onRetry={() => refetchEmployees()}
+        />
+      </div>
+    );
+  }
+
+  if (employeesLoaded && activeEmployees.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.runPayroll} />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <PageHeader
+            title={t("runPayroll.title")}
+            icon={Calculator}
+            iconColor="text-primary"
+          />
+          <section
+            className="mx-auto mt-8 max-w-lg rounded-2xl border bg-card px-6 py-10 text-center"
+            aria-labelledby="no-payroll-employees-title"
+          >
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Users className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <h2 id="no-payroll-employees-title" className="mt-4 text-lg font-semibold">
+              {t("employees.empty.noEmployeesTitle")}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {canAddEmployees
+                ? t("employees.empty.noEmployeesStart")
+                : t("runPayroll.noEmployeesAdminHelp")}
+            </p>
+            {canAddEmployees ? (
+              <Button className="mt-5" onClick={() => navigate("/people/add")}>
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                {t("employees.buttons.addFirstEmployee")}
+              </Button>
+            ) : (
+              <Button className="mt-5" variant="outline" onClick={() => navigate("/payroll")}>
+                {t("common.back")}
+              </Button>
+            )}
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeEmployees.length > 0 && calc.isYtdLoading) {
+    return <PayrollLoadingSkeleton />;
+  }
+
+  if (activeEmployees.length > 0 && calc.isYtdError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={calc.isYtdFetching}
+          onRetry={() => calc.refetchYtd()}
+        />
+      </div>
+    );
   }
 
   const currentStepId = wizardSteps[currentStep].id;
@@ -251,7 +450,20 @@ export default function RunPayrollWizard() {
           onBeforeNext={handleBeforeNext}
           onCancel={() => navigate("/payroll")}
           onComplete={handleSubmit}
-          isSubmitting={createPayrollMutation.isPending}
+          isSubmitting={payrollMutationPending}
+          canProceed={
+            !calc.calculationsPending &&
+            !payrollMutationPending &&
+            (currentStep === 0 || hasIncludedEmployees) &&
+            (currentStep !== 2 || !calc.attendanceSyncPending)
+          }
+          cannotProceedMessage={
+            calc.calculationsPending || calc.attendanceSyncPending
+              ? t("common.loading")
+              : currentStep > 0 && !hasIncludedEmployees
+                ? t("runPayroll.noEmployeesFound")
+                : undefined
+          }
           submitLabel={t("runPayroll.submitForApproval")}
           contentClassName="min-h-0"
         >
@@ -313,8 +525,10 @@ export default function RunPayrollWizard() {
               includedEmployees={calc.getIncludedData()}
               onSaveDraft={handleSaveDraft}
               onSubmit={handleSubmit}
-              saving={createPayrollMutation.isPending}
-              processing={createPayrollMutation.isPending}
+              saving={
+                payrollMutationPending && payrollMutationAction !== "submit"
+              }
+              processing={payrollMutationAction === "submit"}
               selfApprovalAllowed={selfApprovalAllowed}
             />
           </StepContent>

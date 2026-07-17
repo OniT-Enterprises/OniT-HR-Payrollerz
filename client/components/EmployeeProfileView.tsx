@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { formatDateTL } from "@/lib/dateUtils";
 import { getComplianceIssues } from "@/lib/employeeUtils";
@@ -434,11 +434,12 @@ function EditLink({ label, onOpenChange, navigate, employeeId }: EditLinkProps) 
 
 interface WorkContractSectionProps {
   employee: Employee;
+  canManageTenant: boolean;
   onOpenChange: (open: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
 }
 
-function WorkContractSection({ employee, onOpenChange, navigate }: WorkContractSectionProps) {
+function WorkContractSection({ employee, canManageTenant, onOpenChange, navigate }: WorkContractSectionProps) {
   const hasFile = employee.documents?.workContract?.fileUrl &&
     employee.documents?.workContract?.fileUrl.trim() !== "";
 
@@ -463,7 +464,9 @@ function WorkContractSection({ employee, onOpenChange, navigate }: WorkContractS
           )}
         </div>
       ) : (
-        <EditLink label="Upload contract" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+        canManageTenant
+          ? <EditLink label="Upload contract" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+          : <p className="text-sm italic text-muted-foreground/60">Not provided</p>
       )}
     </div>
   );
@@ -471,11 +474,12 @@ function WorkContractSection({ employee, onOpenChange, navigate }: WorkContractS
 
 interface WorkingVisaSectionProps {
   employee: Employee;
+  canManageTenant: boolean;
   onOpenChange: (open: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
 }
 
-function WorkingVisaSection({ employee, onOpenChange, navigate }: WorkingVisaSectionProps) {
+function WorkingVisaSection({ employee, canManageTenant, onOpenChange, navigate }: WorkingVisaSectionProps) {
   if (employee.documents?.nationality === "Timor-Leste") return null;
 
   const visa = employee.documents?.workingVisaResidency;
@@ -498,11 +502,15 @@ function WorkingVisaSection({ employee, onOpenChange, navigate }: WorkingVisaSec
               ✓ Document uploaded
             </Badge>
           ) : (
-            <EditLink label="Upload visa document" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+            canManageTenant
+              ? <EditLink label="Upload visa document" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+              : <p className="text-sm italic text-muted-foreground/60">Not provided</p>
           )}
         </div>
       ) : (
-        <EditLink label="Add visa details" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+        canManageTenant
+          ? <EditLink label="Add visa details" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
+          : <p className="text-sm italic text-muted-foreground/60">Not provided</p>
       )}
     </div>
   );
@@ -510,11 +518,12 @@ function WorkingVisaSection({ employee, onOpenChange, navigate }: WorkingVisaSec
 
 interface DocumentsCardProps {
   employee: Employee;
+  canManageTenant: boolean;
   onOpenChange: (open: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
 }
 
-function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps) {
+function DocumentsCard({ employee, canManageTenant, onOpenChange, navigate }: DocumentsCardProps) {
   return (
     <Card className="lg:col-span-3">
       <CardHeader>
@@ -572,9 +581,9 @@ function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps)
             label="Passport"
             number={employee.documents?.passport?.number}
             expiryDate={employee.documents?.passport?.expiryDate}
-            editFallback={
+            editFallback={canManageTenant ? (
               <EditLink label="Add passport" onOpenChange={onOpenChange} navigate={navigate} employeeId={employee.id!} />
-            }
+            ) : undefined}
           />
         </div>
         <div className="mt-6 pt-6 border-t border-border">
@@ -583,8 +592,8 @@ function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps)
             Employment Documents
           </h4>
           <div className="grid md:grid-cols-2 gap-4">
-            <WorkContractSection employee={employee} onOpenChange={onOpenChange} navigate={navigate} />
-            <WorkingVisaSection employee={employee} onOpenChange={onOpenChange} navigate={navigate} />
+            <WorkContractSection employee={employee} canManageTenant={canManageTenant} onOpenChange={onOpenChange} navigate={navigate} />
+            <WorkingVisaSection employee={employee} canManageTenant={canManageTenant} onOpenChange={onOpenChange} navigate={navigate} />
           </div>
         </div>
       </CardContent>
@@ -596,18 +605,19 @@ function DocumentsCard({ employee, onOpenChange, navigate }: DocumentsCardProps)
 
 interface ProfileHeaderProps {
   employee: Employee;
+  canManageTenant: boolean;
   onOpenChange: (open: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
 }
 
-function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps) {
+function ProfileHeader({ employee, canManageTenant, onOpenChange, navigate }: ProfileHeaderProps) {
   const tenantId = useTenantId();
   const { toast } = useToast();
   const [inviting, setInviting] = useState(false);
   const inviteEmail = employee.personalInfo.email?.trim();
 
   const handleAppInvite = async () => {
-    if (!inviteEmail || !employee.id) return;
+    if (!canManageTenant || !inviteEmail || !employee.id) return;
     setInviting(true);
     try {
       await employeeService.sendAppInvite(tenantId, {
@@ -662,13 +672,13 @@ function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps)
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          {inviteEmail && (
+          {canManageTenant && inviteEmail && (
             <Button variant="outline" size="sm" onClick={handleAppInvite} disabled={inviting}>
               <Send className="h-4 w-4 mr-2" />
               {inviting ? "Sending…" : "App invite"}
             </Button>
           )}
-          <Button
+          {canManageTenant && <Button
             variant="outline"
             size="sm"
             onClick={async () => {
@@ -678,7 +688,7 @@ function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps)
           >
             <FileText className="h-4 w-4 mr-2" />
             CV PDF
-          </Button>
+          </Button>}
           <Button
             variant="outline"
             size="sm"
@@ -708,6 +718,8 @@ export default function EmployeeProfileView({
   onOpenChange,
 }: EmployeeProfileViewProps) {
   const navigate = useNavigate();
+  const { canManage } = useTenant();
+  const canManageTenant = canManage();
 
   const { data: allEmployees = [] } = useAllEmployees();
   const managerName = useMemo(() => {
@@ -734,19 +746,22 @@ export default function EmployeeProfileView({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
         <ProfileHeader
           employee={employee}
+          canManageTenant={canManageTenant}
           onOpenChange={onOpenChange}
           navigate={navigate}
         />
 
-        <ComplianceWarnings issues={issues} onOpenChange={onOpenChange} navigate={navigate} />
+        {canManageTenant && (
+          <ComplianceWarnings issues={issues} onOpenChange={onOpenChange} navigate={navigate} />
+        )}
 
-        <FixedTermConversionWarning employee={employee} />
+        {canManageTenant && <FixedTermConversionWarning employee={employee} />}
 
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <PersonalInfoCard employee={employee} />
           <JobInfoCard employee={employee} managerName={managerName} />
           <CompensationCard employee={employee} leaveBalance={leaveBalance} />
-          <DocumentsCard employee={employee} onOpenChange={onOpenChange} navigate={navigate} />
+          <DocumentsCard employee={employee} canManageTenant={canManageTenant} onOpenChange={onOpenChange} navigate={navigate} />
         </div>
       </DialogContent>
 

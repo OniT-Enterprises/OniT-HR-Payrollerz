@@ -4,7 +4,7 @@
  */
 
 import { useRef, useState, type DragEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
@@ -39,9 +39,7 @@ import MoreDetailsSection from '@/components/MoreDetailsSection';
 import QuickBillDialog from '@/components/money/QuickBillDialog';
 import { partitionBillFiles, BILL_FILE_ACCEPT } from '@/lib/billFiles';
 
-import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
-import { formatDateTL } from '@/lib/dateUtils';
-import { sumMoney } from '@/lib/currency';
+import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
 import type { Bill, BillStatus } from '@/types/money';
 import {
   FileText,
@@ -53,7 +51,6 @@ import {
   Trash2,
   DollarSign,
   Calendar,
-  AlertTriangle,
   Upload,
 } from 'lucide-react';
 
@@ -65,17 +62,45 @@ const STATUS_STYLES: Record<BillStatus, string> = {
   cancelled: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
 
+const BILL_STATUS_FILTERS = new Set<BillStatus>([
+  'pending',
+  'paid',
+  'partial',
+  'overdue',
+  'cancelled',
+]);
+const UNPAID_BILL_STATUSES: BillStatus[] = [
+  'pending',
+  'partial',
+  'overdue',
+];
+
+const isBillStatusFilter = (value: string | null): value is BillStatus =>
+  value !== null && BILL_STATUS_FILTERS.has(value as BillStatus);
+
 export default function Bills() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
   const tenantId = useTenantId();
+  const canManageTenant = canManage();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const statusParam = searchParams.get('status');
+  const statusFilter: BillStatus | 'all' = isBillStatusFilter(statusParam)
+    ? statusParam
+    : 'all';
+  const todayIso = getTodayTL();
+  const billFilters =
+    statusFilter === 'all'
+      ? {}
+      : statusFilter === 'overdue'
+        ? { status: UNPAID_BILL_STATUSES, dueBefore: todayIso }
+        : { status: statusFilter };
 
   // Quick-add bill from dropped/picked files
   const [quickFiles, setQuickFiles] = useState<File[]>([]);
@@ -85,7 +110,7 @@ export default function Bills() {
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const handleIncomingFiles = (incoming: File[]) => {
-    if (incoming.length === 0) return;
+    if (!canManageTenant || incoming.length === 0) return;
     const { valid, errors } = partitionBillFiles(incoming);
     if (errors.length > 0) {
       toast({
@@ -131,16 +156,37 @@ export default function Bills() {
     handleIncomingFiles(Array.from(e.dataTransfer.files));
   };
 
-  const { bills, totalLoaded, isLoading: loading, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartBills(isSearching);
+  const { bills, totalLoaded, isLoading: loading, error: queryError, refetch: loadBills, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartBills(
+    isSearching,
+    billFilters,
+  );
+
+  const getDisplayStatus = (bill: Bill): BillStatus =>
+    bill.balanceDue > 0 &&
+    bill.dueDate < todayIso &&
+    UNPAID_BILL_STATUSES.includes(bill.status)
+      ? 'overdue'
+      : bill.status;
 
   const filteredBills = bills.filter((bill) => {
     const matchesSearch =
       bill.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bill.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bill.billNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' || getDisplayStatus(bill) === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleStatusFilterChange = (value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (isBillStatusFilter(value)) {
+      nextParams.set('status', value);
+    } else {
+      nextParams.delete('status');
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -155,15 +201,8 @@ export default function Bills() {
     return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Calculate stats
-  const totalPayables = sumMoney(bills
-    .filter((b) => ['pending', 'partial', 'overdue'].includes(b.status))
-    .map((bill) => bill.balanceDue));
-  const overdueBills = bills.filter((b) => b.status === 'overdue');
-  const overdueAmount = sumMoney(overdueBills.map((bill) => bill.balanceDue));
-
   const handleDelete = async (bill: Bill) => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManageTenant || bill.status !== 'pending') return;
     if (
       !confirm(
         t('money.bills.confirmDelete') || `Delete bill from ${bill.vendorName}?`
@@ -215,16 +254,16 @@ export default function Bills() {
   return (
     <div
       className="min-h-screen bg-background"
-      onDragEnter={handlePageDragEnter}
-      onDragOver={handlePageDragOver}
-      onDragLeave={handlePageDragLeave}
-      onDrop={handlePageDrop}
+      onDragEnter={canManageTenant ? handlePageDragEnter : undefined}
+      onDragOver={canManageTenant ? handlePageDragOver : undefined}
+      onDragLeave={canManageTenant ? handlePageDragLeave : undefined}
+      onDrop={canManageTenant ? handlePageDrop : undefined}
     >
       <SEO title="Bills - Xefe" description="Manage your bills and accounts payable" />
       <MainNavigation />
 
       {/* Full-page drop overlay */}
-      {dragActive && (
+      {canManageTenant && dragActive && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
           <div className="border-2 border-dashed border-indigo-500 rounded-xl px-12 py-10 text-center bg-background shadow-lg">
             <Upload className="h-10 w-10 mx-auto mb-3 text-indigo-500" />
@@ -238,23 +277,27 @@ export default function Bills() {
         </div>
       )}
 
-      <input
-        ref={uploadInputRef}
-        type="file"
-        accept={BILL_FILE_ACCEPT}
-        multiple
-        className="sr-only"
-        onChange={(e) => {
-          handleIncomingFiles(Array.from(e.target.files || []));
-          e.target.value = '';
-        }}
-      />
+      {canManageTenant && (
+        <>
+          <input
+            ref={uploadInputRef}
+            type="file"
+            accept={BILL_FILE_ACCEPT}
+            multiple
+            className="sr-only"
+            onChange={(e) => {
+              handleIncomingFiles(Array.from(e.target.files || []));
+              e.target.value = '';
+            }}
+          />
 
-      <QuickBillDialog
-        open={quickAddOpen}
-        onOpenChange={setQuickAddOpen}
-        initialFiles={quickFiles}
-      />
+          <QuickBillDialog
+            open={quickAddOpen}
+            onOpenChange={setQuickAddOpen}
+            initialFiles={quickFiles}
+          />
+        </>
+      )}
 
       <div className="p-6 mx-auto max-w-screen-2xl">
         <PageHeader
@@ -262,7 +305,7 @@ export default function Bills() {
           subtitle={t('money.bills.subtitle') || 'Manage accounts payable'}
           icon={FileText}
           iconColor="text-indigo-500"
-          actions={
+          actions={canManageTenant ? (
             <>
               <Button variant="outline" onClick={() => uploadInputRef.current?.click()}>
                 <Upload className="h-4 w-4 mr-2" />
@@ -276,54 +319,8 @@ export default function Bills() {
                 {t('money.bills.new') || 'New Bill'}
               </Button>
             </>
-          }
+          ) : undefined}
         />
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    {t('money.bills.totalPayables') || 'Total Payables'}
-                    <InfoTooltip content={MoneyTooltips.dashboard.totalPayables} />
-                  </p>
-                  <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalPayables)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {bills.filter((b) => ['pending', 'partial', 'overdue'].includes(b.status)).length}{' '}
-                    {t('money.bills.unpaidBills') || 'unpaid bills'}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t('money.bills.overdue') || 'Overdue'}
-                  </p>
-                  <p className="text-2xl font-bold text-red-600">{formatCurrency(overdueAmount)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {overdueBills.length}{' '}
-                    {overdueBills.length === 1
-                      ? t('money.bills.bill') || 'bill'
-                      : t('money.bills.bills') || 'bills'}
-                  </p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
-                  <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Filters */}
         <div className="relative mb-4 max-w-md">
@@ -337,7 +334,7 @@ export default function Bills() {
         </div>
         <MoreDetailsSection className="mb-6" title={t('money.bills.status') || 'Status'}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder={t('money.bills.status') || 'Status'} />
               </SelectTrigger>
@@ -354,30 +351,59 @@ export default function Bills() {
         </MoreDetailsSection>
 
         {/* Quick-add dropzone */}
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => uploadInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              uploadInputRef.current?.click();
-            }
-          }}
-          className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-4 py-3 border-2 border-dashed border-muted-foreground/25 rounded-lg text-sm text-muted-foreground hover:border-indigo-400 hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors"
-        >
-          <Upload className="h-4 w-4 shrink-0" />
-          <span className="text-center">
-            {t('money.bills.dropStrip') ||
-              'Drag & drop bill files here (PDF or photo), or click to browse'}
-          </span>
-          <span className="hidden md:inline text-xs text-muted-foreground/70">
-            {t('money.bills.dropStripHint') || '— works with Google Drive & OneDrive folders'}
-          </span>
-        </div>
+        {canManageTenant && (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => uploadInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                uploadInputRef.current?.click();
+              }
+            }}
+            className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-4 py-3 border-2 border-dashed border-muted-foreground/25 rounded-lg text-sm text-muted-foreground hover:border-indigo-400 hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+          >
+            <Upload className="h-4 w-4 shrink-0" />
+            <span className="text-center">
+              {t('money.bills.dropStrip') ||
+                'Drag & drop bill files here (PDF or photo), or click to browse'}
+            </span>
+            <span className="hidden md:inline text-xs text-muted-foreground/70">
+              {t('money.bills.dropStripHint') || '— works with Google Drive & OneDrive folders'}
+            </span>
+          </div>
+        )}
+
+        {queryError && !loading && bills.length > 0 && (
+          <div
+            className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+          >
+            <span>{t('common.connectionIssueDesc')}</span>
+            <Button size="sm" variant="outline" onClick={() => loadBills()}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        )}
 
         {/* Bill List */}
-        {filteredBills.length === 0 ? (
+        {queryError && !loading && bills.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium mb-1">
+                {t('common.connectionIssueTitle') || 'Connection problem'}
+              </p>
+              <p className="text-muted-foreground mb-4">
+                {t('common.connectionIssueDesc') ||
+                  'Your signal is weak. Keep this page open and try again when the internet stabilizes.'}
+              </p>
+              <Button onClick={() => loadBills()} variant="outline">
+                {t('common.retry') || 'Retry'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : filteredBills.length === 0 && !hasNextPage ? (
           <Card>
             <CardContent className="py-12 text-center">
               <img src="/images/illustrations/xefe-empty.webp" alt="No bills yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
@@ -386,7 +412,7 @@ export default function Bills() {
                   ? t('money.bills.noResults') || 'No bills found'
                   : t('money.bills.empty') || 'No bills yet'}
               </p>
-              {!searchTerm && statusFilter === 'all' && (
+              {canManageTenant && !searchTerm && statusFilter === 'all' && (
                 <Button onClick={() => navigate('/money/bills/new')} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.bills.createFirst') || 'Add your first bill'}
@@ -403,21 +429,29 @@ export default function Bills() {
                 onClick={() => navigate(`/money/bills/${bill.id}`)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <div className="hidden h-10 w-10 shrink-0 rounded-full bg-muted sm:flex sm:items-center sm:justify-center">
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{bill.vendorName}</p>
-                          <Badge className={STATUS_STYLES[bill.status]}>
-                            {t(`money.billStatus.${bill.status}`) || bill.status}
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate font-medium">{bill.vendorName}</p>
+                          <Badge className={STATUS_STYLES[getDisplayStatus(bill)]}>
+                            {t(`money.billStatus.${getDisplayStatus(bill)}`) || getDisplayStatus(bill)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="truncate text-sm text-muted-foreground">
                           {bill.description}
                           {bill.billNumber && ` - ${bill.billNumber}`}
+                        </p>
+                        <p className="mt-0.5 text-sm font-semibold sm:hidden">
+                          {formatCurrency(bill.total)}
+                          {bill.balanceDue > 0 && bill.balanceDue !== bill.total && (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              {t('money.bills.due') || 'Due'}: {formatCurrency(bill.balanceDue)}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -439,9 +473,15 @@ export default function Bills() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="sm" className="h-8" onClick={(e) => e.stopPropagation()}>
-                            <MoreHorizontal className="h-4 w-4 mr-1.5" />
-                            {t('common.moreActions') || 'More actions'}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3"
+                            aria-label={t('common.moreActions') || 'More actions'}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4 sm:mr-1.5" />
+                            <span className="hidden sm:inline">{t('common.moreActions') || 'More actions'}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
@@ -451,7 +491,7 @@ export default function Bills() {
                             <Eye className="h-4 w-4 mr-2" />
                             {t('common.view') || 'View'}
                           </DropdownMenuItem>
-                          {bill.status === 'pending' && (
+                          {canManageTenant && bill.status === 'pending' && (
                             <DropdownMenuItem
                               onClick={() => navigate(`/money/bills/${bill.id}/edit`)}
                             >
@@ -459,7 +499,7 @@ export default function Bills() {
                               {t('common.edit') || 'Edit'}
                             </DropdownMenuItem>
                           )}
-                          {['pending', 'partial', 'overdue'].includes(bill.status) && (
+                          {canManageTenant && ['pending', 'partial', 'overdue'].includes(bill.status) && (
                             <DropdownMenuItem
                               onClick={() => navigate(`/money/bills/${bill.id}?record=payment`)}
                             >
@@ -467,14 +507,18 @@ export default function Bills() {
                               {t('money.bills.recordPayment') || 'Record Payment'}
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(bill)}
-                            className="text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('common.delete') || 'Delete'}
-                          </DropdownMenuItem>
+                          {canManageTenant && bill.status === 'pending' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(bill)}
+                                className="text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t('common.delete') || 'Delete'}
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

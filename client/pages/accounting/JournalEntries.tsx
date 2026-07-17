@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -65,9 +66,15 @@ import {
   usePaginatedJournalEntries,
 } from "@/hooks/useAccounting";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import type { JournalEntry, JournalEntryLine, JournalEntryStatus } from "@/types/accounting";
+import type {
+  JournalEntry,
+  JournalEntryLine,
+  JournalEntrySource,
+  JournalEntryStatus,
+} from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
@@ -82,14 +89,42 @@ interface EntryLineForm {
   description: string;
 }
 
+const JOURNAL_SOURCE_OPTIONS: Array<{
+  value: JournalEntrySource;
+  labelKey: string;
+}> = [
+  { value: "payroll", labelKey: "accounting.journalEntries.sourcePayroll" },
+  { value: "manual", labelKey: "accounting.journalEntries.sourceManual" },
+  { value: "opening", labelKey: "accounting.journalEntries.sourceOpening" },
+  { value: "invoice", labelKey: "accounting.journalEntries.sourceInvoice" },
+  { value: "bill", labelKey: "accounting.journalEntries.sourceBill" },
+  { value: "payment", labelKey: "accounting.journalEntries.sourcePayment" },
+  { value: "receipt", labelKey: "accounting.journalEntries.sourceReceipt" },
+  { value: "adjustment", labelKey: "accounting.journalEntries.sourceAdjustment" },
+  { value: "closing", labelKey: "accounting.journalEntries.sourceClosing" },
+];
+const JOURNAL_SOURCE_FILTERS = new Set(
+  JOURNAL_SOURCE_OPTIONS.map((option) => option.value),
+);
+
+const isJournalSourceFilter = (value: string | null): value is JournalEntrySource =>
+  value !== null && JOURNAL_SOURCE_FILTERS.has(value as JournalEntrySource);
+
 export default function JournalEntries() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { canManage } = useTenant();
+  const canManageTenant = canManage();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Filters (yearFilter must be declared before useJournalEntries)
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const sourceParam = searchParams.get("filter");
+  const sourceFilter = isJournalSourceFilter(sourceParam) ? sourceParam : "all";
+  const sourceFilterLabel = JOURNAL_SOURCE_OPTIONS.find(
+    (option) => option.value === sourceFilter,
+  )?.labelKey;
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
   const fiscalYear = parseInt(yearFilter, 10);
@@ -102,7 +137,9 @@ export default function JournalEntries() {
   const isSearching = searchTerm.trim().length > 0;
 
   // React Query hooks
-  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(showAddDialog);
+  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(
+    canManageTenant && showAddDialog,
+  );
   const activeAccounts = useMemo(() => accounts.filter(a => a.isActive), [accounts]);
   const paginatedEntriesQuery = usePaginatedJournalEntries({
     fiscalYear,
@@ -136,6 +173,54 @@ export default function JournalEntries() {
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
   ]);
+  const handledNewAction = useRef(false);
+  const submitInFlight = useRef(false);
+
+  // Treat ?action=new as a one-time command. Consume it after opening so a
+  // normal re-render (or closing the dialog) cannot wipe and reopen the form.
+  useEffect(() => {
+    if (searchParams.get("action") !== "new") {
+      handledNewAction.current = false;
+      return;
+    }
+    if (handledNewAction.current) return;
+
+    if (!canManageTenant) {
+      handledNewAction.current = true;
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("action");
+      setSearchParams(nextParams, { replace: true });
+      return;
+    }
+
+    const openDialog = window.setTimeout(() => {
+      if (handledNewAction.current) return;
+      handledNewAction.current = true;
+      setEntryDate(getTodayTL());
+      setEntryDescription("");
+      setEntryLines([
+        { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+        { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+      ]);
+      setShowAddDialog(true);
+
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("action");
+      setSearchParams(nextParams, { replace: true });
+    }, 0);
+
+    return () => window.clearTimeout(openDialog);
+  }, [canManageTenant, searchParams, setSearchParams]);
+
+  const handleSourceFilterChange = (value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (isJournalSourceFilter(value)) {
+      nextParams.set("filter", value);
+    } else {
+      nextParams.delete("filter");
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   // Filter entries
   const filteredEntries = useMemo(() => {
@@ -297,6 +382,7 @@ export default function JournalEntries() {
 
   // Submit new entry
   const handleSubmit = async (asDraft: boolean = false) => {
+    if (!canManageTenant || submitInFlight.current) return;
     if (!entryDate || !entryDescription) {
       toast({
         title: t("accounting.journalEntries.validationError"),
@@ -326,6 +412,7 @@ export default function JournalEntries() {
       return;
     }
 
+    submitInFlight.current = true;
     try {
       const year = new Date(entryDate).getFullYear();
       const month = new Date(entryDate).getMonth() + 1;
@@ -382,6 +469,8 @@ export default function JournalEntries() {
         description: message,
         variant: "destructive",
       });
+    } finally {
+      submitInFlight.current = false;
     }
   };
 
@@ -402,6 +491,7 @@ export default function JournalEntries() {
 
   // Pre-populate create dialog with reversed lines from an existing entry
   const handleReverse = (entry: JournalEntry) => {
+    if (!canManageTenant) return;
     setEntryDate(getTodayTL());
     setEntryDescription(`Reversal of ${entry.entryNumber}: ${entry.description}`);
     setEntryLines(
@@ -494,7 +584,7 @@ export default function JournalEntries() {
           subtitle={t("accounting.journalEntries.subtitle")}
           icon={FileText}
           iconColor="text-orange-500"
-          actions={
+          actions={canManageTenant ? (
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm} variant="outline" size="sm">
@@ -685,7 +775,7 @@ export default function JournalEntries() {
                   </div>
                 </DialogContent>
             </Dialog>
-          }
+          ) : undefined}
         />
         <MoreDetailsSection className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -736,19 +826,17 @@ export default function JournalEntries() {
                   </div>
                 </div>
                 <div className="w-36">
-                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                  <Select value={sourceFilter} onValueChange={handleSourceFilterChange}>
                     <SelectTrigger>
                       <SelectValue placeholder={t("accounting.journalEntries.allSources")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("accounting.journalEntries.allSources")}</SelectItem>
-                      <SelectItem value="payroll">{t("accounting.journalEntries.sourcePayroll")}</SelectItem>
-                      <SelectItem value="manual">{t("accounting.journalEntries.sourceManual")}</SelectItem>
-                      <SelectItem value="opening">{t("accounting.journalEntries.sourceOpening")}</SelectItem>
-                      <SelectItem value="expense">{t("accounting.journalEntries.sourceExpense")}</SelectItem>
-                      <SelectItem value="revenue">{t("accounting.journalEntries.sourceRevenue")}</SelectItem>
-                      <SelectItem value="payment">{t("accounting.journalEntries.sourcePayment")}</SelectItem>
-                      <SelectItem value="receipt">{t("accounting.journalEntries.sourceReceipt")}</SelectItem>
+                      {JOURNAL_SOURCE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {t(option.labelKey)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -791,7 +879,7 @@ export default function JournalEntries() {
                 {isSearching
                   ? t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })
                   : `${t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}${stats.total > filteredEntries.length ? ` • Loaded ${filteredEntries.length} of ${stats.total}` : ""}`}
-                {sourceFilter !== "all" && ` • ${t("accounting.journalEntries.source")}: ${sourceFilter}`}
+                {sourceFilterLabel && ` • ${t("accounting.journalEntries.source")}: ${t(sourceFilterLabel)}`}
                 {statusFilter !== "all" && ` • ${t("accounting.journalEntries.statusLabel")}: ${statusFilter}`}
               </CardDescription>
             </CardHeader>
@@ -941,7 +1029,7 @@ export default function JournalEntries() {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  {entry.status === "posted" && !isLocked && (
+                                  {canManageTenant && entry.status === "posted" && !isLocked && (
                                     <Button
                                       variant="ghost"
                                       size="sm"

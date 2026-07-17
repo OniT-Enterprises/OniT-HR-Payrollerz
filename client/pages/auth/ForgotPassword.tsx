@@ -10,17 +10,22 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [error, setError] = useState("");
   const { t } = useI18n();
   const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
+    const normalizedEmail = email.trim();
     setError("");
+    setSubmittedEmail(normalizedEmail);
     setLoading(true);
 
     try {
-      await resetPassword(email.trim());
+      await resetPassword(normalizedEmail);
       setSent(true);
     } catch (err: unknown) {
       const code =
@@ -77,7 +82,7 @@ export default function ForgotPassword() {
                 {t("auth.resetEmailSentTitle")}
               </h1>
               <p className="text-sm text-zinc-400">
-                {t("auth.resetEmailSentDetail", { email: email.trim() })}
+                {t("auth.resetEmailSentDetail", { email: submittedEmail })}
               </p>
               <Link
                 to="/auth/login"
@@ -100,7 +105,7 @@ export default function ForgotPassword() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {error && (
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div role="alert" className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                     <p className="text-sm text-red-400">{error}</p>
                   </div>
                 )}
@@ -113,13 +118,16 @@ export default function ForgotPassword() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                     <input
                       id="email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       placeholder={t("auth.emailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full h-11 pl-10 pr-4 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-colors text-sm"
                       required
                       autoFocus
+                      disabled={loading}
                     />
                   </div>
                 </div>

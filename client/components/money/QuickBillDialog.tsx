@@ -4,7 +4,7 @@
  * Files are staged, then uploaded to Storage and saved on the new bill.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { useCreateBill } from '@/hooks/useBills';
 import { fileUploadService } from '@/services/fileUploadService';
@@ -79,8 +79,14 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
-  const { data: vendors = [] } = useActiveVendors();
+  const {
+    data: vendors = [],
+    isLoading: vendorsLoading,
+    isError: vendorsLoadError,
+    refetch: retryVendors,
+  } = useActiveVendors();
   const createBillMutation = useCreateBill();
 
   const [files, setFiles] = useState<File[]>([]);
@@ -92,6 +98,8 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
   const [category, setCategory] = useState<ExpenseCategory>('other');
   const [billNumber, setBillNumber] = useState('');
   const [saving, setSaving] = useState(false);
+  const submitInFlight = useRef(false);
+  const vendorsUnavailable = vendorsLoadError && vendors.length === 0;
 
   // Seed state each time the dialog opens with a fresh batch of files
   useEffect(() => {
@@ -116,6 +124,7 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
   };
 
   const handleSave = async () => {
+    if (!canManage() || submitInFlight.current) return;
     const parsedAmount = parseFloat(amount);
     if (!vendorId) {
       toast({
@@ -142,6 +151,7 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
       return;
     }
 
+    submitInFlight.current = true;
     setSaving(true);
     try {
       // Pre-generate the bill ID so attachment storage paths match the final document
@@ -197,6 +207,7 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
         variant: 'destructive',
       });
     } finally {
+      submitInFlight.current = false;
       setSaving(false);
     }
   };
@@ -222,7 +233,25 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
 
           <div className="space-y-2">
             <Label>{t('money.bills.vendor') || 'Vendor'} *</Label>
-            {vendors.length === 0 ? (
+            {vendorsUnavailable ? (
+              <div className="flex items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+                <p className="text-sm text-muted-foreground">
+                  {t('common.connectionIssueDesc')}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void retryVendors()}
+                >
+                  {t('common.retry')}
+                </Button>
+              </div>
+            ) : vendorsLoading ? (
+              <p className="rounded-md border p-3 text-sm text-muted-foreground">
+                {t('common.loading')}
+              </p>
+            ) : vendors.length === 0 ? (
               <div className="flex items-center justify-between gap-2 p-3 border rounded-md">
                 <p className="text-sm text-muted-foreground">
                   {t('money.bills.noVendors') || 'No vendors yet — add one first'}
@@ -340,7 +369,7 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving || vendors.length === 0}
+            disabled={saving || vendorsLoading || vendorsUnavailable || vendors.length === 0}
             className="bg-indigo-600 hover:bg-indigo-700"
           >
             {saving

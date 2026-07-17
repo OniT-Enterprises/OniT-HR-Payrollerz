@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import { peopleNavConfig } from "@/lib/moduleNav";
 import { useActiveEmployeeSummary, useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
@@ -15,6 +16,7 @@ import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { interviewService } from "@/services/interviewService";
 import { trainingService } from "@/services/trainingService";
 import { disciplinaryService } from "@/services/disciplinaryService";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   AlertTriangle,
   Briefcase,
@@ -49,8 +51,10 @@ function PeopleHomeSkeleton() {
 
 export default function PeopleDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const tenantId = useTenantId();
-  const { hasModule } = useTenant();
+  const { hasModule, canManage } = useTenant();
+  const canManageTenant = canManage();
   const hasStaff = hasModule("staff");
   const hasHiring = hasModule("hiring");
   const hasPerformance = hasModule("performance");
@@ -58,32 +62,65 @@ export default function PeopleDashboard() {
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary(hasStaff);
-  const { data: recentEmployees } = useAllEmployees(8, hasStaff);
-  const { data: leaveStats } = useLeaveStats(hasTimeleave);
-  const { data: goalStats } = useGoalStats(undefined);
-  const { data: interviewStats } = useQuery({
+  const employeeSummaryQuery = useActiveEmployeeSummary(hasStaff);
+  const recentEmployeesQuery = useAllEmployees(8, hasStaff);
+  const leaveStatsQuery = useLeaveStats(hasTimeleave);
+  const goalStatsQuery = useGoalStats(undefined, hasPerformance);
+  const interviewStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "interviews"],
     queryFn: () => interviewService.getStats(tenantId),
     enabled: hasHiring,
     staleTime: 5 * 60 * 1000,
   });
-  const { data: trainingStats } = useQuery({
+  const trainingStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "training"],
     queryFn: () => trainingService.getTrainingStats(tenantId),
     enabled: hasPerformance,
     staleTime: 5 * 60 * 1000,
   });
-  const { data: disciplinaryStats } = useQuery({
+  const disciplinaryStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "disciplinary"],
     queryFn: () => disciplinaryService.getStats(tenantId),
     enabled: hasPerformance,
     staleTime: 5 * 60 * 1000,
   });
 
-  if (employeeLoading) {
+  const dashboardQueries = [
+    ...(hasStaff ? [employeeSummaryQuery, recentEmployeesQuery] : []),
+    ...(hasTimeleave ? [leaveStatsQuery] : []),
+    ...(hasHiring ? [interviewStatsQuery] : []),
+    ...(hasPerformance ? [goalStatsQuery, trainingStatsQuery, disciplinaryStatsQuery] : []),
+  ];
+  const dashboardLoading = dashboardQueries.some((query) => query.isLoading);
+  const dashboardError = dashboardQueries.some((query) => query.data === undefined);
+
+  if (dashboardLoading) {
     return <PeopleHomeSkeleton />;
   }
+
+  if (dashboardError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("moduleDashboards.people.title")}
+          description={t("moduleDashboards.people.seoDescription")}
+        />
+        <ModuleSectionNav config={peopleNavConfig} />
+        <DashboardLoadError
+          isRetrying={dashboardQueries.some((query) => query.isFetching)}
+          onRetry={() => Promise.all(dashboardQueries.map((query) => query.refetch()))}
+        />
+      </div>
+    );
+  }
+
+  const employeeSummary = employeeSummaryQuery.data;
+  const recentEmployees = recentEmployeesQuery.data;
+  const leaveStats = leaveStatsQuery.data;
+  const goalStats = goalStatsQuery.data;
+  const interviewStats = interviewStatsQuery.data;
+  const trainingStats = trainingStatsQuery.data;
+  const disciplinaryStats = disciplinaryStatsQuery.data;
 
   const activeEmployees = employeeSummary?.active ?? 0;
   const employeesWithIssues = employeeSummary?.employeesWithIssues ?? 0;
@@ -107,7 +144,11 @@ export default function PeopleDashboard() {
     {
       show: hasTimeleave && pendingLeave > 0,
       count: pendingLeave,
-      label: `leave request${pendingLeave === 1 ? "" : "s"} waiting for approval`,
+      label: t(
+        pendingLeave === 1
+          ? "moduleDashboards.people.attention.leaveRequest"
+          : "moduleDashboards.people.attention.leaveRequests",
+      ),
       path: "/time-leave/leave",
       icon: CalendarClock,
       tone: "text-cyan-600 bg-cyan-100 dark:bg-cyan-950/30 dark:text-cyan-300",
@@ -115,7 +156,11 @@ export default function PeopleDashboard() {
     {
       show: hasStaff && employeesWithIssues > 0,
       count: employeesWithIssues,
-      label: `employee${employeesWithIssues === 1 ? "" : "s"} missing required info`,
+      label: t(
+        employeesWithIssues === 1
+          ? "moduleDashboards.people.attention.employeeMissingInfo"
+          : "moduleDashboards.people.attention.employeesMissingInfo",
+      ),
       path: "/people/employees?filter=issues",
       icon: AlertTriangle,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
@@ -123,23 +168,23 @@ export default function PeopleDashboard() {
     {
       show: hasPerformance && trainingExpiring > 0,
       count: trainingExpiring,
-      label: `certificate${trainingExpiring === 1 ? "" : "s"} expiring within 30 days`,
+      label: t(
+        trainingExpiring === 1
+          ? "moduleDashboards.people.attention.certificateExpiring"
+          : "moduleDashboards.people.attention.certificatesExpiring",
+      ),
       path: "/people/training",
       icon: GraduationCap,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
     },
     {
-      show: hasHiring && interviewsScheduled > 0,
-      count: interviewsScheduled,
-      label: `interview${interviewsScheduled === 1 ? "" : "s"} scheduled`,
-      path: "/people/interviews",
-      icon: Briefcase,
-      tone: "text-blue-600 bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300",
-    },
-    {
       show: hasPerformance && disciplinaryOpen > 0,
       count: disciplinaryOpen,
-      label: `open employee case${disciplinaryOpen === 1 ? "" : "s"}`,
+      label: t(
+        disciplinaryOpen === 1
+          ? "moduleDashboards.people.attention.openCase"
+          : "moduleDashboards.people.attention.openCases",
+      ),
       path: "/people/disciplinary",
       icon: ShieldAlert,
       tone: "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300",
@@ -149,16 +194,21 @@ export default function PeopleDashboard() {
   const hubCards = [
     {
       show: hasStaff,
-      title: "Staff",
-      meta: `${activeEmployees} active`,
+      title: t("moduleDashboards.people.cards.staff"),
+      meta: t("moduleDashboards.people.cards.active", { count: activeEmployees }),
       path: "/people/employees",
       icon: Users,
       art: "/images/illustrations/xefe-card-people.webp",
     },
     {
       show: hasHiring,
-      title: "Hiring",
-      meta: `${interviewsScheduled} interview${interviewsScheduled === 1 ? "" : "s"} scheduled`,
+      title: t("moduleDashboards.people.cards.hiring"),
+      meta: t(
+        interviewsScheduled === 1
+          ? "moduleDashboards.people.cards.interviewScheduled"
+          : "moduleDashboards.people.cards.interviewsScheduled",
+        { count: interviewsScheduled },
+      ),
       path: "/people/jobs",
       icon: Briefcase,
       art: "/images/illustrations/xefe-card-hiring.webp",
@@ -167,16 +217,21 @@ export default function PeopleDashboard() {
       // Pending requests already surface in the attention strip above —
       // show a complementary fact here instead of repeating it.
       show: hasTimeleave,
-      title: "Time & Leave",
-      meta: `${onLeaveToday} on leave today`,
+      title: t("moduleDashboards.people.cards.timeLeave"),
+      meta: t("moduleDashboards.people.cards.onLeaveToday", { count: onLeaveToday }),
       path: "/time-leave",
       icon: CalendarClock,
       art: "/images/illustrations/xefe-card-timeleave.webp",
     },
     {
       show: hasPerformance,
-      title: "Performance",
-      meta: `${goalsActive} active goal${goalsActive === 1 ? "" : "s"}`,
+      title: t("moduleDashboards.people.cards.performance"),
+      meta: t(
+        goalsActive === 1
+          ? "moduleDashboards.people.cards.activeGoal"
+          : "moduleDashboards.people.cards.activeGoals",
+        { count: goalsActive },
+      ),
       path: "/people/reviews",
       icon: Target,
       art: "/images/illustrations/xefe-card-performance.webp",
@@ -187,7 +242,10 @@ export default function PeopleDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.people} />
+      <SEO
+        title={t("moduleDashboards.people.title")}
+        description={t("moduleDashboards.people.seoDescription")}
+      />
       <ModuleSectionNav config={peopleNavConfig} />
 
       <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
@@ -195,35 +253,41 @@ export default function PeopleDashboard() {
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">People</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {t("moduleDashboards.people.title")}
+              </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {hasStaff
-                  ? `${activeEmployees} active staff. Find anyone, or jump to what needs you.`
-                  : "Find anyone, or jump to what needs you."}
+                  ? t("moduleDashboards.people.subtitle", { count: activeEmployees })
+                  : t("moduleDashboards.people.subtitleNoStaff")}
               </p>
             </div>
-            <Button onClick={() => navigate("/people/add")}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add employee
-            </Button>
+            {hasStaff && canManageTenant && (
+              <Button onClick={() => navigate("/people/add")}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.people.addEmployee")}
+              </Button>
+            )}
           </div>
 
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Find anyone — name, role, or ID number…"
-              className="h-12 rounded-xl pl-12 text-base"
-              aria-label="Search employees"
-            />
-          </form>
+          {hasStaff && (
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t("moduleDashboards.people.searchPlaceholder")}
+                className="h-12 rounded-xl pl-12 text-base"
+                aria-label={t("moduleDashboards.people.searchAria")}
+              />
+            </form>
+          )}
         </div>
 
         {/* Needs attention */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Needs your attention
+            {t("moduleDashboards.common.needsAttention")}
           </h2>
           {attention.length > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -249,7 +313,7 @@ export default function PeopleDashboard() {
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
               <CheckCircle2 className="h-5 w-5 text-blue-600" />
-              You&apos;re all caught up — nothing needs attention right now.
+              {t("moduleDashboards.people.allGood")}
             </div>
           )}
         </section>
@@ -283,7 +347,7 @@ export default function PeopleDashboard() {
         {hasStaff && recent.length > 0 && (
           <section>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Recently added
+              {t("moduleDashboards.people.recentlyAdded")}
             </h2>
             <div className="flex flex-wrap gap-3">
               {recent.map((emp) => {
@@ -303,7 +367,9 @@ export default function PeopleDashboard() {
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium">{name || "Unnamed"}</span>
+                    <span className="text-sm font-medium">
+                      {name || t("moduleDashboards.people.unnamed")}
+                    </span>
                   </button>
                 );
               })}

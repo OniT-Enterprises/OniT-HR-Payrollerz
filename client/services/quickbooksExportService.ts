@@ -397,6 +397,7 @@ export async function getExportSettingsForTenant(tenantId: string): Promise<QBEx
     }
   } catch (error) {
     console.error('Error loading QB export settings:', error);
+    throw error;
   }
 
   // Return defaults

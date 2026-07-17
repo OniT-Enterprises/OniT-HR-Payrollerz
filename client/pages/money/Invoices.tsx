@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,10 +29,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
+import { invoiceKeys, useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
@@ -42,7 +43,8 @@ import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
 import { SendReminderDialog } from '@/components/money/SendReminderDialog';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
-import { formatDateTL } from '@/lib/dateUtils';
+import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
+import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import {
   FileText,
@@ -75,19 +77,55 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   cancelled: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
 
+const INVOICE_STATUS_FILTERS = new Set<InvoiceStatus>([
+  'draft',
+  'sent',
+  'viewed',
+  'paid',
+  'partial',
+  'overdue',
+  'cancelled',
+]);
+const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = [
+  'sent',
+  'viewed',
+  'partial',
+  'overdue',
+];
+
+const isInvoiceStatusFilter = (value: string | null): value is InvoiceStatus =>
+  value !== null && INVOICE_STATUS_FILTERS.has(value as InvoiceStatus);
+
 export default function Invoices() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+  const canManageTenant = canManage();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const statusParam = searchParams.get('status');
+  const statusFilter: InvoiceStatus | 'all' = isInvoiceStatusFilter(statusParam)
+    ? statusParam
+    : 'all';
+  const todayIso = getTodayTL();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
+  const invoiceFilters =
+    statusFilter === 'all'
+      ? {}
+      : statusFilter === 'overdue'
+        ? {
+            status: OUTSTANDING_INVOICE_STATUSES,
+            dueBefore: todayIso,
+          }
+        : { status: statusFilter };
 
   // Preload PDF module so download resolves instantly from cache
   const preloaded = useRef(false);
@@ -97,16 +135,41 @@ export default function Invoices() {
     import('@/components/money/InvoicePDF');
   }, []);
 
-  const { invoices, totalLoaded, isLoading: loading, error: queryError, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(isSearching);
-  const { data: invoiceSettings = {} } = useInvoiceSettings();
+  const { invoices, totalLoaded, isLoading: loading, error: queryError, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(
+    isSearching,
+    invoiceFilters,
+  );
+  const {
+    data: loadedInvoiceSettings,
+    isLoading: invoiceSettingsLoading,
+    isError: invoiceSettingsError,
+    refetch: retryInvoiceSettings,
+  } = useInvoiceSettings();
+  const invoiceSettings = loadedInvoiceSettings ?? {};
+  const invoiceSettingsUnavailable =
+    invoiceSettingsError && loadedInvoiceSettings === undefined;
+
+  const getDisplayStatus = (invoice: Invoice): InvoiceStatus =>
+    getEffectiveInvoiceStatus(invoice, todayIso);
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
       invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' || getDisplayStatus(invoice) === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleStatusFilterChange = (value: string) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (isInvoiceStatusFilter(value)) {
+      nextParams.set('status', value);
+    } else {
+      nextParams.delete('status');
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -122,7 +185,7 @@ export default function Invoices() {
   };
 
   const handleSend = async (invoice: Invoice) => {
-    if (!tenantId) return;
+    if (!tenantId || !canManageTenant) return;
     try {
       await invoiceService.markAsSent(tenantId, invoice.id);
       toast({
@@ -130,6 +193,7 @@ export default function Invoices() {
         description: t('money.invoices.markedSent') || 'Invoice marked as sent',
       });
       loadInvoices();
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     } catch (error) {
       console.error('Error sending invoice:', error);
       toast({
@@ -163,12 +227,13 @@ export default function Invoices() {
   };
 
   const handleDuplicate = async (invoice: Invoice) => {
+    if (!canManageTenant) return;
     // Navigate to create with prefilled data
     navigate(`/money/invoices/new?duplicate=${invoice.id}`);
   };
 
   const handleDelete = async (invoice: Invoice) => {
-    if (!tenantId) return;
+    if (!tenantId || !canManageTenant || invoice.status !== 'draft') return;
     if (
       !confirm(
         t('money.invoices.confirmDelete') || `Delete invoice ${invoice.invoiceNumber}?`
@@ -184,6 +249,7 @@ export default function Invoices() {
         description: t('money.invoices.deleted') || 'Invoice deleted',
       });
       loadInvoices();
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     } catch (error) {
       console.error('Error deleting invoice:', error);
       toast({
@@ -195,10 +261,14 @@ export default function Invoices() {
   };
 
   const handleDownloadPDF = async (invoice: Invoice) => {
+    if (invoiceSettingsLoading || invoiceSettingsUnavailable) return;
     try {
       setDownloadingId(invoice.id);
       const { downloadInvoicePDF } = await import('@/components/money/InvoicePDF');
-      await downloadInvoicePDF(invoice, invoiceSettings);
+      const displayStatus = getDisplayStatus(invoice);
+      const displayInvoice =
+        displayStatus === invoice.status ? invoice : { ...invoice, status: displayStatus };
+      await downloadInvoicePDF(displayInvoice, invoiceSettings);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.pdfDownloaded') || 'Invoice PDF downloaded',
@@ -245,31 +315,35 @@ export default function Invoices() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <MoreHorizontal className="h-4 w-4 mr-2" />
-                    {t('common.moreActions') || 'More'}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate('/money/invoices/recurring')}>
-                    <Repeat className="h-4 w-4 mr-2" />
-                    {t('money.recurring.title') || 'Recurring Invoices'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/money/invoices/settings')}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    {t('money.settings.title') || 'Invoice Settings'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                onClick={() => navigate('/money/invoices/new')}
-                className="bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t('money.invoices.new') || 'New Invoice'}
-              </Button>
+              {canManageTenant && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <MoreHorizontal className="h-4 w-4 mr-2" />
+                      {t('common.moreActions') || 'More'}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate('/money/invoices/recurring')}>
+                      <Repeat className="h-4 w-4 mr-2" />
+                      {t('money.recurring.title') || 'Recurring Invoices'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/money/invoices/settings')}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      {t('money.settings.title') || 'Invoice Settings'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {canManageTenant && (
+                <Button
+                  onClick={() => navigate('/money/invoices/new')}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('money.invoices.new') || 'New Invoice'}
+                </Button>
+              )}
             </>
           }
         />
@@ -286,7 +360,7 @@ export default function Invoices() {
         </div>
         <MoreDetailsSection className="mb-6" title={t('money.invoices.status') || 'Status'}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
               <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder={t('money.invoices.status') || 'Status'} />
               </SelectTrigger>
@@ -319,8 +393,32 @@ export default function Invoices() {
           </div>
         </MoreDetailsSection>
 
+        {queryError && !loading && invoices.length > 0 && (
+          <div
+            className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+          >
+            <span>{t('common.connectionIssueDesc')}</span>
+            <Button size="sm" variant="outline" onClick={() => loadInvoices()}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        )}
+
+        {invoiceSettingsError && (
+          <div
+            className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+          >
+            <span>{t('common.connectionIssueDesc')}</span>
+            <Button size="sm" variant="outline" onClick={() => void retryInvoiceSettings()}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        )}
+
         {/* Invoice List */}
-        {queryError && !loading ? (
+        {queryError && !loading && invoices.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="font-medium mb-1">{t('common.connectionIssueTitle') || 'Connection problem'}</p>
@@ -332,7 +430,7 @@ export default function Invoices() {
               </Button>
             </CardContent>
           </Card>
-        ) : filteredInvoices.length === 0 ? (
+        ) : filteredInvoices.length === 0 && !hasNextPage ? (
           <Card>
             <CardContent className="py-12 text-center">
               <img src="/images/illustrations/xefe-card-money.webp" alt="No invoices yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
@@ -341,7 +439,7 @@ export default function Invoices() {
                   ? t('money.invoices.noResults') || 'No invoices found'
                   : t('money.invoices.empty') || 'No invoices yet'}
               </p>
-              {!searchTerm && statusFilter === 'all' && (
+              {canManageTenant && !searchTerm && statusFilter === 'all' && (
                 <Button onClick={() => navigate('/money/invoices/new')} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.invoices.createFirst') || 'Create your first invoice'}
@@ -358,21 +456,29 @@ export default function Invoices() {
                 onClick={() => navigate(`/money/invoices/${invoice.id}`)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <div className="hidden h-10 w-10 shrink-0 rounded-full bg-muted sm:flex sm:items-center sm:justify-center">
                         <FileText className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-sm font-medium">
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-mono text-sm font-medium">
                             {invoice.invoiceNumber}
                           </span>
-                          <Badge className={STATUS_STYLES[invoice.status]}>
-                            {t(`money.status.${invoice.status}`) || invoice.status}
+                          <Badge className={STATUS_STYLES[getDisplayStatus(invoice)]}>
+                            {t(`money.status.${getDisplayStatus(invoice)}`) || getDisplayStatus(invoice)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{invoice.customerName}</p>
+                        <p className="truncate text-sm text-muted-foreground">{invoice.customerName}</p>
+                        <p className="mt-0.5 text-sm font-semibold sm:hidden">
+                          {formatCurrency(invoice.total)}
+                          {invoice.balanceDue > 0 && invoice.balanceDue !== invoice.total && (
+                            <span className="ml-2 text-xs font-normal text-muted-foreground">
+                              {t('money.invoices.due') || 'Due'}: {formatCurrency(invoice.balanceDue)}
+                            </span>
+                          )}
+                        </p>
                         <InvoiceStatusTimeline invoice={invoice} compact className="mt-1" />
                       </div>
                     </div>
@@ -394,9 +500,15 @@ export default function Invoices() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="sm" className="h-8" onClick={(e) => e.stopPropagation()}>
-                            <MoreHorizontal className="h-4 w-4 mr-1.5" />
-                            {t('common.moreActions') || 'More actions'}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 sm:px-3"
+                            aria-label={t('common.moreActions') || 'More actions'}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="h-4 w-4 sm:mr-1.5" />
+                            <span className="hidden sm:inline">{t('common.moreActions') || 'More actions'}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
@@ -406,7 +518,7 @@ export default function Invoices() {
                             <Eye className="h-4 w-4 mr-2" />
                             {t('common.view') || 'View'}
                           </DropdownMenuItem>
-                          {invoice.status === 'draft' && (
+                          {canManageTenant && invoice.status === 'draft' && (
                             <DropdownMenuItem
                               onClick={() => navigate(`/money/invoices/${invoice.id}/edit`)}
                             >
@@ -414,7 +526,7 @@ export default function Invoices() {
                               {t('common.edit') || 'Edit'}
                             </DropdownMenuItem>
                           )}
-                          {invoice.status === 'draft' && (
+                          {canManageTenant && invoice.status === 'draft' && (
                             <DropdownMenuItem onClick={() => handleSend(invoice)}>
                               <Send className="h-4 w-4 mr-2" />
                               {t('money.invoices.markSent') || 'Mark as Sent'}
@@ -426,7 +538,11 @@ export default function Invoices() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDownloadPDF(invoice)}
-                            disabled={downloadingId === invoice.id}
+                            disabled={
+                              downloadingId === invoice.id ||
+                              invoiceSettingsLoading ||
+                              invoiceSettingsUnavailable
+                            }
                           >
                             {downloadingId === invoice.id ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -435,11 +551,13 @@ export default function Invoices() {
                             )}
                             {t('money.invoices.downloadPdf') || 'Download PDF'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDuplicate(invoice)}>
-                            <Copy className="h-4 w-4 mr-2" />
-                            {t('money.invoices.duplicate') || 'Duplicate'}
-                          </DropdownMenuItem>
-                          {['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
+                          {canManageTenant && (
+                            <DropdownMenuItem onClick={() => handleDuplicate(invoice)}>
+                              <Copy className="h-4 w-4 mr-2" />
+                              {t('money.invoices.duplicate') || 'Duplicate'}
+                            </DropdownMenuItem>
+                          )}
+                          {canManageTenant && ['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
                             <DropdownMenuItem
                               onClick={() => setPaymentInvoice(invoice)}
                             >
@@ -447,7 +565,7 @@ export default function Invoices() {
                               {t('money.invoices.recordPayment') || 'Record Payment'}
                             </DropdownMenuItem>
                           )}
-                          {['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
+                          {canManageTenant && ['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
                             <DropdownMenuItem
                               onClick={() => setReminderInvoice(invoice)}
                             >
@@ -455,24 +573,30 @@ export default function Invoices() {
                               {t('money.invoices.sendReminder') || 'Send Reminder'}
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuSeparator />
-                          {invoice.status === 'draft' ? (
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(invoice)}
-                              className="text-red-500"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {t('common.delete') || 'Delete'}
-                            </DropdownMenuItem>
-                          ) : invoice.status !== 'cancelled' && invoice.status !== 'paid' ? (
-                            <DropdownMenuItem
-                              onClick={() => setVoidInvoice(invoice)}
-                              className="text-red-500"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              {t('money.invoices.void') || 'Void Invoice'}
-                            </DropdownMenuItem>
-                          ) : null}
+                          {canManageTenant &&
+                            invoice.status !== 'cancelled' &&
+                            invoice.status !== 'paid' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                {invoice.status === 'draft' ? (
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(invoice)}
+                                    className="text-red-500"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    {t('common.delete') || 'Delete'}
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem
+                                    onClick={() => setVoidInvoice(invoice)}
+                                    className="text-red-500"
+                                  >
+                                    <XCircle className="h-4 w-4 mr-2" />
+                                    {t('money.invoices.void') || 'Void Invoice'}
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -507,7 +631,7 @@ export default function Invoices() {
       </div>
 
       {/* Record Payment Modal */}
-      {paymentInvoice && (
+      {canManageTenant && paymentInvoice && (
         <RecordPaymentModal
           invoice={paymentInvoice}
           open={!!paymentInvoice}
@@ -515,12 +639,13 @@ export default function Invoices() {
           onPaymentRecorded={() => {
             setPaymentInvoice(null);
             loadInvoices();
+            queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
           }}
         />
       )}
 
       {/* Void Invoice Dialog */}
-      {voidInvoice && (
+      {canManageTenant && voidInvoice && (
         <VoidInvoiceDialog
           invoice={voidInvoice}
           open={!!voidInvoice}
@@ -528,12 +653,13 @@ export default function Invoices() {
           onVoided={() => {
             setVoidInvoice(null);
             loadInvoices();
+            queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
           }}
         />
       )}
 
       {/* Send Reminder Dialog */}
-      {reminderInvoice && (
+      {canManageTenant && reminderInvoice && (
         <SendReminderDialog
           invoice={reminderInvoice}
           open={!!reminderInvoice}
@@ -541,6 +667,7 @@ export default function Invoices() {
           onReminderSent={() => {
             setReminderInvoice(null);
             loadInvoices();
+            queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
           }}
         />
       )}

@@ -77,6 +77,9 @@ interface NavItem {
   icon: ComponentType<{ className?: string }>;
   requiredModule?: ModulePermission;
   requiredAnyModules?: ModulePermission[];
+  requiredAllModules?: ModulePermission[];
+  manageOnly?: boolean;
+  managerOnly?: boolean;
 }
 
 export interface ModuleSection {
@@ -89,6 +92,9 @@ export interface ModuleSection {
   subPages: NavItem[];   // Level 2 sibling pages (empty = direct link, no expand)
   requiredModule?: ModulePermission;
   requiredAnyModules?: ModulePermission[];
+  requiredAllModules?: ModulePermission[];
+  manageOnly?: boolean;
+  managerOnly?: boolean;
 }
 
 export interface ModuleNavConfig {
@@ -196,6 +202,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       path: "/time-leave/shifts",
       matchPaths: ["/time-leave/shifts"],
       subPages: [],
+      manageOnly: true,
     },
     {
       id: "leave",
@@ -203,7 +210,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       labelKey: "leave",
       icon: CalendarDays,
       path: "/time-leave/leave",
-      matchPaths: ["/time-leave/leave"],
+      matchPaths: ["/time-leave/leave", "/time-leave/settings"],
       subPages: [
         {
           id: "settings",
@@ -212,6 +219,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
           icon: Settings,
           path: "/time-leave/settings",
           matchPaths: ["/time-leave/settings"],
+          manageOnly: true,
         },
       ],
     },
@@ -223,6 +231,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       path: "/time-leave/time-tracking",
       matchPaths: ["/time-leave/time-tracking"],
       subPages: [],
+      manageOnly: true,
     },
     {
       id: "attendance",
@@ -257,6 +266,7 @@ export const payrollNavConfig: ModuleNavConfig = {
       path: "/payroll/run",
       matchPaths: ["/payroll/run"],
       subPages: [],
+      manageOnly: true,
     },
     {
       id: "history",
@@ -289,6 +299,7 @@ export const payrollNavConfig: ModuleNavConfig = {
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },
       ],
+      manageOnly: true,
     },
     {
       id: "settings",
@@ -302,6 +313,7 @@ export const payrollNavConfig: ModuleNavConfig = {
         { label: "Benefits", labelKey: "benefits", path: "/payroll/settings/benefits", icon: Heart },
         { label: "Deductions", labelKey: "deductions", path: "/payroll/settings/deductions", icon: MinusCircle },
       ],
+      manageOnly: true,
     },
   ],
 };
@@ -353,13 +365,14 @@ export const moneyNavConfig: ModuleNavConfig = {
       path: "/money/expenses",
       matchPaths: ["/money/expenses"],
       subPages: [],
+      managerOnly: true,
     },
     {
       id: "financial-reports",
       label: "Financial Reports",
       labelKey: "financialReports",
       icon: BarChart3,
-      path: "/money/financials/profit-loss",
+      path: "/money/financials/ar-aging",
       matchPaths: [
         "/money/financials/profit-loss",
         "/money/financials/balance-sheet",
@@ -370,13 +383,13 @@ export const moneyNavConfig: ModuleNavConfig = {
         "/money/financials/vat-returns",
       ],
       subPages: [
-        { label: "Profit & Loss", labelKey: "profitLoss", path: "/money/financials/profit-loss", icon: TrendingUp },
-        { label: "Balance Sheet", labelKey: "balanceSheet", path: "/money/financials/balance-sheet", icon: Scale },
-        { label: "Cashflow", labelKey: "cashflow", path: "/money/financials/cashflow", icon: DollarSign },
+        { label: "Profit & Loss", labelKey: "profitLoss", path: "/money/financials/profit-loss", icon: TrendingUp, managerOnly: true },
+        { label: "Balance Sheet", labelKey: "balanceSheet", path: "/money/financials/balance-sheet", icon: Scale, managerOnly: true },
+        { label: "Cashflow", labelKey: "cashflow", path: "/money/financials/cashflow", icon: DollarSign, managerOnly: true },
         { label: "AR Aging", labelKey: "arAging", path: "/money/financials/ar-aging", icon: ClipboardList },
         { label: "AP Aging", labelKey: "apAging", path: "/money/financials/ap-aging", icon: ClipboardList },
-        { label: "Reconciliation", labelKey: "reconciliation", path: "/money/financials/reconciliation", icon: CheckSquare },
-        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/financials/vat-returns", icon: FileSpreadsheet },
+        { label: "Reconciliation", labelKey: "reconciliation", path: "/money/financials/reconciliation", icon: CheckSquare, manageOnly: true },
+        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/financials/vat-returns", icon: FileSpreadsheet, manageOnly: true },
       ],
     },
   ],
@@ -431,6 +444,7 @@ export const accountingNavConfig: ModuleNavConfig = {
       path: "/accounting/reconciliation",
       matchPaths: ["/accounting/reconciliation"],
       subPages: [],
+      manageOnly: true,
     },
     {
       id: "statements",
@@ -449,7 +463,7 @@ export const accountingNavConfig: ModuleNavConfig = {
         { label: "Trial Balance", labelKey: "trialBalance", path: "/accounting/statements/trial-balance", icon: ClipboardList },
         { label: "Income Statement", labelKey: "incomeStatement", path: "/accounting/statements/income-statement", icon: PieChart },
         { label: "Balance Sheet", labelKey: "balanceSheet", path: "/accounting/statements/balance-sheet", icon: Scale },
-        { label: "Fiscal Periods", labelKey: "fiscalPeriods", path: "/accounting/statements/fiscal-periods", icon: CalendarRange },
+        { label: "Fiscal Periods", labelKey: "fiscalPeriods", path: "/accounting/statements/fiscal-periods", icon: CalendarRange, manageOnly: true },
         { label: "Audit Trail", labelKey: "auditTrail", path: "/accounting/statements/audit-trail", icon: ScrollText },
       ],
     },
@@ -478,6 +492,7 @@ export const reportsNavConfig: ModuleNavConfig = {
       path: "/reports/payroll",
       matchPaths: ["/reports/payroll"],
       subPages: [],
+      requiredModule: "payroll",
     },
     {
       id: "employee-reports",
@@ -487,6 +502,7 @@ export const reportsNavConfig: ModuleNavConfig = {
       path: "/reports/employees",
       matchPaths: ["/reports/employees"],
       subPages: [],
+      requiredModule: "staff",
     },
     {
       id: "attendance-reports",
@@ -496,6 +512,7 @@ export const reportsNavConfig: ModuleNavConfig = {
       path: "/reports/attendance",
       matchPaths: ["/reports/attendance"],
       subPages: [],
+      requiredModule: "timeleave",
     },
     {
       id: "department-reports",
@@ -505,6 +522,7 @@ export const reportsNavConfig: ModuleNavConfig = {
       path: "/reports/departments",
       matchPaths: ["/reports/departments"],
       subPages: [],
+      requiredModule: "staff",
     },
     // Tax & Compliance moved to Payroll > Tax & INSS
     {
@@ -515,9 +533,16 @@ export const reportsNavConfig: ModuleNavConfig = {
       path: "/reports/payroll-allocation",
       matchPaths: ["/reports/payroll-allocation", "/reports/donor-export"],
       subPages: [
-        { label: "Payroll Allocation", labelKey: "payrollAllocation", path: "/reports/payroll-allocation", icon: DollarSign },
+        {
+          label: "Payroll Allocation",
+          labelKey: "payrollAllocation",
+          path: "/reports/payroll-allocation",
+          icon: DollarSign,
+          requiredAllModules: ["payroll", "staff"],
+        },
         { label: "Donor Export", labelKey: "donorExport", path: "/reports/donor-export", icon: FileSpreadsheet },
       ],
+      requiredAllModules: ["payroll", "staff"],
     },
     {
       id: "custom",
@@ -537,10 +562,27 @@ export const reportsNavConfig: ModuleNavConfig = {
 /* ─── Lookup helper ─── */
 
 function canViewNavEntry(
-  entry: { requiredModule?: ModulePermission; requiredAnyModules?: ModulePermission[] },
+  entry: {
+    requiredModule?: ModulePermission;
+    requiredAnyModules?: ModulePermission[];
+    requiredAllModules?: ModulePermission[];
+    manageOnly?: boolean;
+    managerOnly?: boolean;
+  },
   hasModule: (module: ModulePermission) => boolean,
+  canManageTenant: boolean,
+  canManageTeam: boolean,
 ) {
+  if (entry.manageOnly && !canManageTenant) {
+    return false;
+  }
+  if (entry.managerOnly && !canManageTeam) {
+    return false;
+  }
   if (entry.requiredModule && !hasModule(entry.requiredModule)) {
+    return false;
+  }
+  if (entry.requiredAllModules?.some((module) => !hasModule(module))) {
     return false;
   }
 
@@ -554,18 +596,22 @@ function canViewNavEntry(
 export function filterModuleNavConfigByPermissions(
   config: ModuleNavConfig,
   hasModule: (module: ModulePermission) => boolean,
+  canManageTenant: boolean = true,
+  canManageTeam: boolean = canManageTenant,
 ): ModuleNavConfig {
   return {
     ...config,
     overview:
-      config.overview && canViewNavEntry(config.overview, hasModule)
+      config.overview && canViewNavEntry(config.overview, hasModule, canManageTenant, canManageTeam)
         ? config.overview
         : undefined,
     sections: config.sections
-      .filter((section) => canViewNavEntry(section, hasModule))
+      .filter((section) => canViewNavEntry(section, hasModule, canManageTenant, canManageTeam))
       .map((section) => ({
         ...section,
-        subPages: section.subPages.filter((page) => canViewNavEntry(page, hasModule)),
+        subPages: section.subPages.filter((page) =>
+          canViewNavEntry(page, hasModule, canManageTenant, canManageTeam)
+        ),
       })),
   };
 }

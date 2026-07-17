@@ -10,6 +10,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useActiveCustomers, customerKeys } from '@/hooks/useCustomers';
 import { customerService } from '@/services/customerService';
 import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice } from '@/hooks/useInvoices';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { InvoiceViewScreen } from '@/components/money/InvoiceViewScreen';
 import { InvoicePaper, type InvoicePaperData } from '@/components/money/InvoicePaper';
 import { TemplatePicker } from '@/components/money/TemplatePicker';
@@ -78,7 +79,9 @@ export default function InvoiceForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { canManage } = useTenant();
   const tenantId = useTenantId();
+  const canManageTenant = canManage();
 
   // Preload PDF module so download resolves instantly from cache
   const preloaded = useRef(false);
@@ -89,11 +92,11 @@ export default function InvoiceForm() {
   }, []);
 
   const isNew = !id || id === 'new';
-  const isEditMode = searchParams.get('mode') === 'edit' || window.location.pathname.endsWith('/edit');
   const duplicateId = searchParams.get('duplicate');
   const preselectedCustomerId = searchParams.get('customer');
 
   const [saving, setSaving] = useState(false);
+  const submitInFlight = useRef(false);
   const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
   const [showNewCustomer, setShowNewCustomer] = useState(false);
@@ -101,21 +104,45 @@ export default function InvoiceForm() {
   const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   // React Query hooks for data loading
-  const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
-  const { data: loadedSettings } = useInvoiceSettings();
+  const {
+    data: customers = [],
+    isLoading: customersLoading,
+    isError: customersLoadError,
+    isFetching: customersFetching,
+    refetch: retryCustomers,
+  } = useActiveCustomers();
+  const {
+    data: loadedSettings,
+    isLoading: settingsLoading,
+    isError: settingsLoadError,
+    isFetching: settingsFetching,
+    refetch: retrySettingsLoad,
+  } = useInvoiceSettings();
   const invoiceSettings: Partial<InvoiceSettings> = useMemo(
     () => loadedSettings || {},
     [loadedSettings]
   );
   const invoiceIdToLoad = !isNew && id ? id : undefined;
-  const { data: invoice = null, isLoading: invoiceLoading } = useInvoice(invoiceIdToLoad);
-  const { data: duplicateInvoice } = useInvoice(duplicateId || undefined);
+  const {
+    data: invoice = null,
+    isLoading: invoiceLoading,
+    isError: invoiceLoadError,
+    refetch: retryInvoiceLoad,
+  } = useInvoice(invoiceIdToLoad);
+  const {
+    data: duplicateInvoice,
+    isLoading: duplicateLoading,
+    isError: duplicateLoadError,
+    isFetching: duplicateFetching,
+    isSuccess: duplicateLoaded,
+    refetch: retryDuplicateLoad,
+  } = useInvoice(duplicateId || undefined);
   const createInvoiceMutation = useCreateInvoice();
   const updateInvoiceMutation = useUpdateInvoice();
 
-  const loading = !isNew && !duplicateId
+  const loading = settingsLoading || Boolean(duplicateId && duplicateLoading) || (!isNew
     ? (customersLoading || invoiceLoading)
-    : (customersLoading && !customers.length);
+    : (customersLoading && !customers.length));
 
   const TAX_RATES = [
     { value: 0, label: t('money.invoices.noTax') || 'No Tax (0%)' },
@@ -372,6 +399,8 @@ export default function InvoiceForm() {
   };
 
   const onSubmit = async (data: InvoiceFormSchemaData, sendAfter = false) => {
+    if (submitInFlight.current || !canManageTenant) return;
+    submitInFlight.current = true;
     try {
       setSaving(true);
 
@@ -438,6 +467,7 @@ export default function InvoiceForm() {
         variant: 'destructive',
       });
     } finally {
+      submitInFlight.current = false;
       setSaving(false);
     }
   };
@@ -461,7 +491,9 @@ export default function InvoiceForm() {
     }).format(amount);
   };
 
-  const canEdit = isNew || duplicateId || (invoice && invoice.status === 'draft');
+  const canEdit =
+    canManageTenant &&
+    (isNew || Boolean(duplicateId) || Boolean(invoice && invoice.status === 'draft'));
 
   if (loading) {
     return (
@@ -475,8 +507,109 @@ export default function InvoiceForm() {
     );
   }
 
+  if (settingsLoadError && loadedSettings === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={settingsFetching}
+          onRetry={() => retrySettingsLoad()}
+        />
+      </div>
+    );
+  }
+
+  const customersUnavailable = customersLoadError && customers.length === 0;
+  const duplicateUnavailable = Boolean(
+    duplicateId && duplicateLoadError && duplicateInvoice === undefined,
+  );
+
+  if (customersUnavailable || duplicateUnavailable) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError
+          isRetrying={customersFetching || duplicateFetching}
+          onRetry={() =>
+            Promise.all([
+              ...(customersUnavailable ? [retryCustomers()] : []),
+              ...(duplicateUnavailable ? [retryDuplicateLoad()] : []),
+            ])
+          }
+        />
+      </div>
+    );
+  }
+
+  if (duplicateId && duplicateLoaded && !duplicateInvoice) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title={`${t('money.invoices.title') || 'Invoices'} - Xefe`} />
+        <MainNavigation />
+        <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
+          <Card className="max-w-xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle>{t('money.invoices.noResults') || 'Invoice not found'}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-sm text-muted-foreground mb-6">
+                {t('notFound.message') ||
+                  "The invoice you're looking for doesn't exist or is no longer available."}
+              </p>
+              <Button variant="outline" onClick={() => navigate('/money/invoices')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('common.back') || 'Back'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isNew && !invoice) {
+    const isQueryError = invoiceLoadError;
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title={`${t('money.invoices.title') || 'Invoices'} - Xefe`} />
+        <MainNavigation />
+        <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
+          <Card className="max-w-xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle>
+                {isQueryError
+                  ? t('common.connectionIssueTitle') || 'Connection problem'
+                  : t('money.invoices.noResults') || 'Invoice not found'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-sm text-muted-foreground mb-6">
+                {isQueryError
+                  ? t('common.connectionIssueDesc') ||
+                    'Check your connection, then try loading the invoice again.'
+                  : t('notFound.message') ||
+                    "The invoice you're looking for doesn't exist or is no longer available."}
+              </p>
+              <div className="flex flex-col-reverse sm:flex-row justify-center gap-2">
+                <Button variant="outline" onClick={() => navigate('/money/invoices')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('common.back') || 'Back'}
+                </Button>
+                {isQueryError && (
+                  <Button onClick={() => void retryInvoiceLoad()}>
+                    {t('common.retry') || 'Retry'}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // View mode for non-draft invoices
-  if (invoice && !canEdit && !isEditMode) {
+  if (invoice && !canEdit) {
     return <InvoiceViewScreen invoice={invoice} settings={invoiceSettings} />;
   }
 
@@ -841,7 +974,7 @@ export default function InvoiceForm() {
                         </Select>
                       )}
                     />
-                    {paymentAccounts.length === 0 && (
+                    {paymentAccounts.length === 0 && canManageTenant && (
                       <Button
                         variant="link"
                         className="p-0 h-auto text-xs text-indigo-600"

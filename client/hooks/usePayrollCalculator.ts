@@ -11,7 +11,7 @@
  * - Validation, build run/records for submission
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -34,9 +34,11 @@ import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import type { PayrollConfig } from "@/types/settings";
 import { addMoney, sumMoney } from "@/lib/currency";
-import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { getTodayTL } from "@/lib/dateUtils";
+import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
 import type { Employee } from "@/services/employeeService";
-import { payrollService } from "@/services/payrollService";
+import { payrollService, type EmployeePayrollYTD } from "@/services/payrollService";
+import type { AttendanceEmployeeSummary } from "@/services/attendanceService";
 import { leaveService, calculateWorkingDays, TL_LEAVE_TYPES } from "@/services/leaveService";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 
@@ -52,7 +54,11 @@ interface UsePayrollCalculatorOptions {
   tenantId: string;
   userId: string;
   payrollConfig?: PayrollConfig;
+  defaultPayFrequency?: TLPayFrequency;
+  defaultPayDay?: number;
 }
+
+const EMPTY_YTD_BY_EMPLOYEE: Record<string, EmployeePayrollYTD> = {};
 
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
 // INSS enrollment, and outside minimum-wage rules.
@@ -60,31 +66,13 @@ function isShareholder(employee: Employee): boolean {
   return (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder";
 }
 
-function getInitialPayrollDates() {
-  // Use toDateStringTL(new Date()) to get the current date in TL timezone,
-  // then derive year/month from that string to avoid browser timezone drift.
-  const todayTL = getTodayTL(); // "YYYY-MM-DD" in TL timezone
-  const [yearStr, monthStr] = todayTL.split("-");
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10) - 1; // 0-indexed
-
-  // Construct dates in UTC to avoid local timezone boundary issues
-  const firstDay = new Date(Date.UTC(year, month, 1));
-  const lastDay = new Date(Date.UTC(year, month + 1, 0));
-  const payDay = new Date(Date.UTC(year, month + 1, 5));
-
-  return {
-    periodStart: toDateStringTL(firstDay),
-    periodEnd: toDateStringTL(lastDay),
-    payDate: toDateStringTL(payDay),
-  };
-}
-
 export function usePayrollCalculator({
   activeEmployees,
   tenantId,
   userId,
   payrollConfig,
+  defaultPayFrequency,
+  defaultPayDay,
 }: UsePayrollCalculatorOptions) {
   const { toast } = useToast();
   const { t } = useI18n();
@@ -94,12 +82,36 @@ export function usePayrollCalculator({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Payroll period settings
-  const initialPayrollDates = useMemo(() => getInitialPayrollDates(), []);
+  const initialPayrollDates = useMemo(
+    () => getInitialPayrollDates({ frequency: "monthly", payDay: 25 }),
+    [],
+  );
   const [payFrequency, setPayFrequency] = useState<TLPayFrequency>("monthly");
   const [periodStart, setPeriodStart] = useState(initialPayrollDates.periodStart);
   const [periodEnd, setPeriodEnd] = useState(initialPayrollDates.periodEnd);
   const [payDate, setPayDate] = useState(initialPayrollDates.payDate);
+  const configuredScheduleApplied = useRef(false);
   const [includeSubsidioAnual, setIncludeSubsidioAnual] = useState(false);
+
+  useEffect(() => {
+    if (
+      configuredScheduleApplied.current ||
+      !defaultPayFrequency ||
+      defaultPayDay === undefined
+    ) {
+      return;
+    }
+
+    const dates = getInitialPayrollDates({
+      frequency: defaultPayFrequency,
+      payDay: defaultPayDay,
+    });
+    configuredScheduleApplied.current = true;
+    setPayFrequency(defaultPayFrequency);
+    setPeriodStart(dates.periodStart);
+    setPeriodEnd(dates.periodEnd);
+    setPayDate(dates.payDate);
+  }, [defaultPayDay, defaultPayFrequency]);
   const calculationConfig = useMemo(() => payrollConfig ? ({
     incomeTax: {
       residentRate: payrollConfig.tax.residentRate / 100,
@@ -117,66 +129,23 @@ export function usePayrollCalculator({
     minimumWage: payrollConfig.minimumWage,
   }) : undefined, [payrollConfig]);
   const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
-  const { data: ytdByEmployee = {} } = useQuery({
+  const ytdQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
     queryFn: () => payrollService.records.getTenantYTDTotals(tenantId, payrollYear),
     enabled: Boolean(tenantId) && Number.isInteger(payrollYear) && activeEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
+  const ytdByEmployee = ytdQuery.data ?? EMPTY_YTD_BY_EMPLOYEE;
 
   const {
-    data: attendanceSummary = [],
-    isFetching: syncingAttendance,
+    isFetching: attendanceSummaryFetching,
     refetch: refetchAttendanceSummary,
   } = useAttendanceSummary(periodStart, periodEnd);
 
   // Compliance states
   const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
-
-  // Initialize payroll data when active employees change
-  useEffect(() => {
-    if (activeEmployees.length === 0) {
-       
-      setEmployeePayrollData([]);
-      return;
-    }
-
-    const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-    const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
-
-    const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => {
-      const hireDate = emp.jobDetails.hireDate || '';
-      const empHours = calculateProRataHours(hireDate, periodStart, periodEnd, defaultHours);
-
-      return {
-        employee: emp,
-        regularHours: empHours,
-        overtimeHours: 0,
-        nightShiftHours: 0,
-        holidayHours: 0,
-        absenceHours: 0,
-        lateArrivalMinutes: 0,
-        sickDays: 0,
-        perDiem: 0,
-        bonus: 0,
-        allowances: 0,
-        calculation: null,
-        isEdited: false,
-        originalValues: {
-          regularHours: empHours,
-          overtimeHours: 0,
-          nightShiftHours: 0,
-          absenceHours: 0,
-          lateArrivalMinutes: 0,
-          bonus: 0,
-          perDiem: 0,
-          allowances: 0,
-        },
-      };
-    });
-
-    setEmployeePayrollData(initialData);
-  }, [activeEmployees, payFrequency, periodStart, periodEnd]);
+  const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
+  const attendanceSyncRequestRef = useRef(0);
 
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
@@ -246,43 +215,85 @@ export function usePayrollCalculator({
     }
   }, [payFrequency, payDate, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
 
-  // Initial calculation when data is first loaded
+  const latestCalculatorRef = useRef(calculateForEmployee);
+  const [appliedCalculator, setAppliedCalculator] = useState(
+    () => calculateForEmployee,
+  );
+
   useEffect(() => {
-    if (employeePayrollData.length === 0) return;
-    if (employeePayrollData.every((data) => data.calculation !== null)) return;
+    latestCalculatorRef.current = calculateForEmployee;
+  }, [calculateForEmployee]);
 
-    const updatedData = employeePayrollData.map((data) =>
-      data.calculation !== null
-        ? data
-        : {
-            ...data,
-            calculation: calculateForEmployee(data),
-          }
-    );
-
-    const hasChanges = updatedData.some(
-      (data, index) => data.calculation !== employeePayrollData[index]?.calculation,
-    );
-
-    if (hasChanges) {
-       
-      setEmployeePayrollData(updatedData);
+  // Initialize rows when the employee set or period changes. The calculator ref
+  // keeps async config/YTD changes from resetting manual row edits.
+  useEffect(() => {
+    if (activeEmployees.length === 0) {
+      setEmployeePayrollData([]);
+      return;
     }
-  }, [employeePayrollData, calculateForEmployee]);
 
-  // Recalculate when pay frequency changes
+    const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
+    const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
+
+    const initialData = activeEmployees.map((employee): EmployeePayrollData => {
+      const hireDate = employee.jobDetails.hireDate || "";
+      const regularHours = calculateProRataHours(
+        hireDate,
+        periodStart,
+        periodEnd,
+        defaultHours,
+      );
+      const row: EmployeePayrollData = {
+        employee,
+        regularHours,
+        overtimeHours: 0,
+        nightShiftHours: 0,
+        holidayHours: 0,
+        absenceHours: 0,
+        lateArrivalMinutes: 0,
+        sickDays: 0,
+        perDiem: 0,
+        bonus: 0,
+        allowances: 0,
+        calculation: null,
+        isEdited: false,
+        originalValues: {
+          regularHours,
+          overtimeHours: 0,
+          nightShiftHours: 0,
+          absenceHours: 0,
+          lateArrivalMinutes: 0,
+          bonus: 0,
+          perDiem: 0,
+          allowances: 0,
+        },
+      };
+
+      return {
+        ...row,
+        calculation: latestCalculatorRef.current(row),
+      };
+    });
+
+    setEmployeePayrollData(initialData);
+  }, [activeEmployees, payFrequency, periodStart, periodEnd]);
+
+  // Recalculate every existing row when tax configuration, YTD totals, pay
+  // date, frequency, or Subsidio settings change. Because row state is not a
+  // dependency, this cannot loop, and manually edited inputs are preserved.
   useEffect(() => {
-    if (employeePayrollData.length === 0) return;
+    setEmployeePayrollData((previous) => {
+      if (previous.length === 0) return previous;
 
-     
-    setEmployeePayrollData((prev) =>
-      prev.map((data) => ({
+      return previous.map((data) => ({
         ...data,
         calculation: calculateForEmployee(data),
-      }))
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- calculateForEmployee excluded to prevent infinite loop
-  }, [payFrequency, payDate, includeSubsidioAnual, employeePayrollData.length]);
+      }));
+    });
+    setAppliedCalculator(() => calculateForEmployee);
+  }, [calculateForEmployee]);
+
+  const calculationsPending = appliedCalculator !== calculateForEmployee;
 
   // ─── Edit tracking helpers ──────────────────────────────────────
 
@@ -366,6 +377,11 @@ export function usePayrollCalculator({
 
   // ─── Sync from attendance ───────────────────────────────────────
 
+  useEffect(() => {
+    attendanceSyncRequestRef.current += 1;
+    setAttendanceSyncPending(false);
+  }, [periodStart, periodEnd]);
+
   const handleSyncFromAttendance = useCallback(async () => {
     if (!periodStart || !periodEnd) {
       toast({
@@ -376,13 +392,42 @@ export function usePayrollCalculator({
       return;
     }
 
-    const result = await refetchAttendanceSummary();
-    const summaryRows = result.data ?? attendanceSummary;
+    const requestId = ++attendanceSyncRequestRef.current;
+    const finishSync = () => {
+      if (attendanceSyncRequestRef.current === requestId) {
+        setAttendanceSyncPending(false);
+      }
+    };
+    setAttendanceSyncPending(true);
+
+    let summaryRows: AttendanceEmployeeSummary[] | undefined;
+    try {
+      const result = await refetchAttendanceSummary();
+      if (attendanceSyncRequestRef.current !== requestId) return;
+      if (result.isError || result.error) {
+        throw result.error ?? new Error("Attendance refresh failed");
+      }
+      // Never fall back to cached rows after this explicit refresh. A failed
+      // refresh must not silently put stale attendance into a new payroll run.
+      summaryRows = result.data;
+    } catch (error) {
+      if (attendanceSyncRequestRef.current !== requestId) return;
+      console.error("Failed to refresh attendance for payroll sync:", error);
+      toast({
+        title: t("runPayroll.syncAttendance"),
+        description: t("common.connectionIssueDesc"),
+        variant: "destructive",
+      });
+      finishSync();
+      return;
+    }
+
     if (!summaryRows || summaryRows.length === 0) {
       toast({
         title: t("runPayroll.syncAttendance"),
         description: t("runPayroll.toastSyncAttendanceNoData"),
       });
+      finishSync();
       return;
     }
 
@@ -395,6 +440,7 @@ export function usePayrollCalculator({
     let leaveByEmployee: ReturnType<typeof computeLeaveCredits>;
     try {
       const approvedLeave = await leaveService.getEmployeesOnLeave(tenantId, periodStart, periodEnd);
+      if (attendanceSyncRequestRef.current !== requestId) return;
       leaveByEmployee = computeLeaveCredits(
         approvedLeave,
         periodStart,
@@ -409,6 +455,7 @@ export function usePayrollCalculator({
         calculateWorkingDays,
       );
     } catch (error) {
+      if (attendanceSyncRequestRef.current !== requestId) return;
       // Abort rather than sync without leave data — that would silently dock
       // pay for employees on approved paid leave.
       console.error("Failed to load approved leave for payroll sync:", error);
@@ -417,6 +464,7 @@ export function usePayrollCalculator({
         description: t("runPayroll.toastSyncLeaveLookupFailed"),
         variant: "destructive",
       });
+      finishSync();
       return;
     }
 
@@ -453,7 +501,10 @@ export function usePayrollCalculator({
         const isEdited = checkIsEdited(updated);
         syncedCount += 1;
         const withEdit = { ...updated, isEdited };
-        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
+        return {
+          ...withEdit,
+          calculation: latestCalculatorRef.current(withEdit),
+        };
       })
     );
 
@@ -467,7 +518,8 @@ export function usePayrollCalculator({
             })
           : t("runPayroll.toastSyncedAttendance", { count: String(syncedCount) }),
     });
-  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary, attendanceSummary, calculateForEmployee]);
+    finishSync();
+  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary]);
 
   // ─── Compliance issues ──────────────────────────────────────────
 
@@ -739,13 +791,19 @@ export function usePayrollCalculator({
     totals,
     editedCount,
     payrollWarnings,
-    syncingAttendance,
+    syncingAttendance: attendanceSummaryFetching || attendanceSyncPending,
+    attendanceSyncPending,
+    calculationsPending,
+    isYtdLoading: ytdQuery.isLoading,
+    isYtdError: ytdQuery.isError && ytdQuery.data === undefined,
+    isYtdFetching: ytdQuery.isFetching,
 
     // Actions
     handleInputChange,
     handleResetRow,
     toggleRowExpansion,
     handleSyncFromAttendance,
+    refetchYtd: ytdQuery.refetch,
 
     // Submission helpers
     getIncludedData,

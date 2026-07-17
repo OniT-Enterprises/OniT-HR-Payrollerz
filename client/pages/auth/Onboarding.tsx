@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { updateProfile } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,14 +31,36 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 export default function Onboarding() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { user, userProfile, authResolved, refreshUserProfile } = useAuth();
-  const { switchTenant } = useTenant();
+  const {
+    user,
+    userProfile,
+    profileStatus,
+    authResolved,
+    isSuperAdmin,
+    refreshUserProfile,
+    signOut,
+  } = useAuth();
+  const {
+    session,
+    availableTenants,
+    loading: tenantLoading,
+    tenantResolved,
+    switchTenant,
+  } = useTenant();
 
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const actionInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const alreadyHasTenant =
+    (userProfile?.tenantIds?.length ?? 0) > 0 ||
+    Object.keys(userProfile?.tenantAccess ?? {}).length > 0 ||
+    availableTenants.length > 0 ||
+    Boolean(session);
 
   const generateSlug = (name: string) =>
     name
@@ -55,23 +78,52 @@ export default function Onboarding() {
 
   // Not signed in → login. Already has a tenant → straight to the app.
   useEffect(() => {
-    if (!authResolved) return;
+    if (!authResolved || tenantLoading || (!tenantResolved && !session)) return;
     if (!user) {
       navigate("/auth/login", { replace: true });
       return;
     }
-    if (userProfile?.tenantIds && userProfile.tenantIds.length > 0) {
+    if (isSuperAdmin || alreadyHasTenant) {
       navigate("/", { replace: true });
     }
-  }, [authResolved, user, userProfile, navigate]);
+  }, [
+    alreadyHasTenant,
+    authResolved,
+    isSuperAdmin,
+    navigate,
+    session,
+    tenantLoading,
+    tenantResolved,
+    user,
+  ]);
 
   const handleCompanyNameChange = (name: string) => {
     setCompanyName(name);
-    setCompanySlug(generateSlug(name));
+    if (!slugManuallyEdited) {
+      setCompanySlug(generateSlug(name));
+    }
+  };
+
+  const handleUseAnotherAccount = async () => {
+    if (actionInFlight.current) return;
+
+    actionInFlight.current = true;
+    setError(null);
+    setSigningOut(true);
+    try {
+      await signOut();
+      navigate("/auth/login", { replace: true });
+    } catch {
+      setError(t("auth.errors.signOutFailed") || "Could not sign out. Please try again.");
+    } finally {
+      actionInFlight.current = false;
+      setSigningOut(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (actionInFlight.current) return;
     setError(null);
 
     if (!user) {
@@ -87,11 +139,17 @@ export default function Onboarding() {
       return;
     }
 
+    actionInFlight.current = true;
     setLoading(true);
     try {
+      const normalizedDisplayName = displayName.trim();
+      if (user.displayName !== normalizedDisplayName) {
+        await updateProfile(user, { displayName: normalizedDisplayName });
+      }
+
       const tenantId = await provisionOrganization({
         user,
-        displayName: displayName.trim(),
+        displayName: normalizedDisplayName,
         companyName,
         companySlug,
       });
@@ -112,17 +170,48 @@ export default function Onboarding() {
       } else if (err instanceof ProvisioningTimeoutError) {
         setError(t("auth.errors.networkTimeout"));
       } else {
-        setError(err instanceof Error ? err.message : t("auth.errors.signupFailed"));
+        setError(t("auth.errors.signupFailed"));
       }
     } finally {
+      actionInFlight.current = false;
       setLoading(false);
     }
   };
 
-  if (!authResolved || !user) {
+  if (
+    !authResolved ||
+    tenantLoading ||
+    (!tenantResolved && !session) ||
+    !user ||
+    isSuperAdmin ||
+    alreadyHasTenant ||
+    profileStatus === "idle" ||
+    profileStatus === "loading"
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (profileStatus === "error") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+        <Card className="w-full max-w-md border-border/50 shadow-xl">
+          <CardHeader>
+            <CardTitle>{t("common.accountRecoveryTitle")}</CardTitle>
+            <CardDescription>{t("common.accountRecoveryDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => { void refreshUserProfile(); }}>
+              {t("common.retry")}
+            </Button>
+            <Button variant="ghost" onClick={() => { void handleUseAnotherAccount(); }}>
+              {t("auth.onboarding.useAnotherAccount")}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -150,11 +239,22 @@ export default function Onboarding() {
             <CardDescription className="text-center">
               {t("auth.onboarding.subtitle")}
             </CardDescription>
+            <div className="pt-2 text-center text-xs text-muted-foreground">
+              {user.email && <p className="mb-1 truncate">{user.email}</p>}
+              <button
+                type="button"
+                onClick={handleUseAnotherAccount}
+                disabled={loading || signingOut}
+                className="inline-flex min-h-11 items-center rounded-md px-3 font-medium text-primary underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {signingOut ? t("common.loading") : t("auth.onboarding.useAnotherAccount") || "Use another account"}
+              </button>
+            </div>
           </CardHeader>
 
           <CardContent>
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert role="alert" variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -166,7 +266,9 @@ export default function Onboarding() {
                   <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="displayName"
+                    name="name"
                     type="text"
+                    autoComplete="name"
                     placeholder={t("auth.signup.fullNamePlaceholder")}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
@@ -182,7 +284,9 @@ export default function Onboarding() {
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="companyName"
+                    name="organization"
                     type="text"
+                    autoComplete="organization"
                     placeholder={t("auth.signup.companyNamePlaceholder")}
                     value={companyName}
                     onChange={(e) => handleCompanyNameChange(e.target.value)}
@@ -197,10 +301,15 @@ export default function Onboarding() {
                 <div className="flex items-center gap-2">
                   <Input
                     id="companySlug"
+                    name="companySlug"
                     type="text"
+                    autoComplete="off"
                     placeholder={t("auth.signup.companySlugPlaceholder")}
                     value={companySlug}
-                    onChange={(e) => setCompanySlug(generateSlug(e.target.value))}
+                    onChange={(e) => {
+                      setSlugManuallyEdited(true);
+                      setCompanySlug(generateSlug(e.target.value));
+                    }}
                     className="flex-1"
                   />
                 </div>
@@ -209,7 +318,7 @@ export default function Onboarding() {
                 </p>
               </div>
 
-              <Button type="submit" className="w-full gap-2" disabled={loading}>
+              <Button type="submit" className="h-11 w-full gap-2" disabled={loading || signingOut}>
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />

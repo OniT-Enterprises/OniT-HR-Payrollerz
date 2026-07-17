@@ -3,7 +3,7 @@
  * 5-step wizard: Company Details -> Bank Accounts -> Leave Policies -> Payroll Config -> Complete
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,9 +33,12 @@ import {
   ArrowLeft,
   Loader2,
   Sparkles,
+  AlertCircle,
+  RotateCcw,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { settingsService } from "@/services/settingsService";
+import { settingsKeys } from "@/hooks/useSettings";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -46,6 +49,7 @@ import type {
   CompanyStructure,
   EmployeeGradeConfig,
 } from "@/types/settings";
+import { TL_DEFAULT_LEAVE_POLICIES } from "@/types/settings";
 
 const STEPS = [
   { id: "company", labelKey: "setupWizard.steps.companyDetails", icon: Building2 },
@@ -96,13 +100,27 @@ export default function SetupWizard() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
-  const invalidateSetupProgress = () =>
-    queryClient.invalidateQueries({
-      queryKey: ["tenants", tenantId, "setupProgress"],
-    });
+  const invalidateSetupData = () =>
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["tenants", tenantId, "setupProgress"],
+      }),
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all(tenantId) }),
+    ]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<boolean[]>([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
   const [saving, setSaving] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
+  const transitionInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   // Company Details form
   const [companyForm, setCompanyForm] = useState<Partial<CompanyDetails>>({
@@ -131,9 +149,16 @@ export default function SetupWizard() {
     accountNumber: "",
     purpose: "payroll" as const,
   });
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "bank_transfer">(
+    "cash",
+  );
 
   // Payroll Config form
-  const [payrollForm, setPayrollForm] = useState({
+  const [payrollForm, setPayrollForm] = useState<{
+    payFrequency: "monthly";
+    payDay: string;
+    currency: string;
+  }>({
     payFrequency: "monthly",
     payDay: "25",
     currency: "USD",
@@ -142,6 +167,8 @@ export default function SetupWizard() {
   // Load existing progress
   useEffect(() => {
     const loadProgress = async () => {
+      setLoading(true);
+      setLoadError(false);
       try {
         let settings = await settingsService.getSettings(tenantId);
         if (!settings) {
@@ -173,7 +200,14 @@ export default function SetupWizard() {
             : "",
         });
 
-        const primaryBank = settings.paymentStructure.bankAccounts?.[0];
+        const primaryBank = settings.paymentStructure.bankAccounts?.find(
+          (account) => account.purpose === "payroll",
+        );
+        setPaymentMethod(
+          settings.paymentStructure.primaryPaymentMethod === "bank_transfer" && primaryBank
+            ? "bank_transfer"
+            : "cash",
+        );
         if (primaryBank) {
           setBankForm({
             bankName: primaryBank.bankName || "",
@@ -185,34 +219,33 @@ export default function SetupWizard() {
 
         const primaryPayrollPeriod = settings.paymentStructure.payrollPeriods?.[0];
         setPayrollForm({
-          payFrequency: primaryPayrollPeriod?.frequency === "weekly"
-            ? "weekly"
-            : primaryPayrollPeriod?.frequency === "bi_weekly"
-              ? "biweekly"
-              : "monthly",
+          payFrequency: "monthly",
           payDay: String(primaryPayrollPeriod?.payDay || 25),
           currency: settings.payrollConfig.currency || "USD",
         });
 
-        if (!progress.progress.companyDetails || !progress.progress.companyStructure) {
-          setCurrentStep(0);
-        } else if (!progress.progress.paymentStructure) {
-          setCurrentStep(1);
-        } else if (!progress.progress.timeOffPolicies) {
-          setCurrentStep(2);
-        } else if (!progress.progress.payrollConfig) {
-          setCurrentStep(3);
-        } else {
-          setCurrentStep(4);
-        }
+        const loadedCompletedSteps = [
+          progress.progress.companyDetails && progress.progress.companyStructure,
+          progress.progress.paymentStructure,
+          progress.progress.timeOffPolicies,
+          progress.progress.payrollConfig,
+          false,
+        ];
+        setCompletedSteps(loadedCompletedSteps);
+        const firstIncompleteStep = loadedCompletedSteps
+          .slice(0, STEPS.length - 1)
+          .findIndex((isComplete) => !isComplete);
+        setCurrentStep(firstIncompleteStep === -1 ? STEPS.length - 1 : firstIncompleteStep);
       } catch {
-        // Settings don't exist yet - start fresh
+        // A failed read is not the same as a new account. Keep the form
+        // blocked so a transient connection issue cannot overwrite settings.
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
-    loadProgress();
-  }, [tenantId, navigate]);
+    void loadProgress();
+  }, [tenantId, navigate, loadAttempt]);
 
   const handleSaveCompanyDetails = async () => {
     if (!companyForm.legalName || !companyForm.tinNumber) {
@@ -262,7 +295,10 @@ export default function SetupWizard() {
   };
 
   const handleSaveBankAccount = async () => {
-    if (!bankForm.bankName || !bankForm.accountNumber) {
+    if (
+      paymentMethod === "bank_transfer" &&
+      (!bankForm.bankName.trim() || !bankForm.accountNumber.trim())
+    ) {
       toast({
         title: t("setupWizard.requiredFields"),
         description: t("setupWizard.bankNameAccountRequired"),
@@ -273,20 +309,50 @@ export default function SetupWizard() {
 
     setSaving(true);
     try {
+      const settings = await settingsService.getSettings(tenantId);
+      if (!settings) throw new Error("Settings unavailable");
+      if (paymentMethod === "cash") {
+        await settingsService.updatePaymentStructure(tenantId, {
+          ...settings.paymentStructure,
+          paymentMethods: Array.from(
+            new Set([
+              ...settings.paymentStructure.paymentMethods.filter(
+                (method) =>
+                  method !== "bank_transfer" ||
+                  settings.paymentStructure.bankAccounts.length > 0,
+              ),
+              "cash" as const,
+            ]),
+          ),
+          primaryPaymentMethod: "cash",
+        });
+        return true;
+      }
+
+      const existingPayrollAccount = settings.paymentStructure.bankAccounts.find(
+        (account) => account.purpose === "payroll",
+      );
+      const payrollAccount = {
+        id: existingPayrollAccount?.id || `bank-${Date.now()}`,
+        purpose: bankForm.purpose,
+        bankName: bankForm.bankName.trim(),
+        accountName: bankForm.accountName.trim(),
+        accountNumber: bankForm.accountNumber.trim(),
+        isActive: true,
+      };
+
       await settingsService.updatePaymentStructure(tenantId, {
-        paymentMethods: ["bank_transfer"],
+        ...settings.paymentStructure,
+        paymentMethods: Array.from(
+          new Set([...settings.paymentStructure.paymentMethods, "bank_transfer" as const]),
+        ),
         primaryPaymentMethod: "bank_transfer",
-        bankAccounts: [{
-          id: `bank-${Date.now()}`,
-          purpose: bankForm.purpose,
-          bankName: bankForm.bankName,
-          accountName: bankForm.accountName,
-          accountNumber: bankForm.accountNumber,
-          isActive: true,
-        }],
-        employmentTypes: ["full_time", "part_time", "contract"],
-        payrollFrequencies: ["monthly"],
-        payrollPeriods: [],
+        bankAccounts: [
+          payrollAccount,
+          ...settings.paymentStructure.bankAccounts.filter(
+            (account) => account.id !== existingPayrollAccount?.id,
+          ),
+        ],
       });
       return true;
     } catch {
@@ -304,13 +370,8 @@ export default function SetupWizard() {
   const handleSaveLeavePolicy = async () => {
     setSaving(true);
     try {
-      // Use TL defaults - just mark as configured
-      await settingsService.updateTimeOffPolicies(tenantId, {
-        annualLeave: { daysPerYear: 12, accrualMethod: "annual", carryOverMax: 0 },
-        sickLeave: { daysPerYear: 30, requiresCertificate: true, certificateAfterDays: 3 },
-        maternityLeave: { weeks: 12, paidWeeks: 12 },
-        paternityLeave: { days: 5 },
-      });
+      // Save the same complete TL defaults that the review screen describes.
+      await settingsService.updateTimeOffPolicies(tenantId, TL_DEFAULT_LEAVE_POLICIES);
       return true;
     } catch {
       toast({
@@ -325,19 +386,44 @@ export default function SetupWizard() {
   };
 
   const handleSavePayrollConfig = async () => {
+    const enteredPayDay = Number.parseInt(payrollForm.payDay, 10);
+    if (!Number.isInteger(enteredPayDay) || enteredPayDay < 1 || enteredPayDay > 28) {
+      toast({
+        title: t("setupWizard.requiredFields"),
+        description: t("setupWizard.payDayRange"),
+        variant: "destructive",
+      });
+      return false;
+    }
+
     setSaving(true);
     try {
-      await settingsService.updatePayrollConfig(tenantId, {
-        payFrequency: payrollForm.payFrequency,
-        payDay: parseInt(payrollForm.payDay),
-        currency: payrollForm.currency,
-        taxSystem: "timor_leste",
-        witRate: 0.10,
-        witThreshold: 500,
-        inssEmployeeRate: 0.04,
-        inssEmployerRate: 0.06,
-        standardWeeklyHours: 44,
-      });
+      const settings = await settingsService.getSettings(tenantId);
+      if (!settings) throw new Error("Settings unavailable");
+      const frequency = payrollForm.payFrequency;
+      const payDay = enteredPayDay;
+
+      await Promise.all([
+        settingsService.updatePaymentStructure(tenantId, {
+          ...settings.paymentStructure,
+          payrollFrequencies: [frequency],
+          payrollPeriods: [
+            {
+              frequency,
+              startDay: 1,
+              endDay: frequency === "monthly" ? 31 : frequency === "bi_weekly" ? 14 : 7,
+              payDay,
+              isActive: true,
+            },
+          ],
+        }),
+        settingsService.updatePayrollConfig(tenantId, {
+          ...settings.payrollConfig,
+          currency: payrollForm.currency,
+          currencySymbol:
+            payrollForm.currency === "USD" ? "$" : settings.payrollConfig.currencySymbol,
+        }),
+      ]);
       return true;
     } catch {
       toast({
@@ -355,7 +441,7 @@ export default function SetupWizard() {
     setSaving(true);
     try {
       await settingsService.completeSetup(tenantId);
-      invalidateSetupProgress();
+      await invalidateSetupData();
       toast({
         title: t("setupWizard.setupComplete"),
         description: t("setupWizard.accountReady"),
@@ -373,39 +459,76 @@ export default function SetupWizard() {
   };
 
   const handleNext = async () => {
-    let success = true;
+    // State updates do not synchronously block a second click. Keep a ref guard
+    // for the whole transition so a slow mobile connection cannot advance two
+    // setup steps from one double-tap.
+    if (transitionInFlight.current) return;
+    transitionInFlight.current = true;
+    setTransitioning(true);
 
-    switch (currentStep) {
-      case 0:
-        success = await handleSaveCompanyDetails();
-        break;
-      case 1:
-        success = await handleSaveBankAccount();
-        break;
-      case 2:
-        success = await handleSaveLeavePolicy();
-        break;
-      case 3:
-        success = await handleSavePayrollConfig();
-        break;
-      case 4:
-        await handleCompleteSetup();
+    try {
+      if (currentStep < STEPS.length - 1 && completedSteps[currentStep]) {
+        let nextStep = currentStep + 1;
+        while (
+          nextStep < STEPS.length - 1 &&
+          completedSteps[nextStep]
+        ) {
+          nextStep += 1;
+        }
+        setCurrentStep(nextStep);
         return;
-    }
+      }
 
-    if (success) {
-      // The TopBar/MainNavigation setup banner reads a cached setupProgress
-      // query (5-min staleTime); without this it says "0% complete" until a
-      // full reload, even right after finishing the wizard.
-      invalidateSetupProgress();
-      setCurrentStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+      let success = true;
+
+      switch (currentStep) {
+        case 0:
+          success = await handleSaveCompanyDetails();
+          break;
+        case 1:
+          success = await handleSaveBankAccount();
+          break;
+        case 2:
+          success = await handleSaveLeavePolicy();
+          break;
+        case 3:
+          success = await handleSavePayrollConfig();
+          break;
+        case 4:
+          await handleCompleteSetup();
+          return;
+      }
+
+      if (success) {
+        const nextCompletedSteps = [...completedSteps];
+        nextCompletedSteps[currentStep] = true;
+        setCompletedSteps(nextCompletedSteps);
+        let nextStep = currentStep + 1;
+        while (
+          nextStep < STEPS.length - 1 &&
+          nextCompletedSteps[nextStep]
+        ) {
+          nextStep += 1;
+        }
+        setCurrentStep(Math.min(nextStep, STEPS.length - 1));
+        // The banner can refresh in the background; advancing the saved step
+        // should not wait on another network round-trip.
+        void invalidateSetupData();
+      }
+    } finally {
+      transitionInFlight.current = false;
+      setTransitioning(false);
     }
   };
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
-  const progressPercent = Math.round(((currentStep + 1) / STEPS.length) * 100);
+  const progressPercent = Math.round(
+    (completedSteps.slice(0, STEPS.length - 1).filter(Boolean).length /
+      (STEPS.length - 1)) *
+      100,
+  );
 
   if (loading) {
     return (
@@ -415,9 +538,33 @@ export default function SetupWizard() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+              <AlertCircle className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold">{t("setupWizard.loadFailedTitle")}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("setupWizard.loadFailedDesc")}
+              </p>
+            </div>
+            <Button onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {t("common.retry")}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-12">
         <div className="mb-6 flex justify-end">
           <LocaleSwitcher variant="buttons" className="justify-end" />
         </div>
@@ -427,13 +574,13 @@ export default function SetupWizard() {
           <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25 mb-4">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold">{t("setupWizard.welcome")}</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">{t("setupWizard.welcome")}</h1>
           <p className="text-muted-foreground mt-2">
             {t("setupWizard.welcomeDesc")}
           </p>
         </div>
 
-        <div className="mb-6 grid gap-3 md:grid-cols-2">
+        <div className="mb-6">
           <Card className="border-green-200 bg-white/80 dark:border-green-900/40 dark:bg-background/80">
             <CardContent className="pt-5">
               <div className="flex items-start justify-between gap-4">
@@ -452,6 +599,11 @@ export default function SetupWizard() {
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
                 <div
+                  role="progressbar"
+                  aria-label={t("setupWizard.progressTitle")}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progressPercent}
                   className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
                   style={{ width: `${progressPercent}%` }}
                 />
@@ -461,29 +613,18 @@ export default function SetupWizard() {
               </p>
             </CardContent>
           </Card>
-
-          <Card className="border-border/60 bg-white/80 dark:bg-background/80">
-            <CardContent className="pt-5">
-              <p className="text-sm font-semibold text-foreground">
-                {t("setupWizard.savedAutomaticallyTitle")}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("setupWizard.savedAutomaticallyDesc")}
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Step Indicator */}
-        <div className="flex items-center justify-center gap-2 mb-8">
+        <div className="mb-8 hidden items-center justify-center gap-2 sm:flex">
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
-            const isCompleted = index < currentStep;
+            const isCompleted = completedSteps[index];
             return (
               <React.Fragment key={step.id}>
                 {index > 0 && (
-                  <div className={`h-0.5 w-8 ${isCompleted ? "bg-green-500" : "bg-border"}`} />
+                  <div className={`h-0.5 w-8 ${completedSteps[index - 1] ? "bg-green-500" : "bg-border"}`} />
                 )}
                 <div className="flex min-w-16 flex-col items-center gap-2 text-center">
                   <div
@@ -525,13 +666,22 @@ export default function SetupWizard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {currentStep < STEPS.length - 1 && completedSteps[currentStep] && (
+              <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center dark:border-green-900/50 dark:bg-green-950/20">
+                <CheckCircle className="mx-auto h-7 w-7 text-green-600" />
+                <p className="mt-2 font-medium">{t("setupWizard.stepAlreadySaved")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("setupWizard.stepAlreadySavedDesc")}
+                </p>
+              </div>
+            )}
             {/* Step 1: Company Details */}
-            {currentStep === 0 && (
+            {currentStep === 0 && !completedSteps[0] && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   {t("setupWizard.companyIntro")}
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{t("setupWizard.legalName")}</Label>
                     <Input
@@ -549,7 +699,7 @@ export default function SetupWizard() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{t("settings.company.businessType")}</Label>
                     <Select
@@ -591,7 +741,7 @@ export default function SetupWizard() {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{t("setupWizard.tinNumber")}</Label>
                     <Input
@@ -629,7 +779,7 @@ export default function SetupWizard() {
                     placeholder={t("setupWizard.addressPlaceholder")}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{t("setupWizard.city")}</Label>
                     <Input
@@ -643,7 +793,7 @@ export default function SetupWizard() {
                     <Input value={companyForm.country} disabled />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label>{t("setupWizard.phone")}</Label>
                     <Input
@@ -664,55 +814,95 @@ export default function SetupWizard() {
               </div>
             )}
 
-            {/* Step 2: Bank Accounts */}
-            {currentStep === 1 && (
+            {/* Step 2: Salary payment */}
+            {currentStep === 1 && !completedSteps[1] && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   {t("setupWizard.bankIntro")}
                 </p>
                 <div>
-                  <Label>{t("setupWizard.bankName")}</Label>
+                  <Label>{t("setupWizard.paymentMethod")}</Label>
                   <Select
-                    value={bankForm.bankName}
-                    onValueChange={(v) => setBankForm((p) => ({ ...p, bankName: v }))}
+                    value={paymentMethod}
+                    onValueChange={(value: "cash" | "bank_transfer") =>
+                      setPaymentMethod(value)
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={t("setupWizard.selectBank")} />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="BNU">BNU (Banco Nacional Ultramarino)</SelectItem>
-                      <SelectItem value="Mandiri">Bank Mandiri</SelectItem>
-                      <SelectItem value="ANZ">ANZ</SelectItem>
-                      <SelectItem value="BNCTL">BNCTL</SelectItem>
+                      <SelectItem value="cash">{t("setupWizard.cash")}</SelectItem>
+                      <SelectItem value="bank_transfer">
+                        {t("setupWizard.bankTransfer")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label>{t("setupWizard.accountName")}</Label>
-                  <Input
-                    value={bankForm.accountName}
-                    onChange={(e) => setBankForm((p) => ({ ...p, accountName: e.target.value }))}
-                    placeholder={t("setupWizard.accountNamePlaceholder")}
-                  />
-                </div>
-                <div>
-                  <Label>{t("setupWizard.accountNumber")}</Label>
-                  <Input
-                    value={bankForm.accountNumber}
-                    onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
-                    placeholder={t("setupWizard.accountNumberPlaceholder")}
-                  />
-                </div>
+                {paymentMethod === "cash" ? (
+                  <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                    {t("setupWizard.cashInfo")}
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <Label>{t("setupWizard.bankName")}</Label>
+                      <Input
+                        list="setup-bank-options"
+                        value={bankForm.bankName}
+                        onChange={(event) =>
+                          setBankForm((previous) => ({
+                            ...previous,
+                            bankName: event.target.value,
+                          }))
+                        }
+                        placeholder={t("setupWizard.selectBank")}
+                      />
+                      <datalist id="setup-bank-options">
+                        <option value="BNU (Banco Nacional Ultramarino)" />
+                        <option value="Bank Mandiri" />
+                        <option value="ANZ" />
+                        <option value="BNCTL" />
+                      </datalist>
+                    </div>
+                    <div>
+                      <Label>{t("setupWizard.accountName")}</Label>
+                      <Input
+                        value={bankForm.accountName}
+                        onChange={(event) =>
+                          setBankForm((previous) => ({
+                            ...previous,
+                            accountName: event.target.value,
+                          }))
+                        }
+                        placeholder={t("setupWizard.accountNamePlaceholder")}
+                      />
+                    </div>
+                    <div>
+                      <Label>{t("setupWizard.accountNumber")}</Label>
+                      <Input
+                        value={bankForm.accountNumber}
+                        onChange={(event) =>
+                          setBankForm((previous) => ({
+                            ...previous,
+                            accountNumber: event.target.value,
+                          }))
+                        }
+                        placeholder={t("setupWizard.accountNumberPlaceholder")}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Step 3: Leave Policies */}
-            {currentStep === 2 && (
+            {currentStep === 2 && !completedSteps[2] && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   {t("setupWizard.leaveIntro")}
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {[
                     { labelKey: "setupWizard.annualLeave", valueKey: "setupWizard.annualLeaveValue" },
                     { labelKey: "setupWizard.sickLeave", valueKey: "setupWizard.sickLeaveValue" },
@@ -732,23 +922,11 @@ export default function SetupWizard() {
             )}
 
             {/* Step 4: Payroll Config */}
-            {currentStep === 3 && (
+            {currentStep === 3 && !completedSteps[3] && (
               <div className="space-y-4">
                 <div>
                   <Label>{t("setupWizard.payFrequency")}</Label>
-                  <Select
-                    value={payrollForm.payFrequency}
-                    onValueChange={(v) => setPayrollForm((p) => ({ ...p, payFrequency: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">{t("setupWizard.monthly")}</SelectItem>
-                      <SelectItem value="biweekly">{t("setupWizard.biWeekly")}</SelectItem>
-                      <SelectItem value="weekly">{t("setupWizard.weekly")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input value={t("setupWizard.monthly")} readOnly disabled />
                 </div>
                 <div>
                   <Label>{t("setupWizard.payDay")}</Label>
@@ -789,7 +967,7 @@ export default function SetupWizard() {
               <div className="text-center py-8 space-y-4">
                 <img
                   src="/images/illustrations/setup-complete.webp"
-                  alt="Setup complete!"
+                  alt={t("setupWizard.allSet")}
                   className="w-40 h-40 mx-auto mb-2 drop-shadow-xl"
                 />
                 <h3 className="text-xl font-bold">{t("setupWizard.allSet")}</h3>
@@ -802,12 +980,12 @@ export default function SetupWizard() {
         </Card>
 
         {/* Navigation */}
-        <div className="flex justify-between mt-6">
-          <div className="flex items-center gap-3">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
             <Button
               variant="outline"
               onClick={handleBack}
-              disabled={currentStep === 0 || saving}
+              disabled={currentStep === 0 || saving || transitioning}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t("setupWizard.back")}
@@ -816,19 +994,19 @@ export default function SetupWizard() {
               variant="outline"
               className="text-muted-foreground"
               onClick={() => {
-                sessionStorage.setItem("setup-dismissed", "1");
                 navigate("/dashboard");
               }}
+              disabled={saving || transitioning}
             >
               {t("setupWizard.doLater")}
             </Button>
           </div>
           <Button
             onClick={handleNext}
-            disabled={saving}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={saving || transitioning}
+            className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto"
           >
-            {saving ? (
+            {saving || transitioning ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 {t("setupWizard.saving")}

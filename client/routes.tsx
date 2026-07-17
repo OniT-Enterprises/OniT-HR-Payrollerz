@@ -248,7 +248,7 @@ export const authRoutes = (
     <Route
       path="/settings"
       element={
-        <FeatureRoute fallbackPath="/">
+        <FeatureRoute requireManage>
           <Settings />
         </FeatureRoute>
       }
@@ -264,7 +264,7 @@ export const authRoutes = (
     <Route
       path="/settings/departments"
       element={
-        <FeatureRoute requiredModule="staff">
+        <FeatureRoute requiredModule="staff" requireManage>
           <Departments />
         </FeatureRoute>
       }
@@ -272,7 +272,7 @@ export const authRoutes = (
     <Route
       path="/settings/org-chart"
       element={
-        <FeatureRoute requiredModule="staff">
+        <FeatureRoute requiredModule="staff" requireManage>
           <OrganizationChart />
         </FeatureRoute>
       }
@@ -280,7 +280,7 @@ export const authRoutes = (
     <Route
       path="/settings/foreign-workers"
       element={
-        <FeatureRoute requiredModule="staff" fallbackPath="/settings">
+        <FeatureRoute requiredModule="staff" requireManage>
           <ForeignWorkers />
         </FeatureRoute>
       }
@@ -338,7 +338,7 @@ export const peopleRoutes = (
     <Route
       path="/people/add"
       element={
-        <FeatureRoute requiredModule="staff">
+        <FeatureRoute requiredModule="staff" requireManage>
           <AddEmployee />
         </FeatureRoute>
       }
@@ -462,7 +462,7 @@ export const schedulingRoutes = (
     <Route
       path="/time-leave/time-tracking"
       element={
-        <FeatureRoute requiredModule="timeleave">
+        <FeatureRoute requiredModule="timeleave" requireManage>
           <TimeTracking />
         </FeatureRoute>
       }
@@ -486,7 +486,7 @@ export const schedulingRoutes = (
     <Route
       path="/time-leave/shifts"
       element={
-        <FeatureRoute requiredModule="timeleave">
+        <FeatureRoute requiredModule="timeleave" requireManage>
           <ShiftScheduling />
         </FeatureRoute>
       }
@@ -494,7 +494,7 @@ export const schedulingRoutes = (
     <Route
       path="/time-leave/settings"
       element={
-        <FeatureRoute requiredModule="timeleave">
+        <FeatureRoute requiredModule="timeleave" requireManage>
           <TimeLeaveSettings />
         </FeatureRoute>
       }
@@ -518,7 +518,7 @@ export const payrollRoutes = (
     <Route
       path="/payroll/run"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <RunPayrollWizard />
         </FeatureRoute>
       }
@@ -542,7 +542,7 @@ export const payrollRoutes = (
     <Route
       path="/payroll/tax"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <TaxReports />
         </FeatureRoute>
       }
@@ -550,7 +550,7 @@ export const payrollRoutes = (
     <Route
       path="/payroll/settings/benefits"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <BenefitsEnrollment />
         </FeatureRoute>
       }
@@ -558,7 +558,7 @@ export const payrollRoutes = (
     <Route
       path="/payroll/settings/deductions"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <DeductionsAdvances />
         </FeatureRoute>
       }
@@ -566,7 +566,7 @@ export const payrollRoutes = (
     <Route
       path="/payroll/settings"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <PayrollSettings />
         </FeatureRoute>
       }
@@ -606,7 +606,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/new"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <InvoiceForm />
         </FeatureRoute>
       }
@@ -622,7 +622,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/:id/edit"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <InvoiceForm />
         </FeatureRoute>
       }
@@ -630,7 +630,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/settings"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <InvoiceSettings />
         </FeatureRoute>
       }
@@ -638,7 +638,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/recurring"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <RecurringInvoices />
         </FeatureRoute>
       }
@@ -646,7 +646,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/recurring/new"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <RecurringInvoiceForm />
         </FeatureRoute>
       }
@@ -654,7 +654,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/recurring/:id"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <RecurringInvoiceForm />
         </FeatureRoute>
       }
@@ -662,7 +662,7 @@ export const moneyRoutes = (
     <Route
       path="/money/invoices/recurring/:id/edit"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <RecurringInvoiceForm />
         </FeatureRoute>
       }
@@ -686,7 +686,7 @@ export const moneyRoutes = (
     <Route
       path="/money/expenses"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManager>
           <Expenses />
         </FeatureRoute>
       }
@@ -702,7 +702,7 @@ export const moneyRoutes = (
     <Route
       path="/money/bills/new"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <BillForm />
         </FeatureRoute>
       }
@@ -718,7 +718,7 @@ export const moneyRoutes = (
     <Route
       path="/money/bills/:id/edit"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <BillForm />
         </FeatureRoute>
       }
@@ -726,7 +726,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/profit-loss"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManager>
           <ProfitLoss />
         </FeatureRoute>
       }
@@ -734,7 +734,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/balance-sheet"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManager>
           <BalanceSheet />
         </FeatureRoute>
       }
@@ -742,7 +742,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/cashflow"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManager>
           <Cashflow />
         </FeatureRoute>
       }
@@ -766,7 +766,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/reconciliation"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <BankReconciliation />
         </FeatureRoute>
       }
@@ -774,7 +774,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/vat-settings"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <VATSettings />
         </FeatureRoute>
       }
@@ -782,7 +782,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/vat-returns"
       element={
-        <FeatureRoute requiredModule="money">
+        <FeatureRoute requiredModule="money" requireManage>
           <VATReturns />
         </FeatureRoute>
       }
@@ -830,7 +830,7 @@ export const accountingRoutes = (
     <Route
       path="/accounting/reconciliation"
       element={
-        <FeatureRoute requiredModule="accounting">
+        <FeatureRoute requiredModule="accounting" requireManage>
           <BankReconciliation />
         </FeatureRoute>
       }
@@ -864,7 +864,7 @@ export const accountingRoutes = (
     <Route
       path="/accounting/statements/fiscal-periods"
       element={
-        <FeatureRoute requiredModule="accounting">
+        <FeatureRoute requiredModule="accounting" requireManage>
           <FiscalPeriods />
         </FeatureRoute>
       }
@@ -896,7 +896,7 @@ export const reportsRoutes = (
     <Route
       path="/reports/payroll"
       element={
-        <FeatureRoute requiredModule="reports">
+        <FeatureRoute requiredAllModules={["reports", "payroll"]}>
           <PayrollReports />
         </FeatureRoute>
       }
@@ -904,7 +904,7 @@ export const reportsRoutes = (
     <Route
       path="/reports/employees"
       element={
-        <FeatureRoute requiredModule="reports">
+        <FeatureRoute requiredAllModules={["reports", "staff"]}>
           <EmployeeReports />
         </FeatureRoute>
       }
@@ -913,7 +913,7 @@ export const reportsRoutes = (
     <Route
       path="/reports/attendance"
       element={
-        <FeatureRoute requiredModule="reports">
+        <FeatureRoute requiredAllModules={["reports", "timeleave"]}>
           <AttendanceReports />
         </FeatureRoute>
       }
@@ -929,7 +929,7 @@ export const reportsRoutes = (
     <Route
       path="/reports/departments"
       element={
-        <FeatureRoute requiredModule="reports">
+        <FeatureRoute requiredAllModules={["reports", "staff"]}>
           <DepartmentReports />
         </FeatureRoute>
       }
@@ -948,6 +948,7 @@ export const reportsRoutes = (
       element={
         <FeatureRoute
           requiredModule="reports"
+          requiredAllModules={["payroll", "staff"]}
           requireNgoReporting
           fallbackPath="/reports"
         >
@@ -960,6 +961,7 @@ export const reportsRoutes = (
       element={
         <FeatureRoute
           requiredModule="reports"
+          requiredAllModules={["payroll", "staff"]}
           requireManage
           requireNgoReporting
           fallbackPath="/reports"
@@ -973,7 +975,7 @@ export const reportsRoutes = (
     <Route
       path="/payroll/tax/monthly-wit"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <ATTLMonthlyWIT />
         </FeatureRoute>
       }
@@ -981,7 +983,7 @@ export const reportsRoutes = (
     <Route
       path="/payroll/tax/inss-monthly"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <INSSMonthly />
         </FeatureRoute>
       }
@@ -989,7 +991,7 @@ export const reportsRoutes = (
     <Route
       path="/payroll/tax/inss-annual"
       element={
-        <FeatureRoute requiredModule="payroll">
+        <FeatureRoute requiredModule="payroll" requireManage>
           <INSSAnnual />
         </FeatureRoute>
       }

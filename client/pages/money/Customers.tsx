@@ -3,7 +3,7 @@
  * List, search, and manage customers for invoicing
  */
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import {
   Dialog,
   DialogContent,
@@ -63,13 +64,16 @@ export default function Customers() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const { session, canManage } = useTenant();
+  const canManageTenant = canManage();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const deleteInFlight = useRef(false);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
     type: 'business',
@@ -82,7 +86,13 @@ export default function Customers() {
   });
 
   // Use React Query for data fetching
-  const { data: customers = [], isLoading: loading } = useAllCustomers();
+  const {
+    data: customers = [],
+    isLoading: loading,
+    isError: loadError,
+    isFetching,
+    refetch,
+  } = useAllCustomers();
 
   const filteredCustomers = customers.filter((customer) => {
     const term = searchTerm.toLowerCase();
@@ -94,7 +104,7 @@ export default function Customers() {
   });
 
   const handleSubmit = async () => {
-    if (!session?.tid || saving) return;
+    if (!session?.tid || !canManageTenant || saveInFlight.current) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -104,6 +114,7 @@ export default function Customers() {
       return;
     }
 
+    saveInFlight.current = true;
     setSaving(true);
     try {
       if (editingCustomer) {
@@ -131,11 +142,13 @@ export default function Customers() {
         variant: 'destructive',
       });
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   };
 
   const handleEdit = (customer: Customer) => {
+    if (!canManageTenant) return;
     setEditingCustomer(customer);
     setFormData({
       name: customer.name,
@@ -151,11 +164,12 @@ export default function Customers() {
   };
 
   const handleDelete = async (customer: Customer) => {
-    if (!session?.tid) return;
+    if (!session?.tid || !canManageTenant || deleteInFlight.current) return;
     if (!confirm(t('money.customers.confirmDelete') || `Delete customer "${customer.name}"?`)) {
       return;
     }
 
+    deleteInFlight.current = true;
     try {
       await customerService.deactivateCustomer(session.tid, customer.id);
       toast({
@@ -170,6 +184,8 @@ export default function Customers() {
         description: t('money.customers.deleteError') || 'Failed to delete customer',
         variant: 'destructive',
       });
+    } finally {
+      deleteInFlight.current = false;
     }
   };
 
@@ -187,6 +203,7 @@ export default function Customers() {
   };
 
   const openAddDialog = () => {
+    if (!canManageTenant) return;
     setEditingCustomer(null);
     resetForm();
     setShowAddDialog(true);
@@ -209,6 +226,15 @@ export default function Customers() {
     );
   }
 
+  if (loadError && customers.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <DashboardLoadError isRetrying={isFetching} onRetry={() => refetch()} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Customers - Xefe" description="Manage your customers for invoicing" />
@@ -220,12 +246,12 @@ export default function Customers() {
           subtitle={t('money.customers.subtitle') || 'Manage your customer list'}
           icon={Users}
           iconColor="text-indigo-500"
-          actions={
+          actions={canManageTenant ? (
             <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
               <Plus className="h-4 w-4 mr-2" />
               {t('money.customers.add') || 'Add Customer'}
             </Button>
-          }
+          ) : undefined}
         />
 
         {/* Search */}
@@ -251,7 +277,7 @@ export default function Customers() {
                   ? t('money.customers.noResults') || 'No customers found'
                   : t('money.customers.empty') || 'No customers yet'}
               </p>
-              {!searchTerm && (
+              {!searchTerm && canManageTenant && (
                 <Button onClick={openAddDialog} variant="outline">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.customers.addFirst') || 'Add your first customer'}
@@ -312,7 +338,7 @@ export default function Customers() {
                         </div>
                       </div>
                     </div>
-                    <DropdownMenu>
+                    {canManageTenant && <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
@@ -335,7 +361,7 @@ export default function Customers() {
                           {t('common.delete') || 'Delete'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu>}
                   </div>
                 </CardContent>
               </Card>
@@ -355,7 +381,7 @@ export default function Customers() {
       </div>
 
       {/* Add/Edit Customer Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={canManageTenant && showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>

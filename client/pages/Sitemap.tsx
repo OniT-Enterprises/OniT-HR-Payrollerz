@@ -507,15 +507,21 @@ const sitemapData: SitemapSection[] = [
 export default function Sitemap() {
   const { session, hasModule, canManage } = useTenant();
   const { isSuperAdmin } = useAuth();
+  const canManageTenant = canManage();
+  const canManageTeam = canManageTenant || session?.role === 'manager';
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule('reports'));
   const donorExportEnabled = canUseDonorExport(
     session,
     hasModule('reports'),
-    canManage()
+    canManageTenant
   );
   const canAccessPath = (path: string) => {
-    if (path === '/dashboard' || path === '/settings') {
+    if (path === '/dashboard') {
       return true;
+    }
+
+    if (path === '/settings') {
+      return canManageTenant;
     }
 
     if (
@@ -523,17 +529,20 @@ export default function Sitemap() {
       path === '/settings/org-chart' ||
       path === '/settings/foreign-workers'
     ) {
-      return hasModule('staff');
+      return hasModule('staff') && canManageTenant;
     }
 
     if (path === '/people') {
       return (['staff', 'hiring', 'performance'] as const).some((module) => hasModule(module));
     }
 
+    if (path === '/people/add') {
+      return hasModule('staff') && canManageTenant;
+    }
+
     if (
       path === '/people/staff' ||
       path === '/people/employees' ||
-      path === '/people/add' ||
       path === '/people/announcements' ||
       path === '/people/grievances' ||
       path === '/admin/document-alerts'
@@ -562,8 +571,28 @@ export default function Sitemap() {
       return hasModule('performance');
     }
 
+    if (path === '/time-leave/settings' || path === '/time-leave/time-tracking') {
+      return hasModule('timeleave') && canManageTenant;
+    }
+
+    if (path === '/time-leave/shifts') {
+      return hasModule('timeleave') && canManageTenant;
+    }
+
     if (path.startsWith('/time-leave')) {
       return hasModule('timeleave');
+    }
+
+    if (path.startsWith('/payroll/settings')) {
+      return hasModule('payroll') && canManageTenant;
+    }
+
+    if (path.startsWith('/payroll/tax')) {
+      return hasModule('payroll') && canManageTenant;
+    }
+
+    if (path === '/payroll/run') {
+      return hasModule('payroll') && canManageTenant;
     }
 
     if (path.startsWith('/payroll')) {
@@ -571,23 +600,64 @@ export default function Sitemap() {
     }
 
     if (path === '/reports/payroll-allocation') {
-      return ngoReportingEnabled;
+      return ngoReportingEnabled && hasModule('payroll') && hasModule('staff');
     }
 
     if (path === '/reports/donor-export') {
-      return donorExportEnabled;
+      return donorExportEnabled && hasModule('payroll') && hasModule('staff');
     }
 
     if (path.startsWith('/reports')) {
+      if (path === '/reports/payroll') return hasModule('reports') && hasModule('payroll');
+      if (path === '/reports/employees' || path === '/reports/departments') {
+        return hasModule('reports') && hasModule('staff');
+      }
+      if (path === '/reports/attendance') {
+        return hasModule('reports') && hasModule('timeleave');
+      }
       return hasModule('reports');
     }
 
     if (path.startsWith('/money')) {
+      if (path === '/money/expenses') {
+        return hasModule('money') && canManageTeam;
+      }
+      if (
+        path === '/money/financials/profit-loss' ||
+        path === '/money/financials/balance-sheet' ||
+        path === '/money/financials/cashflow'
+      ) {
+        return hasModule('money') && canManageTeam;
+      }
+      if (
+        path === '/money/financials/reconciliation' ||
+        path === '/money/financials/vat-returns'
+      ) {
+        return hasModule('money') && canManageTenant;
+      }
+      if (
+        path === '/money/invoices/settings' ||
+        path === '/money/invoices/recurring' ||
+        path === '/money/financials/vat-settings'
+      ) {
+        return hasModule('money') && canManageTenant;
+      }
       return hasModule('money');
+    }
+
+    if (
+      path === '/accounting/reconciliation' ||
+      path === '/accounting/statements/fiscal-periods'
+    ) {
+      return hasModule('accounting') && canManageTenant;
     }
 
     if (path.startsWith('/accounting')) {
       return hasModule('accounting');
+    }
+
+    if (path === '/admin/seed') {
+      return import.meta.env.DEV && isSuperAdmin;
     }
 
     if (path.startsWith('/admin')) {

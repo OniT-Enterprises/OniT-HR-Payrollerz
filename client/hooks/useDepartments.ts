@@ -25,13 +25,16 @@ export function useDepartments(tenantId: string, maxResults: number = 100) {
   });
 }
 
-export function useAllDepartments(tenantId: string, maxResults: number = 100) {
+export function useAllDepartments(
+  tenantId: string,
+  maxResults: number = 100,
+  enabled = true,
+) {
   return useQuery({
     queryKey: departmentKeys.list(tenantId, maxResults),
     queryFn: () => departmentService.getAllDepartments(tenantId, maxResults),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-    enabled: !!tenantId,
+    enabled: !!tenantId && enabled,
   });
 }
-

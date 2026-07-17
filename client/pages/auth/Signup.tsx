@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export default function Signup() {
   const { switchTenant } = useTenant();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const actionInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"account" | "organization">("account");
 
@@ -39,6 +40,7 @@ export default function Signup() {
   // Organization fields
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const generateSlug = (name: string) => {
     return name
@@ -50,11 +52,14 @@ export default function Signup() {
 
   const handleCompanyNameChange = (name: string) => {
     setCompanyName(name);
-    setCompanySlug(generateSlug(name));
+    if (!slugManuallyEdited) {
+      setCompanySlug(generateSlug(name));
+    }
   };
 
   const handleAccountSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (actionInFlight.current) return;
     setError(null);
 
     if (password.length < 6) {
@@ -77,12 +82,16 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (actionInFlight.current) return;
+
+    actionInFlight.current = true;
     setError(null);
     setLoading(true);
 
     if (!companyName.trim()) {
       setError(t("auth.errors.companyNameRequired"));
       setLoading(false);
+      actionInFlight.current = false;
       return;
     }
 
@@ -119,11 +128,10 @@ export default function Signup() {
       }
 
       // 5. Everyone starts free; they subscribe later when they run payroll.
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err: unknown) {
       console.error("Signup error:", err);
       const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
-      const errMessage = err instanceof Error ? err.message : t("auth.errors.signupFailed");
       if (err instanceof SlugTakenError) {
         setError(t("auth.errors.companySlugTaken"));
       } else if (err instanceof ProvisioningTimeoutError) {
@@ -135,21 +143,25 @@ export default function Signup() {
       } else if (errCode === "auth/invalid-email") {
         setError(t("auth.errors.invalidEmail"));
       } else {
-        setError(errMessage);
+        setError(t("auth.errors.signupFailed"));
       }
     } finally {
+      actionInFlight.current = false;
       setLoading(false);
     }
   };
 
   const handleGoogle = async () => {
+    if (actionInFlight.current) return;
+
+    actionInFlight.current = true;
     setError(null);
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
       // New Google users have no tenant yet → HomeRoute sends them to
       // onboarding to create their company. Returning users go to the app.
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (err: unknown) {
       const code =
         err && typeof err === "object" && "code" in err
@@ -163,6 +175,7 @@ export default function Signup() {
       }
       setError(t("auth.errors.googleSignInFailed"));
     } finally {
+      actionInFlight.current = false;
       setGoogleLoading(false);
     }
   };
@@ -193,7 +206,7 @@ export default function Signup() {
             </CardTitle>
             <CardDescription className="text-center">
               {step === "account"
-                ? t("auth.signup.subtitleAccount")
+                ? `${t("landing.hero.trust.trial")} · ${t("admin.createTenant.planFreeDesc")}`
                 : t("auth.signup.subtitleOrganization")}
             </CardDescription>
           </CardHeader>
@@ -225,7 +238,7 @@ export default function Signup() {
             </div>
 
             {error && (
-              <Alert variant="destructive" className="mb-4">
+              <Alert role="alert" variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
@@ -255,7 +268,9 @@ export default function Signup() {
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="displayName"
+                      name="name"
                       type="text"
+                      autoComplete="name"
                       placeholder={t("auth.signup.fullNamePlaceholder")}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
@@ -271,7 +286,9 @@ export default function Signup() {
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
+                      name="email"
                       type="email"
+                      autoComplete="email"
                       placeholder={t("auth.signup.workEmailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -287,7 +304,9 @@ export default function Signup() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
+                      name="password"
                       type="password"
+                      autoComplete="new-password"
                       placeholder={t("auth.signup.passwordHint")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -304,7 +323,9 @@ export default function Signup() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
+                      name="confirmPassword"
                       type="password"
+                      autoComplete="new-password"
                       placeholder={t("auth.signup.confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -314,7 +335,7 @@ export default function Signup() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full gap-2">
+                <Button type="submit" className="h-11 w-full gap-2" disabled={googleLoading}>
                   {t("auth.signup.continue")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -328,7 +349,9 @@ export default function Signup() {
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="companyName"
+                      name="organization"
                       type="text"
+                      autoComplete="organization"
                       placeholder={t("auth.signup.companyNamePlaceholder")}
                       value={companyName}
                       onChange={(e) => handleCompanyNameChange(e.target.value)}
@@ -343,10 +366,15 @@ export default function Signup() {
                   <div className="flex items-center gap-2">
                     <Input
                       id="companySlug"
+                      name="companySlug"
                       type="text"
+                      autoComplete="off"
                       placeholder={t("auth.signup.companySlugPlaceholder")}
                       value={companySlug}
-                      onChange={(e) => setCompanySlug(generateSlug(e.target.value))}
+                      onChange={(e) => {
+                        setSlugManuallyEdited(true);
+                        setCompanySlug(generateSlug(e.target.value));
+                      }}
                       className="flex-1"
                     />
                   </div>
@@ -401,33 +429,17 @@ export default function Signup() {
 
             <p className="text-xs text-center text-muted-foreground">
               {t("legal.signupAgreePre")}{" "}
-              <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+              <Link to="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
                 {t("legal.terms.title")}
               </Link>{" "}
               {t("legal.signupAgreeAnd")}{" "}
-              <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
                 {t("legal.privacy.title")}
               </Link>
               .
             </p>
           </CardFooter>
         </Card>
-
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-primary">{t("auth.signup.trialLabel")}</div>
-            <div className="text-xs text-muted-foreground">{t("auth.signup.trialValue")}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-primary">5</div>
-            <div className="text-xs text-muted-foreground">{t("auth.signup.employeesLabel")}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-2xl font-bold text-primary">{t("auth.signup.allValue")}</div>
-            <div className="text-xs text-muted-foreground">{t("auth.signup.featuresLabel")}</div>
-          </div>
-        </div>
       </div>
     </div>
   );

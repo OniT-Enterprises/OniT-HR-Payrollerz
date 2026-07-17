@@ -2,12 +2,14 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
 import { filterModuleNavConfigByPermissions, reportsNavConfig } from "@/lib/moduleNav";
 import { useTenant } from "@/contexts/TenantContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { FilingDueDate } from "@/types/tax-filing";
 import { CheckCircle2, ChevronRight, Clock3, ShieldAlert, Wrench } from "lucide-react";
 
@@ -28,32 +30,36 @@ function ReportsDashboardSkeleton() {
   );
 }
 
-function formatShortDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
+type Translate = (key: string, params?: Record<string, string | number>) => string;
+
+function formatShortDate(value: string, locale: "en" | "tet" | "pt") {
+  const dateLocale = locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
+  return new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(value));
 }
 
-function getFilingLabel(item: FilingDueDate) {
-  if (item.type === "monthly_wit") return `WIT ${item.period}`;
-  if (item.type === "annual_wit") return `Annual WIT ${item.period}`;
-  if (item.task === "payment") return `INSS payment ${item.period}`;
-  return `INSS statement ${item.period}`;
+function getFilingLabel(item: FilingDueDate, t: Translate) {
+  if (item.type === "monthly_wit") {
+    return t("moduleDashboards.reports.filings.monthlyWit", { period: item.period });
+  }
+  if (item.type === "annual_wit") {
+    return t("moduleDashboards.reports.filings.annualWit", { period: item.period });
+  }
+  if (item.task === "payment") {
+    return t("moduleDashboards.reports.filings.inssPayment", { period: item.period });
+  }
+  return t("moduleDashboards.reports.filings.inssStatement", { period: item.period });
 }
 
-function getDueDescriptor(item: FilingDueDate) {
-  if (item.isOverdue) return `${Math.abs(item.daysUntilDue)}d overdue`;
-  if (item.daysUntilDue === 0) return "due today";
-  if (item.daysUntilDue === 1) return "due tomorrow";
-  return `${item.daysUntilDue}d left`;
+function getDueDescriptor(item: FilingDueDate, t: Translate) {
+  if (item.isOverdue) {
+    return t("moduleDashboards.reports.filings.overdue", {
+      days: Math.abs(item.daysUntilDue),
+    });
+  }
+  if (item.daysUntilDue === 0) return t("moduleDashboards.reports.filings.dueToday");
+  if (item.daysUntilDue === 1) return t("moduleDashboards.reports.filings.dueTomorrow");
+  return t("moduleDashboards.reports.filings.daysLeft", { days: item.daysUntilDue });
 }
-
-const familyDescriptions: Record<string, string> = {
-  "payroll-reports": "Payslips, tax views, year-to-date detail, and payroll summaries.",
-  "employee-reports": "Headcount, movement, workforce structure, and staff reporting.",
-  "attendance-reports": "Absence, overtime, punctuality, and time trend reporting.",
-  "department-reports": "Cost comparisons, allocation views, and org-level reporting.",
-  ngo: "Allocation packs and donor-facing exports for restricted funds.",
-  custom: "Builder surfaces, saved reports, and reporting setup controls.",
-};
 
 const RED = "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300";
 const AMBER = "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
@@ -61,19 +67,49 @@ const VIOLET = "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-vi
 
 export default function ReportsDashboard() {
   const navigate = useNavigate();
+  const { t, locale } = useI18n();
   const { session, hasModule, canManage } = useTenant();
   const hasReports = hasModule("reports");
   const hasPayroll = hasModule("payroll");
+  const hasStaff = hasModule("staff");
+  const hasTimeleave = hasModule("timeleave");
+  const canManageTenant = canManage();
   const ngoReportingEnabled = canUseNgoReporting(session, hasReports);
   const donorExportEnabled = canUseDonorExport(session, hasReports, canManage());
-  const { data: filingDueDates = [], isLoading } = useTaxFilingsDueSoon(3, hasPayroll);
+  const filingQuery = useTaxFilingsDueSoon(3, hasPayroll && canManageTenant);
 
-  if (isLoading) {
+  if (filingQuery.isLoading) {
     return <ReportsDashboardSkeleton />;
   }
 
-  const filteredConfig = filterModuleNavConfigByPermissions(reportsNavConfig, hasModule);
+  if (hasPayroll && canManageTenant && filingQuery.data === undefined) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("moduleDashboards.reports.title")}
+          description={t("moduleDashboards.reports.seoDescription")}
+        />
+        <ModuleSectionNav config={reportsNavConfig} />
+        <DashboardLoadError
+          isRetrying={filingQuery.isFetching}
+          onRetry={() => filingQuery.refetch()}
+        />
+      </div>
+    );
+  }
+
+  const filingDueDates = filingQuery.data ?? [];
+
+  const filteredConfig = filterModuleNavConfigByPermissions(
+    reportsNavConfig,
+    hasModule,
+    canManage(),
+    canManage() || session?.role === "manager",
+  );
   const reportFamilies = filteredConfig.sections.flatMap((section) => {
+    if (section.id === "payroll-reports" && !hasPayroll) return [];
+    if ((section.id === "employee-reports" || section.id === "department-reports") && !hasStaff) return [];
+    if (section.id === "attendance-reports" && !hasTimeleave) return [];
     if (section.id !== "ngo") return [section];
     if (!ngoReportingEnabled) return [];
     return [
@@ -99,10 +135,17 @@ export default function ReportsDashboard() {
     const count = outputs.length;
     return {
       id: section.id,
-      title: section.label,
+      title: t(`nav.${section.labelKey}`) || section.label,
       art: familyArt[section.id] ?? "/images/illustrations/xefe-card-reports.webp",
       path: outputs[0]?.path ?? section.path,
-      description: familyDescriptions[section.id] ?? `${count} report${count === 1 ? "" : "s"} in this lane.`,
+      description:
+        t(`moduleDashboards.reports.families.${section.id}`) ||
+        t(
+          count === 1
+            ? "moduleDashboards.reports.families.fallbackSingle"
+            : "moduleDashboards.reports.families.fallbackPlural",
+          { count },
+        ),
       icon: section.icon,
     };
   });
@@ -115,15 +158,29 @@ export default function ReportsDashboard() {
 
   const compliancePhrase =
     overdueCount > 0
-      ? `${overdueCount} filing${overdueCount === 1 ? "" : "s"} overdue`
+      ? t(
+          overdueCount === 1
+            ? "moduleDashboards.reports.compliance.filingOverdue"
+            : "moduleDashboards.reports.compliance.filingsOverdue",
+          { count: overdueCount },
+        )
       : dueThisWeek > 0
-        ? `${dueThisWeek} filing${dueThisWeek === 1 ? "" : "s"} due this week`
-        : "no filings due";
+        ? t(
+            dueThisWeek === 1
+              ? "moduleDashboards.reports.compliance.filingDueThisWeek"
+              : "moduleDashboards.reports.compliance.filingsDueThisWeek",
+            { count: dueThisWeek },
+          )
+        : t("moduleDashboards.reports.compliance.noneDue");
 
   // Triage: the real actionable signal in Reports is the tax/INSS filing runway
   const attention = openFilings.slice(0, 5).map((item) => ({
     key: `${item.type}-${item.task ?? "default"}-${item.period}`,
-    text: `${getFilingLabel(item)} — ${getDueDescriptor(item)} (due ${formatShortDate(item.dueDate)})`,
+    text: t("moduleDashboards.reports.filings.line", {
+      label: getFilingLabel(item, t),
+      descriptor: getDueDescriptor(item, t),
+      date: formatShortDate(item.dueDate, locale),
+    }),
     path: "/payroll/tax",
     icon: item.isOverdue ? ShieldAlert : Clock3,
     tone: item.isOverdue ? RED : item.daysUntilDue <= 3 ? AMBER : VIOLET,
@@ -131,36 +188,53 @@ export default function ReportsDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Reports" description="Payroll, people, attendance, department, and compliance reports in one place." />
+      <SEO
+        title={t("moduleDashboards.reports.title")}
+        description={t("moduleDashboards.reports.seoDescription")}
+      />
       <ModuleSectionNav config={reportsNavConfig} />
 
       <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("moduleDashboards.reports.title")}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {familyCards.length} report {familyCards.length === 1 ? "family" : "families"} · {compliancePhrase}.
+              {canManageTenant
+                ? t(
+                    familyCards.length === 1
+                      ? "moduleDashboards.reports.summarySingle"
+                      : "moduleDashboards.reports.summaryPlural",
+                    { count: familyCards.length, compliance: compliancePhrase },
+                  )
+                : t(
+                    familyCards.length === 1
+                      ? "moduleDashboards.reports.summaryReadOnlySingle"
+                      : "moduleDashboards.reports.summaryReadOnlyPlural",
+                    { count: familyCards.length },
+                  )}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate("/reports/setup")}>
-              Report setup
+              {t("moduleDashboards.reports.reportSetup")}
             </Button>
             <Button
               onClick={() => navigate("/reports/custom")}
             >
               <Wrench className="mr-2 h-4 w-4" />
-              Custom reports
+              {t("moduleDashboards.reports.customReports")}
             </Button>
           </div>
         </div>
 
         {/* Filing runway */}
-        {hasPayroll && (
+        {hasPayroll && canManageTenant && (
           <section>
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Filing runway
+              {t("moduleDashboards.reports.filingRunway")}
             </h2>
             {attention.length > 0 ? (
               <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -183,7 +257,7 @@ export default function ReportsDashboard() {
             ) : (
               <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
                 <CheckCircle2 className="h-5 w-5 text-violet-600" />
-                No tax filings due — the reporting runway is clear.
+                {t("moduleDashboards.reports.allGood")}
               </div>
             )}
           </section>
@@ -192,7 +266,7 @@ export default function ReportsDashboard() {
         {/* Report library */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Browse reports
+            {t("moduleDashboards.reports.browseReports")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {familyCards.map((card) => (

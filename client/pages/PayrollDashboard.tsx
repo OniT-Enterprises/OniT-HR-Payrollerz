@@ -3,16 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useSettings } from "@/hooks/useSettings";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
-import { getNextMonthlyAdjustedDeadline, getUrgencyFromDays } from "@/lib/tax/compliance";
+import {
+  getNextMonthlyAdjustedDeadline,
+  getUrgencyFromDays,
+} from "@/lib/tax/compliance";
+import {
+  getConfiguredPayrollSchedule,
+  getDaysUntilIso,
+  getNextPayDateIso,
+} from "@/lib/payroll/payroll-schedule";
 import {
   Banknote,
   CalendarClock,
@@ -41,46 +52,89 @@ function PayrollDashboardSkeleton() {
   );
 }
 
-function getNextPayDate() {
-  const now = new Date();
-  if (now.getDate() > 25) {
-    return new Date(now.getFullYear(), now.getMonth() + 1, 25);
-  }
-  return new Date(now.getFullYear(), now.getMonth(), 25);
-}
-
-const DAY_MS = 1000 * 60 * 60 * 24;
-
 export default function PayrollDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const tenantId = useTenantId();
+  const { hasModule, canManage, session } = useTenant();
+  const canManageTenant = canManage();
+  const hasTimeleave = hasModule("timeleave");
+  const canReadEmployeeDirectory =
+    hasModule("staff") ||
+    hasModule("hiring") ||
+    canManageTenant ||
+    session?.role === "manager";
 
-  const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary();
-  const { data: payrollRuns = [], isLoading: payrollRunsLoading } = usePayrollRuns({ limit: 6 });
-  const { data: leaveStats, isLoading: leaveLoading } = useQuery({
+  const employeeSummaryQuery = useActiveEmployeeSummary(canReadEmployeeDirectory);
+  const payrollRunsQuery = usePayrollRuns({ limit: 6 });
+  const settingsQuery = useSettings();
+  const leaveStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollHomeLeaveStats"],
     queryFn: () => leaveService.getLeaveStats(tenantId),
+    enabled: hasTimeleave,
     staleTime: 5 * 60 * 1000,
   });
+  const dashboardQueries = [
+    ...(canReadEmployeeDirectory ? [employeeSummaryQuery] : []),
+    payrollRunsQuery,
+    settingsQuery,
+    ...(hasTimeleave ? [leaveStatsQuery] : []),
+  ];
 
-  if (employeeLoading || payrollRunsLoading || leaveLoading) {
+  if (dashboardQueries.some((query) => query.isLoading)) {
     return <PayrollDashboardSkeleton />;
   }
+
+  if (
+    dashboardQueries.some((query) => query.data === undefined)
+  ) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("moduleDashboards.payroll.title")}
+          description={t("moduleDashboards.payroll.seoDescription")}
+        />
+        <ModuleSectionNav config={payrollNavConfig} />
+        <DashboardLoadError
+          isRetrying={dashboardQueries.some((query) => query.isFetching)}
+          onRetry={() =>
+            Promise.all(dashboardQueries.map((query) => query.refetch()))
+          }
+        />
+      </div>
+    );
+  }
+
+  const employeeSummary = employeeSummaryQuery.data;
+  const payrollRuns = payrollRunsQuery.data ?? [];
+  const leaveStats = leaveStatsQuery.data;
+  const payrollSchedule = getConfiguredPayrollSchedule(
+    settingsQuery.data?.paymentStructure,
+  );
 
   const activeEmployees = employeeSummary?.active ?? 0;
   const grossPayroll = employeeSummary?.totalMonthlySalary ?? 0;
   const blockedEmployees = employeeSummary?.employeesWithBlockingIssues ?? 0;
-  const pendingLeave = leaveStats?.pendingRequests ?? 0;
-  const readyToPay = payrollRuns.filter((run) => run.status === "approved").length;
-
-  const nextPayDate = getNextPayDate();
-  const daysUntilPayday = Math.ceil((nextPayDate.getTime() - Date.now()) / DAY_MS);
+  const pendingLeave = hasTimeleave ? (leaveStats?.pendingRequests ?? 0) : 0;
+  const readyToPay = payrollRuns.filter(
+    (run) => run.status === "approved",
+  ).length;
+  const hasComplianceContext = activeEmployees > 0 || payrollRuns.length > 0;
 
   const todayIso = getTodayTL();
+  const nextPayDateIso = getNextPayDateIso(payrollSchedule, todayIso);
+  const nextPayDate = parseDateISO(nextPayDateIso);
+  const daysUntilPayday = getDaysUntilIso(nextPayDateIso, todayIso);
   const witDate = parseDateISO(getNextMonthlyAdjustedDeadline(todayIso, 15));
   const inssDate = parseDateISO(getNextMonthlyAdjustedDeadline(todayIso, 20));
-  const witDays = Math.ceil((witDate.getTime() - Date.now()) / DAY_MS);
-  const inssDays = Math.ceil((inssDate.getTime() - Date.now()) / DAY_MS);
+  const witDays = getDaysUntilIso(
+    getNextMonthlyAdjustedDeadline(todayIso, 15),
+    todayIso,
+  );
+  const inssDays = getDaysUntilIso(
+    getNextMonthlyAdjustedDeadline(todayIso, 20),
+    todayIso,
+  );
   const witUrgency = getUrgencyFromDays(witDays);
   const inssUrgency = getUrgencyFromDays(inssDays);
 
@@ -96,7 +150,11 @@ export default function PayrollDashboard() {
       content: (
         <>
           <span className="font-semibold tabular-nums">{blockedEmployees}</span>{" "}
-          employee{blockedEmployees === 1 ? "" : "s"} missing info that blocks payroll
+          {t(
+            blockedEmployees === 1
+              ? "moduleDashboards.payroll.attention.employeeBlocking"
+              : "moduleDashboards.payroll.attention.employeesBlocking",
+          )}
         </>
       ),
       path: "/people/employees?filter=blocking-issues",
@@ -104,11 +162,15 @@ export default function PayrollDashboard() {
       tone: "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300",
     },
     {
-      show: pendingLeave > 0,
+      show: hasTimeleave && pendingLeave > 0,
       content: (
         <>
           <span className="font-semibold tabular-nums">{pendingLeave}</span>{" "}
-          leave request{pendingLeave === 1 ? "" : "s"} awaiting approval
+          {t(
+            pendingLeave === 1
+              ? "moduleDashboards.payroll.attention.leaveRequest"
+              : "moduleDashboards.payroll.attention.leaveRequests",
+          )}
         </>
       ),
       path: "/time-leave/leave",
@@ -116,11 +178,18 @@ export default function PayrollDashboard() {
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
-      show: witUrgency !== "ok",
+      show: canManageTenant && hasComplianceContext && witUrgency !== "ok",
       content: (
         <>
-          Monthly WIT due in <span className="font-semibold tabular-nums">{witDays}</span>{" "}
-          day{witDays === 1 ? "" : "s"} — {formatDateTL(witDate, { month: "short", day: "numeric" })}
+          {t("moduleDashboards.payroll.attention.monthlyWitDueIn")} {" "}
+          <span className="font-semibold tabular-nums">{witDays}</span>{" "}
+          {t(
+            witDays === 1
+              ? "moduleDashboards.common.day"
+              : "moduleDashboards.common.days",
+          )}{" "}
+          —{" "}
+          {formatDateTL(witDate, { month: "short", day: "numeric" })}
         </>
       ),
       path: "/payroll/tax/monthly-wit",
@@ -128,11 +197,18 @@ export default function PayrollDashboard() {
       tone: urgencyTone(witUrgency),
     },
     {
-      show: inssUrgency !== "ok",
+      show: canManageTenant && hasComplianceContext && inssUrgency !== "ok",
       content: (
         <>
-          INSS payment due in <span className="font-semibold tabular-nums">{inssDays}</span>{" "}
-          day{inssDays === 1 ? "" : "s"} — {formatDateTL(inssDate, { month: "short", day: "numeric" })}
+          {t("moduleDashboards.payroll.attention.inssDueIn")} {" "}
+          <span className="font-semibold tabular-nums">{inssDays}</span>{" "}
+          {t(
+            inssDays === 1
+              ? "moduleDashboards.common.day"
+              : "moduleDashboards.common.days",
+          )}{" "}
+          —{" "}
+          {formatDateTL(inssDate, { month: "short", day: "numeric" })}
         </>
       ),
       path: "/payroll/tax/inss-monthly",
@@ -143,67 +219,110 @@ export default function PayrollDashboard() {
 
   const hubCards = [
     {
-      title: "Run payroll",
+      title: t("moduleDashboards.payroll.cards.runPayroll"),
       art: "/images/illustrations/xefe-card-payroll.webp",
-      meta: `${activeEmployees} staff in cycle`,
+      meta: t("moduleDashboards.payroll.cards.staffInCycle", { count: activeEmployees }),
       path: "/payroll/run",
       icon: Play,
     },
     {
-      title: "History",
+      title: t("moduleDashboards.payroll.cards.history"),
       art: "/images/illustrations/xefe-card-pr-history.webp",
-      meta: payrollRuns.length > 0 ? `${payrollRuns.length} recent run${payrollRuns.length === 1 ? "" : "s"}` : "No runs yet",
+      meta:
+        payrollRuns.length > 0
+          ? t(
+              payrollRuns.length === 1
+                ? "moduleDashboards.payroll.cards.recentRun"
+                : "moduleDashboards.payroll.cards.recentRuns",
+              { count: payrollRuns.length },
+            )
+          : t("moduleDashboards.payroll.cards.noRuns"),
       path: "/payroll/history",
       icon: History,
     },
     {
-      title: "Bank transfers",
+      title: t("moduleDashboards.payroll.cards.bankTransfers"),
       art: "/images/illustrations/xefe-card-pr-bank.webp",
-      meta: readyToPay > 0 ? `${readyToPay} ready to pay` : "Export & pay",
+      meta:
+        readyToPay > 0
+          ? t("moduleDashboards.payroll.cards.readyToPay", { count: readyToPay })
+          : t("moduleDashboards.payroll.cards.exportPay"),
       path: "/payroll/payments",
       icon: Banknote,
     },
     {
-      title: "Tax & INSS",
+      title: t("moduleDashboards.payroll.cards.taxInss"),
       art: "/images/illustrations/xefe-card-pr-tax.webp",
-      meta: `WIT in ${witDays}d · INSS in ${inssDays}d`,
+      meta: t("moduleDashboards.payroll.cards.taxDue", {
+        witDays,
+        inssDays,
+      }),
       path: "/payroll/tax",
       icon: FileSpreadsheet,
     },
-  ];
+  ].filter(
+    (card) =>
+      canManageTenant ||
+      (card.path !== "/payroll/run" && card.path !== "/payroll/tax"),
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.payroll} />
+      <SEO
+        title={t("moduleDashboards.payroll.title")}
+        description={t("moduleDashboards.payroll.seoDescription")}
+      />
       <ModuleSectionNav config={payrollNavConfig} />
 
       <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Payroll</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              {t("moduleDashboards.payroll.title")}
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {formatCurrencyTL(grossPayroll)} estimated gross · next payday in{" "}
-              <span className="font-medium text-foreground">{daysUntilPayday} day{daysUntilPayday === 1 ? "" : "s"}</span>{" "}
+              {canReadEmployeeDirectory && (
+                <>
+                  {t("moduleDashboards.payroll.estimatedGross", {
+                    amount: formatCurrencyTL(grossPayroll),
+                  })}{" "}
+                  ·{" "}
+                </>
+              )}
+              {t("moduleDashboards.payroll.nextPaydayIn")} {" "}
+              <span className="font-medium text-foreground">
+                {daysUntilPayday}{" "}
+                {t(
+                  daysUntilPayday === 1
+                    ? "moduleDashboards.common.day"
+                    : "moduleDashboards.common.days",
+                )}
+              </span>{" "}
               ({formatDateTL(nextPayDate, { month: "long", day: "numeric" })}).
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate("/payroll/history")}>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/payroll/history")}
+            >
               <History className="mr-2 h-4 w-4" />
-              History
+              {t("moduleDashboards.payroll.historyAction")}
             </Button>
-            <Button onClick={() => navigate("/payroll/run")}>
-              <Play className="mr-2 h-4 w-4" />
-              Run payroll
-            </Button>
+            {canManageTenant && (
+              <Button onClick={() => navigate("/payroll/run")}>
+                <Play className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.payroll.runAction")}
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Needs attention */}
         <section>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Needs your attention
+            {t("moduleDashboards.common.needsAttention")}
           </h2>
           {attention.length > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
@@ -212,13 +331,19 @@ export default function PayrollDashboard() {
                   key={item.path}
                   onClick={() => navigate(item.path)}
                   className={`flex w-full items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 ${
-                    idx !== attention.length - 1 ? "border-b border-border/60" : ""
+                    idx !== attention.length - 1
+                      ? "border-b border-border/60"
+                      : ""
                   }`}
                 >
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}
+                  >
                     <item.icon className="h-4 w-4" />
                   </span>
-                  <span className="flex-1 text-sm text-foreground/90">{item.content}</span>
+                  <span className="flex-1 text-sm text-foreground/90">
+                    {item.content}
+                  </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
               ))}
@@ -226,7 +351,7 @@ export default function PayrollDashboard() {
           ) : (
             <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
               <CheckCircle2 className="h-5 w-5 text-primary" />
-              Payroll is on track — nothing needs attention before payday.
+              {t("moduleDashboards.payroll.allGood")}
             </div>
           )}
         </section>
@@ -248,7 +373,9 @@ export default function PayrollDashboard() {
               />
               <div>
                 <p className="text-base font-semibold">{card.title}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {card.meta}
+                </p>
               </div>
             </button>
           ))}

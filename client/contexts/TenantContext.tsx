@@ -59,6 +59,7 @@ interface TenantContextType {
   // Refresh functions
   refreshSession: () => Promise<void>;
   refreshTenants: () => Promise<void>;
+  retryInitialization: () => void;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -114,17 +115,22 @@ const TENANT_CACHE_KEY = 'meza-tenant-cache';
 const TENANT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 interface TenantCache {
+  uid: string;
   session: TenantSession | null;
   availableTenants: Array<{ id: string; name: string; role: TenantRole }>;
   timestamp: number;
 }
 
-function readTenantCache(): TenantCache | null {
+function readTenantCache(expectedUid: string): TenantCache | null {
   try {
     const raw = localStorage.getItem(TENANT_CACHE_KEY);
     if (!raw) return null;
     const data: TenantCache = JSON.parse(raw);
-    if (Date.now() - data.timestamp > TENANT_CACHE_TTL) {
+    if (
+      data.uid !== expectedUid ||
+      typeof data.timestamp !== "number" ||
+      Date.now() - data.timestamp > TENANT_CACHE_TTL
+    ) {
       localStorage.removeItem(TENANT_CACHE_KEY);
       return null;
     }
@@ -135,9 +141,10 @@ function readTenantCache(): TenantCache | null {
   }
 }
 
-function writeTenantCache(session: TenantSession | null, availableTenants: Array<{ id: string; name: string; role: TenantRole }>): void {
+function writeTenantCache(uid: string, session: TenantSession | null, availableTenants: Array<{ id: string; name: string; role: TenantRole }>): void {
   try {
     localStorage.setItem(TENANT_CACHE_KEY, JSON.stringify({
+      uid,
       session,
       availableTenants,
       timestamp: Date.now(),
@@ -147,25 +154,82 @@ function writeTenantCache(session: TenantSession | null, availableTenants: Array
   }
 }
 
+const currentTenantKey = (uid: string) => `currentTenantId:${uid}`;
+
+function readCurrentTenantId(
+  uid: string,
+  tenants: Array<{ id: string }>,
+): string | null {
+  const scopedKey = currentTenantKey(uid);
+  const scopedTenantId = localStorage.getItem(scopedKey);
+  if (scopedTenantId && tenants.some((tenant) => tenant.id === scopedTenantId)) {
+    return scopedTenantId;
+  }
+  if (scopedTenantId) {
+    localStorage.removeItem(scopedKey);
+  }
+
+  // One-time migration from the old global selection. It is accepted only
+  // after the authenticated user's tenant list confirms access.
+  const legacyTenantId = localStorage.getItem("currentTenantId");
+  localStorage.removeItem("currentTenantId");
+  if (legacyTenantId && tenants.some((tenant) => tenant.id === legacyTenantId)) {
+    localStorage.setItem(scopedKey, legacyTenantId);
+    return legacyTenantId;
+  }
+  return null;
+}
+
+function clearImpersonationStorage(): void {
+  sessionStorage.removeItem("impersonatingUid");
+  sessionStorage.removeItem("impersonatingTenantId");
+  sessionStorage.removeItem("impersonatingTenantName");
+}
+
 export function TenantProvider({ children }: TenantProviderProps) {
   const { user, isSuperAdmin, userProfile, authResolved } = useAuth();
   const queryClient = useQueryClient();
 
-  // Restore cached state for instant returning-user loads
-  const cachedTenant = readTenantCache();
-
-  const [session, setSession] = useState<TenantSession | null>(cachedTenant?.session ?? null);
-  const [loading, setLoading] = useState(cachedTenant ? false : true);
-  const [tenantResolved, setTenantResolved] = useState<boolean>(Boolean(cachedTenant?.session));
+  // Persisted tenant state cannot be read safely until AuthProvider supplies
+  // the authenticated UID that owns it.
+  const [session, setSession] = useState<TenantSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [tenantResolved, setTenantResolved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableTenants, setAvailableTenants] = useState<
     Array<{ id: string; name: string; role: TenantRole }>
-  >(cachedTenant?.availableTenants ?? []);
+  >([]);
+  const [initializationAttempt, setInitializationAttempt] = useState(0);
 
   // Impersonation state
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [impersonatedTenantId, setImpersonatedTenantId] = useState<string | null>(null);
   const [impersonatedTenantName, setImpersonatedTenantName] = useState<string | null>(null);
+  const tenantOwnerUidRef = React.useRef<string | null>(null);
+
+  // Clear account-owned state as soon as Firebase changes users. The
+  // initialization effect below may then restore only a matching UID cache.
+  useEffect(() => {
+    const nextUid = user?.uid ?? null;
+    const previousUid = tenantOwnerUidRef.current;
+    if (previousUid === nextUid) return;
+
+    tenantOwnerUidRef.current = nextUid;
+    setSession(null);
+    setAvailableTenants([]);
+    setError(null);
+    setTenantResolved(false);
+    setLoading(true);
+    setIsImpersonating(false);
+    setImpersonatedTenantId(null);
+    setImpersonatedTenantName(null);
+
+    // Preserve a same-account page-refresh impersonation (null -> UID), but
+    // clear it on sign-out or a direct account switch.
+    if (previousUid !== null || nextUid === null) {
+      clearImpersonationStorage();
+    }
+  }, [user?.uid]);
 
   // Get current user and custom claims
   const getCurrentUserAndClaims = useCallback(async (): Promise<{
@@ -173,7 +237,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     claims: CustomClaims | null;
   }> => {
     if (!auth?.currentUser) {
-      return { user: null, claims: null };
+      throw new Error("Authenticated session is unavailable");
     }
 
     try {
@@ -182,114 +246,64 @@ export function TenantProvider({ children }: TenantProviderProps) {
       return { user: auth.currentUser, claims };
     } catch (error) {
       console.error("Failed to get user claims:", error);
-      return { user: auth.currentUser, claims: null };
+      throw error;
     }
   }, []);
 
-  // Load available tenants for current user
-  // Optimized: Uses denormalized tenantAccess when available (1 read vs N×2 reads)
+  // Load available tenants for current user. Profile and token membership lists
+  // are discovery hints only; each candidate is verified against the tenant and
+  // member documents before it is shown or restored.
   const loadAvailableTenants = useCallback(async (
     firebaseUser: User,
   ): Promise<Array<{ id: string; name: string; role: TenantRole }>> => {
     if (!db) {
-      console.warn("Database not available");
-      return [];
+      throw new Error("Database is unavailable");
     }
 
     try {
-      // OPTIMIZED: Use denormalized tenantAccess from userProfile (1 read total)
-      if (userProfile?.tenantAccess && Object.keys(userProfile.tenantAccess).length > 0) {
-        const tenants = Object.entries(userProfile.tenantAccess).map(([tid, info]) => ({
-          id: tid,
-          name: info.name || tid,
-          role: info.role as TenantRole,
-        }));
-        if (tenants.length > 0) {
-          return tenants;
-        }
-      }
-
-      // FALLBACK: Use custom claims + individual fetches (N×2 reads)
-      // This path is for backwards compatibility until tenantAccess is populated
       const { claims } = await getCurrentUserAndClaims();
-      // Support both map format { tenantId: role } and legacy array format [tenantId]
       const claimTenantIds = claims?.tenants
         ? (Array.isArray(claims.tenants)
             ? claims.tenants as string[]
             : Object.keys(claims.tenants))
         : [];
-      if (claimTenantIds.length > 0) {
-        const tenantPromises = claimTenantIds.map(async (tid: string) => {
-          try {
-            // Get tenant config and member doc in parallel
-            const [tenantDoc, memberDoc] = await Promise.all([
-              getDoc(doc(db, paths.tenant(tid))),
-              getDoc(doc(db, paths.member(tid, firebaseUser.uid))),
-            ]);
+      const candidateTenantIds = Array.from(new Set([
+        ...Object.keys(userProfile?.tenantAccess ?? {}),
+        ...(userProfile?.tenantIds ?? []),
+        ...claimTenantIds,
+      ]));
 
-            if (tenantDoc.exists() && memberDoc.exists()) {
-              const tenantData = tenantDoc.data() as TenantConfig;
-              const memberData = memberDoc.data() as TenantMember;
+      const tenantResults = await Promise.allSettled(
+        candidateTenantIds.map(async (tid) => {
+          const [tenantDoc, memberDoc] = await Promise.all([
+            getDoc(doc(db, paths.tenant(tid))),
+            getDoc(doc(db, paths.member(tid, firebaseUser.uid))),
+          ]);
 
-              return {
-                id: tid,
-                name: tenantData.name || tid,
-                role: memberData.role,
-              };
-            }
-            return null;
-          } catch (error) {
-            console.warn(`Failed to load tenant ${tid}:`, error);
-            return null;
-          }
-        });
+          if (!tenantDoc.exists() || !memberDoc.exists()) return null;
+          const tenantData = tenantDoc.data() as TenantConfig;
+          const memberData = memberDoc.data() as TenantMember;
+          return {
+            id: tid,
+            name: tenantData.name || tid,
+            role: memberData.role,
+          };
+        }),
+      );
 
-        const tenants = (await Promise.all(tenantPromises)).filter(
-          Boolean,
-        ) as Array<{ id: string; name: string; role: TenantRole }>;
-        if (tenants.length > 0) {
-          return tenants;
-        }
-      }
+      const tenants = tenantResults.flatMap((result) =>
+        result.status === "fulfilled" && result.value ? [result.value] : [],
+      );
+      if (tenants.length > 0) return tenants;
 
-      // FALLBACK 2: Check user profile tenantIds (N×2 reads)
-      if (userProfile?.tenantIds && userProfile.tenantIds.length > 0) {
-        const tenantPromises = userProfile.tenantIds.map(async (tid: string) => {
-          try {
-            const [tenantDoc, memberDoc] = await Promise.all([
-              getDoc(doc(db, paths.tenant(tid))),
-              getDoc(doc(db, paths.member(tid, firebaseUser.uid))),
-            ]);
-
-            if (tenantDoc.exists() && memberDoc.exists()) {
-              const tenantData = tenantDoc.data() as TenantConfig;
-              const memberData = memberDoc.data() as TenantMember;
-
-              return {
-                id: tid,
-                name: tenantData.name || tid,
-                role: memberData.role,
-              };
-            }
-            return null;
-          } catch (error) {
-            console.warn(`Failed to load tenant ${tid}:`, error);
-            return null;
-          }
-        });
-
-        const tenants = (await Promise.all(tenantPromises)).filter(
-          Boolean,
-        ) as Array<{ id: string; name: string; role: TenantRole }>;
-        if (tenants.length > 0) {
-          return tenants;
-        }
-      }
-
+      const rejectedResult = tenantResults.find(
+        (result) => result.status === "rejected",
+      );
+      if (rejectedResult?.status === "rejected") throw rejectedResult.reason;
       return [];
     } catch (error) {
       console.error("Failed to load available tenants:", error);
-      return [];
+      throw error;
     }
   }, [getCurrentUserAndClaims, userProfile]);
 
@@ -300,8 +314,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     bypassMembershipCheck = false,
   ): Promise<TenantSession | null> => {
     if (!db) {
-      console.warn("Database not available");
-      return null;
+      throw new Error("Database is unavailable");
     }
 
     try {
@@ -361,26 +374,21 @@ export function TenantProvider({ children }: TenantProviderProps) {
     if (!user || !isSuperAdmin) {
       throw new Error("Only superadmins can impersonate");
     }
+    const operationUid = user.uid;
+    const isCurrentAccount = () => tenantOwnerUidRef.current === operationUid;
 
     try {
       queryClient.clear();
       await clearPersistedQueryCache(user.uid);
+      if (!isCurrentAccount()) return;
       setLoading(true);
+      setTenantResolved(false);
       setError(null);
 
       // Load the tenant session with bypass
       const impersonatedSession = await loadTenantSession(tenantId, user, true);
 
-      if (impersonatedSession) {
-        setSession(impersonatedSession);
-        setIsImpersonating(true);
-        setImpersonatedTenantId(tenantId);
-        setImpersonatedTenantName(tenantName);
-
-        // Session-only: expires when browser closes (no Firestore write — prevents cross-device lock-in)
-        sessionStorage.setItem("impersonatingTenantId", tenantId);
-        sessionStorage.setItem("impersonatingTenantName", tenantName);
-
+      if (impersonatedSession && isCurrentAccount()) {
         // Audit trail: superadmin access to tenant data must be accountable
         const { adminService } = await import("@/services/adminService");
         await adminService.logAdminAction({
@@ -392,25 +400,42 @@ export function TenantProvider({ children }: TenantProviderProps) {
           targetName: tenantName,
           timestamp: Timestamp.now(),
         });
+
+        if (!isCurrentAccount()) return;
+        setSession(impersonatedSession);
+        setIsImpersonating(true);
+        setImpersonatedTenantId(tenantId);
+        setImpersonatedTenantName(tenantName);
+
+        // Session-only: expires when browser closes (no Firestore write — prevents cross-device lock-in)
+        sessionStorage.setItem("impersonatingUid", user.uid);
+        sessionStorage.setItem("impersonatingTenantId", tenantId);
+        sessionStorage.setItem("impersonatingTenantName", tenantName);
       }
     } catch (error: unknown) {
       console.error("Failed to start impersonation:", error);
+      if (!isCurrentAccount()) throw error;
       const message = error instanceof Error ? error.message : "Failed to impersonate";
       setError(message);
       throw error;
     } finally {
-      setLoading(false);
+      if (isCurrentAccount()) setLoading(false);
+      if (isCurrentAccount()) setTenantResolved(true);
     }
   }, [user, isSuperAdmin, loadTenantSession, queryClient]);
 
   // Stop impersonation
   const stopImpersonation = useCallback(async () => {
     if (!user) return;
+    const operationUid = user.uid;
+    const isCurrentAccount = () => tenantOwnerUidRef.current === operationUid;
 
     try {
       queryClient.clear();
       await clearPersistedQueryCache(user.uid);
+      if (!isCurrentAccount()) return;
       setLoading(true);
+      setTenantResolved(false);
 
       const endedTenantId = impersonatedTenantId;
       const endedTenantName = impersonatedTenantName;
@@ -422,42 +447,54 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setSession(null);
 
       // Clear sessionStorage
-      sessionStorage.removeItem("impersonatingTenantId");
-      sessionStorage.removeItem("impersonatingTenantName");
+      clearImpersonationStorage();
 
       if (endedTenantId) {
         const { adminService } = await import("@/services/adminService");
-        await adminService.logAdminAction({
-          action: "impersonation_ended",
-          actorUid: user.uid,
-          actorEmail: user.email || "",
-          targetType: "tenant",
-          targetId: endedTenantId,
-          targetName: endedTenantName || undefined,
-          timestamp: Timestamp.now(),
-        });
+        try {
+          await adminService.logAdminAction({
+            action: "impersonation_ended",
+            actorUid: user.uid,
+            actorEmail: user.email || "",
+            targetType: "tenant",
+            targetId: endedTenantId,
+            targetName: endedTenantName || undefined,
+            timestamp: Timestamp.now(),
+          });
+        } catch (auditError) {
+          // Restoring the administrator's real session is more important than
+          // leaving the app unusable when the audit endpoint is unavailable.
+          console.error("Failed to record impersonation end:", auditError);
+        }
       }
 
       // Reload user's actual tenants
       const tenants = await loadAvailableTenants(user);
+      if (!isCurrentAccount()) return;
       setAvailableTenants(tenants);
 
       if (tenants.length > 0) {
-        const savedTenantId = localStorage.getItem("currentTenantId");
+        const savedTenantId = readCurrentTenantId(user.uid, tenants);
         const targetTenant =
           savedTenantId && tenants.find((t) => t.id === savedTenantId)
             ? savedTenantId
             : tenants[0]?.id;
 
         if (targetTenant) {
-          const session = await loadTenantSession(targetTenant, user);
-          setSession(session);
+          const restoredSession = await loadTenantSession(targetTenant, user);
+          if (!isCurrentAccount()) return;
+          setSession(restoredSession);
+          localStorage.setItem(currentTenantKey(user.uid), targetTenant);
+          writeTenantCache(user.uid, restoredSession, tenants);
         }
+      } else {
+        writeTenantCache(user.uid, null, tenants);
       }
     } catch (error) {
       console.error("Failed to stop impersonation:", error);
     } finally {
-      setLoading(false);
+      if (isCurrentAccount()) setLoading(false);
+      if (isCurrentAccount()) setTenantResolved(true);
     }
   }, [user, loadAvailableTenants, loadTenantSession, impersonatedTenantId, impersonatedTenantName, queryClient]);
 
@@ -473,45 +510,50 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
     if (switchingRef.current) return;
     switchingRef.current = true;
+    const operationUid = user.uid;
+    const isCurrentAccount = () => tenantOwnerUidRef.current === operationUid;
 
     try {
-      // If impersonating, clear impersonation state directly instead of
-      // calling stopImpersonation() to avoid re-entrancy.
-      if (isImpersonating) {
-        setIsImpersonating(false);
-        setImpersonatedTenantId(null);
-        setImpersonatedTenantName(null);
-        sessionStorage.removeItem("impersonatingTenantId");
-        sessionStorage.removeItem("impersonatingTenantName");
-      }
-
       setLoading(true);
+      setTenantResolved(false);
       setError(null);
       queryClient.clear();
       await clearPersistedQueryCache(user.uid);
+      if (!isCurrentAccount()) return;
 
       const newSession = await loadTenantSession(tid, user);
-      if (newSession) {
+      if (newSession && isCurrentAccount()) {
+        // Commit the replacement atomically. A failed load must leave the
+        // impersonation banner and virtual-owner session intact.
+        if (isImpersonating) {
+          setIsImpersonating(false);
+          setImpersonatedTenantId(null);
+          setImpersonatedTenantName(null);
+          clearImpersonationStorage();
+        }
         setSession(newSession);
         // Store current tenant in localStorage for persistence
-        localStorage.setItem("currentTenantId", tid);
+        localStorage.setItem(currentTenantKey(user.uid), tid);
         // Update cache with new session
-        writeTenantCache(newSession, availableTenants);
+        writeTenantCache(user.uid, newSession, availableTenants);
       }
     } catch (error: unknown) {
       console.error("Failed to switch tenant:", error);
+      if (!isCurrentAccount()) throw error;
       const message = error instanceof Error ? error.message : "Failed to switch tenant";
       setError(message);
       throw error;
     } finally {
       switchingRef.current = false;
-      setLoading(false);
+      if (isCurrentAccount()) setLoading(false);
+      if (isCurrentAccount()) setTenantResolved(true);
     }
   }, [user, isImpersonating, loadTenantSession, availableTenants, queryClient]);
 
   // Refresh current session
   const refreshSession = useCallback(async () => {
     if (!session || !user) return;
+    const operationUid = user.uid;
 
     try {
       const refreshedSession = await loadTenantSession(
@@ -519,40 +561,51 @@ export function TenantProvider({ children }: TenantProviderProps) {
         user,
         isImpersonating,
       );
-      if (refreshedSession) {
+      if (refreshedSession && tenantOwnerUidRef.current === operationUid) {
         setSession(refreshedSession);
+        writeTenantCache(user.uid, refreshedSession, availableTenants);
       }
     } catch (error) {
       console.error("Failed to refresh session:", error);
+      if (tenantOwnerUidRef.current !== operationUid) return;
       setError("Failed to refresh session");
     }
-  }, [session, user, isImpersonating, loadTenantSession]);
+  }, [session, user, isImpersonating, loadTenantSession, availableTenants]);
 
   // Refresh available tenants
   const refreshTenants = useCallback(async () => {
     if (!user) return;
+    const operationUid = user.uid;
 
     try {
       const tenants = await loadAvailableTenants(user);
+      if (tenantOwnerUidRef.current !== operationUid) return;
       setAvailableTenants(tenants);
+      writeTenantCache(user.uid, session, tenants);
     } catch (error) {
       console.error("Failed to refresh tenants:", error);
     }
-  }, [user, loadAvailableTenants]);
+  }, [user, session, loadAvailableTenants]);
+
+  const retryInitialization = useCallback(() => {
+    setError(null);
+    setTenantResolved(false);
+    setLoading(true);
+    setInitializationAttempt((attempt) => attempt + 1);
+  }, []);
 
   // Initialize tenant session
   useEffect(() => {
-    const initializeTenant = async () => {
-      // Never touch tenant state while Firebase auth is still restoring. On a
-      // cold load `user` is briefly null (AuthProvider doesn't seed user from
-      // cache), and nulling session here causes a transient
-      // (session=null, tenantResolved=true) that bounces gated deep-links to
-      // the dashboard. Wait for auth to settle first.
-      if (!authResolved) {
-        return;
-      }
+    if (!authResolved) return;
 
+    let cancelled = false;
+    const expectedUid = user?.uid ?? null;
+    const isCurrentAccount = () =>
+      !cancelled && tenantOwnerUidRef.current === expectedUid;
+
+    const initializeTenant = async () => {
       if (!user) {
+        if (!isCurrentAccount()) return;
         setSession(null);
         setAvailableTenants([]);
         setIsImpersonating(false);
@@ -564,22 +617,42 @@ export function TenantProvider({ children }: TenantProviderProps) {
         return;
       }
 
-      try {
-        // Only show loading if we don't have cached state already
-        if (!readTenantCache()) {
-          setLoading(true);
-        }
-        setError(null);
+      const cached = readTenantCache(user.uid);
+      if (!isCurrentAccount()) return;
+      setLoading(!cached?.session);
 
+      if (cached) {
+        setSession(cached.session);
+        setAvailableTenants(cached.availableTenants);
+        setTenantResolved(Boolean(cached.session));
+      } else {
+        setSession(null);
+        setAvailableTenants([]);
+        setTenantResolved(false);
+      }
+
+      try {
+        setError(null);
         // Check sessionStorage for persisted impersonation (session-only, no Firestore)
+        const savedImpersonatingUid = sessionStorage.getItem("impersonatingUid");
         const savedImpersonatingId = sessionStorage.getItem("impersonatingTenantId");
         const savedImpersonatingName = sessionStorage.getItem("impersonatingTenantName");
 
-        if (isSuperAdmin && savedImpersonatingId) {
+        if (
+          savedImpersonatingId &&
+          savedImpersonatingUid !== user.uid
+        ) {
+          clearImpersonationStorage();
+        }
+
+        if (
+          isSuperAdmin &&
+          savedImpersonatingUid === user.uid &&
+          savedImpersonatingId
+        ) {
           try {
             const impersonatedSession = await loadTenantSession(savedImpersonatingId, user, true);
-
-            if (impersonatedSession) {
+            if (impersonatedSession && isCurrentAccount()) {
               setSession(impersonatedSession);
               setIsImpersonating(true);
               setImpersonatedTenantId(savedImpersonatingId);
@@ -589,51 +662,93 @@ export function TenantProvider({ children }: TenantProviderProps) {
               setTenantResolved(true);
               return;
             }
-          } catch {
-            // Clear invalid impersonation data
-            sessionStorage.removeItem("impersonatingTenantId");
-            sessionStorage.removeItem("impersonatingTenantName");
+          } catch (impersonationError) {
+            clearImpersonationStorage();
+            throw impersonationError;
           }
         }
 
         // Load available tenants normally
         const tenants = await loadAvailableTenants(user);
+        if (!isCurrentAccount()) return;
         setAvailableTenants(tenants);
 
-        // Try to restore previous tenant or use first available
-        const savedTenantId = localStorage.getItem("currentTenantId");
-        const targetTenant =
-          savedTenantId && tenants.find((t) => t.id === savedTenantId)
-            ? savedTenantId
-            : tenants[0]?.id;
+        // Prefer the saved tenant, but continue through verified memberships if
+        // it became stale between discovery and session restoration.
+        const savedTenantId = readCurrentTenantId(user.uid, tenants);
+        const orderedTenantIds = [
+          ...(savedTenantId ? [savedTenantId] : []),
+          ...tenants
+            .map((tenant) => tenant.id)
+            .filter((tenantId) => tenantId !== savedTenantId),
+        ];
 
-        if (targetTenant) {
-          try {
-            const session = await loadTenantSession(targetTenant, user);
-            setSession(session);
-            localStorage.setItem("currentTenantId", targetTenant);
-            // Cache session + tenants for instant returning-user loads
-            writeTenantCache(session, tenants);
-          } catch (error) {
-            console.error("Failed to load tenant session:", error);
-            setError(`Failed to load tenant: ${error}`);
+        if (orderedTenantIds.length > 0) {
+          let lastSessionError: unknown;
+          let restored = false;
+
+          for (const tenantId of orderedTenantIds) {
+            try {
+              const restoredSession = await loadTenantSession(tenantId, user);
+              if (!isCurrentAccount()) return;
+              if (!restoredSession) continue;
+              setSession(restoredSession);
+              localStorage.setItem(currentTenantKey(user.uid), tenantId);
+              writeTenantCache(user.uid, restoredSession, tenants);
+              restored = true;
+              break;
+            } catch (sessionError) {
+              if (!isCurrentAccount()) return;
+              lastSessionError = sessionError;
+            }
           }
-        } else if (!isSuperAdmin) {
-          // Only show error for non-superadmins
-          console.warn("No tenants available for user");
-          setError("No tenants available. Contact your administrator.");
+
+          if (!restored) {
+            throw lastSessionError ?? new Error("No tenant session could be restored");
+          }
+        } else {
+          setSession(null);
+          writeTenantCache(user.uid, null, tenants);
+
+          const expectedTenantCount = Math.max(
+            userProfile?.tenantIds?.length ?? 0,
+            Object.keys(userProfile?.tenantAccess ?? {}).length,
+          );
+          if (!isSuperAdmin && expectedTenantCount > 0) {
+            console.warn("No tenant membership could be restored for user");
+            setError("No tenant membership could be loaded.");
+          }
         }
-      } catch (error) {
-        console.error("Tenant initialization error:", error);
-        setError(`Tenant error: ${error}`);
+      } catch (initializationError) {
+        if (!isCurrentAccount()) return;
+        console.error("Tenant initialization error:", initializationError);
+        if (!cached?.session) {
+          setSession(null);
+        }
+        setError(
+          initializationError instanceof Error
+            ? initializationError.message
+            : "Failed to restore tenant session",
+        );
       } finally {
-        setLoading(false);
-        setTenantResolved(true);
+        if (isCurrentAccount()) setLoading(false);
+        if (isCurrentAccount()) setTenantResolved(true);
       }
     };
 
     void initializeTenant();
-  }, [authResolved, user, isSuperAdmin, loadAvailableTenants, loadTenantSession]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authResolved,
+    user,
+    userProfile,
+    isSuperAdmin,
+    loadAvailableTenants,
+    loadTenantSession,
+    initializationAttempt,
+  ]);
 
   // Permission helpers
   const hasModule = (module: ModulePermission): boolean => {
@@ -668,6 +783,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     canManage,
     refreshSession,
     refreshTenants,
+    retryInitialization,
   };
 
   // Dismiss the HTML splash overlay once we're past the loading gate

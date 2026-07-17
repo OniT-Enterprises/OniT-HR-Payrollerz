@@ -62,6 +62,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 // Payroll-linked account codes - these should not be edited carelessly
@@ -76,6 +77,8 @@ export default function ChartOfAccounts() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { canManage } = useTenant();
+  const canManageTenant = canManage();
   const { data: accounts = [], isLoading: loading } = useAccounts();
   const createAccountMutation = useCreateAccount();
   const updateAccountMutation = useUpdateAccount();
@@ -101,6 +104,7 @@ export default function ChartOfAccounts() {
 
   // Initialize default chart of accounts
   const handleInitialize = async () => {
+    if (!canManageTenant) return;
     try {
       await initializeMutation.mutateAsync({
         userId: user?.uid || user?.email || "unknown",
@@ -223,6 +227,7 @@ export default function ChartOfAccounts() {
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageTenant) return;
 
     if (!formData.code || !formData.name) {
       toast({
@@ -296,6 +301,7 @@ export default function ChartOfAccounts() {
   };
 
   const openEditDialog = (account: Account) => {
+    if (!canManageTenant) return;
     setEditingAccount(account);
     setFormData({
       code: account.code,
@@ -386,7 +392,7 @@ export default function ChartOfAccounts() {
             </div>
           </TableCell>
           <TableCell>
-            {!account.isSystem ? (
+            {canManageTenant && !account.isSystem ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -487,7 +493,7 @@ export default function ChartOfAccounts() {
           subtitle={t("accounting.chartOfAccounts.subtitle")}
           icon={BookOpen}
           iconColor="text-orange-500"
-          actions={
+          actions={canManageTenant ? (
             <>
               {accounts.length === 0 && (
                 <Button
@@ -689,7 +695,7 @@ export default function ChartOfAccounts() {
                 </DialogContent>
               </Dialog>
             </>
-          }
+          ) : undefined}
         />
         <MoreDetailsSection className="mb-6">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -805,7 +811,7 @@ export default function ChartOfAccounts() {
                 <div className="text-center py-12">
                   <img src="/images/illustrations/empty-accounting.webp" alt="No accounts yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                   <p className="text-muted-foreground mb-4">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
-                  <Button onClick={handleInitialize} disabled={initializing}>
+                  {canManageTenant && <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -814,7 +820,7 @@ export default function ChartOfAccounts() {
                     ) : (
                       t("accounting.chartOfAccounts.initializeDefault")
                     )}
-                  </Button>
+                  </Button>}
                 </div>
               ) : groupedAccounts.all.length === 0 ? (
                 <div className="text-center py-12">

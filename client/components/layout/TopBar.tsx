@@ -49,6 +49,7 @@ import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
+import { useToast } from "@/hooks/use-toast";
 
 // --- Helpers ---
 
@@ -185,9 +186,10 @@ interface TopBarUserMenuProps {
   onNavigate: (path: string) => void;
   onSignOut: () => void;
   t: (key: string) => string;
+  canManageTenant: boolean;
 }
 
-function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOut, t }: TopBarUserMenuProps) {
+function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOut, t, canManageTenant }: TopBarUserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -219,10 +221,22 @@ function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOu
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem onClick={() => onNavigate("/settings")}>
-          <Settings className="h-4 w-4 mr-2" />
-          {t("common.settings")}
-        </DropdownMenuItem>
+        <div
+          className="px-2 py-2 sm:hidden"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
+            {t("common.language")}
+          </p>
+          <LocaleSwitcher variant="buttons" />
+        </div>
+        <DropdownMenuSeparator className="sm:hidden" />
+        {canManageTenant && (
+          <DropdownMenuItem onClick={() => onNavigate("/settings")}>
+            <Settings className="h-4 w-4 mr-2" />
+            {t("common.settings")}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => onNavigate("/sitemap")}>
           <Map className="h-4 w-4 mr-2" />
           {t("common.sitemap")}
@@ -357,12 +371,17 @@ export default function TopBar() {
   const { hasModule, canManage, availableTenants, switchTenant, session } = useTenant();
   const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
-  const { toggleSidebar } = useLayout();
+  const { toggleSidebar, sidebarOpen } = useLayout();
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
+  const { toast } = useToast();
   const canManageTenant = canManage();
 
-  const notifCounts = useNotificationCounts(hasModule("payroll"), hasModule("timeleave"), hasModule("staff"));
+  const notifCounts = useNotificationCounts(
+    hasModule("payroll") && canManageTenant,
+    hasModule("timeleave"),
+    hasModule("staff"),
+  );
 
   const { data: setupProgress } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress", "nav"],
@@ -373,9 +392,31 @@ export default function TopBar() {
 
   const handleNavigate = (path: string) => navigate(path);
 
+  const handleTenantSwitch = async (tid: string) => {
+    try {
+      await switchTenant(tid);
+    } catch (error) {
+      console.error("Failed to switch organization:", error);
+      toast({
+        title: t("common.connectionIssueTitle"),
+        description: t("common.connectionIssueDesc"),
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth/login");
+    try {
+      await signOut();
+      navigate("/auth/login");
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+      toast({
+        title: t("common.error"),
+        description: t("auth.errors.signOutFailed"),
+        variant: "destructive",
+      });
+    }
   };
 
   const userInitials = user ? getUserInitials(user) : "U";
@@ -393,6 +434,8 @@ export default function TopBar() {
             onClick={toggleSidebar}
             className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
             aria-label={t("common.openMenu")}
+            aria-expanded={sidebarOpen}
+            aria-controls="app-mobile-sidebar"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -401,7 +444,7 @@ export default function TopBar() {
             <BusinessSelector
               currentName={session?.config?.name || ""}
               availableTenants={availableTenants}
-              onSwitch={(tid) => { void switchTenant(tid); }}
+              onSwitch={(tid) => { void handleTenantSwitch(tid); }}
               currentTenantId={tenantId}
             />
           </div>
@@ -415,6 +458,7 @@ export default function TopBar() {
               size="sm"
               onClick={() => setChatOpen(true)}
               className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+              aria-label={t("common.askAI")}
             >
               <Bot className="h-4 w-4" />
               <span className="hidden sm:inline text-xs">{t("common.askAI")}</span>
@@ -437,6 +481,7 @@ export default function TopBar() {
               onNavigate={handleNavigate}
               onSignOut={handleSignOut}
               t={t}
+              canManageTenant={canManageTenant}
             />
           </div>
         </div>

@@ -73,17 +73,19 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<QBExportSettings>(() => createDefaultSettings());
 
   const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(false);
       const existingSettings = await getExportSettingsForTenant(tenantId);
       setSettings(existingSettings ?? createDefaultSettings());
     } catch (error) {
       console.error('Error loading QuickBooks settings:', error);
-      setSettings(createDefaultSettings());
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -94,6 +96,7 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   }, [loadSettings]);
 
   const handleSave = async () => {
+    if (loadError) return;
     setSaving(true);
     try {
       await saveExportSettingsForTenant(tenantId, settings);
@@ -144,7 +147,25 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
       <Card>
         <CardContent className="py-12 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-          <p className="mt-2 text-muted-foreground">Loading settings...</p>
+          <p className="mt-2 text-muted-foreground">{t('common.loading')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-4 py-10 text-center" role="alert">
+          <AlertCircle className="h-8 w-8 text-amber-600" />
+          <div>
+            <p className="font-semibold">{t('common.connectionIssueTitle')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t('common.connectionIssueDesc')}</p>
+          </div>
+          <Button variant="outline" onClick={() => void loadSettings()}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            {t('common.retry')}
+          </Button>
         </CardContent>
       </Card>
     );
@@ -170,7 +191,9 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
         <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
           <span className="text-sm">
-            QuickBooks export is configured with {settings.accountMappings.length} account mappings
+            {t('payroll.quickbooks.settings.readyMappings', {
+              count: settings.accountMappings.length,
+            })}
           </span>
         </div>
 
@@ -183,7 +206,7 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
               setSettings({ ...settings, defaultFormat: value })
             }
           >
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -229,17 +252,17 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                     {t('payroll.quickbooks.settings.expenses')}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    ({expenseMappings.length} accounts)
+                    ({t('payroll.quickbooks.settings.accountCount', { count: expenseMappings.length })})
                   </span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <Table>
+              <AccordionContent className="overflow-x-auto">
+                <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[35%]">{t('payroll.quickbooks.settings.onitAccount')}</TableHead>
                       <TableHead className="w-[50%]">{t('payroll.quickbooks.settings.qbAccount')}</TableHead>
-                      <TableHead className="w-[15%]">Status</TableHead>
+                      <TableHead className="w-[15%]">{t('payroll.quickbooks.settings.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -260,14 +283,14 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                             <Input
                               value={mapping.qbAccountName}
                               onChange={(e) => updateMapping(globalIndex, 'qbAccountName', e.target.value)}
-                              placeholder="Enter QuickBooks account name"
+                              placeholder={t('payroll.quickbooks.settings.accountPlaceholder')}
                             />
                           </TableCell>
                           <TableCell>
                             {mapping.isDefault ? (
-                              <Badge variant="secondary" className="text-xs">Default</Badge>
+                              <Badge variant="secondary" className="text-xs">{t('payroll.quickbooks.settings.default')}</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Custom</Badge>
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">{t('payroll.quickbooks.settings.custom')}</Badge>
                             )}
                           </TableCell>
                         </TableRow>
@@ -286,17 +309,17 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                     {t('payroll.quickbooks.settings.liabilities')}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    ({liabilityMappings.length} accounts)
+                    ({t('payroll.quickbooks.settings.accountCount', { count: liabilityMappings.length })})
                   </span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent>
-                <Table>
+              <AccordionContent className="overflow-x-auto">
+                <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[35%]">{t('payroll.quickbooks.settings.onitAccount')}</TableHead>
                       <TableHead className="w-[50%]">{t('payroll.quickbooks.settings.qbAccount')}</TableHead>
-                      <TableHead className="w-[15%]">Status</TableHead>
+                      <TableHead className="w-[15%]">{t('payroll.quickbooks.settings.status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -317,14 +340,14 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                             <Input
                               value={mapping.qbAccountName}
                               onChange={(e) => updateMapping(globalIndex, 'qbAccountName', e.target.value)}
-                              placeholder="Enter QuickBooks account name"
+                              placeholder={t('payroll.quickbooks.settings.accountPlaceholder')}
                             />
                           </TableCell>
                           <TableCell>
                             {mapping.isDefault ? (
-                              <Badge variant="secondary" className="text-xs">Default</Badge>
+                              <Badge variant="secondary" className="text-xs">{t('payroll.quickbooks.settings.default')}</Badge>
                             ) : (
-                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Custom</Badge>
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">{t('payroll.quickbooks.settings.custom')}</Badge>
                             )}
                           </TableCell>
                         </TableRow>
@@ -344,17 +367,17 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                       Assets
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      ({assetMappings.length} accounts)
+                        ({t('payroll.quickbooks.settings.accountCount', { count: assetMappings.length })})
                     </span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent>
-                  <Table>
+                <AccordionContent className="overflow-x-auto">
+                  <Table className="min-w-[640px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[35%]">{t('payroll.quickbooks.settings.onitAccount')}</TableHead>
                         <TableHead className="w-[50%]">{t('payroll.quickbooks.settings.qbAccount')}</TableHead>
-                        <TableHead className="w-[15%]">Status</TableHead>
+                        <TableHead className="w-[15%]">{t('payroll.quickbooks.settings.status')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -375,14 +398,14 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                               <Input
                                 value={mapping.qbAccountName}
                                 onChange={(e) => updateMapping(globalIndex, 'qbAccountName', e.target.value)}
-                                placeholder="Enter QuickBooks account name"
+                                placeholder={t('payroll.quickbooks.settings.accountPlaceholder')}
                               />
                             </TableCell>
                             <TableCell>
                               {mapping.isDefault ? (
-                                <Badge variant="secondary" className="text-xs">Default</Badge>
+                                <Badge variant="secondary" className="text-xs">{t('payroll.quickbooks.settings.default')}</Badge>
                               ) : (
-                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">Custom</Badge>
+                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">{t('payroll.quickbooks.settings.custom')}</Badge>
                               )}
                             </TableCell>
                           </TableRow>

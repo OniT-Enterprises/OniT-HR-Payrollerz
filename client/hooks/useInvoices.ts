@@ -22,11 +22,16 @@ export const invoiceKeys = {
   topCustomers: (tenantId: string, maxResults: number) => [...invoiceKeys.all(tenantId), 'topCustomers', maxResults] as const,
 };
 
-function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+function useAllInvoices(
+  maxResults: number = SEARCH_FETCH_LIMIT,
+  enabled: boolean = true,
+  filters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc'> = {},
+) {
   const tenantId = useTenantId();
+  const queryFilters = { ...filters, pageSize: maxResults };
   return useQuery({
-    queryKey: invoiceKeys.list(tenantId, { pageSize: maxResults }),
-    queryFn: () => invoiceService.getInvoices(tenantId, { pageSize: maxResults }),
+    queryKey: invoiceKeys.list(tenantId, queryFilters),
+    queryFn: () => invoiceService.getInvoices(tenantId, queryFilters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
@@ -63,9 +68,8 @@ export function useUpdateInvoice() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InvoiceFormData> }) =>
       invoiceService.updateInvoice(tenantId, id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.lists(tenantId) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },
   });
 }
@@ -120,8 +124,7 @@ export function useInvoiceSettings() {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: ['invoiceSettings', tenantId],
-    queryFn: (): Promise<Partial<InvoiceSettings>> =>
-      invoiceService.getSettings(tenantId).catch(() => ({})),
+    queryFn: (): Promise<Partial<InvoiceSettings>> => invoiceService.getSettings(tenantId),
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });
@@ -172,9 +175,12 @@ function useFlattenedPaginatedInvoices(
  * Only one query is active at a time (via `enabled`), preventing the memory leak
  * of keeping a 500-item cache mounted alongside an infinite query.
  */
-export function useSmartInvoices(isSearching: boolean) {
-  const paginatedQuery = useFlattenedPaginatedInvoices({}, !isSearching);
-  const allQuery = useAllInvoices(SEARCH_FETCH_LIMIT, isSearching);
+export function useSmartInvoices(
+  isSearching: boolean,
+  filters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc'> = {},
+) {
+  const paginatedQuery = useFlattenedPaginatedInvoices(filters, !isSearching);
+  const allQuery = useAllInvoices(SEARCH_FETCH_LIMIT, isSearching, filters);
 
   return {
     invoices: isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices,

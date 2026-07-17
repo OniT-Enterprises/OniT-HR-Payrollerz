@@ -162,8 +162,15 @@ export function createOptimizedQueryClient(): QueryClient {
  * Hydrate QueryClient with persisted cache on app load.
  * Async — call at startup but the app renders immediately; cache arrives shortly after.
  */
-export async function hydrateQueryClient(queryClient: QueryClient, userId: string): Promise<void> {
+export async function hydrateQueryClient(
+  queryClient: QueryClient,
+  userId: string,
+  shouldApply: () => boolean = () => true,
+): Promise<void> {
   const store = await loadCacheStore(userId);
+  // Account changes can happen while IndexedDB is resolving. Never apply an
+  // old user's entries to the shared client after that transition.
+  if (!shouldApply()) return;
 
   Object.values(store.entries).forEach((entry) => {
     try {

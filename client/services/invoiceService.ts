@@ -233,8 +233,11 @@ class InvoiceService {
       constraints.push(where('issueDate', '<=', dateTo));
     }
 
-    // Ordering and pagination
-    constraints.push(orderBy('issueDate', 'desc'));
+    // A due-date range must lead the ordering for Firestore cursor queries.
+    // The matching composite indexes are declared in firestore.indexes.json.
+    constraints.push(
+      dueBefore ? orderBy('dueDate', 'asc') : orderBy('issueDate', 'desc'),
+    );
 
     if (startAfterDoc) {
       constraints.push(startAfter(startAfterDoc));
@@ -535,6 +538,8 @@ class InvoiceService {
         break;
       }
       const result = await this.getInvoices(tenantId, {
+        // Already-overdue records must not be returned here: this helper feeds
+        // the status updater, which should only report and rewrite new changes.
         status: ['sent', 'viewed', 'partial'],
         dueBefore: today,
         pageSize: 500,

@@ -68,9 +68,53 @@ export function PaymentStructureTab({
 
   const save = async () => {
     if (!tenantId) return;
+    if (payment.paymentMethods.length === 0) {
+      toast({
+        title: t('settings.payment.validationTitle'),
+        description: t('settings.payment.selectMethodError'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (payment.payrollFrequencies.length === 0) {
+      toast({
+        title: t('settings.payment.validationTitle'),
+        description: t('settings.payment.selectFrequencyError'),
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (
+      payment.paymentMethods.includes('bank_transfer') &&
+      (payment.bankAccounts.length === 0 ||
+        payment.bankAccounts.some(
+          (account) => !account.bankName.trim() || !account.accountNumber.trim(),
+        ))
+    ) {
+      toast({
+        title: t('settings.payment.validationTitle'),
+        description: t('settings.payment.bankDetailsError'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const normalizedPayment: PaymentStructure = {
+      ...payment,
+      primaryPaymentMethod: payment.paymentMethods.includes(payment.primaryPaymentMethod)
+        ? payment.primaryPaymentMethod
+        : payment.paymentMethods[0],
+      bankAccounts: payment.bankAccounts.map((account) => ({
+        ...account,
+        bankName: account.bankName.trim(),
+        accountName: account.accountName.trim(),
+        accountNumber: account.accountNumber.trim(),
+      })),
+    };
     setSaving(true);
     try {
-      await settingsService.updatePaymentStructure(tenantId, payment);
+      await settingsService.updatePaymentStructure(tenantId, normalizedPayment);
+      setPayment(normalizedPayment);
       toast({
         title: t('settings.notifications.savedTitle'),
         description: t('settings.notifications.paymentSaved'),
@@ -104,9 +148,11 @@ export function PaymentStructureTab({
               { value: 'cheque', label: t('settings.payment.methodLabels.cheque') },
               { value: 'other', label: t('settings.payment.methodLabels.other') },
             ].map((method) => (
-              <div
+              <button
+                type="button"
                 key={method.value}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                aria-pressed={payment.paymentMethods.includes(method.value as PaymentMethod)}
+                className={`p-4 border rounded-lg transition-colors text-left ${
                   payment.paymentMethods.includes(method.value as PaymentMethod)
                     ? 'border-primary bg-primary/5'
                     : 'hover:border-muted-foreground'
@@ -115,7 +161,13 @@ export function PaymentStructureTab({
                   const methods = payment.paymentMethods.includes(method.value as PaymentMethod)
                     ? payment.paymentMethods.filter((m) => m !== method.value)
                     : [...payment.paymentMethods, method.value as PaymentMethod];
-                  setPayment({ ...payment, paymentMethods: methods });
+                  setPayment({
+                    ...payment,
+                    paymentMethods: methods,
+                    primaryPaymentMethod: methods.includes(payment.primaryPaymentMethod)
+                      ? payment.primaryPaymentMethod
+                      : (methods[0] ?? payment.primaryPaymentMethod),
+                  });
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -126,7 +178,7 @@ export function PaymentStructureTab({
                   )}
                   <span className="text-sm font-medium">{method.label}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -135,12 +187,18 @@ export function PaymentStructureTab({
 
         {/* Bank Accounts */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-medium">{t('settings.payment.bankAccounts')}</h3>
               <p className="text-sm text-muted-foreground">{t('settings.payment.bankAccountsHint')}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={addBankAccount}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addBankAccount}
+              disabled={saving}
+              className="self-start sm:self-auto"
+            >
               <Plus className="h-4 w-4 mr-2" />
               {t('settings.payment.addAccount')}
             </Button>
@@ -164,7 +222,7 @@ export function PaymentStructureTab({
                         setPayment({ ...payment, bankAccounts: updated });
                       }}
                     >
-                      <SelectTrigger className="w-48">
+                      <SelectTrigger className="w-full sm:w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -175,8 +233,10 @@ export function PaymentStructureTab({
                       </SelectContent>
                     </Select>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
+                      aria-label={t('common.delete')}
                       onClick={() => {
                         setPayment({
                           ...payment,
@@ -244,9 +304,11 @@ export function PaymentStructureTab({
               { value: 'bi_weekly', label: t('settings.payment.frequencyLabels.biWeekly') },
               { value: 'monthly', label: t('settings.payment.frequencyLabels.monthly') },
             ].map((freq) => (
-              <div
+              <button
+                type="button"
                 key={freq.value}
-                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                aria-pressed={payment.payrollFrequencies.includes(freq.value as PayrollFrequency)}
+                className={`p-4 border rounded-lg transition-colors text-left ${
                   payment.payrollFrequencies.includes(freq.value as PayrollFrequency)
                     ? 'border-primary bg-primary/5'
                     : 'hover:border-muted-foreground'
@@ -266,13 +328,13 @@ export function PaymentStructureTab({
                   )}
                   <span className="text-sm font-medium">{freq.label}</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (

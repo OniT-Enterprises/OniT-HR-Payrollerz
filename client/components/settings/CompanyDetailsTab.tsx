@@ -159,7 +159,9 @@ export function CompanyDetailsTab({
           country: data.country,
           phone: data.phone || "",
           email: data.email || "",
-          logoUrl: nextLogoUrl || undefined,
+          // Keep an explicit empty string when removing a logo. Omitting the
+          // field during a merge would preserve the stale Firestore URL.
+          logoUrl: nextLogoUrl,
         };
         await settingsService.updateCompanyDetails(tenantId, companyDetails);
 
@@ -237,7 +239,7 @@ export function CompanyDetailsTab({
                     {logoFile ? logoFile.name : logoPreviewUrl ? 'Current company logo' : 'No logo uploaded yet'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Upload a PNG, JPG, WebP, or SVG. If no logo is saved, the app will use the legal company name instead.
+                    {t('money.settings.logoHint')}
                   </p>
                 </div>
               </div>
