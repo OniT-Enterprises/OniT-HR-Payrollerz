@@ -110,6 +110,13 @@ describe('Public invoice link rules', () => {
       await assertFails(getDoc(doc(publicDb(), `invoice_links/${REVOKED_TOKEN}`)));
     });
 
+    it('get of a nonexistent token resolves (NOT_FOUND, not permission-denied)', async () => {
+      // ensureShareLink() checks existence before create — a denied get here
+      // would make it impossible for admins to ever create a link.
+      await assertSucceeds(getDoc(doc(publicDb(), 'invoice_links/no-such-token')));
+      await assertSucceeds(getDoc(doc(ownerADb(), 'invoice_links/no-such-token')));
+    });
+
     it('cannot list the collection (no enumeration)', async () => {
       await assertFails(getDocs(collection(publicDb(), 'invoice_links')));
     });

@@ -1652,7 +1652,11 @@ service cloud.firestore {
     // Public access is get-only (no list), so links can't be enumerated.
     // ============================================
     match /invoice_links/{token} {
-      allow get: if resource.data.revoked == false ||
+      // `resource == null` (doc doesn't exist) must be allowed or the
+      // admin client's create-or-update existence check is denied — the
+      // caller just gets NOT_FOUND, and tokens are unguessable anyway.
+      allow get: if resource == null ||
+        resource.data.revoked == false ||
         isSuperAdmin() ||
         (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
       allow list: if isSuperAdmin();
