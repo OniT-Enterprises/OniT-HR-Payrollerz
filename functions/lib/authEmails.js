@@ -20,6 +20,9 @@ const firebase_functions_1 = require("firebase-functions");
 const authz_1 = require("./authz");
 const APP_URL = "https://xefe.tl";
 const BRAND = "#6A9C29";
+// Where Firebase's hosted action handler sends the user after they verify their
+// email / finish a password reset. xefe.tl is in Firebase's authorized domains.
+const ACTION_CONTINUE = { url: `${APP_URL}/auth/login`, handleCodeInApp: false };
 /** Escape the small set of HTML-significant characters for interpolation. */
 function esc(value) {
     return (value || "")
@@ -95,7 +98,7 @@ exports.sendWelcomeEmail = (0, https_1.onCall)(async (request) => {
         // Password signup — generate a verification link and fold it in.
         let verifyLink;
         try {
-            verifyLink = await auth.generateEmailVerificationLink(email);
+            verifyLink = await auth.generateEmailVerificationLink(email, ACTION_CONTINUE);
         }
         catch (error) {
             firebase_functions_1.logger.error("Failed to generate email verification link:", error);
@@ -201,7 +204,7 @@ exports.requestPasswordReset = (0, https_1.onCall)(async (request) => {
     }
     let resetLink;
     try {
-        resetLink = await (0, auth_1.getAuth)().generatePasswordResetLink(email);
+        resetLink = await (0, auth_1.getAuth)().generatePasswordResetLink(email, ACTION_CONTINUE);
     }
     catch (error) {
         const code = error === null || error === void 0 ? void 0 : error.code;

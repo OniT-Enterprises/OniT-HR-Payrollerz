@@ -2425,6 +2425,12 @@ export const translations = {
           "actions": "Actions",
           "viewReason": "View reason"
         },
+        "approveConfirm": {
+          "title": "Approve Leave Request?",
+          "description": "Approve {{name}}'s {{type}} ({{days}} day(s))?",
+          "confirm": "Approve & Notify"
+        },
+        "notifyNotice": "{{name}} will be notified by email about this decision.",
         "reject": {
           "title": "Reject Leave Request",
           "description": "Are you sure you want to reject the leave request for {{name}}?",
@@ -2467,6 +2473,9 @@ export const translations = {
           "approvedTitle": "Success",
           "approvedDesc": "Leave request for {{name}} has been approved.",
           "approveFailed": "Failed to approve leave request.",
+          "noEmailTitle": "Staff member not emailed",
+          "noEmailDesc": "{{name}} has no email on file — add one to their profile so they get decision emails.",
+          "emailFailedDesc": "The decision was saved but the email to {{name}} could not be sent.",
           "rejectedTitle": "Success",
           "rejectedDesc": "Leave request for {{name}} has been rejected.",
           "rejectFailed": "Failed to reject leave request.",
@@ -9012,6 +9021,12 @@ export const translations = {
           "actions": "Asaun",
           "viewReason": "Haree razao"
         },
+        "approveConfirm": {
+          "title": "Aprova Pedido Lisensa?",
+          "description": "Aprova {{type}} husi {{name}} (loron {{days}})?",
+          "confirm": "Aprova & Avizu"
+        },
+        "notifyNotice": "{{name}} sei simu avizu liuhusi email kona-ba desizaun ida ne'e.",
         "reject": {
           "title": "Rejeita Pedido Lisensa",
           "description": "Ita hakarak rejeita pedido {{name}}?",
@@ -9054,6 +9069,9 @@ export const translations = {
           "approvedTitle": "Susesu",
           "approvedDesc": "Pedido {{name}} aprova.",
           "approveFailed": "Falha aprova pedido.",
+          "noEmailTitle": "Staf la simu email",
+          "noEmailDesc": "{{name}} seidauk iha email — tau email iha ninia perfil atu simu avizu desizaun.",
+          "emailFailedDesc": "Desizaun rai tiha ona maibé email ba {{name}} la konsege haruka.",
           "rejectedTitle": "Susesu",
           "rejectedDesc": "Pedido {{name}} rejeita.",
           "rejectFailed": "Falha rejeita pedido.",
@@ -15599,6 +15617,12 @@ export const translations = {
           "actions": "Ações",
           "viewReason": "Ver motivo"
         },
+        "approveConfirm": {
+          "title": "Aprovar Pedido de Licença?",
+          "description": "Aprovar {{type}} de {{name}} ({{days}} dia(s))?",
+          "confirm": "Aprovar e Notificar"
+        },
+        "notifyNotice": "{{name}} será notificado por email sobre esta decisão.",
         "reject": {
           "title": "Rejeitar Pedido de Licença",
           "description": "Tem a certeza que quer rejeitar o pedido de licença de {{name}}?",
@@ -15641,6 +15665,9 @@ export const translations = {
           "approvedTitle": "Sucesso",
           "approvedDesc": "Pedido de licença de {{name}} foi aprovado.",
           "approveFailed": "Falha ao aprovar pedido de licença.",
+          "noEmailTitle": "Funcionário não notificado",
+          "noEmailDesc": "{{name}} não tem email registado — adicione um ao perfil para receber emails de decisão.",
+          "emailFailedDesc": "A decisão foi guardada mas o email para {{name}} não pôde ser enviado.",
           "rejectedTitle": "Sucesso",
           "rejectedDesc": "Pedido de licença de {{name}} foi rejeitado.",
           "rejectFailed": "Falha ao rejeitar pedido de licença.",

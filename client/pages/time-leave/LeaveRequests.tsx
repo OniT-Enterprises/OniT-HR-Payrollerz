@@ -118,6 +118,8 @@ export default function LeaveRequests() {
   const [activeTab, setActiveTab] = useState("all");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  // Approve needs an explicit confirm because it also emails the staff member
+  const [confirmApproveRequest, setConfirmApproveRequest] = useState<LeaveRequest | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -311,7 +313,37 @@ export default function LeaveRequests() {
     }
   };
 
-  // Handle approval
+  // Emails the staff member about the decision; never fails the main action.
+  const notifyDecision = async (
+    request: LeaveRequest,
+    decision: "approved" | "rejected",
+    reason?: string,
+  ) => {
+    try {
+      const emailed = await leaveService.notifyLeaveDecision(tenantId, request, decision, {
+        approverName: user?.displayName || user?.email || "HR Admin",
+        reason,
+      });
+      if (!emailed) {
+        toast({
+          title: t("timeLeave.leaveRequests.toast.noEmailTitle"),
+          description: t("timeLeave.leaveRequests.toast.noEmailDesc", {
+            name: request.employeeName,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error("Error emailing leave decision:", error);
+      toast({
+        title: t("timeLeave.leaveRequests.toast.noEmailTitle"),
+        description: t("timeLeave.leaveRequests.toast.emailFailedDesc", {
+          name: request.employeeName,
+        }),
+      });
+    }
+  };
+
+  // Handle approval (called from the confirm dialog)
   const handleApprove = async (request: LeaveRequest) => {
     setSaving(true);
     try {
@@ -320,6 +352,8 @@ export default function LeaveRequests() {
         approverId: user?.uid || "admin",
         approverName: user?.displayName || user?.email || "HR Admin",
       });
+
+      await notifyDecision(request, "approved");
 
       toast({
         title: t("timeLeave.leaveRequests.toast.approvedTitle"),
@@ -336,6 +370,7 @@ export default function LeaveRequests() {
       });
     } finally {
       setSaving(false);
+      setConfirmApproveRequest(null);
     }
   };
 
@@ -358,6 +393,8 @@ export default function LeaveRequests() {
         approverName: user?.displayName || user?.email || "HR Admin",
         reason: rejectionReason,
       });
+
+      await notifyDecision(selectedRequest, "rejected", rejectionReason);
 
       toast({
         title: t("timeLeave.leaveRequests.toast.rejectedTitle"),
@@ -992,7 +1029,7 @@ export default function LeaveRequests() {
                                 size="sm"
                                 variant="outline"
                                 className="h-8 gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800"
-                                onClick={() => handleApprove(request)}
+                                onClick={() => setConfirmApproveRequest(request)}
                                 disabled={saving}
                               >
                                 <Check className="h-4 w-4" />
@@ -1055,6 +1092,49 @@ export default function LeaveRequests() {
       </div>
 
       {/* Rejection Dialog */}
+      <AlertDialog
+        open={confirmApproveRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmApproveRequest(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("timeLeave.leaveRequests.approveConfirm.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmApproveRequest && (
+                <span>
+                  {t("timeLeave.leaveRequests.approveConfirm.description", {
+                    name: confirmApproveRequest.employeeName,
+                    type: confirmApproveRequest.leaveTypeLabel || confirmApproveRequest.leaveType,
+                    days: String(confirmApproveRequest.duration),
+                  })}{" "}
+                  <span className="font-medium text-foreground">
+                    {t("timeLeave.leaveRequests.notifyNotice", {
+                      name: confirmApproveRequest.employeeName,
+                    })}
+                  </span>
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmApproveRequest(null)}>
+              {t("timeLeave.leaveRequests.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmApproveRequest && handleApprove(confirmApproveRequest)}
+              disabled={saving}
+            >
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {t("timeLeave.leaveRequests.approveConfirm.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1066,7 +1146,12 @@ export default function LeaveRequests() {
                 <span>
                   {t("timeLeave.leaveRequests.reject.description", {
                     name: selectedRequest.employeeName,
-                  })}
+                  })}{" "}
+                  <span className="font-medium text-foreground">
+                    {t("timeLeave.leaveRequests.notifyNotice", {
+                      name: selectedRequest.employeeName,
+                    })}
+                  </span>
                 </span>
               )}
             </AlertDialogDescription>

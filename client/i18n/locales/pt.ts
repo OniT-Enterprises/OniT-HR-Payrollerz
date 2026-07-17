@@ -2421,6 +2421,12 @@ const messages = {
         "actions": "Ações",
         "viewReason": "Ver motivo"
       },
+      "approveConfirm": {
+        "title": "Aprovar Pedido de Licença?",
+        "description": "Aprovar {{type}} de {{name}} ({{days}} dia(s))?",
+        "confirm": "Aprovar e Notificar"
+      },
+      "notifyNotice": "{{name}} será notificado por email sobre esta decisão.",
       "reject": {
         "title": "Rejeitar Pedido de Licença",
         "description": "Tem a certeza que quer rejeitar o pedido de licença de {{name}}?",
@@ -2463,6 +2469,9 @@ const messages = {
         "approvedTitle": "Sucesso",
         "approvedDesc": "Pedido de licença de {{name}} foi aprovado.",
         "approveFailed": "Falha ao aprovar pedido de licença.",
+        "noEmailTitle": "Funcionário não notificado",
+        "noEmailDesc": "{{name}} não tem email registado — adicione um ao perfil para receber emails de decisão.",
+        "emailFailedDesc": "A decisão foi guardada mas o email para {{name}} não pôde ser enviado.",
         "rejectedTitle": "Sucesso",
         "rejectedDesc": "Pedido de licença de {{name}} foi rejeitado.",
         "rejectFailed": "Falha ao rejeitar pedido de licença.",

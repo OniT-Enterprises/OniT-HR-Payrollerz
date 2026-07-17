@@ -2421,6 +2421,12 @@ const messages = {
         "actions": "Actions",
         "viewReason": "View reason"
       },
+      "approveConfirm": {
+        "title": "Approve Leave Request?",
+        "description": "Approve {{name}}'s {{type}} ({{days}} day(s))?",
+        "confirm": "Approve & Notify"
+      },
+      "notifyNotice": "{{name}} will be notified by email about this decision.",
       "reject": {
         "title": "Reject Leave Request",
         "description": "Are you sure you want to reject the leave request for {{name}}?",
@@ -2463,6 +2469,9 @@ const messages = {
         "approvedTitle": "Success",
         "approvedDesc": "Leave request for {{name}} has been approved.",
         "approveFailed": "Failed to approve leave request.",
+        "noEmailTitle": "Staff member not emailed",
+        "noEmailDesc": "{{name}} has no email on file — add one to their profile so they get decision emails.",
+        "emailFailedDesc": "The decision was saved but the email to {{name}} could not be sent.",
         "rejectedTitle": "Success",
         "rejectedDesc": "Leave request for {{name}} has been rejected.",
         "rejectFailed": "Failed to reject leave request.",

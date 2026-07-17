@@ -2421,6 +2421,12 @@ const messages = {
         "actions": "Asaun",
         "viewReason": "Haree razao"
       },
+      "approveConfirm": {
+        "title": "Aprova Pedido Lisensa?",
+        "description": "Aprova {{type}} husi {{name}} (loron {{days}})?",
+        "confirm": "Aprova & Avizu"
+      },
+      "notifyNotice": "{{name}} sei simu avizu liuhusi email kona-ba desizaun ida ne'e.",
       "reject": {
         "title": "Rejeita Pedido Lisensa",
         "description": "Ita hakarak rejeita pedido {{name}}?",
@@ -2463,6 +2469,9 @@ const messages = {
         "approvedTitle": "Susesu",
         "approvedDesc": "Pedido {{name}} aprova.",
         "approveFailed": "Falha aprova pedido.",
+        "noEmailTitle": "Staf la simu email",
+        "noEmailDesc": "{{name}} seidauk iha email — tau email iha ninia perfil atu simu avizu desizaun.",
+        "emailFailedDesc": "Desizaun rai tiha ona maibé email ba {{name}} la konsege haruka.",
         "rejectedTitle": "Susesu",
         "rejectedDesc": "Pedido {{name}} rejeita.",
         "rejectFailed": "Falha rejeita pedido.",

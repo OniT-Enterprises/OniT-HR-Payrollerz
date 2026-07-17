@@ -1596,11 +1596,12 @@ service cloud.firestore {
     // EMAIL QUEUE (Firebase Trigger Email extension)
     // ============================================
     match /mail/{emailId} {
-      // Tenant admins can queue emails for their tenant
+      // Tenant admins AND managers can queue emails for their tenant
+      // (managers approve/reject leave, which emails the staff member)
       allow create: if isSuperAdmin() || (
         isAuthenticated() &&
         request.resource.data.tenantId != null &&
-        isTenantAdmin(request.resource.data.tenantId)
+        isTenantManagerOrAdmin(request.resource.data.tenantId)
       );
 
       // Tenant admins can read email history for their tenant

@@ -331,6 +331,65 @@ class LeaveService {
   }
 
   /**
+   * Email the staff member about an approve/reject decision (queued through
+   * the mail collection → Resend). Bilingual EN + Tetun — Ekipa staff are
+   * Tetun-first. Returns false when the employee has no email on file.
+   * Non-critical: callers should not fail the approval if this throws.
+   */
+  async notifyLeaveDecision(
+    tenantId: string,
+    request: LeaveRequest,
+    decision: 'approved' | 'rejected',
+    opts: { approverName: string; reason?: string },
+  ): Promise<boolean> {
+    const empSnap = await getDoc(
+      doc(db, `tenants/${tenantId}/employees/${request.employeeId}`),
+    );
+    const email = (
+      empSnap.data()?.personalInfo?.email as string | undefined
+    )?.trim();
+    if (!email) return false;
+
+    const period =
+      request.startDate === request.endDate
+        ? request.startDate
+        : `${request.startDate} – ${request.endDate}`;
+    const label = request.leaveTypeLabel || request.leaveType;
+    const approved = decision === 'approved';
+
+    const subject = approved
+      ? `Leave approved / Lisensa aprova ona — ${label}, ${period}`
+      : `Leave request declined / Pedidu lisensa la aprova — ${label}, ${period}`;
+    const text = [
+      `Hi ${request.employeeName},`,
+      '',
+      approved
+        ? `Your ${label} request for ${period} (${request.duration} day(s)) was APPROVED by ${opts.approverName}.`
+        : `Your ${label} request for ${period} (${request.duration} day(s)) was DECLINED by ${opts.approverName}.`,
+      ...(!approved && opts.reason ? [`Reason: ${opts.reason}`] : []),
+      '',
+      approved
+        ? `Ita-nia pedidu lisensa (${label}) ba ${period} (loron ${request.duration}) APROVA ona husi ${opts.approverName}.`
+        : `Ita-nia pedidu lisensa (${label}) ba ${period} (loron ${request.duration}) LA APROVA husi ${opts.approverName}.`,
+      ...(!approved && opts.reason ? [`Razaun: ${opts.reason}`] : []),
+      '',
+      '— Xefe / Ekipa',
+    ].join('\n');
+
+    await addDoc(collection(db, 'mail'), {
+      tenantId,
+      to: [email],
+      subject,
+      text,
+      status: 'pending',
+      purpose: 'leave-decision',
+      ...(request.id ? { relatedId: request.id } : {}),
+      createdAt: serverTimestamp(),
+    });
+    return true;
+  }
+
+  /**
    * Approve a leave request
    */
   async approveLeaveRequest(
