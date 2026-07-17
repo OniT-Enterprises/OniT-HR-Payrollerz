@@ -19,6 +19,10 @@ import { requireAuth } from "./authz";
 const APP_URL = "https://xefe.tl";
 const BRAND = "#6A9C29";
 
+// Where Firebase's hosted action handler sends the user after they verify their
+// email / finish a password reset. xefe.tl is in Firebase's authorized domains.
+const ACTION_CONTINUE = { url: `${APP_URL}/auth/login`, handleCodeInApp: false };
+
 /** Escape the small set of HTML-significant characters for interpolation. */
 function esc(value: string | undefined | null): string {
   return (value || "")
@@ -116,7 +120,7 @@ export const sendWelcomeEmail = onCall(
       // Password signup — generate a verification link and fold it in.
       let verifyLink: string;
       try {
-        verifyLink = await auth.generateEmailVerificationLink(email);
+        verifyLink = await auth.generateEmailVerificationLink(email, ACTION_CONTINUE);
       } catch (error) {
         logger.error("Failed to generate email verification link:", error);
         // Still send a plain welcome rather than nothing.
@@ -239,7 +243,7 @@ export const requestPasswordReset = onCall(
 
     let resetLink: string;
     try {
-      resetLink = await getAuth().generatePasswordResetLink(email);
+      resetLink = await getAuth().generatePasswordResetLink(email, ACTION_CONTINUE);
     } catch (error) {
       const code = (error as { code?: string })?.code;
       // Unknown/disabled account: succeed silently (no account enumeration).
