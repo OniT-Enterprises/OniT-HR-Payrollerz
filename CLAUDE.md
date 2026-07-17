@@ -6,6 +6,8 @@
 - **Roadmap**: See `docs/IMPLEMENTATION_ROADMAP.md` for feature plans and TL legal requirements.
 - **Code quality**: See `docs/CODE_REVIEW_JAN2026.md` for technical debt and pending items.
 - **Launch ops**: See `docs/LAUNCH_OPS_TODO.md` for remaining manual/console items (backups, Sentry, icons) and deploy notes.
+- **Billing / paywall**: Read `docs/BILLING.md` before touching payroll gating, Stripe, subscriptions, or tenant billing fields. One paywall only (finalizing payroll); `isTenantSubscribed()` ↔ rules `tenantHasActiveSubscription()` must stay in sync; tenant billing fields are tamper-protected in rules.
+- **Email / notifications**: Read `docs/EMAIL_NOTIFICATIONS.md` before sending anything. **Never write `mail` docs directly from client code** — always `notificationService.queueEmail()` (per-recipient privacy, purpose tags, EN+Tetun footer). Emails are non-fatal: they never break the action that triggered them. Actions that email someone say so in the UI first.
 - **Bot integration**: See `OPENCLAW_XEFE_INTEGRATION.md` for the Xefe AI assistant (WhatsApp + web dashboard).
 - **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Infra was renamed meza-* → xefe-* on 2026-07-13 (`server/xefe-api`, `openclaw-xefe`, PM2/Docker `xefe-*`); the canonical public domain is **xefe.tl** (was meza.naroman.tl, which now 301s to it). The `onit-hr-payroll` Firebase project ID is unchanged.
 
