@@ -1,4 +1,9 @@
 rules_version = '2';
+// Cross-service note: these rules call firestore.get()/exists(), which only
+// works if the STORAGE service agent (service-<project#>@gcp-sa-firebasestorage
+// .iam.gserviceaccount.com) holds roles/firebaserules.firestoreServiceAgent.
+// Granted 2026-07-17 — without it every membership-gated upload 403s, and
+// scripts/deploy-rules.mjs (Admin SDK) never provisions it the way the CLI does.
 service firebase.storage {
   match /b/{bucket}/o {
 
