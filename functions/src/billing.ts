@@ -14,7 +14,7 @@ import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import Stripe from "stripe";
-import { requireAuth, requireTenantAdmin } from "./authz";
+import { isSuperAdmin, requireAuth, requireTenantAdmin, type AuthContext } from "./authz";
 
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
@@ -66,15 +66,26 @@ interface CheckoutData {
   returnUrl?: string;
 }
 
+/**
+ * Billing actions are for tenant owners/hr-admins — or superadmins, who can
+ * run billing on any tenant (e.g. while impersonating a demo tenant). This
+ * mirrors firestore.rules, where isSuperAdmin() passes everywhere; without it
+ * the UI shows "Subscribe now" during impersonation but the callable 403s.
+ */
+async function requireBillingManager(tenantId: string, auth: AuthContext): Promise<void> {
+  if (await isSuperAdmin(auth.uid, auth.token)) return;
+  await requireTenantAdmin(tenantId, auth.uid);
+}
+
 export const createCheckoutSession = onCall(
   { secrets: [STRIPE_SECRET_KEY], cors: true },
   async (request) => {
-    const { uid } = requireAuth(request);
+    const auth = requireAuth(request);
     const { tenantId, returnUrl } = (request.data ?? {}) as CheckoutData;
     if (!tenantId) {
       throw new HttpsError("invalid-argument", "tenantId is required");
     }
-    await requireTenantAdmin(tenantId, uid);
+    await requireBillingManager(tenantId, auth);
 
     const db = getFirestore();
     const tenantRef = db.doc(`tenants/${tenantId}`);
@@ -140,12 +151,12 @@ export const createCheckoutSession = onCall(
 export const createBillingPortalSession = onCall(
   { secrets: [STRIPE_SECRET_KEY], cors: true },
   async (request) => {
-    const { uid } = requireAuth(request);
+    const auth = requireAuth(request);
     const { tenantId, returnUrl } = (request.data ?? {}) as CheckoutData;
     if (!tenantId) {
       throw new HttpsError("invalid-argument", "tenantId is required");
     }
-    await requireTenantAdmin(tenantId, uid);
+    await requireBillingManager(tenantId, auth);
 
     const tenantSnap = await getFirestore().doc(`tenants/${tenantId}`).get();
     const customerId = tenantSnap.data()?.stripeCustomerId as string | undefined;

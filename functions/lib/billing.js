@@ -62,14 +62,25 @@ async function countActiveEmployees(db, tenantId) {
         return null;
     }
 }
+/**
+ * Billing actions are for tenant owners/hr-admins — or superadmins, who can
+ * run billing on any tenant (e.g. while impersonating a demo tenant). This
+ * mirrors firestore.rules, where isSuperAdmin() passes everywhere; without it
+ * the UI shows "Subscribe now" during impersonation but the callable 403s.
+ */
+async function requireBillingManager(tenantId, auth) {
+    if (await (0, authz_1.isSuperAdmin)(auth.uid, auth.token))
+        return;
+    await (0, authz_1.requireTenantAdmin)(tenantId, auth.uid);
+}
 exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KEY], cors: true }, async (request) => {
     var _a, _b;
-    const { uid } = (0, authz_1.requireAuth)(request);
+    const auth = (0, authz_1.requireAuth)(request);
     const { tenantId, returnUrl } = ((_a = request.data) !== null && _a !== void 0 ? _a : {});
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
     }
-    await (0, authz_1.requireTenantAdmin)(tenantId, uid);
+    await requireBillingManager(tenantId, auth);
     const db = (0, firestore_1.getFirestore)();
     const tenantRef = db.doc(`tenants/${tenantId}`);
     const tenantSnap = await tenantRef.get();
@@ -124,12 +135,12 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
 });
 exports.createBillingPortalSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KEY], cors: true }, async (request) => {
     var _a, _b;
-    const { uid } = (0, authz_1.requireAuth)(request);
+    const auth = (0, authz_1.requireAuth)(request);
     const { tenantId, returnUrl } = ((_a = request.data) !== null && _a !== void 0 ? _a : {});
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
     }
-    await (0, authz_1.requireTenantAdmin)(tenantId, uid);
+    await requireBillingManager(tenantId, auth);
     const tenantSnap = await (0, firestore_1.getFirestore)().doc(`tenants/${tenantId}`).get();
     const customerId = (_b = tenantSnap.data()) === null || _b === void 0 ? void 0 : _b.stripeCustomerId;
     if (!customerId) {
