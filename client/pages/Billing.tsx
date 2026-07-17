@@ -1,29 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { doc, getDoc } from "firebase/firestore";
 import { CheckCircle2, CreditCard, Loader2, Sparkles } from "lucide-react";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { db } from "@/lib/firebase";
-import { paths } from "@/lib/paths";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { usePackagesConfig } from "@/hooks/useAdmin";
+import { useTenantBilling } from "@/hooks/useBilling";
+import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { ALL_FEATURES, isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { billingService } from "@/services/billingService";
 import { toast } from "sonner";
-
-interface TenantBilling {
-  currentEmployeeCount: number;
-  monthlySubscriptionAmount?: number;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string;
-  status?: string;
-  subscriptionPaidUntil?: { toDate: () => Date } | null;
-}
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -44,25 +33,13 @@ export default function Billing() {
 
   const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
 
-  const { data: tenant, isLoading, refetch } = useQuery<TenantBilling>({
-    queryKey: ["tenant-billing", tenantId],
-    queryFn: async () => {
-      const snap = await getDoc(doc(db, paths.tenant(tenantId)));
-      const d = (snap.data() ?? {}) as Record<string, unknown>;
-      return {
-        currentEmployeeCount: Math.max(0, (d.currentEmployeeCount as number) ?? 0),
-        monthlySubscriptionAmount: d.monthlySubscriptionAmount as number | undefined,
-        stripeCustomerId: d.stripeCustomerId as string | undefined,
-        stripeSubscriptionId: d.stripeSubscriptionId as string | undefined,
-        status: d.status as string | undefined,
-        subscriptionPaidUntil: (d.subscriptionPaidUntil as TenantBilling["subscriptionPaidUntil"]) ?? null,
-      };
-    },
-    enabled: Boolean(tenantId),
-  });
+  const { data: tenant, isLoading, refetch } = useTenantBilling();
+  // Live active-employee count — checkout bills this number (the stored
+  // currentEmployeeCount field goes stale for self-serve tenants).
+  const { data: employeeSummary } = useActiveEmployeeSummary(canManage());
 
   const subscribed = tenant ? isTenantSubscribed(tenant) : false;
-  const employees = tenant?.currentEmployeeCount ?? 0;
+  const employees = employeeSummary?.active ?? tenant?.currentEmployeeCount ?? 0;
   const projected = rate * employees;
   const paidUntil = tenant?.subscriptionPaidUntil?.toDate?.();
 

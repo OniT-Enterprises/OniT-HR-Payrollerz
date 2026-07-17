@@ -37,8 +37,9 @@ import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { Button } from "@/components/ui/button";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL } from "@/lib/dateUtils";
-import { Calculator, Calendar, CheckCircle, Clock, Plus, Users } from "lucide-react";
+import { Calculator, Calendar, CheckCircle, Clock, Plus, Sparkles, Users } from "lucide-react";
 import { getConfiguredPayrollSchedule } from "@/lib/payroll/payroll-schedule";
+import { useIsSubscribed } from "@/hooks/useBilling";
 
 export default function RunPayrollWizard() {
   const navigate = useNavigate();
@@ -52,9 +53,14 @@ export default function RunPayrollWizard() {
     { id: "review", title: t("common.review"), icon: CheckCircle },
   ];
   const { user } = useAuth();
-  const { hasModule, canWrite } = useTenant();
+  const { hasModule, canWrite, canManage } = useTenant();
   const tenantId = useTenantId();
   const canAddEmployees = hasModule("staff") && canWrite();
+  const canManageTenant = canManage();
+  // Pre-gate transparency: tell free tenants up front that building/reviewing
+  // is free and only finalizing needs a subscription — the paywall at the end
+  // of the flow should never be a surprise.
+  const subscribed = useIsSubscribed(canManageTenant);
 
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -443,6 +449,17 @@ export default function RunPayrollWizard() {
           icon={Calculator}
           iconColor="text-primary"
         />
+        {canManageTenant && subscribed === false && (
+          <button
+            type="button"
+            onClick={() => navigate("/billing")}
+            className="mb-4 flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-left text-sm transition-colors hover:bg-primary/10"
+          >
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="flex-1 text-foreground/90">{t("runPayroll.freePlanNotice")}</span>
+            <span className="shrink-0 font-medium text-primary">{t("runPayroll.freePlanNoticeCta")}</span>
+          </button>
+        )}
         <StepWizard
           steps={wizardSteps}
           currentStep={currentStep}

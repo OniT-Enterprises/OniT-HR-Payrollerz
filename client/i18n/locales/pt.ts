@@ -133,6 +133,10 @@ const messages = {
     "reports": "Relatórios",
     "setupBannerTitle": "A configuração ainda não terminou",
     "setupBannerDesc": "Termine os dados da empresa, banco, licenças e salário. {{percent}}% concluído.",
+    "billingPlan": "Faturação & Plano",
+    "billingPlanDesc": "O seu plano, preço e pagamentos",
+    "planFree": "Gratuito",
+    "planActive": "Ativo",
     "employees": "Funcionários",
     "announcements": "Comunicados",
     "grievances": "Queixas",
@@ -5790,6 +5794,8 @@ const messages = {
   },
   "runPayroll": {
     "title": "Processar Folha",
+    "freePlanNotice": "Está no plano gratuito. Prepare e reveja a folha à vontade — finalizar exige uma subscrição.",
+    "freePlanNoticeCta": "Ver plano",
     "processPayrollFor": "Processar folha para {{count}} funcionários ativos",
     "saveDraft": "Guardar Rascunho",
     "notSet": "Não definido",
@@ -6351,6 +6357,7 @@ const messages = {
       "runAction": "Processar folha",
       "allGood": "A folha está em dia — nada precisa de atenção antes do pagamento.",
       "attention": {
+        "addTeamFirst": "Adicione a sua equipa para processar a primeira folha",
         "employeeBlocking": "funcionário sem informação necessária para processar a folha",
         "employeesBlocking": "funcionários sem informação necessária para processar a folha",
         "leaveRequest": "pedido de licença à espera de aprovação",

@@ -11,6 +11,7 @@
  */
 import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import Stripe from "stripe";
 import { requireAuth, requireTenantAdmin } from "./authz";
@@ -37,6 +38,29 @@ async function getPerEmployeeRate(db: FirebaseFirestore.Firestore): Promise<numb
   return DEFAULT_RATE;
 }
 
+/**
+ * Count the tenant's ACTIVE employees at checkout time. The source of truth is
+ * the employees subcollection — tenants add staff themselves, so the manually
+ * curated `currentEmployeeCount` field goes stale and must not drive billing.
+ * Returns null if the aggregate query fails (caller falls back to the field).
+ */
+async function countActiveEmployees(
+  db: FirebaseFirestore.Firestore,
+  tenantId: string,
+): Promise<number | null> {
+  try {
+    const agg = await db
+      .collection(`tenants/${tenantId}/employees`)
+      .where("status", "==", "active")
+      .count()
+      .get();
+    return agg.data().count;
+  } catch (error) {
+    console.error("Active-employee count failed, falling back to stored count:", error);
+    return null;
+  }
+}
+
 interface CheckoutData {
   tenantId?: string;
   returnUrl?: string;
@@ -61,9 +85,19 @@ export const createCheckoutSession = onCall(
     const tenant = tenantSnap.data() as Record<string, unknown>;
 
     const rate = await getPerEmployeeRate(db);
-    // Stripe requires quantity >= 1; a tenant with 0 employees is billed for 1
-    // seat until the count syncs upward.
-    const employeeCount = Math.max(1, Math.floor((tenant.currentEmployeeCount as number) ?? 1));
+    // Bill for the REAL active-employee count (live query), not the manually
+    // curated tenant field — self-serve tenants add staff without ever touching
+    // that field. Stripe requires quantity >= 1, so a tenant with 0 employees
+    // is billed for 1 seat until the count syncs upward.
+    const activeCount = await countActiveEmployees(db, tenantId);
+    const employeeCount = Math.max(
+      1,
+      activeCount ?? Math.floor((tenant.currentEmployeeCount as number) ?? 1),
+    );
+    if (activeCount !== null && activeCount !== tenant.currentEmployeeCount) {
+      // Self-heal the stored count so the billing page and admin console agree.
+      await tenantRef.set({ currentEmployeeCount: activeCount }, { merge: true });
+    }
 
     const stripe = stripeClient();
     let customerId = tenant.stripeCustomerId as string | undefined;
@@ -153,6 +187,64 @@ async function applySubscription(
 
   await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
 }
+
+/**
+ * Daily true-up: keep each subscribed tenant's Stripe quantity equal to their
+ * ACTIVE employee count, so "more employees cost more" stays true after
+ * checkout day (quantity is otherwise frozen at whatever it was on subscribe).
+ * proration_behavior 'none' means no mid-cycle part-charges — the next monthly
+ * invoice simply bills the current team size. The customer.subscription.updated
+ * webhook then syncs monthlySubscriptionAmount on the tenant doc.
+ */
+export const syncSubscriptionQuantities = onSchedule(
+  {
+    schedule: "0 3 * * *", // daily at 03:00 Dili time (quiet hours)
+    timeZone: "Asia/Dili",
+    secrets: [STRIPE_SECRET_KEY],
+  },
+  async () => {
+    const db = getFirestore();
+    const stripe = stripeClient();
+
+    // Only tenants with a live subscription flag (non-empty string field).
+    const subscribed = await db
+      .collection("tenants")
+      .where("stripeSubscriptionId", ">", "")
+      .get();
+
+    for (const tenantDoc of subscribed.docs) {
+      const tenantId = tenantDoc.id;
+      const subId = tenantDoc.data().stripeSubscriptionId as string;
+      try {
+        const activeCount = await countActiveEmployees(db, tenantId);
+        if (activeCount === null) continue; // count failed; retry tomorrow
+        const quantity = Math.max(1, activeCount);
+
+        const sub = await stripe.subscriptions.retrieve(subId);
+        if (sub.status !== "active" && sub.status !== "trialing") continue;
+
+        const item = sub.items.data[0];
+        if (item && item.quantity !== quantity) {
+          await stripe.subscriptions.update(subId, {
+            items: [{ id: item.id, quantity }],
+            proration_behavior: "none",
+          });
+          console.log(
+            `Tenant ${tenantId}: subscription quantity ${item.quantity} -> ${quantity}`,
+          );
+        }
+
+        // Self-heal the stored count so billing/admin pages agree.
+        if (tenantDoc.data().currentEmployeeCount !== activeCount) {
+          await tenantDoc.ref.set({ currentEmployeeCount: activeCount }, { merge: true });
+        }
+      } catch (error) {
+        // One bad tenant must not block the rest of the sweep.
+        console.error(`Quantity sync failed for tenant ${tenantId}:`, error);
+      }
+    }
+  },
+);
 
 export const stripeWebhook = onRequest(
   { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] },

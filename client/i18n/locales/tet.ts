@@ -133,6 +133,10 @@ const messages = {
     "reports": "Relatóriu",
     "setupBannerTitle": "Setup seidauk remata",
     "setupBannerDesc": "Remata dadus empreza, banku, lisensa no saláriu. {{percent}}% kompletu.",
+    "billingPlan": "Faturasaun & Planu",
+    "billingPlanDesc": "Ita-nia planu, presu no pagamentu",
+    "planFree": "Gratuitu",
+    "planActive": "Ativu",
     "employees": "Empregadu",
     "announcements": "Anúnsiu",
     "grievances": "Keiksa",
@@ -5790,6 +5794,8 @@ const messages = {
   },
   "runPayroll": {
     "title": "Prosesu Saláriu",
+    "freePlanNotice": "Ita uza planu gratuitu. Bele prepara no reve saláriu livre — atu finaliza presiza subskrisaun.",
+    "freePlanNoticeCta": "Haree planu",
     "processPayrollFor": "Prosesu saláriu ba trabalhador ativu {{count}}",
     "saveDraft": "Rai Raskunhu",
     "notSet": "Seidauk defini",
@@ -6351,6 +6357,7 @@ const messages = {
       "runAction": "Halo saláriu",
       "allGood": "Saláriu lao tuir planu — laiha buat ne'ebé presiza atensaun molok loron pagamentu.",
       "attention": {
+        "addTeamFirst": "Tau ita-nia ekipa atu halo saláriu dahuluk",
         "employeeBlocking": "funsionáriu falta informasaun ne'ebé taka prosesu saláriu",
         "employeesBlocking": "funsionáriu sira falta informasaun ne'ebé taka prosesu saláriu",
         "leaveRequest": "pedidu lisensa hein aprovasaun",

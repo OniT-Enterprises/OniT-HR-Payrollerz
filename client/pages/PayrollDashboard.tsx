@@ -33,6 +33,7 @@ import {
   History,
   Play,
   ShieldAlert,
+  Users,
 } from "lucide-react";
 
 function PayrollDashboardSkeleton() {
@@ -145,6 +146,15 @@ export default function PayrollDashboard() {
 
   // Triage: only what needs a decision before payday (and tax deadlines only when approaching)
   const attention = [
+    {
+      // Brand-new tenant: "payroll is on track" would be misleading with no
+      // team yet — point at the real first step instead.
+      show: canManageTenant && activeEmployees === 0 && payrollRuns.length === 0,
+      content: <>{t("moduleDashboards.payroll.attention.addTeamFirst")}</>,
+      path: "/people/add",
+      icon: Users,
+      tone: "text-primary bg-primary/10",
+    },
     {
       show: blockedEmployees > 0,
       content: (

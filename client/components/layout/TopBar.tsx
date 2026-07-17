@@ -43,7 +43,10 @@ import {
   Building2,
   ChevronsUpDown,
   Check,
+  CreditCard,
 } from "lucide-react";
+import { PlanBadge } from "@/components/layout/MainNavigation";
+import { useIsSubscribed } from "@/hooks/useBilling";
 import { useChatStore } from "@/stores/chatStore";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { usePayrollRuns } from "@/hooks/usePayroll";
@@ -187,9 +190,10 @@ interface TopBarUserMenuProps {
   onSignOut: () => void;
   t: (key: string) => string;
   canManageTenant: boolean;
+  subscribed: boolean | undefined;
 }
 
-function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOut, t, canManageTenant }: TopBarUserMenuProps) {
+function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOut, t, canManageTenant, subscribed }: TopBarUserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -235,6 +239,13 @@ function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOu
           <DropdownMenuItem onClick={() => onNavigate("/settings")}>
             <Settings className="h-4 w-4 mr-2" />
             {t("common.settings")}
+          </DropdownMenuItem>
+        )}
+        {canManageTenant && (
+          <DropdownMenuItem onClick={() => onNavigate("/billing")}>
+            <CreditCard className="h-4 w-4 mr-2" />
+            {t("nav.billingPlan")}
+            <PlanBadge subscribed={subscribed} t={t} />
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={() => onNavigate("/sitemap")}>
@@ -376,6 +387,8 @@ export default function TopBar() {
   const { t } = useI18n();
   const { toast } = useToast();
   const canManageTenant = canManage();
+  // Billing visibility: admins always see where they stand (free vs subscribed)
+  const subscribed = useIsSubscribed(canManageTenant);
 
   const notifCounts = useNotificationCounts(
     hasModule("payroll") && canManageTenant,
@@ -482,6 +495,7 @@ export default function TopBar() {
               onSignOut={handleSignOut}
               t={t}
               canManageTenant={canManageTenant}
+              subscribed={subscribed}
             />
           </div>
         </div>

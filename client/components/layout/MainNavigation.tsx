@@ -41,6 +41,7 @@ import {
   Map,
   BookOpen,
   Check,
+  CreditCard,
   FolderKanban,
   FileSpreadsheet,
   Clock,
@@ -49,6 +50,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from "lucide-react";
+import { useIsSubscribed } from "@/hooks/useBilling";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
@@ -106,6 +108,21 @@ function getUserInitials(user: { displayName?: string | null; email?: string | n
 
 // --- Sub-components ---
 
+// Small free/active chip next to the "Billing & Plan" entry so admins always
+// know which plan they're on without hunting for it. (Also used by TopBar.)
+export function PlanBadge({ subscribed, t }: { subscribed: boolean | undefined; t: (key: string) => string }) {
+  if (subscribed === undefined) return null;
+  return (
+    <span
+      className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        subscribed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+      }`}
+    >
+      {t(subscribed ? "nav.planActive" : "nav.planFree")}
+    </span>
+  );
+}
+
 interface DesktopNavProps {
   items: NavItem[];
   pathname: string;
@@ -153,9 +170,11 @@ interface MobileNavProps {
   t: (key: string) => string;
   ngoReportingEnabled: boolean;
   donorExportEnabled: boolean;
+  showBilling: boolean;
+  subscribed: boolean | undefined;
 }
 
-function MobileNav({ items, pathname, onNavigate, t, ngoReportingEnabled, donorExportEnabled }: MobileNavProps) {
+function MobileNav({ items, pathname, onNavigate, t, ngoReportingEnabled, donorExportEnabled, showBilling, subscribed }: MobileNavProps) {
   return (
     <div className="md:hidden py-4 border-t border-border/50">
       <div className="mb-4 rounded-xl border border-border/50 bg-muted/30 p-3">
@@ -197,6 +216,13 @@ function MobileNav({ items, pathname, onNavigate, t, ngoReportingEnabled, donorE
           <Settings className="h-5 w-5 mr-3" />
           {t("common.settings")}
         </Button>
+        {showBilling && (
+          <Button variant="ghost" onClick={() => onNavigate("/billing")} className="justify-start h-12 text-base text-muted-foreground">
+            <CreditCard className="h-5 w-5 mr-3" />
+            {t("nav.billingPlan")}
+            <PlanBadge subscribed={subscribed} t={t} />
+          </Button>
+        )}
         <Button variant="ghost" onClick={() => onNavigate("/sitemap")} className="justify-start h-12 text-base text-muted-foreground">
           <Map className="h-5 w-5 mr-3" />
           {t("common.sitemap")}
@@ -231,13 +257,15 @@ interface UserMenuProps {
   ngoReportingEnabled: boolean;
   donorExportEnabled: boolean;
   guidanceEnabled: boolean;
+  showBilling: boolean;
+  subscribed: boolean | undefined;
   onNavigate: (path: string) => void;
   onSignOut: () => void;
   onToggleGuidance: () => void;
   t: (key: string) => string;
 }
 
-function UserMenu({ user, userInitials, isSuperAdmin, ngoReportingEnabled, donorExportEnabled, guidanceEnabled, onNavigate, onSignOut, onToggleGuidance, t }: UserMenuProps) {
+function UserMenu({ user, userInitials, isSuperAdmin, ngoReportingEnabled, donorExportEnabled, guidanceEnabled, showBilling, subscribed, onNavigate, onSignOut, onToggleGuidance, t }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -273,6 +301,13 @@ function UserMenu({ user, userInitials, isSuperAdmin, ngoReportingEnabled, donor
           <Settings className="h-4 w-4 mr-2" />
           {t("common.settings")}
         </DropdownMenuItem>
+        {showBilling && (
+          <DropdownMenuItem onClick={() => onNavigate("/billing")}>
+            <CreditCard className="h-4 w-4 mr-2" />
+            {t("nav.billingPlan")}
+            <PlanBadge subscribed={subscribed} t={t} />
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => onNavigate("/sitemap")}>
           <Map className="h-4 w-4 mr-2" />
           {t("common.sitemap")}
@@ -530,6 +565,8 @@ function MainNavigationInner() {
   const canManageTenant = canManage();
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(session, hasModule("reports"), canManageTenant);
+  // Billing visibility: admins always see where they stand (free vs subscribed)
+  const subscribed = useIsSubscribed(canManageTenant);
 
   const { data: setupProgress } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress", "nav"],
@@ -558,6 +595,7 @@ function MainNavigationInner() {
   const userMenuProps = {
     user, userInitials, isSuperAdmin, ngoReportingEnabled,
     donorExportEnabled, guidanceEnabled, onToggleGuidance: toggleGuidance, t,
+    showBilling: canManageTenant, subscribed,
   };
 
   return (
@@ -585,6 +623,8 @@ function MainNavigationInner() {
             t={t}
             ngoReportingEnabled={ngoReportingEnabled}
             donorExportEnabled={donorExportEnabled}
+            showBilling={canManageTenant}
+            subscribed={subscribed}
           />
         )}
 

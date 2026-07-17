@@ -140,6 +140,21 @@ service cloud.firestore {
           .data.get('payrollConfig', {}).get('allowSelfApproval', false) == true;
     }
 
+    // Paywall backstop: moving a payroll run to 'approved' (finalizing) requires
+    // an active subscription — mirrors isTenantSubscribed() in
+    // client/lib/packagePricing.ts. The Stripe webhook sets/clears
+    // stripeSubscriptionId; subscriptionPaidUntil (when present) must not be in
+    // the past. exists() guard first — a failed get() would deny the whole update.
+    function tenantHasActiveSubscription(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId))
+          .data.get('stripeSubscriptionId', '') != '' &&
+        (get(/databases/$(database)/documents/tenants/$(tenantId))
+           .data.get('subscriptionPaidUntil', null) == null ||
+         get(/databases/$(database)/documents/tenants/$(tenantId))
+           .data.get('subscriptionPaidUntil', null) > request.time);
+    }
+
     // ============================================
     // USER PROFILES (Global, not tenant-scoped)
     // ============================================
@@ -475,7 +490,12 @@ service cloud.firestore {
           request.resource.data.createdBy == resource.data.createdBy &&
           (request.resource.data.status != 'approved' ||
            request.resource.data.approvedBy != resource.data.createdBy ||
-           allowsSelfApproval(tenantId))
+           allowsSelfApproval(tenantId)) &&
+          // Paywall: the transition INTO 'approved' requires an active
+          // subscription (already-approved runs stay editable if it lapses)
+          (request.resource.data.status != 'approved' ||
+           resource.data.status == 'approved' ||
+           tenantHasActiveSubscription(tenantId))
         );
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
 
@@ -1266,7 +1286,12 @@ service cloud.firestore {
         request.resource.data.createdBy == resource.data.createdBy &&
         (request.resource.data.status != 'approved' ||
          request.resource.data.approvedBy != resource.data.createdBy ||
-         allowsSelfApproval(resource.data.tenantId))
+         allowsSelfApproval(resource.data.tenantId)) &&
+        // Paywall: the transition INTO 'approved' requires an active
+        // subscription (already-approved runs stay editable if it lapses)
+        (request.resource.data.status != 'approved' ||
+         resource.data.status == 'approved' ||
+         tenantHasActiveSubscription(resource.data.tenantId))
       );
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1308,7 +1333,12 @@ service cloud.firestore {
         // (unless tenant opted in to solo self-approval)
         (request.resource.data.status != 'approved' ||
          request.resource.data.approvedBy != resource.data.createdBy ||
-         allowsSelfApproval(resource.data.tenantId))
+         allowsSelfApproval(resource.data.tenantId)) &&
+        // Paywall: the transition INTO 'approved' requires an active
+        // subscription (already-approved runs stay editable if it lapses)
+        (request.resource.data.status != 'approved' ||
+         resource.data.status == 'approved' ||
+         tenantHasActiveSubscription(resource.data.tenantId))
       );
 
       allow delete: if isSuperAdmin() || (

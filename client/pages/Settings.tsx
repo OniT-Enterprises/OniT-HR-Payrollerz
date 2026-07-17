@@ -10,7 +10,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 
 import { useSettings, settingsKeys } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -35,6 +35,7 @@ import {
 export default function Settings() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const { canManage } = useTenant();
   const { t } = useI18n();
 
   const queryClient = useQueryClient();
@@ -51,7 +52,17 @@ export default function Settings() {
     requestedTab && VALID_TABS.includes(requestedTab)
       ? requestedTab
       : "company";
-  const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] = [];
+  const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] =
+    canManage()
+      ? [
+          {
+            label: t("nav.billingPlan"),
+            path: "/billing",
+            icon: CreditCard,
+            description: t("nav.billingPlanDesc"),
+          },
+        ]
+      : [];
 
   const handleTabChange = (value: string) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -98,12 +109,9 @@ export default function Settings() {
           iconColor="text-primary"
         />
 
-        {/* Organization Quick Links */}
+        {/* Quick links (billing & plan, etc.) */}
         {organizationLinks.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
-              Organization
-            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {organizationLinks.map((link) => (
                 <button

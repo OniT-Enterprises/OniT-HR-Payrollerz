@@ -133,6 +133,10 @@ const messages = {
     "reports": "Reports",
     "setupBannerTitle": "Setup is not finished yet",
     "setupBannerDesc": "Finish your company, bank, leave, and payroll details. {{percent}}% complete.",
+    "billingPlan": "Billing & Plan",
+    "billingPlanDesc": "Your plan, price, and payments",
+    "planFree": "Free",
+    "planActive": "Active",
     "employees": "Employees",
     "announcements": "Announcements",
     "grievances": "Grievances",
@@ -5790,6 +5794,8 @@ const messages = {
   },
   "runPayroll": {
     "title": "Run Payroll",
+    "freePlanNotice": "You're on the free plan. Build and review payroll freely — finalizing a run needs a subscription.",
+    "freePlanNoticeCta": "View plan",
     "processPayrollFor": "Process payroll for {{count}} active employees",
     "saveDraft": "Save Draft",
     "notSet": "Not set",
@@ -6351,6 +6357,7 @@ const messages = {
       "runAction": "Run payroll",
       "allGood": "Payroll is on track — nothing needs attention before payday.",
       "attention": {
+        "addTeamFirst": "Add your team to run your first payroll",
         "employeeBlocking": "employee missing info that blocks payroll",
         "employeesBlocking": "employees missing info that blocks payroll",
         "leaveRequest": "leave request awaiting approval",

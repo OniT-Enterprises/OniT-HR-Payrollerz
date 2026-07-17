@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stripeWebhook = exports.createBillingPortalSession = exports.createCheckoutSession = void 0;
+exports.stripeWebhook = exports.syncSubscriptionQuantities = exports.createBillingPortalSession = exports.createCheckoutSession = void 0;
 /**
  * Stripe billing — one flat per-employee subscription.
  *
@@ -17,6 +17,7 @@ exports.stripeWebhook = exports.createBillingPortalSession = exports.createCheck
  */
 const firestore_1 = require("firebase-admin/firestore");
 const https_1 = require("firebase-functions/v2/https");
+const scheduler_1 = require("firebase-functions/v2/scheduler");
 const params_1 = require("firebase-functions/params");
 const stripe_1 = __importDefault(require("stripe"));
 const authz_1 = require("./authz");
@@ -41,6 +42,26 @@ async function getPerEmployeeRate(db) {
     }
     return DEFAULT_RATE;
 }
+/**
+ * Count the tenant's ACTIVE employees at checkout time. The source of truth is
+ * the employees subcollection — tenants add staff themselves, so the manually
+ * curated `currentEmployeeCount` field goes stale and must not drive billing.
+ * Returns null if the aggregate query fails (caller falls back to the field).
+ */
+async function countActiveEmployees(db, tenantId) {
+    try {
+        const agg = await db
+            .collection(`tenants/${tenantId}/employees`)
+            .where("status", "==", "active")
+            .count()
+            .get();
+        return agg.data().count;
+    }
+    catch (error) {
+        console.error("Active-employee count failed, falling back to stored count:", error);
+        return null;
+    }
+}
 exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KEY], cors: true }, async (request) => {
     var _a, _b;
     const { uid } = (0, authz_1.requireAuth)(request);
@@ -57,9 +78,16 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
     }
     const tenant = tenantSnap.data();
     const rate = await getPerEmployeeRate(db);
-    // Stripe requires quantity >= 1; a tenant with 0 employees is billed for 1
-    // seat until the count syncs upward.
-    const employeeCount = Math.max(1, Math.floor((_b = tenant.currentEmployeeCount) !== null && _b !== void 0 ? _b : 1));
+    // Bill for the REAL active-employee count (live query), not the manually
+    // curated tenant field — self-serve tenants add staff without ever touching
+    // that field. Stripe requires quantity >= 1, so a tenant with 0 employees
+    // is billed for 1 seat until the count syncs upward.
+    const activeCount = await countActiveEmployees(db, tenantId);
+    const employeeCount = Math.max(1, activeCount !== null && activeCount !== void 0 ? activeCount : Math.floor((_b = tenant.currentEmployeeCount) !== null && _b !== void 0 ? _b : 1));
+    if (activeCount !== null && activeCount !== tenant.currentEmployeeCount) {
+        // Self-heal the stored count so the billing page and admin console agree.
+        await tenantRef.set({ currentEmployeeCount: activeCount }, { merge: true });
+    }
     const stripe = stripeClient();
     let customerId = tenant.stripeCustomerId;
     if (!customerId) {
@@ -132,6 +160,56 @@ async function applySubscription(db, tenantId, sub) {
         patch.subscriptionPaidUntil = firestore_1.Timestamp.fromMillis(periodEndSec * 1000);
     await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
 }
+/**
+ * Daily true-up: keep each subscribed tenant's Stripe quantity equal to their
+ * ACTIVE employee count, so "more employees cost more" stays true after
+ * checkout day (quantity is otherwise frozen at whatever it was on subscribe).
+ * proration_behavior 'none' means no mid-cycle part-charges — the next monthly
+ * invoice simply bills the current team size. The customer.subscription.updated
+ * webhook then syncs monthlySubscriptionAmount on the tenant doc.
+ */
+exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
+    schedule: "0 3 * * *", // daily at 03:00 Dili time (quiet hours)
+    timeZone: "Asia/Dili",
+    secrets: [STRIPE_SECRET_KEY],
+}, async () => {
+    const db = (0, firestore_1.getFirestore)();
+    const stripe = stripeClient();
+    // Only tenants with a live subscription flag (non-empty string field).
+    const subscribed = await db
+        .collection("tenants")
+        .where("stripeSubscriptionId", ">", "")
+        .get();
+    for (const tenantDoc of subscribed.docs) {
+        const tenantId = tenantDoc.id;
+        const subId = tenantDoc.data().stripeSubscriptionId;
+        try {
+            const activeCount = await countActiveEmployees(db, tenantId);
+            if (activeCount === null)
+                continue; // count failed; retry tomorrow
+            const quantity = Math.max(1, activeCount);
+            const sub = await stripe.subscriptions.retrieve(subId);
+            if (sub.status !== "active" && sub.status !== "trialing")
+                continue;
+            const item = sub.items.data[0];
+            if (item && item.quantity !== quantity) {
+                await stripe.subscriptions.update(subId, {
+                    items: [{ id: item.id, quantity }],
+                    proration_behavior: "none",
+                });
+                console.log(`Tenant ${tenantId}: subscription quantity ${item.quantity} -> ${quantity}`);
+            }
+            // Self-heal the stored count so billing/admin pages agree.
+            if (tenantDoc.data().currentEmployeeCount !== activeCount) {
+                await tenantDoc.ref.set({ currentEmployeeCount: activeCount }, { merge: true });
+            }
+        }
+        catch (error) {
+            // One bad tenant must not block the rest of the sweep.
+            console.error(`Quantity sync failed for tenant ${tenantId}:`, error);
+        }
+    }
+});
 exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] }, async (req, res) => {
     var _a, _b, _c;
     const stripe = stripeClient();
