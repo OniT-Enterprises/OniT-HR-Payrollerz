@@ -1,7 +1,7 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { FirebaseError } from "firebase/app";
 import type { User } from "firebase/auth";
-import { db } from "@/lib/firebase";
+import { db, getFunctionsLazy } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
 
@@ -188,6 +188,22 @@ async function provisionOrgWrites({
     await accountService.initializeChartOfAccounts(tenantId);
   } catch (err) {
     console.warn("Chart of accounts seeding failed during onboarding:", err);
+  }
+
+  // Send the branded welcome (+ email verification link for password signups).
+  // Non-fatal: a failed/blocked email must never break account creation.
+  try {
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import("firebase/functions"),
+      getFunctionsLazy(),
+    ]);
+    const sendWelcome = httpsCallable<{ tenantName: string }, { sent: boolean }>(
+      functions,
+      "sendWelcomeEmail",
+    );
+    await sendWelcome({ tenantName: name });
+  } catch (err) {
+    console.warn("Welcome email send failed during onboarding:", err);
   }
 
   return tenantId;

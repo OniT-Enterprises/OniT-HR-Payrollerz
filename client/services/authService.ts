@@ -7,10 +7,9 @@ import {
   onAuthStateChanged,
   User,
   updateProfile,
-  sendPasswordResetEmail,
   sendEmailVerification,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, getFunctionsLazy } from "@/lib/firebase";
 
 interface UserProfile {
   uid: string;
@@ -82,8 +81,25 @@ class AuthService {
   }
 
   async resetPassword(email: string): Promise<void> {
+    // Route through the Cloud Function so the reset email is Xefe-branded
+    // (sent via Resend) instead of Firebase's default unbranded message.
+    const normalized = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+      // Preserve the code the ForgotPassword page maps to "invalid email".
+      throw Object.assign(new Error("Invalid email"), {
+        code: "auth/invalid-email",
+      });
+    }
     try {
-      await sendPasswordResetEmail(auth, email);
+      const [{ httpsCallable }, functions] = await Promise.all([
+        import("firebase/functions"),
+        getFunctionsLazy(),
+      ]);
+      const requestReset = httpsCallable<{ email: string }, { success: boolean }>(
+        functions,
+        "requestPasswordReset",
+      );
+      await requestReset({ email: normalized });
     } catch (error) {
       console.error("Error sending password reset email:", error);
       throw error;

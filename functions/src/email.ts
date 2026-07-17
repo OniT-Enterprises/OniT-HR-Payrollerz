@@ -17,8 +17,9 @@ import { FieldValue } from "firebase-admin/firestore";
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
-// reply.rezerva.tl is the verified Resend domain (until xefe.tl is set up).
-const DEFAULT_FROM = "Xefe <noreply@reply.rezerva.tl>";
+// xefe.tl is verified in Resend (account-level), so all queued mail sends from
+// the branded Xefe address. Per-message `from` overrides still win when set.
+const DEFAULT_FROM = "Xefe <noreply@xefe.tl>";
 
 export const sendQueuedEmail = onDocumentCreated(
   { document: "mail/{mailId}", secrets: [RESEND_API_KEY] },
