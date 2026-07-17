@@ -20,6 +20,7 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { notificationService } from '@/services/notificationService';
 
 // ============================================
 // Types
@@ -373,6 +374,32 @@ class ReviewService {
       status: 'submitted',
       submittedAt: new Date(),
     });
+
+    // Tell the employee their review awaits acknowledgement. Non-fatal —
+    // the workflow must not depend on email delivery.
+    try {
+      const email = await notificationService.getEmployeeEmail(tenantId, existing.employeeId);
+      if (email) {
+        await notificationService.queueEmail({
+          tenantId,
+          to: email,
+          subject: 'Your performance review is ready for your acknowledgement',
+          text: [
+            `Hi ${existing.employeeName},`,
+            '',
+            `Your ${getReviewTypeName(existing.reviewType)} (${existing.reviewPeriodStart} – ${existing.reviewPeriodEnd}) has been completed by your reviewer and is ready for you to read and acknowledge in Xefe/Ekipa.`,
+            '',
+            `Ita-nia revizaun dezempeñu prontu ona atu ita lee no rekoñese iha Xefe/Ekipa.`,
+            '',
+            notificationService.bilingualFooter(),
+          ].join('\n'),
+          purpose: 'review-submitted',
+          relatedId: reviewId,
+        });
+      }
+    } catch (error) {
+      console.error('Review-submitted email failed:', error);
+    }
   }
 
   /**
@@ -416,6 +443,31 @@ class ReviewService {
       status: 'completed',
       completedAt: new Date(),
     });
+
+    // Close the loop with the employee. Non-fatal.
+    try {
+      const email = await notificationService.getEmployeeEmail(tenantId, existing.employeeId);
+      if (email) {
+        await notificationService.queueEmail({
+          tenantId,
+          to: email,
+          subject: 'Your performance review is complete',
+          text: [
+            `Hi ${existing.employeeName},`,
+            '',
+            `Your ${getReviewTypeName(existing.reviewType)} (${existing.reviewPeriodStart} – ${existing.reviewPeriodEnd}) has been finalized. You can view it any time in Xefe/Ekipa.`,
+            '',
+            `Ita-nia revizaun dezempeñu remata ona. Ita bele haree iha Xefe/Ekipa.`,
+            '',
+            notificationService.bilingualFooter(),
+          ].join('\n'),
+          purpose: 'review-completed',
+          relatedId: reviewId,
+        });
+      }
+    } catch (error) {
+      console.error('Review-completed email failed:', error);
+    }
   }
 
   /**

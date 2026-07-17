@@ -174,11 +174,17 @@ export function useUpdatePreCheck() {
   });
 }
 
-export function useMarkInvitationSent() {
+export function useSendInterviewInvitation() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: (id: string) => interviewService.markInvitationSent(tenantId, id),
+    // Emails the candidate (when an address is on file) and marks it sent.
+    // Resolves to whether an email actually went out.
+    mutationFn: (input: { interview: Interview; companyName?: string; replyTo?: string }) =>
+      interviewService.sendInvitation(tenantId, input.interview, {
+        companyName: input.companyName,
+        replyTo: input.replyTo,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interviewKeys.all(tenantId) });
     },
@@ -212,8 +218,11 @@ export function useMakeDecision() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: ({ id, decision, notes }: { id: string; decision: InterviewDecision; notes?: string }) =>
-      interviewService.makeDecision(tenantId, id, decision, notes),
+    mutationFn: ({ id, decision, notes, companyName, replyTo }: {
+      id: string; decision: InterviewDecision; notes?: string;
+      companyName?: string; replyTo?: string;
+    }) =>
+      interviewService.makeDecision(tenantId, id, decision, notes, { companyName, replyTo }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: interviewKeys.all(tenantId) });
     },

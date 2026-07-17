@@ -191,7 +191,7 @@ exports.notifyEkipaExpenseDecision = (0, firestore_2.onDocumentUpdated)({
     document: "tenants/{tenantId}/expenses/{expenseId}",
     region: REGION,
 }, async (event) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f;
     const before = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before.data();
     const after = (_b = event.data) === null || _b === void 0 ? void 0 : _b.after.data();
     if (!before || !after || before.status === after.status)
@@ -227,6 +227,43 @@ exports.notifyEkipaExpenseDecision = (0, firestore_2.onDocumentUpdated)({
         entityId: expenseId,
         tenantId,
     }));
+    // Email mirror of the push (same pattern as leave decisions) — staff
+    // without Ekipa installed still hear the outcome. Non-fatal.
+    try {
+        const empSnap = await db.doc(`tenants/${tenantId}/employees/${employeeId}`).get();
+        const email = (_e = (_d = (_c = empSnap.data()) === null || _c === void 0 ? void 0 : _c.personalInfo) === null || _d === void 0 ? void 0 : _d.email) === null || _e === void 0 ? void 0 : _e.trim();
+        if (!email)
+            return;
+        const description = asString(after.description) || "your expense";
+        const amount = Number((_f = after.amount) !== null && _f !== void 0 ? _f : 0);
+        const amountLabel = Number.isFinite(amount) && amount > 0 ? ` ($${amount.toFixed(2)})` : "";
+        await db.collection("mail").add({
+            tenantId,
+            to: [email],
+            subject: approved
+                ? `Expense approved${amountLabel} — ${description}`
+                : `Expense declined${amountLabel} — ${description}`,
+            text: [
+                approved
+                    ? `Your expense "${description}"${amountLabel} was APPROVED.`
+                    : `Your expense "${description}"${amountLabel} was DECLINED.`,
+                ...(after.rejectionReason ? [`Reason: ${asString(after.rejectionReason)}`] : []),
+                "",
+                approved
+                    ? `Ita-nia despeza "${description}"${amountLabel} APROVA ona.`
+                    : `Ita-nia despeza "${description}"${amountLabel} LA APROVA.`,
+                "",
+                "(Sent via Xefe — also in your Ekipa app / Haruka liuhusi Xefe — haree mós iha Ekipa)",
+            ].join("\n"),
+            status: "pending",
+            purpose: "expense-decision",
+            relatedId: expenseId,
+            createdAt: firestore_1.FieldValue.serverTimestamp(),
+        });
+    }
+    catch (error) {
+        v2_1.logger.error("Expense decision email failed", { tenantId, expenseId, error });
+    }
 });
 exports.notifyEkipaPayslipReady = (0, firestore_2.onDocumentCreated)({
     document: "tenants/{tenantId}/payruns/{period}/payslips/{employeeId}",

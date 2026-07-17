@@ -6,7 +6,7 @@
  * short summaries; sensitive payroll amounts remain inside authenticated
  * Ekipa screens.
  */
-import { getFirestore, type DocumentReference } from "firebase-admin/firestore";
+import { FieldValue, getFirestore, type DocumentReference } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import {
   onDocumentCreated,
@@ -297,6 +297,44 @@ export const notifyEkipaExpenseDecision = onDocumentUpdated(
         tenantId,
       }),
     );
+
+    // Email mirror of the push (same pattern as leave decisions) — staff
+    // without Ekipa installed still hear the outcome. Non-fatal.
+    try {
+      const empSnap = await db.doc(`tenants/${tenantId}/employees/${employeeId}`).get();
+      const email = (empSnap.data()?.personalInfo?.email as string | undefined)?.trim();
+      if (!email) return;
+
+      const description = asString(after.description) || "your expense";
+      const amount = Number(after.amount ?? 0);
+      const amountLabel = Number.isFinite(amount) && amount > 0 ? ` ($${amount.toFixed(2)})` : "";
+
+      await db.collection("mail").add({
+        tenantId,
+        to: [email],
+        subject: approved
+          ? `Expense approved${amountLabel} — ${description}`
+          : `Expense declined${amountLabel} — ${description}`,
+        text: [
+          approved
+            ? `Your expense "${description}"${amountLabel} was APPROVED.`
+            : `Your expense "${description}"${amountLabel} was DECLINED.`,
+          ...(after.rejectionReason ? [`Reason: ${asString(after.rejectionReason)}`] : []),
+          "",
+          approved
+            ? `Ita-nia despeza "${description}"${amountLabel} APROVA ona.`
+            : `Ita-nia despeza "${description}"${amountLabel} LA APROVA.`,
+          "",
+          "(Sent via Xefe — also in your Ekipa app / Haruka liuhusi Xefe — haree mós iha Ekipa)",
+        ].join("\n"),
+        status: "pending",
+        purpose: "expense-decision",
+        relatedId: expenseId,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    } catch (error) {
+      logger.error("Expense decision email failed", { tenantId, expenseId, error });
+    }
   },
 );
 

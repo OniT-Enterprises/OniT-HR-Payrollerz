@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
+import { notificationService } from '@/services/notificationService';
 
 // ============================================
 // Types
@@ -440,8 +441,11 @@ class InterviewService {
     tenantId: string,
     interviewId: string,
     newDate: string,
-    newTime: string
+    newTime: string,
+    opts?: { companyName?: string; replyTo?: string }
   ): Promise<void> {
+    const existing = await this.getInterview(tenantId, interviewId);
+
     await this.updateInterview(tenantId, interviewId, {
       interviewDate: newDate,
       interviewTime: newTime,
@@ -449,6 +453,40 @@ class InterviewService {
       reminderSent: false,
       candidateConfirmed: false,
     });
+
+    // If the candidate was already invited, tell them the time changed.
+    // Non-fatal: a failed email must not undo the reschedule.
+    if (existing?.invitationSent && existing.candidateEmail?.trim()) {
+      const company = opts?.companyName || 'our company';
+      try {
+        await notificationService.queueEmail({
+          tenantId,
+          to: existing.candidateEmail,
+          replyTo: opts?.replyTo,
+          subject: `Interview rescheduled — ${existing.position} at ${company}, now ${newDate} ${newTime}`,
+          text: [
+            `Dear ${existing.candidateName},`,
+            '',
+            `Your interview for ${existing.position} at ${company} has been rescheduled.`,
+            '',
+            `New date: ${newDate}`,
+            `New time: ${newTime}`,
+            ...(existing.location ? [`Location: ${existing.location}`] : []),
+            ...(existing.meetingLink ? [`Video link: ${existing.meetingLink}`] : []),
+            '',
+            'Please reply to this email to confirm the new time.',
+            '',
+            `Ita-nia entrevista muda ona ba ${newDate} tuku ${newTime}. Favór responde atu konfirma.`,
+            '',
+            `— ${company} (sent via Xefe)`,
+          ].join('\n'),
+          purpose: 'interview-reschedule',
+          relatedId: interviewId,
+        });
+      } catch (error) {
+        console.error('Interview reschedule email failed:', error);
+      }
+    }
   }
 
   // ----------------------------------------
@@ -488,6 +526,105 @@ class InterviewService {
   // ----------------------------------------
   // Communication Operations
   // ----------------------------------------
+
+  /** Candidate-facing schedule lines shared by invitation/reminder emails. */
+  private interviewDetailLines(interview: Interview): string[] {
+    return [
+      `Date: ${interview.interviewDate}`,
+      `Time: ${interview.interviewTime} (${interview.duration} minutes)`,
+      `Format: ${interview.interviewType}`,
+      ...(interview.location ? [`Location: ${interview.location}`] : []),
+      ...(interview.meetingLink ? [`Video link: ${interview.meetingLink}`] : []),
+    ];
+  }
+
+  /**
+   * Email the interview invitation to the candidate. Returns false when the
+   * interview has no candidateEmail (caller decides how to surface that).
+   */
+  async sendInvitationEmail(
+    tenantId: string,
+    interview: Interview,
+    opts?: { companyName?: string; replyTo?: string },
+  ): Promise<boolean> {
+    const email = interview.candidateEmail?.trim();
+    if (!email) return false;
+    const company = opts?.companyName || 'our company';
+
+    await notificationService.queueEmail({
+      tenantId,
+      to: email,
+      replyTo: opts?.replyTo,
+      subject: `Interview invitation — ${interview.position} at ${company}`,
+      text: [
+        `Dear ${interview.candidateName},`,
+        '',
+        `You are invited to an interview for the position of ${interview.position} at ${company}.`,
+        '',
+        ...this.interviewDetailLines(interview),
+        '',
+        'Please reply to this email to confirm you can attend.',
+        '',
+        `Konvite ba entrevista ba pozisaun ${interview.position} iha ${company}, ${interview.interviewDate} tuku ${interview.interviewTime}. Favór responde atu konfirma.`,
+        '',
+        `— ${company} (sent via Xefe)`,
+      ].join('\n'),
+      purpose: 'interview-invitation',
+      relatedId: interview.id,
+    });
+    return true;
+  }
+
+  /**
+   * Email an interview reminder to the candidate. Returns false when there is
+   * no candidateEmail.
+   */
+  async sendReminderEmail(
+    tenantId: string,
+    interview: Interview,
+    opts?: { companyName?: string; replyTo?: string },
+  ): Promise<boolean> {
+    const email = interview.candidateEmail?.trim();
+    if (!email) return false;
+    const company = opts?.companyName || 'our company';
+
+    await notificationService.queueEmail({
+      tenantId,
+      to: email,
+      replyTo: opts?.replyTo,
+      subject: `Interview reminder — ${interview.position} at ${company}, ${interview.interviewDate} ${interview.interviewTime}`,
+      text: [
+        `Dear ${interview.candidateName},`,
+        '',
+        `A friendly reminder about your upcoming interview for ${interview.position} at ${company}.`,
+        '',
+        ...this.interviewDetailLines(interview),
+        '',
+        `Lembransa ba ita-nia entrevista iha ${interview.interviewDate} tuku ${interview.interviewTime}.`,
+        '',
+        `— ${company} (sent via Xefe)`,
+      ].join('\n'),
+      purpose: 'interview-reminder',
+      relatedId: interview.id,
+    });
+    return true;
+  }
+
+  /**
+   * Send the invitation email (when the candidate has one on file) and mark
+   * the invitation as sent. Returns whether an email actually went out —
+   * callers surface "no email on file" so the recruiter contacts them
+   * directly instead of assuming the system did.
+   */
+  async sendInvitation(
+    tenantId: string,
+    interview: Interview,
+    opts?: { companyName?: string; replyTo?: string },
+  ): Promise<boolean> {
+    const emailed = await this.sendInvitationEmail(tenantId, interview, opts);
+    await this.markInvitationSent(tenantId, interview.id!);
+    return emailed;
+  }
 
   /**
    * Mark invitation as sent
@@ -567,13 +704,51 @@ class InterviewService {
     tenantId: string,
     interviewId: string,
     decision: InterviewDecision,
-    notes?: string
+    notes?: string,
+    opts?: { companyName?: string; replyTo?: string }
   ): Promise<void> {
+    const existing = await this.getInterview(tenantId, interviewId);
+
     await this.updateInterview(tenantId, interviewId, {
       decision,
       decisionNotes: notes,
       status: 'completed',
     });
+
+    // Candidates hear the outcome for final decisions only (hire / reject) —
+    // internal states (hold, next_round, pending) stay internal. Decision
+    // notes are internal too and never emailed. Non-fatal.
+    if ((decision === 'hire' || decision === 'reject') && existing?.candidateEmail?.trim()) {
+      const company = opts?.companyName || 'our company';
+      const hired = decision === 'hire';
+      try {
+        await notificationService.queueEmail({
+          tenantId,
+          to: existing.candidateEmail,
+          replyTo: opts?.replyTo,
+          subject: hired
+            ? `Good news about your application — ${existing.position} at ${company}`
+            : `Update on your application — ${existing.position} at ${company}`,
+          text: [
+            `Dear ${existing.candidateName},`,
+            '',
+            hired
+              ? `Congratulations! Following your interview, we would like to move forward with you for the position of ${existing.position} at ${company}. We will contact you shortly with the next steps.`
+              : `Thank you for taking the time to interview for ${existing.position} at ${company}. After careful consideration we will not be moving forward with your application on this occasion. We appreciate your interest and wish you every success.`,
+            '',
+            hired
+              ? `Parabéns! Ami sei kontaktu ita lalais ho pasu tuir mai sira.`
+              : `Obrigadu ba ita-nia tempu no interese. Infelizmente ami la avansa ho ita-nia aplikasaun iha biban ida ne'e.`,
+            '',
+            `— ${company} (sent via Xefe)`,
+          ].join('\n'),
+          purpose: 'interview-decision',
+          relatedId: interviewId,
+        });
+      } catch (error) {
+        console.error('Interview decision email failed:', error);
+      }
+    }
   }
 
   // ----------------------------------------

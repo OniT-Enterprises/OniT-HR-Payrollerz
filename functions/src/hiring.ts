@@ -1,5 +1,5 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import {
@@ -479,5 +479,65 @@ export const validateJobApproval = onCall(async (request) => {
     throw new HttpsError("internal", `Failed to ${action} job`);
   }
 });
+
+/**
+ * Confirmation email when a public job application lands. Runs server-side
+ * because public applicants are unauthenticated and cannot write to the
+ * mail queue themselves. Sends only to the applicant's own address.
+ */
+export const sendApplicationReceivedEmail = onDocumentCreated(
+  "jobApplications/{applicationId}",
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    const email = (data.email as string | undefined)?.trim();
+    if (!email) return;
+
+    const tenantId = (data.tenantId as string | undefined) ?? undefined;
+    const name = (data.name as string) || "there";
+    const jobTitle = (data.jobTitle as string) || "the position";
+
+    let company = "the company";
+    if (tenantId) {
+      try {
+        const tenantSnap = await getFirestore().doc(`tenants/${tenantId}`).get();
+        company = (tenantSnap.data()?.name as string) || company;
+      } catch (error) {
+        logger.warn("Could not resolve tenant name for application email", { tenantId, error });
+      }
+    }
+
+    try {
+      await getFirestore().collection("mail").add({
+        tenantId: tenantId ?? "platform",
+        to: [email],
+        subject: `We received your application — ${jobTitle} at ${company}`,
+        text: [
+          `Dear ${name},`,
+          "",
+          `Thank you for applying for ${jobTitle} at ${company}. Your application has been received and will be reviewed by the hiring team. We will contact you about the outcome.`,
+          "",
+          `Obrigadu ba ita-nia aplikasaun ba ${jobTitle} iha ${company}. Ami simu ona no sei revee. Ami sei kontaktu ita kona-ba rezultadu.`,
+          "",
+          `— ${company} (sent via Xefe)`,
+        ].join("\n"),
+        status: "pending",
+        purpose: "application-received",
+        relatedId: event.params.applicationId,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      logger.info("Application-received email queued", {
+        applicationId: event.params.applicationId,
+        tenantId,
+      });
+    } catch (error) {
+      logger.error("Failed to queue application-received email", {
+        applicationId: event.params.applicationId,
+        error,
+      });
+    }
+  },
+);
 
 // Functions are exported inline with their declarations above

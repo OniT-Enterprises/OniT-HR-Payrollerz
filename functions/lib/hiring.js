@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateJobApproval = exports.onOfferAccepted = exports.createEmploymentSnapshot = exports.acceptOffer = void 0;
+exports.sendApplicationReceivedEmail = exports.validateJobApproval = exports.onOfferAccepted = exports.createEmploymentSnapshot = exports.acceptOffer = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const firestore_2 = require("firebase-admin/firestore");
@@ -351,6 +351,63 @@ exports.validateJobApproval = (0, https_1.onCall)(async (request) => {
             throw error;
         }
         throw new https_1.HttpsError("internal", `Failed to ${action} job`);
+    }
+});
+/**
+ * Confirmation email when a public job application lands. Runs server-side
+ * because public applicants are unauthenticated and cannot write to the
+ * mail queue themselves. Sends only to the applicant's own address.
+ */
+exports.sendApplicationReceivedEmail = (0, firestore_1.onDocumentCreated)("jobApplications/{applicationId}", async (event) => {
+    var _a, _b, _c, _d;
+    const data = (_a = event.data) === null || _a === void 0 ? void 0 : _a.data();
+    if (!data)
+        return;
+    const email = (_b = data.email) === null || _b === void 0 ? void 0 : _b.trim();
+    if (!email)
+        return;
+    const tenantId = (_c = data.tenantId) !== null && _c !== void 0 ? _c : undefined;
+    const name = data.name || "there";
+    const jobTitle = data.jobTitle || "the position";
+    let company = "the company";
+    if (tenantId) {
+        try {
+            const tenantSnap = await (0, firestore_2.getFirestore)().doc(`tenants/${tenantId}`).get();
+            company = ((_d = tenantSnap.data()) === null || _d === void 0 ? void 0 : _d.name) || company;
+        }
+        catch (error) {
+            v2_1.logger.warn("Could not resolve tenant name for application email", { tenantId, error });
+        }
+    }
+    try {
+        await (0, firestore_2.getFirestore)().collection("mail").add({
+            tenantId: tenantId !== null && tenantId !== void 0 ? tenantId : "platform",
+            to: [email],
+            subject: `We received your application — ${jobTitle} at ${company}`,
+            text: [
+                `Dear ${name},`,
+                "",
+                `Thank you for applying for ${jobTitle} at ${company}. Your application has been received and will be reviewed by the hiring team. We will contact you about the outcome.`,
+                "",
+                `Obrigadu ba ita-nia aplikasaun ba ${jobTitle} iha ${company}. Ami simu ona no sei revee. Ami sei kontaktu ita kona-ba rezultadu.`,
+                "",
+                `— ${company} (sent via Xefe)`,
+            ].join("\n"),
+            status: "pending",
+            purpose: "application-received",
+            relatedId: event.params.applicationId,
+            createdAt: firestore_2.FieldValue.serverTimestamp(),
+        });
+        v2_1.logger.info("Application-received email queued", {
+            applicationId: event.params.applicationId,
+            tenantId,
+        });
+    }
+    catch (error) {
+        v2_1.logger.error("Failed to queue application-received email", {
+            applicationId: event.params.applicationId,
+            error,
+        });
     }
 });
 // Functions are exported inline with their declarations above

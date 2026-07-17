@@ -284,6 +284,59 @@ async function syncTenantDocumentAlerts(
  * Runs daily at 6:00 AM UTC to check all employee documents across all tenants
  * Creates or updates alerts in the document_alerts collection
  */
+/**
+ * Email a digest of document alerts to the tenant's admins (owner/billing
+ * email). Sent only on days when NEW alerts appeared, so it never nags —
+ * the in-app alerts page stays the full record.
+ */
+async function sendExpiryDigestEmail(
+  tenantId: string,
+  tenant: Record<string, unknown>,
+  syncResult: TenantAlertSyncResult,
+): Promise<void> {
+  const recipients = [
+    ...new Set(
+      [tenant.ownerEmail, tenant.billingEmail]
+        .map((e) => (typeof e === "string" ? e.trim() : ""))
+        .filter(Boolean),
+    ),
+  ];
+  if (recipients.length === 0) return;
+
+  const important = [...syncResult.alerts]
+    .filter((a) => a.severity !== "upcoming")
+    .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry)
+    .slice(0, 30);
+  if (important.length === 0) return;
+
+  const companyName = (tenant.name as string) || tenantId;
+  const lines = important.map((a) => {
+    const when =
+      a.daysUntilExpiry < 0
+        ? `EXPIRED ${Math.abs(a.daysUntilExpiry)} day(s) ago (${a.expiryDate})`
+        : `expires in ${a.daysUntilExpiry} day(s) (${a.expiryDate})`;
+    return `- ${a.employeeName}: ${a.documentLabel} — ${when}`;
+  });
+
+  await db.collection("mail").add({
+    tenantId,
+    to: recipients, // tenant admins — shared "to" is fine here
+    subject: `Document alerts — ${syncResult.created} new for ${companyName}`,
+    text: [
+      `Daily document check for ${companyName}: ${syncResult.created} new alert(s), ${syncResult.alertsFound} open in total.`,
+      "",
+      ...lines,
+      "",
+      "Review and acknowledge in Xefe: https://xefe.tl/people/employees (Document alerts)",
+      "",
+      "(Sent via Xefe)",
+    ].join("\n"),
+    status: "pending",
+    purpose: "document-expiry-digest",
+    createdAt: FieldValue.serverTimestamp(),
+  });
+}
+
 export const checkDocumentExpiry = onSchedule(
   {
     schedule: "0 6 * * *", // Every day at 6:00 AM UTC
@@ -323,6 +376,13 @@ export const checkDocumentExpiry = onSchedule(
           totalAlertsCreated += syncResult.created;
           totalAlertsUpdated += syncResult.updated;
           tenantsProcessed++;
+
+          // Digest email on days with NEW alerts (non-fatal)
+          if (syncResult.created > 0) {
+            await sendExpiryDigestEmail(tenantId, tenantDoc.data(), syncResult).catch(
+              (error) => logger.error(`Digest email failed for tenant ${tenantId}`, { error }),
+            );
+          }
 
           logger.info(`Processed tenant ${tenantId}`, {
             employees: syncResult.employeesScanned,

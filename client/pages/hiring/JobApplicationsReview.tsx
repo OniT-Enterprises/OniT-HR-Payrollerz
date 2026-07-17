@@ -22,7 +22,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import PageHeader from "@/components/layout/PageHeader";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { notificationService } from "@/services/notificationService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAddCandidate } from "@/hooks/useHiring";
@@ -46,6 +47,7 @@ import {
 export default function JobApplicationsReview() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const { session } = useTenant();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -123,6 +125,32 @@ export default function JobApplicationsReview() {
         candidateId,
         verificationChecklist: docChecks,
       });
+
+      // Tell the applicant they moved forward. Non-fatal.
+      if (app.email?.trim()) {
+        const company = session?.config?.name || "our company";
+        try {
+          await notificationService.queueEmail({
+            tenantId,
+            to: app.email,
+            replyTo: user?.email || undefined,
+            subject: `Your application for ${app.jobTitle} at ${company} — next steps`,
+            text: [
+              `Dear ${app.name},`,
+              "",
+              `Good news — your application for ${app.jobTitle} at ${company} has been reviewed and approved. We will contact you shortly about the next steps.`,
+              "",
+              `Notísia di'ak — ita-nia aplikasaun ba ${app.jobTitle} iha ${company} aprova ona. Ami sei kontaktu ita lalais.`,
+              "",
+              `— ${company} (sent via Xefe)`,
+            ].join("\n"),
+            purpose: "application-outcome",
+            relatedId: app.id,
+          });
+        } catch (emailError) {
+          console.error("Application-approved email failed:", emailError);
+        }
+      }
       return candidateId;
     },
     onSuccess: (candidateId) => {
@@ -148,6 +176,33 @@ export default function JobApplicationsReview() {
     mutationFn: async ({ app, reason }: { app: JobApplication; reason: string }) => {
       if (!app.id) throw new Error("Missing id");
       await jobApplicationService.reject(tenantId, app.id, user?.email || "unknown", reason);
+
+      // Courtesy decline to the applicant. The recorded reason stays internal
+      // — a generic, respectful note is kinder and safer. Non-fatal.
+      if (app.email?.trim()) {
+        const company = session?.config?.name || "our company";
+        try {
+          await notificationService.queueEmail({
+            tenantId,
+            to: app.email,
+            replyTo: user?.email || undefined,
+            subject: `Update on your application — ${app.jobTitle} at ${company}`,
+            text: [
+              `Dear ${app.name},`,
+              "",
+              `Thank you for applying for ${app.jobTitle} at ${company}. After careful review, we will not be moving forward with your application on this occasion. We appreciate the time you took to apply and wish you every success.`,
+              "",
+              `Obrigadu ba ita-nia aplikasaun ba ${app.jobTitle} iha ${company}. Infelizmente ami la avansa ho ita-nia aplikasaun iha biban ida ne'e. Ami hato'o susesu ba ita-nia futuru.`,
+              "",
+              `— ${company} (sent via Xefe)`,
+            ].join("\n"),
+            purpose: "application-outcome",
+            relatedId: app.id,
+          });
+        } catch (emailError) {
+          console.error("Application-rejected email failed:", emailError);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobApplications", tenantId] });

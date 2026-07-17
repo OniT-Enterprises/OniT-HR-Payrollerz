@@ -41,7 +41,7 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import {
@@ -53,7 +53,7 @@ import {
   useCancelInterview,
   useMarkNoShow,
   useUpdatePreCheck,
-  useMarkInvitationSent,
+  useSendInterviewInvitation,
   useMarkFollowUpCall,
   useAddFeedback,
   useMakeDecision,
@@ -134,6 +134,7 @@ function StarRating({
 export default function Interviews() {
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { session } = useTenant();
   const { user } = useAuth();
   const { data: employees = [], isLoading: _employeesLoading } = useAllEmployees();
 
@@ -146,7 +147,7 @@ export default function Interviews() {
   const cancelInterviewMutation = useCancelInterview();
   const noShowMutation = useMarkNoShow();
   const updatePreCheckMutation = useUpdatePreCheck();
-  const markInvitationMutation = useMarkInvitationSent();
+  const markInvitationMutation = useSendInterviewInvitation();
   const markFollowUpMutation = useMarkFollowUpCall();
   const addFeedbackMutation = useAddFeedback();
   const makeDecisionMutation = useMakeDecision();
@@ -377,10 +378,22 @@ export default function Interviews() {
   const handleSendInvitation = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    markInvitationMutation.mutate(interview.id, {
-      onSuccess: () => toast.success("Invitation marked as sent"),
-      onError: () => toast.error("Failed to update"),
-    });
+    markInvitationMutation.mutate(
+      {
+        interview,
+        companyName: session?.config?.name,
+        replyTo: user?.email || undefined,
+      },
+      {
+        onSuccess: (emailed) =>
+          emailed
+            ? toast.success(`Invitation emailed to ${interview.candidateName}`)
+            : toast.warning(
+                "No candidate email on file — marked as sent, contact them directly",
+              ),
+        onError: () => toast.error("Failed to send invitation"),
+      },
+    );
   };
 
   const handleFollowUpCall = (interview: Interview) => {
@@ -444,7 +457,12 @@ export default function Interviews() {
     if (!tenantId || !interview.id) return;
 
     makeDecisionMutation.mutate(
-      { id: interview.id, decision },
+      {
+        id: interview.id,
+        decision,
+        companyName: session?.config?.name,
+        replyTo: user?.email || undefined,
+      },
       {
         onSuccess: () => {
           if (decision === "hire") {
