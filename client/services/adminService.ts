@@ -594,6 +594,85 @@ class AdminService {
     }
   }
 
+  /**
+   * Record an offline (bank transfer / cash) subscription payment. Manual
+   * subscriptions are never open-ended: paid-until extends from
+   * max(now, current paid-until) by the given number of months. Mirrors the
+   * manual path in isTenantSubscribed() / firestore.rules.
+   */
+  async recordManualSubscription(
+    tenantId: string,
+    input: { months: number; monthlyAmount: number },
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
+    if (!db) throw new Error("Database not available");
+
+    const months = Math.max(1, Math.floor(input.months));
+    const tenantRef = doc(db, paths.tenant(tenantId));
+    const tenantSnap = await getDoc(tenantRef);
+    if (!tenantSnap.exists()) throw new Error("Tenant not found");
+
+    const current = tenantSnap.data()?.subscriptionPaidUntil as
+      | { toDate?: () => Date }
+      | undefined;
+    const currentDate = typeof current?.toDate === "function" ? current.toDate() : null;
+    const base = currentDate && currentDate.getTime() > Date.now() ? currentDate : new Date();
+    const paidUntil = new Date(base);
+    paidUntil.setMonth(paidUntil.getMonth() + months);
+
+    await updateDoc(tenantRef, {
+      manualSubscription: true,
+      subscriptionPaidUntil: Timestamp.fromDate(paidUntil),
+      monthlySubscriptionAmount: Math.max(0, input.monthlyAmount),
+      updatedAt: serverTimestamp(),
+    });
+
+    await this.logAdminAction({
+      action: "manual_subscription_recorded",
+      actorUid,
+      actorEmail,
+      targetType: "tenant",
+      targetId: tenantId,
+      targetName: tenantSnap.data()?.name,
+      details: {
+        months,
+        monthlyAmount: input.monthlyAmount,
+        paidUntil: paidUntil.toISOString(),
+      },
+      timestamp: Timestamp.now(),
+    });
+  }
+
+  /** End a manual subscription (paid-until stays for the record; gate closes). */
+  async cancelManualSubscription(
+    tenantId: string,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
+    if (!db) throw new Error("Database not available");
+
+    const tenantRef = doc(db, paths.tenant(tenantId));
+    const tenantSnap = await getDoc(tenantRef);
+    if (!tenantSnap.exists()) throw new Error("Tenant not found");
+
+    await updateDoc(tenantRef, {
+      manualSubscription: false,
+      updatedAt: serverTimestamp(),
+    });
+
+    await this.logAdminAction({
+      action: "manual_subscription_cancelled",
+      actorUid,
+      actorEmail,
+      targetType: "tenant",
+      targetId: tenantId,
+      targetName: tenantSnap.data()?.name,
+      details: {},
+      timestamp: Timestamp.now(),
+    });
+  }
+
   async suspendTenant(tenantId: string, reason: string, actorUid: string, actorEmail: string): Promise<void> {
     if (!db) throw new Error("Database not available");
 

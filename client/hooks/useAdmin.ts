@@ -85,6 +85,36 @@ export function useTenantStats(id: string | undefined) {
   });
 }
 
+export function useRecordManualSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, months, monthlyAmount, actorUid, actorEmail }: {
+      tenantId: string; months: number; monthlyAmount: number; actorUid: string; actorEmail: string;
+    }) => adminService.recordManualSubscription(tenantId, { months, monthlyAmount }, actorUid, actorEmail),
+    onSuccess: (_, { tenantId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenant(tenantId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+      queryClient.invalidateQueries({ queryKey: ["tenant-billing", tenantId] });
+    },
+  });
+}
+
+export function useCancelManualSubscription() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, actorUid, actorEmail }: {
+      tenantId: string; actorUid: string; actorEmail: string;
+    }) => adminService.cancelManualSubscription(tenantId, actorUid, actorEmail),
+    onSuccess: (_, { tenantId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenant(tenantId) });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+      queryClient.invalidateQueries({ queryKey: ["tenant-billing", tenantId] });
+    },
+  });
+}
+
 export function useSuspendTenant() {
   const queryClient = useQueryClient();
   return useMutation({

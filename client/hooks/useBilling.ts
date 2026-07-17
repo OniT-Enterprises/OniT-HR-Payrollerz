@@ -14,6 +14,7 @@ export interface TenantBilling {
   monthlySubscriptionAmount?: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  manualSubscription?: boolean;
   status?: string;
   subscriptionPaidUntil?: { toDate: () => Date } | null;
 }
@@ -30,6 +31,7 @@ export function useTenantBilling(enabled = true) {
         monthlySubscriptionAmount: d.monthlySubscriptionAmount as number | undefined,
         stripeCustomerId: d.stripeCustomerId as string | undefined,
         stripeSubscriptionId: d.stripeSubscriptionId as string | undefined,
+        manualSubscription: d.manualSubscription === true,
         status: d.status as string | undefined,
         subscriptionPaidUntil: (d.subscriptionPaidUntil as TenantBilling["subscriptionPaidUntil"]) ?? null,
       };

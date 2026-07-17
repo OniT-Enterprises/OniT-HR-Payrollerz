@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { CheckCircle2, CreditCard, Landmark, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { usePackagesConfig } from "@/hooks/useAdmin";
 import { useTenantBilling } from "@/hooks/useBilling";
@@ -13,6 +16,9 @@ import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { ALL_FEATURES, isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { billingService } from "@/services/billingService";
 import { toast } from "sonner";
+
+// Where offline-payment (bank transfer / cash) invoice requests are sent.
+const BILLING_SUPPORT_EMAIL = "info@naroman.tl";
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -24,11 +30,13 @@ function formatMoney(amount: number): string {
 
 export default function Billing() {
   const tenantId = useTenantId();
-  const { canManage } = useTenant();
+  const { canManage, session } = useTenant();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: packagesConfig } = usePackagesConfig();
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
+  const [invoiceRequestState, setInvoiceRequestState] = useState<"idle" | "sending" | "sent">("idle");
   const autoCheckoutFired = useRef(false);
 
   const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
@@ -66,6 +74,46 @@ export default function Billing() {
       console.error(error);
       toast.error("Could not open the billing portal.");
       setPortalBusy(false);
+    }
+  };
+
+  // Offline path for the many TL businesses without cards: queue an email to
+  // us; we send an invoice, they pay by bank transfer or cash, and a
+  // superadmin activates the subscription in Admin once payment lands.
+  const requestInvoice = async () => {
+    if (!canManage()) {
+      toast.error("Only owners and admins can manage billing");
+      return;
+    }
+    setInvoiceRequestState("sending");
+    try {
+      const companyName = session?.config?.name || tenantId;
+      const contactEmail = user?.email || "unknown";
+      await addDoc(collection(db, "mail"), {
+        tenantId,
+        to: [BILLING_SUPPORT_EMAIL],
+        ...(user?.email ? { replyTo: user.email } : {}),
+        subject: `Xefe invoice request — ${companyName} (${employees} employees, ${formatMoney(projected)}/mo)`,
+        text: [
+          `Tenant: ${companyName} (${tenantId})`,
+          `Requested by: ${contactEmail}`,
+          `Active employees: ${employees}`,
+          `Rate: ${formatMoney(rate)}/employee/month`,
+          `Monthly total: ${formatMoney(projected)}`,
+          "",
+          "The tenant wants to subscribe by bank transfer or cash.",
+          "Send them an invoice, then record the payment in Admin → Tenants once it arrives.",
+        ].join("\n"),
+        status: "pending",
+        purpose: "billing-invoice-request",
+        createdAt: serverTimestamp(),
+      });
+      setInvoiceRequestState("sent");
+      toast.success("Request sent — we'll email your invoice with payment details.");
+    } catch (error) {
+      console.error(error);
+      setInvoiceRequestState("idle");
+      toast.error("Could not send the request. Please try again.");
     }
   };
 
@@ -146,15 +194,28 @@ export default function Billing() {
                 </div>
 
                 {subscribed && paidUntil && (
-                  <Badge variant="outline">Renews {paidUntil.toLocaleDateString()}</Badge>
+                  <Badge variant="outline">
+                    {tenant?.manualSubscription && !tenant?.stripeSubscriptionId ? "Paid until" : "Renews"}{" "}
+                    {paidUntil.toLocaleDateString()}
+                  </Badge>
                 )}
 
                 <div className="flex flex-wrap gap-3">
                   {subscribed ? (
-                    <Button variant="outline" className="gap-2" onClick={openPortal} disabled={portalBusy}>
-                      {portalBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
-                      Manage billing
-                    </Button>
+                    tenant?.stripeCustomerId ? (
+                      <Button variant="outline" className="gap-2" onClick={openPortal} disabled={portalBusy}>
+                        {portalBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}
+                        Manage billing
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Paid by bank transfer or cash. To renew or make changes, email{" "}
+                        <a className="text-primary underline-offset-2 hover:underline" href={`mailto:${BILLING_SUPPORT_EMAIL}`}>
+                          {BILLING_SUPPORT_EMAIL}
+                        </a>
+                        .
+                      </p>
+                    )
                   ) : (
                     <Button className="gap-2" onClick={startCheckout} disabled={checkoutBusy || !canManage()}>
                       {checkoutBusy && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -167,6 +228,43 @@ export default function Billing() {
                     </Button>
                   )}
                 </div>
+
+                {!subscribed && (
+                  <>
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                      Card payments are processed securely by Stripe.
+                    </p>
+
+                    {/* Offline path — most TL businesses don't have cards */}
+                    <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Landmark className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold">No card? Pay by bank transfer or cash.</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            Request an invoice and we'll send payment details. Your subscription is
+                            activated as soon as the payment is confirmed.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={requestInvoice}
+                            disabled={invoiceRequestState !== "idle" || !canManage()}
+                          >
+                            {invoiceRequestState === "sending" && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {invoiceRequestState === "sent" ? "Request sent ✓" : "Request an invoice"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {!canManage() && (
                   <p className="text-sm text-muted-foreground">

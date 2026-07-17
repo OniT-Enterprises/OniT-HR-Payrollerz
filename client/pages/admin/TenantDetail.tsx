@@ -22,13 +22,34 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import {
+  useCancelManualSubscription,
   useDeleteTenant,
+  usePackagesConfig,
   useReactivateTenant,
+  useRecordManualSubscription,
   useSuspendTenant,
   useTenantDetail,
   useTenantStats,
   useUpdateTenantProfile,
 } from "@/hooks/useAdmin";
+import { normalizeBillingPackagesConfig } from "@/lib/packagePricing";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TenantProfileInput } from "@/services/adminService";
 import { OptionalTimestamp } from "@/types/firebase";
 import {
@@ -38,6 +59,7 @@ import {
   CheckCircle,
   ChevronLeft,
   CreditCard,
+  Landmark,
   Loader2,
   Pencil,
   Trash2,
@@ -83,6 +105,14 @@ export default function TenantDetail() {
   const [formValue, setFormValue] = useState<TenantProfileInput | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
+  // Offline (bank transfer / cash) subscription recording
+  const recordManualMutation = useRecordManualSubscription();
+  const cancelManualMutation = useCancelManualSubscription();
+  const { data: packagesConfig } = usePackagesConfig();
+  const [offlinePaymentOpen, setOfflinePaymentOpen] = useState(false);
+  const [offlineMonths, setOfflineMonths] = useState("1");
+  const [offlineMonthlyAmount, setOfflineMonthlyAmount] = useState("");
+
   useEffect(() => {
     if (tenant) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -111,6 +141,52 @@ export default function TenantDetail() {
       tenant.features?.reports !== false ? "Reports" : null,
     ].filter(Boolean) as string[];
   }, [tenant]);
+
+  const openOfflinePayment = () => {
+    const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
+    const employees = stats?.employeeCount ?? tenant?.currentEmployeeCount ?? 0;
+    setOfflineMonthlyAmount(String(Math.max(0, employees * rate)));
+    setOfflineMonths("1");
+    setOfflinePaymentOpen(true);
+  };
+
+  const handleRecordOfflinePayment = async () => {
+    if (!tenant || !user) return;
+    const monthlyAmount = Number(offlineMonthlyAmount);
+    if (!Number.isFinite(monthlyAmount) || monthlyAmount < 0) {
+      toast.error("Enter a valid monthly amount");
+      return;
+    }
+    try {
+      await recordManualMutation.mutateAsync({
+        tenantId: tenant.id,
+        months: Number(offlineMonths),
+        monthlyAmount,
+        actorUid: user.uid,
+        actorEmail: user.email || "",
+      });
+      toast.success("Payment recorded — subscription is active");
+      setOfflinePaymentOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not record the payment");
+    }
+  };
+
+  const handleCancelManualSubscription = async () => {
+    if (!tenant || !user) return;
+    try {
+      await cancelManualMutation.mutateAsync({
+        tenantId: tenant.id,
+        actorUid: user.uid,
+        actorEmail: user.email || "",
+      });
+      toast.success("Manual subscription ended");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not end the subscription");
+    }
+  };
 
   const handleImpersonate = async () => {
     if (!tenant) return;
@@ -336,6 +412,61 @@ export default function TenantDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <Dialog open={offlinePaymentOpen} onOpenChange={setOfflinePaymentOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record offline payment</DialogTitle>
+            <DialogDescription>
+              Bank transfer or cash received from {tenant?.name}. This activates the
+              subscription (payroll finalizing) until the new paid-until date.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="offline-months">Months paid</Label>
+              <Select value={offlineMonths} onValueChange={setOfflineMonths}>
+                <SelectTrigger id="offline-months">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 month</SelectItem>
+                  <SelectItem value="3">3 months</SelectItem>
+                  <SelectItem value="6">6 months</SelectItem>
+                  <SelectItem value="12">12 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="offline-amount">Monthly amount (USD)</Label>
+              <Input
+                id="offline-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={offlineMonthlyAmount}
+                onChange={(event) => setOfflineMonthlyAmount(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Total received:{" "}
+                <span className="font-medium text-foreground">
+                  ${(Number(offlineMonths) * (Number(offlineMonthlyAmount) || 0)).toFixed(2)}
+                </span>{" "}
+                for {offlineMonths} month{offlineMonths === "1" ? "" : "s"}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOfflinePaymentOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRecordOfflinePayment} disabled={recordManualMutation.isPending}>
+              {recordManualMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Record payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="px-6 py-6 lg:px-8">
         {isEditing && formValue ? (
           <div className="max-w-4xl">
@@ -464,6 +595,30 @@ export default function TenantDetail() {
                   <div>
                     <p className="text-sm text-muted-foreground">Paid Until</p>
                     <p className="font-medium">{formatDateValue(tenant.subscriptionPaidUntil)}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-4 sm:col-span-2">
+                    <Button variant="outline" size="sm" onClick={openOfflinePayment}>
+                      <Landmark className="mr-2 h-4 w-4" />
+                      Record offline payment
+                    </Button>
+                    {tenant.manualSubscription && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500"
+                        onClick={handleCancelManualSubscription}
+                        disabled={cancelManualMutation.isPending}
+                      >
+                        {cancelManualMutation.isPending && (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        End manual subscription
+                      </Button>
+                    )}
+                    <p className="w-full text-xs text-muted-foreground">
+                      For bank-transfer or cash payments: record the months paid and the
+                      subscription unlocks payroll finalizing until the paid-until date.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

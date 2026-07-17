@@ -54,27 +54,41 @@ export function calculatePackageEstimate(
   };
 }
 
+function toDateMaybe(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof (value as { toDate?: () => Date }).toDate === "function") {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  return null;
+}
+
 /**
  * A tenant can finalize payroll only when it has an active paid subscription.
- * The webhook sets stripeSubscriptionId on subscribe and clears it on cancel;
- * subscriptionPaidUntil (if present) must not be in the past.
+ * Two ways to be subscribed (mirrored by tenantHasActiveSubscription in
+ * firestore.rules — keep them in sync):
+ *
+ * - Stripe: the webhook sets stripeSubscriptionId on subscribe and clears it
+ *   on cancel; subscriptionPaidUntil (if present) must not be in the past.
+ * - Manual (bank transfer / cash, recorded by a superadmin in Admin):
+ *   manualSubscription === true AND an unexpired subscriptionPaidUntil is
+ *   REQUIRED — manual subs are never open-ended.
  */
 export function isTenantSubscribed(tenant: {
   stripeSubscriptionId?: string | null;
-  // Accepts Date, Firestore Timestamp, or any unknown shape (duck-typed below)
+  manualSubscription?: boolean | null;
+  // Accepts Date, Firestore Timestamp, or any unknown shape (duck-typed)
   // so admin TenantConfig docs can be passed straight in.
   subscriptionPaidUntil?: unknown;
 }): boolean {
-  if (!tenant.stripeSubscriptionId) return false;
-  const paidUntil = tenant.subscriptionPaidUntil;
-  if (paidUntil) {
-    const date =
-      paidUntil instanceof Date
-        ? paidUntil
-        : typeof (paidUntil as { toDate?: () => Date }).toDate === "function"
-          ? (paidUntil as { toDate: () => Date }).toDate()
-          : null;
-    if (date && date.getTime() < Date.now()) return false;
+  const paidUntil = toDateMaybe(tenant.subscriptionPaidUntil);
+  const lapsed = paidUntil !== null && paidUntil.getTime() < Date.now();
+  if (tenant.stripeSubscriptionId) {
+    // Stripe tolerates a missing paidUntil (webhook fills it in shortly).
+    return !lapsed;
   }
-  return true;
+  if (tenant.manualSubscription === true) {
+    return paidUntil !== null && !lapsed;
+  }
+  return false;
 }

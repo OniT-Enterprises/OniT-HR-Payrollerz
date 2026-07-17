@@ -142,17 +142,30 @@ service cloud.firestore {
 
     // Paywall backstop: moving a payroll run to 'approved' (finalizing) requires
     // an active subscription — mirrors isTenantSubscribed() in
-    // client/lib/packagePricing.ts. The Stripe webhook sets/clears
-    // stripeSubscriptionId; subscriptionPaidUntil (when present) must not be in
-    // the past. exists() guard first — a failed get() would deny the whole update.
+    // client/lib/packagePricing.ts (keep in sync). Two paths:
+    //  - Stripe: webhook-managed stripeSubscriptionId; subscriptionPaidUntil
+    //    (when present) must not be in the past.
+    //  - Manual (bank transfer / cash, recorded by superadmins): requires
+    //    manualSubscription == true AND an unexpired subscriptionPaidUntil.
+    // exists() guard first — a failed get() would deny the whole update.
     function tenantHasActiveSubscription(tenantId) {
-      return exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
-        get(/databases/$(database)/documents/tenants/$(tenantId))
-          .data.get('stripeSubscriptionId', '') != '' &&
-        (get(/databases/$(database)/documents/tenants/$(tenantId))
-           .data.get('subscriptionPaidUntil', null) == null ||
-         get(/databases/$(database)/documents/tenants/$(tenantId))
-           .data.get('subscriptionPaidUntil', null) > request.time);
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)) && (
+        (
+          get(/databases/$(database)/documents/tenants/$(tenantId))
+            .data.get('stripeSubscriptionId', '') != '' &&
+          (get(/databases/$(database)/documents/tenants/$(tenantId))
+             .data.get('subscriptionPaidUntil', null) == null ||
+           get(/databases/$(database)/documents/tenants/$(tenantId))
+             .data.get('subscriptionPaidUntil', null) > request.time)
+        ) || (
+          get(/databases/$(database)/documents/tenants/$(tenantId))
+            .data.get('manualSubscription', false) == true &&
+          get(/databases/$(database)/documents/tenants/$(tenantId))
+            .data.get('subscriptionPaidUntil', null) != null &&
+          get(/databases/$(database)/documents/tenants/$(tenantId))
+            .data.get('subscriptionPaidUntil', null) > request.time
+        )
+      );
     }
 
     // ============================================
@@ -262,9 +275,16 @@ service cloud.firestore {
       // Tenant members can read their tenant config
       allow read: if isTenantMember(tenantId);
 
-      // Only tenant owners can update config (but not status/plan/limits)
+      // Only tenant owners can update config — but never the billing/paywall
+      // fields (only the Stripe webhook / superadmins set those; a tenant
+      // writing stripeSubscriptionId or manualSubscription themselves would
+      // self-activate the payroll paywall).
       allow update: if isTenantOwner(tenantId) &&
-        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'plan', 'limits', 'stripeCustomerId']);
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'status', 'plan', 'limits', 'stripeCustomerId',
+          'stripeSubscriptionId', 'subscriptionPaidUntil',
+          'manualSubscription', 'monthlySubscriptionAmount'
+        ]);
 
       // Creating new tenants requires authentication and self-ownership
       allow create: if canCreateOwnTenant(tenantId);

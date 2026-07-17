@@ -32,6 +32,9 @@ export interface TenantConfig {
   billingEmail?: string;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  // Offline (bank transfer / cash) subscription recorded by a superadmin —
+  // requires an unexpired subscriptionPaidUntil to count as subscribed.
+  manualSubscription?: boolean;
   subscriptionPaidUntil?: FirestoreTimestamp;
   monthlySubscriptionAmount?: number;
 

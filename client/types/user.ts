@@ -74,6 +74,8 @@ export type AdminAuditAction =
   | 'tenant_reactivated'
   | 'tenant_deleted'
   | 'tenant_updated'
+  | 'manual_subscription_recorded'
+  | 'manual_subscription_cancelled'
   | 'impersonation_started'
   | 'impersonation_ended'
   | 'user_superadmin_granted'

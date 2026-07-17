@@ -201,6 +201,70 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
       );
     });
 
+    it('allows approval with an active MANUAL subscription (bank transfer/cash)', async () => {
+      await seed(undefined, {
+        name: 'Tenant A',
+        manualSubscription: true,
+        subscriptionPaidUntil: new Date(Date.now() + DAY_MS),
+      });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
+    it('blocks approval when a manual subscription has lapsed', async () => {
+      await seed(undefined, {
+        name: 'Tenant A',
+        manualSubscription: true,
+        subscriptionPaidUntil: new Date(Date.now() - DAY_MS),
+      });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
+    it('blocks approval when a manual subscription has no paid-until (never open-ended)', async () => {
+      await seed(undefined, { name: 'Tenant A', manualSubscription: true });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
+    it('blocks a tenant owner from self-activating via billing fields on the tenant doc', async () => {
+      await seed(undefined, { name: 'Tenant A' });
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), { stripeSubscriptionId: 'sub_forged' }),
+      );
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), {
+          manualSubscription: true,
+          subscriptionPaidUntil: new Date(Date.now() + 30 * DAY_MS),
+        }),
+      );
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), {
+          subscriptionPaidUntil: new Date(Date.now() + 30 * DAY_MS),
+        }),
+      );
+      // Benign config updates by the owner must still work
+      await assertSucceeds(
+        updateDoc(doc(db, 'tenants/tenant-a'), { name: 'Tenant A (renamed)' }),
+      );
+    });
+
     it('does not freeze already-approved runs when the subscription lapses', async () => {
       await testEnv.clearFirestore();
       await testEnv.withSecurityRulesDisabled(async (context) => {
