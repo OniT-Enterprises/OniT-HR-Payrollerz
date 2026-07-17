@@ -16,13 +16,13 @@ import { GuidanceProvider } from "@/contexts/GuidanceContext";
 import { I18nProvider, useI18n } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
+import { RouteLoadingFallback } from "@/components/RouteLoadingFallback";
 
 import ChatWidget from "@/components/chat/ChatWidget";
 import AppLayout from "@/components/layout/AppLayout";
 
 // Route definitions
 import {
-  PageLoader,
   Dashboard,
   Landing,
   authRoutes,
@@ -144,7 +144,7 @@ function HomeRoute() {
   // Never make a redirect decision until Firebase has resolved the latest auth
   // transition and a profile read has a definite outcome.
   if (loading || !authResolved) {
-    return <PageLoader />;
+    return <RouteLoadingFallback />;
   }
 
   // Not logged in - show landing page
@@ -153,7 +153,7 @@ function HomeRoute() {
   }
 
   if (profileStatus === "idle" || profileStatus === "loading") {
-    return <PageLoader />;
+    return <RouteLoadingFallback />;
   }
 
   const profileReadFailed = profileStatus === "error" || profileError !== null;
@@ -176,7 +176,7 @@ function HomeRoute() {
   // not yet denormalized onto the user profile. Let it finish before deciding
   // that this user needs a new organization.
   if (tenantLoading || (!tenantResolved && !session)) {
-    return <PageLoader />;
+    return <RouteLoadingFallback />;
   }
 
   // A failed membership/claims read is an unknown state, never evidence that
@@ -216,7 +216,7 @@ function HomeRoute() {
   // finished yet). Wait for it to resolve rather than bouncing to landing —
   // this is what caused "signed in but got kicked back to the home page".
   if (!session && !tenantResolved) {
-    return <PageLoader />;
+    return <RouteLoadingFallback />;
   }
 
   if (!session) {
@@ -244,14 +244,14 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
             <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true }}>
               <ErrorBoundary>
                 <FirebaseProvider>
                   <AuthProvider>
                     <TenantProvider>
                       <ChatWidget />
                       <AppLayout>
-                        <Suspense fallback={<PageLoader />}>
+                        <Suspense fallback={<RouteLoadingFallback />}>
                           <Routes>
                             <Route path="/" element={<HomeRoute />} />
                             {authRoutes}
