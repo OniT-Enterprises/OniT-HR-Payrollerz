@@ -581,6 +581,110 @@ const messages = {
       "pricing": "Preços",
       "getStarted": "Começar"
     },
+    "simple": {
+      "nav": {
+        "howItWorks": "Como funciona"
+      },
+      "hero": {
+        "eyebrow": "Folha de pagamento para Timor-Leste",
+        "title": "Pague corretamente à sua equipa.",
+        "titleAccent": "Mantenha a conformidade.",
+        "description": "O Xefe calcula IRT, INSS, horas extra e subsídio anual, depois prepara ficheiros bancários e recibos — sem folhas de cálculo.",
+        "primary": "Começar grátis",
+        "secondary": "Ver como funciona",
+        "calculationNote": "Todos os valores ficam visíveis para revisão antes de finalizar a folha.",
+        "trust": {
+          "noCard": "Não precisa de cartão para começar",
+          "languages": "Tétum, Inglês e Português",
+          "localSupport": "Suporte local em Timor-Leste"
+        }
+      },
+      "workflow": {
+        "eyebrow": "Simples do início ao fim",
+        "title": "Folha de pagamento em três passos",
+        "description": "Configure a equipa uma vez. O Xefe repete os cálculos em cada período de pagamento.",
+        "steps": {
+          "add": {
+            "title": "Adicione os funcionários",
+            "description": "Introduza salário, horário e dados de pagamento num único registo guiado."
+          },
+          "calculate": {
+            "title": "Reveja o cálculo",
+            "description": "IRT, INSS, horas extra, subsídios e acumulação do 13.º mês são calculados em conjunto."
+          },
+          "pay": {
+            "title": "Pague e partilhe",
+            "description": "Aprove a folha, descarregue ficheiros bancários e entregue um recibo claro a cada funcionário."
+          }
+        }
+      },
+      "features": {
+        "eyebrow": "Um sistema ligado",
+        "title": "Tudo à volta do pagamento, de forma simples",
+        "description": "Comece pela folha. Acrescente pessoas, faturação e contabilidade conforme a empresa precisar.",
+        "people": {
+          "title": "Pessoas e tempo",
+          "description": "Mantenha registos, assiduidade e licenças juntos. A equipa pode ver recibos e pedir licenças no Ekipa."
+        },
+        "payroll": {
+          "title": "Folha e bancos locais",
+          "description": "Calcule salários, reveja descontos e prepare ficheiros para bancos de Timor-Leste na mesma folha."
+        },
+        "invoices": {
+          "title": "Faturas e pagamentos do dia a dia",
+          "description": "Crie faturas de clientes e registe pagamentos em dinheiro, transferência, cartão, dinheiro móvel ou cheque."
+        },
+        "viewAll": "Ver todas as funcionalidades"
+      },
+      "local": {
+        "eyebrow": "Feito para Timor-Leste",
+        "title": "Criado para a forma como as empresas locais trabalham",
+        "description": "Regras, bancos e idiomas locais fazem parte do produto — não são um extra.",
+        "compliance": {
+          "title": "IRT, INSS e subsídio incluídos",
+          "description": "Calcule descontos, contribuições do empregador, horas extra e acumulação do subsídio anual numa folha revista."
+        },
+        "banks": {
+          "title": "Ficheiros para bancos locais",
+          "description": "Prepare ficheiros de folha para BNU, BNCTL, Mandiri e ANZ sem voltar a introduzir cada pagamento."
+        },
+        "languages": {
+          "title": "Claro em todos os idiomas",
+          "description": "Use o Xefe em Tétum, Inglês ou Português, com integração local e suporte por WhatsApp."
+        },
+        "payslipTitle": "Um recibo que todos os funcionários entendem",
+        "payslipDescription": "Cada folha cria um detalhe claro que pode ser visto no telefone ou descarregado em PDF."
+      },
+      "pricing": {
+        "eyebrow": "Preço simples",
+        "title": "Um preço. Todas as funcionalidades incluídas.",
+        "description": "Configure a empresa e prepare a folha gratuitamente. Subscreva apenas quando estiver pronto para finalizar uma folha real.",
+        "perEmployeeMonth": "/funcionário/mês",
+        "example": "Exemplo: {{total}}/mês para {{employees}} funcionários",
+        "billedMonthly": "faturado mensalmente",
+        "cta": "Começar grátis",
+        "includedTitle": "Incluído em todas as contas",
+        "benefits": {
+          "payroll": "Cálculos automáticos de IRT, INSS e subsídio",
+          "bankFiles": "Ficheiros bancários e recibos claros",
+          "people": "Ferramentas de RH, faturação e contabilidade",
+          "ekipa": "Aplicação Ekipa para funcionários"
+        },
+        "freeNote": "As contas gratuitas podem usar todas as funcionalidades. A subscrição permite finalizar folhas de pagamento.",
+        "cardPaymentTitle": "Pague online por cartão",
+        "cardPaymentDescription": "O checkout e a faturação segura da subscrição são tratados pelo Stripe.",
+        "localPaymentTitle": "Prefere um pagamento local?",
+        "localPaymentDescription": "Pergunte-nos sobre pagar o Xefe por fatura, transferência bancária ou dinheiro.",
+        "contactSupport": "Contactar suporte local"
+      },
+      "support": {
+        "eyebrow": "Suporte local",
+        "title": "Precisa de ajuda com a primeira folha?",
+        "description": "Receba ajuda para configurar funcionários, regras da folha e o primeiro ficheiro bancário de quem entende as empresas locais.",
+        "primary": "Começar grátis",
+        "whatsapp": "Falar connosco no WhatsApp"
+      }
+    },
     "hero": {
       "badge": "Feito para",
       "badgeHighlight": "Timor-Leste",

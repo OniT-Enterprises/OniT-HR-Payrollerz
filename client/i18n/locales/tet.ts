@@ -581,6 +581,110 @@ const messages = {
       "pricing": "Presu",
       "getStarted": "Hahu"
     },
+    "simple": {
+      "nav": {
+        "howItWorks": "Oinsá funsiona"
+      },
+      "hero": {
+        "eyebrow": "Folha pagamentu ba Timor-Leste",
+        "title": "Selu ita-nia ekipa ho loos.",
+        "titleAccent": "Kumpre lei ho fasil.",
+        "description": "Xefe kalkula WIT, INSS, oras estra no subsídiu anuál, depois prepara ficheiru banku no payslip — la presiza spreadsheet.",
+        "primary": "Hahú grátis",
+        "secondary": "Haree oinsá funsiona",
+        "calculationNote": "Reviza montante hotu molok finaliza folha pagamentu.",
+        "trust": {
+          "noCard": "La presiza kartaun atu hahú",
+          "languages": "Tetun, Inglés no Portugés",
+          "localSupport": "Suporte lokal iha Timor-Leste"
+        }
+      },
+      "workflow": {
+        "eyebrow": "Simples husi hahú to'o remata",
+        "title": "Folha pagamentu iha etapa tolu",
+        "description": "Konfigura ekipa dala ida. Xefe halo kalkulasaun repetidu iha períodu pagamentu ida-idak.",
+        "steps": {
+          "add": {
+            "title": "Hatama ita-nia funsionáriu",
+            "description": "Hatama saláriu, oráriu servisu no detallu pagamentu iha rejistu funsionáriu ida."
+          },
+          "calculate": {
+            "title": "Reviza kalkulasaun",
+            "description": "WIT, INSS, oras estra, subsídiu no akumulasaun fulan-13 kalkula hamutuk."
+          },
+          "pay": {
+            "title": "Selu no fahe",
+            "description": "Aprova folha, download ficheiru banku no fó payslip klaru ba funsionáriu ida-idak."
+          }
+        }
+      },
+      "features": {
+        "eyebrow": "Sistema ida ne'ebé liga hamutuk",
+        "title": "Servisu hotu hale'u loron pagamentu, ho simples",
+        "description": "Hahú ho folha pagamentu. Aumenta funsaun ema, fatura no kontabilidade bainhira negósiu presiza.",
+        "people": {
+          "title": "Ema no tempu",
+          "description": "Rai rejistu funsionáriu, asiduidade no lisensa hamutuk. Staf bele haree payslip no husu lisensa iha Ekipa."
+        },
+        "payroll": {
+          "title": "Folha no banku lokal",
+          "description": "Kalkula saláriu, reviza dedusaun no prepara ficheiru ba banku Timor-Leste husi folha ida deit."
+        },
+        "invoices": {
+          "title": "Fatura no pagamentu loroloron",
+          "description": "Kria fatura ba kliente no rejista pagamentu osan-kontante, transferénsia bankária, kartaun, osan móvel ka xeke."
+        },
+        "viewAll": "Haree funsaun hotu"
+      },
+      "local": {
+        "eyebrow": "Hadia ba Timor-Leste",
+        "title": "Hadia tuir maneira negósiu lokal servisu",
+        "description": "Regra, banku no lian lokal sira mak parte husi produtu — la'ós buat ne'ebé aumenta depois.",
+        "compliance": {
+          "title": "WIT, INSS no subsídiu iha laran",
+          "description": "Kalkula dedusaun, kontribuisaun empregadór, oras estra no akumulasaun subsídiu anuál iha folha ida."
+        },
+        "banks": {
+          "title": "Ficheiru ba banku lokal",
+          "description": "Prepara ficheiru folha ba BNU, BNCTL, Mandiri no ANZ la presiza hakerek fali pagamentu ida-idak."
+        },
+        "languages": {
+          "title": "Klaru iha lian ida-idak",
+          "description": "Uza Xefe iha Tetun, Inglés ka Portugés, ho onboarding lokal no suporte WhatsApp."
+        },
+        "payslipTitle": "Payslip ne'ebé funsionáriu hotu bele komprende",
+        "payslipDescription": "Folha ida-idak kria detallu klaru ne'ebé bele haree iha telemóvel ka download nu'udar PDF."
+      },
+      "pricing": {
+        "eyebrow": "Presu simples",
+        "title": "Presu ida. Funsaun hotu inklui.",
+        "description": "Konfigura empresa no prepara folha grátis. Subscreve deit bainhira prontu atu finaliza folha loos.",
+        "perEmployeeMonth": "/funsionáriu/fulan",
+        "example": "Ezemplu: {{total}}/fulan ba funsionáriu {{employees}}",
+        "billedMonthly": "selu kada fulan",
+        "cta": "Hahú grátis",
+        "includedTitle": "Inklui iha konta hotu",
+        "benefits": {
+          "payroll": "Kalkulasaun WIT, INSS no subsídiu automátiku",
+          "bankFiles": "Ficheiru banku no payslip klaru",
+          "people": "Funsaun RH, fatura no kontabilidade",
+          "ekipa": "Aplikasaun funsionáriu Ekipa"
+        },
+        "freeNote": "Konta grátis bele uza funsaun hotu. Subskrisaun loke finalizasaun folha pagamentu.",
+        "cardPaymentTitle": "Selu online ho kartaun",
+        "cardPaymentDescription": "Stripe trata checkout no faturasaun subskrisaun ho seguru.",
+        "localPaymentTitle": "Prefere pagamentu lokal?",
+        "localPaymentDescription": "Husu mai ami kona-ba selu Xefe ho fatura, transferénsia bankária ka osan-kontante.",
+        "contactSupport": "Kontaktu suporte lokal"
+      },
+      "support": {
+        "eyebrow": "Suporte lokal",
+        "title": "Presiza ajuda ho folha dahuluk?",
+        "description": "Hetan ajuda atu konfigura funsionáriu, regra folha no ficheiru banku dahuluk husi ema ne'ebé komprende negósiu lokal.",
+        "primary": "Hahú grátis",
+        "whatsapp": "Ko'alia ho ami iha WhatsApp"
+      }
+    },
     "hero": {
       "badge": "Hadia ba",
       "badgeHighlight": "Timor-Leste",

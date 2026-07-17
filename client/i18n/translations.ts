@@ -585,6 +585,110 @@ export const translations = {
         "pricing": "Pricing",
         "getStarted": "Get Started"
       },
+      "simple": {
+        "nav": {
+          "howItWorks": "How it works"
+        },
+        "hero": {
+          "eyebrow": "Payroll built for Timor-Leste",
+          "title": "Pay your team correctly.",
+          "titleAccent": "Stay compliant.",
+          "description": "Xefe calculates WIT, INSS, overtime and subsídio anual, then prepares bank files and payslips — without spreadsheets.",
+          "primary": "Start free",
+          "secondary": "See how it works",
+          "calculationNote": "Every amount stays visible for review before you finalize payroll.",
+          "trust": {
+            "noCard": "No card required to start",
+            "languages": "Tetun, English and Portuguese",
+            "localSupport": "Local support in Timor-Leste"
+          }
+        },
+        "workflow": {
+          "eyebrow": "Simple from start to finish",
+          "title": "Payroll in three clear steps",
+          "description": "Set up the team once. Xefe handles the repeat calculations each pay period.",
+          "steps": {
+            "add": {
+              "title": "Add your employees",
+              "description": "Enter salary, work schedule and payment details in one guided employee record."
+            },
+            "calculate": {
+              "title": "Review the calculation",
+              "description": "WIT, INSS, overtime, allowances and 13th-month accrual are calculated together."
+            },
+            "pay": {
+              "title": "Pay and share",
+              "description": "Approve the run, download bank files and give each employee a clear payslip."
+            }
+          }
+        },
+        "features": {
+          "eyebrow": "One connected system",
+          "title": "Everything around payday, kept simple",
+          "description": "Start with payroll. Add people, invoicing and accounting tools as your business needs them.",
+          "people": {
+            "title": "People and time",
+            "description": "Keep employee records, attendance and leave together. Staff can view payslips and request leave in Ekipa."
+          },
+          "payroll": {
+            "title": "Payroll and local banking",
+            "description": "Calculate pay, review deductions and prepare files for Timor-Leste banks from the same payroll run."
+          },
+          "invoices": {
+            "title": "Invoices and everyday payments",
+            "description": "Create customer invoices and record cash, bank transfer, card, mobile-money or cheque payments."
+          },
+          "viewAll": "View all features"
+        },
+        "local": {
+          "eyebrow": "Made for Timor-Leste",
+          "title": "Built around the way local businesses work",
+          "description": "Local rules, banks and languages are part of the product — not an afterthought.",
+          "compliance": {
+            "title": "WIT, INSS and subsídio built in",
+            "description": "Calculate deductions, employer contributions, overtime and annual subsidy accrual in one reviewed payroll run."
+          },
+          "banks": {
+            "title": "Files for local banks",
+            "description": "Prepare payroll files for BNU, BNCTL, Mandiri and ANZ without retyping each payment."
+          },
+          "languages": {
+            "title": "Clear in every language",
+            "description": "Use Xefe in Tetun, English or Portuguese, with local onboarding and WhatsApp support."
+          },
+          "payslipTitle": "A payslip every employee can understand",
+          "payslipDescription": "Each run produces a clear breakdown that can be viewed on a phone or downloaded as a PDF."
+        },
+        "pricing": {
+          "eyebrow": "Simple pricing",
+          "title": "One price. Every feature included.",
+          "description": "Set up your company and build payroll free. Subscribe only when you are ready to finalize a real payroll run.",
+          "perEmployeeMonth": "/employee/month",
+          "example": "Example: {{total}}/month for {{employees}} employees",
+          "billedMonthly": "billed monthly",
+          "cta": "Start free",
+          "includedTitle": "Included with every account",
+          "benefits": {
+            "payroll": "Automatic WIT, INSS and subsídio calculations",
+            "bankFiles": "Bank files and clear payslips",
+            "people": "HR, invoicing and accounting tools",
+            "ekipa": "Ekipa employee app"
+          },
+          "freeNote": "Free accounts can use every feature. A subscription unlocks finalizing payroll runs.",
+          "cardPaymentTitle": "Pay online by card",
+          "cardPaymentDescription": "Secure subscription checkout and billing are handled through Stripe.",
+          "localPaymentTitle": "Prefer a local payment?",
+          "localPaymentDescription": "Ask us about paying Xefe by invoice, bank transfer or cash.",
+          "contactSupport": "Contact local support"
+        },
+        "support": {
+          "eyebrow": "Local support",
+          "title": "Need help with your first payroll?",
+          "description": "Get help setting up employees, payroll rules and your first bank file from people who understand local business.",
+          "primary": "Start free",
+          "whatsapp": "Talk to us on WhatsApp"
+        }
+      },
       "hero": {
         "badge": "Built for",
         "badgeHighlight": "Timor-Leste",
@@ -7068,6 +7172,110 @@ export const translations = {
         "pricing": "Presu",
         "getStarted": "Hahu"
       },
+      "simple": {
+        "nav": {
+          "howItWorks": "Oinsá funsiona"
+        },
+        "hero": {
+          "eyebrow": "Folha pagamentu ba Timor-Leste",
+          "title": "Selu ita-nia ekipa ho loos.",
+          "titleAccent": "Kumpre lei ho fasil.",
+          "description": "Xefe kalkula WIT, INSS, oras estra no subsídiu anuál, depois prepara ficheiru banku no payslip — la presiza spreadsheet.",
+          "primary": "Hahú grátis",
+          "secondary": "Haree oinsá funsiona",
+          "calculationNote": "Reviza montante hotu molok finaliza folha pagamentu.",
+          "trust": {
+            "noCard": "La presiza kartaun atu hahú",
+            "languages": "Tetun, Inglés no Portugés",
+            "localSupport": "Suporte lokal iha Timor-Leste"
+          }
+        },
+        "workflow": {
+          "eyebrow": "Simples husi hahú to'o remata",
+          "title": "Folha pagamentu iha etapa tolu",
+          "description": "Konfigura ekipa dala ida. Xefe halo kalkulasaun repetidu iha períodu pagamentu ida-idak.",
+          "steps": {
+            "add": {
+              "title": "Hatama ita-nia funsionáriu",
+              "description": "Hatama saláriu, oráriu servisu no detallu pagamentu iha rejistu funsionáriu ida."
+            },
+            "calculate": {
+              "title": "Reviza kalkulasaun",
+              "description": "WIT, INSS, oras estra, subsídiu no akumulasaun fulan-13 kalkula hamutuk."
+            },
+            "pay": {
+              "title": "Selu no fahe",
+              "description": "Aprova folha, download ficheiru banku no fó payslip klaru ba funsionáriu ida-idak."
+            }
+          }
+        },
+        "features": {
+          "eyebrow": "Sistema ida ne'ebé liga hamutuk",
+          "title": "Servisu hotu hale'u loron pagamentu, ho simples",
+          "description": "Hahú ho folha pagamentu. Aumenta funsaun ema, fatura no kontabilidade bainhira negósiu presiza.",
+          "people": {
+            "title": "Ema no tempu",
+            "description": "Rai rejistu funsionáriu, asiduidade no lisensa hamutuk. Staf bele haree payslip no husu lisensa iha Ekipa."
+          },
+          "payroll": {
+            "title": "Folha no banku lokal",
+            "description": "Kalkula saláriu, reviza dedusaun no prepara ficheiru ba banku Timor-Leste husi folha ida deit."
+          },
+          "invoices": {
+            "title": "Fatura no pagamentu loroloron",
+            "description": "Kria fatura ba kliente no rejista pagamentu osan-kontante, transferénsia bankária, kartaun, osan móvel ka xeke."
+          },
+          "viewAll": "Haree funsaun hotu"
+        },
+        "local": {
+          "eyebrow": "Hadia ba Timor-Leste",
+          "title": "Hadia tuir maneira negósiu lokal servisu",
+          "description": "Regra, banku no lian lokal sira mak parte husi produtu — la'ós buat ne'ebé aumenta depois.",
+          "compliance": {
+            "title": "WIT, INSS no subsídiu iha laran",
+            "description": "Kalkula dedusaun, kontribuisaun empregadór, oras estra no akumulasaun subsídiu anuál iha folha ida."
+          },
+          "banks": {
+            "title": "Ficheiru ba banku lokal",
+            "description": "Prepara ficheiru folha ba BNU, BNCTL, Mandiri no ANZ la presiza hakerek fali pagamentu ida-idak."
+          },
+          "languages": {
+            "title": "Klaru iha lian ida-idak",
+            "description": "Uza Xefe iha Tetun, Inglés ka Portugés, ho onboarding lokal no suporte WhatsApp."
+          },
+          "payslipTitle": "Payslip ne'ebé funsionáriu hotu bele komprende",
+          "payslipDescription": "Folha ida-idak kria detallu klaru ne'ebé bele haree iha telemóvel ka download nu'udar PDF."
+        },
+        "pricing": {
+          "eyebrow": "Presu simples",
+          "title": "Presu ida. Funsaun hotu inklui.",
+          "description": "Konfigura empresa no prepara folha grátis. Subscreve deit bainhira prontu atu finaliza folha loos.",
+          "perEmployeeMonth": "/funsionáriu/fulan",
+          "example": "Ezemplu: {{total}}/fulan ba funsionáriu {{employees}}",
+          "billedMonthly": "selu kada fulan",
+          "cta": "Hahú grátis",
+          "includedTitle": "Inklui iha konta hotu",
+          "benefits": {
+            "payroll": "Kalkulasaun WIT, INSS no subsídiu automátiku",
+            "bankFiles": "Ficheiru banku no payslip klaru",
+            "people": "Funsaun RH, fatura no kontabilidade",
+            "ekipa": "Aplikasaun funsionáriu Ekipa"
+          },
+          "freeNote": "Konta grátis bele uza funsaun hotu. Subskrisaun loke finalizasaun folha pagamentu.",
+          "cardPaymentTitle": "Selu online ho kartaun",
+          "cardPaymentDescription": "Stripe trata checkout no faturasaun subskrisaun ho seguru.",
+          "localPaymentTitle": "Prefere pagamentu lokal?",
+          "localPaymentDescription": "Husu mai ami kona-ba selu Xefe ho fatura, transferénsia bankária ka osan-kontante.",
+          "contactSupport": "Kontaktu suporte lokal"
+        },
+        "support": {
+          "eyebrow": "Suporte lokal",
+          "title": "Presiza ajuda ho folha dahuluk?",
+          "description": "Hetan ajuda atu konfigura funsionáriu, regra folha no ficheiru banku dahuluk husi ema ne'ebé komprende negósiu lokal.",
+          "primary": "Hahú grátis",
+          "whatsapp": "Ko'alia ho ami iha WhatsApp"
+        }
+      },
       "hero": {
         "badge": "Hadia ba",
         "badgeHighlight": "Timor-Leste",
@@ -13550,6 +13758,110 @@ export const translations = {
         "apps": "Apps",
         "pricing": "Preços",
         "getStarted": "Começar"
+      },
+      "simple": {
+        "nav": {
+          "howItWorks": "Como funciona"
+        },
+        "hero": {
+          "eyebrow": "Folha de pagamento para Timor-Leste",
+          "title": "Pague corretamente à sua equipa.",
+          "titleAccent": "Mantenha a conformidade.",
+          "description": "O Xefe calcula IRT, INSS, horas extra e subsídio anual, depois prepara ficheiros bancários e recibos — sem folhas de cálculo.",
+          "primary": "Começar grátis",
+          "secondary": "Ver como funciona",
+          "calculationNote": "Todos os valores ficam visíveis para revisão antes de finalizar a folha.",
+          "trust": {
+            "noCard": "Não precisa de cartão para começar",
+            "languages": "Tétum, Inglês e Português",
+            "localSupport": "Suporte local em Timor-Leste"
+          }
+        },
+        "workflow": {
+          "eyebrow": "Simples do início ao fim",
+          "title": "Folha de pagamento em três passos",
+          "description": "Configure a equipa uma vez. O Xefe repete os cálculos em cada período de pagamento.",
+          "steps": {
+            "add": {
+              "title": "Adicione os funcionários",
+              "description": "Introduza salário, horário e dados de pagamento num único registo guiado."
+            },
+            "calculate": {
+              "title": "Reveja o cálculo",
+              "description": "IRT, INSS, horas extra, subsídios e acumulação do 13.º mês são calculados em conjunto."
+            },
+            "pay": {
+              "title": "Pague e partilhe",
+              "description": "Aprove a folha, descarregue ficheiros bancários e entregue um recibo claro a cada funcionário."
+            }
+          }
+        },
+        "features": {
+          "eyebrow": "Um sistema ligado",
+          "title": "Tudo à volta do pagamento, de forma simples",
+          "description": "Comece pela folha. Acrescente pessoas, faturação e contabilidade conforme a empresa precisar.",
+          "people": {
+            "title": "Pessoas e tempo",
+            "description": "Mantenha registos, assiduidade e licenças juntos. A equipa pode ver recibos e pedir licenças no Ekipa."
+          },
+          "payroll": {
+            "title": "Folha e bancos locais",
+            "description": "Calcule salários, reveja descontos e prepare ficheiros para bancos de Timor-Leste na mesma folha."
+          },
+          "invoices": {
+            "title": "Faturas e pagamentos do dia a dia",
+            "description": "Crie faturas de clientes e registe pagamentos em dinheiro, transferência, cartão, dinheiro móvel ou cheque."
+          },
+          "viewAll": "Ver todas as funcionalidades"
+        },
+        "local": {
+          "eyebrow": "Feito para Timor-Leste",
+          "title": "Criado para a forma como as empresas locais trabalham",
+          "description": "Regras, bancos e idiomas locais fazem parte do produto — não são um extra.",
+          "compliance": {
+            "title": "IRT, INSS e subsídio incluídos",
+            "description": "Calcule descontos, contribuições do empregador, horas extra e acumulação do subsídio anual numa folha revista."
+          },
+          "banks": {
+            "title": "Ficheiros para bancos locais",
+            "description": "Prepare ficheiros de folha para BNU, BNCTL, Mandiri e ANZ sem voltar a introduzir cada pagamento."
+          },
+          "languages": {
+            "title": "Claro em todos os idiomas",
+            "description": "Use o Xefe em Tétum, Inglês ou Português, com integração local e suporte por WhatsApp."
+          },
+          "payslipTitle": "Um recibo que todos os funcionários entendem",
+          "payslipDescription": "Cada folha cria um detalhe claro que pode ser visto no telefone ou descarregado em PDF."
+        },
+        "pricing": {
+          "eyebrow": "Preço simples",
+          "title": "Um preço. Todas as funcionalidades incluídas.",
+          "description": "Configure a empresa e prepare a folha gratuitamente. Subscreva apenas quando estiver pronto para finalizar uma folha real.",
+          "perEmployeeMonth": "/funcionário/mês",
+          "example": "Exemplo: {{total}}/mês para {{employees}} funcionários",
+          "billedMonthly": "faturado mensalmente",
+          "cta": "Começar grátis",
+          "includedTitle": "Incluído em todas as contas",
+          "benefits": {
+            "payroll": "Cálculos automáticos de IRT, INSS e subsídio",
+            "bankFiles": "Ficheiros bancários e recibos claros",
+            "people": "Ferramentas de RH, faturação e contabilidade",
+            "ekipa": "Aplicação Ekipa para funcionários"
+          },
+          "freeNote": "As contas gratuitas podem usar todas as funcionalidades. A subscrição permite finalizar folhas de pagamento.",
+          "cardPaymentTitle": "Pague online por cartão",
+          "cardPaymentDescription": "O checkout e a faturação segura da subscrição são tratados pelo Stripe.",
+          "localPaymentTitle": "Prefere um pagamento local?",
+          "localPaymentDescription": "Pergunte-nos sobre pagar o Xefe por fatura, transferência bancária ou dinheiro.",
+          "contactSupport": "Contactar suporte local"
+        },
+        "support": {
+          "eyebrow": "Suporte local",
+          "title": "Precisa de ajuda com a primeira folha?",
+          "description": "Receba ajuda para configurar funcionários, regras da folha e o primeiro ficheiro bancário de quem entende as empresas locais.",
+          "primary": "Começar grátis",
+          "whatsapp": "Falar connosco no WhatsApp"
+        }
       },
       "hero": {
         "badge": "Feito para",

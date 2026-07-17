@@ -55,6 +55,7 @@ export default function LocaleSwitcher({
           size="sm"
           className={cn("h-9 gap-2", className)}
           title={t("common.language")}
+          aria-label={`${t("common.language")}: ${localeLabels[locale]}`}
         >
           <Languages className="h-4 w-4" />
           <span>{localeLabels[locale]}</span>

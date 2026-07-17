@@ -4,7 +4,7 @@
  * Extracted from App.tsx for better maintainability
  */
 
-import React, { lazy, useMemo } from "react";
+import React, { lazy } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 import { FeatureRoute } from "@/components/auth/FeatureRoute";
@@ -29,65 +29,6 @@ function lazyWithRetry<P extends object>(
       throw error;
     }
   });
-}
-
-const splashMessages: [string, string][] = [
-  // Tetun — conversational, people know these
-  ["\u201CBainaka\u201D", "Welcome \u2014 let\u2019s get to work"],
-  ["\u201CHamutuk ita bele\u201D", "Together we can"],
-  ["\u201CServisu ho laran\u201D", "Work with heart"],
-  ["\u201CLao ba oin\u201D", "Moving forward, always"],
-  ["\u201CDi\u2019ak loron ida\u201D", "Have a good day"],
-  ["\u201CProntu ona\u201D", "All set \u2014 almost there"],
-  ["\u201CAmi prontu\u201D", "We\u2019re ready when you are"],
-  ["\u201CHakarak di\u2019ak liu tan\u201D", "Always striving for better"],
-  ["\u201CIta nia forsa maka ita nia ema\u201D", "Our strength is our people"],
-  // Feature callouts
-  ["Payroll. People. Accounting.", "Everything your business needs, in one place."],
-  ["Built for Timor-Leste", "INSS, WIT, subsidio anual \u2014 all handled."],
-  ["Your back office, simplified", "From hire to retire, Xefe has you covered."],
-  ["Run payroll in minutes", "Not hours. Not headaches. Minutes."],
-  ["Real-time financials", "Journal entries, trial balance, always up to date."],
-  ["Track your team", "Attendance, leave, performance \u2014 all in one place."],
-  // Fun personality
-  ["Spreadsheets are so last decade", "Welcome to the future of HR."],
-  ["Fueling the businesses of Timor-Leste", "One payroll at a time."],
-  ["Where HR meets simplicity", "Xefe \u2014 your digital back office."],
-];
-
-// Loading fallback component
-export function PageLoader() {
-  const [phrase, sub] = useMemo(
-    () => splashMessages[Math.floor(Math.random() * splashMessages.length)],
-    []
-  );
-
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center relative overflow-hidden"
-      style={{ background: "#09090b" }}
-    >
-      <img
-        src="/images/illustrations/splash-loading.webp"
-        alt=""
-        aria-hidden
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{ opacity: 0.07 }}
-      />
-      <div className="flex flex-col items-center gap-5 relative">
-        <img
-          src="/images/illustrations/xefe-logo-light.webp"
-          alt="Xefe"
-          className="h-12 w-auto"
-        />
-        <div className="animate-spin h-8 w-8 border-[3px] border-white/15 border-t-indigo-400 rounded-full" />
-        <div className="text-center max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <p className="text-base italic text-white/80">{phrase}</p>
-          <p className="text-xs text-white/35 mt-1.5">{sub}</p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // Essential routes - eagerly loaded (first paint)

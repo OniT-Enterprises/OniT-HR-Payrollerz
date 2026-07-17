@@ -581,6 +581,110 @@ const messages = {
       "pricing": "Pricing",
       "getStarted": "Get Started"
     },
+    "simple": {
+      "nav": {
+        "howItWorks": "How it works"
+      },
+      "hero": {
+        "eyebrow": "Payroll built for Timor-Leste",
+        "title": "Pay your team correctly.",
+        "titleAccent": "Stay compliant.",
+        "description": "Xefe calculates WIT, INSS, overtime and subsídio anual, then prepares bank files and payslips — without spreadsheets.",
+        "primary": "Start free",
+        "secondary": "See how it works",
+        "calculationNote": "Every amount stays visible for review before you finalize payroll.",
+        "trust": {
+          "noCard": "No card required to start",
+          "languages": "Tetun, English and Portuguese",
+          "localSupport": "Local support in Timor-Leste"
+        }
+      },
+      "workflow": {
+        "eyebrow": "Simple from start to finish",
+        "title": "Payroll in three clear steps",
+        "description": "Set up the team once. Xefe handles the repeat calculations each pay period.",
+        "steps": {
+          "add": {
+            "title": "Add your employees",
+            "description": "Enter salary, work schedule and payment details in one guided employee record."
+          },
+          "calculate": {
+            "title": "Review the calculation",
+            "description": "WIT, INSS, overtime, allowances and 13th-month accrual are calculated together."
+          },
+          "pay": {
+            "title": "Pay and share",
+            "description": "Approve the run, download bank files and give each employee a clear payslip."
+          }
+        }
+      },
+      "features": {
+        "eyebrow": "One connected system",
+        "title": "Everything around payday, kept simple",
+        "description": "Start with payroll. Add people, invoicing and accounting tools as your business needs them.",
+        "people": {
+          "title": "People and time",
+          "description": "Keep employee records, attendance and leave together. Staff can view payslips and request leave in Ekipa."
+        },
+        "payroll": {
+          "title": "Payroll and local banking",
+          "description": "Calculate pay, review deductions and prepare files for Timor-Leste banks from the same payroll run."
+        },
+        "invoices": {
+          "title": "Invoices and everyday payments",
+          "description": "Create customer invoices and record cash, bank transfer, card, mobile-money or cheque payments."
+        },
+        "viewAll": "View all features"
+      },
+      "local": {
+        "eyebrow": "Made for Timor-Leste",
+        "title": "Built around the way local businesses work",
+        "description": "Local rules, banks and languages are part of the product — not an afterthought.",
+        "compliance": {
+          "title": "WIT, INSS and subsídio built in",
+          "description": "Calculate deductions, employer contributions, overtime and annual subsidy accrual in one reviewed payroll run."
+        },
+        "banks": {
+          "title": "Files for local banks",
+          "description": "Prepare payroll files for BNU, BNCTL, Mandiri and ANZ without retyping each payment."
+        },
+        "languages": {
+          "title": "Clear in every language",
+          "description": "Use Xefe in Tetun, English or Portuguese, with local onboarding and WhatsApp support."
+        },
+        "payslipTitle": "A payslip every employee can understand",
+        "payslipDescription": "Each run produces a clear breakdown that can be viewed on a phone or downloaded as a PDF."
+      },
+      "pricing": {
+        "eyebrow": "Simple pricing",
+        "title": "One price. Every feature included.",
+        "description": "Set up your company and build payroll free. Subscribe only when you are ready to finalize a real payroll run.",
+        "perEmployeeMonth": "/employee/month",
+        "example": "Example: {{total}}/month for {{employees}} employees",
+        "billedMonthly": "billed monthly",
+        "cta": "Start free",
+        "includedTitle": "Included with every account",
+        "benefits": {
+          "payroll": "Automatic WIT, INSS and subsídio calculations",
+          "bankFiles": "Bank files and clear payslips",
+          "people": "HR, invoicing and accounting tools",
+          "ekipa": "Ekipa employee app"
+        },
+        "freeNote": "Free accounts can use every feature. A subscription unlocks finalizing payroll runs.",
+        "cardPaymentTitle": "Pay online by card",
+        "cardPaymentDescription": "Secure subscription checkout and billing are handled through Stripe.",
+        "localPaymentTitle": "Prefer a local payment?",
+        "localPaymentDescription": "Ask us about paying Xefe by invoice, bank transfer or cash.",
+        "contactSupport": "Contact local support"
+      },
+      "support": {
+        "eyebrow": "Local support",
+        "title": "Need help with your first payroll?",
+        "description": "Get help setting up employees, payroll rules and your first bank file from people who understand local business.",
+        "primary": "Start free",
+        "whatsapp": "Talk to us on WhatsApp"
+      }
+    },
     "hero": {
       "badge": "Built for",
       "badgeHighlight": "Timor-Leste",
