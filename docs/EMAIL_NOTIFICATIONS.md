@@ -1,7 +1,8 @@
 # Email & Notifications — architecture
 
-_Last updated: 2026-07-17. Audience: agents and developers adding any
-outbound email or notification._
+_Last updated: 2026-07-18. Audience: agents and developers adding any
+outbound email or notification. Invoice/receipt email specifics live in
+docs/INVOICING.md._
 
 ## Pipeline
 
@@ -59,8 +60,9 @@ by server-side triggers (see `sendApplicationReceivedEmail`).
 ### Client (via notificationService)
 | Flow | purpose | Recipients |
 |---|---|---|
-| Invoice send | `invoice` | customer |
-| Invoice payment reminder | `invoice-reminder` | customer |
+| Invoice send (hosted-page link + as-sent PDF attached, `fromName`) | `invoice` | customer |
+| Invoice payment reminder (hosted-page link) | `invoice-reminder` | customer |
+| Payment receipt (auto when invoice fully paid) | `receipt` | customer |
 | Payslip bulk send (manual, with PDFs) | `payslip` | staff (per-recipient) |
 | Platform/superadmin notices | `notification` | admins (shared to) |
 | Leave decision | `leave-decision` | employee |

@@ -100,6 +100,14 @@ CI deploy target, and Firebase authorized domains.
 - **CI deploys everything now**: hosting + Hetzner rsync + Firestore rules
   (rules via Admin SDK script — the firebase-tools CLI path 403s because neither
   service account has `firebaserules` IAM roles).
+- **Storage cross-service IAM (DONE July 17 2026, don't lose it)**: storage.rules
+  call `firestore.get()/exists()`, which requires
+  `service-415646082318@gcp-sa-firebasestorage.iam.gserviceaccount.com` to hold
+  `roles/firebaserules.firestoreServiceAgent`. Before the grant, EVERY
+  membership-gated upload (logos, payslips, employee docs, invoice PDFs)
+  silently 403'd in prod. `deploy-rules.mjs` never provisions this — any new
+  project/bucket needs the gcloud binding (see storage.rules header comment
+  and docs/INVOICING.md).
 - **xefe-api deploys are still manual**:
   `rsync -avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules server/xefe-api/ hetzner:/opt/xefe-api/ && ssh hetzner 'cd /opt/xefe-api && npm install --omit=dev && pm2 restart xefe-api'`
   (the `--exclude` flags protect the server's `.env` and credentials — do not drop them).
