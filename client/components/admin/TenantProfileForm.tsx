@@ -140,15 +140,18 @@ export function TenantProfileForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tenant-employee-count">Current Number of Employees</Label>
+              <Label htmlFor="tenant-employee-count">Active Employees (billed seats)</Label>
               <Input
                 id="tenant-employee-count"
                 type="number"
-                min="0"
                 value={value.currentEmployeeCount ?? 0}
-                onChange={(event) => update("currentEmployeeCount", Number(event.target.value) || 0)}
-                disabled={loading}
+                readOnly
+                disabled
               />
+              <p className="text-xs text-muted-foreground">
+                Auto-synced from the tenant's active employees — Stripe checkout and the
+                daily quantity sync overwrite manual edits, so this is read-only.
+              </p>
             </div>
 
             <div className="space-y-2">

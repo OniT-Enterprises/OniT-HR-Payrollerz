@@ -18,9 +18,14 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { db, getFunctionsLazy } from "@/lib/firebase";
-import { calculatePackageEstimate, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
+import {
+  calculatePackageEstimate,
+  isTenantSubscribed,
+  normalizeBillingPackagesConfig,
+} from "@/lib/packagePricing";
 import { paths } from "@/lib/paths";
 import {
   PackagesConfig,
@@ -260,7 +265,14 @@ function enrichTenantConfig(
       getNumberCandidate(billing.price),
   };
 
-  if (typeof enriched.monthlySubscriptionAmount !== "number" && packagesConfig) {
+  // Only estimate a missing amount for tenants that actually HAVE a live
+  // subscription — fabricating one for free tenants made them look like
+  // paying customers in the admin console.
+  if (
+    typeof enriched.monthlySubscriptionAmount !== "number" &&
+    packagesConfig &&
+    isTenantSubscribed(enriched)
+  ) {
     enriched.monthlySubscriptionAmount = calculateMonthlySubscription(enriched, packagesConfig);
   }
 
@@ -686,7 +698,11 @@ class AdminService {
     try {
       const [membersSnap, employeesSnap] = await Promise.all([
         getCountFromServer(query(collection(db, paths.members(tenantId)))),
-        getCountFromServer(query(collection(db, paths.employees(tenantId)))),
+        // ACTIVE only — this is the number billing charges for (checkout +
+        // daily quantity sync both count status == 'active').
+        getCountFromServer(
+          query(collection(db, paths.employees(tenantId)), where("status", "==", "active")),
+        ),
       ]);
 
       return {

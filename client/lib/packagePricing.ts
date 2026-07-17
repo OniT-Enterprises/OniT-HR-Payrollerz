@@ -61,7 +61,9 @@ export function calculatePackageEstimate(
  */
 export function isTenantSubscribed(tenant: {
   stripeSubscriptionId?: string | null;
-  subscriptionPaidUntil?: { toDate?: () => Date } | Date | null;
+  // Accepts Date, Firestore Timestamp, or any unknown shape (duck-typed below)
+  // so admin TenantConfig docs can be passed straight in.
+  subscriptionPaidUntil?: unknown;
 }): boolean {
   if (!tenant.stripeSubscriptionId) return false;
   const paidUntil = tenant.subscriptionPaidUntil;
@@ -69,8 +71,8 @@ export function isTenantSubscribed(tenant: {
     const date =
       paidUntil instanceof Date
         ? paidUntil
-        : typeof paidUntil.toDate === "function"
-          ? paidUntil.toDate()
+        : typeof (paidUntil as { toDate?: () => Date }).toDate === "function"
+          ? (paidUntil as { toDate: () => Date }).toDate()
           : null;
     if (date && date.getTime() < Date.now()) return false;
   }

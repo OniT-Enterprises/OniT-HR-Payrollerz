@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
+import { isTenantSubscribed } from "@/lib/packagePricing";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { TenantProfileForm } from "@/components/admin/TenantProfileForm";
 import { TenantMembersCard } from "@/components/admin/TenantMembersCard";
@@ -52,13 +53,6 @@ const statusLabels: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-const planLabels: Record<string, string> = {
-  free: "Free",
-  starter: "Starter",
-  professional: "Professional",
-  enterprise: "Enterprise",
-};
-
 function formatDateValue(value: OptionalTimestamp): string {
   if (!value) return "-";
   if (typeof value === "object" && "toDate" in value) {
@@ -77,7 +71,10 @@ export default function TenantDetail() {
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
   const { data: tenant, isLoading } = useTenantDetail(id);
-  const { data: stats = { memberCount: 0, employeeCount: 0 } } = useTenantStats(id);
+  // No zero-default: while stats load we fall back to the stored tenant count
+  // instead of briefly showing 0. Live count wins once loaded (it's what
+  // billing charges for; the stored field can be stale).
+  const { data: stats } = useTenantStats(id);
   const updateTenantMutation = useUpdateTenantProfile();
   const suspendMutation = useSuspendTenant();
   const reactivateMutation = useReactivateTenant();
@@ -97,11 +94,11 @@ export default function TenantDetail() {
         phone: tenant.phone || "",
         ownerEmail: tenant.ownerEmail || "",
         billingEmail: tenant.billingEmail || "",
-        currentEmployeeCount: tenant.currentEmployeeCount ?? stats.employeeCount ?? 0,
+        currentEmployeeCount: stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0,
         plan: tenant.plan,
       });
     }
-  }, [stats.employeeCount, tenant]);
+  }, [stats?.employeeCount, tenant]);
 
   const featureBadges = useMemo(() => {
     if (!tenant) return [];
@@ -237,7 +234,12 @@ export default function TenantDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
                     <Badge variant="outline">{statusLabels[tenant.status] ?? tenant.status}</Badge>
-                    <Badge variant="outline">{planLabels[tenant.plan] ?? tenant.plan}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={isTenantSubscribed(tenant) ? "border-primary/40 text-primary" : "text-muted-foreground"}
+                    >
+                      {isTenantSubscribed(tenant) ? "Subscribed" : "Free plan"}
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">Tenant ID: {tenant.id}</p>
                 </div>
@@ -355,9 +357,9 @@ export default function TenantDetail() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Employees</p>
+                      <p className="text-sm text-muted-foreground">Active Employees</p>
                       <p className="text-2xl font-bold">
-                        {tenant.currentEmployeeCount ?? stats.employeeCount ?? 0}
+                        {stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0}
                       </p>
                     </div>
                     <Users className="h-5 w-5 text-cyan-500" />
@@ -369,7 +371,7 @@ export default function TenantDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Platform Users</p>
-                      <p className="text-2xl font-bold">{stats.memberCount}</p>
+                      <p className="text-2xl font-bold">{stats?.memberCount ?? 0}</p>
                     </div>
                     <Users className="h-5 w-5 text-emerald-500" />
                   </div>
@@ -448,12 +450,16 @@ export default function TenantDetail() {
                     <p className="font-medium">{tenant.billingEmail || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Number of Employees</p>
-                    <p className="font-medium">{tenant.currentEmployeeCount ?? stats.employeeCount ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Active Employees (billed seats)</p>
+                    <p className="font-medium">{stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Subscription Plan</p>
-                    <p className="font-medium">{planLabels[tenant.plan] ?? tenant.plan}</p>
+                    <p className="text-sm text-muted-foreground">Subscription</p>
+                    <p className="font-medium">
+                      {isTenantSubscribed(tenant)
+                        ? `Subscribed${typeof tenant.monthlySubscriptionAmount === "number" ? ` — $${tenant.monthlySubscriptionAmount.toFixed(2)}/mo` : ""}`
+                        : "Free plan"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Paid Until</p>

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
+import { isTenantSubscribed } from "@/lib/packagePricing";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -303,7 +304,7 @@ export default function TenantList() {
                 <div>
                   <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.paying")}</p>
                   <p className="text-2xl font-bold text-amber-600">
-                    {tenants.filter((t) => (t.monthlySubscriptionAmount ?? 0) > 0).length}
+                    {tenants.filter((tenant) => isTenantSubscribed(tenant)).length}
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -390,6 +391,12 @@ export default function TenantList() {
                             <Calendar className="h-3 w-3" />
                             <span>{formatDate(tenant.createdAt)}</span>
                           </div>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${isTenantSubscribed(tenant) ? "border-primary/40 text-primary" : "text-muted-foreground"}`}
+                          >
+                            {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
+                          </Badge>
                           <Badge variant="outline" className="text-xs">
                             {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
                           </Badge>
@@ -458,9 +465,17 @@ export default function TenantList() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium">
-                            {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${isTenantSubscribed(tenant) ? "border-primary/40 text-primary" : "text-muted-foreground"}`}
+                            >
+                              {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <TenantRowActions tenant={tenant} onImpersonate={handleImpersonate} />
