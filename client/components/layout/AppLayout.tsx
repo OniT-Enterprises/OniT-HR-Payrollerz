@@ -21,6 +21,7 @@ const PUBLIC_PATHS = [
   "/features",
   "/unauthorized",
   "/apply/",
+  "/i/",
   "/privacy",
   "/terms",
 ];
