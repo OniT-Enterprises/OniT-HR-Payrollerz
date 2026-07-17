@@ -44,6 +44,15 @@ export type EmailPurpose =
   // Open for new flows — prefer adding a literal here so purposes stay greppable
   | (string & {});
 
+export interface EmailAttachment {
+  filename: string;
+  /** Download URL — the sender fetches it (preferred for Storage files). */
+  url?: string;
+  /** Base64 content — for small, generated-in-memory files. */
+  content?: string;
+  contentType?: string;
+}
+
 export interface QueueEmailInput {
   /** Tenant id, or "platform" for cross-tenant admin notifications. */
   tenantId: string;
@@ -52,6 +61,7 @@ export interface QueueEmailInput {
   text?: string;
   html?: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
   purpose: EmailPurpose;
   relatedId?: string;
   createdBy?: string;
@@ -92,6 +102,7 @@ export const notificationService = {
       ...(input.text ? { text: input.text } : {}),
       ...(input.html ? { html: input.html } : {}),
       ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+      ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       ...(input.relatedId ? { relatedId: input.relatedId } : {}),
       ...(input.createdBy ? { createdBy: input.createdBy } : {}),
     };

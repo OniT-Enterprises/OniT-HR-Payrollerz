@@ -58,6 +58,20 @@ export const sendQueuedEmail = onDocumentCreated(
     if (typeof data.replyTo === "string") payload.reply_to = data.replyTo;
     if (typeof data.cc !== "undefined") payload.cc = data.cc;
 
+    // Attachments: {filename, url|content} → Resend {filename, path|content}.
+    // (Previously ignored — payslip PDFs never actually rode along.)
+    if (Array.isArray(data.attachments)) {
+      const attachments = (data.attachments as Array<Record<string, unknown>>)
+        .map((a) => {
+          if (typeof a?.filename !== "string") return null;
+          if (typeof a.url === "string" && a.url) return { filename: a.filename, path: a.url };
+          if (typeof a.content === "string" && a.content) return { filename: a.filename, content: a.content };
+          return null;
+        })
+        .filter(Boolean);
+      if (attachments.length > 0) payload.attachments = attachments;
+    }
+
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",

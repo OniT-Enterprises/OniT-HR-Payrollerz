@@ -4,13 +4,9 @@
  * Can also be used with direct email API (SendGrid, Resend, etc.)
  */
 
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  Timestamp,
-} from "firebase/firestore";
-import { db, getStorageLazy } from "@/lib/firebase";
+import { Timestamp } from "firebase/firestore";
+import { getStorageLazy } from "@/lib/firebase";
+import { notificationService } from "@/services/notificationService";
 import { PayrollRecord, PayrollRun } from "@/types/payroll";
 
 /**
@@ -92,27 +88,25 @@ export interface SendPayslipsResult {
 // EMAIL COLLECTION (for Firebase Trigger Email extension)
 // ============================================================================
 
-const MAIL_COLLECTION = "mail";
-
 /**
- * Queue an email for sending via Firebase Trigger Email extension
- * The extension watches the 'mail' collection and sends emails automatically
+ * Queue an email through the shared notification service (the one place
+ * that owns mail-collection conventions — see notificationService.ts).
  */
 async function queueEmail(
   tenantId: string,
   email: Omit<EmailRecord, "id" | "tenantId" | "status" | "createdAt">
-): Promise<string> {
-  const mailRef = collection(db, MAIL_COLLECTION);
-
-  const emailDoc: Omit<EmailRecord, "id"> = {
-    ...email,
+): Promise<void> {
+  await notificationService.queueEmail({
     tenantId,
-    status: "pending",
-    createdAt: serverTimestamp() as Timestamp,
-  };
-
-  const docRef = await addDoc(mailRef, emailDoc);
-  return docRef.id;
+    to: email.to,
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+    attachments: email.attachments,
+    purpose: email.purpose,
+    relatedId: email.relatedId,
+    createdBy: email.createdBy,
+  });
 }
 
 // ============================================================================
