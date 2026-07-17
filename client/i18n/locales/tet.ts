@@ -461,7 +461,9 @@ const messages = {
       "bodyPlaceholder": "Hakerek ita nia mensajen avisu...",
       "imageLabel": "URL imajen (opsional)",
       "imagePlaceholder": "https://example.com/image.jpg",
-      "pinLabel": "Tau iha leten iha lista avisu"
+      "pinLabel": "Tau iha leten iha lista avisu",
+      "emailLabel": "Haruka mós liuhusi email ba staf hotu",
+      "emailHint": "Haruka email ba empregadu ativu hotu ne'ebé iha email."
     },
     "delete": {
       "title": "Apaga avisu",
@@ -480,7 +482,10 @@ const messages = {
       "deleteFailed": "Falha apaga avisu",
       "pinned": "Avisu tau iha leten",
       "unpinned": "Avisu hasai hosi leten",
-      "pinFailed": "Falha atualiza avisu"
+      "pinFailed": "Falha atualiza avisu",
+      "emailed": "Email haruka ona ba staf {{count}}",
+      "emailNoRecipients": "Staf ida la iha email — email la haruka",
+      "emailFailed": "Avisu rai tiha ona maibé email la konsege haruka"
     }
   },
   "auth": {

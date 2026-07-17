@@ -461,7 +461,9 @@ const messages = {
       "bodyPlaceholder": "Write your announcement message...",
       "imageLabel": "Image URL (optional)",
       "imagePlaceholder": "https://example.com/image.jpg",
-      "pinLabel": "Pin to top of announcements feed"
+      "pinLabel": "Pin to top of announcements feed",
+      "emailLabel": "Also send to all staff by email",
+      "emailHint": "Emails every active employee who has an email address on file."
     },
     "delete": {
       "title": "Delete announcement",
@@ -480,7 +482,10 @@ const messages = {
       "deleteFailed": "Failed to delete announcement",
       "pinned": "Announcement pinned to top",
       "unpinned": "Announcement unpinned",
-      "pinFailed": "Failed to update announcement"
+      "pinFailed": "Failed to update announcement",
+      "emailed": "Emailed to {{count}} staff member(s)",
+      "emailNoRecipients": "No staff have an email address on file — nobody was emailed",
+      "emailFailed": "Announcement saved, but the staff emails could not be sent"
     }
   },
   "auth": {

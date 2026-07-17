@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -57,6 +57,8 @@ import {
   getDocs,
   query,
   orderBy,
+  where,
+  writeBatch,
   Timestamp,
   serverTimestamp,
 } from "firebase/firestore";
@@ -100,6 +102,7 @@ export default function Announcements() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { session } = useTenant();
   const { user } = useAuth();
 
   const queryClient = useQueryClient();
@@ -139,10 +142,59 @@ export default function Announcements() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [deletingAnnouncement, setDeletingAnnouncement] = useState<Announcement | null>(null);
   const [formData, setFormData] = useState<AnnouncementFormData>(EMPTY_FORM);
+  // Opt-in per publish: also deliver the announcement to staff inboxes
+  const [sendEmailCopy, setSendEmailCopy] = useState(false);
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
     setEditingAnnouncement(null);
+    setSendEmailCopy(false);
+  };
+
+  /**
+   * Queue one email per active employee with an address on file (one doc per
+   * recipient — the mail sender has no BCC, and a shared "to" would leak
+   * everyone's address). Returns how many were queued.
+   */
+  const emailAnnouncementToStaff = async (title: string, body: string): Promise<number> => {
+    const employeesSnap = await getDocs(
+      query(collection(db, `tenants/${tenantId}/employees`), where("status", "==", "active")),
+    );
+    const emails = [
+      ...new Set(
+        employeesSnap.docs
+          .map((d) => (d.data()?.personalInfo?.email as string | undefined)?.trim())
+          .filter((e): e is string => Boolean(e)),
+      ),
+    ];
+    if (emails.length === 0) return 0;
+
+    const companyName = session?.config?.name || "Xefe";
+    const senderName = user?.displayName || user?.email || t("announcements.createdByFallback");
+    const text = [
+      body,
+      "",
+      `— ${senderName}, ${companyName}`,
+      "(Announcement via Xefe — also in your Ekipa app / Avizu liuhusi Xefe — haree mós iha Ekipa)",
+    ].join("\n");
+
+    // Batched writes; Firestore caps batches at 500 ops
+    for (let i = 0; i < emails.length; i += 400) {
+      const batch = writeBatch(db);
+      for (const email of emails.slice(i, i + 400)) {
+        batch.set(doc(collection(db, "mail")), {
+          tenantId,
+          to: [email],
+          subject: `📢 ${companyName}: ${title}`,
+          text,
+          status: "pending",
+          purpose: "announcement",
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    }
+    return emails.length;
   };
 
   const openCreateDialog = () => {
@@ -196,9 +248,10 @@ export default function Announcements() {
         imageUrl: formData.imageUrl.trim() || null,
       };
 
+      let announcementRef;
       if (editingAnnouncement) {
-        const docRef = doc(db, `tenants/${tenantId}/announcements`, editingAnnouncement.id);
-        await updateDoc(docRef, {
+        announcementRef = doc(db, `tenants/${tenantId}/announcements`, editingAnnouncement.id);
+        await updateDoc(announcementRef, {
           ...payload,
           updatedAt: serverTimestamp(),
         });
@@ -207,7 +260,7 @@ export default function Announcements() {
           description: t("announcements.toast.updated"),
         });
       } else {
-        await addDoc(collection(db, `tenants/${tenantId}/announcements`), {
+        announcementRef = await addDoc(collection(db, `tenants/${tenantId}/announcements`), {
           ...payload,
           createdAt: serverTimestamp(),
           createdBy: user?.uid || "",
@@ -218,6 +271,38 @@ export default function Announcements() {
           title: t("common.success"),
           description: t("announcements.toast.published"),
         });
+      }
+
+      // Optional email delivery — never fails the publish itself
+      if (sendEmailCopy) {
+        try {
+          const count = await emailAnnouncementToStaff(
+            formData.title.trim(),
+            formData.body.trim(),
+          );
+          if (count > 0) {
+            await updateDoc(announcementRef, {
+              emailedAt: serverTimestamp(),
+              emailedCount: count,
+            });
+            toast({
+              title: t("common.success"),
+              description: t("announcements.toast.emailed", { count: String(count) }),
+            });
+          } else {
+            toast({
+              title: t("announcements.toast.validationTitle"),
+              description: t("announcements.toast.emailNoRecipients"),
+            });
+          }
+        } catch (emailError) {
+          console.error("Error emailing announcement:", emailError);
+          toast({
+            title: t("common.error"),
+            description: t("announcements.toast.emailFailed"),
+            variant: "destructive",
+          });
+        }
       }
 
       handleCloseDialog();
@@ -546,6 +631,23 @@ export default function Announcements() {
                   <Label htmlFor="ann-pinned" className="text-sm font-normal cursor-pointer">
                     {t("announcements.dialog.pinLabel")}
                   </Label>
+                </div>
+
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="ann-email"
+                    checked={sendEmailCopy}
+                    onCheckedChange={(checked) => setSendEmailCopy(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0">
+                    <Label htmlFor="ann-email" className="text-sm font-normal cursor-pointer">
+                      {t("announcements.dialog.emailLabel")}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {t("announcements.dialog.emailHint")}
+                    </p>
+                  </div>
                 </div>
               </div>
             </MoreDetailsSection>

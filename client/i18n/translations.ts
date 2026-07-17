@@ -465,7 +465,9 @@ export const translations = {
         "bodyPlaceholder": "Write your announcement message...",
         "imageLabel": "Image URL (optional)",
         "imagePlaceholder": "https://example.com/image.jpg",
-        "pinLabel": "Pin to top of announcements feed"
+        "pinLabel": "Pin to top of announcements feed",
+        "emailLabel": "Also send to all staff by email",
+        "emailHint": "Emails every active employee who has an email address on file."
       },
       "delete": {
         "title": "Delete announcement",
@@ -484,7 +486,10 @@ export const translations = {
         "deleteFailed": "Failed to delete announcement",
         "pinned": "Announcement pinned to top",
         "unpinned": "Announcement unpinned",
-        "pinFailed": "Failed to update announcement"
+        "pinFailed": "Failed to update announcement",
+        "emailed": "Emailed to {{count}} staff member(s)",
+        "emailNoRecipients": "No staff have an email address on file — nobody was emailed",
+        "emailFailed": "Announcement saved, but the staff emails could not be sent"
       }
     },
     "auth": {
@@ -7061,7 +7066,9 @@ export const translations = {
         "bodyPlaceholder": "Hakerek ita nia mensajen avisu...",
         "imageLabel": "URL imajen (opsional)",
         "imagePlaceholder": "https://example.com/image.jpg",
-        "pinLabel": "Tau iha leten iha lista avisu"
+        "pinLabel": "Tau iha leten iha lista avisu",
+        "emailLabel": "Haruka mós liuhusi email ba staf hotu",
+        "emailHint": "Haruka email ba empregadu ativu hotu ne'ebé iha email."
       },
       "delete": {
         "title": "Apaga avisu",
@@ -7080,7 +7087,10 @@ export const translations = {
         "deleteFailed": "Falha apaga avisu",
         "pinned": "Avisu tau iha leten",
         "unpinned": "Avisu hasai hosi leten",
-        "pinFailed": "Falha atualiza avisu"
+        "pinFailed": "Falha atualiza avisu",
+        "emailed": "Email haruka ona ba staf {{count}}",
+        "emailNoRecipients": "Staf ida la iha email — email la haruka",
+        "emailFailed": "Avisu rai tiha ona maibé email la konsege haruka"
       }
     },
     "auth": {
@@ -13657,7 +13667,9 @@ export const translations = {
         "bodyPlaceholder": "Escreva a mensagem do anúncio...",
         "imageLabel": "URL da imagem (opcional)",
         "imagePlaceholder": "https://example.com/image.jpg",
-        "pinLabel": "Fixar no topo da lista de anúncios"
+        "pinLabel": "Fixar no topo da lista de anúncios",
+        "emailLabel": "Enviar também por email a todos os funcionários",
+        "emailHint": "Envia email a todos os funcionários ativos com email registado."
       },
       "delete": {
         "title": "Eliminar anúncio",
@@ -13676,7 +13688,10 @@ export const translations = {
         "deleteFailed": "Falha ao eliminar anúncio",
         "pinned": "Anúncio fixado no topo",
         "unpinned": "Anúncio desafixado",
-        "pinFailed": "Falha ao atualizar anúncio"
+        "pinFailed": "Falha ao atualizar anúncio",
+        "emailed": "Email enviado a {{count}} funcionário(s)",
+        "emailNoRecipients": "Nenhum funcionário tem email registado — ninguém recebeu email",
+        "emailFailed": "Anúncio guardado, mas os emails não puderam ser enviados"
       }
     },
     "auth": {

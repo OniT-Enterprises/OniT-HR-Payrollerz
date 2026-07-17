@@ -461,7 +461,9 @@ const messages = {
       "bodyPlaceholder": "Escreva a mensagem do anúncio...",
       "imageLabel": "URL da imagem (opcional)",
       "imagePlaceholder": "https://example.com/image.jpg",
-      "pinLabel": "Fixar no topo da lista de anúncios"
+      "pinLabel": "Fixar no topo da lista de anúncios",
+      "emailLabel": "Enviar também por email a todos os funcionários",
+      "emailHint": "Envia email a todos os funcionários ativos com email registado."
     },
     "delete": {
       "title": "Eliminar anúncio",
@@ -480,7 +482,10 @@ const messages = {
       "deleteFailed": "Falha ao eliminar anúncio",
       "pinned": "Anúncio fixado no topo",
       "unpinned": "Anúncio desafixado",
-      "pinFailed": "Falha ao atualizar anúncio"
+      "pinFailed": "Falha ao atualizar anúncio",
+      "emailed": "Email enviado a {{count}} funcionário(s)",
+      "emailNoRecipients": "Nenhum funcionário tem email registado — ninguém recebeu email",
+      "emailFailed": "Anúncio guardado, mas os emails não puderam ser enviados"
     }
   },
   "auth": {
