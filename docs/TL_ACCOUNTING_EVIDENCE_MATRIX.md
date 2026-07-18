@@ -117,3 +117,24 @@ A future change passes this evidence gate only if it does one of the following:
 
 Practitioner prose alone is never enough to change a statutory default.
 
+
+## Corpus 2 (2026-07-18): 38 additional worked monthly rows
+
+A second de-identified extraction (`tests/client/fixtures/deidentified-firm-payroll-2.ts`,
+asserted by `tests/client/real-firm-payroll-parity-2.test.ts`) covers seven more
+completed schedules across two further template families. Of 38 rows, 36 are
+representable; all 36 match Xefe within two cents on gross, WIT, employee INSS,
+and net. New behaviors corroborated by real computations:
+
+- **Non-resident staff**: flat 10% WIT with no $500 threshold and no INSS
+  enrollment — the firm applied exactly Xefe's model to expatriates.
+- **Post-tax fee reimbursement**: a bank "salary fee" the firm adds back to net
+  after withholding (not an earnings or deduction component).
+- **Employer INSS 4.8% anomaly**: fourteen rows for one client apply a 4.8%
+  employer contribution where DL 20/2017 prescribes 6%. This is a worked
+  calculation, not legal authority; Xefe keeps 6% and the parity test pins the
+  divergence. Open question for the firm's accountants: what did 4.8%
+  represent (historical transitional rate, client-specific arrangement, or an
+  error)?
+- Two rows are unrepresentable (source cells hold uncached formulas); two
+  combined multi-month payment sheets were excluded from monthly parity.
