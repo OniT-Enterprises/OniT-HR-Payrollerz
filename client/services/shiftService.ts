@@ -18,7 +18,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getFunctionsLazy } from '@/lib/firebase';
-import { addDaysISO } from '@/lib/dateUtils';
 
 // Pure calculations/slot config live in a Firebase-free module so they can be
 // unit-tested without loading the Firestore client. Re-exported here so existing
@@ -181,38 +180,35 @@ class ShiftService {
 
   /**
    * Copy all shifts in a week to the following week as drafts.
-   * Returns the number of shifts created.
+   *
+   * Runs entirely server-side in one batched Cloud Function call — cloning a
+   * full guard-company rotation is ~1,800 shifts, which the old per-shift
+   * callable loop turned into minutes of latency. The function skips targets
+   * that already exist (idempotent re-copy) and employees on approved leave.
+   * Returns { created, skipped }.
    */
   async copyWeekToNext(
     tenantId: string,
     startDate: string,
     endDate: string,
-    createdBy: string,
+    _createdBy: string,
     departmentId?: string,
-  ): Promise<number> {
-    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate, departmentId);
-    const toCopy = shifts.filter((s) => s.status !== 'cancelled');
-    if (toCopy.length === 0) return 0;
-
-    for (const shift of toCopy) {
-      await saveValidatedShift(tenantId, {
-        employeeId: shift.employeeId,
-        employeeName: shift.employeeName,
-        department: shift.department,
-        ...(shift.departmentId ? { departmentId: shift.departmentId } : {}),
-        position: shift.position,
-        date: addDaysISO(shift.date, 7),
-        startTime: shift.startTime,
-        endTime: shift.endTime,
-        hours: shift.hours,
-        status: 'draft',
-        location: shift.location,
-        ...(shift.slotId ? { slotId: shift.slotId } : {}),
-        notes: shift.notes,
-        createdBy,
-      });
-    }
-    return toCopy.length;
+  ): Promise<{ created: number; skipped: number }> {
+    const [{ httpsCallable }, functions] = await Promise.all([
+      import('firebase/functions'),
+      getFunctionsLazy(),
+    ]);
+    const callable = httpsCallable<
+      { tenantId: string; startDate: string; endDate: string; departmentId?: string },
+      { created: number; skipped: number }
+    >(functions, 'copyWeekShifts');
+    const result = await callable({
+      tenantId,
+      startDate,
+      endDate,
+      ...(departmentId ? { departmentId } : {}),
+    });
+    return result.data;
   }
 
   /**

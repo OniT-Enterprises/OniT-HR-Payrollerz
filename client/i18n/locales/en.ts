@@ -2968,7 +2968,14 @@ const messages = {
         "totalHours": "Total Hours",
         "totalHoursValue": "{{hours}}h",
         "staffScheduled": "Staff Scheduled",
-        "published": "Published"
+        "published": "Published",
+        "postsStaffed": "posts staffed",
+        "openPosts": "{{count}} open",
+        "overCap": "{{count}} over 44h"
+      },
+      "view": {
+        "grid": "Coverage",
+        "list": "List"
       },
       "actions": {
         "publishSchedule": "Publish {{count}} drafts",
@@ -3133,6 +3140,9 @@ const messages = {
         "exportEmptyDesc": "There are no shifts this week.",
         "copiedTitle": "Week copied",
         "copiedDesc": "{{count}} shifts copied to next week as drafts.",
+        "copiedWithSkippedDesc": "{{count}} shifts copied to next week as drafts. {{skipped}} skipped (already scheduled or on leave).",
+        "copyAllSkippedTitle": "Already up to date",
+        "copyAllSkippedDesc": "Next week already matches — {{skipped}} shifts skipped (already scheduled or on leave).",
         "copyEmptyTitle": "Nothing to copy",
         "copyEmptyDesc": "There are no shifts this week."
       }

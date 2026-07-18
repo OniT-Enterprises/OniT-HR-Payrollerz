@@ -30,6 +30,7 @@ import {
   calculateHoursBetween,
   calculateLateMinutes,
   calculateEarlyDeparture,
+  calculateNightHours,
   determineStatus,
   calculateHoursBreakdown,
   DEFAULT_EXPECTED_START,
@@ -41,6 +42,7 @@ export {
   calculateHoursBetween,
   calculateLateMinutes,
   calculateEarlyDeparture,
+  calculateNightHours,
   determineStatus,
   calculateHoursBreakdown,
   DEFAULT_EXPECTED_START,
@@ -71,6 +73,8 @@ export interface AttendanceRecord {
   // Calculated hours
   regularHours: number;
   overtimeHours: number;
+  /** Hours worked in the 21:00–06:00 night window (subset of worked hours). */
+  nightHours: number;
   lateMinutes: number;
   earlyDepartureMinutes: number;
   breakMinutes: number;
@@ -160,6 +164,7 @@ export interface AttendanceEmployeeSummary {
   department: string;
   regularHours: number;
   overtimeHours: number;
+  nightHours: number;
   lateMinutes: number;
   daysPresent: number;
   recordsCount: number;
@@ -308,10 +313,18 @@ class AttendanceService {
     for (const record of records) {
       if (!record.employeeId) continue;
 
+      // Records written before night-hours tracking have no `nightHours`;
+      // derive it from the clock times so historical months still credit the
+      // night premium.
+      const nightHours =
+        record.nightHours ??
+        calculateNightHours(record.clockIn || '', record.clockOut || '', record.totalHours);
+
       const existing = byEmployee.get(record.employeeId);
       if (existing) {
         existing.regularHours += record.regularHours || 0;
         existing.overtimeHours += record.overtimeHours || 0;
+        existing.nightHours += nightHours;
         existing.lateMinutes += record.lateMinutes || 0;
         existing.recordsCount += 1;
         if ((record.totalHours || 0) > 0 || record.status === 'present' || record.status === 'late') {
@@ -326,6 +339,7 @@ class AttendanceService {
         department: record.department,
         regularHours: record.regularHours || 0,
         overtimeHours: record.overtimeHours || 0,
+        nightHours,
         lateMinutes: record.lateMinutes || 0,
         daysPresent: (record.totalHours || 0) > 0 || record.status === 'present' || record.status === 'late' ? 1 : 0,
         recordsCount: 1,
@@ -417,6 +431,7 @@ class AttendanceService {
     const earlyDepartureMinutes = calculateEarlyDeparture(data.clockOut || '', expected.end);
 
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
+    const nightHours = calculateNightHours(data.clockIn || '', data.clockOut || '', totalHours);
     const status = determineStatus(data.clockIn, data.clockOut, lateMinutes, totalHours);
 
     const record: Omit<AttendanceRecord, 'id'> = {
@@ -432,6 +447,7 @@ class AttendanceService {
       breakEnd: data.breakEnd,
       regularHours: regular,
       overtimeHours: overtime,
+      nightHours,
       lateMinutes,
       earlyDepartureMinutes,
       breakMinutes,
@@ -549,6 +565,7 @@ class AttendanceService {
       current.departmentId,
     );
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
+    const nightHours = calculateNightHours(newClockIn || '', newClockOut || '', totalHours);
     const lateMinutes = calculateLateMinutes(newClockIn || '', expected.start);
     const earlyDepartureMinutes = calculateEarlyDeparture(newClockOut || '', expected.end);
 
@@ -557,6 +574,7 @@ class AttendanceService {
       clockOut: newClockOut,
       regularHours: regular,
       overtimeHours: overtime,
+      nightHours,
       totalHours,
       breakMinutes,
       lateMinutes,
@@ -683,6 +701,7 @@ class AttendanceService {
           throw new Error(`Entry computes to ${totalHours.toFixed(1)}h`);
         }
         const { regular, overtime } = calculateHoursBreakdown(totalHours);
+        const nightHours = calculateNightHours(record.clockIn || '', record.clockOut || '', totalHours);
         const expected = expectedByKey.get(`${record.employeeId}:${record.date}`)
           ?? { start: DEFAULT_EXPECTED_START, end: DEFAULT_EXPECTED_END };
         const lateMinutes = calculateLateMinutes(record.clockIn || '', expected.start);
@@ -694,6 +713,7 @@ class AttendanceService {
           tenantId,
           regularHours: regular,
           overtimeHours: overtime,
+          nightHours,
           lateMinutes,
           earlyDepartureMinutes: calculateEarlyDeparture(record.clockOut || '', expected.end),
           breakMinutes,

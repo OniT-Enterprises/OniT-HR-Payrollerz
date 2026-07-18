@@ -6,6 +6,8 @@ import {
   ChevronRight,
   Copy,
   Download,
+  LayoutGrid,
+  List,
   Loader2,
   MapPin,
   Pencil,
@@ -60,9 +62,12 @@ import {
   useCreateShift,
   useDeleteShift,
   usePublishDraftShifts,
+  useSaveShiftSlots,
+  useShiftSlots,
   useShiftsByRange,
   useUpdateShift,
 } from "@/hooks/useShifts";
+import LocationGridView from "@/components/shifts/LocationGridView";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -138,6 +143,10 @@ export default function ShiftScheduling() {
 
   const [weekStart, setWeekStart] = useState(() => getWeekStartTL(getTodayTL()));
   const weekEnd = addDaysISO(weekStart, 6);
+  // Coverage grid (site × shift-slot) is the default — a flat list of hundreds
+  // of shifts can't answer "is every post covered?". The list stays as a
+  // fallback for anyone who wants the raw per-day view.
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [formOpen, setFormOpen] = useState(false);
@@ -171,8 +180,11 @@ export default function ShiftScheduling() {
     managerDepartmentId ? { departmentId: managerDepartmentId } : undefined,
     canLoadSchedule,
   );
+  const slotsQuery = useShiftSlots();
+  const slots = useMemo(() => slotsQuery.data ?? [], [slotsQuery.data]);
+  const saveSlotsMutation = useSaveShiftSlots();
 
-  const employees = employeesQuery.data ?? [];
+  const employees = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data]);
   const workLocations = useMemo(
     () => (settingsQuery.data?.companyStructure.workLocations ?? [])
       .filter((location) => location.isActive),
@@ -203,9 +215,84 @@ export default function ShiftScheduling() {
     [weekStart],
   );
   const draftCount = visibleShifts.filter((shift) => shift.status === "draft").length;
-  const totalHours = visibleShifts
-    .filter((shift) => shift.status !== "cancelled")
-    .reduce((total, shift) => total + (Number.isFinite(shift.hours) ? shift.hours : 0), 0);
+
+  // Employees mapped to the coverage grid's shape.
+  const gridEmployees = useMemo(
+    () => employees
+      .filter((employee): employee is typeof employee & { id: string } => Boolean(employee.id))
+      .map((employee) => ({
+        id: employee.id,
+        name: `${employee.personalInfo?.firstName ?? ""} ${employee.personalInfo?.lastName ?? ""}`.trim()
+          || employee.personalInfo?.firstName
+          || "—",
+        department: employee.jobDetails?.department ?? "",
+        position: employee.jobDetails?.position ?? "",
+      })),
+    [employees],
+  );
+
+  // The grid keys off configured WorkLocations, but a tenant may already have
+  // shifts at sites they never formally added in Settings. Synthesize entries
+  // for those so the grid works without forcing location setup first.
+  const gridLocations = useMemo(() => {
+    const byName = new Map(workLocations.map((location) => [location.name, location]));
+    for (const name of shifts.map((shift) => shift.location).filter(Boolean)) {
+      if (!byName.has(name)) {
+        byName.set(name, {
+          id: `derived:${name}`,
+          name,
+          address: "",
+          city: "",
+          isHeadquarters: false,
+          isActive: true,
+        });
+      }
+    }
+    return [...byName.values()].sort((left, right) => left.name.localeCompare(right.name));
+  }, [workLocations, shifts]);
+
+  const activeSlots = useMemo(() => slots.filter((slot) => slot.enabled), [slots]);
+
+  // Coverage: how many location × slot × day cells have at least one guard.
+  // "Needed staff per post" isn't modelled, so ≥1 assigned = covered — enough
+  // to answer "where are the holes this week?" at a glance.
+  const coverage = useMemo(() => {
+    if (activeSlots.length === 0 || gridLocations.length === 0) {
+      return { staffed: 0, total: 0, open: 0 };
+    }
+    const inSlot = (time: string, start: string, end: string) =>
+      start === end ? time === start
+        : start < end ? time >= start && time < end
+        : time >= start || time < end; // overnight slot
+    const slotIdForShift = (shift: ShiftRecord): string | undefined => {
+      if (shift.slotId && activeSlots.some((slot) => slot.id === shift.slotId)) return shift.slotId;
+      return activeSlots.find((slot) => inSlot(shift.startTime, slot.startTime, slot.endTime))?.id;
+    };
+    const staffedCells = new Set<string>();
+    for (const shift of visibleShifts) {
+      if (shift.status === "cancelled") continue;
+      const slotId = slotIdForShift(shift);
+      if (!slotId) continue;
+      staffedCells.add(`${shift.location}|${shift.date}|${slotId}`);
+    }
+    const total = gridLocations.length * activeSlots.length * 7;
+    return { staffed: staffedCells.size, total, open: Math.max(0, total - staffedCells.size) };
+  }, [visibleShifts, activeSlots, gridLocations]);
+
+  // Employees over the TL 44h/week cap (across all their shifts this week).
+  const overCapCount = useMemo(() => {
+    const byEmployee = new Map<string, number>();
+    for (const shift of shifts) {
+      if (shift.status === "cancelled") continue;
+      byEmployee.set(
+        shift.employeeId,
+        (byEmployee.get(shift.employeeId) ?? 0) + (Number.isFinite(shift.hours) ? shift.hours : 0),
+      );
+    }
+    let count = 0;
+    byEmployee.forEach((hours) => { if (hours > MAX_WEEKLY_HOURS) count += 1; });
+    return count;
+  }, [shifts]);
   const selectedEmployee = employees.find((employee) => employee.id === form.employeeId);
   const formHours = calcShiftHours(form.startTime, form.endTime);
   const selectedEmployeeWeekHours = shifts
@@ -370,20 +457,32 @@ export default function ShiftScheduling() {
 
   const copyWeek = async () => {
     try {
-      const count = await copyMutation.mutateAsync({
+      const { created, skipped } = await copyMutation.mutateAsync({
         startDate: weekStart,
         endDate: weekEnd,
         createdBy: user?.uid || "",
         departmentId: managerDepartmentId,
       });
-      toast({
-        title: count > 0
-          ? t("timeLeave.shiftScheduling.toast.copiedTitle")
-          : t("timeLeave.shiftScheduling.toast.copyEmptyTitle"),
-        description: count > 0
-          ? t("timeLeave.shiftScheduling.toast.copiedDesc", { count })
-          : t("timeLeave.shiftScheduling.toast.copyEmptyDesc"),
-      });
+      if (created > 0) {
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.copiedTitle"),
+          description: skipped > 0
+            ? t("timeLeave.shiftScheduling.toast.copiedWithSkippedDesc", { count: created, skipped })
+            : t("timeLeave.shiftScheduling.toast.copiedDesc", { count: created }),
+        });
+      } else if (skipped > 0) {
+        // Source shifts existed but every one already had a copy next week (or
+        // the employee is on leave) — an idempotent no-op, not an empty week.
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.copyAllSkippedTitle"),
+          description: t("timeLeave.shiftScheduling.toast.copyAllSkippedDesc", { skipped }),
+        });
+      } else {
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.copyEmptyTitle"),
+          description: t("timeLeave.shiftScheduling.toast.copyEmptyDesc"),
+        });
+      }
     } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
@@ -526,25 +625,73 @@ export default function ShiftScheduling() {
         ) : (
           <>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, -7))} aria-label={t("common.previous")}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setWeekStart(getWeekStartTL(getTodayTL()))}>
-                  {t("timeLeave.attendance.actions.today")}
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, 7))} aria-label={t("common.next")}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <span className="ml-1 text-sm font-semibold">
-                  {formatDateTL(parseDateISO(weekStart), { day: "numeric", month: "short" })}
-                  {" — "}
-                  {formatDateTL(parseDateISO(weekEnd), { day: "numeric", month: "short", year: "numeric" })}
-                </span>
+              {/* The coverage grid carries its own week navigation; only the
+                  list view needs these outer controls. */}
+              {viewMode === "list" ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, -7))} aria-label={t("common.previous")}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setWeekStart(getWeekStartTL(getTodayTL()))}>
+                    {t("timeLeave.attendance.actions.today")}
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, 7))} aria-label={t("common.next")}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <span className="ml-1 text-sm font-semibold">
+                    {formatDateTL(parseDateISO(weekStart), { day: "numeric", month: "short" })}
+                    {" — "}
+                    {formatDateTL(parseDateISO(weekEnd), { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+              ) : <div />}
+              <div className="flex flex-wrap items-center gap-3">
+                {coverage.total > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      <span className="font-semibold text-foreground tabular-nums">{coverage.staffed}</span>
+                      {" / "}{coverage.total} {t("timeLeave.shiftScheduling.summary.postsStaffed")}
+                    </span>
+                    {coverage.open > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 tabular-nums">
+                        {t("timeLeave.shiftScheduling.summary.openPosts", { count: coverage.open })}
+                      </span>
+                    )}
+                    {overCapCount > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 tabular-nums">
+                        <AlertTriangle className="h-3 w-3" />
+                        {t("timeLeave.shiftScheduling.summary.overCap", { count: overCapCount })}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    aria-pressed={viewMode === "grid"}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      viewMode === "grid" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    {t("timeLeave.shiftScheduling.view.grid")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    aria-pressed={viewMode === "list"}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      viewMode === "list" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    {t("timeLeave.shiftScheduling.view.list")}
+                  </button>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {visibleShifts.length} {t("timeLeave.shiftScheduling.summary.totalShifts")} · {totalHours.toFixed(1)}h
-              </p>
             </div>
 
             {draftCount > 0 && (
@@ -591,6 +738,21 @@ export default function ShiftScheduling() {
               </div>
             </MoreDetailsSection>
 
+            {viewMode === "grid" ? (
+              <LocationGridView
+                employees={gridEmployees}
+                shifts={visibleShifts}
+                selectedWeek={weekStart}
+                locations={gridLocations}
+                slots={slots}
+                onSlotsChange={(next) => saveSlotsMutation.mutate(next)}
+                onCreateShift={(data) => createMutation.mutateAsync(data)}
+                onDeleteShift={(shiftId) => deleteMutation.mutateAsync(shiftId)}
+                onSelectWeek={setWeekStart}
+                goToPreviousWeek={() => setWeekStart(addDaysISO(weekStart, -7))}
+                goToNextWeek={() => setWeekStart(addDaysISO(weekStart, 7))}
+              />
+            ) : (
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
               {weekDays.map((date, dayIndex) => {
                 const dayShifts = visibleShifts
@@ -652,6 +814,7 @@ export default function ShiftScheduling() {
                 );
               })}
             </section>
+            )}
           </>
         )}
       </main>

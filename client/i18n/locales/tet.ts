@@ -2968,7 +2968,14 @@ const messages = {
         "totalHours": "Total oras",
         "totalHoursValue": "{{hours}}h",
         "staffScheduled": "Ema eskalada",
-        "published": "Publika"
+        "published": "Publika",
+        "postsStaffed": "postu iha ema",
+        "openPosts": "{{count}} mamuk",
+        "overCap": "{{count}} liu 44h"
+      },
+      "view": {
+        "grid": "Kobertura",
+        "list": "Lista"
       },
       "actions": {
         "publishSchedule": "Publika rascunho {{count}}",
@@ -3133,6 +3140,9 @@ const messages = {
         "exportEmptyDesc": "La iha turnu semana ida ne'e.",
         "copiedTitle": "Semana kopia ona",
         "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho.",
+        "copiedWithSkippedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho. {{skipped}} la kopia (agenda ona ka iha lisensa).",
+        "copyAllSkippedTitle": "Atualiza tiha ona",
+        "copyAllSkippedDesc": "Semana oin mai hanesan ona — turnu {{skipped}} la kopia (agenda ona ka iha lisensa).",
         "copyEmptyTitle": "La iha buat atu kopia",
         "copyEmptyDesc": "La iha turnu semana ida ne'e."
       }

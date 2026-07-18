@@ -2968,7 +2968,14 @@ const messages = {
         "totalHours": "Total de Horas",
         "totalHoursValue": "{{hours}}h",
         "staffScheduled": "Pessoal Escalado",
-        "published": "Publicado"
+        "published": "Publicado",
+        "postsStaffed": "postos preenchidos",
+        "openPosts": "{{count}} por preencher",
+        "overCap": "{{count}} acima de 44h"
+      },
+      "view": {
+        "grid": "Cobertura",
+        "list": "Lista"
       },
       "actions": {
         "publishSchedule": "Publicar {{count}} rascunhos",
@@ -3133,6 +3140,9 @@ const messages = {
         "exportEmptyDesc": "Não há turnos esta semana.",
         "copiedTitle": "Semana copiada",
         "copiedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos.",
+        "copiedWithSkippedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos. {{skipped}} ignorados (já agendados ou de licença).",
+        "copyAllSkippedTitle": "Já está atualizado",
+        "copyAllSkippedDesc": "A próxima semana já corresponde — {{skipped}} turnos ignorados (já agendados ou de licença).",
         "copyEmptyTitle": "Nada para copiar",
         "copyEmptyDesc": "Não há turnos esta semana."
       }

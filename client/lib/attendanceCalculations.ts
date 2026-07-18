@@ -68,6 +68,59 @@ export function computeEntryHours(
 }
 
 /**
+ * Night-work window (Labour Code Art. 27 / constants-tl `nightShiftPremium`):
+ * hours worked between 21:00 and 06:00 earn an additional 25% premium. These
+ * hours are a SUBSET of the worked span — they are paid as regular/overtime
+ * for the base hour and only carry the extra premium — so this figure never
+ * reduces regular or overtime hours.
+ */
+export const NIGHT_WINDOW_START_HOUR = 21;
+export const NIGHT_WINDOW_END_HOUR = 6;
+
+/**
+ * Hours of a shift that fall inside the 21:00–06:00 night window.
+ *
+ * Handles overnight shifts (clock-out < clock-in). Returns hours worked at
+ * night, capped at the shift's total worked hours so a recorded break can
+ * never push night hours above paid hours.
+ */
+export function calculateNightHours(
+  clockIn: string,
+  clockOut: string,
+  totalHours?: number,
+): number {
+  if (!clockIn || !clockOut) return 0;
+
+  const [startHour, startMin] = clockIn.split(':').map(Number);
+  const [endHour, endMin] = clockOut.split(':').map(Number);
+  if ([startHour, startMin, endHour, endMin].some(Number.isNaN)) return 0;
+
+  const start = startHour * 60 + startMin;
+  let end = endHour * 60 + endMin;
+  if (end <= start) end += 24 * 60; // overnight
+
+  // Night windows over a 48h timeline (minutes): early-morning 00:00–06:00,
+  // evening 21:00–06:00 next day, and the following day's evening block. This
+  // covers any shift up to the 16h sanity cap.
+  const nightWindows: Array<[number, number]> = [
+    [0, NIGHT_WINDOW_END_HOUR * 60],
+    [NIGHT_WINDOW_START_HOUR * 60, (24 + NIGHT_WINDOW_END_HOUR) * 60],
+    [(24 + NIGHT_WINDOW_START_HOUR) * 60, (48 + NIGHT_WINDOW_END_HOUR) * 60],
+  ];
+
+  let nightMinutes = 0;
+  for (const [ws, we] of nightWindows) {
+    nightMinutes += Math.max(0, Math.min(end, we) - Math.max(start, ws));
+  }
+
+  let nightHours = Math.round((nightMinutes / 60) * 100) / 100;
+  if (totalHours !== undefined) {
+    nightHours = Math.min(nightHours, Math.max(0, totalHours));
+  }
+  return nightHours;
+}
+
+/**
  * Calculate late minutes based on expected start time
  */
 export function calculateLateMinutes(clockIn: string, expectedStart: string = DEFAULT_EXPECTED_START): number {

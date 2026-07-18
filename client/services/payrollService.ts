@@ -695,8 +695,14 @@ class PayrollRecordService {
 
     for (const runIdChunk of chunkArray(runIds, 10)) {
       if (runIdChunk.length === 0) continue;
+      // The tenantId filter is required, not just a nicety: payrollRecords `list`
+      // rules are tenant-scoped, so a query without it is denied the moment any
+      // record exists (it silently succeeds only while the collection is empty,
+      // i.e. before a tenant's first paid run). Keep it in sync with the
+      // required tenantId field on every top-level tenant-keyed collection.
       const recordsSnapshot = await getDocs(query(
         this.collectionRef,
+        where('tenantId', '==', tenantId),
         where('payrollRunId', 'in', runIdChunk),
       ));
 

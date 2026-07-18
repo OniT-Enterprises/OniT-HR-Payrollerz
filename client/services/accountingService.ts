@@ -1093,9 +1093,20 @@ class JournalEntryService {
 
     // Resolve exactly the chart accounts this run needs, then hand the pure
     // (Firestore-free, unit-tested) builder a synchronous resolver over them.
+    // A tenant that reaches payroll approval before ever opening Accounting has
+    // no chart yet; auto-initialize the standard TL chart once rather than
+    // failing the approval pipeline mid-flight. initializeChartOfAccounts is
+    // idempotent, so this is a no-op when the chart already exists.
+    const neededCodes = payrollJournalAccountCodes(summary);
     const resolved = new Map<string, { id: string; name: string }>();
-    for (const code of payrollJournalAccountCodes(summary)) {
-      const account = await accountService.getAccountByCode(tenantId, code);
+    let didAutoInit = false;
+    for (const code of neededCodes) {
+      let account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id && !didAutoInit) {
+        await accountService.initializeChartOfAccounts(tenantId);
+        didAutoInit = true;
+        account = await accountService.getAccountByCode(tenantId, code);
+      }
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
       }

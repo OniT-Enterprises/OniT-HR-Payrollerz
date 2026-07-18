@@ -248,11 +248,14 @@ async function sendPayslipEmail(
   }
 }
 
-/** Maximum employees per bulk send to prevent OOM from client-side PDF generation */
-const MAX_BULK_PAYSLIP_BATCH = 50;
-
 /**
- * Send payslips to multiple employees
+ * Send payslips to multiple employees.
+ *
+ * Payslips are generated and sent strictly one at a time (each PDF blob is
+ * uploaded, queued, and then released before the next), so memory stays flat
+ * regardless of headcount — a 300+ guard company can send every payslip in a
+ * single run without an artificial batch cap. The `onProgress` callback drives
+ * the UI's "sending X of N" indicator for large runs.
  */
 export async function sendBulkPayslipEmails(
   tenantId: string,
@@ -266,12 +269,6 @@ export async function sendBulkPayslipEmails(
   userId: string,
   onProgress?: (current: number, total: number) => void
 ): Promise<SendPayslipsResult> {
-  if (payslipData.length > MAX_BULK_PAYSLIP_BATCH) {
-    throw new Error(
-      `Batch size ${payslipData.length} exceeds maximum of ${MAX_BULK_PAYSLIP_BATCH}. Please send in smaller batches.`
-    );
-  }
-
   const result: SendPayslipsResult = {
     total: payslipData.length,
     sent: 0,

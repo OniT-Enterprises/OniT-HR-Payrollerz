@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   calculateHoursBetween,
+  calculateNightHours,
   computeEntryHours,
   calculateLateMinutes,
   calculateEarlyDeparture,
@@ -27,6 +28,37 @@ describe('calculateHoursBetween', () => {
   it('returns 0 for missing or malformed input', () => {
     expect(calculateHoursBetween('', '17:00')).toBe(0);
     expect(calculateHoursBetween('abc', 'def')).toBe(0);
+  });
+});
+
+describe('calculateNightHours', () => {
+  it('counts the 21:00–06:00 window of an overnight guard shift', () => {
+    // 18:00 → 06:00: night portion is 21:00→06:00 = 9h
+    expect(calculateNightHours('18:00', '06:00')).toBe(9);
+  });
+
+  it('is zero for a fully-daytime shift', () => {
+    expect(calculateNightHours('06:00', '18:00')).toBe(0);
+  });
+
+  it('counts early-morning hours before 06:00', () => {
+    // 04:00 → 08:00: 04:00–06:00 = 2h at night
+    expect(calculateNightHours('04:00', '08:00')).toBe(2);
+  });
+
+  it('counts late-evening hours after 21:00', () => {
+    // 20:00 → 23:00: 21:00–23:00 = 2h at night
+    expect(calculateNightHours('20:00', '23:00')).toBe(2);
+  });
+
+  it('never exceeds the shift total when a break is present', () => {
+    // 22:00 → 06:00 raw is 8h all at night, but only 6 paid hours worked
+    expect(calculateNightHours('22:00', '06:00', 6)).toBe(6);
+  });
+
+  it('returns 0 for missing or malformed input', () => {
+    expect(calculateNightHours('', '06:00')).toBe(0);
+    expect(calculateNightHours('abc', 'def')).toBe(0);
   });
 });
 

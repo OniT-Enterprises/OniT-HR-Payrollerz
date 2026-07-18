@@ -88,7 +88,7 @@ export default function PayrollAllocationReport() {
     }).format(value);
 
   const payrollRunsQuery = usePayrollRuns({ limit: 300 });
-  const employeesQuery = useAllEmployees(1000);
+  const employeesQuery = useAllEmployees();
   const payrollRuns = useMemo(
     () => payrollRunsQuery.data ?? [],
     [payrollRunsQuery.data],

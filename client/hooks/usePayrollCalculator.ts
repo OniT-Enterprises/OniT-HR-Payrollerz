@@ -82,6 +82,13 @@ export function usePayrollCalculator({
   const showAdvancedTax = useAdvancedTax();
 
   const [employeePayrollData, setEmployeePayrollData] = useState<EmployeePayrollData[]>([]);
+  // Mirror of employeePayrollData so the attendance sync can build the next
+  // array and count matches synchronously (React batches the functional
+  // updater, so a counter mutated inside it is still 0 when the toast reads it).
+  const employeePayrollDataRef = useRef<EmployeePayrollData[]>([]);
+  useEffect(() => {
+    employeePayrollDataRef.current = employeePayrollData;
+  }, [employeePayrollData]);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -510,42 +517,48 @@ export function usePayrollCalculator({
     let syncedCount = 0;
     let leaveCreditedCount = 0;
 
-    setEmployeePayrollData((prev) =>
-      prev.map((data) => {
-        const employeeId = data.employee.id || "";
-        const summary = summaryByEmployee.get(employeeId);
-        if (!summary) return data;
+    // Build the next rows from a synchronous snapshot so the counts below are
+    // accurate the moment the toast reads them.
+    const nextData = employeePayrollDataRef.current.map((data) => {
+      const employeeId = data.employee.id || "";
+      const summary = summaryByEmployee.get(employeeId);
+      if (!summary) return data;
 
-        const regularHours = Number(summary.regularHours.toFixed(2));
-        const overtimeHours = Number(summary.overtimeHours.toFixed(2));
-        const expectedRegularHours = data.originalValues.regularHours;
-        const credit = leaveByEmployee.get(employeeId);
-        const paidLeaveHours = credit?.paidLeaveHours ?? 0;
-        const sickDays = credit?.sickDays ?? 0;
-        if (paidLeaveHours > 0 || sickDays > 0) leaveCreditedCount += 1;
-        const absenceHours = Number(
-          Math.max(0, expectedRegularHours - regularHours - paidLeaveHours).toFixed(2)
-        );
-        const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
+      const regularHours = Number(summary.regularHours.toFixed(2));
+      const overtimeHours = Number(summary.overtimeHours.toFixed(2));
+      // Hours worked at night carry the +25% premium on top of base pay; they
+      // are a subset of regular/overtime, so they are set, not added.
+      const nightShiftHours = Number((summary.nightHours ?? 0).toFixed(2));
+      const expectedRegularHours = data.originalValues.regularHours;
+      const credit = leaveByEmployee.get(employeeId);
+      const paidLeaveHours = credit?.paidLeaveHours ?? 0;
+      const sickDays = credit?.sickDays ?? 0;
+      if (paidLeaveHours > 0 || sickDays > 0) leaveCreditedCount += 1;
+      const absenceHours = Number(
+        Math.max(0, expectedRegularHours - regularHours - paidLeaveHours).toFixed(2)
+      );
+      const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
 
-        const updated: EmployeePayrollData = {
-          ...data,
-          regularHours,
-          overtimeHours,
-          absenceHours,
-          lateArrivalMinutes,
-          sickDays,
-        };
+      const updated: EmployeePayrollData = {
+        ...data,
+        regularHours,
+        overtimeHours,
+        nightShiftHours,
+        absenceHours,
+        lateArrivalMinutes,
+        sickDays,
+      };
 
-        const isEdited = checkIsEdited(updated);
-        syncedCount += 1;
-        const withEdit = { ...updated, isEdited };
-        return {
-          ...withEdit,
-          calculation: latestCalculatorRef.current(withEdit),
-        };
-      })
-    );
+      const isEdited = checkIsEdited(updated);
+      syncedCount += 1;
+      const withEdit = { ...updated, isEdited };
+      return {
+        ...withEdit,
+        calculation: latestCalculatorRef.current(withEdit),
+      };
+    });
+
+    setEmployeePayrollData(nextData);
 
     toast({
       title: t("runPayroll.syncAttendance"),

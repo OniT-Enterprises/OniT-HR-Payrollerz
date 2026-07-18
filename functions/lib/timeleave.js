@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onLeaveRequestWrite = exports.onShiftChange = exports.approveLeaveRequest = exports.createLeaveRequest = exports.createOrUpdateShift = void 0;
+exports.onLeaveRequestWrite = exports.onShiftChange = exports.approveLeaveRequest = exports.createLeaveRequest = exports.copyWeekShifts = exports.createOrUpdateShift = void 0;
 exports.calculateHours = calculateHours;
 exports.getBalanceContribution = getBalanceContribution;
 exports.recomputeWeekTotals = recomputeWeekTotals;
@@ -532,6 +532,91 @@ exports.createOrUpdateShift = (0, https_1.onCall)(async (request) => {
         createdAt: firestore_1.FieldValue.serverTimestamp(),
     })), { updatedAt: firestore_1.FieldValue.serverTimestamp() }), { merge: Boolean(data.shiftId) });
     return { success: true, shiftId: ref.id, hours };
+});
+/**
+ * Clone every non-cancelled shift in one week into the following week as
+ * drafts, in server-side batches. Replaces the old client loop that fired one
+ * createOrUpdateShift call per shift (minutes of latency for a large roster).
+ *
+ * Cloning validated source shifts, so the expensive pairwise overlap/rest
+ * re-check is skipped; instead it prefetches the target week once and skips
+ * (a) an employee+date+start already scheduled next week (idempotent re-copy)
+ * and (b) any target date the employee is on approved leave. Returns how many
+ * were created vs skipped.
+ */
+exports.copyWeekShifts = (0, https_1.onCall)(async (request) => {
+    var _a, _b, _c, _d, _e;
+    const auth = (0, authz_1.requireAuth)(request);
+    const data = request.data;
+    const { tenantId, startDate, endDate } = data;
+    if (!tenantId || !startDate || !endDate) {
+        throw new https_1.HttpsError("invalid-argument", "Missing tenantId, startDate, or endDate");
+    }
+    if (!DATE_RE.test(startDate) || !DATE_RE.test(endDate)) {
+        throw new https_1.HttpsError("invalid-argument", "Dates must be YYYY-MM-DD");
+    }
+    const member = await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
+    const sourceSnap = await db.collection(`tenants/${tenantId}/shifts`)
+        .where("date", ">=", startDate)
+        .where("date", "<=", endDate)
+        .get();
+    let source = sourceSnap.docs
+        .map((document) => document.data())
+        .filter((shift) => shift.status !== "cancelled" && shift.date && shift.startTime && shift.endTime);
+    // Managers may only clone their own department's roster.
+    if (member.role === "manager") {
+        if (!member.departmentId) {
+            throw new https_1.HttpsError("permission-denied", "Managers can only schedule their own department");
+        }
+        source = source.filter((shift) => shift.departmentId === member.departmentId);
+    }
+    if (source.length === 0)
+        return { created: 0, skipped: 0 };
+    const targetStart = addDaysISO(startDate, 7);
+    const targetEnd = addDaysISO(endDate, 7);
+    const [existingSnap, leaveSnap] = await Promise.all([
+        db.collection(`tenants/${tenantId}/shifts`)
+            .where("date", ">=", targetStart)
+            .where("date", "<=", targetEnd)
+            .get(),
+        db.collection("leave_requests")
+            .where("tenantId", "==", tenantId)
+            .where("status", "==", "approved")
+            .get(),
+    ]);
+    const scheduledKeys = new Set(existingSnap.docs
+        .map((document) => document.data())
+        .filter((shift) => shift.status !== "cancelled")
+        .map((shift) => `${shift.employeeId}|${shift.date}|${shift.startTime}`));
+    const leaves = leaveSnap.docs.map((document) => document.data());
+    const onApprovedLeave = (employeeId, date) => leaves.some((leave) => leave.employeeId === employeeId &&
+        typeof leave.startDate === "string" && typeof leave.endDate === "string" &&
+        leave.startDate <= date && leave.endDate >= date);
+    let batch = db.batch();
+    let writes = 0;
+    let created = 0;
+    let skipped = 0;
+    for (const shift of source) {
+        const date = addDaysISO(String(shift.date), 7);
+        const key = `${shift.employeeId}|${date}|${shift.startTime}`;
+        if (scheduledKeys.has(key) || onApprovedLeave(String(shift.employeeId), date)) {
+            skipped += 1;
+            continue;
+        }
+        scheduledKeys.add(key); // guard against duplicate source rows in the same copy
+        const ref = db.collection(`tenants/${tenantId}/shifts`).doc();
+        batch.set(ref, Object.assign(Object.assign(Object.assign(Object.assign({ tenantId, employeeId: shift.employeeId, employeeName: (_a = shift.employeeName) !== null && _a !== void 0 ? _a : "", department: (_b = shift.department) !== null && _b !== void 0 ? _b : "" }, (shift.departmentId ? { departmentId: shift.departmentId } : {})), { position: (_c = shift.position) !== null && _c !== void 0 ? _c : "", date, startTime: shift.startTime, endTime: shift.endTime, hours: typeof shift.hours === "number" ? shift.hours : calculateHours(String(shift.startTime), String(shift.endTime)), status: "draft", location: (_d = shift.location) !== null && _d !== void 0 ? _d : "" }), (shift.slotId ? { slotId: shift.slotId } : {})), { notes: (_e = shift.notes) !== null && _e !== void 0 ? _e : "", createdBy: auth.uid, createdAt: firestore_1.FieldValue.serverTimestamp(), updatedAt: firestore_1.FieldValue.serverTimestamp() }));
+        created += 1;
+        writes += 1;
+        if (writes === 450) {
+            await batch.commit();
+            batch = db.batch();
+            writes = 0;
+        }
+    }
+    if (writes > 0)
+        await batch.commit();
+    return { created, skipped };
 });
 exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
     var _a, _b, _c, _d;

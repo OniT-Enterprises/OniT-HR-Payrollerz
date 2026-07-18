@@ -2972,7 +2972,14 @@ export const translations = {
           "totalHours": "Total Hours",
           "totalHoursValue": "{{hours}}h",
           "staffScheduled": "Staff Scheduled",
-          "published": "Published"
+          "published": "Published",
+          "postsStaffed": "posts staffed",
+          "openPosts": "{{count}} open",
+          "overCap": "{{count}} over 44h"
+        },
+        "view": {
+          "grid": "Coverage",
+          "list": "List"
         },
         "actions": {
           "publishSchedule": "Publish {{count}} drafts",
@@ -3137,6 +3144,9 @@ export const translations = {
           "exportEmptyDesc": "There are no shifts this week.",
           "copiedTitle": "Week copied",
           "copiedDesc": "{{count}} shifts copied to next week as drafts.",
+          "copiedWithSkippedDesc": "{{count}} shifts copied to next week as drafts. {{skipped}} skipped (already scheduled or on leave).",
+          "copyAllSkippedTitle": "Already up to date",
+          "copyAllSkippedDesc": "Next week already matches — {{skipped}} shifts skipped (already scheduled or on leave).",
           "copyEmptyTitle": "Nothing to copy",
           "copyEmptyDesc": "There are no shifts this week."
         }
@@ -10340,7 +10350,14 @@ export const translations = {
           "totalHours": "Total oras",
           "totalHoursValue": "{{hours}}h",
           "staffScheduled": "Ema eskalada",
-          "published": "Publika"
+          "published": "Publika",
+          "postsStaffed": "postu iha ema",
+          "openPosts": "{{count}} mamuk",
+          "overCap": "{{count}} liu 44h"
+        },
+        "view": {
+          "grid": "Kobertura",
+          "list": "Lista"
         },
         "actions": {
           "publishSchedule": "Publika rascunho {{count}}",
@@ -10505,6 +10522,9 @@ export const translations = {
           "exportEmptyDesc": "La iha turnu semana ida ne'e.",
           "copiedTitle": "Semana kopia ona",
           "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho.",
+          "copiedWithSkippedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho. {{skipped}} la kopia (agenda ona ka iha lisensa).",
+          "copyAllSkippedTitle": "Atualiza tiha ona",
+          "copyAllSkippedDesc": "Semana oin mai hanesan ona — turnu {{skipped}} la kopia (agenda ona ka iha lisensa).",
           "copyEmptyTitle": "La iha buat atu kopia",
           "copyEmptyDesc": "La iha turnu semana ida ne'e."
         }
@@ -17708,7 +17728,14 @@ export const translations = {
           "totalHours": "Total de Horas",
           "totalHoursValue": "{{hours}}h",
           "staffScheduled": "Pessoal Escalado",
-          "published": "Publicado"
+          "published": "Publicado",
+          "postsStaffed": "postos preenchidos",
+          "openPosts": "{{count}} por preencher",
+          "overCap": "{{count}} acima de 44h"
+        },
+        "view": {
+          "grid": "Cobertura",
+          "list": "Lista"
         },
         "actions": {
           "publishSchedule": "Publicar {{count}} rascunhos",
@@ -17873,6 +17900,9 @@ export const translations = {
           "exportEmptyDesc": "Não há turnos esta semana.",
           "copiedTitle": "Semana copiada",
           "copiedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos.",
+          "copiedWithSkippedDesc": "{{count}} turnos copiados para a próxima semana como rascunhos. {{skipped}} ignorados (já agendados ou de licença).",
+          "copyAllSkippedTitle": "Já está atualizado",
+          "copyAllSkippedDesc": "A próxima semana já corresponde — {{skipped}} turnos ignorados (já agendados ou de licença).",
           "copyEmptyTitle": "Nada para copiar",
           "copyEmptyDesc": "Não há turnos esta semana."
         }

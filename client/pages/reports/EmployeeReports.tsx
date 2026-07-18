@@ -39,7 +39,7 @@ import {
 import { SEO } from "@/components/SEO";
 
 export default function EmployeeReports() {
-  const employeesQuery = useAllEmployees(500);
+  const employeesQuery = useAllEmployees();
   const employees = useMemo(
     () => employeesQuery.data ?? [],
     [employeesQuery.data],

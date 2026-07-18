@@ -409,7 +409,7 @@ function PayrollEditableCells({
 
 // --- Main component ---
 
-export function PayrollEmployeeRow({
+function PayrollEmployeeRowComponent({
   data,
   isExpanded,
   onToggleExpand,
@@ -488,3 +488,12 @@ export function PayrollEmployeeRow({
     </React.Fragment>
   );
 }
+
+/**
+ * Memoized so that editing one employee's hours doesn't re-render the entire
+ * table. The calculator hook returns the same `data` reference for untouched
+ * rows and the callbacks are stable (useCallback), so a keystroke re-renders
+ * only the edited row — the difference between smooth and unusable at 300+
+ * employees.
+ */
+export const PayrollEmployeeRow = React.memo(PayrollEmployeeRowComponent);

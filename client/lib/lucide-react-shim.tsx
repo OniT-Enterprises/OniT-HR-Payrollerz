@@ -299,6 +299,7 @@ export const MapPin = make(P_MapPin);
 export const Maximize2 = make(P_ArrowsOut);
 export const Megaphone = make(P_Megaphone);
 export const Menu = make(P_List);
+export const List = make(P_List);
 export const MessageCircle = make(P_ChatCircle);
 export const MessageSquare = make(P_Chat);
 export const Minimize2 = make(P_ArrowsIn);

@@ -9,11 +9,8 @@ import { useTenantId } from '@/contexts/TenantContext';
 import {
   employeeService,
   type ActiveEmployeeSummary,
-  type Employee,
   type EmployeeFilters,
-  type PaginatedResult,
 } from '@/services/employeeService';
-import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 // Query keys for cache management
 export const employeeKeys = {
@@ -30,18 +27,28 @@ export const employeeKeys = {
 };
 
 /**
- * Fetch all employees (convenience hook for components that need all data)
- * Fetches a large batch for client-side filtering
+ * Fetch all employees (convenience hook for components that need all data).
+ *
+ * Called with no cap it fetches the ENTIRE roster (paginated under the hood),
+ * so manager pickers, department stats, and pickers never silently hide staff
+ * past a fixed window — a hard requirement for large tenants (e.g. a 500+ guard
+ * company). Callers that genuinely want a small slice (e.g. a "recent 8"
+ * widget) pass an explicit `maxResults`, which does a single capped fetch.
  */
-export function useAllEmployees(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+export function useAllEmployees(maxResults?: number, enabled: boolean = true) {
   const tenantId = useTenantId();
+  const fetchAll = maxResults === undefined;
   return useQuery({
-    queryKey: employeeKeys.list(tenantId, { pageSize: maxResults }),
-    queryFn: () => employeeService.getEmployees(tenantId, { pageSize: maxResults }),
+    queryKey: fetchAll
+      ? employeeKeys.directory(tenantId, {})
+      : employeeKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: fetchAll
+      ? () => employeeService.getAllEmployees(tenantId, {})
+      : async () =>
+          (await employeeService.getEmployees(tenantId, { pageSize: maxResults })).data,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
-    select: (data: PaginatedResult<Employee>) => data.data, // Return just the array
   });
 }
 
@@ -155,7 +162,10 @@ function useFlattenedPaginatedEmployees(
  */
 export function useSmartEmployees(isSearching: boolean) {
   const paginatedQuery = useFlattenedPaginatedEmployees({}, !isSearching);
-  const allQuery = useAllEmployees(SEARCH_FETCH_LIMIT, isSearching);
+  // Search fetches the FULL roster (paginated under the hood) so no employee is
+  // hidden past a fixed window — a 500+ guard tenant must still be able to find
+  // its longest-tenured staff by name or ID.
+  const allQuery = useEmployeeDirectory({}, isSearching);
 
   return {
     employees: isSearching ? (allQuery.data ?? []) : paginatedQuery.employees,
@@ -166,7 +176,7 @@ export function useSmartEmployees(isSearching: boolean) {
     fetchNextPage: paginatedQuery.fetchNextPage,
     hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
     isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
-    /** True when search results may be truncated at the fetch limit */
-    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
+    // The full roster is loaded for search, so results are never truncated.
+    searchLimitReached: false,
   };
 }

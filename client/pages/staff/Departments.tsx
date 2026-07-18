@@ -24,7 +24,7 @@ import {
   departmentService,
   type Department,
 } from "@/services/departmentService";
-import { useAllEmployees, employeeKeys } from "@/hooks/useEmployees";
+import { useEmployeeDirectory, employeeKeys } from "@/hooks/useEmployees";
 import { useDepartments, departmentKeys } from "@/hooks/useDepartments";
 import DepartmentManager from "@/components/DepartmentManager";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
@@ -66,8 +66,10 @@ export default function Departments() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
 
-  // React Query hooks for data fetching
-  const employeesQuery = useAllEmployees();
+  // React Query hooks for data fetching. Use the fully-paginated directory
+  // fetch (not the 300-capped search fetch) so per-department headcounts and
+  // stats stay correct for large tenants (e.g. a 500+ guard company).
+  const employeesQuery = useEmployeeDirectory({});
   const departmentsQuery = useDepartments(tenantId);
 
   const employees = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data]);

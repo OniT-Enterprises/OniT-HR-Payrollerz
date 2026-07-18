@@ -48,7 +48,7 @@ export default function DepartmentReports() {
   const tenantId = useTenantId();
   const canManageTenant = canManage();
   const departmentsQuery = useAllDepartments(tenantId, 100);
-  const employeesQuery = useAllEmployees(500);
+  const employeesQuery = useAllEmployees();
   const departments = useMemo(
     () => departmentsQuery.data ?? [],
     [departmentsQuery.data],
