@@ -16,6 +16,7 @@ import {
   closeAdmin,
   createApprover,
   findTenantIdByName,
+  getPayrollJournal,
   waitForEmulators,
   waitForRunStatus,
 } from "./helpers/admin";
@@ -214,6 +215,28 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // Ground truth: approve → journal → paid must land in Firestore, not just
   // in UI state. Fails naming the stuck status if the pipeline broke midway.
   expect(await waitForRunStatus(tenantId, "paid")).toBe("paid");
+
+  // The books, not just the run status: approving payroll must post a balanced
+  // double-entry journal to the right accounts. Debits (gross wages 5110 +
+  // employer INSS 5150) must equal credits (net 2210 + WIT 2220 + employee
+  // INSS 2230 + employer INSS 2240), and total debits must equal total credits.
+  const journal = await getPayrollJournal(tenantId);
+  expect(journal).not.toBeNull();
+  expect(journal!.totalDebit).toBeGreaterThan(0);
+  expect(Math.abs(journal!.totalDebit - journal!.totalCredit)).toBeLessThanOrEqual(0.01);
+  const wages = journal!.byCode["5110"]?.debit ?? 0;
+  const employerInss = journal!.byCode["5150"]?.debit ?? 0;
+  const netPayable = journal!.byCode["2210"]?.credit ?? 0;
+  const employeeInss = journal!.byCode["2230"]?.credit ?? 0;
+  expect(wages).toBeGreaterThan(0);
+  expect(netPayable).toBeGreaterThan(0);
+  // The single resident employee is under the $500 WIT threshold, so no WIT
+  // line — proving the zero-line drop works end to end, in the live posting.
+  expect(journal!.byCode["2220"]).toBeUndefined();
+  // Employer INSS appears on both sides (expense debit + payable credit).
+  expect(journal!.byCode["2240"]?.credit ?? 0).toBeCloseTo(employerInss, 2);
+  // Debits reconcile to credits by the payroll identity.
+  expect(Math.abs((wages + employerInss) - (netPayable + employeeInss + employerInss))).toBeLessThanOrEqual(0.01);
 
   // Dismiss the "what's next" celebration dialog
   await page.getByRole("button", { name: /i'll do this later/i }).click();

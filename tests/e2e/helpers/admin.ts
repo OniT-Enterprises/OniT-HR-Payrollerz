@@ -177,6 +177,41 @@ export async function getLatestRunTotals(tenantId: string): Promise<{
   };
 }
 
+/**
+ * Read back the payroll journal a run posted, so a test can verify the books —
+ * not just that the run reached "paid". Returns the posted entry's balance and
+ * per-account-code debit/credit totals (tenant-scoped journalEntries).
+ */
+export async function getPayrollJournal(tenantId: string): Promise<{
+  totalDebit: number;
+  totalCredit: number;
+  byCode: Record<string, { debit: number; credit: number }>;
+} | null> {
+  const snapshot = await adminDb()
+    .collection(`tenants/${tenantId}/journalEntries`)
+    .where("source", "==", "payroll")
+    .limit(5)
+    .get();
+  if (snapshot.empty) return null;
+  const entry = snapshot.docs[0].data();
+  const byCode: Record<string, { debit: number; credit: number }> = {};
+  for (const line of (entry.lines ?? []) as Array<{ accountCode: string; debit: number; credit: number }>) {
+    const c = (byCode[line.accountCode] ??= { debit: 0, credit: 0 });
+    c.debit += Number(line.debit ?? 0);
+    c.credit += Number(line.credit ?? 0);
+  }
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  for (const code of Object.keys(byCode)) {
+    byCode[code].debit = round2(byCode[code].debit);
+    byCode[code].credit = round2(byCode[code].credit);
+  }
+  return {
+    totalDebit: Number(entry.totalDebit ?? 0),
+    totalCredit: Number(entry.totalCredit ?? 0),
+    byCode,
+  };
+}
+
 /** Sum the employee income tax + INSS across the run's saved records. */
 export async function getLatestRunRecordTotals(tenantId: string): Promise<{
   incomeTax: number;

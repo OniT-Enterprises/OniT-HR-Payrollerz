@@ -51,10 +51,12 @@ import {
 import { getTodayTL } from '@/lib/dateUtils';
 import {
   addToMoneyMap,
+  buildPayrollJournalLines,
   calculateBillPaymentPostingAmounts,
   getAccountNet,
   getFiscalDateParts,
   normalizeJournalAmounts,
+  payrollJournalAccountCodes,
 } from '@/lib/accounting/calculations';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
@@ -1086,207 +1088,27 @@ class JournalEntryService {
     const { year, period: month } = getFiscalDateParts(summary.periodEnd);
     const entryNumber = await this.getNextEntryNumber(tenantId, year);
 
-    const lines: JournalEntryLine[] = [];
-    let lineNumber = 1;
-
-    const getAccountId = async (code: string) => {
+    // Resolve exactly the chart accounts this run needs, then hand the pure
+    // (Firestore-free, unit-tested) builder a synchronous resolver over them.
+    const resolved = new Map<string, { id: string; name: string }>();
+    for (const code of payrollJournalAccountCodes(summary)) {
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
       }
-      return { id: account.id, name: account.name };
-    };
+      resolved.set(code, { id: account.id, name: account.name });
+    }
 
-    const salaryAccount = await getAccountId('5110');
-    const inssExpense = await getAccountId('5150');
-
-    const allocationRows = (summary.allocations ?? [])
-      .map((row) => ({
-        projectCode: row.projectCode?.trim() || 'Unassigned',
-        fundingSource: row.fundingSource?.trim() || 'Unassigned',
-        grossPay: addMoney(row.grossPay || 0),
-        inssEmployer: addMoney(row.inssEmployer || 0),
-      }))
-      .filter((row) => row.grossPay > 0 || row.inssEmployer > 0);
-
-    if (allocationRows.length > 0) {
-      let allocatedGross = 0;
-      let allocatedINSS = 0;
-
-      for (const allocation of allocationRows) {
-        if (allocation.grossPay > 0) {
-          lines.push({
-            lineNumber: lineNumber++,
-            accountId: salaryAccount.id,
-            accountCode: '5110',
-            accountName: salaryAccount.name,
-            debit: allocation.grossPay,
-            credit: 0,
-            description: `Gross salaries (${allocation.projectCode} | ${allocation.fundingSource})`,
-            projectId: allocation.projectCode,
-            departmentId: allocation.fundingSource,
-          });
-          allocatedGross = addMoney(allocatedGross, allocation.grossPay);
+    const { lines: journalLines, totalDebit, totalCredit } = buildPayrollJournalLines(
+      summary,
+      (code) => {
+        const account = resolved.get(code);
+        if (!account) {
+          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
         }
-        if (allocation.inssEmployer > 0) {
-          lines.push({
-            lineNumber: lineNumber++,
-            accountId: inssExpense.id,
-            accountCode: '5150',
-            accountName: inssExpense.name,
-            debit: allocation.inssEmployer,
-            credit: 0,
-            description: `INSS employer contribution (${allocation.projectCode} | ${allocation.fundingSource})`,
-            projectId: allocation.projectCode,
-            departmentId: allocation.fundingSource,
-          });
-          allocatedINSS = addMoney(allocatedINSS, allocation.inssEmployer);
-        }
-      }
-
-      const grossRemainder = subtractMoney(summary.totalGrossPay, allocatedGross);
-      if (grossRemainder < 0) {
-        throw new Error('Payroll allocations exceed total wages expense');
-      }
-      if (grossRemainder > 0) {
-        lines.push({
-          lineNumber: lineNumber++,
-          accountId: salaryAccount.id,
-          accountCode: '5110',
-          accountName: salaryAccount.name,
-          debit: grossRemainder,
-          credit: 0,
-          description: 'Gross salaries (Unassigned)',
-          projectId: 'Unassigned',
-          departmentId: 'Unassigned',
-        });
-      }
-
-      const inssRemainder = subtractMoney(summary.totalINSSEmployer, allocatedINSS);
-      if (inssRemainder < 0) {
-        throw new Error('Payroll allocations exceed total employer INSS expense');
-      }
-      if (inssRemainder > 0) {
-        lines.push({
-          lineNumber: lineNumber++,
-          accountId: inssExpense.id,
-          accountCode: '5150',
-          accountName: inssExpense.name,
-          debit: inssRemainder,
-          credit: 0,
-          description: 'INSS employer contribution (Unassigned)',
-          projectId: 'Unassigned',
-          departmentId: 'Unassigned',
-        });
-      }
-    } else {
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: salaryAccount.id,
-        accountCode: '5110',
-        accountName: salaryAccount.name,
-        debit: summary.totalGrossPay,
-        credit: 0,
-        description: 'Gross salaries',
-      });
-
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: inssExpense.id,
-        accountCode: '5150',
-        accountName: inssExpense.name,
-        debit: summary.totalINSSEmployer,
-        credit: 0,
-        description: 'INSS employer contribution (6%)',
-      });
-    }
-
-    const salariesPayable = await getAccountId('2210');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: salariesPayable.id,
-      accountCode: '2210',
-      accountName: salariesPayable.name,
-      debit: 0,
-      credit: summary.totalNetPay,
-      description: 'Net salaries payable',
-    });
-
-    const witPayable = await getAccountId('2220');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: witPayable.id,
-      accountCode: '2220',
-      accountName: witPayable.name,
-      debit: 0,
-      credit: summary.totalIncomeTax,
-      description: 'Withholding Income Tax (WIT)',
-    });
-
-    const inssEmployeePayable = await getAccountId('2230');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssEmployeePayable.id,
-      accountCode: '2230',
-      accountName: inssEmployeePayable.name,
-      debit: 0,
-      credit: summary.totalINSSEmployee,
-      description: 'INSS employee contribution (4%)',
-    });
-
-    const inssEmployerPayable = await getAccountId('2240');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssEmployerPayable.id,
-      accountCode: '2240',
-      accountName: inssEmployerPayable.name,
-      debit: 0,
-      credit: summary.totalINSSEmployer,
-      description: 'INSS employer contribution (6%)',
-    });
-
-    if ((summary.totalAdvanceRepayments || 0) > 0) {
-      const employeeAdvances = await getAccountId('1220');
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: employeeAdvances.id,
-        accountCode: '1220',
-        accountName: employeeAdvances.name,
-        debit: 0,
-        credit: summary.totalAdvanceRepayments || 0,
-        description: 'Employee loan and advance repayments',
-      });
-    }
-
-    if ((summary.totalOtherDeductions || 0) > 0) {
-      // Use the long-standing payroll-liabilities control account so existing
-      // tenants do not need a chart-of-accounts migration before approval.
-      const otherPayrollDeductions = await getAccountId('2200');
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: otherPayrollDeductions.id,
-        accountCode: '2200',
-        accountName: otherPayrollDeductions.name,
-        debit: 0,
-        credit: summary.totalOtherDeductions || 0,
-        description: 'Other payroll deductions payable',
-      });
-    }
-
-    // Drop zero-amount lines and renumber: a run can legitimately owe no WIT
-    // (every resident under the $500/month threshold — the common case for
-    // small TL employers) or no INSS (exempt payees), and the journal
-    // validator rejects any line carrying neither a debit nor a credit.
-    // Removing zero lines cannot unbalance the entry.
-    const journalLines = lines.filter(
-      (line) => (line.debit || 0) > 0 || (line.credit || 0) > 0,
+        return account;
+      },
     );
-    journalLines.forEach((line, index) => {
-      line.lineNumber = index + 1;
-    });
-
-    const totalDebit = sumMoney(journalLines.map((line) => line.debit));
-    const totalCredit = sumMoney(journalLines.map((line) => line.credit));
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,

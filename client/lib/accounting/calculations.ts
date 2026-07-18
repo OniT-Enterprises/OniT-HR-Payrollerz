@@ -177,6 +177,200 @@ export function normalizeJournalAmounts(
   return { lines: normalizedLines, totalDebit, totalCredit };
 }
 
+/** Summary a payroll run hands to accounting to post its journal. */
+export interface PayrollJournalSummary {
+  totalGrossPay: number;
+  totalINSSEmployer: number;
+  totalIncomeTax: number;
+  totalINSSEmployee: number;
+  totalNetPay: number;
+  totalAdvanceRepayments?: number;
+  totalOtherDeductions?: number;
+  allocations?: Array<{
+    projectCode: string;
+    fundingSource: string;
+    grossPay: number;
+    inssEmployer: number;
+  }>;
+}
+
+/** Resolves a chart-of-accounts code to its stored id and name. */
+export type AccountResolver = (code: string) => { id: string; name: string };
+
+/**
+ * The chart-of-accounts codes a payroll journal needs, given a summary.
+ * The four payable accounts are always required (their lines drop out later if
+ * the amount is zero); the two deduction control accounts only when used.
+ */
+export function payrollJournalAccountCodes(
+  summary: PayrollJournalSummary,
+): string[] {
+  const codes = ['5110', '5150', '2210', '2220', '2230', '2240'];
+  if ((summary.totalAdvanceRepayments || 0) > 0) codes.push('1220');
+  if ((summary.totalOtherDeductions || 0) > 0) codes.push('2200');
+  return codes;
+}
+
+/**
+ * Build the balanced double-entry lines for a payroll run — pure and
+ * synchronous so it can be verified without Firestore. Gross wages (5110) and
+ * employer INSS (5150) are debited (optionally split by project allocation);
+ * net pay (2210), WIT (2220), employee INSS (2230), employer INSS (2240), and
+ * any advance (1220) / other (2200) deductions are credited. Zero-amount lines
+ * are dropped and lines renumbered. The result always balances by
+ * construction: debits (gross + employer INSS) equal credits (net + WIT +
+ * employee INSS + employer INSS + advances + other).
+ */
+export function buildPayrollJournalLines(
+  summary: PayrollJournalSummary,
+  resolve: AccountResolver,
+): { lines: JournalEntryLine[]; totalDebit: number; totalCredit: number } {
+  const lines: JournalEntryLine[] = [];
+  let lineNumber = 1;
+
+  const salary = resolve('5110');
+  const inssExpense = resolve('5150');
+
+  const allocationRows = (summary.allocations ?? [])
+    .map((row) => ({
+      projectCode: row.projectCode?.trim() || 'Unassigned',
+      fundingSource: row.fundingSource?.trim() || 'Unassigned',
+      grossPay: addMoney(row.grossPay || 0),
+      inssEmployer: addMoney(row.inssEmployer || 0),
+    }))
+    .filter((row) => row.grossPay > 0 || row.inssEmployer > 0);
+
+  if (allocationRows.length > 0) {
+    let allocatedGross = 0;
+    let allocatedINSS = 0;
+    for (const allocation of allocationRows) {
+      if (allocation.grossPay > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: salary.id, accountCode: '5110', accountName: salary.name,
+          debit: allocation.grossPay, credit: 0,
+          description: `Gross salaries (${allocation.projectCode} | ${allocation.fundingSource})`,
+          projectId: allocation.projectCode, departmentId: allocation.fundingSource,
+        });
+        allocatedGross = addMoney(allocatedGross, allocation.grossPay);
+      }
+      if (allocation.inssEmployer > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: inssExpense.id, accountCode: '5150', accountName: inssExpense.name,
+          debit: allocation.inssEmployer, credit: 0,
+          description: `INSS employer contribution (${allocation.projectCode} | ${allocation.fundingSource})`,
+          projectId: allocation.projectCode, departmentId: allocation.fundingSource,
+        });
+        allocatedINSS = addMoney(allocatedINSS, allocation.inssEmployer);
+      }
+    }
+
+    const grossRemainder = subtractMoney(summary.totalGrossPay, allocatedGross);
+    if (grossRemainder < 0) {
+      throw new Error('Payroll allocations exceed total wages expense');
+    }
+    if (grossRemainder > 0) {
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: salary.id, accountCode: '5110', accountName: salary.name,
+        debit: grossRemainder, credit: 0,
+        description: 'Gross salaries (Unassigned)',
+        projectId: 'Unassigned', departmentId: 'Unassigned',
+      });
+    }
+
+    const inssRemainder = subtractMoney(summary.totalINSSEmployer, allocatedINSS);
+    if (inssRemainder < 0) {
+      throw new Error('Payroll allocations exceed total employer INSS expense');
+    }
+    if (inssRemainder > 0) {
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: inssExpense.id, accountCode: '5150', accountName: inssExpense.name,
+        debit: inssRemainder, credit: 0,
+        description: 'INSS employer contribution (Unassigned)',
+        projectId: 'Unassigned', departmentId: 'Unassigned',
+      });
+    }
+  } else {
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: salary.id, accountCode: '5110', accountName: salary.name,
+      debit: summary.totalGrossPay, credit: 0, description: 'Gross salaries',
+    });
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: inssExpense.id, accountCode: '5150', accountName: inssExpense.name,
+      debit: summary.totalINSSEmployer, credit: 0,
+      description: 'INSS employer contribution (6%)',
+    });
+  }
+
+  const salariesPayable = resolve('2210');
+  lines.push({
+    lineNumber: lineNumber++,
+    accountId: salariesPayable.id, accountCode: '2210', accountName: salariesPayable.name,
+    debit: 0, credit: summary.totalNetPay, description: 'Net salaries payable',
+  });
+
+  const witPayable = resolve('2220');
+  lines.push({
+    lineNumber: lineNumber++,
+    accountId: witPayable.id, accountCode: '2220', accountName: witPayable.name,
+    debit: 0, credit: summary.totalIncomeTax, description: 'Withholding Income Tax (WIT)',
+  });
+
+  const inssEmployeePayable = resolve('2230');
+  lines.push({
+    lineNumber: lineNumber++,
+    accountId: inssEmployeePayable.id, accountCode: '2230', accountName: inssEmployeePayable.name,
+    debit: 0, credit: summary.totalINSSEmployee, description: 'INSS employee contribution (4%)',
+  });
+
+  const inssEmployerPayable = resolve('2240');
+  lines.push({
+    lineNumber: lineNumber++,
+    accountId: inssEmployerPayable.id, accountCode: '2240', accountName: inssEmployerPayable.name,
+    debit: 0, credit: summary.totalINSSEmployer, description: 'INSS employer contribution (6%)',
+  });
+
+  if ((summary.totalAdvanceRepayments || 0) > 0) {
+    const advances = resolve('1220');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: advances.id, accountCode: '1220', accountName: advances.name,
+      debit: 0, credit: summary.totalAdvanceRepayments || 0,
+      description: 'Employee loan and advance repayments',
+    });
+  }
+
+  if ((summary.totalOtherDeductions || 0) > 0) {
+    const other = resolve('2200');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: other.id, accountCode: '2200', accountName: other.name,
+      debit: 0, credit: summary.totalOtherDeductions || 0,
+      description: 'Other payroll deductions payable',
+    });
+  }
+
+  // A run can legitimately owe no WIT (every resident under the $500/month
+  // threshold) or no INSS (exempt payees); the validator rejects a line with
+  // neither a debit nor a credit, so drop zero lines and renumber. Removing a
+  // zero line cannot unbalance the entry.
+  const journalLines = lines.filter(
+    (line) => (line.debit || 0) > 0 || (line.credit || 0) > 0,
+  );
+  journalLines.forEach((line, index) => { line.lineNumber = index + 1; });
+
+  return {
+    lines: journalLines,
+    totalDebit: sumMoney(journalLines.map((line) => line.debit)),
+    totalCredit: sumMoney(journalLines.map((line) => line.credit)),
+  };
+}
+
 /** Accumulate a signed account balance without floating-point drift. */
 export function addToMoneyMap(map: Map<string, number>, key: string, amount: number): void {
   map.set(key, addMoney(map.get(key) ?? 0, amount));
