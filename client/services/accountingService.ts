@@ -51,12 +51,16 @@ import {
 import { getTodayTL } from '@/lib/dateUtils';
 import {
   addToMoneyMap,
+  buildInvoiceJournalLines,
   buildPayrollJournalLines,
   calculateBillPaymentPostingAmounts,
+  deriveBalanceSheet,
+  deriveIncomeStatement,
   getAccountNet,
   getFiscalDateParts,
   normalizeJournalAmounts,
   payrollJournalAccountCodes,
+  type ReportAccount,
 } from '@/lib/accounting/calculations';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
@@ -1160,44 +1164,26 @@ class JournalEntryService {
     };
 
     const mapping = MONEY_JOURNAL_MAPPINGS.invoiceCreated;
-    const arAccount = await getAccountId(mapping.debit.code);
-    const revenueAccount = await getAccountId(mapping.credit.code);
-    const taxAmount = toMoney(toDecimal(invoice.taxAmount || 0));
-    const revenueAmount = subtractMoney(invoice.total, taxAmount);
-    const taxAccount = taxAmount > 0 ? await getAccountId('2310') : null;
-
-    const lines: JournalEntryLine[] = [
-      {
-        lineNumber: 1,
-        accountId: arAccount.id,
-        accountCode: mapping.debit.code,
-        accountName: arAccount.name,
-        debit: invoice.total,
-        credit: 0,
-        description: `AR - ${invoice.invoiceNumber}`,
-      },
-      {
-        lineNumber: 2,
-        accountId: revenueAccount.id,
-        accountCode: mapping.credit.code,
-        accountName: revenueAccount.name,
-        debit: 0,
-        credit: revenueAmount,
-        description: `Revenue - ${invoice.invoiceNumber}`,
-      },
-    ];
-
-    if (taxAccount && taxAmount > 0) {
-      lines.push({
-        lineNumber: 3,
-        accountId: taxAccount.id,
-        accountCode: '2310',
-        accountName: taxAccount.name,
-        debit: 0,
-        credit: taxAmount,
-        description: `Sales tax payable - ${invoice.invoiceNumber}`,
-      });
+    const codes = { receivable: mapping.debit.code, revenue: mapping.credit.code, tax: '2310' };
+    // Pre-resolve accounts (tax only when the invoice carries VAT), then hand
+    // the pure, unit-tested builder a synchronous resolver.
+    const resolved = new Map<string, { id: string; name: string }>();
+    resolved.set(codes.receivable, await getAccountId(codes.receivable));
+    resolved.set(codes.revenue, await getAccountId(codes.revenue));
+    if (toMoney(toDecimal(invoice.taxAmount || 0)) > 0) {
+      resolved.set(codes.tax, await getAccountId(codes.tax));
     }
+    const { lines, totalDebit, totalCredit } = buildInvoiceJournalLines(
+      { id: invoice.id, invoiceNumber: invoice.invoiceNumber, customerName: invoice.customerName, total: invoice.total, taxAmount: invoice.taxAmount },
+      (code) => {
+        const account = resolved.get(code);
+        if (!account) {
+          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        }
+        return account;
+      },
+      codes,
+    );
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,
@@ -1207,8 +1193,8 @@ class JournalEntryService {
       sourceId: invoice.id,
       sourceRef: invoice.invoiceNumber,
       lines,
-      totalDebit: invoice.total,
-      totalCredit: invoice.total,
+      totalDebit,
+      totalCredit,
       status: 'posted',
       postedAt: serverTimestamp(),
       postedBy: createdBy,
@@ -2215,43 +2201,11 @@ class TrialBalanceService {
       });
     }
 
-    const revenueItems: IncomeStatementRow[] = [];
-    const expenseItems: IncomeStatementRow[] = [];
-
-    for (const account of accounts) {
-      if (!account.isActive) continue;
-      if (account.type !== 'revenue' && account.type !== 'expense') continue;
-
-      const net = getAccountNet(balanceById, balanceByCode, account.id!, account.code);
-      if (toDecimal(net).abs().lessThan(0.01)) continue;
-
-      const effectiveAmount = account.type === 'revenue'
-        ? toMoney(toDecimal(net).negated())
-        : net;
-
-      const row: IncomeStatementRow = {
-        accountId: account.id!,
-        accountCode: account.code,
-        accountName: account.name,
-        accountType: account.type as 'revenue' | 'expense',
-        amount: effectiveAmount,
-        level: 0,
-        isTotal: false,
-      };
-
-      if (account.type === 'revenue') {
-        revenueItems.push(row);
-      } else {
-        expenseItems.push(row);
-      }
-    }
-
-    revenueItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
-    expenseItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
-
-    const totalRevenue = sumMoney(revenueItems.map(r => r.amount));
-    const totalExpenses = sumMoney(expenseItems.map(r => r.amount));
-    const netIncome = subtractMoney(totalRevenue, totalExpenses);
+    const { revenueItems, expenseItems, totalRevenue, totalExpenses, netIncome } =
+      deriveIncomeStatement(
+        accounts as ReportAccount[],
+        (account) => getAccountNet(balanceById, balanceByCode, account.id!, account.code),
+      );
 
     return {
       periodStart,
@@ -2309,74 +2263,15 @@ class TrialBalanceService {
       });
     }
 
-    const assetItems: BalanceSheetRow[] = [];
-    const liabilityItems: BalanceSheetRow[] = [];
-    const equityItems: BalanceSheetRow[] = [];
-    let currentYearRevenue = 0;
-    let currentYearExpenses = 0;
-
-    for (const account of accounts) {
-      if (!account.isActive) continue;
-
-      const net = getAccountNet(balanceById, balanceByCode, account.id!, account.code);
-
-      if (account.type === 'revenue' || account.type === 'expense') {
-        if (account.type === 'revenue') {
-          currentYearRevenue = addMoney(currentYearRevenue, toMoney(toDecimal(net).negated()));
-        } else {
-          currentYearExpenses = addMoney(currentYearExpenses, net);
-        }
-        continue;
-      }
-
-      if (toDecimal(net).abs().lessThan(0.01)) continue;
-
-      const displayAmount = (account.type === 'liability' || account.type === 'equity')
-        ? toMoney(toDecimal(net).negated())
-        : net;
-
-      const row: BalanceSheetRow = {
-        accountId: account.id!,
-        accountCode: account.code,
-        accountName: account.name,
-        accountType: account.type as 'asset' | 'liability' | 'equity',
-        amount: displayAmount,
-        level: 0,
-        isTotal: false,
-      };
-
-      if (account.type === 'asset') assetItems.push(row);
-      else if (account.type === 'liability') liabilityItems.push(row);
-      else if (account.type === 'equity') equityItems.push(row);
-    }
-
-    const currentYearEarnings = subtractMoney(currentYearRevenue, currentYearExpenses);
-    if (toDecimal(currentYearEarnings).abs().greaterThanOrEqualTo(0.01)) {
-      equityItems.push({
-        accountId: '__current_year_earnings__',
-        accountCode: '',
-        // Cumulative since inception — the system has no year-end close, so
-        // this line is retained + current-year earnings combined.
-        accountName: 'Accumulated Earnings',
-        accountType: 'equity',
-        amount: currentYearEarnings,
-        level: 0,
-        isTotal: false,
-      });
-    }
-
-    assetItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
-    liabilityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
-    equityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
-
-    const totalAssets = sumMoney(assetItems.map(r => r.amount));
-    const totalLiabilities = sumMoney(liabilityItems.map(r => r.amount));
-    const totalEquity = sumMoney(equityItems.map(r => r.amount));
-
-    const isBalanced = toDecimal(totalAssets)
-      .minus(addMoney(totalLiabilities, totalEquity))
-      .abs()
-      .lessThan(0.01);
+    const {
+      assetItems, totalAssets,
+      liabilityItems, totalLiabilities,
+      equityItems, totalEquity,
+      isBalanced,
+    } = deriveBalanceSheet(
+      accounts as ReportAccount[],
+      (account) => getAccountNet(balanceById, balanceByCode, account.id!, account.code),
+    );
 
     return {
       asOfDate,

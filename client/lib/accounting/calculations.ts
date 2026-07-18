@@ -371,6 +371,232 @@ export function buildPayrollJournalLines(
   };
 }
 
+/** Minimal invoice shape the journal builder needs. */
+export interface InvoiceJournalInput {
+  id?: string;
+  invoiceNumber: string;
+  customerName?: string;
+  total: number;
+  taxAmount?: number;
+}
+
+/**
+ * Build the balanced journal for a sent invoice — pure and Firestore-free.
+ * Debit trade receivables for the full total; credit revenue for the net and
+ * VAT payable for the tax portion. Balances by construction: revenue + tax
+ * always sum to the invoice total. Codes mirror MONEY_JOURNAL_MAPPINGS so the
+ * service stays the single source of account codes.
+ */
+export function buildInvoiceJournalLines(
+  invoice: InvoiceJournalInput,
+  resolve: AccountResolver,
+  codes: { receivable: string; revenue: string; tax: string },
+): { lines: JournalEntryLine[]; totalDebit: number; totalCredit: number } {
+  const taxAmount = roundMoney(invoice.taxAmount || 0);
+  const revenueAmount = subtractMoney(invoice.total, taxAmount);
+  const ar = resolve(codes.receivable);
+  const revenue = resolve(codes.revenue);
+
+  const lines: JournalEntryLine[] = [
+    {
+      lineNumber: 1,
+      accountId: ar.id, accountCode: codes.receivable, accountName: ar.name,
+      debit: invoice.total, credit: 0,
+      description: `AR - ${invoice.invoiceNumber}`,
+    },
+    {
+      lineNumber: 2,
+      accountId: revenue.id, accountCode: codes.revenue, accountName: revenue.name,
+      debit: 0, credit: revenueAmount,
+      description: `Revenue - ${invoice.invoiceNumber}`,
+    },
+  ];
+
+  if (taxAmount > 0) {
+    const tax = resolve(codes.tax);
+    lines.push({
+      lineNumber: 3,
+      accountId: tax.id, accountCode: codes.tax, accountName: tax.name,
+      debit: 0, credit: taxAmount,
+      description: `Sales tax payable - ${invoice.invoiceNumber}`,
+    });
+  }
+
+  return {
+    lines,
+    totalDebit: sumMoney(lines.map((l) => l.debit)),
+    totalCredit: sumMoney(lines.map((l) => l.credit)),
+  };
+}
+
+/** Account fields the financial-report derivations read. */
+export interface ReportAccount {
+  id?: string;
+  code: string;
+  name: string;
+  type: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense';
+  isActive?: boolean;
+}
+
+interface StatementRow {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: 'revenue' | 'expense';
+  amount: number;
+  level: number;
+  isTotal: boolean;
+}
+
+/**
+ * Derive an income statement from account net balances (debit − credit) — the
+ * pure core of the report, so it can be verified without Firestore. Revenue is
+ * credit-normal (its net is negative) and shown as a positive amount; expenses
+ * are debit-normal. Net income = total revenue − total expenses.
+ */
+export function deriveIncomeStatement(
+  accounts: ReportAccount[],
+  netOf: (account: ReportAccount) => number,
+): {
+  revenueItems: StatementRow[];
+  totalRevenue: number;
+  expenseItems: StatementRow[];
+  totalExpenses: number;
+  netIncome: number;
+} {
+  const revenueItems: StatementRow[] = [];
+  const expenseItems: StatementRow[] = [];
+
+  for (const account of accounts) {
+    if (account.isActive === false) continue;
+    if (account.type !== 'revenue' && account.type !== 'expense') continue;
+    const net = netOf(account);
+    if (Math.abs(net) < 0.01) continue;
+    const amount = account.type === 'revenue' ? roundMoney(-net) : net;
+    const row: StatementRow = {
+      accountId: account.id ?? '',
+      accountCode: account.code,
+      accountName: account.name,
+      accountType: account.type,
+      amount,
+      level: 0,
+      isTotal: false,
+    };
+    (account.type === 'revenue' ? revenueItems : expenseItems).push(row);
+  }
+
+  revenueItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+  expenseItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+  const totalRevenue = sumMoney(revenueItems.map((r) => r.amount));
+  const totalExpenses = sumMoney(expenseItems.map((r) => r.amount));
+
+  return {
+    revenueItems,
+    totalRevenue,
+    expenseItems,
+    totalExpenses,
+    netIncome: subtractMoney(totalRevenue, totalExpenses),
+  };
+}
+
+interface SheetRow {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: 'asset' | 'liability' | 'equity';
+  amount: number;
+  level: number;
+  isTotal: boolean;
+}
+
+/**
+ * Derive a balance sheet from account net balances — pure core. Assets are
+ * debit-normal; liabilities and equity are credit-normal (shown positive).
+ * Revenue and expense net into a single "Accumulated Earnings" equity line
+ * (the system has no year-end close). isBalanced asserts the fundamental
+ * identity: assets = liabilities + equity.
+ */
+export function deriveBalanceSheet(
+  accounts: ReportAccount[],
+  netOf: (account: ReportAccount) => number,
+): {
+  assetItems: SheetRow[];
+  totalAssets: number;
+  liabilityItems: SheetRow[];
+  totalLiabilities: number;
+  equityItems: SheetRow[];
+  totalEquity: number;
+  isBalanced: boolean;
+} {
+  const assetItems: SheetRow[] = [];
+  const liabilityItems: SheetRow[] = [];
+  const equityItems: SheetRow[] = [];
+  let currentYearRevenue = 0;
+  let currentYearExpenses = 0;
+
+  for (const account of accounts) {
+    if (account.isActive === false) continue;
+    const net = netOf(account);
+
+    if (account.type === 'revenue' || account.type === 'expense') {
+      if (account.type === 'revenue') {
+        currentYearRevenue = addMoney(currentYearRevenue, roundMoney(-net));
+      } else {
+        currentYearExpenses = addMoney(currentYearExpenses, net);
+      }
+      continue;
+    }
+
+    if (Math.abs(net) < 0.01) continue;
+    const amount = account.type === 'liability' || account.type === 'equity'
+      ? roundMoney(-net)
+      : net;
+    const row: SheetRow = {
+      accountId: account.id ?? '',
+      accountCode: account.code,
+      accountName: account.name,
+      accountType: account.type,
+      amount,
+      level: 0,
+      isTotal: false,
+    };
+    if (account.type === 'asset') assetItems.push(row);
+    else if (account.type === 'liability') liabilityItems.push(row);
+    else equityItems.push(row);
+  }
+
+  const currentYearEarnings = subtractMoney(currentYearRevenue, currentYearExpenses);
+  if (Math.abs(currentYearEarnings) >= 0.01) {
+    equityItems.push({
+      accountId: '__current_year_earnings__',
+      accountCode: '',
+      accountName: 'Accumulated Earnings',
+      accountType: 'equity',
+      amount: currentYearEarnings,
+      level: 0,
+      isTotal: false,
+    });
+  }
+
+  assetItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+  liabilityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+  equityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+  const totalAssets = sumMoney(assetItems.map((r) => r.amount));
+  const totalLiabilities = sumMoney(liabilityItems.map((r) => r.amount));
+  const totalEquity = sumMoney(equityItems.map((r) => r.amount));
+
+  return {
+    assetItems,
+    totalAssets,
+    liabilityItems,
+    totalLiabilities,
+    equityItems,
+    totalEquity,
+    isBalanced: Math.abs(subtractMoney(totalAssets, addMoney(totalLiabilities, totalEquity))) < 0.01,
+  };
+}
+
 /** Accumulate a signed account balance without floating-point drift. */
 export function addToMoneyMap(map: Map<string, number>, key: string, amount: number): void {
   map.set(key, addMoney(map.get(key) ?? 0, amount));
