@@ -2853,7 +2853,7 @@ const messages = {
         "title": "Importa dadus prezensa",
         "description": "Importa registu husi dispozitivu biometriku ka CSV",
         "selectFile": "Hili ficheiru",
-        "format": "Koluna CSV ka XLSX: employee_id, date, clock_in, clock_out",
+        "format": "CSV ka XLSX — formatu naran de'it serve; XefeBot bele lee fixeiru la organizadu",
         "importing": "Importa hela..."
       },
       "mark": {
@@ -2936,6 +2936,8 @@ const messages = {
         "importSelect": "Favor hili ficheiru atu importa.",
         "importErrorTitle": "Erru importa",
         "importEmpty": "Laiha registu validu.",
+        "importAiTitle": "XefeBot lee ona ita-nia fixeiru",
+        "importAiDesc": "Formatu la hanesan, entaun XefeBot normaliza — rekoñese registu {{count}}.",
         "importCompleteTitle": "Importa remata",
         "importCompleteDesc": "{{success}} registu importa, {{duplicates}} duplicadu toba, {{errors}} erru.",
         "importFailed": "Falha importa dadus prezensa."
@@ -5979,7 +5981,10 @@ const messages = {
       "reading": "XefeBot lee hela ita-nia fixeiru…",
       "filled": "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
       "failed": "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
-      "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor."
+      "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
+      "addVendor": "Aumenta \"{{name}}\"",
+      "vendorAdded": "Fornesedor \"{{name}}\" aumenta ona",
+      "vendorAddFailed": "La konsege aumenta fornesedor",
     },
     "expenses": {
       "title": "Despeza",
@@ -6152,7 +6157,7 @@ const messages = {
       "invalidFiles": "Fixeiru balun la simu",
       "dropzoneHint": "Arrasta no soe fixeiru fatura iha ne'e, ka klik atu buka",
       "dropzoneFormats": "PDF ka foto, to'o 10MB ida-idak",
-      "dropStrip": "Arrasta no soe fixeiru fatura iha ne'e (PDF ka foto), ka klik atu buka",
+      "dropStrip": "Arrasta fatura ida mai iha ne'e (PDF ka foto) — XefeBot sei prenxe detallu sira",
       "dropStripHint": "— funsiona ho pasta Google Drive & OneDrive",
       "dropOverlayTitle": "Soe atu tau fatura",
       "dropOverlayHint": "PDF ka foto — formuláriu lalais sei loke",

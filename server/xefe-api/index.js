@@ -5238,6 +5238,43 @@ app.post('/api/tenants/:tenantId/ai/extract-document', extractLimiter, authentic
 });
 
 // ============================================================================
+// POST /api/tenants/:tenantId/ai/extract-table — messy spreadsheet normalization
+// ============================================================================
+// Takes raw table text (CSV/TSV from any device export or hand-made sheet) and
+// returns rows normalized into a fixed schema (kind: 'attendance'). The model
+// only reformats; matching rows to real records stays in the client.
+
+app.post('/api/tenants/:tenantId/ai/extract-table', extractLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, async (req, res) => {
+  const requestId = genId();
+  const { role, canWrite, isSuperAdmin } = req.tenantAccess || {};
+  if (!canWrite && role !== 'accountant' && role !== 'manager' && !isSuperAdmin) {
+    return res.status(403).json({ success: false, message: 'Not allowed to import records', requestId });
+  }
+
+  const { tableText, kind } = req.body || {};
+  if (kind !== 'attendance') {
+    return res.status(400).json({ success: false, message: 'Unsupported kind', requestId });
+  }
+  if (typeof tableText !== 'string' || tableText.trim().length === 0) {
+    return res.status(400).json({ success: false, message: 'tableText is required', requestId });
+  }
+  if (tableText.length > 300_000) {
+    return res.status(400).json({ success: false, message: 'File too large — split it into smaller imports', requestId });
+  }
+
+  req.setTimeout(150000);
+  try {
+    const { extractTableRows } = require('./extract');
+    const rows = await extractTableRows(tableText, kind);
+    console.log(`[extract-table] ${requestId} tenant=${req.params.tenantId} kind=${kind} rows=${rows.length}`);
+    return res.json({ success: true, rows, requestId });
+  } catch (error) {
+    console.error(`[extract-table] ${requestId} failed:`, error.message);
+    return res.status(502).json({ success: false, message: 'Could not read the spreadsheet', requestId });
+  }
+});
+
+// ============================================================================
 // POST /api/tenants/:tenantId/ai/compose — one-shot text generation via OpenClaw
 // ============================================================================
 // Single-turn, no session memory, no tools. Used for "Write with AI" style

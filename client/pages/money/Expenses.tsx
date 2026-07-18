@@ -301,6 +301,36 @@ export default function Expenses() {
     }
   }, [aiVendorName, vendors, formData.vendorId]);
 
+  const [addingVendor, setAddingVendor] = useState(false);
+  const handleAddExtractedVendor = async () => {
+    if (!aiVendorName || addingVendor || !canManageTenant) return;
+    setAddingVendor(true);
+    try {
+      const { vendorService } = await import('@/services/vendorService');
+      const { vendorKeys } = await import('@/hooks/useVendors');
+      const newVendorId = await vendorService.createVendor(tenantId, {
+        name: aiVendorName,
+        type: 'business',
+      });
+      await queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
+      setFormData((prev) => ({ ...prev, vendorId: newVendorId }));
+      setAiVendorName(null);
+      toast({
+        title: t('common.success') || 'Success',
+        description: (t('money.ai.vendorAdded') || 'Vendor "{{name}}" added').replace('{{name}}', aiVendorName),
+      });
+    } catch (error) {
+      console.error('Error creating vendor from extraction:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.ai.vendorAddFailed') || 'Could not add the vendor',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingVendor(false);
+    }
+  };
+
   const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
   const handlePageDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     if (!isFileDrag(e)) return;
@@ -948,6 +978,26 @@ export default function Expenses() {
                   ))}
                 </SelectContent>
               </Select>
+              {!editingExpense && aiVendorName && !formData.vendorId && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 p-2 pl-3">
+                  <p className="text-xs text-muted-foreground">
+                    {(t('money.ai.vendorOnFile') || 'On the document: {{name}} \u2014 not in your vendor list yet.').replace(
+                      '{{name}}',
+                      aiVendorName,
+                    )}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={saving || addingVendor}
+                    onClick={() => void handleAddExtractedVendor()}
+                  >
+                    {addingVendor && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                    {(t('money.ai.addVendor') || 'Add "{{name}}"').replace('{{name}}', aiVendorName)}
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

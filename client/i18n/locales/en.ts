@@ -2853,7 +2853,7 @@ const messages = {
         "title": "Import Attendance Data",
         "description": "Import attendance records from fingerprint device or CSV file",
         "selectFile": "Select File",
-        "format": "CSV or XLSX columns: employee_id, date, clock_in, clock_out",
+        "format": "CSV or XLSX — any layout works; XefeBot reads messy files too",
         "importing": "Importing..."
       },
       "mark": {
@@ -2936,6 +2936,8 @@ const messages = {
         "importSelect": "Please select a file to import.",
         "importErrorTitle": "Import Error",
         "importEmpty": "No valid records found in the file.",
+        "importAiTitle": "XefeBot read your file",
+        "importAiDesc": "The layout didn't match, so XefeBot normalized it — {{count}} record(s) recognized.",
         "importCompleteTitle": "Import Complete",
         "importCompleteDesc": "{{success}} records imported, {{duplicates}} duplicates skipped, {{errors}} errors.",
         "importFailed": "Failed to import attendance data."
@@ -5979,7 +5981,10 @@ const messages = {
       "reading": "XefeBot is reading your file…",
       "filled": "XefeBot filled in the details from your file — check them before saving.",
       "failed": "XefeBot couldn't read this file — fill in the details manually.",
-      "vendorOnFile": "On the document: {{name}} — not in your vendor list yet."
+      "vendorOnFile": "On the document: {{name}} — not in your vendor list yet.",
+      "addVendor": "Add \"{{name}}\"",
+      "vendorAdded": "Vendor \"{{name}}\" added",
+      "vendorAddFailed": "Could not add the vendor",
     },
     "expenses": {
       "title": "Expenses",
@@ -6152,7 +6157,7 @@ const messages = {
       "invalidFiles": "Some files were skipped",
       "dropzoneHint": "Drag & drop bill files here, or click to browse",
       "dropzoneFormats": "PDF or photo, up to 10MB each",
-      "dropStrip": "Drag & drop bill files here (PDF or photo), or click to browse",
+      "dropStrip": "Drag & drop a bill here (PDF or photo) — XefeBot fills in the details",
       "dropStripHint": "— works with Google Drive & OneDrive folders",
       "dropOverlayTitle": "Drop to add a bill",
       "dropOverlayHint": "PDF or photo — a quick form will open",

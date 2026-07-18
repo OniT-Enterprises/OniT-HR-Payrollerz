@@ -2857,7 +2857,7 @@ export const translations = {
           "title": "Import Attendance Data",
           "description": "Import attendance records from fingerprint device or CSV file",
           "selectFile": "Select File",
-          "format": "CSV or XLSX columns: employee_id, date, clock_in, clock_out",
+          "format": "CSV or XLSX — any layout works; XefeBot reads messy files too",
           "importing": "Importing..."
         },
         "mark": {
@@ -2940,6 +2940,8 @@ export const translations = {
           "importSelect": "Please select a file to import.",
           "importErrorTitle": "Import Error",
           "importEmpty": "No valid records found in the file.",
+          "importAiTitle": "XefeBot read your file",
+          "importAiDesc": "The layout didn't match, so XefeBot normalized it — {{count}} record(s) recognized.",
           "importCompleteTitle": "Import Complete",
           "importCompleteDesc": "{{success}} records imported, {{duplicates}} duplicates skipped, {{errors}} errors.",
           "importFailed": "Failed to import attendance data."
@@ -5983,7 +5985,10 @@ export const translations = {
         "reading": "XefeBot is reading your file…",
         "filled": "XefeBot filled in the details from your file — check them before saving.",
         "failed": "XefeBot couldn't read this file — fill in the details manually.",
-        "vendorOnFile": "On the document: {{name}} — not in your vendor list yet."
+        "vendorOnFile": "On the document: {{name}} — not in your vendor list yet.",
+        "addVendor": "Add \"{{name}}\"",
+        "vendorAdded": "Vendor \"{{name}}\" added",
+        "vendorAddFailed": "Could not add the vendor"
       },
       "expenses": {
         "title": "Expenses",
@@ -6156,7 +6161,7 @@ export const translations = {
         "invalidFiles": "Some files were skipped",
         "dropzoneHint": "Drag & drop bill files here, or click to browse",
         "dropzoneFormats": "PDF or photo, up to 10MB each",
-        "dropStrip": "Drag & drop bill files here (PDF or photo), or click to browse",
+        "dropStrip": "Drag & drop a bill here (PDF or photo) — XefeBot fills in the details",
         "dropStripHint": "— works with Google Drive & OneDrive folders",
         "dropOverlayTitle": "Drop to add a bill",
         "dropOverlayHint": "PDF or photo — a quick form will open",
@@ -10220,7 +10225,7 @@ export const translations = {
           "title": "Importa dadus prezensa",
           "description": "Importa registu husi dispozitivu biometriku ka CSV",
           "selectFile": "Hili ficheiru",
-          "format": "Koluna CSV ka XLSX: employee_id, date, clock_in, clock_out",
+          "format": "CSV ka XLSX — formatu naran de'it serve; XefeBot bele lee fixeiru la organizadu",
           "importing": "Importa hela..."
         },
         "mark": {
@@ -10303,6 +10308,8 @@ export const translations = {
           "importSelect": "Favor hili ficheiru atu importa.",
           "importErrorTitle": "Erru importa",
           "importEmpty": "Laiha registu validu.",
+          "importAiTitle": "XefeBot lee ona ita-nia fixeiru",
+          "importAiDesc": "Formatu la hanesan, entaun XefeBot normaliza — rekoñese registu {{count}}.",
           "importCompleteTitle": "Importa remata",
           "importCompleteDesc": "{{success}} registu importa, {{duplicates}} duplicadu toba, {{errors}} erru.",
           "importFailed": "Falha importa dadus prezensa."
@@ -13346,7 +13353,10 @@ export const translations = {
         "reading": "XefeBot lee hela ita-nia fixeiru…",
         "filled": "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
         "failed": "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
-        "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor."
+        "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
+        "addVendor": "Aumenta \"{{name}}\"",
+        "vendorAdded": "Fornesedor \"{{name}}\" aumenta ona",
+        "vendorAddFailed": "La konsege aumenta fornesedor"
       },
       "expenses": {
         "title": "Despeza",
@@ -13519,7 +13529,7 @@ export const translations = {
         "invalidFiles": "Fixeiru balun la simu",
         "dropzoneHint": "Arrasta no soe fixeiru fatura iha ne'e, ka klik atu buka",
         "dropzoneFormats": "PDF ka foto, to'o 10MB ida-idak",
-        "dropStrip": "Arrasta no soe fixeiru fatura iha ne'e (PDF ka foto), ka klik atu buka",
+        "dropStrip": "Arrasta fatura ida mai iha ne'e (PDF ka foto) — XefeBot sei prenxe detallu sira",
         "dropStripHint": "— funsiona ho pasta Google Drive & OneDrive",
         "dropOverlayTitle": "Soe atu tau fatura",
         "dropOverlayHint": "PDF ka foto — formuláriu lalais sei loke",
@@ -17583,7 +17593,7 @@ export const translations = {
           "title": "Importar Dados de Assiduidade",
           "description": "Importar registos de assiduidade de dispositivo biométrico ou ficheiro CSV",
           "selectFile": "Selecionar Ficheiro",
-          "format": "Colunas CSV ou XLSX: id_funcionario, data, entrada, saida",
+          "format": "CSV ou XLSX — qualquer formato serve; o XefeBot lê ficheiros desorganizados",
           "importing": "A importar..."
         },
         "mark": {
@@ -17666,6 +17676,8 @@ export const translations = {
           "importSelect": "Por favor selecione um ficheiro para importar.",
           "importErrorTitle": "Erro de Importação",
           "importEmpty": "Nenhum registo válido encontrado no ficheiro.",
+          "importAiTitle": "O XefeBot leu o seu ficheiro",
+          "importAiDesc": "O formato não correspondia, por isso o XefeBot normalizou-o — {{count}} registo(s) reconhecido(s).",
           "importCompleteTitle": "Importação Concluída",
           "importCompleteDesc": "{{success}} registos importados, {{duplicates}} duplicados ignorados, {{errors}} erros.",
           "importFailed": "Falha ao importar dados de assiduidade."
@@ -20709,7 +20721,10 @@ export const translations = {
         "reading": "O XefeBot está a ler o seu ficheiro…",
         "filled": "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
         "failed": "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
-        "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores."
+        "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
+        "addVendor": "Adicionar \"{{name}}\"",
+        "vendorAdded": "Fornecedor \"{{name}}\" adicionado",
+        "vendorAddFailed": "Não foi possível adicionar o fornecedor"
       },
       "expenses": {
         "title": "Despesas",
@@ -20882,7 +20897,7 @@ export const translations = {
         "invalidFiles": "Alguns ficheiros foram ignorados",
         "dropzoneHint": "Arraste e largue ficheiros da conta aqui, ou clique para procurar",
         "dropzoneFormats": "PDF ou foto, até 10MB cada",
-        "dropStrip": "Arraste e largue ficheiros da conta aqui (PDF ou foto), ou clique para procurar",
+        "dropStrip": "Arraste uma fatura para aqui (PDF ou foto) — o XefeBot preenche os detalhes",
         "dropStripHint": "— funciona com pastas do Google Drive e OneDrive",
         "dropOverlayTitle": "Largue para adicionar uma conta",
         "dropOverlayHint": "PDF ou foto — abrirá um formulário rápido",

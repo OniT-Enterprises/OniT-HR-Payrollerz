@@ -185,4 +185,141 @@ async function extractDocumentFields(filePath, kind) {
   throw lastError ?? new Error('Extraction produced no response');
 }
 
-module.exports = { extractDocumentFields };
+// ── Messy-table normalization ────────────────────────────────────────────
+// Turns an arbitrary spreadsheet/CSV export (fingerprint devices, hand-made
+// sheets, any column names/date formats) into rows of a fixed schema. The
+// model only NORMALIZES formatting — matching rows to real employee records
+// stays deterministic in the client.
+
+const TABLE_KINDS = {
+  attendance: {
+    maxRows: 1000,
+    prompt: (tableText, todayIso) => [
+      'Below is a raw spreadsheet export of employee attendance / clock times from a',
+      'Timor-Leste small business (any layout, any language, possibly extra header or',
+      'summary rows, dates in any format, times in any format).',
+      '',
+      'Normalize it and reply with ONLY a JSON array. One object per attendance row:',
+      '[{',
+      '  "employee": string,        // the employee identifier or full name EXACTLY as written in the sheet',
+      '  "date": "YYYY-MM-DD",',
+      '  "clockIn": "HH:MM",        // 24-hour',
+      '  "clockOut": "HH:MM" | null',
+      '}]',
+      '',
+      'Rules:',
+      '- Skip summary/total/blank rows and rows without a usable date or clock-in time.',
+      `- Today is ${todayIso}; DD/MM/YYYY is the local date convention.`,
+      '- Convert AM/PM and decimal times ("7.30am", "17h05") to 24-hour HH:MM.',
+      '- If one row holds multiple punches, first punch = clockIn, last = clockOut.',
+      '- Do not invent rows or values. Reply with [] if nothing usable.',
+      '',
+      '--- SPREADSHEET START ---',
+      tableText,
+      '--- SPREADSHEET END ---',
+    ].join('\n'),
+    sanitizeRow: (row) => {
+      const employee = typeof row.employee === 'string' ? row.employee.trim().slice(0, 120) : '';
+      const date = typeof row.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.date) ? row.date : '';
+      const time = (v) => {
+        if (typeof v !== 'string') return '';
+        const m = v.trim().match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return '';
+        const h = Math.min(23, parseInt(m[1], 10));
+        return `${String(h).padStart(2, '0')}:${m[2]}`;
+      };
+      const clockIn = time(row.clockIn);
+      if (!employee || !date || !clockIn) return null;
+      return { employee, date, clockIn, clockOut: time(row.clockOut) || null };
+    },
+  },
+};
+
+function parseJsonArrayReply(text) {
+  const trimmed = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  const start = trimmed.indexOf('[');
+  const end = trimmed.lastIndexOf(']');
+  if (start === -1 || end <= start) throw new Error('No JSON array in model reply');
+  const parsed = JSON.parse(trimmed.slice(start, end + 1));
+  if (!Array.isArray(parsed)) throw new Error('Model reply is not an array');
+  return parsed;
+}
+
+async function runTextOnce(prompt, token) {
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), TIMEOUT_MS);
+  const options = {
+    model: EXTRACT_MODEL,
+    maxTurns: 1,
+    systemPrompt: SYSTEM_PROMPT,
+    allowedTools: [],
+    disallowedTools: [...BUILTIN_DENY, 'Read'],
+    permissionMode: 'dontAsk',
+    settingSources: [],
+    abortController,
+    env: envWithToken(token),
+    ...(process.env.CLAUDE_CODE_EXECUTABLE
+      ? { pathToClaudeCodeExecutable: process.env.CLAUDE_CODE_EXECUTABLE }
+      : {}),
+  };
+  const query = await loadQuery();
+  try {
+    for await (const message of query({ prompt, options })) {
+      if (message.type === 'result') {
+        if (message.subtype === 'success') {
+          const usage = message.usage;
+          console.log(
+            `[extract-table] ok model=${EXTRACT_MODEL} in=${usage?.input_tokens ?? 0} out=${usage?.output_tokens ?? 0} ` +
+            `dur=${Math.round((message.duration_ms ?? 0) / 1000)}s`,
+          );
+          return typeof message.result === 'string' ? message.result : '';
+        }
+        throw new Error((message.errors ?? []).join('; ') || message.subtype);
+      }
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+  return '';
+}
+
+/**
+ * Normalize a messy spreadsheet/CSV text into rows of a fixed schema.
+ * @param {string} tableText raw table text (CSV or TSV), capped by the route
+ * @param {'attendance'} kind which schema to normalize into
+ */
+async function extractTableRows(tableText, kind) {
+  const spec = TABLE_KINDS[kind];
+  if (!spec) throw new Error(`Unknown table kind: ${kind}`);
+
+  const tokens = resolveOauthTokens();
+  if (tokens.length === 0) {
+    throw new Error('CLAUDE_CODE_OAUTH_TOKEN is not configured on the server');
+  }
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const prompt = spec.prompt(tableText, todayIso);
+
+  let lastError = null;
+  for (let i = 0; i < tokens.length; i++) {
+    const isLast = i === tokens.length - 1;
+    try {
+      const text = await runTextOnce(prompt, tokens[i]);
+      if (text) {
+        const rows = parseJsonArrayReply(text)
+          .slice(0, spec.maxRows)
+          .map((row) => spec.sanitizeRow(row))
+          .filter(Boolean);
+        return rows;
+      }
+      if (isLast) throw new Error('Model returned empty output from all accounts (usage limit?)');
+      console.warn(`[extract-table] account ${i + 1}/${tokens.length} returned empty output; failing over`);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (isLast) throw lastError;
+      console.warn(`[extract-table] account ${i + 1}/${tokens.length} failed (${lastError.message}); failing over`);
+    }
+  }
+  throw lastError ?? new Error('Table extraction produced no response');
+}
+
+module.exports = { extractDocumentFields, extractTableRows };

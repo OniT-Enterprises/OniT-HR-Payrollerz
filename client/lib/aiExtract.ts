@@ -50,6 +50,50 @@ export function canExtractFile(file: File): boolean {
   return EXTRACT_MIME_TYPES.includes(file.type) && file.size <= 10 * 1024 * 1024;
 }
 
+export interface ExtractedAttendanceRow {
+  employee: string;
+  date: string;
+  clockIn: string;
+  clockOut: string | null;
+}
+
+/**
+ * Normalize a messy spreadsheet (any columns/date/time formats) into rows of
+ * a fixed schema server-side. Used as a fallback when strict parsing of an
+ * import file finds nothing usable.
+ */
+export async function extractTable(
+  tableText: string,
+  tenantId: string,
+  kind: "attendance",
+): Promise<ExtractedAttendanceRow[]> {
+  const user = auth?.currentUser;
+  if (!user) throw new Error("Not signed in");
+  const token = await user.getIdToken();
+
+  const res = await fetch(
+    `${API_BASE}/api/tenants/${tenantId}/ai/extract-table`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ tableText: tableText.slice(0, 300_000), kind }),
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Extraction failed (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  if (!data?.success || !Array.isArray(data.rows)) {
+    throw new Error("Extraction returned no rows");
+  }
+  return data.rows as ExtractedAttendanceRow[];
+}
+
 export async function extractDocument(
   file: File,
   tenantId: string,

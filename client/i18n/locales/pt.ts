@@ -2853,7 +2853,7 @@ const messages = {
         "title": "Importar Dados de Assiduidade",
         "description": "Importar registos de assiduidade de dispositivo biométrico ou ficheiro CSV",
         "selectFile": "Selecionar Ficheiro",
-        "format": "Colunas CSV ou XLSX: id_funcionario, data, entrada, saida",
+        "format": "CSV ou XLSX — qualquer formato serve; o XefeBot lê ficheiros desorganizados",
         "importing": "A importar..."
       },
       "mark": {
@@ -2936,6 +2936,8 @@ const messages = {
         "importSelect": "Por favor selecione um ficheiro para importar.",
         "importErrorTitle": "Erro de Importação",
         "importEmpty": "Nenhum registo válido encontrado no ficheiro.",
+        "importAiTitle": "O XefeBot leu o seu ficheiro",
+        "importAiDesc": "O formato não correspondia, por isso o XefeBot normalizou-o — {{count}} registo(s) reconhecido(s).",
         "importCompleteTitle": "Importação Concluída",
         "importCompleteDesc": "{{success}} registos importados, {{duplicates}} duplicados ignorados, {{errors}} erros.",
         "importFailed": "Falha ao importar dados de assiduidade."
@@ -5979,7 +5981,10 @@ const messages = {
       "reading": "O XefeBot está a ler o seu ficheiro…",
       "filled": "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
       "failed": "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
-      "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores."
+      "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
+      "addVendor": "Adicionar \"{{name}}\"",
+      "vendorAdded": "Fornecedor \"{{name}}\" adicionado",
+      "vendorAddFailed": "Não foi possível adicionar o fornecedor",
     },
     "expenses": {
       "title": "Despesas",
@@ -6152,7 +6157,7 @@ const messages = {
       "invalidFiles": "Alguns ficheiros foram ignorados",
       "dropzoneHint": "Arraste e largue ficheiros da conta aqui, ou clique para procurar",
       "dropzoneFormats": "PDF ou foto, até 10MB cada",
-      "dropStrip": "Arraste e largue ficheiros da conta aqui (PDF ou foto), ou clique para procurar",
+      "dropStrip": "Arraste uma fatura para aqui (PDF ou foto) — o XefeBot preenche os detalhes",
       "dropStripHint": "— funciona com pastas do Google Drive e OneDrive",
       "dropOverlayTitle": "Largue para adicionar uma conta",
       "dropOverlayHint": "PDF ou foto — abrirá um formulário rápido",

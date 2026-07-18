@@ -27,10 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
-import { useActiveVendors } from '@/hooks/useVendors';
+import { useActiveVendors, vendorKeys } from '@/hooks/useVendors';
+import { vendorService } from '@/services/vendorService';
 import { useCreateBill } from '@/hooks/useBills';
 import { fileUploadService } from '@/services/fileUploadService';
 import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
@@ -89,6 +91,7 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
     refetch: retryVendors,
   } = useActiveVendors();
   const createBillMutation = useCreateBill();
+  const queryClient = useQueryClient();
 
   const [files, setFiles] = useState<File[]>([]);
   const [vendorId, setVendorId] = useState('');
@@ -154,6 +157,36 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
         if (aiRun.current === run) setAiStatus('failed');
       });
   }, [open, initialFiles, tenantId]);
+
+  // One-tap create for a vendor XefeBot found on the document but that isn't
+  // in the tenant's vendor list yet.
+  const [addingVendor, setAddingVendor] = useState(false);
+  const handleAddExtractedVendor = async () => {
+    if (!aiVendorName || addingVendor || !canManage()) return;
+    setAddingVendor(true);
+    try {
+      const newVendorId = await vendorService.createVendor(tenantId, {
+        name: aiVendorName,
+        type: 'business',
+      });
+      await queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
+      setVendorId(newVendorId);
+      setAiVendorName(null);
+      toast({
+        title: t('common.success') || 'Success',
+        description: (t('money.ai.vendorAdded') || 'Vendor "{{name}}" added').replace('{{name}}', aiVendorName),
+      });
+    } catch (error) {
+      console.error('Error creating vendor from extraction:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.ai.vendorAddFailed') || 'Could not add the vendor',
+        variant: 'destructive',
+      });
+    } finally {
+      setAddingVendor(false);
+    }
+  };
 
   // Match the extracted vendor name against the vendor list once both exist.
   useEffect(() => {
@@ -353,13 +386,25 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
                 </SelectContent>
               </Select>
             )}
-            {aiVendorName && !vendorId && vendors.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {(t('money.ai.vendorOnFile') || 'On the document: {{name}} — not in your vendor list yet.').replace(
-                  '{{name}}',
-                  aiVendorName,
-                )}
-              </p>
+            {aiVendorName && !vendorId && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 p-2 pl-3">
+                <p className="text-xs text-muted-foreground">
+                  {(t('money.ai.vendorOnFile') || 'On the document: {{name}} — not in your vendor list yet.').replace(
+                    '{{name}}',
+                    aiVendorName,
+                  )}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={saving || addingVendor}
+                  onClick={() => void handleAddExtractedVendor()}
+                >
+                  {addingVendor && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  {(t('money.ai.addVendor') || 'Add "{{name}}"').replace('{{name}}', aiVendorName)}
+                </Button>
+              </div>
             )}
           </div>
 

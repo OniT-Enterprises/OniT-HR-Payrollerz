@@ -77,6 +77,7 @@ import {
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
 import { addDaysISO, getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
+import { extractTable } from "@/lib/aiExtract";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 type AttendanceImportRow = Record<string, string>;
@@ -132,6 +133,23 @@ async function parseAttendanceImport(file: File): Promise<AttendanceImportRow[]>
     throw new Error(result.errors[0]?.message || "Invalid CSV file");
   }
   return result.data;
+}
+
+async function fileToTableText(file: File): Promise<string> {
+  if (file.name.toLowerCase().endsWith(".xlsx")) {
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await file.arrayBuffer());
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) return "";
+    const lines: string[] = [];
+    worksheet.eachRow((row) => {
+      const values = (row.values as unknown[]).slice(1).map((value) => excelCellText(value));
+      lines.push(values.join("\t"));
+    });
+    return lines.join("\n");
+  }
+  return file.text();
 }
 
 export default function Attendance() {
@@ -551,6 +569,39 @@ export default function Attendance() {
         }
       }
 
+      // Strict parse found nothing usable — let XefeBot normalize the messy
+      // file server-side (any columns, date or time formats), then run the
+      // same deterministic employee matching over the normalized rows.
+      let usedAi = false;
+      if (records.length === 0) {
+        try {
+          const tableText = await fileToTableText(importFile);
+          if (tableText.trim()) {
+            const aiRows = await extractTable(tableText, tenantId, "attendance");
+            for (const row of aiRows) {
+              const employee =
+                employeesById.get(row.employee) ||
+                employeesByJobId.get(row.employee) ||
+                employeesByName.get(row.employee.toLowerCase());
+              if (!employee) continue;
+              const department = employee.jobDetails.department;
+              records.push({
+                employeeId: employee.id!,
+                employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+                department,
+                departmentId: departments.find((item) => item.name === department)?.id,
+                date: row.date,
+                clockIn: row.clockIn,
+                clockOut: row.clockOut || "",
+              });
+            }
+            usedAi = records.length > 0;
+          }
+        } catch (aiError) {
+          console.warn("AI attendance import fallback failed:", aiError);
+        }
+      }
+
       if (records.length === 0) {
         toast({
           title: t("timeLeave.attendance.toast.importErrorTitle"),
@@ -558,6 +609,13 @@ export default function Attendance() {
           variant: "destructive",
         });
         return;
+      }
+
+      if (usedAi) {
+        toast({
+          title: t("timeLeave.attendance.toast.importAiTitle"),
+          description: t("timeLeave.attendance.toast.importAiDesc", { count: records.length }),
+        });
       }
 
       const result = await attendanceService.importFromDevice(tenantId, records, {
