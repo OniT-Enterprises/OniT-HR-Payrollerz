@@ -118,7 +118,15 @@ function safeKeyCompare(provided, expected) {
   return crypto.timingSafeEqual(a, b);
 }
 
+const { isInternalAgentRequest } = require('./internalAuth');
+
 function requireApiKey(req, res, next) {
+  // In-process agent tool calls carry the per-boot internal key instead of
+  // the shared bot API key (see internalAuth.js).
+  if (isInternalAgentRequest(req)) {
+    req.internalAgent = true;
+    return next();
+  }
   const key = req.headers['x-api-key'];
   if (!API_KEY) {
     return res.status(500).json({ success: false, message: 'API key not configured on server' });
@@ -134,7 +142,10 @@ function requireTenant(req, res, next) {
   if (!tenantId) {
     return res.status(400).json({ success: false, message: 'Missing tenantId parameter' });
   }
-  if (ALLOWED_TENANT_ID) {
+  // The OpenClaw bot credential is pinned to ALLOWED_TENANT_ID; internal
+  // agent calls are tenant-authorized upstream by the caller's Firebase
+  // membership, so the pin does not apply to them.
+  if (ALLOWED_TENANT_ID && !req.internalAgent) {
     const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
     if (!allowed.includes(tenantId)) {
       return res.status(403).json({ success: false, message: 'Access denied for this tenant' });
@@ -221,6 +232,12 @@ async function requireFirebaseTenantAccess(req, res, next) {
 // than trusting a model-supplied tenantId. This fails closed until deployment
 // config explicitly names the matching tenant.
 function requireOpenClawWebTenant(req, res, next) {
+  // Agent-SDK chat (agentChat.js) runs in-process and is tenant-scoped by the
+  // caller's Firebase membership — the OpenClaw single-tenant restriction
+  // only applies to the legacy gateway relay.
+  if (require('./agentChat').agentChatEnabled()) {
+    return next();
+  }
   if (!OPENCLAW_WEB_TENANT_ID) {
     return res.status(503).json({
       success: false,
@@ -4782,6 +4799,28 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
   const requestId = genId();
   const { tenantId } = req.params;
 
+  // ── Agent-SDK path (replaces the OpenClaw relay; works for every tenant) ──
+  const agentChat = require('./agentChat');
+  if (agentChat.agentChatEnabled()) {
+    const { message, sessionKey } = req.body || {};
+    const trimmedMessage = typeof message === 'string' ? message.slice(0, 2000).trim() : '';
+    if (!trimmedMessage) {
+      return res.status(400).json({ success: false, message: 'message field is required', requestId });
+    }
+    req.setTimeout(150000);
+    try {
+      const reply = await agentChat.runAgentChat({
+        tenantId,
+        message: trimmedMessage,
+        sessionKey: sanitizeSessionKey(sessionKey || 'default'),
+      });
+      return res.json({ success: true, reply, actions: [], requestId });
+    } catch (error) {
+      console.error(`[agent-chat] ${requestId} failed:`, error.message);
+      return res.status(502).json({ success: false, message: 'XefeBot is having trouble right now — please try again.', requestId });
+    }
+  }
+
   // Tenant scoping
   if (ALLOWED_TENANT_ID) {
     const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
@@ -5009,6 +5048,33 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
   const sendEvent = (data) => {
     if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
   };
+
+  // ── Agent-SDK path (replaces the OpenClaw relay; works for every tenant) ──
+  const agentChatStream = require('./agentChat');
+  if (agentChatStream.agentChatEnabled()) {
+    const { message, sessionKey } = req.body || {};
+    const trimmedMessage = typeof message === 'string' ? message.slice(0, 2000).trim() : '';
+    if (!trimmedMessage) {
+      sendEvent({ type: 'error', content: 'message field is required' });
+      return res.end();
+    }
+    req.setTimeout(150000);
+    req.on('close', () => {
+      if (!res.writableEnded) res.end();
+    });
+    try {
+      await agentChatStream.runAgentChat({
+        tenantId,
+        message: trimmedMessage,
+        sessionKey: sanitizeSessionKey(sessionKey || 'default'),
+        onEvent: sendEvent,
+      });
+    } catch (error) {
+      console.error(`[agent-chat] ${requestId} stream failed:`, error.message);
+      // runAgentChat already emitted an error event on terminal failure.
+    }
+    return res.end();
+  }
 
   // Tenant check
   if (ALLOWED_TENANT_ID) {
@@ -5284,6 +5350,23 @@ app.post('/api/tenants/:tenantId/ai/extract-table', extractLimiter, authenticate
 app.post('/api/tenants/:tenantId/ai/compose', chatLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, requireOpenClawWebTenant, async (req, res) => {
   const requestId = genId();
   const { tenantId } = req.params;
+
+  // ── Agent-SDK path (no OpenClaw; works for every tenant) ──
+  const agentCompose = require('./agentChat');
+  if (agentCompose.agentChatEnabled()) {
+    const { systemPrompt, userPrompt } = req.body || {};
+    if (typeof systemPrompt !== 'string' || !systemPrompt.trim() || typeof userPrompt !== 'string' || !userPrompt.trim()) {
+      return res.status(400).json({ success: false, message: 'systemPrompt and userPrompt are required', requestId });
+    }
+    req.setTimeout(150000);
+    try {
+      const reply = await agentCompose.runAgentCompose({ systemPrompt, userPrompt });
+      return res.json({ success: true, reply, requestId });
+    } catch (error) {
+      console.error(`[agent-compose] ${requestId} failed:`, error.message);
+      return res.status(502).json({ success: false, message: 'AI compose is having trouble right now — please try again.', requestId });
+    }
+  }
 
   if (ALLOWED_TENANT_ID) {
     const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
