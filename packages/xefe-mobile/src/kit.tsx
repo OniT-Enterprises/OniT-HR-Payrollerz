@@ -36,13 +36,19 @@ export interface KitConfig<Tones extends Record<string, ChipTone>> {
   /** Chip tone map — must include a `primary` entry (the default tone). */
   tones: Tones & { primary: ChipTone };
   /** Illustration shown by EmptyCard (app-local asset, e.g. xefe-empty.webp). */
-  emptyImage: ImageSourcePropType;
+  emptyImage?: ImageSourcePropType;
+  /**
+   * Icon shown by EmptyCard in a primary-tinted circle — the current brand
+   * treatment (matches the web dashboard's icon-based empty states). Takes
+   * precedence over emptyImage.
+   */
+  emptyIcon?: LucideIcon;
 }
 
 export function createKit<Tones extends Record<string, ChipTone>>(
   config: KitConfig<Tones>,
 ) {
-  const { tokens, tones, emptyImage } = config;
+  const { tokens, tones, emptyImage, emptyIcon: EmptyIcon } = config;
 
   const styles = StyleSheet.create({
     sectionLabel: {
@@ -71,6 +77,15 @@ export function createKit<Tones extends Record<string, ChipTone>>(
       height: 96,
       marginBottom: 10,
       opacity: 0.9,
+    },
+    emptyIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: tones.primary.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
     },
     emptyTitle: {
       fontSize: 15,
@@ -118,11 +133,17 @@ export function createKit<Tones extends Record<string, ChipTone>>(
     );
   }
 
-  /* ── EmptyCard — quiet inline empty state with the Xefe illustration ── */
+  /* ── EmptyCard — quiet inline empty state (icon tile or illustration) ── */
   function EmptyCard({ title, subtitle }: { title: string; subtitle?: string }) {
     return (
       <View style={styles.emptyCard}>
-        <Image source={emptyImage} style={styles.emptyImage} resizeMode="contain" />
+        {EmptyIcon ? (
+          <View style={styles.emptyIconWrap}>
+            <EmptyIcon size={28} color={tones.primary.fg} strokeWidth={1.6} />
+          </View>
+        ) : emptyImage ? (
+          <Image source={emptyImage} style={styles.emptyImage} resizeMode="contain" />
+        ) : null}
         <Text style={styles.emptyTitle}>{title}</Text>
         {subtitle ? <Text style={styles.emptySubtitle}>{subtitle}</Text> : null}
       </View>

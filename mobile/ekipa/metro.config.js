@@ -14,6 +14,16 @@ config.resolver.unstable_enablePackageExports = true;
 // which fails under Metro's package exports mode. Override resolveRequest to handle
 // relative requires within qrcode by resolving them as plain filesystem paths.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Brand-wide icon family: like the web app (vite alias -> Phosphor shim),
+  // every 'lucide-react-native' import renders Phosphor regular-weight glyphs.
+  // TypeScript still type-checks against the real lucide package; this alias
+  // is runtime-only and reversible by deleting this block.
+  if (moduleName === 'lucide-react-native') {
+    return {
+      type: 'sourceFile',
+      filePath: path.resolve(projectRoot, 'lib', 'phosphor-icons.tsx'),
+    };
+  }
   if (
     context.originModulePath &&
     context.originModulePath.includes(path.join('node_modules', 'qrcode', '')) &&

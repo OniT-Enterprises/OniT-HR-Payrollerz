@@ -5,6 +5,7 @@
  * Screens keep importing SectionLabel/ChipIcon/EmptyCard from here.
  */
 import { createKit } from '@xefe/mobile';
+import { Inbox } from 'lucide-react-native';
 import { colors } from '../lib/colors';
 
 export const { SectionLabel, ChipIcon, EmptyCard } = createKit({
@@ -21,5 +22,7 @@ export const { SectionLabel, ChipIcon, EmptyCard } = createKit({
     warning: { bg: colors.warningBg, fg: colors.warning },
     error: { bg: colors.errorBg, fg: colors.error },
   },
-  emptyImage: require('../assets/xefe-empty.webp'),
+  // Icon-based empty states — matches the web dashboard (the kawaii
+  // illustrations were retired with the line-art icon migration).
+  emptyIcon: Inbox,
 });

@@ -3,10 +3,10 @@
  * Xefe · Ekipa design language: one olive accent, editorial section labels,
  * hero intro, full-width leave banner, mixed card sizes.
  */
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import {
-  Calendar, FileText, Clock, CreditCard, Megaphone, Receipt, ArrowRight, ChevronRight,
+  Calendar, FileText, Clock, CreditCard, Megaphone, Receipt, ArrowRight, ChevronRight, Palmtree,
 } from 'lucide-react-native';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
@@ -35,11 +35,7 @@ export default function ActionsScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.bannerContent}>
-          <Image
-            source={require('../../assets/xefe-card-leave.webp')}
-            style={styles.bannerImage}
-            resizeMode="contain"
-          />
+          <ChipIcon icon={Palmtree} size={52} />
           <View style={styles.bannerText}>
             <Text style={styles.bannerTitle}>{t('actions.leaveHero')}</Text>
             <Text style={styles.bannerDesc}>{t('actions.leaveHeroSub')}</Text>
@@ -165,10 +161,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   bannerText: { flex: 1 },
-  bannerImage: {
-    width: 52,
-    height: 62,
-  },
   bannerTitle: {
     fontSize: 17,
     fontWeight: '700',

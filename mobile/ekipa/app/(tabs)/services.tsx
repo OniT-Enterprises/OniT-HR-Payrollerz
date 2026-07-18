@@ -3,10 +3,10 @@
  * Xefe · Ekipa design language: one olive accent, editorial section labels,
  * hero intro, featured tax card, grouped sections, mixed card sizes.
  */
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import {
-  CalendarDays, Users, Star, CalendarClock, Shield, ClipboardCheck, ChevronRight,
+  CalendarDays, Users, Star, CalendarClock, Shield, ClipboardCheck, ChevronRight, Landmark,
 } from 'lucide-react-native';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
@@ -35,11 +35,7 @@ export default function ServicesScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.featRow}>
-          <Image
-            source={require('../../assets/xefe-card-tax.webp')}
-            style={styles.featImage}
-            resizeMode="contain"
-          />
+          <ChipIcon icon={Landmark} size={52} />
           <View style={styles.featText}>
             <Text style={styles.featTitle}>{t('home.taxSummary')}</Text>
             <Text style={styles.featDesc}>{t('services.taxSub')}</Text>
@@ -171,10 +167,6 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   featText: { flex: 1 },
-  featImage: {
-    width: 52,
-    height: 62,
-  },
   featTitle: {
     fontSize: 16,
     fontWeight: '700',
