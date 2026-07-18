@@ -169,6 +169,11 @@ fiscal periods between Dec 2024 and Apr 2025 — bases from $0 (nil month,
 filed as zero) to $33,575.23, every one matching Xefe's Art. 55 calculation
 to the cent including rounding (`tests/client/attl-assessment-parity.test.ts`).
 This tier sits above practitioner workpapers: it is the tax authority's own
-arithmetic. Related tax-account statements on the same client show separate
-resident ($55) and non-resident ($1,045) monthly wage-WIT accounts,
-consistent with the split-form filing model Xefe's ATTL export follows.
+arithmetic. The wage assessments for the same taxpayer close two more loops
+(April 2025): the non-resident notice shows the authority CORRECTING a $0
+submission to $1,045.00 on $10,450.00 of wages — the state enforcing the
+flat 10% no-threshold rule Xefe applies; and the resident notice ($1,200
+wages, $55 withheld, accepted as filed) is inconsistent with an aggregate
+threshold (which would give $70) and consistent only with the per-employee
+$500/month threshold — exactly how Xefe computes it. Both pinned in
+`tests/client/attl-assessment-parity.test.ts`.

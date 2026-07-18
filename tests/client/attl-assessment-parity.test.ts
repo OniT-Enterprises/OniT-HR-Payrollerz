@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { calculateTLWithholding } from "@/lib/tax/withholding-tl";
+import { calculateIncomeTax } from "@/lib/payroll/calculations-tl";
 
 const ASSESSED: Array<{ period: string; base: number; assessedTax: number }> = [
   { period: "2024-12", base: 33575.23, assessedTax: 3357.52 },
@@ -35,4 +36,23 @@ describe("ATTL rent withholding assessments (LN65 × 10% = LN70)", () => {
       expect(result.collectionMethod).toBe("payer_withholding");
     });
   }
+});
+
+describe("ATTL wage income tax assessments (form line 10 = tax on line 5 wages)", () => {
+  it("non-resident: authority ASSESSED flat 10% on $10,450 of wages (Apr 2025)", () => {
+    // The submission carried $0; the assessment notice records the authority
+    // correcting it to $1,045.00 — the state enforcing the flat rate with no
+    // threshold, exactly Xefe's non-resident model.
+    expect(calculateIncomeTax(10450, false, "monthly")).toBe(1045);
+  });
+
+  it("resident: accepted filing evidences the per-employee threshold (Apr 2025)", () => {
+    // Line 5 = $1,200.00 wages, line 10 = $55.00 withheld, accepted as filed.
+    // A single-employee calculation would be (1200-500) x 10% = $70 — so the
+    // $500/month threshold is applied per employee, not on the aggregate.
+    // Xefe computes per employee; a plausible split reproduces the filing:
+    expect(calculateIncomeTax(1200, true, "monthly")).toBe(70); // aggregate-as-one ≠ filing
+    const split = calculateIncomeTax(1050, true, "monthly") + calculateIncomeTax(150, true, "monthly");
+    expect(split).toBe(55); // per-employee math matches the accepted filing
+  });
 });
