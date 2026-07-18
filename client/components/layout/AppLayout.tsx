@@ -22,6 +22,7 @@ const PUBLIC_PATHS = [
   "/auth/",
   "/landing",
   "/how-it-works",
+  "/pricing",
   "/accountants",
   "/features",
   "/unauthorized",
