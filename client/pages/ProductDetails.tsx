@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -20,6 +20,8 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+import { Crescent } from "@/components/marketing/Crescent";
+import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
 import { PublicSectionNav } from "@/components/marketing/PublicSectionNav";
@@ -29,26 +31,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 type Locale = "en" | "tet" | "pt";
 
-/** Gold crescent — the small mark used throughout Xefe's public identity. */
-function Crescent({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
-      <path
-        d="M12 62 A46 46 0 0 1 88 40 A60 60 0 0 0 12 62 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
-function SectionEyebrow({ children }: { children: ReactNode }) {
-  return (
-    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-lime-300">
-      <Crescent className="h-3.5 w-3.5 text-lime-400" />
-      {children}
-    </p>
-  );
-}
 
 function formatUSD(amount: number, locale: Locale): string {
   const locales: Record<Locale, string> = {
@@ -409,7 +392,7 @@ export default function ProductDetails() {
         <section className="border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("howItWorks.audience.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="lime">{t("howItWorks.audience.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
                 {t("howItWorks.audience.title")}
               </h2>
@@ -456,7 +439,7 @@ export default function ProductDetails() {
         <section id="workflow" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("howItWorks.workflow.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="lime">{t("howItWorks.workflow.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
                 {t("howItWorks.workflow.title")}
               </h2>
@@ -493,7 +476,7 @@ export default function ProductDetails() {
         <section id="example" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("howItWorks.example.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="lime">{t("howItWorks.example.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
                 {t("howItWorks.example.title")}
               </h2>
@@ -601,7 +584,7 @@ export default function ProductDetails() {
         <section id="controls" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("howItWorks.controls.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="lime">{t("howItWorks.controls.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
                 {t("howItWorks.controls.title")}
               </h2>
@@ -657,7 +640,7 @@ export default function ProductDetails() {
         <section id="evidence" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("howItWorks.evidence.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="lime">{t("howItWorks.evidence.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
                 {t("howItWorks.evidence.title")}
               </h2>
@@ -694,7 +677,7 @@ export default function ProductDetails() {
         <section className="relative overflow-hidden border-t border-white/[0.06] py-20 lg:py-24">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_48%)]" />
           <div className="relative mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
-            <SectionEyebrow>{t("howItWorks.cta.eyebrow")}</SectionEyebrow>
+            <SectionEyebrow accent="lime">{t("howItWorks.cta.eyebrow")}</SectionEyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
               {t("howItWorks.cta.title")}
             </h2>

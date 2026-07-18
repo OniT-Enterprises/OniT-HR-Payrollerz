@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -15,6 +14,8 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+import { Crescent } from "@/components/marketing/Crescent";
+import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PayslipExample } from "@/components/marketing/PayslipExample";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
@@ -24,26 +25,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 import { PRIMOS_BOOT_PARTNER } from "@/lib/accountantPartners";
 
-/** Gold crescent — echoes the mark above the "x" in the Xefe logo. */
-function Crescent({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
-      <path
-        d="M12 62 A46 46 0 0 1 88 40 A60 60 0 0 0 12 62 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
-function SectionEyebrow({ children }: { children: ReactNode }) {
-  return (
-    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
-      <Crescent className="h-3.5 w-3.5 text-amber-400" />
-      {children}
-    </p>
-  );
-}
 
 function OutcomeCard({
   icon: Icon,
@@ -207,7 +189,7 @@ export default function Landing() {
             </div>
 
             <div className="relative mx-auto w-full max-w-md">
-              <Crescent className="absolute -left-5 -top-8 h-16 w-16 -rotate-12 text-amber-400/80 drop-shadow-[0_0_20px_rgba(251,191,36,0.25)]" />
+              <Crescent className="absolute -left-7 -top-14 h-16 w-16 -rotate-[25deg] text-amber-400/80 drop-shadow-[0_0_20px_rgba(251,191,36,0.25)]" />
               <div className="relative rounded-2xl border border-white/10 bg-zinc-900 p-5 shadow-2xl shadow-black/50 sm:p-7">
                 <div className="mb-5 flex items-center justify-between gap-4">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">

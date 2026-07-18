@@ -1,17 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
-/** Gold crescent — the mark above the "x" in the Xefe logo. */
-function Crescent({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
-      <path
-        d="M12 62 A46 46 0 0 1 88 40 A60 60 0 0 0 12 62 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
+import { Crescent } from "@/components/marketing/Crescent";
+import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
 import { PackagePicker } from "@/components/pricing/PackagePicker";
@@ -46,10 +37,7 @@ export default function Pricing() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.08),transparent_42%)]" />
           <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-amber-400/[0.045] md:block" />
           <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-6 lg:px-8">
-            <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
-              <Crescent className="h-3.5 w-3.5 text-amber-400" />
-              {t("landing.simple.pricing.eyebrow")}
-            </p>
+            <SectionEyebrow>{t("landing.simple.pricing.eyebrow")}</SectionEyebrow>
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
               {t("landing.simple.pricing.title")}
             </h1>

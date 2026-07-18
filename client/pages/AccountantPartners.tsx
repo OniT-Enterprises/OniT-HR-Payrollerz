@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   UserCheck,
 } from "lucide-react";
+import { Crescent } from "@/components/marketing/Crescent";
+import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
 import { PublicSectionNav } from "@/components/marketing/PublicSectionNav";
@@ -30,25 +32,7 @@ import {
 } from "@/lib/accountantPartners";
 import { accountantPartnerService } from "@/services/accountantPartnerService";
 
-function Crescent({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
-      <path
-        d="M12 62 A46 46 0 0 1 88 40 A60 60 0 0 0 12 62 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
-function SectionEyebrow({ children }: { children: ReactNode }) {
-  return (
-    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-sky-300">
-      <Crescent className="h-3.5 w-3.5 text-sky-400" />
-      {children}
-    </p>
-  );
-}
 
 export default function AccountantPartners() {
   const navigate = useNavigate();
@@ -211,7 +195,7 @@ export default function AccountantPartners() {
         <section id="partner" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("accountantPartners.partner.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="sky">{t("accountantPartners.partner.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">{t("accountantPartners.partner.title")}</h2>
               <p className="mt-4 text-zinc-400">{t("accountantPartners.partner.description")}</p>
             </div>
@@ -283,7 +267,7 @@ export default function AccountantPartners() {
         <section id="process" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <SectionEyebrow>{t("accountantPartners.process.eyebrow")}</SectionEyebrow>
+              <SectionEyebrow accent="sky">{t("accountantPartners.process.eyebrow")}</SectionEyebrow>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">{t("accountantPartners.process.title")}</h2>
               <p className="mt-4 text-zinc-400">{t("accountantPartners.process.description")}</p>
             </div>
@@ -312,7 +296,7 @@ export default function AccountantPartners() {
           <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
               <div>
-                <SectionEyebrow>{t("accountantPartners.access.eyebrow")}</SectionEyebrow>
+                <SectionEyebrow accent="sky">{t("accountantPartners.access.eyebrow")}</SectionEyebrow>
                 <h2 className="mt-4 text-3xl font-extrabold tracking-tight">{t("accountantPartners.access.title")}</h2>
                 <p className="mt-4 text-zinc-400">{t("accountantPartners.access.description")}</p>
                 <div className="mt-6 flex items-start gap-3 rounded-xl border border-blue-400/15 bg-blue-400/[0.06] p-4">
