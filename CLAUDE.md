@@ -128,8 +128,13 @@ The Xefe AI assistant lets HR managers query company data via WhatsApp and a web
 cd server/xefe-api && npm install && npm run dev
 
 # Deploy Xefe API to Hetzner (PM2)
-rsync -avz --delete server/xefe-api/ hetzner:/opt/xefe-api/
-ssh hetzner 'cd /opt/xefe-api && npm install && pm2 restart xefe-api'
+# The excludes are load-bearing: /opt/xefe-api holds the prod .env and
+# serviceAccountKey.json, which exist ONLY on the server — a bare
+# `--delete` rsync would destroy them (and nuke node_modules).
+rsync -avz --delete --exclude .env --exclude serviceAccountKey.json \
+  --exclude node_modules --exclude .DS_Store \
+  server/xefe-api/ hetzner:/opt/xefe-api/
+ssh hetzner 'cd /opt/xefe-api && npm ci --omit=dev && pm2 restart xefe-api'
 
 # Deploy OpenClaw bot
 cd server/openclaw-xefe && ./deploy.sh
