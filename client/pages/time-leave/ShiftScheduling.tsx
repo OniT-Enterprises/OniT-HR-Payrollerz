@@ -445,11 +445,57 @@ export default function ShiftScheduling() {
     (canLoadSchedule && (shiftsQuery.isLoading || leaveQuery.isLoading || employeesQuery.isLoading));
   if (loading) {
     return (
-      <div className="mx-auto max-w-screen-2xl space-y-4 px-4 py-5 sm:px-6 sm:py-6">
-        <Skeleton className="h-14 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-28 w-full" />
+      <div className="min-h-screen bg-background">
+        <main className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("timeLeave.shiftScheduling.title")}
+            subtitle={t("timeLeave.shiftScheduling.subtitle")}
+            cardIcon="tl-shifts"
+            icon={Calendar}
+            iconColor="text-cyan-600"
+          />
+
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <Skeleton className="h-9 w-9 rounded-md" />
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-9 rounded-md" />
+              <Skeleton className="ml-1 h-4 w-36" />
+            </div>
+            <Skeleton className="h-4 w-32" />
+          </div>
+
+          <Skeleton className="mb-4 h-11 w-full rounded-lg" />
+
+          <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+            {Array.from({ length: 7 }, (_, dayIndex) => (
+              <div key={dayIndex} className={cn("p-4", dayIndex > 0 && "border-t border-border/70")}>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-8 w-28 rounded-md" />
+                </div>
+                <div className="space-y-2">
+                  {Array.from({ length: dayIndex < 2 ? 2 : 1 }, (_, rowIndex) => (
+                    <div
+                      key={rowIndex}
+                      className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5"
+                    >
+                      <span className="min-w-0 flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-40" />
+                      </span>
+                      <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
+                      <Skeleton className="h-4 w-4 shrink-0 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+        </main>
       </div>
     );
   }

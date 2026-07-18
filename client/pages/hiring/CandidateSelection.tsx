@@ -267,7 +267,10 @@ export default function CandidateSelection() {
           icon={Users}
           iconColor="text-blue-500"
           actions={
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowImportDialog(true)}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => setShowImportDialog(true)}
+            >
               <Upload className="h-4 w-4 mr-2" />
               {t("hiring.candidates.controls.importApplication")}
             </Button>
@@ -540,28 +543,100 @@ export default function CandidateSelection() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-32 mb-2" />
-                      <Skeleton className="h-3 w-48 mb-1" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-4 w-10" />
-                    <Skeleton className="h-5 w-12" />
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                    <Skeleton className="h-8 w-16" />
-                    <div className="flex flex-col gap-1">
-                      <Skeleton className="h-8 w-20" />
-                      <Skeleton className="h-8 w-20" />
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">
+                        {t("hiring.candidates.table.candidate")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <span className="text-xs leading-tight">
+                          {t("hiring.candidates.table.cv")}
+                        </span>
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <span className="text-xs leading-tight">
+                          {t("hiring.candidates.table.cover")}
+                        </span>
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <span className="text-xs leading-tight">
+                          {t("hiring.candidates.table.technical")}
+                        </span>
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <span className="text-xs leading-tight">
+                          {t("hiring.candidates.table.interview")}
+                        </span>
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <span className="text-sm font-semibold leading-tight">
+                          {t("hiring.candidates.table.total")}
+                        </span>
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.status")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.documents")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.actions")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i} className="border-b">
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                            <div className="min-w-0">
+                              <Skeleton className="h-4 w-32 mb-2" />
+                              <Skeleton className="h-3 w-40 mb-2" />
+                              <div className="flex items-center gap-2">
+                                <Skeleton className="h-5 w-16 rounded-full" />
+                                <Skeleton className="h-3 w-20" />
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-4 w-10 mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-4 w-10 mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-4 w-10 mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-4 w-10 mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-5 w-12 mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-6 w-20 rounded-full mx-auto" />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-1">
+                            <Skeleton className="h-6 w-6 rounded-full" />
+                            <Skeleton className="h-6 w-6 rounded-sm" />
+                            <Skeleton className="h-6 w-6 rounded-full" />
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <Skeleton className="h-8 w-20" />
+                            <Skeleton className="h-8 w-20" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : filteredCandidates.length === 0 ? (
               <div className="text-center py-12">

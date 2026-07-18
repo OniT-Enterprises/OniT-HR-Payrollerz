@@ -159,11 +159,44 @@ export default function RecurringInvoices() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid gap-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-40" />
+          </div>
+
+          <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24" />
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </div>
+                        <div className="flex items-center gap-4 mt-2">
+                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="text-right hidden sm:block space-y-1">
+                        <Skeleton className="h-4 w-16 ml-auto" />
+                        <Skeleton className="h-3 w-14 ml-auto" />
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>

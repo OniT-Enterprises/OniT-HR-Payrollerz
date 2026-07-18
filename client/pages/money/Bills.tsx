@@ -276,16 +276,55 @@ export default function Bills() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {[1, 2].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-md sm:h-10 sm:w-10" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-28" />
+              </div>
+            </div>
+            <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
           </div>
-          <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
+
+          <Skeleton className="h-10 w-full max-w-md mb-4" />
+          <div className="mb-6">
+            <Skeleton className="mb-3 h-11 w-full rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-full mb-6" />
+
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                      <Skeleton className="hidden h-10 w-10 shrink-0 rounded-full sm:block" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+                        <Skeleton className="h-3.5 w-48" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="hidden sm:block text-right">
+                        <Skeleton className="h-4 w-16 mb-1 ml-auto" />
+                        <Skeleton className="h-3 w-12 ml-auto" />
+                      </div>
+                      <Skeleton className="hidden md:block h-3.5 w-20" />
+                      <Skeleton className="h-8 w-8 sm:w-28" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -354,8 +393,8 @@ export default function Bills() {
                 {t('money.bills.uploadBill') || 'Upload Bill'}
               </Button>
               <Button
-                onClick={() => navigate('/money/bills/new')}
                 className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => navigate('/money/bills/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t('money.bills.new') || 'New Bill'}

@@ -261,16 +261,37 @@ export default function INSSAnnual() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="px-4 py-5 sm:px-6 sm:py-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <Skeleton className="h-8 w-56 mb-2" />
-            <Skeleton className="h-4 w-80 mb-6" />
-            <Card>
-              <CardContent className="p-6">
-                <Skeleton className="h-12 w-full" />
-              </CardContent>
-            </Card>
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <div className="mb-6 flex items-center gap-3">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <div>
+              <Skeleton className="h-6 w-56 mb-2" />
+              <Skeleton className="h-4 w-72" />
+            </div>
           </div>
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                <Skeleton className="h-5 w-40" />
+              </CardTitle>
+              <CardDescription>
+                <Skeleton className="h-4 w-64" />
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="md:col-span-2 flex gap-2">
+                  <Skeleton className="h-10 flex-1" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

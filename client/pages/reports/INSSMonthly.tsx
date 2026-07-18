@@ -463,21 +463,142 @@ export default function INSSMonthly() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="px-4 py-5 sm:px-6 sm:py-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-56 mb-2" />
-                <Skeleton className="h-4 w-80" />
-              </div>
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="h-8 w-8 rounded" />
+            <div>
+              <Skeleton className="h-8 w-56 mb-2" />
+              <Skeleton className="h-4 w-80" />
             </div>
-            <Card>
-              <CardContent className="p-6">
-                <Skeleton className="h-12 w-full" />
-              </CardContent>
-            </Card>
           </div>
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Skeleton className="h-4 w-40" />
+              </CardTitle>
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="md:col-span-2">
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-4 w-72" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 md:hidden">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <Skeleton className="h-4 w-24 mb-1" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {Array.from({ length: 6 }).map((__, cellIndex) => (
+                          <div key={cellIndex}>
+                            <Skeleton className="h-3 w-16 mb-1" />
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="hidden rounded-lg border overflow-hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        {t("reports.inssMonthly.tracker.period")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.tracker.statementDue")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.tracker.paymentDue")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.tracker.statementStatus")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.tracker.paymentStatus")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.tracker.employees")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.tracker.employeeContribution")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.tracker.employerContribution")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.tracker.actions")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-8 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Skeleton className="h-8 w-16" />
+                            <Skeleton className="h-8 w-20" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

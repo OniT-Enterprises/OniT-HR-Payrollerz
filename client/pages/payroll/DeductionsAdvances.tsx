@@ -291,52 +291,80 @@ export default function DeductionsAdvances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
+
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
                 <Skeleton className="h-8 w-52 mb-2" />
                 <Skeleton className="h-4 w-72" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32 mb-2" />
-                <Skeleton className="h-4 w-56" />
-              </CardHeader>
-              <CardContent>
-                <div className="flex gap-2 mb-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-9 w-24" />
-                  ))}
-                </div>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-36" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20 ml-auto" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <Skeleton className="h-10 w-40" />
           </div>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+                <Skeleton className="h-10 w-64" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-10 w-48 mb-4" />
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("deductions.employee")}</TableHead>
+                      <TableHead>{t("deductions.type")}</TableHead>
+                      <TableHead>{t("deductions.description")}</TableHead>
+                      <TableHead className="text-right">{t("deductions.amount")}</TableHead>
+                      <TableHead>{t("deductions.frequency")}</TableHead>
+                      <TableHead>{t("deductions.status")}</TableHead>
+                      <TableHead className="text-right">{t("deductions.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">
+                          <Skeleton className="h-4 w-28" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-24 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-36" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

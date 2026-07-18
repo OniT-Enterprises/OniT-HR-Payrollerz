@@ -370,7 +370,6 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
           <Button
             onClick={handleSave}
             disabled={saving || vendorsLoading || vendorsUnavailable || vendors.length === 0}
-            className="bg-indigo-600 hover:bg-indigo-700"
           >
             {saving
               ? t('common.saving') || 'Saving...'

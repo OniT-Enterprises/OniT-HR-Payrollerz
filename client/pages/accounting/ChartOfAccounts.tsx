@@ -431,53 +431,79 @@ export default function ChartOfAccounts() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-9 w-9 rounded-lg" />
               <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-7 w-56 mb-2" />
+                <Skeleton className="h-4 w-72" />
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-4 w-16 mb-2" />
-                    <Skeleton className="h-8 w-12" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <Skeleton className="h-10 flex-1" />
-                  <Skeleton className="h-10 w-48" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32 mb-2" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20 ml-auto" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <Skeleton className="h-10 w-36" />
           </div>
+
+          <Skeleton className="mb-6 h-11 w-full rounded-lg" />
+
+          <Card className="mb-6 border-border/50">
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <Skeleton className="h-10 flex-1" />
+                <Skeleton className="h-10 w-[150px]" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <Skeleton className="h-5 w-32 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-40">{t("accounting.chartOfAccounts.code")}</TableHead>
+                      <TableHead>{t("accounting.chartOfAccounts.name")}</TableHead>
+                      <TableHead className="w-32">{t("accounting.chartOfAccounts.type")}</TableHead>
+                      <TableHead className="w-40">{t("accounting.chartOfAccounts.subType")}</TableHead>
+                      <TableHead className="w-32">{t("accounting.chartOfAccounts.status")}</TableHead>
+                      <TableHead className="w-16">{t("accounting.chartOfAccounts.edit")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-5" />
+                            <Skeleton className="h-5 w-14 rounded" />
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-36 mb-1" />
+                          <Skeleton className="h-3 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-6 rounded" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

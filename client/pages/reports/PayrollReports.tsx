@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -25,7 +26,7 @@ import {
 } from "@/components/reports/ReportLayout";
 import { usePayrollRuns, usePayrollRecordsByRun } from "@/hooks/usePayroll";
 import { useI18n } from "@/i18n/I18nProvider";
-import { FileText, Download, Play, Loader2, WifiOff } from "lucide-react";
+import { FileText, Download, Play, WifiOff } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toast } from "sonner";
 import { getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
@@ -320,8 +321,20 @@ export default function PayrollReports() {
               </CardHeader>
               <CardContent>
                 {recordsLoading ? (
-                  <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> …
+                  <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
+                    {summaryRows.map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
+                      >
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton
+                          className={
+                            row.strong ? "h-5 w-20" : "h-4 w-16"
+                          }
+                        />
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
@@ -358,9 +371,85 @@ export default function PayrollReports() {
               </CardHeader>
               <CardContent>
                 {recordsLoading ? (
-                  <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> …
-                  </div>
+                  <>
+                    <div className="space-y-3 md:hidden">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="rounded-lg border border-border/70 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-1.5">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                            {Array.from({ length: 4 }).map((__, cellIndex) => (
+                              <div key={cellIndex} className="space-y-1">
+                                <Skeleton className="h-3 w-14" />
+                                <Skeleton className="h-4 w-16" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="p-3 text-left font-medium">
+                              {t("reports.payrollRun.table.employee")}
+                            </th>
+                            <th className="p-3 text-left font-medium">
+                              {t("reports.payrollRun.table.department")}
+                            </th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.gross")}
+                            </th>
+                            <th className="p-3 text-right font-medium">WIT</th>
+                            <th className="p-3 text-right font-medium">INSS</th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.other")}
+                            </th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.net")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: 5 }).map((_, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="p-3">
+                                <Skeleton className="h-4 w-28" />
+                                <Skeleton className="mt-1 h-3 w-16" />
+                              </td>
+                              <td className="p-3">
+                                <Skeleton className="h-4 w-20" />
+                              </td>
+                              <td className="p-3 text-right">
+                                <Skeleton className="ml-auto h-4 w-16" />
+                              </td>
+                              <td className="p-3 text-right">
+                                <Skeleton className="ml-auto h-4 w-14" />
+                              </td>
+                              <td className="p-3 text-right">
+                                <Skeleton className="ml-auto h-4 w-14" />
+                              </td>
+                              <td className="p-3 text-right">
+                                <Skeleton className="ml-auto h-4 w-14" />
+                              </td>
+                              <td className="p-3 text-right">
+                                <Skeleton className="ml-auto h-4 w-16" />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 ) : records.length === 0 ? (
                   <div className="rounded-lg border p-6 text-sm text-muted-foreground">
                     {t("reports.payrollRun.table.empty")}

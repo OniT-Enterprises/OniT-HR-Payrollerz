@@ -6,6 +6,7 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
 import { TimeOffPoliciesTab } from "@/components/settings/TimeOffPoliciesTab";
 import { SEO } from "@/components/SEO";
@@ -43,8 +44,122 @@ export default function TimeLeaveSettings() {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-96 w-full rounded-2xl" />
+          <PageHeader
+            title={t("settings.tabs.timeOff") || "Time Off Policies"}
+            subtitle={t("settings.timeOff.description") || "Leave entitlements per Timor-Leste labor law"}
+            icon={Settings}
+            iconColor="text-cyan-500"
+          />
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-72 mt-1" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Skeleton className="h-16 w-full rounded-lg" />
+
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-40" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="p-4 border rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-5 w-5 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
+                      <div className="space-y-2 pt-6">
+                        <Skeleton className="h-6 w-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-56" />
+                    <Skeleton className="h-4 w-80" />
+                  </div>
+                  <div className="w-32 space-y-2">
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+
+                <div className="border rounded-lg divide-y">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="p-3 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+                        <Skeleton className="h-4 w-40" />
+                      </div>
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-48" />
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-5 w-9 rounded-full" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-20 w-full" />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Skeleton className="h-10 w-20" />
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

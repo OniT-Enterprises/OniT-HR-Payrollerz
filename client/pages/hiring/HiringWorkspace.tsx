@@ -614,9 +614,70 @@ export default function HiringWorkspace() {
         </Card>
 
         {loading ? (
-          <div className="grid gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
-            <Skeleton className="h-72 w-full" />
-            <Skeleton className="h-96 w-full" />
+          <div className="grid items-start gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="mt-2 h-4 w-20" />
+                  </div>
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-2 p-2 pt-0 sm:p-3 sm:pt-0">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="rounded-lg border border-transparent px-3 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-6 shrink-0 rounded-full" />
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="border-b pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Skeleton className="h-5 w-40" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="mt-2 h-4 w-48" />
+                  </div>
+                  <Skeleton className="h-9 w-9 shrink-0 rounded-md" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
+                  <div>
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="mt-2 h-3 w-16" />
+                  </div>
+                </div>
+                <div className="divide-y">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="flex w-full items-center gap-3 px-4 py-4 sm:px-6">
+                      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Skeleton className="h-4 w-28" />
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </div>
+                        <Skeleton className="mt-2 h-3 w-36" />
+                      </div>
+                      <Skeleton className="hidden h-4 w-24 shrink-0 sm:block" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : jobs.length === 0 ? (
           <Card className="border-dashed">

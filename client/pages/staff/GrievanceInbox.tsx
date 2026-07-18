@@ -286,14 +286,62 @@ export default function GrievanceInbox() {
     return (
       <div className="min-h-screen bg-background">
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <Skeleton className="h-10 w-96 mb-6" />
-          <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16" />
-            ))}
+          <PageHeader
+            title="Grievance Inbox"
+            subtitle="Anonymous employee concerns and complaints"
+            icon={ShieldAlert}
+            iconColor="text-blue-500"
+          />
+
+          <div className="mb-6">
+            <Skeleton className="h-10 w-[160px]" />
           </div>
+
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[40px]" />
+                  <TableHead className="w-[120px]">Ticket ID</TableHead>
+                  <TableHead className="w-[140px]">Category</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="w-[120px]">Status</TableHead>
+                  <TableHead className="w-[120px]">Submitted</TableHead>
+                  <TableHead className="w-[220px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell className="px-2">
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className={i % 2 === 0 ? "h-4 w-40" : "h-4 w-56"} />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </div>
       </div>
     );

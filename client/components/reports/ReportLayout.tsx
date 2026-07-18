@@ -74,11 +74,19 @@ export function ReportPage({
 interface ReportPageSkeletonProps {
   sections?: number;
   maxWidth?: ReportWidth;
+  toolbarFields?: number;
+  rowsPerSection?: number;
+  showToolbar?: boolean;
+  showHeaderAction?: boolean;
 }
 
 export function ReportPageSkeleton({
   sections = 2,
   maxWidth = "2xl",
+  toolbarFields = 4,
+  rowsPerSection = 5,
+  showToolbar = true,
+  showHeaderAction = false,
 }: ReportPageSkeletonProps) {
   return (
     <div className="min-h-screen bg-background">
@@ -86,18 +94,66 @@ export function ReportPageSkeleton({
       <ModuleSectionNav config={reportsNavConfig} />
       <div
         className={cn(
-          "mx-auto space-y-6 px-4 py-5 sm:px-6 sm:py-6",
+          "mx-auto px-4 py-5 sm:px-6 sm:py-6",
           WIDTH_CLASS[maxWidth],
         )}
       >
-        <div className="space-y-2 border-b border-border/70 pb-4">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-72 max-w-full" />
+        <div className="mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Skeleton className="h-[30px] w-[30px] shrink-0 rounded-lg" />
+              <div className="min-w-0 space-y-1.5">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-72 max-w-full" />
+              </div>
+            </div>
+            {showHeaderAction && (
+              <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
+            )}
+          </div>
+          <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
         </div>
-        <Skeleton className="h-16 w-full rounded-xl" />
-        {Array.from({ length: sections }).map((_, index) => (
-          <Skeleton key={index} className="h-56 w-full rounded-xl" />
-        ))}
+        <div className="space-y-6">
+          {showToolbar && (
+            <div className="rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {Array.from({ length: toolbarFields }).map((_, index) => (
+                    <div key={index} className="space-y-1.5">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-10 w-full rounded-md" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {Array.from({ length: sections }).map((_, sectionIndex) => (
+            <Card key={sectionIndex} className="border-border/70 shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="min-w-0 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-3.5 w-56 max-w-full" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid gap-x-8 sm:grid-cols-2">
+                  {Array.from({ length: rowsPerSection }).map(
+                    (_, rowIndex) => (
+                      <div
+                        key={rowIndex}
+                        className="flex min-w-0 items-center justify-between gap-4 border-b border-border/50 py-2.5 last:border-b-0 sm:[&:nth-last-child(2)]:border-b-0"
+                      >
+                        <Skeleton className="h-3.5 w-28" />
+                        <Skeleton className="h-3.5 w-16" />
+                      </div>
+                    ),
+                  )}
+                </dl>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

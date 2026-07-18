@@ -284,7 +284,7 @@ export default function EmployeeReports() {
   };
 
   if (loading) {
-    return <ReportPageSkeleton sections={2} />;
+    return <ReportPageSkeleton sections={3} />;
   }
 
   if (employeesQuery.isError) {

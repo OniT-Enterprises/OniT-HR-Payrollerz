@@ -635,58 +635,114 @@ export default function PayrollHistory() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-lg sm:h-10 sm:w-10" />
+                <div className="min-w-0">
+                  <Skeleton className="h-6 w-48 mb-1.5" />
+                  <Skeleton className="h-3 w-64" />
+                </div>
               </div>
+              <Skeleton className="h-10 w-40 shrink-0" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-24" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24 ml-auto" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="mt-3 h-0.5 rounded-full bg-muted opacity-40" />
           </div>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 px-1">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+
+          <Skeleton className="mb-6 h-11 w-full rounded-lg" />
+
+          <div className="flex items-center gap-3 mb-4">
+            <Skeleton className="h-10 w-[220px]" />
+          </div>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <Skeleton className="h-4 w-72 mt-1" />
+            </CardHeader>
+            <CardContent>
+              {/* Mobile skeleton */}
+              <div className="md:hidden divide-y divide-border/50">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-4">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <Skeleton className="h-4 w-28 mb-1.5" />
+                        <Skeleton className="h-3 w-36" />
+                      </div>
+                      <Skeleton className="h-5 w-20 rounded-full shrink-0" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop skeleton */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("payrollHistory.period")}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t("payrollHistory.payDate")}</TableHead>
+                      <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.grossPay")}</TableHead>
+                      <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.netPay")}</TableHead>
+                      <TableHead className="whitespace-nowrap">{t("payrollHistory.submittedBy")}</TableHead>
+                      <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell className="whitespace-nowrap">
+                          <Skeleton className="h-4 w-28 mb-1.5" />
+                          <Skeleton className="h-3 w-36" />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-8 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Skeleton className="h-8 w-8" />
+                            <Skeleton className="h-8 w-20" />
+                            <Skeleton className="h-8 w-8" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

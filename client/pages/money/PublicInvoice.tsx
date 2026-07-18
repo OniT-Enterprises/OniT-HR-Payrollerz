@@ -100,10 +100,17 @@ export default function PublicInvoice() {
   if (loading) {
     return (
       <PublicShell>
-        <div className="space-y-4">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-[480px] w-full rounded-xl" />
+        <div className="space-y-2 rounded-xl border bg-card p-5 text-center">
+          <Skeleton className="mx-auto h-4 w-40" />
+          <Skeleton className="mx-auto h-8 w-32" />
+          <Skeleton className="mx-auto h-4 w-48" />
         </div>
+
+        <div className="my-4 flex justify-end">
+          <Skeleton className="h-10 w-36 rounded-md" />
+        </div>
+
+        <Skeleton className="h-[480px] w-full rounded-xl" />
       </PublicShell>
     );
   }

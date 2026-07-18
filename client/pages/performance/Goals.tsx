@@ -423,17 +423,91 @@ export default function Goals() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-5">
-                  <Skeleton className="h-4 w-28 mb-2" />
-                  <Skeleton className="h-8 w-16 mb-1" />
-                  <Skeleton className="h-3 w-20" />
-                </CardContent>
-              </Card>
-            ))}
+        <SEO {...seoConfig.goals} />
+
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <PageHeader
+            title="Performance & Goals Management"
+            subtitle="Strategic planning with OKRs and performance tracking"
+            icon={Target}
+            iconColor="text-blue-500"
+            actions={
+              <>
+                <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quarters.map((quarter) => (
+                      <SelectItem key={quarter} value={quarter}>
+                        {quarter}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => openOKRDialog()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New OKR
+                </Button>
+              </>
+            }
+          />
+
+          <div className="grid w-full grid-cols-3 gap-1 rounded-md bg-muted p-1 mb-6">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+
+          <div className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="border-border/50 shadow-lg">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-16 mb-2" />
+                    <Skeleton className="h-3 w-28" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Quick Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[1, 2].map((i) => (
+                <Card key={i} className="border-border/50">
+                  <CardHeader>
+                    <Skeleton className="h-5 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((j) => (
+                        <div key={j} className="flex items-center justify-between">
+                          <div className="space-y-1 flex-1">
+                            <Skeleton className="h-4 w-40" />
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-3 w-20" />
+                              <Skeleton className="h-5 w-16 rounded-full" />
+                            </div>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <Skeleton className="h-3 w-8 ml-auto" />
+                            <Skeleton className="h-2 w-20" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>

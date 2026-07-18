@@ -121,7 +121,9 @@ export default function SetupReports() {
   };
 
   if (settingsQuery.isLoading) {
-    return <ReportPageSkeleton sections={1} maxWidth="lg" />;
+    return (
+      <ReportPageSkeleton sections={2} maxWidth="lg" showToolbar={false} />
+    );
   }
 
   if (settingsQuery.isError && settingsQuery.data === undefined) {

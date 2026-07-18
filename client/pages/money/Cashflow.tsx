@@ -228,9 +228,76 @@ export default function Cashflow() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 max-w-screen-2xl mx-auto">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <Skeleton className="h-96 w-full" />
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-5 w-56" />
+            </div>
+            <Skeleton className="h-10 w-[180px]" />
+          </div>
+
+          <div className="mb-8">
+            <Skeleton className="h-11 w-full rounded-lg" />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-40" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <div className="ml-6 space-y-1">
+                  <div className="flex justify-between py-1">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+                <div className="flex justify-between py-2 border-t">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <div className="ml-6 space-y-1">
+                  <div className="flex justify-between py-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+                <div className="flex justify-between py-2 border-t">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2 bg-muted rounded-lg px-4 py-3">
+                <div className="flex justify-between text-sm">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <Skeleton className="h-6 w-28" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

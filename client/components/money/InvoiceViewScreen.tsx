@@ -346,7 +346,6 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
                 <Button
                   onClick={handleSend}
                   disabled={sending}
-                  className="bg-indigo-600 hover:bg-indigo-700"
                 >
                   {sending ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -359,7 +358,6 @@ export function InvoiceViewScreen({ invoice, settings }: InvoiceViewScreenProps)
               {canRecordPayment && (
                 <Button
                   onClick={() => setShowPaymentDialog(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   {t('money.invoices.recordPayment') || 'Record Payment'}

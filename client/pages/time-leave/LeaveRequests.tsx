@@ -479,18 +479,73 @@ export default function LeaveRequests() {
     }
   };
 
+  const canCreate = Boolean(currentEmployeeId || canSelectEmployee);
+
   if (loading) {
     return (
-      <div className="mx-auto max-w-screen-2xl space-y-4 px-4 py-5 sm:px-6 sm:py-6">
-        <Skeleton className="h-14 w-full" />
-        <Skeleton className="h-11 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.leave} />
+        <main className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("timeLeave.leaveRequests.title")}
+            subtitle={t("timeLeave.leaveRequests.subtitle")}
+            cardIcon="tl-leave"
+            icon={CalendarDays}
+            iconColor="text-cyan-600"
+            actions={canCreate ? (
+              <Button disabled>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("timeLeave.leaveRequests.actions.newRequest")}
+              </Button>
+            ) : undefined}
+          />
+
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist">
+            {(["all", "pending", "approved", "rejected", "cancelled"] as RequestFilter[]).map((status) => (
+              <Button
+                key={status}
+                type="button"
+                variant={filter === status ? "secondary" : "ghost"}
+                size="sm"
+                role="tab"
+                aria-selected={filter === status}
+                disabled
+                className="shrink-0"
+              >
+                {status === "all"
+                  ? t("timeLeave.leaveRequests.tabs.all")
+                  : statusLabel(status)}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <article
+                key={index}
+                className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </div>
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-56" />
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Skeleton className="h-9 w-20" />
+                    <Skeleton className="h-9 w-20" />
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </main>
       </div>
     );
   }
-
-  const canCreate = Boolean(currentEmployeeId || canSelectEmployee);
 
   return (
     <div className="min-h-screen bg-background">

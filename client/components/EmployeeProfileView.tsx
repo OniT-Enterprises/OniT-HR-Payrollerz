@@ -210,7 +210,7 @@ function FixedTermConversionWarning({ employee }: { employee: Employee }) {
           size="sm"
           onClick={handleConvert}
           disabled={isConverting}
-          className="bg-orange-600 hover:bg-orange-700 text-white shrink-0"
+          className="shrink-0"
         >
           {isConverting ? "Converting…" : "Convert now"}
         </Button>

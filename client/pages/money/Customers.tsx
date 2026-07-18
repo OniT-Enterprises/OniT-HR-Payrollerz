@@ -214,11 +214,44 @@ export default function Customers() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-36" />
+          </div>
+
+          <div className="mb-6">
+            <Skeleton className="h-10 w-full max-w-md" />
+          </div>
+
           <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-16 rounded-full" />
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1">
+                          <Skeleton className="h-3 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                      </div>
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>

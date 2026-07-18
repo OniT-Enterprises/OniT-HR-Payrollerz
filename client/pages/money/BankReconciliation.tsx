@@ -363,13 +363,97 @@ export default function BankReconciliation() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-6 py-6">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div>
+                <Skeleton className="h-7 w-56 mb-2" />
+                <Skeleton className="h-4 w-72" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-36" />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i} className="relative overflow-hidden border-border/50">
+                <CardContent className="relative pt-5 pb-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Skeleton className="h-3 w-16 mb-2" />
+                      <Skeleton className="h-6 w-12" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-7 w-7 rounded-lg" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-36" />
+                  <Skeleton className="h-9 w-[200px]" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>{t('money.bankRecon.date') || 'Date'}</TableHead>
+                      <TableHead>{t('money.bankRecon.description') || 'Description'}</TableHead>
+                      <TableHead className="text-right">{t('money.bankRecon.amount') || 'Amount'}</TableHead>
+                      <TableHead className="text-center">{t('money.bankRecon.status') || 'Status'}</TableHead>
+                      <TableHead>{t('money.bankRecon.matchedTo') || 'Matched To'}</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-4 rounded-full" />
+                            <div>
+                              <Skeleton className="h-4 w-40 mb-1" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-4 w-16 ml-auto" />
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Skeleton className="h-5 w-20 rounded-full mx-auto" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-8 rounded-md" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

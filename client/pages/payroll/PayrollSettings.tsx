@@ -6,6 +6,8 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { PayrollConfigTab } from "@/components/settings/PayrollConfigTab";
@@ -32,8 +34,125 @@ export default function PayrollSettings() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-6 py-6">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-96 w-full rounded-2xl" />
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-4 w-72" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Tax (WIT) */}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-32" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-3 w-36" />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Social Security (INSS) */}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-10 rounded-full" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-10 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Overtime */}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-24" />
+                <div className="max-w-md space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 13th Month */}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-36" />
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-6 w-10 rounded-full" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Approval policy */}
+              <div className="space-y-4">
+                <Skeleton className="h-5 w-40" />
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-6 w-10 rounded-full" />
+                  <div className="space-y-1">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3 w-64" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Skeleton className="h-10 w-full sm:w-32" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

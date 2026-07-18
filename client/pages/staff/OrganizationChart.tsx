@@ -352,28 +352,37 @@ export default function OrganizationChart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-8">
+        <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
           {/* Header skeleton */}
-          <div className="flex items-center justify-between mb-8">
-            <Skeleton className="h-10 w-64" />
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-36" />
-              <Skeleton className="h-10 w-24" />
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-[30px] w-[30px] shrink-0 rounded-lg" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-36" />
+                <Skeleton className="h-10 w-24" />
+              </div>
             </div>
+            <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
           </div>
 
           {/* Statistics skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
+                <Card key={i} className="border-border/50 shadow-lg">
+                  <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-20" />
                         <Skeleton className="h-8 w-12" />
                       </div>
-                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <Skeleton className="h-11 w-11 rounded-xl" />
                     </div>
                   </CardContent>
                 </Card>
@@ -381,7 +390,8 @@ export default function OrganizationChart() {
           </div>
 
           {/* Org chart skeleton */}
-          <div className="bg-card rounded-lg shadow-sm border border-border p-12">
+          <Card className="border-border/50 shadow-lg overflow-x-auto">
+            <CardContent className="p-12 min-w-max">
             <div className="flex flex-col items-center space-y-8">
               {/* Executive chain skeleton */}
               <div className="flex flex-col items-center space-y-4">
@@ -412,7 +422,8 @@ export default function OrganizationChart() {
                 ))}
               </div>
             </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

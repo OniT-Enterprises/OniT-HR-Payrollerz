@@ -262,9 +262,15 @@ export default function ContractGeneratorDialog({
         </DialogHeader>
 
         {templatesLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-64 w-full" />
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2 flex-1 min-w-[240px]">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-36" />
+            </div>
           </div>
         ) : templates.length === 0 ? (
           <Alert>

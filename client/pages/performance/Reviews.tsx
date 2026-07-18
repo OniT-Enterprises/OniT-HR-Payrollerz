@@ -384,24 +384,52 @@ export default function Reviews() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <Skeleton className="h-8 w-8 rounded" />
-            <div>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-4 w-64" />
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <div>
+                <Skeleton className="h-7 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
             </div>
+            <Skeleton className="h-10 w-32" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-5">
-                  <Skeleton className="h-4 w-28 mb-2" />
-                  <Skeleton className="h-8 w-16 mb-1" />
-                  <Skeleton className="h-3 w-20" />
-                </CardContent>
-              </Card>
-            ))}
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="inline-flex gap-1 rounded-md bg-muted p-1">
+                <Skeleton className="h-8 w-24 rounded-sm" />
+                <Skeleton className="h-8 w-24 rounded-sm" />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-border/50"
+                  >
+                    <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                    <Skeleton className="h-8 w-20 shrink-0" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

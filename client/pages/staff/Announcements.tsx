@@ -356,13 +356,88 @@ export default function Announcements() {
     return (
       <div className="min-h-screen bg-background">
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-16" />
+          <PageHeader
+            title={t("announcements.title")}
+            subtitle={t("announcements.subtitle")}
+            icon={Megaphone}
+            iconColor="text-blue-500"
+            actions={
+              <Button size="lg" disabled>
+                <Plus className="h-5 w-5 mr-2" />
+                {t("announcements.new")}
+              </Button>
+            }
+          />
+
+          <div className="space-y-3 md:hidden">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-56" />
+                    </div>
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
+
+          <Card className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[250px]">{t("announcements.table.title")}</TableHead>
+                  <TableHead>{t("announcements.table.body")}</TableHead>
+                  <TableHead className="w-[100px]">{t("announcements.table.pinned")}</TableHead>
+                  <TableHead className="w-[150px]">{t("announcements.table.created")}</TableHead>
+                  <TableHead className="w-[120px] text-center">{t("announcements.table.readCount")}</TableHead>
+                  <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-48" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20 mb-1" />
+                      <Skeleton className="h-3 w-16" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="h-5 w-8 rounded-full mx-auto" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
         </div>
       </div>
     );
@@ -379,7 +454,7 @@ export default function Announcements() {
           icon={Megaphone}
           iconColor="text-blue-500"
           actions={
-            <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700 text-white" size="lg">
+            <Button onClick={openCreateDialog} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="h-5 w-5 mr-2" />
               {t("announcements.new")}
             </Button>

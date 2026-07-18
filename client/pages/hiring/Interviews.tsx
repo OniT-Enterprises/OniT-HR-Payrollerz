@@ -567,14 +567,64 @@ export default function Interviews() {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-64" />
-            <div className="grid grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-24" />
-              ))}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
             </div>
-            <Skeleton className="h-96" />
+            <Skeleton className="h-10 w-44" />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-[160px]" />
+            <Skeleton className="h-10 w-[180px]" />
+          </div>
+
+          <div className="mt-4 space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="border-border/50">
+                <CardContent className="p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                    <div className="flex items-start gap-4 flex-1">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-32" />
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </div>
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-40" />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-start gap-2 min-w-[200px]">
+                      <Skeleton className="h-4 w-36" />
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+
+                    <div className="min-w-[180px] space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+
+                    <div className="min-w-[150px] space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-8 w-28" />
+                      <Skeleton className="h-8 w-28" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>

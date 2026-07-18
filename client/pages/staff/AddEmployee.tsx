@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -707,10 +708,63 @@ export default function AddEmployee() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-64 mb-6" />
-          <Skeleton className="h-20 w-full mb-6" />
-          <Skeleton className="h-96 w-full" />
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+              <div className="min-w-0 space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-32 shrink-0" />
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5 sm:hidden">
+              <div className="min-w-0 space-y-1">
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-4 w-28" />
+              </div>
+              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+            </div>
+
+            <div className="relative hidden sm:flex justify-between">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex flex-col items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+
+            <Card>
+              <CardHeader className="hidden sm:block">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <Skeleton className="h-4 w-56 mt-2" />
+              </CardHeader>
+              <CardContent className="min-h-[420px] space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-between border-t pt-4">
+              <Skeleton className="h-10 w-20" />
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

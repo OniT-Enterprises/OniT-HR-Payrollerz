@@ -446,11 +446,111 @@ export default function PayrollAllocationReport() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
+              <>
+                <div className="space-y-3 md:hidden">
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <div
+                      key={index}
+                      className="space-y-3 rounded-lg border border-border/70 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-4 w-28" />
+                          <Skeleton className="h-3 w-20" />
+                        </div>
+                        <Skeleton className="h-3 w-16" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-14" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-14" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-14" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-14" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden md:block">
+                  <Table className="min-w-[960px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          {t("reports.payrollAllocation.table.project")}
+                        </TableHead>
+                        <TableHead>
+                          {t("reports.payrollAllocation.table.fundingSource")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.employees")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.gross")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.incomeTax")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.inssEmployee")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.inssEmployer")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.net")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.payrollAllocation.table.employerCost")}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Array.from({ length: 5 }, (_, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Skeleton className="h-4 w-24" />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton className="h-4 w-20" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-8" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Skeleton className="ml-auto h-4 w-16" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             ) : rows.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border rounded-md">
                 <Building2 className="h-4 w-4" />

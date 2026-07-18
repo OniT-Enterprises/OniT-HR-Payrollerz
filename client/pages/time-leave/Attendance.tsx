@@ -670,18 +670,89 @@ export default function Attendance() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="mb-6">
-              <Skeleton className="h-9 w-40 mb-2" />
-              <Skeleton className="h-4 w-64" />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
+            subtitle={isToday ? (
+              <>
+                {formatDateLabel(selectedDate)}
+                <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
+              </>
+            ) : (
+              formatDateLabel(selectedDate)
+            )}
+            cardIcon="tl-attendance" icon={Clock}
+            iconColor="text-cyan-500"
+            actions={canManageAttendance ? (
+              <>
+                {isAttendanceAdmin && <Skeleton className="h-9 w-24 rounded-md" />}
+                <Skeleton className="h-9 w-32 rounded-md" />
+              </>
+            ) : undefined}
+          />
+
+          {/* Inline Toolbar */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-[180px] rounded-md" />
+              <Skeleton className="h-9 w-20 rounded-md" />
             </div>
-            <Skeleton className="h-12 w-full rounded-lg mb-6" />
-            <div className="space-y-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-lg" />
-              ))}
+            <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
             </div>
+          </div>
+
+          <div className="mb-6">
+            <Skeleton className="h-11 w-full rounded-lg" />
+          </div>
+
+          {/* Attendance Records */}
+          <div className="space-y-1.5">
+            <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 px-5 py-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-3 w-12 ml-auto" />
+              <Skeleton className="h-3 w-14 ml-auto" />
+              <Skeleton className="h-3 w-10 ml-auto" />
+              <Skeleton className="h-3 w-14 ml-auto" />
+            </div>
+
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="rounded-lg border border-border/50 bg-card">
+                {/* Desktop layout */}
+                <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 items-center px-5 py-3">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-4 w-14" />
+                  <Skeleton className="h-4 w-14" />
+                  <Skeleton className="h-4 w-10 ml-auto" />
+                  <Skeleton className="h-4 w-10 ml-auto" />
+                  <Skeleton className="h-4 w-8 ml-auto" />
+                  <Skeleton className="h-5 w-20 rounded-full ml-auto" />
+                </div>
+
+                {/* Mobile layout */}
+                <div className="md:hidden px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-3 w-10" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

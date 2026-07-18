@@ -142,14 +142,61 @@ export default function ARAgingReport() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid grid-cols-5 gap-4 mb-8">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
+          <div className="flex items-start justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-md" />
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-5 w-64" />
+              </div>
+            </div>
+            <div className="text-right">
+              <Skeleton className="h-4 w-28 mb-2 ml-auto" />
+              <Skeleton className="h-8 w-24 ml-auto" />
+            </div>
           </div>
-          <Skeleton className="h-96 w-full" />
+
+          <Skeleton className="mb-8 h-11 w-full rounded-lg" />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                <Skeleton className="h-5 w-40" />
+              </CardTitle>
+              <Skeleton className="h-4 w-60" />
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b text-sm">
+                      <th className="text-left py-3 font-medium">{t('money.arAging.customer') || 'Customer'}</th>
+                      <th className="text-right py-3 font-medium">{t('money.arAging.current') || 'Current'}</th>
+                      <th className="text-right py-3 font-medium">1-30</th>
+                      <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">90+</th>
+                      <th className="text-right py-3 font-medium">{t('money.arAging.total') || 'Total'}</th>
+                      <th className="w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i} className="border-b">
+                        <td className="py-3"><Skeleton className="h-4 w-32" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="py-3"><Skeleton className="h-8 w-8 rounded-md" /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

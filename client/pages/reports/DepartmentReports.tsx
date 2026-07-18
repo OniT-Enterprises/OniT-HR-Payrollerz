@@ -206,7 +206,7 @@ export default function DepartmentReports() {
   };
 
   if (loading) {
-    return <ReportPageSkeleton sections={2} />;
+    return <ReportPageSkeleton sections={4} />;
   }
 
   if (departmentsQuery.isError || employeesQuery.isError) {

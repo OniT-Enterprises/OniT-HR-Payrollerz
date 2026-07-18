@@ -231,9 +231,86 @@ export default function ProfitLoss() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 max-w-screen-2xl mx-auto">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <Skeleton className="h-96 w-full" />
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-[30px] w-[30px] shrink-0 rounded-lg" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-[180px] shrink-0" />
+            </div>
+            <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
+          </div>
+
+          <div className="mb-8">
+            <Skeleton className="mb-3 h-11 w-full rounded-lg" />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <div className="ml-6 space-y-1">
+                  <div className="flex justify-between py-1">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+                <div className="flex justify-between py-2 border-t">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+
+              <Separator className="my-6" />
+
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <div className="ml-6 space-y-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex justify-between py-1">
+                      <Skeleton className="h-4" style={{ width: `${140 - i * 12}px` }} />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between py-2 border-t">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+
+              <Separator className="my-6" />
+
+              <div className="flex justify-between py-3 bg-muted rounded-lg px-4">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-4 w-28 mb-2" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                    <Skeleton className="h-5 w-5 rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     );

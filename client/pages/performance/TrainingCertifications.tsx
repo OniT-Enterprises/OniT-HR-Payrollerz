@@ -434,7 +434,7 @@ export default function TrainingCertifications() {
           icon={Award}
           iconColor="text-blue-500"
           actions={
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { resetForm(); setShowAddDialog(true); }}>
+            <Button onClick={() => { resetForm(); setShowAddDialog(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               Add Training
             </Button>

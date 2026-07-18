@@ -285,7 +285,7 @@ export function JobPostImage({
             <Copy className="h-4 w-4" />
             Copy caption
           </Button>
-          <Button onClick={handleDownload} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+          <Button onClick={handleDownload} className="gap-2">
             <Download className="h-4 w-4" />
             Download image
           </Button>

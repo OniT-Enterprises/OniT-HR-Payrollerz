@@ -932,31 +932,64 @@ export default function AllEmployees() {
 
   const incompleteEmployees = getIncompleteEmployees(employees);
 
-  // Skeleton for data rows while loading
+  // Skeleton for data rows while loading — mirrors the mobile card list and
+  // desktop table rows shape so nothing jumps when data arrives.
   const TableSkeleton = () => (
-    <div className="space-y-4">
-      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-        <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div>
-              <Skeleton className="h-4 w-32 mb-1" />
+    <>
+      <div className="md:hidden divide-y divide-border/50">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="p-4 flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-16 rounded-full shrink-0" />
+              </div>
+              <Skeleton className="h-3 w-40" />
               <Skeleton className="h-3 w-20" />
             </div>
           </div>
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-8 w-16" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-20" />
-          <div className="flex gap-2 ml-auto">
-            <Skeleton className="h-8 w-8 rounded" />
-            <Skeleton className="h-8 w-8 rounded" />
-            <Skeleton className="h-8 w-8 rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <tbody className="divide-y divide-border/50">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <tr key={i}>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <Skeleton className="h-4 w-24" />
+                </td>
+                <td className="px-4 py-3">
+                  <Skeleton className="h-4 w-28" />
+                </td>
+                <td className="px-4 py-3">
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </td>
+                {showSalary && (
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                  </td>
+                )}
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end">
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 
   return (

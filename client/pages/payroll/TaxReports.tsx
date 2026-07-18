@@ -76,19 +76,58 @@ export default function TaxReports() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-lg" />
               <div>
                 <Skeleton className="h-8 w-40 mb-2" />
                 <Skeleton className="h-4 w-72" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
-              <Card><CardContent className="p-6"><Skeleton className="h-24 w-full" /></CardContent></Card>
-            </div>
+            <Skeleton className="h-6 w-28 rounded-full" />
+          </div>
+
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                {t("taxReports.upcomingDeadlines")}
+              </CardTitle>
+              <CardDescription>
+                {t("taxReports.upcomingDeadlinesDesc")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="p-4 rounded-lg border bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4 rounded" />
+                        <Skeleton className="h-4 w-28" />
+                      </div>
+                      <Skeleton className="h-5 w-24 rounded-full" />
+                    </div>
+                    <Skeleton className="h-4 w-56 mt-2" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: showAdvancedTax ? 2 : 1 }).map((_, i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-4 w-64" />
+                </CardHeader>
+                <CardContent className="flex items-center justify-between">
+                  <Skeleton className="h-10 w-40" />
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>

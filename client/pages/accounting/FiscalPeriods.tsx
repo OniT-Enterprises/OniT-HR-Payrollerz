@@ -341,20 +341,43 @@ export default function FiscalPeriods() {
       </Card>
 
       {loading ? (
-        <Card>
-          <CardContent className="py-8">
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-6 w-16" />
-                  <Skeleton className="h-8 w-20 ml-auto" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <div className="mb-3 flex min-h-11 w-full items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-4" />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="mt-1 h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[60px]">#</TableHead>
+                    <TableHead>{t("accounting.fiscalPeriods.month")}</TableHead>
+                    <TableHead>{t("accounting.fiscalPeriods.dateRange")}</TableHead>
+                    <TableHead>{t("accounting.fiscalPeriods.status")}</TableHead>
+                    <TableHead className="text-right">{t("accounting.fiscalPeriods.actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
       ) : !fiscalYear ? (
         <Card>
           <CardContent className="py-12">

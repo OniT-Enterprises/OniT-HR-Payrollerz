@@ -238,21 +238,23 @@ export default function Departments() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6">
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
           {/* Header Skeleton */}
-          <div className="flex justify-end mb-4">
-            <div className="flex gap-2">
-              <Skeleton className="h-10 w-36" />
-              <Skeleton className="h-10 w-40" />
-              <Skeleton className="h-10 w-44" />
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-lg sm:h-10 sm:w-10" />
+                <div className="min-w-0">
+                  <Skeleton className="h-5 w-40 mb-1.5" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-40" />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-3 mb-6">
-            <Skeleton className="h-8 w-8 rounded" />
-            <div>
-              <Skeleton className="h-8 w-40 mb-2" />
-              <Skeleton className="h-4 w-64" />
-            </div>
+            <div className="mt-3 h-0.5 rounded-full bg-muted opacity-40" />
           </div>
 
           {/* Stats Skeleton */}
@@ -279,19 +281,55 @@ export default function Departments() {
               <Skeleton className="h-4 w-72" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-4 w-4 rounded-full" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                    <Skeleton className="h-6 w-24 rounded-full" />
-                    <Skeleton className="h-6 w-24 rounded-full" />
-                    <Skeleton className="h-6 w-12 rounded-full" />
-                    <Skeleton className="h-8 w-8 rounded ml-auto" />
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">
+                        <Skeleton className="h-4 w-24" />
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <Skeleton className="h-4 w-24 mx-auto" />
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i} className="border-b">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="w-4 h-4 rounded-full" />
+                            <Skeleton className="h-4 w-4" />
+                            <Skeleton className="h-4 w-28" />
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-5 w-20 rounded-full mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-5 w-20 rounded-full mx-auto" />
+                        </td>
+                        <td className="p-3 text-center">
+                          <Skeleton className="h-5 w-8 rounded-full mx-auto" />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
@@ -361,8 +399,8 @@ export default function Departments() {
                 {t("departments.emptyDesc")}
               </p>
               <Button
-                onClick={() => navigate("/people/add")}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => navigate("/people/add")}
               >
                 <User className="mr-2 h-4 w-4" />
                 {t("departments.addFirstEmployee")}

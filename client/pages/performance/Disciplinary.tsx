@@ -470,7 +470,7 @@ export default function Disciplinary() {
           icon={Shield}
           iconColor="text-blue-500"
           actions={
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { resetForm(); setShowRecordDialog(true); }}>
+            <Button onClick={() => { resetForm(); setShowRecordDialog(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               Record Incident
             </Button>

@@ -147,7 +147,7 @@ export function SendReminderDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSendReminder} disabled={loading} className="bg-orange-600 hover:bg-orange-700">
+          <AlertDialogAction onClick={handleSendReminder} disabled={loading}>
             {loading ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
             ) : (

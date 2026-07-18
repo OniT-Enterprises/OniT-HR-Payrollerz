@@ -168,38 +168,155 @@ function ForeignWorkersSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="border-b bg-blue-50 dark:bg-blue-950/20">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <Skeleton className="h-4 w-24 mb-4" />
+      <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-14 w-14 rounded-2xl" />
+            <Skeleton className="h-10 w-10 rounded-lg" />
             <div>
-              <Skeleton className="h-8 w-48 mb-2" />
-              <Skeleton className="h-5 w-64" />
+              <Skeleton className="h-7 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
             </div>
           </div>
+          <Skeleton className="h-10 w-36" />
         </div>
-      </div>
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[1, 2, 3, 4].map((i) => (
+
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
               <CardContent className="p-5">
-                <Skeleton className="h-4 w-24 mb-2" />
-                <Skeleton className="h-8 w-16" />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-4 w-20 mb-2" />
+                    <Skeleton className="h-7 w-10" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
         <Card>
           <CardHeader>
-            <Skeleton className="h-6 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-5 w-40 mb-2" />
+            <Skeleton className="h-4 w-56" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+            <div className="mb-4 flex gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-28" />
+              <Skeleton className="h-9 w-24" />
+            </div>
+
+            <div className="mb-4">
+              <Skeleton className="h-10 w-full" />
+            </div>
+
+            <div className="space-y-3 md:hidden">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="border-border/50">
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div>
+                            <Skeleton className="h-4 w-28 mb-1" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Skeleton className="h-3 w-16 mb-1" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                        <div>
+                          <Skeleton className="h-3 w-16 mb-1" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                        <div>
+                          <Skeleton className="h-3 w-16 mb-1" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                        <div>
+                          <Skeleton className="h-3 w-16 mb-1" />
+                          <Skeleton className="h-4 w-20" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-9 w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Table className="hidden md:table">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead>{" "}</TableHead>
+                  <TableHead className="text-right">{" "}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div>
+                          <Skeleton className="h-4 w-28 mb-1" />
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Skeleton className="h-8 w-28 ml-auto" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i}>
+                  <Skeleton className="h-4 w-32 mb-3" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-5/6" />
+                    <Skeleton className="h-3 w-4/6" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                </div>
               ))}
             </div>
           </CardContent>

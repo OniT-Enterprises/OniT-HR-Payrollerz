@@ -244,40 +244,105 @@ export default function CreateJobLocal() {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <div>
-            <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8">
-              <div className="p-8">
-                <div className="flex items-start gap-4">
-                  <Skeleton className="h-14 w-14 rounded-xl" />
+          <PageHeader
+            title={t("hiring.createJob.title")}
+            subtitle={t("hiring.createJob.subtitle")}
+            cardIcon="hiring" icon={Briefcase}
+            iconColor="text-blue-500"
+          />
+
+          <div className="mt-6 space-y-6">
+            <Card className="border-border/50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <Skeleton className="h-5 w-5 rounded" />
+                  </div>
                   <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-8 w-64" />
-                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-56" />
                   </div>
                 </div>
-              </div>
-            </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card className="border-border/50">
               <CardHeader>
-                <Skeleton className="h-6 w-40 mb-2" />
-                <Skeleton className="h-4 w-64" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <Skeleton className="h-5 w-5 rounded" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-72" />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-10 w-full" />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
                   </div>
-                ))}
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+                <Skeleton className="h-16 w-full rounded-lg" />
               </CardContent>
             </Card>
+
+            <Card className="border-border/50">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-56" />
+                  </div>
+                  <Skeleton className="h-8 w-32 rounded-md shrink-0" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-52 w-full" />
+              </CardContent>
+            </Card>
+
+            <div className="flex items-center justify-end gap-3 pt-4">
+              <Skeleton className="h-10 w-24 rounded-md" />
+              <Skeleton className="h-10 w-40 rounded-md" />
+              <Skeleton className="h-10 w-32 rounded-md" />
+            </div>
           </div>
         </div>
       </div>

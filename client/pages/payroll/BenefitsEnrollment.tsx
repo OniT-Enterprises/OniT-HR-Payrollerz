@@ -373,27 +373,85 @@ export default function EmployeeAllowances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
-                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-7 w-48 mb-2" />
                 <Skeleton className="h-4 w-64" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Skeleton className="h-10 w-36" />
           </div>
+
+          <Card className="mb-6 border-border/50">
+            <CardHeader className="pb-3">
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-4 w-56" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="p-3 border rounded-lg">
+                    <Skeleton className="h-5 w-5 mb-1.5" />
+                    <Skeleton className="h-3 w-16 mb-1.5" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-4 w-28" />
+                </div>
+                <Skeleton className="h-10 w-64" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+                      <TableHead className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+                      <TableHead><Skeleton className="h-4 w-16" /></TableHead>
+                      <TableHead className="text-right"><Skeleton className="h-4 w-14 ml-auto" /></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-6 w-6 rounded" />
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Skeleton className="h-8 w-8 rounded" />
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

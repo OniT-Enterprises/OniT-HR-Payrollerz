@@ -285,16 +285,40 @@ export default function AccountingAuditTrail() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-4 w-44" />
-                    <Skeleton className="h-4 flex-1" />
-                    <Skeleton className="h-8 w-10 ml-auto" />
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[190px]">{t("accounting.auditTrail.time")}</TableHead>
+                      <TableHead className="w-[120px]">{t("accounting.auditTrail.severity")}</TableHead>
+                      <TableHead className="w-[220px]">{t("accounting.auditTrail.user")}</TableHead>
+                      <TableHead>{t("accounting.auditTrail.description")}</TableHead>
+                      <TableHead className="w-[70px] text-right">{t("common.view")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-36" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className={`h-4 ${i % 2 === 0 ? "w-3/4" : "w-full"}`} />
+                          {i % 3 === 0 && <Skeleton className="h-3 w-24 mt-1.5" />}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-8 w-8 ml-auto rounded-md" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">

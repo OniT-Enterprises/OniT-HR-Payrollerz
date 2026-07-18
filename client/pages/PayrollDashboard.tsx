@@ -42,13 +42,54 @@ function PayrollDashboardSkeleton() {
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={payrollNavConfig} />
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        <Skeleton className="h-24 w-full rounded-2xl" />
-        <Skeleton className="h-40 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
-          ))}
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-40" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-32 rounded-md" />
+            <Skeleton className="h-10 w-32 rounded-md" />
+          </div>
         </div>
+
+        {/* Needs attention */}
+        <section>
+          <Skeleton className="mb-3 h-3 w-36" />
+          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`flex w-full items-center gap-4 px-4 py-3.5 ${
+                  idx !== 2 ? "border-b border-border/60" : ""
+                }`}
+              >
+                <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+                <Skeleton
+                  className={`h-4 flex-1 ${idx === 0 ? "max-w-[12rem]" : idx === 1 ? "max-w-[16rem]" : "max-w-[10rem]"}`}
+                />
+                <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Module hub */}
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
+            >
+              <Skeleton className="h-12 w-12 rounded-lg sm:h-16 sm:w-16" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          ))}
+        </section>
       </div>
     </div>
   );

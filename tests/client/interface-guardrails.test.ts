@@ -63,7 +63,9 @@ describe("interface guardrails", () => {
     expect(dashboard).not.toContain(
       'title: t("moduleDashboards.scheduling.cards.timeTracking")',
     );
-    expect(dashboard).toContain("h-14 w-full");
+    // The loading skeleton reserves a compact attention strip (row-height
+    // placeholders), never a tall summary block.
+    expect(dashboard).toContain("px-4 py-3.5");
     expect(dashboard).not.toContain("h-40 w-full");
 
     expect(impersonation).toContain("bg-amber-800");

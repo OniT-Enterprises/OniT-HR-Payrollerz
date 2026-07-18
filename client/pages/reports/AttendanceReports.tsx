@@ -318,7 +318,7 @@ export default function AttendanceReports() {
   };
 
   if (loading) {
-    return <ReportPageSkeleton sections={2} />;
+    return <ReportPageSkeleton sections={2} toolbarFields={1} />;
   }
 
   if (loadError || !hasReadableScope) {

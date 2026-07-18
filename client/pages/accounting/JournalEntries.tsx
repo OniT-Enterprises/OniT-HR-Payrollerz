@@ -521,29 +521,24 @@ export default function JournalEntries() {
         <MainNavigation />
         <div className="p-6">
           <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-8 w-8 rounded" />
+                <div>
+                  <Skeleton className="h-8 w-48 mb-2" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
               </div>
+              {canManageTenant && <Skeleton className="h-9 w-40 rounded-md" />}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Skeleton className="h-11 w-full rounded-lg mb-6" />
             <Card className="mb-6">
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-4">
                   <Skeleton className="h-10 flex-1" />
-                  <Skeleton className="h-10 w-40" />
-                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-full md:w-36" />
+                  <Skeleton className="h-10 w-full md:w-32" />
+                  <Skeleton className="h-10 w-full md:w-28" />
                 </div>
               </CardContent>
             </Card>
@@ -553,16 +548,32 @@ export default function JournalEntries() {
                 <Skeleton className="h-4 w-48" />
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20 ml-auto" />
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="border rounded-lg overflow-hidden bg-card">
+                      <div className="px-4 py-3 flex items-center gap-4">
+                        <Skeleton className="h-4 w-4 shrink-0" />
+                        <div className="flex-1 grid grid-cols-12 gap-4 items-center">
+                          <div className="col-span-2">
+                            <Skeleton className="h-4 w-16" />
+                          </div>
+                          <div className="col-span-1">
+                            <Skeleton className="h-4 w-14" />
+                          </div>
+                          <div className="col-span-4">
+                            <Skeleton className="h-4 w-full max-w-[12rem]" />
+                          </div>
+                          <div className="col-span-1">
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                          </div>
+                          <div className="col-span-2 flex justify-end">
+                            <Skeleton className="h-4 w-20" />
+                          </div>
+                          <div className="col-span-2">
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -142,14 +142,80 @@ export default function APAgingReport() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid grid-cols-5 gap-4 mb-8">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
+          <div className="mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Skeleton className="h-[30px] w-[30px] shrink-0 rounded-lg" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <div className="shrink-0">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-7 w-28" />
+              </div>
+            </div>
+            <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
           </div>
-          <Skeleton className="h-96 w-full" />
+
+          <MoreDetailsSection className="mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Card key={i}>
+                  <CardContent className="pt-4 pb-3">
+                    <Skeleton className="h-3 w-16 mb-2" />
+                    <Skeleton className="h-6 w-20 mb-2" />
+                    <Skeleton className="h-3 w-12" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </MoreDetailsSection>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                <Skeleton className="h-5 w-36" />
+              </CardTitle>
+              <Skeleton className="h-4 w-56" />
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b text-sm">
+                      <th className="text-left py-3 font-medium">{t('money.apAging.vendor') || 'Vendor'}</th>
+                      <th className="text-right py-3 font-medium">{t('money.apAging.current') || 'Current'}</th>
+                      <th className="text-right py-3 font-medium">1-30</th>
+                      <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">90+</th>
+                      <th className="text-right py-3 font-medium">{t('money.apAging.total') || 'Total'}</th>
+                      <th className="w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <tr key={i} className="border-b">
+                        <td className="py-3">
+                          <Skeleton className="h-4 w-32" />
+                        </td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="text-right py-3"><Skeleton className="h-4 w-16 ml-auto" /></td>
+                        <td className="py-3">
+                          <Skeleton className="h-8 w-8 rounded-md" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
