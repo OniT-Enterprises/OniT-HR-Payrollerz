@@ -95,7 +95,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="dark min-h-screen bg-[#0a0a0b] flex items-center justify-center p-4 relative overflow-hidden">
       <SEO {...seoConfig.login} />
 
       {/* Background effects */}

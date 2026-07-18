@@ -1,10 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase-core";
@@ -204,66 +200,76 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 py-6 sm:items-center">
+    <div className="dark relative flex min-h-screen items-start justify-center overflow-hidden bg-[#0a0a0b] p-4 py-8 sm:items-center">
       <SEO {...seoConfig.signup} />
-      <div className="w-full max-w-md">
-        <div className="mb-4 flex justify-end">
-          <LocaleSwitcher variant="buttons" className="justify-end" />
+
+      {/* Background effects (matches Login) */}
+      <div className="absolute inset-0">
+        <div className="absolute left-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px]" />
+        <div className="absolute bottom-1/3 right-1/4 h-[400px] w-[400px] rounded-full bg-primary/5 blur-[100px]" />
+      </div>
+
+      {/* Grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_70%)]" />
+
+      <div className="relative w-full max-w-md">
+        <div className="mb-6 flex justify-center">
+          <LocaleSwitcher variant="buttons" className="justify-center" />
         </div>
 
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-3">
+        <div className="mb-10 flex justify-center">
+          <Link to="/landing">
             <img
-              src="/images/illustrations/xefe-logo-dark.webp"
+              src="/images/illustrations/xefe-logo-light.webp"
               alt="Xefe"
-              className="h-10 w-auto"
+              className="h-12 w-auto"
             />
-          </div>
+          </Link>
         </div>
 
-        <Card className="border-border/50 shadow-xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl font-bold text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-white">
               {step === "account" ? t("auth.signup.titleAccount") : t("auth.signup.titleOrganization")}
-            </CardTitle>
-            <CardDescription className="text-center">
+            </h1>
+            <p className="mt-2 text-sm text-zinc-500">
               {step === "account"
                 ? `${t("landing.hero.trust.trial")} · ${t("admin.createTenant.planFreeDesc")}`
                 : t("auth.signup.subtitleOrganization")}
-            </CardDescription>
-          </CardHeader>
+            </p>
+          </div>
 
-          <CardContent>
+          <div>
             {/* Progress indicator */}
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <div className={`flex items-center gap-2 ${step === "account" ? "text-primary" : "text-muted-foreground"}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+            <div className="mb-6 flex items-center justify-center gap-2">
+              <div className={`flex items-center gap-2 ${step === "account" ? "text-primary" : "text-zinc-500"}`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                   step === "account"
                     ? "bg-primary text-primary-foreground"
                     : "bg-primary/10 text-primary"
                 }`}>
                   {step === "organization" ? <CheckCircle2 className="h-5 w-5" /> : "1"}
                 </div>
-                <span className="text-sm font-medium hidden sm:inline">{t("auth.signup.stepAccount")}</span>
+                <span className="hidden text-sm font-medium sm:inline">{t("auth.signup.stepAccount")}</span>
               </div>
-              <div className="w-8 h-0.5 bg-border" />
-              <div className={`flex items-center gap-2 ${step === "organization" ? "text-primary" : "text-muted-foreground"}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              <div className="h-0.5 w-8 bg-white/10" />
+              <div className={`flex items-center gap-2 ${step === "organization" ? "text-primary" : "text-zinc-500"}`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
                   step === "organization"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    : "bg-white/5 text-zinc-500"
                 }`}>
                   2
                 </div>
-                <span className="text-sm font-medium hidden sm:inline">{t("auth.signup.stepOrganization")}</span>
+                <span className="hidden text-sm font-medium sm:inline">{t("auth.signup.stepOrganization")}</span>
               </div>
             </div>
 
             {error && (
-              <Alert role="alert" variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <div role="alert" className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 p-3">
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
             )}
 
             {step === "account" ? (
@@ -276,20 +282,20 @@ export default function Signup() {
                 />
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
+                    <div className="w-full border-t border-white/10" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-card px-3 text-xs uppercase tracking-wide text-muted-foreground">
+                    <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-500">
                       {t("auth.orDivider")}
                     </span>
                   </div>
                 </div>
                 <form onSubmit={handleAccountSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">{t("auth.signup.fullName")}</Label>
+                  <label htmlFor="displayName" className="text-sm font-medium text-zinc-300">{t("auth.signup.fullName")}</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
                       id="displayName"
                       name="name"
                       type="text"
@@ -297,17 +303,17 @@ export default function Signup() {
                       placeholder={t("auth.signup.fullNamePlaceholder")}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="pl-9"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">{t("auth.signup.workEmail")}</Label>
+                  <label htmlFor="email" className="text-sm font-medium text-zinc-300">{t("auth.signup.workEmail")}</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
                       id="email"
                       name="email"
                       type="email"
@@ -315,17 +321,17 @@ export default function Signup() {
                       placeholder={t("auth.signup.workEmailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t("auth.password")}</Label>
+                  <label htmlFor="password" className="text-sm font-medium text-zinc-300">{t("auth.password")}</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
                       id="password"
                       name="password"
                       type="password"
@@ -333,7 +339,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.passwordHint")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                       minLength={6}
                     />
@@ -341,10 +347,10 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t("auth.signup.confirmPassword")}</Label>
+                  <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-300">{t("auth.signup.confirmPassword")}</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
                       id="confirmPassword"
                       name="confirmPassword"
                       type="password"
@@ -352,7 +358,7 @@ export default function Signup() {
                       placeholder={t("auth.signup.confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-9"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
@@ -367,10 +373,10 @@ export default function Signup() {
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
+                  <label htmlFor="companyName" className="text-sm font-medium text-zinc-300">{t("auth.signup.companyName")}</label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
                       id="companyName"
                       name="organization"
                       type="text"
@@ -378,16 +384,16 @@ export default function Signup() {
                       placeholder={t("auth.signup.companyNamePlaceholder")}
                       value={companyName}
                       onChange={(e) => handleCompanyNameChange(e.target.value)}
-                      className="pl-9"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="companySlug">{t("auth.signup.companyUrl")}</Label>
+                  <label htmlFor="companySlug" className="text-sm font-medium text-zinc-300">{t("auth.signup.companyUrl")}</label>
                   <div className="flex items-center gap-2">
-                    <Input
+                    <input
                       id="companySlug"
                       name="companySlug"
                       type="text"
@@ -398,10 +404,10 @@ export default function Signup() {
                         setSlugManuallyEdited(true);
                         setCompanySlug(generateSlug(e.target.value));
                       }}
-                      className="flex-1"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-zinc-500">
                     {t("auth.signup.companyUrlHint")}
                   </p>
                 </div>
@@ -438,37 +444,41 @@ export default function Signup() {
                 </div>
               </form>
             )}
-          </CardContent>
+          </div>
 
-          <CardFooter className="flex flex-col gap-4 pt-0">
+          <div className="mt-6 flex flex-col gap-4">
             <div className="relative w-full">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="w-full border-t border-white/10" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
+                <span className="bg-[#0a0a0b] px-2 text-zinc-500">
                   {t("auth.signup.alreadyHaveAccount")}
                 </span>
               </div>
             </div>
 
-            <Button variant="outline" asChild className="w-full">
+            <Button
+              variant="outline"
+              asChild
+              className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+            >
               <Link to="/auth/login">{t("auth.signIn")}</Link>
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-center text-xs text-zinc-500">
               {t("legal.signupAgreePre")}{" "}
-              <Link to="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
+              <Link to="/terms" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-300">
                 {t("legal.terms.title")}
               </Link>{" "}
               {t("legal.signupAgreeAnd")}{" "}
-              <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
+              <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-zinc-300">
                 {t("legal.privacy.title")}
               </Link>
               .
             </p>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
