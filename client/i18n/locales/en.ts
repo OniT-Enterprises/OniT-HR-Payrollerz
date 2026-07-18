@@ -6519,6 +6519,12 @@ const messages = {
     "deleteSuccess": "Deduction deleted.",
     "deleteError": "Failed to delete deduction."
   },
+  "paymentOrders": {
+    "action": "Payment order (bank)",
+    "downloadedTitle": "Payment order downloaded",
+    "downloadedDescription": "Print it, fill in the OT number, sign, and email it to your bank branch.",
+    "failed": "Could not generate the payment order."
+  },
   "payrollHistory": {
     "title": "Payroll History",
     "subtitle": "View and manage past payroll runs",

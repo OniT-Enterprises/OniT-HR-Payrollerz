@@ -6519,6 +6519,12 @@ const messages = {
     "deleteSuccess": "Dedução eliminada.",
     "deleteError": "Falha ao eliminar dedução."
   },
+  "paymentOrders": {
+    "action": "Ordem de pagamento (banco)",
+    "downloadedTitle": "Ordem de pagamento descarregada",
+    "downloadedDescription": "Imprima, preencha o número da OT, assine e envie por email ao seu balcão bancário.",
+    "failed": "Não foi possível gerar a ordem de pagamento."
+  },
   "payrollHistory": {
     "title": "Histórico da Folha",
     "subtitle": "Ver e gerir folhas anteriores",

@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
+import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
   useTaxFilings,
   useTaxFilingsDueSoon,
@@ -87,6 +88,7 @@ export default function INSSMonthly() {
 
   // React Query hooks
   const { data: settings, isLoading: settingsLoading } = useSettings();
+  const paymentProfile = useCompanyPaymentProfile();
   const { data: filings = [], isLoading: filingsLoading } = useTaxFilings("inss_monthly");
   const { data: allDueDates = [], isLoading: duesLoading } = useTaxFilingsDueSoon(6);
   const generateINSS = useGenerateMonthlyINSS();
@@ -296,6 +298,56 @@ export default function INSSMonthly() {
         description: reviewFlag
           ? t("common.needsReviewDesc", { field: reviewFlag.field })
           : t("reports.inssMonthly.toast.drExportError") || "Could not export the DR Excel file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Signed bank payment order for the month's total contribution — the
+  // corpus-verified BNU workflow (docs/BANK_PAYMENTS.md). The employer NISS
+  // is not stored in settings yet, so the reference leaves it to fill in.
+  const handleDownloadPaymentOrder = async () => {
+    if (!selectedReturn) return;
+    try {
+      const [
+        { generateSinglePaymentOrderXlsx, formatPeriodLabelPT, formatPeriodRefPT },
+        { INSS_PAYMENT_ACCOUNT },
+        { downloadBlob },
+        { getTodayTL },
+      ] = await Promise.all([
+        import("@/lib/bank-transfers/payment-pack"),
+        import("@/lib/tlBanking"),
+        import("@/lib/downloadBlob"),
+        import("@/lib/dateUtils"),
+      ]);
+      const period = selectedReturn.reportingPeriod;
+      const tin = selectedReturn.employerTIN || paymentProfile.tin || "________";
+      const pack = await generateSinglePaymentOrderXlsx({
+        company: {
+          name: paymentProfile.companyName || selectedReturn.employerName,
+          accountNumber: paymentProfile.debitAccount || "____________",
+        },
+        bankDisplayName: `${INSS_PAYMENT_ACCOUNT.bank}`,
+        purpose: `das contribuições à Segurança Social de ${formatPeriodLabelPT(period)}`,
+        beneficiaryName: INSS_PAYMENT_ACCOUNT.beneficiary,
+        beneficiaryAccount: INSS_PAYMENT_ACCOUNT.account,
+        reference: `Ref ________ Seg Soc ${tin} ${formatPeriodRefPT(period)}`,
+        amount: selectedReturn.totalContributions,
+        valueDate: getTodayTL(),
+        fileBaseName: `INSS_Pagamento_${period}`,
+        extraNote:
+          "Nota: preencher o NISS da entidade empregadora na descrição da transferência.",
+      });
+      downloadBlob(pack.blob, pack.fileName);
+      toast({
+        title: t("paymentOrders.downloadedTitle"),
+        description: t("paymentOrders.downloadedDescription"),
+      });
+    } catch (error) {
+      console.error("Error generating INSS payment order:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("paymentOrders.failed"),
         variant: "destructive",
       });
     }
@@ -538,6 +590,10 @@ export default function INSSMonthly() {
                   <Button onClick={handleExportDrExcel}>
                     <Download className="h-4 w-4 mr-2" />
                     {t("reports.inssMonthly.actions.exportDr") || "DR Excel (INSS portal)"}
+                  </Button>
+                  <Button variant="outline" onClick={handleDownloadPaymentOrder}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {t("paymentOrders.action")}
                   </Button>
                 </div>
               </CardTitle>

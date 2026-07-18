@@ -42,14 +42,35 @@ Invariants:
   for those banks; `generateBankFile` remains the validation/summary step for
   every bank.
 
-## Known gaps / next candidates (same evidence base)
+## One-off payment orders (added 2026-07-18)
 
-- **INSS monthly payment instruction** — "Pagamento à Segurança Social" is the
-  same letter-to-bank pattern; Xefe produces the INSS DR spreadsheet but not
-  the payment order.
-- **ATTL tax payment order** — `tlBanking.ts` already has the published ATTL
-  BNU accounts; the monthly WIT payment could reuse the payment-pack letter.
-- **Supplier/bill payments** — one-off "Pagamento <vendor> Fatura n.º…"
-  emails follow the same shape; the Money module could generate them.
-- **BNCTL layout is assumed identical to BNU** (same local practice) but not
-  yet verified against a BNCTL-specific example.
+`generateSinglePaymentOrderXlsx` in `payment-pack.ts` produces the signed
+one-off "Ordem de Pagamento" sheet, surfaced via `paymentOrders.*` i18n keys:
+
+- **INSS monthly contribution** (INSS Monthly report page). The INSS
+  collection account at BNU is `INSS_PAYMENT_ACCOUNT` in `tlBanking.ts` —
+  corpus-verified against 200+ real transfer confirmations (beneficiary
+  "SEGURANCA SOCIAL MSS"). Credit-description convention:
+  `Ref <employer NISS> Seg Soc <TIN> <MES> <ANO>`. The employer NISS is not
+  yet a settings field, so the generated reference leaves a blank —
+  **follow-up: add an employer NISS field to company settings**.
+  The INSS portal's own "Guia de Pagamento" carries a reference of the form
+  `<NISS><MM><YYYY><seq>` (e.g. 900000447 + 05 + 2024 + 01).
+- **ATTL monthly WIT** (Monthly WIT page) — pays the published
+  `ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax` IBAN; the sheet reminds the user
+  to mark the advice "electronic payment" per ATTL.
+- **Supplier bills** (Bills page action) — "Pagamento <vendor> Fatura n.º…";
+  vendor bank fields fill in when stored, blanks otherwise.
+
+## Verified non-findings (don't build these without new evidence)
+
+- **Tax-clearance certificates**: zero outbound email requests to government
+  in the corpus — certidões are requested via portal/in person and only
+  circulate firm↔client by email. No letter format exists to generate.
+- **BNCTL**: no BNCTL-specific salary list appeared in the corpus (the mined
+  firm's clients bank at BNU); the BNU layout is assumed for BNCTL on shared
+  local practice — verify against a real example when a BNCTL customer shows
+  up.
+- **ANZ**: correspondence is exclusively automated "Payment advice" PDFs from
+  a Transactive-style channel; no upload file ever crossed email, so ANZ's
+  real file spec remains unverified. The generated ANZ CSV is best-effort.

@@ -95,6 +95,117 @@ export function buildBankCoverEmail(
 }
 
 /**
+ * A one-off payment order — the same signed "Ordem de Pagamento" ritual used
+ * for statutory payments (INSS contributions, ATTL taxes) and supplier bills.
+ * Corpus evidence: BNU executes these as internal transfers with a credit
+ * description like "Ref <NISS> Seg Soc <TIN> <MES> <ANO>"; one-off supplier
+ * payments follow "Pagamento <vendor> Fatura n.º …" threads.
+ */
+export interface SinglePaymentOrder {
+  company: PaymentPackCompany;
+  /** Addressee bank, e.g. "Banco Nacional Ultramarino, S.A." */
+  bankDisplayName: string;
+  /** Portuguese purpose fragment: "das contribuições à Segurança Social de Julho de 2026" */
+  purpose: string;
+  beneficiaryName: string;
+  /** May contain a fill-in blank when the account is not stored. */
+  beneficiaryAccount: string;
+  /** Credit / transfer description the bank should carry through. */
+  reference?: string;
+  amount: number;
+  valueDate: string; // ISO yyyy-mm-dd
+  /** e.g. "INSS_Pagamento_2026-07" — ".xlsx" is appended. */
+  fileBaseName: string;
+  /** Optional extra instruction line, e.g. ATTL's "electronic payment" marking. */
+  extraNote?: string;
+}
+
+export function buildSinglePaymentCoverEmail(order: SinglePaymentOrder): string {
+  const date = formatDatePT(order.valueDate);
+  return [
+    `Assunto: Pagamento — ${order.purpose} — ${order.company.name}`,
+    "",
+    "Exmos. Senhores,",
+    "",
+    "Vimos por este meio solicitar a V. Exas. que procedam ao pagamento",
+    `${order.purpose}, conforme a ordem de pagamento assinada em anexo.`,
+    "",
+    `Conta a debitar: ${order.company.accountNumber}`,
+    `Beneficiário: ${order.beneficiaryName}`,
+    `Conta do beneficiário: ${order.beneficiaryAccount}`,
+    ...(order.reference ? [`Descrição da transferência: ${order.reference}`] : []),
+    `Montante: ${formatUSD(order.amount)}`,
+    `Data de execução pretendida: ${date}`,
+    ...(order.extraNote ? ["", order.extraNote] : []),
+    "",
+    "Agradecemos a confirmação após a execução.",
+    "",
+    "Com os melhores cumprimentos,",
+    order.company.name,
+  ].join("\n");
+}
+
+export async function generateSinglePaymentOrderXlsx(
+  order: SinglePaymentOrder,
+): Promise<{ blob: Blob; fileName: string }> {
+  const { default: ExcelJSLib } = await import("exceljs");
+  const wb = new ExcelJSLib.Workbook();
+  const sheet = wb.addWorksheet("Ordem de Pagamento");
+  sheet.columns = [{ width: 4 }, { width: 34 }, { width: 34 }, { width: 22 }];
+
+  let rowCursor = 2;
+  const put = (value: string, opts?: { bold?: boolean; size?: number; gapBefore?: number }) => {
+    rowCursor += opts?.gapBefore ?? 0;
+    sheet.mergeCells(`B${rowCursor}:D${rowCursor}`);
+    const cell = sheet.getCell(`B${rowCursor}`);
+    cell.value = value;
+    if (opts?.bold || opts?.size) cell.font = { bold: opts.bold, size: opts.size };
+    rowCursor += 1;
+  };
+
+  put(order.company.name, { bold: true, size: 13 });
+  put(`ORDEM DE PAGAMENTO — OT n.º ________ / ${order.valueDate.slice(0, 4)}`, {
+    bold: true,
+    size: 12,
+    gapBefore: 1,
+  });
+  put(`Ao ${order.bankDisplayName}`, { gapBefore: 1 });
+  put("Autorizamos o débito da nossa conta abaixo indicada para pagamento", { gapBefore: 1 });
+  put(`${order.purpose}, conforme os dados seguintes.`);
+  put(`Conta a debitar: ${order.company.accountNumber}`, { gapBefore: 1 });
+  put(`Beneficiário: ${order.beneficiaryName}`);
+  put(`Conta do beneficiário: ${order.beneficiaryAccount}`);
+  if (order.reference) put(`Descrição da transferência: ${order.reference}`);
+  put(`Montante: ${formatUSD(order.amount)}`);
+  put(`Data de execução pretendida: ${formatDatePT(order.valueDate)}`);
+  if (order.extraNote) put(order.extraNote, { gapBefore: 1 });
+  put(`Díli, ${formatDatePT(order.valueDate)}`, { gapBefore: 2 });
+  put("_____________________________          _____________________________", {
+    gapBefore: 3,
+  });
+  put("Assinatura autorizada                                  Assinatura autorizada");
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  return { blob, fileName: `${order.fileBaseName}.xlsx` };
+}
+
+/** Portuguese month name for period headings, e.g. "2026-07" → "Julho de 2026". */
+export function formatPeriodLabelPT(period: string): string {
+  return formatPeriodPT(period);
+}
+
+/** Upper-case PT month abbreviation used in bank credit descriptions ("ABR 2026"). */
+export function formatPeriodRefPT(period: string): string {
+  const [y, m] = period.split("-").map(Number);
+  const abbrev = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  if (!y || !m) return period;
+  return `${abbrev[m - 1]} ${y}`;
+}
+
+/**
  * Build the two-sheet .xlsx pack. ExcelJS (~750KB) is lazy-loaded so the
  * payroll pages don't pay for it until a pack is generated.
  */

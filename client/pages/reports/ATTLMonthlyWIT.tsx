@@ -64,6 +64,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
+import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
   useTaxFilings,
   useTaxFilingsDueSoon,
@@ -100,6 +101,7 @@ export default function ATTLMonthlyWIT() {
 
   // React Query hooks
   const { data: settings, isLoading: settingsLoading } = useSettings();
+  const paymentProfile = useCompanyPaymentProfile();
   const { data: filings = [], isLoading: filingsLoading } = useTaxFilings("monthly_wit");
   const { data: allDueDates = [], isLoading: duesLoading } = useTaxFilingsDueSoon(6);
   const generateWIT = useGenerateMonthlyWIT();
@@ -309,6 +311,56 @@ export default function ATTLMonthlyWIT() {
       toast({
         title: t("reports.attlMonthlyWit.toast.exportFailedTitle"),
         description: t("reports.attlMonthlyWit.toast.pdfExportFailedDescription"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Signed bank payment order for the month's WIT remittance to the
+  // published ATTL BNU account (docs/BANK_PAYMENTS.md). ATTL requires the
+  // payment advice to be marked "electronic payment".
+  const handleDownloadPaymentOrder = async () => {
+    if (!selectedReturn) return;
+    try {
+      const [
+        { generateSinglePaymentOrderXlsx, formatPeriodLabelPT, formatPeriodRefPT },
+        { ATTL_TAX_ACCOUNTS },
+        { downloadBlob },
+        { getTodayTL },
+      ] = await Promise.all([
+        import("@/lib/bank-transfers/payment-pack"),
+        import("@/lib/tlBanking"),
+        import("@/lib/downloadBlob"),
+        import("@/lib/dateUtils"),
+      ]);
+      const period = selectedReturn.reportingPeriod;
+      const tin = selectedReturn.employerTIN || paymentProfile.tin || "________";
+      const pack = await generateSinglePaymentOrderXlsx({
+        company: {
+          name: paymentProfile.companyName || selectedReturn.employerName,
+          accountNumber: paymentProfile.debitAccount || "____________",
+        },
+        bankDisplayName: ATTL_TAX_ACCOUNTS.bank,
+        purpose: `do Imposto sobre os Rendimentos Salariais (WIT) de ${formatPeriodLabelPT(period)}`,
+        beneficiaryName: ATTL_TAX_ACCOUNTS.beneficiary,
+        beneficiaryAccount: ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax,
+        reference: `TIN ${tin} — WIT ${formatPeriodRefPT(period)}`,
+        amount: selectedReturn.totalWITWithheld,
+        valueDate: getTodayTL(),
+        fileBaseName: `WIT_Pagamento_${period}`,
+        extraNote:
+          'Nota: marcar o aviso de pagamento como "electronic payment" (requisito da ATTL).',
+      });
+      downloadBlob(pack.blob, pack.fileName);
+      toast({
+        title: t("paymentOrders.downloadedTitle"),
+        description: t("paymentOrders.downloadedDescription"),
+      });
+    } catch (error) {
+      console.error("Error generating WIT payment order:", error);
+      toast({
+        title: t("common.error") || "Error",
+        description: t("paymentOrders.failed"),
         variant: "destructive",
       });
     }
@@ -784,6 +836,10 @@ export default function ATTLMonthlyWIT() {
                   <Button variant="outline" size="sm" onClick={handleExportPDF}>
                     <Download className="h-4 w-4 mr-2" />
                     PDF
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDownloadPaymentOrder}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {t("paymentOrders.action")}
                   </Button>
                 </div>
               </div>

@@ -70,6 +70,19 @@ export function validateTLIban(input: string): TLIbanResult {
  * "electronic payment"; monthly taxes are due by the 15th of the
  * following month.
  */
+/**
+ * INSS (Segurança Social) contribution collection account at BNU.
+ * Verified against 200+ real monthly transfer confirmations (2024–2026,
+ * de-identified corpus — docs/MINED_TL_ACCOUNTING_INTEL.md Appendix C):
+ * beneficiary "SEGURANCA SOCIAL MSS". The bank credit description convention
+ * is "Ref <employer NISS> Seg Soc <TIN> <MES> <ANO>".
+ */
+export const INSS_PAYMENT_ACCOUNT = {
+  beneficiary: 'Segurança Social (MSS)',
+  bank: 'Banco Nacional Ultramarino (BNU)',
+  account: '01311876610001',
+} as const;
+
 export const ATTL_TAX_ACCOUNTS = {
   beneficiary: 'National Directorate of Domestic Revenue-Tax Authority',
   bank: 'Banco Nacional Ultramarino (BNU)',

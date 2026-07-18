@@ -6519,6 +6519,12 @@ const messages = {
     "deleteSuccess": "Dedusaun hasai tiha.",
     "deleteError": "La konsege hasai dedusaun."
   },
+  "paymentOrders": {
+    "action": "Ordem de pagamentu (banku)",
+    "downloadedTitle": "Ordem de pagamentu download ona",
+    "downloadedDescription": "Imprime, prienxe númeru OT, asina, no haruka liu husi email ba Ita-nia balcão banku.",
+    "failed": "La konsege kria ordem de pagamentu."
+  },
   "payrollHistory": {
     "title": "Istória Folha Pagamentu",
     "subtitle": "Haree no jere folha pagamentu pasadu",

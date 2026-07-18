@@ -6523,6 +6523,12 @@ export const translations = {
       "deleteSuccess": "Deduction deleted.",
       "deleteError": "Failed to delete deduction."
     },
+    "paymentOrders": {
+      "action": "Payment order (bank)",
+      "downloadedTitle": "Payment order downloaded",
+      "downloadedDescription": "Print it, fill in the OT number, sign, and email it to your bank branch.",
+      "failed": "Could not generate the payment order."
+    },
     "payrollHistory": {
       "title": "Payroll History",
       "subtitle": "View and manage past payroll runs",
@@ -13838,6 +13844,12 @@ export const translations = {
       "deleteSuccess": "Dedusaun hasai tiha.",
       "deleteError": "La konsege hasai dedusaun."
     },
+    "paymentOrders": {
+      "action": "Ordem de pagamentu (banku)",
+      "downloadedTitle": "Ordem de pagamentu download ona",
+      "downloadedDescription": "Imprime, prienxe númeru OT, asina, no haruka liu husi email ba Ita-nia balcão banku.",
+      "failed": "La konsege kria ordem de pagamentu."
+    },
     "payrollHistory": {
       "title": "Istória Folha Pagamentu",
       "subtitle": "Haree no jere folha pagamentu pasadu",
@@ -21152,6 +21164,12 @@ export const translations = {
       "toggleError": "Falha ao atualizar dedução.",
       "deleteSuccess": "Dedução eliminada.",
       "deleteError": "Falha ao eliminar dedução."
+    },
+    "paymentOrders": {
+      "action": "Ordem de pagamento (banco)",
+      "downloadedTitle": "Ordem de pagamento descarregada",
+      "downloadedDescription": "Imprima, preencha o número da OT, assine e envie por email ao seu balcão bancário.",
+      "failed": "Não foi possível gerar a ordem de pagamento."
     },
     "payrollHistory": {
       "title": "Histórico da Folha",

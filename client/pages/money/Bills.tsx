@@ -51,8 +51,10 @@ import {
   Trash2,
   DollarSign,
   Calendar,
+  Download,
   Upload,
 } from 'lucide-react';
+import { useCompanyPaymentProfile } from '@/hooks/useCompanyPaymentProfile';
 
 const STATUS_STYLES: Record<BillStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
@@ -85,6 +87,46 @@ export default function Bills() {
   const { t } = useI18n();
   const { session, canManage } = useTenant();
   const tenantId = useTenantId();
+  const paymentProfile = useCompanyPaymentProfile();
+
+  // One-off supplier payment order — same signed "Ordem de Pagamento" ritual
+  // the banks run for statutory payments (docs/BANK_PAYMENTS.md). Vendors
+  // don't store bank details yet, so the sheet leaves blanks to write in.
+  const handlePaymentOrder = async (bill: Bill) => {
+    try {
+      const [{ generateSinglePaymentOrderXlsx }, { downloadBlob }] = await Promise.all([
+        import('@/lib/bank-transfers/payment-pack'),
+        import('@/lib/downloadBlob'),
+      ]);
+      const billLabel = bill.billNumber || bill.id.slice(0, 8);
+      const pack = await generateSinglePaymentOrderXlsx({
+        company: {
+          name: paymentProfile.companyName || '____________',
+          accountNumber: paymentProfile.debitAccount || '____________',
+        },
+        bankDisplayName: '____________ (banco)',
+        purpose: `da fatura n.º ${billLabel} de ${bill.vendorName}`,
+        beneficiaryName: bill.vendorName,
+        beneficiaryAccount: '____________',
+        reference: `Pagamento Fatura ${billLabel}`,
+        amount: bill.balanceDue > 0 ? bill.balanceDue : bill.total,
+        valueDate: getTodayTL(),
+        fileBaseName: `Pagamento_Fatura_${billLabel.replace(/[^\w-]+/g, '_')}`,
+      });
+      downloadBlob(pack.blob, pack.fileName);
+      toast({
+        title: t('paymentOrders.downloadedTitle'),
+        description: t('paymentOrders.downloadedDescription'),
+      });
+    } catch (error) {
+      console.error('Error generating bill payment order:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('paymentOrders.failed'),
+        variant: 'destructive',
+      });
+    }
+  };
   const canManageTenant = canManage();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -505,6 +547,12 @@ export default function Bills() {
                             >
                               <DollarSign className="h-4 w-4 mr-2" />
                               {t('money.bills.recordPayment') || 'Record Payment'}
+                            </DropdownMenuItem>
+                          )}
+                          {canManageTenant && ['pending', 'partial', 'overdue'].includes(bill.status) && (
+                            <DropdownMenuItem onClick={() => void handlePaymentOrder(bill)}>
+                              <Download className="h-4 w-4 mr-2" />
+                              {t('paymentOrders.action')}
                             </DropdownMenuItem>
                           )}
                           {canManageTenant && bill.status === 'pending' && (
