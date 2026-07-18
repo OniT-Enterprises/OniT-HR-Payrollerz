@@ -3115,7 +3115,7 @@ const messages = {
         "copyEmptyTitle": "La iha buat atu kopia",
         "copyEmptyDesc": "La iha turnu semana ida ne'e."
       }
-    },
+    }
   },
   "payroll": {
     "dashboard": {
@@ -4067,6 +4067,14 @@ const messages = {
     "payrollRun": {
       "subtitle": "Rezumu kona-ba saláriu ne'ebé selu duni iha kada prosesu pagamentu.",
       "selectRunPlaceholder": "Hili prosesu pagamentu",
+      "status": {
+        "draft": "Rascunhu",
+        "approved": "Aprova ona",
+        "processing": "Prosesu hela",
+        "paid": "Selu ona",
+        "rejected": "Rejeita ona",
+        "cancelled": "Kansela ona"
+      },
       "noRuns": {
         "title": "Seidauk iha prosesu pagamentu",
         "description": "Prosesa pagamentu dahuluk atu haree rezumu no detallu kada empregadu iha ne'e.",
@@ -4268,6 +4276,11 @@ const messages = {
       },
       "exportTitle": "Exporta Kompletu",
       "exportDescription": "{{filename}} download ho susesu",
+      "filters": "Filtru relatóriu",
+      "summary": "Rezumu",
+      "invalidDateRange": "Data remata tenke depois data hahú.",
+      "unavailableTitle": "Relatóriu la disponível",
+      "unavailableDescription": "Relatóriu ida-ne'e la disponível ba ita-nia funsaun agora.",
       "monthsShort": "ful"
     },
     "setup": {

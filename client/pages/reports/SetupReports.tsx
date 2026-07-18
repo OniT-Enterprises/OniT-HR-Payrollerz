@@ -9,15 +9,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import MainNavigation from "@/components/layout/MainNavigation";
-import PageHeader from "@/components/layout/PageHeader";
+import {
+  ReportEmptyState,
+  ReportPage,
+  ReportPageSkeleton,
+} from "@/components/reports/ReportLayout";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { useSettings } from "@/hooks/useSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
-import { CheckCircle2, Download, Settings, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Download, Settings } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { exportToCSV } from "@/lib/csvExport";
 import { useTenant } from "@/contexts/TenantContext";
@@ -119,86 +121,79 @@ export default function SetupReports() {
   };
 
   if (settingsQuery.isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
-          <Skeleton className="mb-3 h-8 w-48" />
-          <Skeleton className="mb-6 h-5 w-72 max-w-full" />
-          <Skeleton className="h-72 rounded-xl" />
-        </div>
-      </div>
-    );
+    return <ReportPageSkeleton sections={1} maxWidth="lg" />;
   }
 
   if (settingsQuery.isError && settingsQuery.data === undefined) {
     return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
+      <ReportPage
+        title={t("reports.setup.title")}
+        subtitle={t("reports.setup.subtitle")}
+        icon={Settings}
+        maxWidth="lg"
+      >
         <DashboardLoadError
           isRetrying={settingsQuery.isFetching}
           onRetry={() => settingsQuery.refetch()}
         />
-      </div>
+      </ReportPage>
     );
   }
 
   if (!settings || !setupProgress) {
     return (
-      <div className="min-h-screen bg-background">
+      <>
         <SEO
           title={`${t("reports.setup.title")} | Xefe`}
           description={t("reports.setup.subtitle")}
         />
-        <MainNavigation />
-        <div className="mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
-          <PageHeader
-            title={t("reports.setup.title")}
-            subtitle={t("reports.setup.subtitle")}
-            icon={Settings}
-            iconColor="text-violet-500"
-          />
-          <Card>
-            <CardContent className="py-10 text-center">
-              <Settings className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-              <h2 className="font-semibold">{t("reports.setup.missing.title")}</h2>
-              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                {t(
+        <ReportPage
+          title={t("reports.setup.title")}
+          subtitle={t("reports.setup.subtitle")}
+          icon={Settings}
+          maxWidth="lg"
+        >
+          <Card className="border-border/70 shadow-sm">
+            <CardContent>
+              <ReportEmptyState
+                icon={Settings}
+                title={t("reports.setup.missing.title")}
+                description={t(
                   canManageTenant
                     ? "reports.setup.missing.managerDescription"
                     : "reports.setup.missing.viewerDescription",
                 )}
-              </p>
-              {canManageTenant && (
-                <Button className="mt-5" onClick={() => navigate("/setup")}>
-                  {t("reports.setup.missing.action")}
-                </Button>
-              )}
+                actionLabel={
+                  canManageTenant
+                    ? t("reports.setup.missing.action")
+                    : undefined
+                }
+                onAction={
+                  canManageTenant ? () => navigate("/setup") : undefined
+                }
+              />
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </ReportPage>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <SEO
         title={`${t("reports.setup.title")} | Xefe`}
         description={t("reports.setup.subtitle")}
       />
-      <MainNavigation />
-      <div className="mx-auto max-w-screen-lg px-4 py-6 sm:px-6">
-        <PageHeader
-          title={t("reports.setup.title")}
-          subtitle={t("reports.setup.subtitle")}
-          icon={Settings}
-          iconColor="text-violet-500"
-        />
-
-        <Card className="mb-6 border-border/50">
+      <ReportPage
+        title={t("reports.setup.title")}
+        subtitle={t("reports.setup.subtitle")}
+        icon={Settings}
+        maxWidth="lg"
+      >
+        <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <CheckCircle2 className="h-5 w-5 text-violet-600" />
               {t("reports.setup.progress.title")}
             </CardTitle>
@@ -227,7 +222,7 @@ export default function SetupReports() {
                     {done ? (
                       <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" />
                     ) : (
-                      <XCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
+                      <Circle className="h-5 w-5 shrink-0 text-muted-foreground" />
                     )}
                     <span className="truncate text-sm font-medium">
                       {getSetupStepLabel(step)}
@@ -244,9 +239,9 @@ export default function SetupReports() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50">
+        <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Settings className="h-5 w-5 text-violet-600" />
               {t("reports.setup.cards.configuration.title")}
             </CardTitle>
@@ -284,13 +279,17 @@ export default function SetupReports() {
                 </dd>
               </div>
             </dl>
-            <Button className="w-full sm:w-auto" onClick={exportSystemConfig}>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={exportSystemConfig}
+            >
               <Download className="mr-2 h-4 w-4" />
               {t("reports.setup.cards.configuration.export")}
             </Button>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </ReportPage>
+    </>
   );
 }

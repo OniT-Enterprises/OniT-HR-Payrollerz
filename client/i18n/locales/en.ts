@@ -3121,6 +3121,14 @@ const messages = {
     "payrollRun": {
       "subtitle": "Summary of what was actually paid in each payroll run.",
       "selectRunPlaceholder": "Select a payroll run",
+      "status": {
+        "draft": "Draft",
+        "approved": "Approved",
+        "processing": "Processing",
+        "paid": "Paid",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
+      },
       "noRuns": {
         "title": "No payroll runs yet",
         "description": "Run your first payroll to see paid summaries and per-employee breakdowns here.",
@@ -3322,6 +3330,11 @@ const messages = {
       },
       "exportTitle": "Export Complete",
       "exportDescription": "{{filename}} downloaded successfully",
+      "filters": "Report filters",
+      "summary": "Summary",
+      "invalidDateRange": "End date must be after start date.",
+      "unavailableTitle": "Report unavailable",
+      "unavailableDescription": "This report is not available for your current role.",
       "monthsShort": "mo"
     },
     "setup": {

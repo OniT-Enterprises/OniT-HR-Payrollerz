@@ -15,31 +15,27 @@ import {
   limit,
   serverTimestamp,
   runTransaction,
-} from 'firebase/firestore';
-import { db, getFunctionsLazy } from '@/lib/firebase';
-import { getTodayTL } from '@/lib/dateUtils';
-import { notificationService } from '@/services/notificationService';
+} from "firebase/firestore";
+import { db, getFunctionsLazy } from "@/lib/firebase";
+import { getTodayTL } from "@/lib/dateUtils";
+import { notificationService } from "@/services/notificationService";
 
 // ============================================
 // Types
 // ============================================
 
 export type LeaveType =
-  | 'annual'
-  | 'sick'
-  | 'maternity'
-  | 'paternity'
-  | 'bereavement'
-  | 'unpaid'
-  | 'marriage'
-  | 'study'
-  | 'custom';
+  | "annual"
+  | "sick"
+  | "maternity"
+  | "paternity"
+  | "bereavement"
+  | "unpaid"
+  | "marriage"
+  | "study"
+  | "custom";
 
-export type LeaveStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'cancelled';
+export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 
 export interface LeaveRequest {
   id?: string;
@@ -56,7 +52,7 @@ export interface LeaveRequest {
   endDate: string;
   duration: number; // Working days
   halfDay?: boolean;
-  halfDayType?: 'morning' | 'afternoon';
+  halfDayType?: "morning" | "afternoon";
 
   // Request info
   reason: string;
@@ -81,7 +77,7 @@ export interface LeaveRequest {
 
 export type NewLeaveRequest = Omit<
   LeaveRequest,
-  'id' | 'tenantId' | 'status' | 'requestDate' | 'createdAt' | 'updatedAt'
+  "id" | "tenantId" | "status" | "requestDate" | "createdAt" | "updatedAt"
 >;
 
 export interface LeaveBalance {
@@ -125,72 +121,73 @@ interface LeaveStats {
 // Constants
 // ============================================
 
-const LEAVE_REQUESTS_COLLECTION = 'leave_requests';
-const LEAVE_BALANCES_COLLECTION = 'leave_balances';
+const LEAVE_REQUESTS_COLLECTION = "leave_requests";
+const LEAVE_BALANCES_COLLECTION = "leave_balances";
 
 async function callTimeLeaveFunction<TRequest, TResponse>(
   name: string,
   payload: TRequest,
 ): Promise<TResponse> {
   const [{ httpsCallable }, functions] = await Promise.all([
-    import('firebase/functions'),
+    import("firebase/functions"),
     getFunctionsLazy(),
   ]);
-  return (await httpsCallable<TRequest, TResponse>(functions, name)(payload)).data;
+  return (await httpsCallable<TRequest, TResponse>(functions, name)(payload))
+    .data;
 }
 
 // TL-specific leave type definitions
 export const TL_LEAVE_TYPES = [
   {
-    id: 'annual',
-    name: 'Annual Leave (Férias)',
+    id: "annual",
+    name: "Annual Leave (Férias)",
     daysPerYear: 12,
     isPaid: true,
     requiresCertificate: false,
   },
   {
-    id: 'sick',
-    name: 'Sick Leave (Licença Médica)',
+    id: "sick",
+    name: "Sick Leave (Licença Médica)",
     daysPerYear: 12,
     isPaid: true, // First 6 days 100%, next 6 days 50%
     requiresCertificate: true,
-    certificateType: 'Medical Certificate',
+    certificateType: "Medical Certificate",
   },
   {
-    id: 'maternity',
-    name: 'Maternity Leave (Licença de Maternidade)',
+    id: "maternity",
+    name: "Maternity Leave (Licença de Maternidade)",
     daysPerYear: 84, // 12 weeks
     isPaid: true,
     requiresCertificate: true,
-    certificateType: 'Medical Certificate',
+    certificateType: "Medical Certificate",
   },
   {
-    id: 'paternity',
-    name: 'Paternity Leave (Licença de Paternidade)',
+    id: "paternity",
+    name: "Paternity Leave (Licença de Paternidade)",
     daysPerYear: 5,
     isPaid: true,
     requiresCertificate: true,
-    certificateType: 'Birth Certificate',
+    certificateType: "Birth Certificate",
   },
   {
-    id: 'bereavement',
-    name: 'Bereavement Leave (Licença por Falecimento)',
+    id: "bereavement",
+    name: "Bereavement Leave (Licença por Falecimento)",
     daysPerYear: 5,
     isPaid: true,
     requiresCertificate: true,
-    certificateType: 'Death Certificate',
+    certificateType: "Death Certificate",
   },
   {
-    id: 'marriage',
-    name: 'Marriage Leave (Licença de Casamento)',
+    id: "marriage",
+    name: "Marriage Leave (Licença de Casamento)",
     daysPerYear: 5,
     isPaid: true,
     requiresCertificate: true,
-    certificateType: 'Marriage Certificate',
+    certificateType: "Marriage Certificate",
   },
   {
-    id: 'unpaid',
-    name: 'Unpaid Leave (Licença sem Vencimento)',
+    id: "unpaid",
+    name: "Unpaid Leave (Licença sem Vencimento)",
     daysPerYear: 30,
     isPaid: false,
     requiresCertificate: false,
@@ -259,10 +256,10 @@ class LeaveService {
       const result = await callTimeLeaveFunction<
         NewLeaveRequest & { tenantId: string },
         { success: true; requestId: string; duration: number }
-      >('createLeaveRequest', { ...request, tenantId });
+      >("createLeaveRequest", { ...request, tenantId });
       return result.requestId;
     } catch (error) {
-      console.error('Error creating leave request:', error);
+      console.error("Error creating leave request:", error);
       throw error;
     }
   }
@@ -270,7 +267,10 @@ class LeaveService {
   /**
    * Get leave request by ID
    */
-  async getLeaveRequest(tenantId: string, requestId: string): Promise<LeaveRequest | null> {
+  async getLeaveRequest(
+    tenantId: string,
+    requestId: string,
+  ): Promise<LeaveRequest | null> {
     try {
       const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
       const docSnap = await getDoc(docRef);
@@ -291,7 +291,7 @@ class LeaveService {
 
       return null;
     } catch (error) {
-      console.error('Error getting leave request:', error);
+      console.error("Error getting leave request:", error);
       throw error;
     }
   }
@@ -299,31 +299,34 @@ class LeaveService {
   /**
    * Get all leave requests with optional filters
    */
-  async getLeaveRequests(tenantId: string, filters?: {
-    status?: LeaveStatus;
-    employeeId?: string;
-    departmentId?: string;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<LeaveRequest[]> {
+  async getLeaveRequests(
+    tenantId: string,
+    filters?: {
+      status?: LeaveStatus;
+      employeeId?: string;
+      departmentId?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+  ): Promise<LeaveRequest[]> {
     try {
       let q = query(
         collection(db, LEAVE_REQUESTS_COLLECTION),
-        where('tenantId', '==', tenantId),
-        orderBy('requestDate', 'desc'),
+        where("tenantId", "==", tenantId),
+        orderBy("requestDate", "desc"),
         limit(200),
       );
 
       if (filters?.status) {
-        q = query(q, where('status', '==', filters.status));
+        q = query(q, where("status", "==", filters.status));
       }
 
       if (filters?.employeeId) {
-        q = query(q, where('employeeId', '==', filters.employeeId));
+        q = query(q, where("employeeId", "==", filters.employeeId));
       }
 
       if (filters?.departmentId) {
-        q = query(q, where('departmentId', '==', filters.departmentId));
+        q = query(q, where("departmentId", "==", filters.departmentId));
       }
 
       const querySnapshot = await getDocs(q);
@@ -345,7 +348,8 @@ class LeaveService {
       // Filter by date range if provided (client-side for flexibility)
       if (filters?.startDate || filters?.endDate) {
         return requests.filter((req) => {
-          if (filters.startDate && req.startDate < filters.startDate) return false;
+          if (filters.startDate && req.startDate < filters.startDate)
+            return false;
           if (filters.endDate && req.endDate > filters.endDate) return false;
           return true;
         });
@@ -353,7 +357,7 @@ class LeaveService {
 
       return requests;
     } catch (error) {
-      console.error('Error getting leave requests:', error);
+      console.error("Error getting leave requests:", error);
       throw error;
     }
   }
@@ -367,10 +371,13 @@ class LeaveService {
   async notifyLeaveDecision(
     tenantId: string,
     request: LeaveRequest,
-    decision: 'approved' | 'rejected',
+    decision: "approved" | "rejected",
     opts: { approverName: string; reason?: string },
   ): Promise<boolean> {
-    const email = await notificationService.getEmployeeEmail(tenantId, request.employeeId);
+    const email = await notificationService.getEmployeeEmail(
+      tenantId,
+      request.employeeId,
+    );
     if (!email) return false;
 
     const period =
@@ -378,33 +385,33 @@ class LeaveService {
         ? request.startDate
         : `${request.startDate} – ${request.endDate}`;
     const label = request.leaveTypeLabel || request.leaveType;
-    const approved = decision === 'approved';
+    const approved = decision === "approved";
 
     const subject = approved
       ? `Leave approved / Lisensa aprova ona — ${label}, ${period}`
       : `Leave request declined / Pedidu lisensa la aprova — ${label}, ${period}`;
     const text = [
       `Hi ${request.employeeName},`,
-      '',
+      "",
       approved
         ? `Your ${label} request for ${period} (${request.duration} day(s)) was APPROVED by ${opts.approverName}.`
         : `Your ${label} request for ${period} (${request.duration} day(s)) was DECLINED by ${opts.approverName}.`,
       ...(!approved && opts.reason ? [`Reason: ${opts.reason}`] : []),
-      '',
+      "",
       approved
         ? `Ita-nia pedidu lisensa (${label}) ba ${period} (loron ${request.duration}) APROVA ona husi ${opts.approverName}.`
         : `Ita-nia pedidu lisensa (${label}) ba ${period} (loron ${request.duration}) LA APROVA husi ${opts.approverName}.`,
       ...(!approved && opts.reason ? [`Razaun: ${opts.reason}`] : []),
-      '',
+      "",
       notificationService.bilingualFooter(),
-    ].join('\n');
+    ].join("\n");
 
     await notificationService.queueEmail({
       tenantId,
       to: email,
       subject,
       text,
-      purpose: 'leave-decision',
+      purpose: "leave-decision",
       relatedId: request.id,
     });
     return true;
@@ -417,17 +424,17 @@ class LeaveService {
     tenantId: string,
     requestId: string,
     _approverId: string,
-    approverName: string
+    approverName: string,
   ): Promise<void> {
     try {
-      await callTimeLeaveFunction('approveLeaveRequest', {
+      await callTimeLeaveFunction("approveLeaveRequest", {
         tenantId,
         requestId,
         approved: true,
         approverName,
       });
     } catch (error) {
-      console.error('Error approving leave request:', error);
+      console.error("Error approving leave request:", error);
       throw error;
     }
   }
@@ -440,10 +447,10 @@ class LeaveService {
     requestId: string,
     _approverId: string,
     approverName: string,
-    rejectionReason: string
+    rejectionReason: string,
   ): Promise<void> {
     try {
-      await callTimeLeaveFunction('approveLeaveRequest', {
+      await callTimeLeaveFunction("approveLeaveRequest", {
         tenantId,
         requestId,
         approved: false,
@@ -451,7 +458,7 @@ class LeaveService {
         note: rejectionReason,
       });
     } catch (error) {
-      console.error('Error rejecting leave request:', error);
+      console.error("Error rejecting leave request:", error);
       throw error;
     }
   }
@@ -465,18 +472,18 @@ class LeaveService {
       await runTransaction(db, async (transaction) => {
         const snapshot = await transaction.get(requestRef);
         if (!snapshot.exists() || snapshot.data().tenantId !== tenantId) {
-          throw new Error('Leave request not found');
+          throw new Error("Leave request not found");
         }
-        if (snapshot.data().status !== 'pending') {
-          throw new Error('Only pending requests can be cancelled');
+        if (snapshot.data().status !== "pending") {
+          throw new Error("Only pending requests can be cancelled");
         }
         transaction.update(requestRef, {
-          status: 'cancelled',
+          status: "cancelled",
           updatedAt: serverTimestamp(),
         });
       });
     } catch (error) {
-      console.error('Error cancelling leave request:', error);
+      console.error("Error cancelling leave request:", error);
       throw error;
     }
   }
@@ -484,17 +491,23 @@ class LeaveService {
   /**
    * Get pending requests for approval (for managers)
    */
-  async getPendingRequests(tenantId: string, departmentId?: string): Promise<LeaveRequest[]> {
+  async getPendingRequests(
+    tenantId: string,
+    departmentId?: string,
+  ): Promise<LeaveRequest[]> {
     return this.getLeaveRequests(tenantId, {
-      status: 'pending',
-      departmentId
+      status: "pending",
+      departmentId,
     });
   }
 
   /**
    * Get requests by employee
    */
-  async getEmployeeRequests(tenantId: string, employeeId: string): Promise<LeaveRequest[]> {
+  async getEmployeeRequests(
+    tenantId: string,
+    employeeId: string,
+  ): Promise<LeaveRequest[]> {
     return this.getLeaveRequests(tenantId, { employeeId });
   }
 
@@ -517,16 +530,16 @@ class LeaveService {
       const q = departmentId
         ? query(
             collection(db, LEAVE_BALANCES_COLLECTION),
-            where('tenantId', '==', tenantId),
-            where('employeeId', '==', employeeId),
-            where('departmentId', '==', departmentId),
-            where('year', '==', targetYear),
+            where("tenantId", "==", tenantId),
+            where("employeeId", "==", employeeId),
+            where("departmentId", "==", departmentId),
+            where("year", "==", targetYear),
           )
         : query(
             collection(db, LEAVE_BALANCES_COLLECTION),
-            where('tenantId', '==', tenantId),
-            where('employeeId', '==', employeeId),
-            where('year', '==', targetYear),
+            where("tenantId", "==", tenantId),
+            where("employeeId", "==", employeeId),
+            where("year", "==", targetYear),
           );
 
       const querySnapshot = await getDocs(q);
@@ -543,7 +556,7 @@ class LeaveService {
 
       return null;
     } catch (error) {
-      console.error('Error getting leave balance:', error);
+      console.error("Error getting leave balance:", error);
       throw error;
     }
   }
@@ -551,15 +564,26 @@ class LeaveService {
   /**
    * Get all employee balances (for admin view)
    */
-  async getAllBalances(tenantId: string, year?: number): Promise<LeaveBalance[]> {
+  async getAllBalances(
+    tenantId: string,
+    year?: number,
+    departmentId?: string,
+  ): Promise<LeaveBalance[]> {
     const targetYear = year || Number(getTodayTL().slice(0, 4));
 
     try {
-      const q = query(
-        collection(db, LEAVE_BALANCES_COLLECTION),
-        where('tenantId', '==', tenantId),
-        where('year', '==', targetYear)
-      );
+      const q = departmentId
+        ? query(
+            collection(db, LEAVE_BALANCES_COLLECTION),
+            where("tenantId", "==", tenantId),
+            where("departmentId", "==", departmentId),
+            where("year", "==", targetYear),
+          )
+        : query(
+            collection(db, LEAVE_BALANCES_COLLECTION),
+            where("tenantId", "==", tenantId),
+            where("year", "==", targetYear),
+          );
 
       const querySnapshot = await getDocs(q);
       const balances: LeaveBalance[] = [];
@@ -575,7 +599,7 @@ class LeaveService {
 
       return balances;
     } catch (error) {
-      console.error('Error getting all balances:', error);
+      console.error("Error getting all balances:", error);
       throw error;
     }
   }
@@ -594,12 +618,21 @@ class LeaveService {
     try {
       const today = getTodayTL();
       const leaveRequestsRef = collection(db, LEAVE_REQUESTS_COLLECTION);
-      let statsQuery = query(leaveRequestsRef, where('tenantId', '==', tenantId));
+      let statsQuery = query(
+        leaveRequestsRef,
+        where("tenantId", "==", tenantId),
+      );
       if (filters?.employeeId) {
-        statsQuery = query(statsQuery, where('employeeId', '==', filters.employeeId));
+        statsQuery = query(
+          statsQuery,
+          where("employeeId", "==", filters.employeeId),
+        );
       }
       if (filters?.departmentId) {
-        statsQuery = query(statsQuery, where('departmentId', '==', filters.departmentId));
+        statsQuery = query(
+          statsQuery,
+          where("departmentId", "==", filters.departmentId),
+        );
       }
       const snapshot = await getDocs(statsQuery);
 
@@ -612,14 +645,13 @@ class LeaveService {
       for (const doc of snapshot.docs) {
         const data = doc.data();
         totalRequests++;
-        if (data.status === 'pending') pendingRequests++;
-        else if (data.status === 'approved') {
+        if (data.status === "pending") pendingRequests++;
+        else if (data.status === "approved") {
           approvedRequests++;
           if (data.startDate <= today && data.endDate >= today) {
             employeesOnLeaveToday++;
           }
-        }
-        else if (data.status === 'rejected') rejectedRequests++;
+        } else if (data.status === "rejected") rejectedRequests++;
       }
 
       return {
@@ -630,7 +662,7 @@ class LeaveService {
         employeesOnLeaveToday,
       };
     } catch (error) {
-      console.error('Error getting leave stats:', error);
+      console.error("Error getting leave stats:", error);
       throw error;
     }
   }
@@ -638,14 +670,18 @@ class LeaveService {
   /**
    * Get employees on leave for a date range
    */
-  async getEmployeesOnLeave(tenantId: string, startDate: string, endDate: string): Promise<LeaveRequest[]> {
+  async getEmployeesOnLeave(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<LeaveRequest[]> {
     try {
       const q = query(
         collection(db, LEAVE_REQUESTS_COLLECTION),
-        where('tenantId', '==', tenantId),
-        where('status', '==', 'approved'),
-        where('startDate', '<=', endDate),
-        where('endDate', '>=', startDate)
+        where("tenantId", "==", tenantId),
+        where("status", "==", "approved"),
+        where("startDate", "<=", endDate),
+        where("endDate", ">=", startDate),
       );
 
       const querySnapshot = await getDocs(q);
@@ -659,7 +695,7 @@ class LeaveService {
         } as LeaveRequest;
       });
     } catch (error) {
-      console.error('Error getting employees on leave:', error);
+      console.error("Error getting employees on leave:", error);
       throw error;
     }
   }
@@ -670,7 +706,7 @@ class LeaveService {
   async getLeaveSummaryByDepartment(
     tenantId: string,
     departmentId: string,
-    year?: number
+    year?: number,
   ): Promise<{
     totalDaysTaken: number;
     byType: Record<string, number>;
@@ -683,7 +719,7 @@ class LeaveService {
     try {
       const requests = await this.getLeaveRequests(tenantId, {
         departmentId,
-        status: 'approved',
+        status: "approved",
         startDate: yearStart,
         endDate: yearEnd,
       });
@@ -692,10 +728,11 @@ class LeaveService {
       const byEmployee: Record<string, number> = {};
       let totalDaysTaken = 0;
 
-      requests.forEach(req => {
+      requests.forEach((req) => {
         totalDaysTaken += req.duration;
         byType[req.leaveType] = (byType[req.leaveType] || 0) + req.duration;
-        byEmployee[req.employeeName] = (byEmployee[req.employeeName] || 0) + req.duration;
+        byEmployee[req.employeeName] =
+          (byEmployee[req.employeeName] || 0) + req.duration;
       });
 
       const employees = Object.entries(byEmployee)
@@ -704,7 +741,7 @@ class LeaveService {
 
       return { totalDaysTaken, byType, employees };
     } catch (error) {
-      console.error('Error getting department leave summary:', error);
+      console.error("Error getting department leave summary:", error);
       throw error;
     }
   }

@@ -3125,6 +3125,14 @@ export const translations = {
       "payrollRun": {
         "subtitle": "Summary of what was actually paid in each payroll run.",
         "selectRunPlaceholder": "Select a payroll run",
+        "status": {
+          "draft": "Draft",
+          "approved": "Approved",
+          "processing": "Processing",
+          "paid": "Paid",
+          "rejected": "Rejected",
+          "cancelled": "Cancelled"
+        },
         "noRuns": {
           "title": "No payroll runs yet",
           "description": "Run your first payroll to see paid summaries and per-employee breakdowns here.",
@@ -3326,6 +3334,11 @@ export const translations = {
         },
         "exportTitle": "Export Complete",
         "exportDescription": "{{filename}} downloaded successfully",
+        "filters": "Report filters",
+        "summary": "Summary",
+        "invalidDateRange": "End date must be after start date.",
+        "unavailableTitle": "Report unavailable",
+        "unavailableDescription": "This report is not available for your current role.",
         "monthsShort": "mo"
       },
       "setup": {
@@ -11392,6 +11405,14 @@ export const translations = {
       "payrollRun": {
         "subtitle": "Rezumu kona-ba saláriu ne'ebé selu duni iha kada prosesu pagamentu.",
         "selectRunPlaceholder": "Hili prosesu pagamentu",
+        "status": {
+          "draft": "Rascunhu",
+          "approved": "Aprova ona",
+          "processing": "Prosesu hela",
+          "paid": "Selu ona",
+          "rejected": "Rejeita ona",
+          "cancelled": "Kansela ona"
+        },
         "noRuns": {
           "title": "Seidauk iha prosesu pagamentu",
           "description": "Prosesa pagamentu dahuluk atu haree rezumu no detallu kada empregadu iha ne'e.",
@@ -11593,6 +11614,11 @@ export const translations = {
         },
         "exportTitle": "Exporta Kompletu",
         "exportDescription": "{{filename}} download ho susesu",
+        "filters": "Filtru relatóriu",
+        "summary": "Rezumu",
+        "invalidDateRange": "Data remata tenke depois data hahú.",
+        "unavailableTitle": "Relatóriu la disponível",
+        "unavailableDescription": "Relatóriu ida-ne'e la disponível ba ita-nia funsaun agora.",
         "monthsShort": "ful"
       },
       "setup": {
@@ -17767,6 +17793,14 @@ export const translations = {
       "payrollRun": {
         "subtitle": "Resumo do que foi efetivamente pago em cada processamento de salários.",
         "selectRunPlaceholder": "Selecione um processamento",
+        "status": {
+          "draft": "Rascunho",
+          "approved": "Aprovado",
+          "processing": "Em processamento",
+          "paid": "Pago",
+          "rejected": "Rejeitado",
+          "cancelled": "Cancelado"
+        },
         "noRuns": {
           "title": "Ainda não há processamentos",
           "description": "Processe o primeiro salário para ver resumos pagos e detalhe por funcionário aqui.",
@@ -17968,6 +18002,11 @@ export const translations = {
         },
         "exportTitle": "Exportação Completa",
         "exportDescription": "{{filename}} transferido com sucesso",
+        "filters": "Filtros do relatório",
+        "summary": "Resumo",
+        "invalidDateRange": "A data final deve ser posterior à data inicial.",
+        "unavailableTitle": "Relatório indisponível",
+        "unavailableDescription": "Este relatório não está disponível para a sua função atual.",
         "monthsShort": "meses"
       },
       "setup": {

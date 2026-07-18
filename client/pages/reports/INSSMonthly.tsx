@@ -89,30 +89,44 @@ export default function INSSMonthly() {
   // React Query hooks
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const paymentProfile = useCompanyPaymentProfile();
-  const { data: filings = [], isLoading: filingsLoading } = useTaxFilings("inss_monthly");
-  const { data: allDueDates = [], isLoading: duesLoading } = useTaxFilingsDueSoon(6);
+  const { data: filings = [], isLoading: filingsLoading } =
+    useTaxFilings("inss_monthly");
+  const { data: allDueDates = [], isLoading: duesLoading } =
+    useTaxFilingsDueSoon(6);
   const generateINSS = useGenerateMonthlyINSS();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
 
   const company: Partial<CompanyDetails> = settings?.companyDetails || {};
-  const dueDates = useMemo(() => allDueDates.filter(d => d.type === "inss_monthly"), [allDueDates]);
+  const dueDates = useMemo(
+    () => allDueDates.filter((d) => d.type === "inss_monthly"),
+    [allDueDates],
+  );
   const loading = settingsLoading || filingsLoading || duesLoading;
 
   // Local state
-  const [selectedReturn, setSelectedReturn] = useState<MonthlyINSSReturn | null>(null);
+  const [selectedReturn, setSelectedReturn] =
+    useState<MonthlyINSSReturn | null>(null);
   const [showMarkFiledDialog, setShowMarkFiledDialog] = useState(false);
   const [selectedFilingId, setSelectedFilingId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<TaxFilingTask>("statement");
 
   const currentDate = new Date();
-  const previousMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+  const previousMonthDate = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() - 1,
+    1,
+  );
   const defaultYear = previousMonthDate.getFullYear();
-  const defaultMonth = String(previousMonthDate.getMonth() + 1).padStart(2, "0");
+  const defaultMonth = String(previousMonthDate.getMonth() + 1).padStart(
+    2,
+    "0",
+  );
   const [selectedYear, setSelectedYear] = useState(String(defaultYear));
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
 
-  const [filedMethod, setFiledMethod] = useState<SubmissionMethod>("inss_portal");
+  const [filedMethod, setFiledMethod] =
+    useState<SubmissionMethod>("inss_portal");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
 
@@ -154,25 +168,29 @@ export default function INSSMonthly() {
       case "pending":
         return {
           label: t("reports.inssMonthly.status.pending"),
-          className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+          className:
+            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
           icon: Clock,
         };
       case "overdue":
         return {
           label: t("reports.inssMonthly.status.overdue"),
-          className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+          className:
+            "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
           icon: AlertTriangle,
         };
       case "filed":
         return {
           label: t("reports.inssMonthly.status.filed"),
-          className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+          className:
+            "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
           icon: CheckCircle,
         };
       default:
         return {
           label: t("reports.inssMonthly.status.draft"),
-          className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+          className:
+            "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
           icon: FileSpreadsheet,
         };
     }
@@ -217,7 +235,10 @@ export default function INSSMonthly() {
     if (!snapshot || !snapshot.employees?.length) {
       // No data snapshot — regenerate from payroll
       try {
-        const returnData = await generateINSS.mutateAsync({ period: filing.period, company });
+        const returnData = await generateINSS.mutateAsync({
+          period: filing.period,
+          company,
+        });
         setSelectedReturn(returnData);
         setSelectedFilingId(filing.id);
       } catch {
@@ -262,7 +283,9 @@ export default function INSSMonthly() {
       .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -297,7 +320,8 @@ export default function INSSMonthly() {
           : t("common.error") || "Error",
         description: reviewFlag
           ? t("common.needsReviewDesc", { field: reviewFlag.field })
-          : t("reports.inssMonthly.toast.drExportError") || "Could not export the DR Excel file",
+          : t("reports.inssMonthly.toast.drExportError") ||
+            "Could not export the DR Excel file",
         variant: "destructive",
       });
     }
@@ -310,7 +334,11 @@ export default function INSSMonthly() {
     if (!selectedReturn) return;
     try {
       const [
-        { generateSinglePaymentOrderXlsx, formatPeriodLabelPT, formatPeriodRefPT },
+        {
+          generateSinglePaymentOrderXlsx,
+          formatPeriodLabelPT,
+          formatPeriodRefPT,
+        },
         { INSS_PAYMENT_ACCOUNT },
         { downloadBlob },
         { getTodayTL },
@@ -321,7 +349,8 @@ export default function INSSMonthly() {
         import("@/lib/dateUtils"),
       ]);
       const period = selectedReturn.reportingPeriod;
-      const tin = selectedReturn.employerTIN || paymentProfile.tin || "________";
+      const tin =
+        selectedReturn.employerTIN || paymentProfile.tin || "________";
       const pack = await generateSinglePaymentOrderXlsx({
         company: {
           name: paymentProfile.companyName || selectedReturn.employerName,
@@ -398,7 +427,7 @@ export default function INSSMonthly() {
 
   const overdueFiling = useMemo(
     () => dueDates.find((d) => d.status === "overdue"),
-    [dueDates]
+    [dueDates],
   );
 
   const upcomingDue = useMemo(() => {
@@ -414,14 +443,18 @@ export default function INSSMonthly() {
   };
 
   const getTaskStatus = (filing: TaxFiling, task: TaxFilingTask) =>
-    task === "statement" ? (filing.statementStatus || filing.status) : (filing.paymentStatus || filing.status);
+    task === "statement"
+      ? filing.statementStatus || filing.status
+      : filing.paymentStatus || filing.status;
 
   const getTaskDueDate = (filing: TaxFiling, task: TaxFilingTask) => {
-    const due = dueDates.find((d) => d.period === filing.period && d.task === task);
+    const due = dueDates.find(
+      (d) => d.period === filing.period && d.task === task,
+    );
     if (due?.dueDate) return due.dueDate;
     return task === "statement"
-      ? (filing.statementDueDate || filing.dueDate)
-      : (filing.paymentDueDate || filing.dueDate);
+      ? filing.statementDueDate || filing.dueDate
+      : filing.paymentDueDate || filing.dueDate;
   };
 
   const generating = generateINSS.isPending || saveFiling.isPending;
@@ -430,7 +463,7 @@ export default function INSSMonthly() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
+        <div className="px-4 py-5 sm:px-6 sm:py-6">
           <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
@@ -457,7 +490,7 @@ export default function INSSMonthly() {
         description={t("reports.inssMonthly.subtitle")}
       />
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("reports.inssMonthly.title")}
           subtitle={t("reports.inssMonthly.subtitle")}
@@ -512,7 +545,7 @@ export default function INSSMonthly() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Building className="h-5 w-5 text-muted-foreground" />
               {t("reports.inssMonthly.generate.title")}
             </CardTitle>
@@ -532,7 +565,9 @@ export default function INSSMonthly() {
                   </SelectTrigger>
                   <SelectContent>
                     {availableYears.map((y) => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -543,19 +578,27 @@ export default function INSSMonthly() {
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={t("reports.inssMonthly.generate.selectMonth")}
+                      placeholder={t(
+                        "reports.inssMonthly.generate.selectMonth",
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {months.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="md:col-span-2 flex gap-2">
-                <Button onClick={handleGenerateReturn} disabled={generating} className="flex-1">
+                <Button
+                  onClick={handleGenerateReturn}
+                  disabled={generating}
+                  className="flex-1"
+                >
                   {generating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -576,61 +619,81 @@ export default function INSSMonthly() {
         {selectedReturn && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  {t("reports.inssMonthly.selected.title", {
-                    period: formatPeriodLabel(selectedReturn.reportingPeriod),
-                  })}
-                </span>
-                <div className="flex gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-base">
+                    {t("reports.inssMonthly.selected.title", {
+                      period: formatPeriodLabel(selectedReturn.reportingPeriod),
+                    })}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {t("reports.inssMonthly.selected.description", {
+                      employer:
+                        selectedReturn.employerName || company.legalName || "-",
+                      tin:
+                        selectedReturn.employerTIN || company.tinNumber || "-",
+                    })}
+                  </CardDescription>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="h-4 w-4 mr-2" />
                     {t("reports.inssMonthly.actions.export")}
                   </Button>
-                  <Button onClick={handleExportDrExcel}>
+                  <Button variant="outline" onClick={handleExportDrExcel}>
                     <Download className="h-4 w-4 mr-2" />
-                    {t("reports.inssMonthly.actions.exportDr") || "DR Excel (INSS portal)"}
+                    {t("reports.inssMonthly.actions.exportDr") ||
+                      "DR Excel (INSS portal)"}
                   </Button>
-                  <Button variant="outline" onClick={handleDownloadPaymentOrder}>
+                  <Button
+                    variant="outline"
+                    onClick={handleDownloadPaymentOrder}
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     {t("paymentOrders.action")}
                   </Button>
                 </div>
-              </CardTitle>
-              <CardDescription>
-                {t("reports.inssMonthly.selected.description", {
-                  employer: selectedReturn.employerName || company.legalName || "-",
-                  tin: selectedReturn.employerTIN || company.tinNumber || "-",
-                })}
-              </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+              <dl className="mb-6 grid gap-x-8 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssMonthly.stats.employees")}
-                  </p>
-                  <p className="text-2xl font-bold">{selectedReturn.totalEmployees}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {selectedReturn.totalEmployees}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssMonthly.stats.contributionBase")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalContributionBase)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(selectedReturn.totalContributionBase)}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5 sm:border-b-0">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssMonthly.stats.employeeContribution")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalEmployeeContributions)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(
+                      selectedReturn.totalEmployeeContributions,
+                    )}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssMonthly.stats.employerContribution")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalEmployerContributions)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(
+                      selectedReturn.totalEmployerContributions,
+                    )}
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
               <div className="space-y-3 md:hidden">
                 {selectedReturn.employees.map((emp) => (
@@ -638,7 +701,9 @@ export default function INSSMonthly() {
                     <CardContent className="p-4 space-y-3">
                       <div>
                         <p className="font-semibold">{emp.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{emp.employeeId}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {emp.employeeId}
+                        </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
@@ -646,7 +711,8 @@ export default function INSSMonthly() {
                             {t("reports.inssMonthly.table.inssNumber")}
                           </p>
                           <p className={emp.inssNumber ? "" : "text-amber-700"}>
-                            {emp.inssNumber || t("reports.inssMonthly.table.missing")}
+                            {emp.inssNumber ||
+                              t("reports.inssMonthly.table.missing")}
                           </p>
                         </div>
                         <div>
@@ -657,13 +723,17 @@ export default function INSSMonthly() {
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            {t("reports.inssMonthly.table.employeeContribution")}
+                            {t(
+                              "reports.inssMonthly.table.employeeContribution",
+                            )}
                           </p>
                           <p>{formatCurrencyTL(emp.employeeContribution)}</p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            {t("reports.inssMonthly.table.employerContribution")}
+                            {t(
+                              "reports.inssMonthly.table.employerContribution",
+                            )}
                           </p>
                           <p>{formatCurrencyTL(emp.employerContribution)}</p>
                         </div>
@@ -685,8 +755,12 @@ export default function INSSMonthly() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("reports.inssMonthly.table.employee")}</TableHead>
-                      <TableHead>{t("reports.inssMonthly.table.inssNumber")}</TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.table.employee")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssMonthly.table.inssNumber")}
+                      </TableHead>
                       <TableHead className="text-right">
                         {t("reports.inssMonthly.table.base")}
                       </TableHead>
@@ -706,15 +780,28 @@ export default function INSSMonthly() {
                       <TableRow key={emp.employeeId}>
                         <TableCell>
                           <div className="font-medium">{emp.fullName}</div>
-                          <div className="text-xs text-muted-foreground">{emp.employeeId}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {emp.employeeId}
+                          </div>
                         </TableCell>
-                        <TableCell className={emp.inssNumber ? "" : "text-amber-700"}>
-                          {emp.inssNumber || t("reports.inssMonthly.table.missing")}
+                        <TableCell
+                          className={emp.inssNumber ? "" : "text-amber-700"}
+                        >
+                          {emp.inssNumber ||
+                            t("reports.inssMonthly.table.missing")}
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.contributionBase)}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.employeeContribution)}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.employerContribution)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrencyTL(emp.totalContribution)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.contributionBase)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.employeeContribution)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.employerContribution)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrencyTL(emp.totalContribution)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -726,7 +813,9 @@ export default function INSSMonthly() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t("reports.inssMonthly.tracker.title")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("reports.inssMonthly.tracker.title")}
+            </CardTitle>
             <CardDescription>
               {t("reports.inssMonthly.tracker.description")}
             </CardDescription>
@@ -756,7 +845,8 @@ export default function INSSMonthly() {
                               {formatPeriodLabel(filing.period)}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {t("reports.inssMonthly.tracker.employees")}: {filing.employeeCount}
+                              {t("reports.inssMonthly.tracker.employees")}:{" "}
+                              {filing.employeeCount}
                             </p>
                           </div>
                           <Button
@@ -800,22 +890,32 @@ export default function INSSMonthly() {
                           </div>
                           <div>
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              {t("reports.inssMonthly.tracker.employeeContribution")}
+                              {t(
+                                "reports.inssMonthly.tracker.employeeContribution",
+                              )}
                             </p>
-                            <p>{formatCurrencyTL(filing.totalINSSEmployee || 0)}</p>
+                            <p>
+                              {formatCurrencyTL(filing.totalINSSEmployee || 0)}
+                            </p>
                           </div>
                           <div>
                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              {t("reports.inssMonthly.tracker.employerContribution")}
+                              {t(
+                                "reports.inssMonthly.tracker.employerContribution",
+                              )}
                             </p>
-                            <p>{formatCurrencyTL(filing.totalINSSEmployer || 0)}</p>
+                            <p>
+                              {formatCurrencyTL(filing.totalINSSEmployer || 0)}
+                            </p>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {statementStatus !== "filed" && (
                             <Button
                               size="sm"
-                              onClick={() => handleOpenMarkFiled(filing.id, "statement")}
+                              onClick={() =>
+                                handleOpenMarkFiled(filing.id, "statement")
+                              }
                             >
                               {t("reports.inssMonthly.actions.markStatement")}
                             </Button>
@@ -824,7 +924,9 @@ export default function INSSMonthly() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              onClick={() => handleOpenMarkFiled(filing.id, "payment")}
+                              onClick={() =>
+                                handleOpenMarkFiled(filing.id, "payment")
+                              }
                             >
                               {t("reports.inssMonthly.actions.markPayment")}
                             </Button>
@@ -841,11 +943,21 @@ export default function INSSMonthly() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("reports.inssMonthly.tracker.period")}</TableHead>
-                    <TableHead>{t("reports.inssMonthly.tracker.statementDue")}</TableHead>
-                    <TableHead>{t("reports.inssMonthly.tracker.paymentDue")}</TableHead>
-                    <TableHead>{t("reports.inssMonthly.tracker.statementStatus")}</TableHead>
-                    <TableHead>{t("reports.inssMonthly.tracker.paymentStatus")}</TableHead>
+                    <TableHead>
+                      {t("reports.inssMonthly.tracker.period")}
+                    </TableHead>
+                    <TableHead>
+                      {t("reports.inssMonthly.tracker.statementDue")}
+                    </TableHead>
+                    <TableHead>
+                      {t("reports.inssMonthly.tracker.paymentDue")}
+                    </TableHead>
+                    <TableHead>
+                      {t("reports.inssMonthly.tracker.statementStatus")}
+                    </TableHead>
+                    <TableHead>
+                      {t("reports.inssMonthly.tracker.paymentStatus")}
+                    </TableHead>
                     <TableHead className="text-right">
                       {t("reports.inssMonthly.tracker.employees")}
                     </TableHead>
@@ -863,7 +975,10 @@ export default function INSSMonthly() {
                 <TableBody>
                   {filings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      <TableCell
+                        colSpan={9}
+                        className="text-center text-muted-foreground py-8"
+                      >
                         {t("reports.inssMonthly.tracker.empty")}
                       </TableCell>
                     </TableRow>
@@ -880,7 +995,9 @@ export default function INSSMonthly() {
                           <TableCell className="font-medium">
                             {formatPeriodLabel(f.period)}
                           </TableCell>
-                          <TableCell>{getTaskDueDate(f, "statement")}</TableCell>
+                          <TableCell>
+                            {getTaskDueDate(f, "statement")}
+                          </TableCell>
                           <TableCell>{getTaskDueDate(f, "payment")}</TableCell>
                           <TableCell>
                             <Badge className={statementConfig.className}>
@@ -894,21 +1011,44 @@ export default function INSSMonthly() {
                               {paymentConfig.label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">{f.employeeCount}</TableCell>
-                          <TableCell className="text-right">{formatCurrencyTL(f.totalINSSEmployee || 0)}</TableCell>
-                          <TableCell className="text-right">{formatCurrencyTL(f.totalINSSEmployer || 0)}</TableCell>
+                          <TableCell className="text-right">
+                            {f.employeeCount}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrencyTL(f.totalINSSEmployee || 0)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrencyTL(f.totalINSSEmployer || 0)}
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <Button size="sm" variant="outline" onClick={() => handleViewReturn(f)}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewReturn(f)}
+                              >
                                 {t("reports.inssMonthly.actions.view")}
                               </Button>
                               {statementStatus !== "filed" && (
-                                <Button size="sm" onClick={() => handleOpenMarkFiled(f.id, "statement")}>
-                                  {t("reports.inssMonthly.actions.markStatement")}
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleOpenMarkFiled(f.id, "statement")
+                                  }
+                                >
+                                  {t(
+                                    "reports.inssMonthly.actions.markStatement",
+                                  )}
                                 </Button>
                               )}
                               {paymentStatus !== "filed" && (
-                                <Button size="sm" variant="secondary" onClick={() => handleOpenMarkFiled(f.id, "payment")}>
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() =>
+                                    handleOpenMarkFiled(f.id, "payment")
+                                  }
+                                >
                                   {t("reports.inssMonthly.actions.markPayment")}
                                 </Button>
                               )}
@@ -941,11 +1081,18 @@ export default function INSSMonthly() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>{t("reports.inssMonthly.markFiled.submissionMethod")}</Label>
-              <Select value={filedMethod} onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}>
+              <Label>
+                {t("reports.inssMonthly.markFiled.submissionMethod")}
+              </Label>
+              <Select
+                value={filedMethod}
+                onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
+              >
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={t("reports.inssMonthly.markFiled.selectMethod")}
+                    placeholder={t(
+                      "reports.inssMonthly.markFiled.selectMethod",
+                    )}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -963,7 +1110,9 @@ export default function INSSMonthly() {
               <Input
                 value={receiptNumber}
                 onChange={(e) => setReceiptNumber(e.target.value)}
-                placeholder={t("reports.inssMonthly.markFiled.receiptPlaceholder")}
+                placeholder={t(
+                  "reports.inssMonthly.markFiled.receiptPlaceholder",
+                )}
               />
             </div>
             <div className="space-y-2">
@@ -971,12 +1120,17 @@ export default function INSSMonthly() {
               <Textarea
                 value={filedNotes}
                 onChange={(e) => setFiledNotes(e.target.value)}
-                placeholder={t("reports.inssMonthly.markFiled.notesPlaceholder")}
+                placeholder={t(
+                  "reports.inssMonthly.markFiled.notesPlaceholder",
+                )}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowMarkFiledDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowMarkFiledDialog(false)}
+            >
               {t("reports.inssMonthly.markFiled.cancel")}
             </Button>
             <Button onClick={handleMarkFiled}>

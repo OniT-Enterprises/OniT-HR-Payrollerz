@@ -12,6 +12,7 @@
 import React from "react";
 import type { ComponentType } from "react";
 import { CardIcon, hasCardIcon } from "@/components/ui/CardIcon";
+import { cn } from "@/lib/utils";
 
 // Section accent classes (literal strings so Tailwind's scanner picks them up).
 // Keyed by the color word in `iconColor` so headers match their dashboard cards.
@@ -40,6 +41,8 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
   /** Additional className for the container */
   className?: string;
+  /** Optional title sizing override for pages that use the full page-title scale. */
+  titleClassName?: string;
 }
 
 export default function PageHeader({
@@ -50,10 +53,13 @@ export default function PageHeader({
   iconColor = "text-muted-foreground",
   actions,
   className = "",
+  titleClassName,
 }: PageHeaderProps) {
   // Derive accent border color from iconColor (e.g. "text-blue-500" -> "border-blue-500")
   const accentBorder = iconColor.replace("text-", "border-");
-  const colorKey = iconColor.match(/blue|cyan|green|indigo|orange|violet|primary/)?.[0];
+  const colorKey = iconColor.match(
+    /blue|cyan|green|indigo|orange|violet|primary/,
+  )?.[0];
   const showCardIcon = cardIcon && hasCardIcon(cardIcon);
 
   return (
@@ -71,9 +77,18 @@ export default function PageHeader({
             </div>
           ) : null}
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold tracking-tight">{title}</h1>
+            <h1
+              className={cn(
+                "truncate text-lg font-bold tracking-tight",
+                titleClassName,
+              )}
+            >
+              {title}
+            </h1>
             {subtitle && (
-              <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground sm:line-clamp-none sm:truncate">{subtitle}</p>
+              <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-muted-foreground sm:line-clamp-none sm:truncate">
+                {subtitle}
+              </p>
             )}
           </div>
         </div>
@@ -83,7 +98,9 @@ export default function PageHeader({
           </div>
         )}
       </div>
-      <div className={`mt-3 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`} />
+      <div
+        className={`mt-3 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`}
+      />
     </div>
   );
 }

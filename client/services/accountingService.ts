@@ -39,9 +39,7 @@ import type {
   TrialBalanceRow,
   GeneralLedgerEntry,
   IncomeStatement,
-  IncomeStatementRow,
   BalanceSheet,
-  BalanceSheetRow,
 } from '@/types/accounting';
 import {
   getDefaultAccounts,

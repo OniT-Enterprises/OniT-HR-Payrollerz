@@ -3121,6 +3121,14 @@ const messages = {
     "payrollRun": {
       "subtitle": "Resumo do que foi efetivamente pago em cada processamento de salários.",
       "selectRunPlaceholder": "Selecione um processamento",
+      "status": {
+        "draft": "Rascunho",
+        "approved": "Aprovado",
+        "processing": "Em processamento",
+        "paid": "Pago",
+        "rejected": "Rejeitado",
+        "cancelled": "Cancelado"
+      },
       "noRuns": {
         "title": "Ainda não há processamentos",
         "description": "Processe o primeiro salário para ver resumos pagos e detalhe por funcionário aqui.",
@@ -3322,6 +3330,11 @@ const messages = {
       },
       "exportTitle": "Exportação Completa",
       "exportDescription": "{{filename}} transferido com sucesso",
+      "filters": "Filtros do relatório",
+      "summary": "Resumo",
+      "invalidDateRange": "A data final deve ser posterior à data inicial.",
+      "unavailableTitle": "Relatório indisponível",
+      "unavailableDescription": "Este relatório não está disponível para a sua função atual.",
       "monthsShort": "meses"
     },
     "setup": {

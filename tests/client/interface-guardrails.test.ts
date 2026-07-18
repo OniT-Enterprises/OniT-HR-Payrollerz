@@ -22,7 +22,9 @@ describe("interface guardrails", () => {
   it("keeps module dashboards compact and chart-free", () => {
     const dashboardDir = join(repoRoot, "client/pages");
     const moduleDashboards = readdirSync(dashboardDir)
-      .filter((name) => name.endsWith("Dashboard.tsx") && name !== "Dashboard.tsx")
+      .filter(
+        (name) => name.endsWith("Dashboard.tsx") && name !== "Dashboard.tsx",
+      )
       .map((name) => read(`client/pages/${name}`));
 
     for (const source of moduleDashboards) {
@@ -49,10 +51,18 @@ describe("interface guardrails", () => {
     const topBar = read("client/components/layout/TopBar.tsx");
     const globalStyles = read("client/global.css");
 
-    expect(dashboard).toContain('t("moduleDashboards.scheduling.cards.recordedToday")');
-    expect(dashboard).toContain('t("moduleDashboards.scheduling.cards.shiftsThisWeek")');
-    expect(dashboard).toContain('"moduleDashboards.scheduling.attention.draftShifts"');
-    expect(dashboard).not.toContain('title: t("moduleDashboards.scheduling.cards.timeTracking")');
+    expect(dashboard).toContain(
+      't("moduleDashboards.scheduling.cards.recordedToday")',
+    );
+    expect(dashboard).toContain(
+      't("moduleDashboards.scheduling.cards.shiftsThisWeek")',
+    );
+    expect(dashboard).toContain(
+      '"moduleDashboards.scheduling.attention.draftShifts"',
+    );
+    expect(dashboard).not.toContain(
+      'title: t("moduleDashboards.scheduling.cards.timeTracking")',
+    );
     expect(dashboard).toContain("h-14 w-full");
     expect(dashboard).not.toContain("h-40 w-full");
 
@@ -60,6 +70,45 @@ describe("interface guardrails", () => {
     expect(impersonation).not.toContain("bg-gradient");
     expect(topBar).toContain('title={t("common.askAI")}');
     expect(globalStyles).toContain("--sidebar-background: 220 24% 7%");
+  });
+
+  it("keeps report pages compact, neutral, and phone-safe", () => {
+    const reportsDir = join(repoRoot, "client/pages/reports");
+    const reportSources = readdirSync(reportsDir)
+      .filter((name) => name.endsWith(".tsx"))
+      .map((name) => read(`client/pages/reports/${name}`));
+
+    for (const source of reportSources) {
+      expect(source).not.toContain("shadow-lg");
+      expect(source).not.toContain("drop-shadow-lg");
+      expect(source).not.toContain('className="text-2xl font-bold"');
+    }
+
+    for (const name of [
+      "AttendanceReports.tsx",
+      "CustomReports.tsx",
+      "DepartmentReports.tsx",
+      "DonorExportPack.tsx",
+      "EmployeeReports.tsx",
+      "PayrollAllocationReport.tsx",
+      "PayrollReports.tsx",
+      "SetupReports.tsx",
+    ]) {
+      expect(read(`client/pages/reports/${name}`)).toContain("<ReportPage");
+    }
+
+    expect(read("client/pages/reports/AttendanceReports.tsx")).not.toContain(
+      't("reports.attendance.breakdown.title")',
+    );
+    expect(read("client/pages/reports/DepartmentReports.tsx")).not.toContain(
+      't("reports.department.distribution.title")',
+    );
+    expect(read("client/pages/reports/PayrollAllocationReport.tsx")).toContain(
+      "<ReportSummary",
+    );
+    expect(read("client/pages/reports/DonorExportPack.tsx")).toContain(
+      "<ReportSummary",
+    );
   });
 
   it("keeps onboarding focused on required first-run decisions", () => {

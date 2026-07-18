@@ -2,28 +2,44 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon, cardIconNameFromArt } from "@/components/ui/CardIcon";
+import {
+  CardIcon,
+  hasCardIcon,
+  cardIconNameFromArt,
+} from "@/components/ui/CardIcon";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
-import { filterModuleNavConfigByPermissions, reportsNavConfig } from "@/lib/moduleNav";
+import {
+  filterModuleNavConfigByPermissions,
+  reportsNavConfig,
+} from "@/lib/moduleNav";
 import { useTenant } from "@/contexts/TenantContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { FilingDueDate } from "@/types/tax-filing";
-import { CheckCircle2, ChevronRight, Clock3, ShieldAlert, Wrench } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  ShieldAlert,
+  Wrench,
+} from "lucide-react";
 
 function ReportsDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={reportsNavConfig} />
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        <Skeleton className="h-24 w-full rounded-2xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-4 w-72 max-w-full" />
+        </div>
+        <Skeleton className="h-24 w-full rounded-xl" />
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-2xl" />
+            <Skeleton key={i} className="h-32 rounded-xl" />
           ))}
         </div>
       </div>
@@ -31,24 +47,39 @@ function ReportsDashboardSkeleton() {
   );
 }
 
-type Translate = (key: string, params?: Record<string, string | number>) => string;
+type Translate = (
+  key: string,
+  params?: Record<string, string | number>,
+) => string;
 
 function formatShortDate(value: string, locale: "en" | "tet" | "pt") {
-  const dateLocale = locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
-  return new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric" }).format(new Date(value));
+  const dateLocale =
+    locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
+  return new Intl.DateTimeFormat(dateLocale, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
 }
 
 function getFilingLabel(item: FilingDueDate, t: Translate) {
   if (item.type === "monthly_wit") {
-    return t("moduleDashboards.reports.filings.monthlyWit", { period: item.period });
+    return t("moduleDashboards.reports.filings.monthlyWit", {
+      period: item.period,
+    });
   }
   if (item.type === "annual_wit") {
-    return t("moduleDashboards.reports.filings.annualWit", { period: item.period });
+    return t("moduleDashboards.reports.filings.annualWit", {
+      period: item.period,
+    });
   }
   if (item.task === "payment") {
-    return t("moduleDashboards.reports.filings.inssPayment", { period: item.period });
+    return t("moduleDashboards.reports.filings.inssPayment", {
+      period: item.period,
+    });
   }
-  return t("moduleDashboards.reports.filings.inssStatement", { period: item.period });
+  return t("moduleDashboards.reports.filings.inssStatement", {
+    period: item.period,
+  });
 }
 
 function getDueDescriptor(item: FilingDueDate, t: Translate) {
@@ -57,14 +88,20 @@ function getDueDescriptor(item: FilingDueDate, t: Translate) {
       days: Math.abs(item.daysUntilDue),
     });
   }
-  if (item.daysUntilDue === 0) return t("moduleDashboards.reports.filings.dueToday");
-  if (item.daysUntilDue === 1) return t("moduleDashboards.reports.filings.dueTomorrow");
-  return t("moduleDashboards.reports.filings.daysLeft", { days: item.daysUntilDue });
+  if (item.daysUntilDue === 0)
+    return t("moduleDashboards.reports.filings.dueToday");
+  if (item.daysUntilDue === 1)
+    return t("moduleDashboards.reports.filings.dueTomorrow");
+  return t("moduleDashboards.reports.filings.daysLeft", {
+    days: item.daysUntilDue,
+  });
 }
 
 const RED = "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300";
-const AMBER = "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
-const VIOLET = "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300";
+const AMBER =
+  "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
+const VIOLET =
+  "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300";
 
 export default function ReportsDashboard() {
   const navigate = useNavigate();
@@ -76,7 +113,11 @@ export default function ReportsDashboard() {
   const hasTimeleave = hasModule("timeleave");
   const canManageTenant = canManage();
   const ngoReportingEnabled = canUseNgoReporting(session, hasReports);
-  const donorExportEnabled = canUseDonorExport(session, hasReports, canManage());
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasReports,
+    canManage(),
+  );
   const filingQuery = useTaxFilingsDueSoon(3, hasPayroll && canManageTenant);
 
   if (filingQuery.isLoading) {
@@ -110,7 +151,12 @@ export default function ReportsDashboard() {
   );
   const reportFamilies = filteredConfig.sections.flatMap((section) => {
     if (section.id === "payroll-reports" && !hasPayroll) return [];
-    if ((section.id === "employee-reports" || section.id === "department-reports") && !hasStaff) return [];
+    if (
+      (section.id === "employee-reports" ||
+        section.id === "department-reports") &&
+      !hasStaff
+    )
+      return [];
     if (section.id === "attendance-reports" && !hasTimeleave) return [];
     if (section.id !== "ngo") return [section];
     if (!ngoReportingEnabled) return [];
@@ -129,16 +175,18 @@ export default function ReportsDashboard() {
     "employee-reports": "/images/illustrations/xefe-card-people.webp",
     "attendance-reports": "/images/illustrations/xefe-card-tl-attendance.webp",
     "department-reports": "/images/illustrations/xefe-card-people.webp",
-    "ngo": "/images/illustrations/xefe-card-reports.webp",
-    "custom": "/images/illustrations/xefe-card-reports.webp",
+    ngo: "/images/illustrations/xefe-card-reports.webp",
+    custom: "/images/illustrations/xefe-card-reports.webp",
   };
   const familyCards = reportFamilies.map((section) => {
-    const outputs = section.subPages.length > 0 ? section.subPages : [{ path: section.path }];
+    const outputs =
+      section.subPages.length > 0 ? section.subPages : [{ path: section.path }];
     const count = outputs.length;
     return {
       id: section.id,
       title: t(`nav.${section.labelKey}`) || section.label,
-      art: familyArt[section.id] ?? "/images/illustrations/xefe-card-reports.webp",
+      art:
+        familyArt[section.id] ?? "/images/illustrations/xefe-card-reports.webp",
       path: outputs[0]?.path ?? section.path,
       description:
         t(`moduleDashboards.reports.families.${section.id}`) ||
@@ -156,7 +204,9 @@ export default function ReportsDashboard() {
     .filter((item) => item.status !== "filed")
     .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
   const overdueCount = openFilings.filter((item) => item.isOverdue).length;
-  const dueThisWeek = openFilings.filter((item) => item.daysUntilDue >= 0 && item.daysUntilDue <= 7).length;
+  const dueThisWeek = openFilings.filter(
+    (item) => item.daysUntilDue >= 0 && item.daysUntilDue <= 7,
+  ).length;
 
   const compliancePhrase =
     overdueCount > 0
@@ -196,7 +246,7 @@ export default function ReportsDashboard() {
       />
       <ModuleSectionNav config={reportsNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -219,15 +269,13 @@ export default function ReportsDashboard() {
                   )}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate("/reports/setup")}>
-              {t("moduleDashboards.reports.reportSetup")}
-            </Button>
+          <div className="w-full sm:w-auto">
             <Button
+              className="w-full sm:w-auto"
               onClick={() => navigate("/reports/custom")}
             >
               <Wrench className="mr-2 h-4 w-4" />
-              {t("moduleDashboards.reports.customReports")}
+              {t("reports.custom.buildReport")}
             </Button>
           </div>
         </div>
@@ -245,20 +293,26 @@ export default function ReportsDashboard() {
                     key={item.key}
                     onClick={() => navigate(item.path)}
                     className={`flex w-full items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 ${
-                      idx !== attention.length - 1 ? "border-b border-border/60" : ""
+                      idx !== attention.length - 1
+                        ? "border-b border-border/60"
+                        : ""
                     }`}
                   >
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}
+                    >
                       <item.icon className="h-4 w-4" />
                     </span>
-                    <span className="flex-1 text-sm text-foreground/90">{item.text}</span>
+                    <span className="flex-1 text-sm text-foreground/90">
+                      {item.text}
+                    </span>
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
                 ))}
               </div>
             ) : (
               <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
-                <CheckCircle2 className="h-5 w-5 text-violet-600" />
+                <CheckCircle2 className="h-5 w-5 text-primary" />
                 {t("moduleDashboards.reports.allGood")}
               </div>
             )}
@@ -275,7 +329,7 @@ export default function ReportsDashboard() {
               <button
                 key={card.id}
                 onClick={() => navigate(card.path)}
-                className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-violet-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
+                className="flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors hover:border-violet-400/50 sm:min-h-0 sm:gap-3 sm:p-5"
               >
                 {hasCardIcon(cardIconNameFromArt(card.art)) ? (
                   <CardIcon
@@ -292,8 +346,12 @@ export default function ReportsDashboard() {
                   />
                 )}
                 <div>
-                  <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.description}</p>
+                  <p className="text-sm font-semibold sm:text-base">
+                    {card.title}
+                  </p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
+                    {card.description}
+                  </p>
                 </div>
               </button>
             ))}

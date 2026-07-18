@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,21 +17,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import MainNavigation from "@/components/layout/MainNavigation";
-import PageHeader from "@/components/layout/PageHeader";
+import {
+  ReportEmptyState,
+  ReportPage,
+  ReportPageSkeleton,
+  ReportToolbar,
+} from "@/components/reports/ReportLayout";
 import { usePayrollRuns, usePayrollRecordsByRun } from "@/hooks/usePayroll";
 import { useI18n } from "@/i18n/I18nProvider";
-import { FileText, Download, Play, Loader2 } from "lucide-react";
+import { FileText, Download, Play, Loader2, WifiOff } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toast } from "sonner";
 import { getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
 import type { PayrollRecord, PayrollRun } from "@/types/payroll";
 
 // ── Canonical extraction (mirrors PayrollHistory/accounting posting) ──
-const witOf = (r: PayrollRecord) => r.deductions?.find((d) => d.type === "income_tax")?.amount ?? 0;
-const inssEmpOf = (r: PayrollRecord) => r.deductions?.find((d) => d.type === "inss_employee")?.amount ?? 0;
-const inssErOf = (r: PayrollRecord) => r.employerTaxes?.find((t) => t.type === "inss_employer")?.amount ?? 0;
-const otherDedOf = (r: PayrollRecord) => Math.max(0, (r.totalDeductions ?? 0) - witOf(r) - inssEmpOf(r));
+const witOf = (r: PayrollRecord) =>
+  r.deductions?.find((d) => d.type === "income_tax")?.amount ?? 0;
+const inssEmpOf = (r: PayrollRecord) =>
+  r.deductions?.find((d) => d.type === "inss_employee")?.amount ?? 0;
+const inssErOf = (r: PayrollRecord) =>
+  r.employerTaxes?.find((t) => t.type === "inss_employer")?.amount ?? 0;
+const otherDedOf = (r: PayrollRecord) =>
+  Math.max(0, (r.totalDeductions ?? 0) - witOf(r) - inssEmpOf(r));
 
 function fmt(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -44,8 +52,10 @@ function fmt(amount: number) {
 
 const STATUS_BADGE: Record<string, string> = {
   paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-  processing: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+  approved:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+  processing:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
   draft: "bg-muted text-muted-foreground",
   rejected: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300",
   cancelled: "bg-muted text-muted-foreground",
@@ -54,18 +64,37 @@ const STATUS_BADGE: Record<string, string> = {
 export default function PayrollReports() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: runs = [], isLoading: runsLoading, error: runsError, refetch: refetchRuns } = usePayrollRuns({ limit: 24 });
+  const {
+    data: runs = [],
+    isLoading: runsLoading,
+    error: runsError,
+    refetch: refetchRuns,
+  } = usePayrollRuns({ limit: 24 });
 
   const sortedRuns = useMemo(
-    () => [...runs].sort((a, b) => (b.payDate ?? "").localeCompare(a.payDate ?? "")),
+    () =>
+      [...runs].sort((a, b) =>
+        (b.payDate ?? "").localeCompare(a.payDate ?? ""),
+      ),
     [runs],
   );
 
-  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined);
+  const [selectedRunId, setSelectedRunId] = useState<string | undefined>(
+    undefined,
+  );
   const activeRunId = selectedRunId ?? sortedRuns[0]?.id;
   const activeRun = sortedRuns.find((r) => r.id === activeRunId);
 
-  const { data: records = [], isLoading: recordsLoading } = usePayrollRecordsByRun(activeRunId);
+  const { data: records = [], isLoading: recordsLoading } =
+    usePayrollRecordsByRun(activeRunId);
+
+  const sortedRecords = useMemo(
+    () =>
+      [...records].sort(
+        (a, b) => (b.totalGrossPay ?? 0) - (a.totalGrossPay ?? 0),
+      ),
+    [records],
+  );
 
   const totals = useMemo(() => {
     return records.reduce(
@@ -79,21 +108,36 @@ export default function PayrollReports() {
         acc.employerCost += r.totalEmployerCost ?? 0;
         return acc;
       },
-      { gross: 0, wit: 0, inssEmp: 0, inssEr: 0, other: 0, net: 0, employerCost: 0 },
+      {
+        gross: 0,
+        wit: 0,
+        inssEmp: 0,
+        inssEr: 0,
+        other: 0,
+        net: 0,
+        employerCost: 0,
+      },
     );
   }, [records]);
 
   const runLabel = (run: PayrollRun) => {
     const period = run.periodStart
-      ? formatDateTL(parseDateISO(run.periodStart), { month: "long", year: "numeric" })
+      ? formatDateTL(parseDateISO(run.periodStart), {
+          month: "long",
+          year: "numeric",
+        })
       : "—";
     const payDate = run.payDate
-      ? formatDateTL(parseDateISO(run.payDate), { day: "numeric", month: "short" })
+      ? formatDateTL(parseDateISO(run.payDate), {
+          day: "numeric",
+          month: "short",
+        })
       : "—";
     // Only claim "paid" when the run actually is — otherwise it contradicts the status chip
-    const datePart = run.status === "paid"
-      ? t("reports.payrollRun.paidOn", { date: payDate })
-      : t("reports.payrollRun.paysOn", { date: payDate });
+    const datePart =
+      run.status === "paid"
+        ? t("reports.payrollRun.paidOn", { date: payDate })
+        : t("reports.payrollRun.paysOn", { date: payDate });
     return `${period} · ${datePart}`;
   };
 
@@ -104,12 +148,15 @@ export default function PayrollReports() {
       const key = r.employeeNumber || r.employeeName;
       if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
     });
-    return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([key]) => key));
+    return new Set(
+      [...counts.entries()].filter(([, n]) => n > 1).map(([key]) => key),
+    );
   }, [records]);
 
   const exportCSV = () => {
     if (!activeRun || records.length === 0) return;
     const headers = [
+      t("reports.employee.csv.employeeId"),
       t("reports.payrollRun.table.employee"),
       t("reports.payrollRun.table.department"),
       t("reports.payrollRun.table.gross"),
@@ -144,68 +191,101 @@ export default function PayrollReports() {
   };
 
   if (runsLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
-          <Skeleton className="mb-2 h-8 w-48" />
-          <Skeleton className="mb-8 h-4 w-72" />
-          <Skeleton className="mb-6 h-12 w-full max-w-md" />
-          <Skeleton className="mb-6 h-56 w-full rounded-2xl" />
-          <Skeleton className="h-80 w-full rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <ReportPageSkeleton sections={2} />;
   }
 
-  const summaryRows: { label: string; value: string; strong?: boolean; tone?: string }[] = [
-    { label: t("reports.payrollRun.summary.gross"), value: fmt(totals.gross), strong: true },
-    { label: t("reports.payrollRun.summary.wit"), value: `– ${fmt(totals.wit)}`, tone: "text-red-600" },
-    { label: t("reports.payrollRun.summary.inssEmployee"), value: `– ${fmt(totals.inssEmp)}`, tone: "text-orange-600" },
-    { label: t("reports.payrollRun.summary.otherDeductions"), value: `– ${fmt(totals.other)}`, tone: "text-muted-foreground" },
-    { label: t("reports.payrollRun.summary.net"), value: fmt(totals.net), strong: true, tone: "text-green-600" },
-    { label: t("reports.payrollRun.summary.inssEmployer"), value: fmt(totals.inssEr), tone: "text-muted-foreground" },
-    { label: t("reports.payrollRun.summary.employerCost"), value: fmt(totals.employerCost), strong: true },
+  const summaryRows: {
+    label: string;
+    value: string;
+    strong?: boolean;
+    tone?: string;
+  }[] = [
+    {
+      label: t("reports.payrollRun.summary.gross"),
+      value: fmt(totals.gross),
+      strong: true,
+    },
+    {
+      label: t("reports.payrollRun.summary.wit"),
+      value: `– ${fmt(totals.wit)}`,
+    },
+    {
+      label: t("reports.payrollRun.summary.inssEmployee"),
+      value: `– ${fmt(totals.inssEmp)}`,
+    },
+    {
+      label: t("reports.payrollRun.summary.otherDeductions"),
+      value: `– ${fmt(totals.other)}`,
+      tone: "text-muted-foreground",
+    },
+    {
+      label: t("reports.payrollRun.summary.net"),
+      value: fmt(totals.net),
+      strong: true,
+    },
+    {
+      label: t("reports.payrollRun.summary.inssEmployer"),
+      value: fmt(totals.inssEr),
+      tone: "text-muted-foreground",
+    },
+    {
+      label: t("reports.payrollRun.summary.employerCost"),
+      value: fmt(totals.employerCost),
+      strong: true,
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <SEO {...seoConfig.payrollReports} />
-      <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
-        <PageHeader
-          title={t("reports.payroll.title")}
-          subtitle={t("reports.payrollRun.subtitle")}
-          icon={FileText}
-          iconColor="text-primary"
-        />
-
+      <ReportPage
+        title={t("reports.payroll.title")}
+        subtitle={t("reports.payrollRun.subtitle")}
+        icon={FileText}
+      >
         {runsError ? (
-          <div className="py-16 text-center">
-            <h3 className="mb-2 text-lg font-semibold">{t("common.connectionIssueTitle")}</h3>
-            <p className="mb-6 text-muted-foreground">{t("common.connectionIssueDesc")}</p>
-            <Button variant="outline" onClick={() => refetchRuns()}>
-              {t("common.retry")}
-            </Button>
-          </div>
+          <ReportEmptyState
+            icon={WifiOff}
+            title={t("common.connectionIssueTitle")}
+            description={t("common.connectionIssueDesc")}
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              void refetchRuns();
+            }}
+          />
         ) : sortedRuns.length === 0 ? (
-          <div className="py-16 text-center">
-            <img src="/images/illustrations/xefe-card-reports.webp" alt="" className="mx-auto mb-4 h-28 w-auto object-contain drop-shadow-lg" />
-            <h3 className="mb-2 text-lg font-semibold">{t("reports.payrollRun.noRuns.title")}</h3>
-            <p className="mb-6 text-muted-foreground">{t("reports.payrollRun.noRuns.description")}</p>
-            <Button onClick={() => navigate("/payroll/run")}>
-              <Play className="mr-2 h-4 w-4" />
-              {t("reports.payrollRun.noRuns.action")}
-            </Button>
-          </div>
+          <ReportEmptyState
+            icon={Play}
+            title={t("reports.payrollRun.noRuns.title")}
+            description={t("reports.payrollRun.noRuns.description")}
+            actionLabel={t("reports.payrollRun.noRuns.action")}
+            onAction={() => navigate("/payroll/run")}
+          />
         ) : (
           <div className="space-y-6">
             {/* Run selector + export */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <ReportToolbar
+              ariaLabel={t("reports.payrollRun.selectRunPlaceholder")}
+              actions={
+                <Button
+                  variant="outline"
+                  onClick={exportCSV}
+                  disabled={records.length === 0}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("reports.payroll.actions.export")}
+                </Button>
+              }
+            >
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="payroll-report-run">
+                  {t("reports.payrollRun.selectRunPlaceholder")}
+                </Label>
                 <Select value={activeRunId} onValueChange={setSelectedRunId}>
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder={t("reports.payrollRun.selectRunPlaceholder")} />
+                  <SelectTrigger id="payroll-report-run" className="w-full">
+                    <SelectValue
+                      placeholder={t("reports.payrollRun.selectRunPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {sortedRuns.map((run) => (
@@ -216,21 +296,19 @@ export default function PayrollReports() {
                   </SelectContent>
                 </Select>
                 {activeRun && (
-                  <Badge className={STATUS_BADGE[activeRun.status] ?? "bg-muted text-muted-foreground"}>
-                    {activeRun.status}
+                  <Badge
+                    className={`mt-2 ${STATUS_BADGE[activeRun.status] ?? "bg-muted text-muted-foreground"}`}
+                  >
+                    {t(`reports.payrollRun.status.${activeRun.status}`)}
                   </Badge>
                 )}
               </div>
-              <Button onClick={exportCSV} disabled={records.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
-                {t("reports.payroll.actions.export")}
-              </Button>
-            </div>
+            </ReportToolbar>
 
             {/* Summary report card */}
-            <Card className="border-border/50">
+            <Card className="border-border/70 shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <FileText className="h-5 w-5 text-primary" />
                   {t("reports.payrollRun.summary.title")}
                 </CardTitle>
@@ -248,9 +326,16 @@ export default function PayrollReports() {
                 ) : (
                   <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
                     {summaryRows.map((row) => (
-                      <div key={row.label} className="flex items-center justify-between gap-3 border-b border-border/40 pb-2">
-                        <span className="text-sm text-muted-foreground">{row.label}</span>
-                        <span className={`tabular-nums ${row.strong ? "text-base font-semibold" : "text-sm font-medium"} ${row.tone ?? ""}`}>
+                      <div
+                        key={row.label}
+                        className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
+                      >
+                        <span className="text-sm text-muted-foreground">
+                          {row.label}
+                        </span>
+                        <span
+                          className={`tabular-nums ${row.strong ? "text-base font-semibold" : "text-sm font-medium"} ${row.tone ?? ""}`}
+                        >
                           {row.value}
                         </span>
                       </div>
@@ -261,13 +346,15 @@ export default function PayrollReports() {
             </Card>
 
             {/* Per-employee breakdown */}
-            <Card className="border-border/50">
+            <Card className="border-border/70 shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <FileText className="h-5 w-5 text-primary" />
                   {t("reports.payrollRun.table.title")}
                 </CardTitle>
-                <CardDescription>{t("reports.payrollRun.table.description")}</CardDescription>
+                <CardDescription>
+                  {t("reports.payrollRun.table.description")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {recordsLoading ? (
@@ -279,67 +366,174 @@ export default function PayrollReports() {
                     {t("reports.payrollRun.table.empty")}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <>
                     {duplicateEmployeeNumbers.size > 0 && (
                       <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-                        <span>{t("reports.payrollRun.duplicatesWarning", { count: duplicateEmployeeNumbers.size })}</span>
+                        <span>
+                          {t("reports.payrollRun.duplicatesWarning", {
+                            count: duplicateEmployeeNumbers.size,
+                          })}
+                        </span>
                       </div>
                     )}
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="p-3 text-left font-medium">{t("reports.payrollRun.table.employee")}</th>
-                          <th className="p-3 text-left font-medium">{t("reports.payrollRun.table.department")}</th>
-                          <th className="p-3 text-right font-medium">{t("reports.payrollRun.table.gross")}</th>
-                          <th className="p-3 text-right font-medium">WIT</th>
-                          <th className="p-3 text-right font-medium">INSS</th>
-                          <th className="p-3 text-right font-medium">{t("reports.payrollRun.table.other")}</th>
-                          <th className="p-3 text-right font-medium">{t("reports.payrollRun.table.net")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...records]
-                          .sort((a, b) => (b.totalGrossPay ?? 0) - (a.totalGrossPay ?? 0))
-                          .map((r) => (
-                            <tr key={r.id ?? r.employeeId} className="border-b hover:bg-muted/50">
+
+                    <div className="space-y-3 md:hidden">
+                      {sortedRecords.map((record) => (
+                        <div
+                          key={record.id ?? record.employeeId}
+                          className="rounded-lg border border-border/70 p-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold">
+                                {record.employeeName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {[record.employeeNumber, record.department]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            </div>
+                            {duplicateEmployeeNumbers.has(
+                              record.employeeNumber || record.employeeName,
+                            ) && (
+                              <Badge className="shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                {t("reports.payrollRun.duplicateBadge")}
+                              </Badge>
+                            )}
+                          </div>
+                          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                {t("reports.payrollRun.table.gross")}
+                              </dt>
+                              <dd className="mt-0.5 font-medium tabular-nums">
+                                {fmt(record.totalGrossPay ?? 0)}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                WIT
+                              </dt>
+                              <dd className="mt-0.5 font-medium tabular-nums">
+                                {fmt(witOf(record))}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                INSS
+                              </dt>
+                              <dd className="mt-0.5 font-medium tabular-nums">
+                                {fmt(inssEmpOf(record))}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                {t("reports.payrollRun.table.net")}
+                              </dt>
+                              <dd className="mt-0.5 font-semibold tabular-nums">
+                                {fmt(record.netPay ?? 0)}
+                              </dd>
+                            </div>
+                          </dl>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="hidden overflow-x-auto md:block">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="p-3 text-left font-medium">
+                              {t("reports.payrollRun.table.employee")}
+                            </th>
+                            <th className="p-3 text-left font-medium">
+                              {t("reports.payrollRun.table.department")}
+                            </th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.gross")}
+                            </th>
+                            <th className="p-3 text-right font-medium">WIT</th>
+                            <th className="p-3 text-right font-medium">INSS</th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.other")}
+                            </th>
+                            <th className="p-3 text-right font-medium">
+                              {t("reports.payrollRun.table.net")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedRecords.map((r) => (
+                            <tr
+                              key={r.id ?? r.employeeId}
+                              className="border-b hover:bg-muted/50"
+                            >
                               <td className="p-3">
                                 <div className="font-medium">
                                   {r.employeeName}
-                                  {duplicateEmployeeNumbers.has(r.employeeNumber || r.employeeName) && (
+                                  {duplicateEmployeeNumbers.has(
+                                    r.employeeNumber || r.employeeName,
+                                  ) && (
                                     <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
                                       {t("reports.payrollRun.duplicateBadge")}
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="text-xs text-muted-foreground">{r.employeeNumber}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {r.employeeNumber}
+                                </div>
                               </td>
                               <td className="p-3">{r.department}</td>
-                              <td className="p-3 text-right tabular-nums">{fmt(r.totalGrossPay ?? 0)}</td>
-                              <td className="p-3 text-right tabular-nums text-red-600">{fmt(witOf(r))}</td>
-                              <td className="p-3 text-right tabular-nums text-orange-600">{fmt(inssEmpOf(r))}</td>
-                              <td className="p-3 text-right tabular-nums text-muted-foreground">{fmt(otherDedOf(r))}</td>
-                              <td className="p-3 text-right font-medium tabular-nums text-green-600">{fmt(r.netPay ?? 0)}</td>
+                              <td className="p-3 text-right tabular-nums">
+                                {fmt(r.totalGrossPay ?? 0)}
+                              </td>
+                              <td className="p-3 text-right tabular-nums">
+                                {fmt(witOf(r))}
+                              </td>
+                              <td className="p-3 text-right tabular-nums">
+                                {fmt(inssEmpOf(r))}
+                              </td>
+                              <td className="p-3 text-right tabular-nums text-muted-foreground">
+                                {fmt(otherDedOf(r))}
+                              </td>
+                              <td className="p-3 text-right font-medium tabular-nums">
+                                {fmt(r.netPay ?? 0)}
+                              </td>
                             </tr>
                           ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 bg-muted/40 font-semibold">
-                          <td className="p-3" colSpan={2}>{t("reports.payrollRun.table.totals")}</td>
-                          <td className="p-3 text-right tabular-nums">{fmt(totals.gross)}</td>
-                          <td className="p-3 text-right tabular-nums text-red-600">{fmt(totals.wit)}</td>
-                          <td className="p-3 text-right tabular-nums text-orange-600">{fmt(totals.inssEmp)}</td>
-                          <td className="p-3 text-right tabular-nums text-muted-foreground">{fmt(totals.other)}</td>
-                          <td className="p-3 text-right tabular-nums text-green-600">{fmt(totals.net)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t-2 bg-muted/40 font-semibold">
+                            <td className="p-3" colSpan={2}>
+                              {t("reports.payrollRun.table.totals")}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {fmt(totals.gross)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {fmt(totals.wit)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {fmt(totals.inssEmp)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums text-muted-foreground">
+                              {fmt(totals.other)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {fmt(totals.net)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
           </div>
         )}
-      </div>
-    </div>
+      </ReportPage>
+    </>
   );
 }

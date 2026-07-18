@@ -34,19 +34,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
-import {
-  CalendarDays,
-  Download,
-  Shield,
-} from "lucide-react";
+import { CalendarDays, Download, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useTaxFilings } from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import type {
-  MonthlyINSSReturn,
-  TaxFiling,
-} from "@/types/tax-filing";
+import type { MonthlyINSSReturn, TaxFiling } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 
@@ -74,9 +67,14 @@ interface AnnualSummary {
   employees: AnnualEmployeeSummary[];
 }
 
-function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>, year: string): AnnualSummary | null {
-  const inssFilings = filings.filter(f =>
-    f.type === "inss_monthly" && f.dataSnapshot && f.period.startsWith(year)
+function aggregateAnnual(
+  filings: TaxFiling[],
+  company: Partial<CompanyDetails>,
+  year: string,
+): AnnualSummary | null {
+  const inssFilings = filings.filter(
+    (f) =>
+      f.type === "inss_monthly" && f.dataSnapshot && f.period.startsWith(year),
   );
 
   if (inssFilings.length === 0) return null;
@@ -111,7 +109,7 @@ function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>,
   }
 
   const employees = Array.from(employeeMap.values()).sort((a, b) =>
-    a.fullName.localeCompare(b.fullName)
+    a.fullName.localeCompare(b.fullName),
   );
 
   // Round all totals to 2 decimal places
@@ -128,10 +126,18 @@ function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>,
     employerTIN: company.tinNumber || "",
     monthsFiled: inssFilings.length,
     totalEmployees: employees.length,
-    totalContributionBase: +employees.reduce((s, e) => s + e.totalContributionBase, 0).toFixed(2),
-    totalEmployeeContributions: +employees.reduce((s, e) => s + e.totalEmployeeContribution, 0).toFixed(2),
-    totalEmployerContributions: +employees.reduce((s, e) => s + e.totalEmployerContribution, 0).toFixed(2),
-    totalContributions: +employees.reduce((s, e) => s + e.totalContribution, 0).toFixed(2),
+    totalContributionBase: +employees
+      .reduce((s, e) => s + e.totalContributionBase, 0)
+      .toFixed(2),
+    totalEmployeeContributions: +employees
+      .reduce((s, e) => s + e.totalEmployeeContribution, 0)
+      .toFixed(2),
+    totalEmployerContributions: +employees
+      .reduce((s, e) => s + e.totalEmployerContribution, 0)
+      .toFixed(2),
+    totalContributions: +employees
+      .reduce((s, e) => s + e.totalContribution, 0)
+      .toFixed(2),
     employees,
   };
 }
@@ -142,7 +148,8 @@ export default function INSSAnnual() {
 
   // React Query hooks
   const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { data: allFilings = [], isLoading: filingsLoading } = useTaxFilings("inss_monthly");
+  const { data: allFilings = [], isLoading: filingsLoading } =
+    useTaxFilings("inss_monthly");
 
   const loading = settingsLoading || filingsLoading;
 
@@ -157,7 +164,7 @@ export default function INSSAnnual() {
   // Derive company from settings inside useMemo to avoid unstable deps
   const company: Partial<CompanyDetails> = useMemo(
     () => settings?.companyDetails || {},
-    [settings?.companyDetails]
+    [settings?.companyDetails],
   );
 
   // Compute the annual summary from filings data via useMemo
@@ -169,7 +176,9 @@ export default function INSSAnnual() {
   const handleGenerate = () => {
     setShowSummary(true);
 
-    const yearFilings = allFilings.filter(f => f.period.startsWith(selectedYear));
+    const yearFilings = allFilings.filter((f) =>
+      f.period.startsWith(selectedYear),
+    );
     if (yearFilings.length === 0) {
       toast({
         title: t("reports.inssAnnual.toast.noDataTitle"),
@@ -230,7 +239,9 @@ export default function INSSAnnual() {
       .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -250,7 +261,7 @@ export default function INSSAnnual() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
+        <div className="px-4 py-5 sm:px-6 sm:py-6">
           <div className="mx-auto max-w-screen-2xl">
             <Skeleton className="h-8 w-56 mb-2" />
             <Skeleton className="h-4 w-80 mb-6" />
@@ -272,7 +283,7 @@ export default function INSSAnnual() {
         description={t("reports.inssAnnual.subtitle")}
       />
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("reports.inssAnnual.title")}
           subtitle={t("reports.inssAnnual.subtitle")}
@@ -282,7 +293,7 @@ export default function INSSAnnual() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <CalendarDays className="h-5 w-5 text-muted-foreground" />
               {t("reports.inssAnnual.generate.title")}
             </CardTitle>
@@ -294,7 +305,13 @@ export default function INSSAnnual() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="space-y-2">
                 <Label>{t("reports.inssAnnual.generate.year")}</Label>
-                <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setShowSummary(false); }}>
+                <Select
+                  value={selectedYear}
+                  onValueChange={(v) => {
+                    setSelectedYear(v);
+                    setShowSummary(false);
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue
                       placeholder={t("reports.inssAnnual.generate.selectYear")}
@@ -302,7 +319,9 @@ export default function INSSAnnual() {
                   </SelectTrigger>
                   <SelectContent>
                     {availableYears.map((y) => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -319,22 +338,26 @@ export default function INSSAnnual() {
         {summary && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  {t("reports.inssAnnual.summary.title", { year: summary.year })}
-                </span>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <CardTitle className="text-base">
+                    {t("reports.inssAnnual.summary.title", {
+                      year: summary.year,
+                    })}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {t("reports.inssAnnual.summary.description", {
+                      employer: summary.employerName || "-",
+                      tin: summary.employerTIN || "-",
+                      monthsFiled: summary.monthsFiled,
+                    })}
+                  </CardDescription>
+                </div>
                 <Button variant="outline" onClick={handleExportCSV}>
                   <Download className="h-4 w-4 mr-2" />
                   {t("reports.inssAnnual.actions.export")}
                 </Button>
-              </CardTitle>
-              <CardDescription>
-                {t("reports.inssAnnual.summary.description", {
-                  employer: summary.employerName || "-",
-                  tin: summary.employerTIN || "-",
-                  monthsFiled: summary.monthsFiled,
-                })}
-              </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               {summary.monthsFiled < 12 && (
@@ -345,38 +368,48 @@ export default function INSSAnnual() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+              <dl className="mb-6 grid gap-x-8 sm:grid-cols-2">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssAnnual.stats.employees")}
-                  </p>
-                  <p className="text-2xl font-bold">{summary.totalEmployees}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {summary.totalEmployees}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssAnnual.stats.monthsFiled")}
-                  </p>
-                  <p className="text-2xl font-bold">{summary.monthsFiled}/12</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {summary.monthsFiled}/12
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssAnnual.stats.totalBase")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(summary.totalContributionBase)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(summary.totalContributionBase)}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 border-b border-border/50 py-2.5">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssAnnual.stats.employeeContribution")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(summary.totalEmployeeContributions)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(summary.totalEmployeeContributions)}
+                  </dd>
                 </div>
-                <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-4 py-2.5 sm:col-span-2">
+                  <dt className="text-sm text-muted-foreground">
                     {t("reports.inssAnnual.stats.employerContribution")}
-                  </p>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(summary.totalEmployerContributions)}</p>
+                  </dt>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {formatCurrencyTL(summary.totalEmployerContributions)}
+                  </dd>
                 </div>
-              </div>
+              </dl>
 
               <div className="space-y-3 md:hidden">
                 {summary.employees.map((emp) => (
@@ -384,7 +417,9 @@ export default function INSSAnnual() {
                     <CardContent className="p-4 space-y-3">
                       <div>
                         <p className="font-semibold">{emp.fullName}</p>
-                        <p className="text-xs text-muted-foreground">{emp.employeeId}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {emp.employeeId}
+                        </p>
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
@@ -392,7 +427,8 @@ export default function INSSAnnual() {
                             {t("reports.inssAnnual.table.inssNumber")}
                           </p>
                           <p className={emp.inssNumber ? "" : "text-amber-700"}>
-                            {emp.inssNumber || t("reports.inssAnnual.table.missing")}
+                            {emp.inssNumber ||
+                              t("reports.inssAnnual.table.missing")}
                           </p>
                         </div>
                         <div>
@@ -411,13 +447,17 @@ export default function INSSAnnual() {
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                             {t("reports.inssAnnual.table.employeeContribution")}
                           </p>
-                          <p>{formatCurrencyTL(emp.totalEmployeeContribution)}</p>
+                          <p>
+                            {formatCurrencyTL(emp.totalEmployeeContribution)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                             {t("reports.inssAnnual.table.employerContribution")}
                           </p>
-                          <p>{formatCurrencyTL(emp.totalEmployerContribution)}</p>
+                          <p>
+                            {formatCurrencyTL(emp.totalEmployerContribution)}
+                          </p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -437,8 +477,12 @@ export default function INSSAnnual() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("reports.inssAnnual.table.employee")}</TableHead>
-                      <TableHead>{t("reports.inssAnnual.table.inssNumber")}</TableHead>
+                      <TableHead>
+                        {t("reports.inssAnnual.table.employee")}
+                      </TableHead>
+                      <TableHead>
+                        {t("reports.inssAnnual.table.inssNumber")}
+                      </TableHead>
                       <TableHead className="text-center">
                         {t("reports.inssAnnual.table.months")}
                       </TableHead>
@@ -461,28 +505,49 @@ export default function INSSAnnual() {
                       <TableRow key={emp.employeeId}>
                         <TableCell>
                           <div className="font-medium">{emp.fullName}</div>
-                          <div className="text-xs text-muted-foreground">{emp.employeeId}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {emp.employeeId}
+                          </div>
                         </TableCell>
-                        <TableCell className={emp.inssNumber ? "" : "text-amber-700"}>
-                          {emp.inssNumber || t("reports.inssAnnual.table.missing")}
+                        <TableCell
+                          className={emp.inssNumber ? "" : "text-amber-700"}
+                        >
+                          {emp.inssNumber ||
+                            t("reports.inssAnnual.table.missing")}
                         </TableCell>
                         <TableCell className="text-center">
                           {emp.monthsContributed}
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.totalContributionBase)}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.totalEmployeeContribution)}</TableCell>
-                        <TableCell className="text-right">{formatCurrencyTL(emp.totalEmployerContribution)}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrencyTL(emp.totalContribution)}</TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.totalContributionBase)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.totalEmployeeContribution)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrencyTL(emp.totalEmployerContribution)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrencyTL(emp.totalContribution)}
+                        </TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={3}>
                         {t("reports.inssAnnual.table.total")}
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrencyTL(summary.totalContributionBase)}</TableCell>
-                      <TableCell className="text-right">{formatCurrencyTL(summary.totalEmployeeContributions)}</TableCell>
-                      <TableCell className="text-right">{formatCurrencyTL(summary.totalEmployerContributions)}</TableCell>
-                      <TableCell className="text-right">{formatCurrencyTL(summary.totalContributions)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrencyTL(summary.totalContributionBase)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrencyTL(summary.totalEmployeeContributions)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrencyTL(summary.totalEmployerContributions)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrencyTL(summary.totalContributions)}
+                      </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>

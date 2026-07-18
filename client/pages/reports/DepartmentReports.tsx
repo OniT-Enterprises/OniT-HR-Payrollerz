@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -17,20 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import MainNavigation from "@/components/layout/MainNavigation";
-import PageHeader from "@/components/layout/PageHeader";
+import {
+  ReportEmptyState,
+  ReportPage,
+  ReportPageSkeleton,
+  ReportToolbar,
+} from "@/components/reports/ReportLayout";
 import { useAllDepartments } from "@/hooks/useDepartments";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import type { Department } from "@/services/departmentService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
-import {
-  Building,
-  Download,
-  Users,
-  TrendingUp,
-  PieChart,
-} from "lucide-react";
+import { Building, Download, Users, TrendingUp, WifiOff } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { exportToCSV } from "@/lib/csvExport";
@@ -49,14 +47,23 @@ export default function DepartmentReports() {
   const { canManage } = useTenant();
   const tenantId = useTenantId();
   const canManageTenant = canManage();
-  const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(tenantId, 100);
-  const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
+  const departmentsQuery = useAllDepartments(tenantId, 100);
+  const employeesQuery = useAllEmployees(500);
+  const departments = useMemo(
+    () => departmentsQuery.data ?? [],
+    [departmentsQuery.data],
+  );
+  const employees = useMemo(
+    () => employeesQuery.data ?? [],
+    [employeesQuery.data],
+  );
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
 
-  const getDateRangeLabel = (value: string) => t(`reports.shared.ranges.${value}`);
-  const loading = deptsLoading || empsLoading;
+  const getDateRangeLabel = (value: string) =>
+    t(`reports.shared.ranges.${value}`);
+  const loading = departmentsQuery.isLoading || employeesQuery.isLoading;
 
   // Calculate stats per department
   const departmentStats = useMemo((): DepartmentStats[] => {
@@ -65,7 +72,7 @@ export default function DepartmentReports() {
 
     const stats: DepartmentStats[] = departments.map((dept) => {
       const deptEmployees = employees.filter(
-        (e) => e.jobDetails?.department === dept.name
+        (e) => e.jobDetails?.department === dept.name,
       );
       const activeEmps = deptEmployees.filter((e) => e.status === "active");
       const newHires = deptEmployees.filter((e) => {
@@ -92,11 +99,14 @@ export default function DepartmentReports() {
           : 0;
 
       // Employment type breakdown
-      const employmentTypes = deptEmployees.reduce((acc, e) => {
-        const type = e.jobDetails?.employmentType || "Unknown";
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const employmentTypes = deptEmployees.reduce(
+        (acc, e) => {
+          const type = e.jobDetails?.employmentType || "Unknown";
+          acc[type] = (acc[type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
 
       return {
         department: dept,
@@ -117,11 +127,17 @@ export default function DepartmentReports() {
   const totalDepartments = departments.length;
   const totalEmployees = employees.length;
 
-  const doExport = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
+  const doExport = (
+    data: Record<string, unknown>[],
+    filename: string,
+    columns: { key: string; label: string }[],
+  ) => {
     exportToCSV(data, filename, columns);
     toast({
       title: t("reports.shared.exportTitle"),
-      description: t("reports.shared.exportDescription", { filename: `${filename}.csv` }),
+      description: t("reports.shared.exportDescription", {
+        filename: `${filename}.csv`,
+      }),
     });
   };
 
@@ -140,7 +156,10 @@ export default function DepartmentReports() {
       { key: "manager", label: t("reports.department.csv.manager") },
       { key: "headcount", label: t("reports.department.csv.headcount") },
       { key: "activeEmployees", label: t("reports.department.csv.active") },
-      { key: "avgTenureMonths", label: t("reports.department.csv.avgTenureMonths") },
+      {
+        key: "avgTenureMonths",
+        label: t("reports.department.csv.avgTenureMonths"),
+      },
     ]);
   };
 
@@ -150,12 +169,16 @@ export default function DepartmentReports() {
         department: s.department.name,
         employmentType: type,
         count,
-        percentage: ((count / s.headcount) * 100).toFixed(1),
-      }))
+        percentage:
+          s.headcount > 0 ? ((count / s.headcount) * 100).toFixed(1) : "0.0",
+      })),
     );
     doExport(data, "staffing_by_department", [
       { key: "department", label: t("reports.department.csv.department") },
-      { key: "employmentType", label: t("reports.department.csv.employmentType") },
+      {
+        key: "employmentType",
+        label: t("reports.department.csv.employmentType"),
+      },
       { key: "count", label: t("reports.department.csv.count") },
       { key: "percentage", label: t("reports.department.csv.percentage") },
     ]);
@@ -173,77 +196,85 @@ export default function DepartmentReports() {
     }));
     doExport(data, "department_growth", [
       { key: "department", label: t("reports.department.csv.department") },
-      { key: "currentHeadcount", label: t("reports.department.csv.currentHeadcount") },
+      {
+        key: "currentHeadcount",
+        label: t("reports.department.csv.currentHeadcount"),
+      },
       { key: "newHires", label: t("reports.department.csv.newHires") },
       { key: "growthRate", label: t("reports.department.csv.growthRate") },
     ]);
   };
 
   if (loading) {
+    return <ReportPageSkeleton sections={2} />;
+  }
+
+  if (departmentsQuery.isError || employeesQuery.isError) {
     return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="px-6 py-6 mx-auto max-w-screen-2xl">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-72 mb-8" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-5 w-32 mb-1" />
-                  <Skeleton className="h-4 w-48" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 mb-4">
-                    {[1, 2, 3].map((j) => (
-                      <div key={j} className="flex justify-between">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-5 w-10" />
-                      </div>
-                    ))}
-                  </div>
-                  <Skeleton className="h-9 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
+      <>
+        <SEO
+          title={`${t("reports.department.title")} | Xefe`}
+          description={t("reports.department.subtitle")}
+        />
+        <ReportPage
+          title={t("reports.department.title")}
+          subtitle={t("reports.department.subtitle")}
+          icon={Building}
+        >
+          <ReportEmptyState
+            icon={WifiOff}
+            title={t("common.connectionIssueTitle")}
+            description={t("common.connectionIssueDesc")}
+            actionLabel={t("common.retry")}
+            onAction={() => {
+              void Promise.all([
+                departmentsQuery.refetch(),
+                employeesQuery.refetch(),
+              ]);
+            }}
+          />
+        </ReportPage>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <SEO title={`${t("reports.department.title")} | Xefe`} description={t("reports.department.subtitle")} />
-      <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
-        <PageHeader
-          title={t("reports.department.title")}
-          subtitle={t("reports.department.subtitle")}
-          icon={Building}
-          iconColor="text-violet-500"
-          actions={
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{t("reports.shared.periodLabel")}</span>
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7">{getDateRangeLabel("7")}</SelectItem>
-                  <SelectItem value="30">{getDateRangeLabel("30")}</SelectItem>
-                  <SelectItem value="90">{getDateRangeLabel("90")}</SelectItem>
-                  <SelectItem value="365">{getDateRangeLabel("365")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
-        />
+    <>
+      <SEO
+        title={`${t("reports.department.title")} | Xefe`}
+        description={t("reports.department.subtitle")}
+      />
+      <ReportPage
+        title={t("reports.department.title")}
+        subtitle={t("reports.department.subtitle")}
+        icon={Building}
+      >
+        <ReportToolbar ariaLabel={t("reports.shared.periodLabel")}>
+          <div className="space-y-1.5">
+            <Label htmlFor="department-report-period">
+              {t("reports.shared.periodLabel")}
+            </Label>
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger
+                id="department-report-period"
+                className="w-full sm:w-48"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">{getDateRangeLabel("7")}</SelectItem>
+                <SelectItem value="30">{getDateRangeLabel("30")}</SelectItem>
+                <SelectItem value="90">{getDateRangeLabel("90")}</SelectItem>
+                <SelectItem value="365">{getDateRangeLabel("365")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </ReportToolbar>
         {/* Report Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          <Card className="border-border/50 shadow-lg">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="border-border/70 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Building className="h-5 w-5 text-violet-600" />
                 {t("reports.department.cards.overview.title")}
               </CardTitle>
@@ -254,11 +285,15 @@ export default function DepartmentReports() {
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("reports.department.cards.overview.departments")}</span>
+                  <span className="text-muted-foreground">
+                    {t("reports.department.cards.overview.departments")}
+                  </span>
                   <span className="font-medium">{totalDepartments}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("reports.department.cards.overview.totalStaff")}</span>
+                  <span className="text-muted-foreground">
+                    {t("reports.department.cards.overview.totalStaff")}
+                  </span>
                   <Badge
                     variant="outline"
                     className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
@@ -275,16 +310,20 @@ export default function DepartmentReports() {
                   </Badge>
                 </div>
               </div>
-              <Button className="w-full" onClick={exportDepartmentOverview}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={exportDepartmentOverview}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 {t("reports.department.cards.overview.export")}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-lg">
+          <Card className="border-border/70 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-5 w-5 text-blue-600" />
                 {t("reports.department.cards.staffing.title")}
               </CardTitle>
@@ -295,12 +334,17 @@ export default function DepartmentReports() {
             <CardContent>
               <div className="space-y-3 mb-4">
                 {departmentStats.slice(0, 3).map((s) => (
-                  <div key={s.department.id} className="flex justify-between text-sm">
+                  <div
+                    key={s.department.id}
+                    className="flex justify-between text-sm"
+                  >
                     <span className="text-muted-foreground truncate max-w-[140px]">
                       {s.department.name}
                     </span>
                     <Badge variant="outline">
-                      {t("reports.department.cards.staffing.staffCount", { count: String(s.headcount) })}
+                      {t("reports.department.cards.staffing.staffCount", {
+                        count: String(s.headcount),
+                      })}
                     </Badge>
                   </div>
                 ))}
@@ -312,16 +356,20 @@ export default function DepartmentReports() {
                   </p>
                 )}
               </div>
-              <Button className="w-full" onClick={exportStaffingReport}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={exportStaffingReport}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 {t("reports.department.cards.staffing.export")}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-lg">
+          <Card className="border-border/70 shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 {t("reports.department.cards.growth.title")}
               </CardTitle>
@@ -340,8 +388,12 @@ export default function DepartmentReports() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("reports.shared.periodLabel")}</span>
-                  <Badge variant="outline">{getDateRangeLabel(dateRange)}</Badge>
+                  <span className="text-muted-foreground">
+                    {t("reports.shared.periodLabel")}
+                  </span>
+                  <Badge variant="outline">
+                    {getDateRangeLabel(dateRange)}
+                  </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">
@@ -352,7 +404,11 @@ export default function DepartmentReports() {
                   </span>
                 </div>
               </div>
-              <Button className="w-full" onClick={exportGrowthReport}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={exportGrowthReport}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 {t("reports.department.cards.growth.export")}
               </Button>
@@ -360,48 +416,10 @@ export default function DepartmentReports() {
           </Card>
         </div>
 
-        {/* Department Size Distribution */}
-        <Card className="border-border/50 shadow-lg mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-violet-600" />
-              {t("reports.department.distribution.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.department.distribution.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {departmentStats.map((s) => {
-                const pct = totalEmployees > 0 ? (s.headcount / totalEmployees) * 100 : 0;
-                return (
-                  <div
-                    key={s.department.id}
-                    className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: s.department.color || "#8b5cf6" }}
-                      />
-                      <span className="truncate text-muted-foreground">{s.department.name}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(0)}%</span>
-                      <Badge variant="outline" className="tabular-nums">{s.headcount}</Badge>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Department Table */}
-        <Card className="border-border/50 shadow-lg">
+        <Card className="border-border/70 shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Building className="h-5 w-5 text-violet-600" />
               {t("reports.department.table.title")}
             </CardTitle>
@@ -414,9 +432,14 @@ export default function DepartmentReports() {
               <div className="text-center py-8 text-muted-foreground">
                 <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{t("reports.department.table.empty")}</p>
-                <p className="text-sm mb-4">{t("reports.department.table.emptyDescription")}</p>
+                <p className="text-sm mb-4">
+                  {t("reports.department.table.emptyDescription")}
+                </p>
                 {canManageTenant && (
-                  <Button variant="outline" onClick={() => navigate("/settings/departments")}>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/settings/departments")}
+                  >
                     <Building className="h-4 w-4 mr-2" />
                     {t("reports.department.table.goToDepartments")}
                   </Button>
@@ -426,47 +449,58 @@ export default function DepartmentReports() {
               <>
                 <div className="space-y-3 md:hidden">
                   {departmentStats.map((s) => (
-                    <div key={s.department.id} className="rounded-lg border border-border/50 p-4">
+                    <div
+                      key={s.department.id}
+                      className="rounded-lg border border-border/50 p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <div
                             className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: s.department.color || "#8b5cf6" }}
+                            style={{
+                              backgroundColor: s.department.color || "#8b5cf6",
+                            }}
                           />
-                          <span className="font-medium">{s.department.name}</span>
+                          <span className="font-medium">
+                            {s.department.name}
+                          </span>
                         </div>
-                        <Badge
-                          className={
-                            s.headcount > 10
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : s.headcount > 5
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
-                          }
-                        >
-                          {s.headcount}
-                        </Badge>
+                        <Badge variant="outline">{s.headcount}</Badge>
                       </div>
                       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground">{t("reports.department.table.columns.director")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.department.table.columns.director")}
+                          </p>
                           <p>{s.department.director || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t("reports.department.table.columns.manager")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.department.table.columns.manager")}
+                          </p>
                           <p>{s.department.manager || "-"}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t("reports.department.table.columns.active")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.department.table.columns.active")}
+                          </p>
                           <p>{s.activeEmployees}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">{t("reports.department.table.columns.newHires")}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.department.table.columns.newHires")}
+                          </p>
                           <p>{s.newHires > 0 ? `+${s.newHires}` : "0"}</p>
                         </div>
                         <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground">{t("reports.department.table.columns.avgTenure")}</p>
-                          <p>{s.averageTenure > 0 ? `${s.averageTenure.toFixed(0)} ${t("reports.shared.monthsShort")}` : "-"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.department.table.columns.avgTenure")}
+                          </p>
+                          <p>
+                            {s.averageTenure > 0
+                              ? `${s.averageTenure.toFixed(0)} ${t("reports.shared.monthsShort")}`
+                              : "-"}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -477,13 +511,27 @@ export default function DepartmentReports() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-3 font-medium">{t("reports.department.table.columns.department")}</th>
-                        <th className="text-left p-3 font-medium">{t("reports.department.table.columns.director")}</th>
-                        <th className="text-left p-3 font-medium">{t("reports.department.table.columns.manager")}</th>
-                        <th className="text-center p-3 font-medium">{t("reports.department.table.columns.headcount")}</th>
-                        <th className="text-center p-3 font-medium">{t("reports.department.table.columns.active")}</th>
-                        <th className="text-center p-3 font-medium">{t("reports.department.table.columns.newHires")}</th>
-                        <th className="text-center p-3 font-medium">{t("reports.department.table.columns.avgTenure")}</th>
+                        <th className="text-left p-3 font-medium">
+                          {t("reports.department.table.columns.department")}
+                        </th>
+                        <th className="text-left p-3 font-medium">
+                          {t("reports.department.table.columns.director")}
+                        </th>
+                        <th className="text-left p-3 font-medium">
+                          {t("reports.department.table.columns.manager")}
+                        </th>
+                        <th className="text-center p-3 font-medium">
+                          {t("reports.department.table.columns.headcount")}
+                        </th>
+                        <th className="text-center p-3 font-medium">
+                          {t("reports.department.table.columns.active")}
+                        </th>
+                        <th className="text-center p-3 font-medium">
+                          {t("reports.department.table.columns.newHires")}
+                        </th>
+                        <th className="text-center p-3 font-medium">
+                          {t("reports.department.table.columns.avgTenure")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -497,7 +545,8 @@ export default function DepartmentReports() {
                               <div
                                 className="w-3 h-3 rounded-full"
                                 style={{
-                                  backgroundColor: s.department.color || "#8b5cf6",
+                                  backgroundColor:
+                                    s.department.color || "#8b5cf6",
                                 }}
                               />
                               <span className="font-medium">
@@ -516,31 +565,24 @@ export default function DepartmentReports() {
                             )}
                           </td>
                           <td className="p-3 text-center">
-                            <Badge
-                              className={
-                                s.headcount > 10
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                  : s.headcount > 5
-                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
-                              }
-                            >
-                              {s.headcount}
-                            </Badge>
+                            <Badge variant="outline">{s.headcount}</Badge>
                           </td>
-                          <td className="p-3 text-center">{s.activeEmployees}</td>
+                          <td className="p-3 text-center">
+                            {s.activeEmployees}
+                          </td>
                           <td className="p-3 text-center">
                             {s.newHires > 0 ? (
-                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                +{s.newHires}
-                              </Badge>
+                              <Badge variant="outline">+{s.newHires}</Badge>
                             ) : (
                               <span className="text-muted-foreground">0</span>
                             )}
                           </td>
                           <td className="p-3 text-center">
                             {s.averageTenure > 0 ? (
-                              <span>{s.averageTenure.toFixed(0)} {t("reports.shared.monthsShort")}</span>
+                              <span>
+                                {s.averageTenure.toFixed(0)}{" "}
+                                {t("reports.shared.monthsShort")}
+                              </span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
@@ -554,7 +596,7 @@ export default function DepartmentReports() {
             )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </ReportPage>
+    </>
   );
 }
