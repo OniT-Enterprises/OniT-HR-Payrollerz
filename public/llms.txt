@@ -11,6 +11,7 @@
 
 - [Landing page](https://xefe.tl/): product overview and Timor-Leste compliance details
 - [How Xefe works](https://xefe.tl/how-it-works): plain-language workflow, inspectable payroll example, accounting controls, outputs, and validation approach
+- [Pricing](https://xefe.tl/pricing): one flat price — $4 per employee per month, every feature included; free to set up, subscription only required to finalize payroll
 - [Accountant partners](https://xefe.tl/accountants): optional accountant support, featuring Primos Bo'ot in Dili, with explicit business-controlled access
 - [Sign up](https://xefe.tl/auth/signup): self-serve organization creation with a free trial
 

@@ -36,7 +36,7 @@ describe("accountant partner funnel", () => {
     const routes = read("client/routes.tsx");
     const layout = read("client/components/layout/AppLayout.tsx");
     const landing = read("client/pages/Landing.tsx");
-    const seo = read("client/components/SEO.tsx");
+    const seo = read("client/lib/seo-config.ts");
 
     expect(routes).toContain('<Route path="/accountants" element={<AccountantPartners />} />');
     expect(layout).toContain('"/accountants"');

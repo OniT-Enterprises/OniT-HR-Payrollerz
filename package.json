@@ -24,7 +24,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/check-entry-budget.mjs",
+    "build": "vite build && node scripts/check-entry-budget.mjs && tsx scripts/generate-static-heads.ts",
     "test": "vitest --run -c tests/vitest.config.ts",
     "test:all": "npm test && npm run emul:rules && npm --prefix functions run build",
     "format.fix": "prettier --write .",

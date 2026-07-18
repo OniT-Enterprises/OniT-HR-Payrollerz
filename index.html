@@ -18,12 +18,12 @@
     <meta name="theme-color" content="#6A9C29" />
     <meta name="msapplication-TileColor" content="#6A9C29" />
 
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://xefe.tl/" />
+    <!-- Canonical + og:url/twitter:url are route-dependent and injected per
+         page by the SEO component (react-helmet) — do not hardcode them here,
+         or every route tells non-JS crawlers it is a copy of the homepage. -->
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://xefe.tl/" />
     <meta property="og:title" content="Xefe — HR, Payroll & Accounting for Timor-Leste" />
     <meta property="og:description" content="Xefe is HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual and Lei Trabalho compliance, bank payroll files, and double-entry accounting. In Tetun, English and Portuguese." />
     <meta property="og:image" content="https://xefe.tl/images/illustrations/hero-dashboard.webp" />
@@ -34,7 +34,6 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://xefe.tl/" />
     <meta name="twitter:title" content="Xefe — HR, Payroll & Accounting for Timor-Leste" />
     <meta name="twitter:description" content="Xefe is HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual and Lei Trabalho compliance, bank payroll files, and double-entry accounting. In Tetun, English and Portuguese." />
     <meta name="twitter:image" content="https://xefe.tl/images/illustrations/hero-dashboard.webp" />
@@ -60,8 +59,16 @@
       "description": "HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual, Lei Trabalho compliance, bank payroll files, and double-entry accounting. Available in Tetun, English and Portuguese.",
       "offers": {
         "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+        "price": "4.00",
+        "priceCurrency": "USD",
+        "description": "Per employee per month. Free to set up and explore; a subscription is only required to finalize payroll runs.",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "4.00",
+          "priceCurrency": "USD",
+          "unitText": "per employee per month"
+        },
+        "url": "https://xefe.tl/pricing"
       },
       "featureList": [
         "Employee Management",
@@ -78,6 +85,29 @@
       "author": {
         "@type": "Organization",
         "name": "OniT Enterprises"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Xefe",
+      "legalName": "OniT Enterprises",
+      "url": "https://xefe.tl",
+      "logo": "https://xefe.tl/images/illustrations/xefe-logo-light.webp",
+      "description": "HR, payroll and accounting software built for Timor-Leste, in Tetun, English and Portuguese.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Dili",
+        "addressCountry": "TL"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "suporte@onit.tl",
+        "url": "https://wa.me/6707701234",
+        "availableLanguage": ["Tetum", "English", "Portuguese"]
       }
     }
     </script>
