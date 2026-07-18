@@ -588,10 +588,10 @@ export default function HiringWorkspace() {
 
         <Card
           className={cn(
-            "mb-5 border-l-4",
+            "mb-5",
             pendingCount > 0
-              ? "border-l-amber-500 bg-amber-50/60 dark:bg-amber-950/20"
-              : "border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20",
+              ? "bg-amber-50/60 dark:bg-amber-950/20"
+              : "bg-emerald-50/50 dark:bg-emerald-950/20",
           )}
         >
           <CardContent className="flex items-center gap-3 p-4">

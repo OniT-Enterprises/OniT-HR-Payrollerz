@@ -337,7 +337,7 @@ export default function Onboarding() {
 
             {selectedEmployee && (
               <>
-                <Card className="border-l-4 border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20">
+                <Card className="border bg-blue-50/50 dark:bg-blue-950/20">
                   <CardContent className="flex items-center justify-between gap-4 p-4">
                     <div className="min-w-0">
                       <p className="truncate font-semibold">{employeeName(selectedEmployee)}</p>

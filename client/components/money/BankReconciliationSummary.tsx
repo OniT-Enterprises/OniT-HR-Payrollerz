@@ -26,24 +26,25 @@ interface BankReconciliationSummaryProps {
 }
 
 /** Reusable stat card for the reconciliation summary grid */
-function ReconStatCard({ label, children, gradientFrom, gradientTo, icon: Icon, iconShadow }: {
+function ReconStatCard({ label, children, tint, iconBg, icon: Icon }: {
   label: string;
   children: React.ReactNode;
-  gradientFrom: string;
-  gradientTo: string;
+  /** Flat wash behind the card content, e.g. "bg-amber-500/5". */
+  tint: string;
+  /** Solid icon badge color, e.g. "bg-amber-500". */
+  iconBg: string;
   icon: React.ComponentType<{ className?: string }>;
-  iconShadow: string;
 }) {
   return (
-    <Card className="relative overflow-hidden border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} ${gradientTo}`} />
+    <Card className="relative overflow-hidden border-border/50">
+      <div className={`absolute inset-0 ${tint}`} />
       <CardContent className="relative pt-5 pb-4">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
             {children}
           </div>
-          <div className={`p-2 rounded-lg bg-gradient-to-br ${gradientFrom.replace('/5', '')} ${gradientTo.replace('/5', '')} shadow-md ${iconShadow}`}>
+          <div className={`p-2 rounded-lg ${iconBg}`}>
             <Icon className="h-4 w-4 text-white" />
           </div>
         </div>
@@ -64,26 +65,24 @@ export function BankReconciliationSummary({ summary, formatCurrency }: BankRecon
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
       <ReconStatCard
         label={t('money.bankRecon.unmatched') || 'Unmatched'}
-        gradientFrom="from-amber-500/5"
-        gradientTo="to-orange-500/5"
+        tint="bg-amber-500/5"
         icon={AlertCircle}
-        iconShadow="shadow-amber-500/20"
+        iconBg="bg-amber-500"
       >
         <p className="text-2xl font-bold tracking-tight text-amber-600 mt-1">{summary.unmatchedCount}</p>
       </ReconStatCard>
 
       <ReconStatCard
         label={t('money.bankRecon.matched') || 'Matched'}
-        gradientFrom="from-blue-500/5"
-        gradientTo="to-indigo-500/5"
+        tint="bg-blue-500/5"
         icon={Link2}
-        iconShadow="shadow-blue-500/20"
+        iconBg="bg-blue-500"
       >
         <p className="text-2xl font-bold tracking-tight text-blue-600 mt-1">{summary.matchedCount}</p>
       </ReconStatCard>
 
-      <Card className="relative overflow-hidden border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5" />
+      <Card className="relative overflow-hidden border-border/50">
+        <div className="absolute inset-0 bg-emerald-500/5" />
         <CardContent className="relative pt-5 pb-4">
           <div className="flex items-start justify-between">
             <div>
@@ -94,7 +93,7 @@ export function BankReconciliationSummary({ summary, formatCurrency }: BankRecon
                 {summary.reconciledCount}
               </p>
             </div>
-            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md shadow-emerald-500/20">
+            <div className="p-2 rounded-lg bg-emerald-500">
               <CheckCircle2 className="h-4 w-4 text-white" />
             </div>
           </div>
@@ -102,7 +101,7 @@ export function BankReconciliationSummary({ summary, formatCurrency }: BankRecon
             <div className="mt-2">
               <div className="h-1 w-full bg-emerald-100 dark:bg-emerald-900/30 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-green-500 rounded-full transition-all duration-500"
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
                   style={{ width: `${completionPercent}%` }}
                 />
               </div>
@@ -114,20 +113,18 @@ export function BankReconciliationSummary({ summary, formatCurrency }: BankRecon
 
       <ReconStatCard
         label={t('money.bankRecon.deposits') || 'Deposits'}
-        gradientFrom="from-green-500/5"
-        gradientTo="to-teal-500/5"
+        tint="bg-green-500/5"
         icon={ArrowDownLeft}
-        iconShadow="shadow-green-500/20"
+        iconBg="bg-green-500"
       >
         <p className="text-2xl font-bold tracking-tight text-green-600 mt-1">{formatCurrency(summary.totalDeposits)}</p>
       </ReconStatCard>
 
       <ReconStatCard
         label={t('money.bankRecon.withdrawals') || 'Withdrawals'}
-        gradientFrom="from-red-500/5"
-        gradientTo="to-rose-500/5"
+        tint="bg-red-500/5"
         icon={ArrowUpRight}
-        iconShadow="shadow-red-500/20"
+        iconBg="bg-red-500"
       >
         <p className="text-2xl font-bold tracking-tight text-red-600 mt-1">{formatCurrency(summary.totalWithdrawals)}</p>
       </ReconStatCard>

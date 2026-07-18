@@ -280,7 +280,7 @@ function ExportDialogActions({
       <Button
         onClick={onExport}
         disabled={exporting}
-        className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+        className="bg-green-600 text-white hover:bg-green-700"
       >
         {exporting ? (
           <>

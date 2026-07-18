@@ -255,7 +255,7 @@ export default function Billing() {
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+                <div className="flex flex-wrap items-end gap-x-8 gap-y-3 tabular-nums">
                   <div>
                     <p className="text-sm text-muted-foreground">{t("billing.price")}</p>
                     <p className="text-3xl font-bold">

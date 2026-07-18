@@ -100,7 +100,7 @@ function AdminHeaderRight({
           <Button variant="ghost" className="flex items-center gap-2 px-2">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.photoURL || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-500 text-white text-xs">
+              <AvatarFallback className="bg-amber-500 text-white text-xs">
                 {userProfile?.displayName?.[0] || user?.email?.[0] || "A"}
               </AvatarFallback>
             </Avatar>

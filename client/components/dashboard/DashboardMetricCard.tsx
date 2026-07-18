@@ -28,7 +28,7 @@ export function DashboardMetricCard({
     <Card
       className={cn(
         "dashboard-panel-glow border-border/70 transition-all",
-        interactive ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md" : "",
+        interactive ? "cursor-pointer hover:border-primary/40 hover:bg-muted/40" : "",
       )}
       onClick={onClick}
     >

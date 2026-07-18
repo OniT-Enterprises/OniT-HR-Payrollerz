@@ -216,7 +216,7 @@ function ChatHeader({
   onClose?: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-primary/5">
       <div className="flex items-center gap-2">
         <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
           <Bot className="h-4 w-4 text-primary" />

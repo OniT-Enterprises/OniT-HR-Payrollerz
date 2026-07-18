@@ -82,9 +82,9 @@ export default function BankReconciliation() {
         bar: 'bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50',
         barText: 'text-sm font-medium text-orange-800 dark:text-orange-200',
         outlineBtn: 'border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300',
-        iconBadgeGrad: 'bg-gradient-to-r from-orange-500/10 to-orange-600/10',
+        iconBadgeGrad: 'bg-orange-500/10',
         iconBadgeText: 'h-4 w-4 text-orange-600 dark:text-orange-400',
-        emptyGrad: 'bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/20 dark:to-orange-950/10',
+        emptyGrad: 'bg-orange-50 dark:bg-orange-950/20',
         emptyIcon: 'h-8 w-8 text-orange-400',
       }
     : {
@@ -94,9 +94,9 @@ export default function BankReconciliation() {
         bar: 'bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50',
         barText: 'text-sm font-medium text-indigo-800 dark:text-indigo-200',
         outlineBtn: 'border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
-        iconBadgeGrad: 'bg-gradient-to-r from-indigo-500/10 to-indigo-600/10',
+        iconBadgeGrad: 'bg-indigo-500/10',
         iconBadgeText: 'h-4 w-4 text-indigo-600 dark:text-indigo-400',
-        emptyGrad: 'bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-950/10',
+        emptyGrad: 'bg-indigo-50 dark:bg-indigo-950/20',
         emptyIcon: 'h-8 w-8 text-indigo-400',
       };
 

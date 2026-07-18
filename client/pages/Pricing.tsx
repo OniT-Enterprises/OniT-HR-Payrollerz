@@ -46,7 +46,8 @@ export default function Pricing() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.08),transparent_42%)]" />
           <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-amber-400/[0.045] md:block" />
           <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-6 lg:px-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
+            <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
+              <Crescent className="h-3.5 w-3.5 text-amber-400" />
               {t("landing.simple.pricing.eyebrow")}
             </p>
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">

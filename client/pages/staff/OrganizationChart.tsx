@@ -476,7 +476,7 @@ export default function OrganizationChart() {
                       {executives.length}
                     </p>
                   </div>
-                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                  <div className="p-2.5 bg-purple-500 rounded-xl">
                     <Crown className="h-6 w-6 text-white" />
                   </div>
                 </div>
@@ -506,7 +506,7 @@ export default function OrganizationChart() {
                       }
                     </p>
                   </div>
-                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                  <div className="p-2.5 bg-blue-500 rounded-xl">
                     <UserCheck className="h-6 w-6 text-white" />
                   </div>
                 </div>
@@ -536,7 +536,7 @@ export default function OrganizationChart() {
                       }
                     </p>
                   </div>
-                  <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl">
+                  <div className="p-2.5 bg-cyan-600 rounded-xl">
                     <GraduationCap className="h-6 w-6 text-white" />
                   </div>
                 </div>
@@ -553,7 +553,7 @@ export default function OrganizationChart() {
                       {employees.length}
                     </p>
                   </div>
-                  <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl">
+                  <div className="p-2.5 bg-indigo-500 rounded-xl">
                     <Users className="h-6 w-6 text-white" />
                   </div>
                 </div>
@@ -626,7 +626,7 @@ export default function OrganizationChart() {
                                   )}
 
                                   {/* Executive Card */}
-                                  <div className="w-56 h-32 border-2 border-primary/50 rounded-lg bg-gradient-to-b from-primary/10 to-card shadow-md">
+                                  <div className="w-56 h-32 border-2 border-primary/50 rounded-lg bg-primary/5 shadow-md">
                                     <div className="p-4 text-center h-full flex flex-col justify-center">
                                       <div className="flex justify-center mb-2">
                                         <Avatar className="h-12 w-12 border-2 border-primary/60">
@@ -726,7 +726,7 @@ export default function OrganizationChart() {
                                         </div>
                                       )}
 
-                                      <div className="w-48 h-28 border-2 border-border rounded-lg bg-gradient-to-b from-muted to-card shadow-md">
+                                      <div className="w-48 h-28 border-2 border-border rounded-lg bg-muted/60 shadow-md">
                                         <div className="p-3 text-center h-full flex flex-col justify-center">
                                           <div className="flex justify-center mb-2">
                                             <Avatar className="h-10 w-10 border border-border">
@@ -765,7 +765,7 @@ export default function OrganizationChart() {
                                           {group.members.map((member) => (
                                             <div
                                               key={member.id}
-                                              className="w-36 h-24 border border-primary/30 rounded-lg bg-gradient-to-b from-primary/10 to-card shadow-sm"
+                                              className="w-36 h-24 border border-primary/30 rounded-lg bg-primary/5 shadow-sm"
                                             >
                                               <div className="p-2 text-center h-full flex flex-col justify-center">
                                                 <div className="flex justify-center mb-1">

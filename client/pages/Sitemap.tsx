@@ -671,7 +671,7 @@ export default function Sitemap() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
               <Map className="h-6 w-6 text-white" />
             </div>
             <div>

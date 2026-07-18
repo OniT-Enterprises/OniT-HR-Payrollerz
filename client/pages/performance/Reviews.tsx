@@ -105,7 +105,7 @@ function RatingStars({ value, onChange, readonly = false, size = "md" }: RatingS
           type="button"
           disabled={readonly}
           onClick={() => onChange?.(star as RatingValue)}
-          className={`${readonly ? "" : "cursor-pointer hover:scale-110"} transition-transform`}
+          className={`${readonly ? "" : "cursor-pointer hover:opacity-75"} transition-opacity`}
         >
           <Star
             className={`${sizeClasses[size]} ${

@@ -116,7 +116,7 @@ function StarRating({
           type="button"
           disabled={readonly}
           onClick={() => onChange?.(star)}
-          className={`${readonly ? "cursor-default" : "cursor-pointer hover:scale-110"} transition-transform`}
+          className={`${readonly ? "cursor-default" : "cursor-pointer hover:opacity-75"} transition-opacity`}
         >
           <Star
             className={`h-5 w-5 ${
@@ -675,7 +675,7 @@ export default function Interviews() {
                         {/* Candidate Info */}
                         <div className="flex items-start gap-4 flex-1">
                           <Avatar className="h-12 w-12">
-                            <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white">
+                            <AvatarFallback className="bg-primary/10 text-primary">
                               {interview.candidateName
                                 .split(" ")
                                 .map((n) => n[0])
@@ -1331,7 +1331,7 @@ export default function Interviews() {
               {/* Candidate */}
               <div className="flex items-start gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-xl">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
                     {selectedInterview.candidateName
                       .split(" ")
                       .map((n) => n[0])

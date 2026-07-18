@@ -58,7 +58,7 @@ const typeConfig = {
 function TransactionSummary({ transaction, formatCurrency }: { transaction: BankTransaction; formatCurrency: (amount: number) => string }) {
   const isDeposit = transaction.amount >= 0;
   return (
-    <div className="mt-2 p-4 rounded-lg border border-border/50 bg-gradient-to-r from-muted/50 to-muted/30">
+    <div className="mt-2 p-4 rounded-lg border border-border/50 bg-muted/40">
       <div className="flex items-start justify-between">
         <div>
           <p className="font-medium text-foreground">{transaction.description}</p>
@@ -175,7 +175,7 @@ export function BankMatchDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-500/10 to-indigo-600/10">
+            <div className="p-1.5 rounded-lg bg-indigo-500/10">
               <Link2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             {t('money.bankRecon.matchTransaction') || 'Match Transaction'}

@@ -209,13 +209,11 @@ export default function TenantList() {
     <AdminLayout>
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-border/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-orange-500/5" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         <div className="relative px-6 py-8 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="flex items-start gap-4 animate-fade-up">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/25">
+              <div className="p-3 rounded-xl bg-amber-500">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <div className="space-y-1">
@@ -244,7 +242,7 @@ export default function TenantList() {
               )}
               <Button
                 onClick={() => navigate("/admin/tenants/new")}
-                className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
+                className="gap-2 bg-amber-500 text-white hover:bg-amber-600"
               >
                 <Plus className="h-4 w-4" />
                 {t("admin.tenantList.addTenant")}

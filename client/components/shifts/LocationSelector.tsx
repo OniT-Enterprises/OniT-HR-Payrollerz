@@ -49,7 +49,7 @@ export default function LocationSelector({
               onClick={() => onSelect(loc.name)}
               className={cn(
                 "flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200 text-left whitespace-nowrap",
-                "hover:shadow-md hover:-translate-y-px",
+                "hover:border-primary/40 hover:bg-muted/40",
                 onOpenSettings && "pr-9",
                 isSelected
                   ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/40 shadow-sm shadow-cyan-500/10"

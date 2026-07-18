@@ -489,7 +489,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active OKRs</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
+                    <div className="p-2 bg-blue-500 rounded-lg">
                       <Target className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -505,7 +505,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
+                    <div className="p-2 bg-blue-500 rounded-lg">
                       <CheckSquare className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -519,7 +519,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Avg. OKR Progress</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
+                    <div className="p-2 bg-blue-500 rounded-lg">
                       <TrendingUp className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -531,7 +531,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Avg. Goal Progress</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-sky-500 to-blue-500 rounded-lg">
+                    <div className="p-2 bg-sky-500 rounded-lg">
                       <BarChart3 className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>

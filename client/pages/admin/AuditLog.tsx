@@ -182,13 +182,11 @@ export default function AuditLog() {
     <AdminLayout>
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-border/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-purple-500/5" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         <div className="relative px-6 py-8 lg:px-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="flex items-start gap-4 animate-fade-up">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
+              <div className="p-3 rounded-xl bg-violet-500">
                 <ScrollText className="h-6 w-6 text-white" />
               </div>
               <div className="space-y-1">

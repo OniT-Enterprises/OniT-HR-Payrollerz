@@ -85,7 +85,7 @@ function EmployeeInfoCell({
     <TableCell>
       <div className="flex items-center gap-3">
         <div className="relative flex-shrink-0">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 flex items-center justify-center">
+          <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
             <span className="text-xs font-semibold text-green-700 dark:text-green-300">
               {employee.personalInfo.firstName[0]}{employee.personalInfo.lastName[0]}
             </span>

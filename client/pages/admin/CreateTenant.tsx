@@ -66,7 +66,7 @@ export default function CreateTenant() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/25">
+            <div className="p-4 rounded-xl bg-amber-500">
               <Building2 className="h-8 w-8 text-white" />
             </div>
             <div>

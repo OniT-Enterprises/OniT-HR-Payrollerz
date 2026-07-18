@@ -154,7 +154,7 @@ export function TemplatePicker({
                   title={color.name}
                   aria-pressed={selected}
                   onClick={() => onAccentChange(color.value)}
-                  className={`flex h-8 w-8 items-center justify-center rounded-full transition-transform hover:scale-110 ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-80 ${
                     selected ? 'ring-2 ring-offset-2 ring-offset-background' : ''
                   }`}
                   style={{ backgroundColor: color.value, ...(selected ? { boxShadow: `0 0 0 2px var(--background), 0 0 0 4px ${color.value}` } : {}) }}
