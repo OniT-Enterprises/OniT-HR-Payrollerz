@@ -187,8 +187,8 @@ rates as the authority's own arithmetic (`attl-assessment-parity.test.ts`):
 - **Construction 2%** (form line 80 = LN75 × 2%): assessed $4,104.49 on a
   $205,224.72 base. Xefe: exact.
 - **Construction consulting 4%** (line 90 = LN85 × 4%): assessed $31.25 on
-  $781.25. Xefe: exact. This corroborates the earlier Envipro finding against
-  a second, unrelated taxpayer.
+  $781.25. Xefe: exact. This corroborates the earlier consulting-rate finding
+  against a second, unrelated taxpayer.
 
 **Rate table status after this pass** (`client/lib/tax/withholding-tl.ts`):
 
@@ -196,7 +196,7 @@ rates as the authority's own arithmetic (`attl-assessment-parity.test.ts`):
 | --- | --- | --- |
 | rent (land/buildings) | 10% | assessment-verified (4 periods) |
 | construction | 2% | assessment-verified |
-| construction consulting | 4% | assessment-verified + Envipro invoice |
+| construction consulting | 4% | assessment-verified (two taxpayers) |
 | non-resident wages | 10% flat | assessment-verified (authority corrected $0→$1,045) |
 | resident wages | 10% > $500/mo per employee | assessment-verified (per-employee) |
 | air/sea transport | 2.64% | UNVERIFIED — needs accountant sign-off |
