@@ -314,7 +314,7 @@ export default function CreateJobLocal() {
         <PageHeader
           title={t("hiring.createJob.title")}
           subtitle={t("hiring.createJob.subtitle")}
-          icon={Briefcase}
+          cardIcon="hiring" icon={Briefcase}
           iconColor="text-blue-500"
         />
 

@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { VATConfig, TenantVATSettings } from '@onit/shared';
-import { DEFAULT_VAT_CONFIG, DEFAULT_TENANT_VAT_SETTINGS } from '@onit/shared';
+import { DEFAULT_VAT_CONFIG, DEFAULT_TENANT_VAT_SETTINGS, isVATConfigOperational } from '@onit/shared';
 
 const PLATFORM_CACHE_KEY = '@kaixa/vatConfig';
 const TENANT_CACHE_KEY_PREFIX = '@kaixa/tenantVatSettings/';
@@ -50,12 +50,15 @@ export const useVATStore = create<VATState>((set, get) => ({
 
   isVATActive: () => {
     const { config, tenantSettings } = get();
-    return config.enabled && tenantSettings.vatEnabled;
+    return (
+      isVATConfigOperational(config) && tenantSettings.vatEnabled === true && tenantSettings.vatRegistered === true
+    );
   },
 
   effectiveRate: () => {
     const { config, tenantSettings } = get();
-    if (!config.enabled || !tenantSettings.vatEnabled) return 0;
+    if (!isVATConfigOperational(config) || tenantSettings.vatEnabled !== true || tenantSettings.vatRegistered !== true)
+      return 0;
     return tenantSettings.defaultVATRate || config.standardRate;
   },
 
@@ -105,9 +108,7 @@ export const useVATStore = create<VATState>((set, get) => ({
         getDoc(doc(db, 'tenants', tenantId, 'settings', 'vat')),
       ]);
 
-      const config = configSnap.exists()
-        ? (configSnap.data() as VATConfig)
-        : DEFAULT_VAT_CONFIG;
+      const config = configSnap.exists() ? (configSnap.data() as VATConfig) : DEFAULT_VAT_CONFIG;
 
       const tenantSettings = settingsSnap.exists()
         ? (settingsSnap.data() as TenantVATSettings)
@@ -120,10 +121,7 @@ export const useVATStore = create<VATState>((set, get) => ({
       // Cache for offline use
       await Promise.all([
         AsyncStorage.setItem(PLATFORM_CACHE_KEY, JSON.stringify(config)),
-        AsyncStorage.setItem(
-          `${TENANT_CACHE_KEY_PREFIX}${tenantId}`,
-          JSON.stringify(tenantSettings)
-        ),
+        AsyncStorage.setItem(`${TENANT_CACHE_KEY_PREFIX}${tenantId}`, JSON.stringify(tenantSettings)),
       ]);
     } catch {
       // Offline — use cached values
@@ -131,10 +129,11 @@ export const useVATStore = create<VATState>((set, get) => ({
     }
   },
 
-  clear: () => set({
-    tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
-    loading: false,
-    lastSynced: null,
-    activeTenantId: null,
-  }),
+  clear: () =>
+    set({
+      tenantSettings: DEFAULT_TENANT_VAT_SETTINGS,
+      loading: false,
+      lastSynced: null,
+      activeTenantId: null,
+    }),
 }));

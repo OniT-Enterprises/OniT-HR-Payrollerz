@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
 import { createOptimizedQueryClient } from "@/lib/queryCache";
-import { prefetchCommonRoutesOnIdle } from "@/lib/prefetch";
 
 
 // Initialize Sentry for production error tracking
@@ -24,7 +23,7 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 // (shared once-per-minute guard with lazyWithRetry in routes.tsx) to pick up
 // the fresh index.html instead of stranding the user on a dead page.
 window.addEventListener("vite:preloadError", (event) => {
-  const KEY = "meza-chunk-reload-at";
+  const KEY = "xefe-chunk-reload-at";
   const last = Number(sessionStorage.getItem(KEY) || 0);
   if (Date.now() - last > 60_000) {
     sessionStorage.setItem(KEY, String(Date.now()));
@@ -52,9 +51,6 @@ if (!root) {
 const queryClient = createOptimizedQueryClient();
 
 root.render(<App queryClient={queryClient} />);
-
-// Prefetch common routes after browser is idle
-prefetchCommonRoutesOnIdle();
 
 // Register service worker after page load (don't block render)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

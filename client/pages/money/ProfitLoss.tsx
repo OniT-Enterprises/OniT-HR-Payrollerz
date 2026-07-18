@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useAdvancedTax, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -29,6 +29,7 @@ import { addMoney, subtractMoney } from '@/lib/currency';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { InstallmentTaxEtaxFiling } from '@/components/reports/InstallmentTaxEtaxFiling';
+import { getTLIncomeTaxInstallmentFrequency } from '@/lib/tax/income-tax-installment-tl';
 import type { ExpenseCategory } from '@/types/money';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
@@ -67,6 +68,7 @@ export default function ProfitLoss() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const showAdvancedTax = useAdvancedTax();
   const [period, setPeriod] = useState<string>('this_month');
 
   const getDateRange = (periodValue: string): { start: string; end: string } => {
@@ -167,6 +169,42 @@ export default function ProfitLoss() {
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
+
+  // Art. 64 uses the preceding tax year's total turnover to choose monthly vs
+  // quarterly installments. Use the ledger rather than guessing from the
+  // currently selected report period.
+  const selectedTaxYear = Number(endStr.slice(0, 4));
+  const priorTaxYear = selectedTaxYear - 1;
+  const priorYearStart = `${priorTaxYear}-01-01`;
+  const priorYearEnd = `${priorTaxYear}-12-31`;
+  const {
+    data: priorYearTurnover = 0,
+    isLoading: priorYearTurnoverLoading,
+    isError: priorYearTurnoverError,
+  } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'installmentTaxTurnover', priorTaxYear],
+    queryFn: async (): Promise<number> => {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        const statement = await trialBalanceService.generateIncomeStatement(
+          tenantId,
+          priorYearStart,
+          priorYearEnd,
+          priorTaxYear,
+        );
+        return statement.totalRevenue;
+      }
+      return invoiceService.getRevenueTotalByDateRange(tenantId, priorYearStart, priorYearEnd);
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
+
+  const installmentFrequency = getTLIncomeTaxInstallmentFrequency(priorYearTurnover);
+  const isInstallmentPeriod = installmentFrequency === 'quarterly'
+    ? period === 'this_quarter'
+    : period === 'this_month' || period === 'last_month';
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -367,10 +405,18 @@ export default function ProfitLoss() {
           </CardContent>
         </Card>
 
-        {/* Assisted installment-tax filing — monthly only (0.5% of turnover) */}
-        {(period === 'this_month' || period === 'last_month') && (
+        {/* Art. 64: quarterly at <= $1m prior-year turnover; monthly above it.
+            Accountant-grade filing panel — hidden on the simple flow. */}
+        {showAdvancedTax
+          && !priorYearTurnoverLoading
+          && !priorYearTurnoverError
+          && isInstallmentPeriod && (
           <div className="mt-6">
-            <InstallmentTaxEtaxFiling revenue={data.revenue} periodLabel={getPeriodLabel()} />
+            <InstallmentTaxEtaxFiling
+              revenue={data.revenue}
+              priorYearTurnover={priorYearTurnover}
+              periodLabel={getPeriodLabel()}
+            />
           </div>
         )}
 

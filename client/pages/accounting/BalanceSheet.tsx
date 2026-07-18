@@ -28,6 +28,7 @@ import {
 } from '../../components/ui/table';
 import {
   BarChart3,
+  Scale,
   Download,
   Loader2,
   CheckCircle2,
@@ -148,7 +149,8 @@ export default function BalanceSheet() {
         <PageHeader
           title={t("accounting.balanceSheet.title")}
           subtitle={t("accounting.balanceSheet.subtitle")}
-          icon={BarChart3}
+          cardIcon="ac-balance"
+          icon={Scale}
           iconColor="text-orange-500"
           actions={
             <>

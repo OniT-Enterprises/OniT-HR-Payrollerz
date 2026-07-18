@@ -135,12 +135,12 @@ function NavTabButton({
 function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { hasModule, canManage, session } = useTenant();
+  const { hasModule, canManage, session, showAdvancedTax } = useTenant();
   const canManageTenant = canManage();
   const canManageTeam = canManageTenant || session?.role === "manager";
   const visibleConfig = React.useMemo(
-    () => filterModuleNavConfigByPermissions(config, hasModule, canManageTenant, canManageTeam),
-    [config, hasModule, canManageTenant, canManageTeam],
+    () => filterModuleNavConfigByPermissions(config, hasModule, canManageTenant, canManageTeam, showAdvancedTax),
+    [config, hasModule, canManageTenant, canManageTeam, showAdvancedTax],
   );
 
   const tabs = React.useMemo(

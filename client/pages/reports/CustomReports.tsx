@@ -380,7 +380,7 @@ export default function CustomReports() {
           <PageHeader
             title={t("reports.custom.title")}
             subtitle={t("reports.custom.subtitle")}
-            icon={BarChart3}
+            cardIcon="reports" icon={BarChart3}
             iconColor="text-violet-500"
           />
           <Card>
@@ -405,7 +405,7 @@ export default function CustomReports() {
         <PageHeader
           title={t("reports.custom.title")}
           subtitle={t("reports.custom.subtitle")}
-          icon={BarChart3}
+          cardIcon="reports" icon={BarChart3}
           iconColor="text-violet-500"
           actions={
             <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>

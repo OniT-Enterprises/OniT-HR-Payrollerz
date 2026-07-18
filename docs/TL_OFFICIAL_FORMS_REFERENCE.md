@@ -183,7 +183,7 @@ The official form is titled "CONSOLIDATED MONTHLY TAXES FORM" from the National 
 | 65/70 | Rent land and buildings | 10% |
 | 75/80 | Construction and building activities | 2% |
 | 85/90 | Construction consulting services | 4% |
-| 95/100 | Mining and mining support services | 4% |
+| 95/100 | Mining and mining support services | 4.5% |
 | 105/110 | Transportation - Air and Sea | 2.64% |
 | 115/120 | Non-resident without permanent establishment | 10% (all payment types) |
 | 130 | TOTAL WITHHOLDING TAX | Sum of lines 50-120 |
@@ -195,7 +195,7 @@ The official form is titled "CONSOLIDATED MONTHLY TAXES FORM" from the National 
 | 20 | Restaurant and bar services | 5% |
 | 30 | Telecommunications services | 5% |
 | 35 | Total Sales (before tax) | Sum of 15+20+30 |
-| 40 | Services Tax Payable | Line 35 × 5% |
+| 40 | Services Tax Payable | 0% below $500 monthly designated-service receipts; otherwise Line 35 × 5% |
 
 #### Section 4: ANNUAL INCOME TAX INSTALLMENT
 | Payer Type | Due Dates | Rate |

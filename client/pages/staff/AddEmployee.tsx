@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -787,7 +788,7 @@ export default function AddEmployee() {
           <StepContent stepId="basic" currentStepId={WIZARD_STEPS[currentStep].id}>
             <div className="space-y-6">
               {/* Name Row */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">{t("addEmployee.fields.firstName")}</Label>
                   <Input
@@ -812,7 +813,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Date of Birth + Address Row */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">{t("addEmployee.fields.dateOfBirth")}</Label>
                   <Input
@@ -822,7 +823,7 @@ export default function AddEmployee() {
                     className={fieldBorder(watch("dateOfBirth"))}
                   />
                 </div>
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="address">{t("addEmployee.fields.address")}</Label>
                   <Input
                     id="address"
@@ -834,7 +835,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Contact Row */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-blue-600" />
@@ -882,17 +883,22 @@ export default function AddEmployee() {
                     {...register("phoneApp")}
                     placeholder="+670 987 6543"
                   />
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="checkbox"
-                      id="appEligible"
-                      className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
-                      {...register("appEligible")}
-                    />
-                    <Label htmlFor="appEligible" className="text-sm text-muted-foreground cursor-pointer">
-                      {t("addEmployee.fields.appEligible")}
-                    </Label>
-                  </div>
+                  <Controller
+                    name="appEligible"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="mt-1 flex min-h-11 items-center gap-3 rounded-md px-1">
+                        <Checkbox
+                          id="appEligible"
+                          checked={Boolean(field.value)}
+                          onCheckedChange={field.onChange}
+                        />
+                        <Label htmlFor="appEligible" className="cursor-pointer text-sm text-muted-foreground">
+                          {t("addEmployee.fields.appEligible")}
+                        </Label>
+                      </div>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -901,7 +907,7 @@ export default function AddEmployee() {
                 <h3 className="font-medium mb-3 text-red-800 dark:text-red-200">
                   {t("addEmployee.fields.emergencyTitle")}
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="emergencyContactName">{t("addEmployee.fields.emergencyName")}</Label>
                     <Input
@@ -928,7 +934,7 @@ export default function AddEmployee() {
           <StepContent stepId="job" currentStepId={WIZARD_STEPS[currentStep].id}>
             <div className="space-y-6">
               {/* Department & Title */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="department">{t("addEmployee.fields.department")}</Label>
                   <Controller
@@ -962,7 +968,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Manager, Date, Type */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="manager">{t("addEmployee.fields.manager")}</Label>
                   <Controller
@@ -1052,7 +1058,7 @@ export default function AddEmployee() {
           {/* Step 3: Compensation */}
           <StepContent stepId="compensation" currentStepId={WIZARD_STEPS[currentStep].id}>
             <div className="space-y-6">
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
                   <Label htmlFor="salary">{t("addEmployee.compensation.salaryLabel")}</Label>
                   <Input
@@ -1114,7 +1120,7 @@ export default function AddEmployee() {
               </div>
 
               {/* Payment Method & Bank Details */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-2">
                   <Label>{t("addEmployee.compensation.paymentMethod")}</Label>
                   <Select
@@ -1164,21 +1170,26 @@ export default function AddEmployee() {
               </div>
 
               {/* Tax & Deductions Summary */}
-              <div className="flex items-center gap-6 p-3 border rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="isResident"
-                    className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
-                    {...register("isResident")}
-                  />
-                  <Label htmlFor="isResident" className="cursor-pointer text-sm">
-                    {t("addEmployee.compensation.taxResidentLabel")}
-                  </Label>
-                </div>
-                <span className="text-xs text-muted-foreground">|</span>
+              <div className="flex flex-col items-start gap-2 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:gap-4">
+                <Controller
+                  name="isResident"
+                  control={control}
+                  render={({ field }) => (
+                    <div className="flex min-h-11 items-center gap-3">
+                      <Checkbox
+                        id="isResident"
+                        checked={Boolean(field.value)}
+                        onCheckedChange={field.onChange}
+                      />
+                      <Label htmlFor="isResident" className="cursor-pointer text-sm">
+                        {t("addEmployee.compensation.taxResidentLabel")}
+                      </Label>
+                    </div>
+                  )}
+                />
+                <span className="hidden text-xs text-muted-foreground sm:inline">|</span>
                 <span className="text-xs text-muted-foreground">{t("addEmployee.compensation.incomeTaxTitle")}: {t("addEmployee.compensation.incomeTaxDesc")}</span>
-                <span className="text-xs text-muted-foreground">|</span>
+                <span className="hidden text-xs text-muted-foreground sm:inline">|</span>
                 <span className="text-xs text-muted-foreground">{t("addEmployee.compensation.socialSecurityTitle")}: {t("addEmployee.compensation.socialSecurityDesc")}</span>
               </div>
             </div>
@@ -1286,7 +1297,7 @@ export default function AddEmployee() {
                   {/* Working Visa */}
                   <div>
                     <Label className="text-sm font-medium">{t("addEmployee.documents.visaTitle")}</Label>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
+                    <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="space-y-1">
                         <Label htmlFor="workingVisaNumber" className="text-xs text-muted-foreground">{t("addEmployee.documents.visaNumber")}</Label>
                         <Input
@@ -1320,7 +1331,7 @@ export default function AddEmployee() {
                   {/* SEFOPE Work Permit */}
                   <div>
                     <Label className="text-sm font-medium">{t("addEmployee.documents.sefopePermitTitle")}</Label>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
+                    <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
                       <div className="space-y-1">
                         <Label htmlFor="sefopePermitNumber" className="text-xs text-muted-foreground">{t("addEmployee.documents.sefopePermitNumber")}</Label>
                         <Input

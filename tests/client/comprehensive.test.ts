@@ -36,11 +36,14 @@ function makePayrollInput(overrides: Partial<TLPayrollInput> = {}): TLPayrollInp
     sickDaysUsed: 0,
     ytdSickDaysUsed: 0,
     bonus: 0,
+    bonusINSSCategory: null,
     commission: 0,
     perDiem: 0,
     foodAllowance: 0,
     transportAllowance: 0,
     otherEarnings: 0,
+    nonCashBenefits: 0,
+    nonCashBenefitINSSCategory: null,
     taxInfo: { isResident: true, hasTaxExemption: false },
     loanRepayment: 0,
     advanceRepayment: 0,
@@ -167,10 +170,11 @@ describe("Timor-Leste INSS Contributions", () => {
     expect(result.inssEmployee).toBe(40); // 4% of 1000
   });
 
-  it("should exclude bonus from INSS base", () => {
+  it("should exclude a company-profit award from INSS base", () => {
     const result = calculateTLPayroll(makePayrollInput({
       monthlySalary: 1000,
-      bonus: 500, // Should not affect INSS base
+      bonus: 500,
+      bonusINSSCategory: "company_profit",
     }));
     expect(result.inssBase).toBe(1000);
     expect(result.inssEmployee).toBe(40);

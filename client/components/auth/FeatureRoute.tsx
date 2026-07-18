@@ -6,6 +6,15 @@ import type { ModulePermission } from "@/types/tenant";
 import { PageSkeleton } from "@/components/PageSkeleton";
 import { canUseNgoReporting } from "@/lib/ngo/access";
 
+// Lazy: FeatureRoute is in the entry graph and the gate pulls in the page
+// chrome (MainNavigation → firestore) — a static import would blow the
+// initial-page budget (scripts/check-entry-budget.mjs).
+const AccountantGate = React.lazy(() =>
+  import("@/components/auth/AccountantGate").then((m) => ({
+    default: m.AccountantGate,
+  })),
+);
+
 interface FeatureRouteProps {
   children: React.ReactNode;
   requiredModule?: ModulePermission;
@@ -14,6 +23,11 @@ interface FeatureRouteProps {
   requireManage?: boolean;
   requireManager?: boolean;
   requireNgoReporting?: boolean;
+  /**
+   * Accountant-only screen: without showAdvancedTax the user gets a friendly
+   * explainer (AccountantGate) pointing back at the everyday module.
+   */
+  requireAdvancedTax?: false | "money" | "payroll";
   fallbackPath?: string;
 }
 
@@ -25,11 +39,19 @@ export function FeatureRoute({
   requireManage = false,
   requireManager = false,
   requireNgoReporting = false,
+  requireAdvancedTax = false,
   fallbackPath,
 }: FeatureRouteProps) {
   const location = useLocation();
   const { user, loading: authLoading, authResolved } = useAuth();
-  const { session, loading: tenantLoading, tenantResolved, hasModule, canManage } = useTenant();
+  const {
+    session,
+    loading: tenantLoading,
+    tenantResolved,
+    hasModule,
+    canManage,
+    showAdvancedTax,
+  } = useTenant();
 
   // Routes that set an explicit fallbackPath keep the old silent redirect;
   // otherwise denied users land on /unauthorized so they know why.
@@ -82,6 +104,18 @@ export function FeatureRoute({
 
   if (requireNgoReporting && !canUseNgoReporting(session, hasModule("reports"))) {
     return <Navigate to={deniedPath} replace />;
+  }
+
+  if (requireAdvancedTax && !showAdvancedTax) {
+    return (
+      <React.Suspense
+        fallback={
+          <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />
+        }
+      >
+        <AccountantGate backTo={requireAdvancedTax} />
+      </React.Suspense>
+    );
   }
 
   return <>{children}</>;

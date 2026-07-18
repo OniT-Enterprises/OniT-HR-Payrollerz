@@ -693,7 +693,7 @@ export default function PayrollHistory() {
         <PageHeader
           title={t("payrollHistory.title")}
           subtitle={t("payrollHistory.subtitle")}
-          icon={FileText}
+          cardIcon="pr-history" icon={FileText}
           iconColor="text-primary"
           actions={canManageTenant ? (
             <Button onClick={() => navigate("/payroll/run")}>

@@ -10,9 +10,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
 import AppSidebar from "./AppSidebar";
-import TopBar from "./TopBar";
 import { ImpersonationBanner } from "./ImpersonationBanner";
 import { useI18n } from "@/i18n/I18nProvider";
+
+// TopBar owns setup/notification data queries. Do not load that Firestore
+// surface for landing and authentication pages that never render app chrome.
+const TopBar = React.lazy(() => import("./TopBar"));
 
 // Routes that should NOT show the sidebar layout
 const PUBLIC_PATHS = [
@@ -69,7 +72,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           {isImpersonating && <ImpersonationBanner />}
-          <TopBar />
+          <React.Suspense fallback={<div className="h-14 shrink-0 border-b border-border/50" />}>
+            <TopBar />
+          </React.Suspense>
           <main
             id="main-content"
             ref={mainRef}

@@ -9,7 +9,7 @@ import {
   updateProfile,
   sendEmailVerification,
 } from "firebase/auth";
-import { auth, getFunctionsLazy } from "@/lib/firebase";
+import { auth, getFunctionsLazy } from "@/lib/firebase-core";
 
 interface UserProfile {
   uid: string;

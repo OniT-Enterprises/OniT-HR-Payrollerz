@@ -638,7 +638,7 @@ export default function BankTransfers() {
         <PageHeader
           title={t("bankTransfers.title")}
           subtitle={t("bankTransfers.subtitle")}
-          icon={Send}
+          cardIcon="pr-bank" icon={Send}
           iconColor="text-primary"
           actions={canManageTenant ? (
             <Button

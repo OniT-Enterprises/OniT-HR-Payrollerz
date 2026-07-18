@@ -14,6 +14,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
@@ -59,6 +66,7 @@ function isValidPayrollConfig(config: PayrollConfig): boolean {
     isInRange(config.socialSecurity.paymentDueDay, 1, 28) &&
     isInRange(config.minimumWage, 0, 1_000_000) &&
     isInRange(config.maxWorkHoursPerWeek, 1, 168) &&
+    ['weekly_average', 'fixed_190_round_up'].includes(config.hourlyRateConvention) &&
     isInRange(config.overtimeRates.standard, 1, 10) &&
     isInRange(config.overtimeRates.sundayHoliday, 1, 10) &&
     (!config.subsidioAnual.enabled || isValidMonthDay(config.subsidioAnual.payByDate))
@@ -289,6 +297,33 @@ export function PayrollConfigTab({
             <Clock className="h-5 w-5" />
             {t('settings.payroll.overtime')}
           </h3>
+          <div className="max-w-md space-y-2">
+            <Label>{t('settings.payroll.hourlyRateMethod')}</Label>
+            <Select
+              value={payrollConfig.hourlyRateConvention}
+              onValueChange={(value: PayrollConfig['hourlyRateConvention']) =>
+                setPayrollConfig({
+                  ...payrollConfig,
+                  hourlyRateConvention: value,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weekly_average">
+                  {t('settings.payroll.hourlyRateWeeklyAverage')}
+                </SelectItem>
+                <SelectItem value="fixed_190_round_up">
+                  {t('settings.payroll.hourlyRateFixed190')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t('settings.payroll.hourlyRateHint')}
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>{t('settings.payroll.maxHoursWeek')}</Label>

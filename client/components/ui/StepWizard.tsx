@@ -97,8 +97,26 @@ export function StepWizard({
 
   return (
     <div className={cn("space-y-6", className)}>
+      {/* On phones, name the current decision instead of squeezing a four-step
+          diagram into the available width. */}
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5 sm:hidden">
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">
+            {currentStep + 1} / {steps.length}
+          </p>
+          <p className="truncate text-sm font-semibold">{currentStepData.title}</p>
+        </div>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          {currentStepData.icon ? (
+            <currentStepData.icon className="h-5 w-5" />
+          ) : (
+            <span className="text-sm font-semibold">{currentStep + 1}</span>
+          )}
+        </span>
+      </div>
+
       {/* Step Indicator */}
-      <div className="relative">
+      <div className="relative hidden sm:block">
         {/* Progress Line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted">
           <div
@@ -121,6 +139,7 @@ export function StepWizard({
                 type="button"
                 onClick={() => handleStepClick(index)}
                 disabled={!isClickable}
+                aria-current={isCurrent ? "step" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-2 bg-background px-2",
                   isClickable && "cursor-pointer",
@@ -132,7 +151,7 @@ export function StepWizard({
                   className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-200",
                     isCompleted && "bg-primary border-primary text-primary-foreground",
-                    isCurrent && "bg-primary/10 border-primary text-primary",
+                    isCurrent && "bg-primary/10 border-primary text-primary ring-2 ring-primary/20 ring-offset-2 ring-offset-background",
                     !isCompleted && !isCurrent && "bg-muted border-muted-foreground/30 text-muted-foreground"
                   )}
                 >
@@ -150,7 +169,7 @@ export function StepWizard({
                   <p
                     className={cn(
                       "text-sm font-medium",
-                      isCurrent && "text-primary",
+                      isCurrent && "font-bold text-primary",
                       !isCurrent && !isCompleted && "text-muted-foreground"
                     )}
                   >
@@ -168,7 +187,7 @@ export function StepWizard({
 
       {/* Step Content Card */}
       <Card>
-        <CardHeader>
+        <CardHeader className="hidden sm:block">
           <CardTitle className="flex items-center gap-2">
             {currentStepData.icon && (
               <currentStepData.icon className="h-5 w-5 text-primary" />
@@ -188,7 +207,7 @@ export function StepWizard({
       </Card>
 
       {/* Sticky Bottom Navigation Bar */}
-      <div className="sticky bottom-0 z-30 -mx-6 -mb-6 mt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3">
+      <div className="sticky bottom-0 z-30 -mx-4 -mb-6 mt-6 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6">
         <div className="flex items-center justify-between">
           <div>
             {onCancel && (
@@ -198,7 +217,7 @@ export function StepWizard({
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {!canProceed && cannotProceedMessage && (
               <p className="text-sm text-amber-500 hidden sm:block">{cannotProceedMessage}</p>
             )}

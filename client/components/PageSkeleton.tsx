@@ -1,7 +1,11 @@
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
+
+// Route guards render this skeleton before authentication and tenant recovery
+// have settled. Keep the data-querying legacy navigation out of that guest
+// path; pages that still request it can load it with their own content.
+const MainNavigation = React.lazy(() => import("@/components/layout/MainNavigation"));
 
 interface PageSkeletonProps {
   type?: "table" | "form" | "dashboard" | "list";
@@ -182,7 +186,11 @@ export function PageSkeleton({
 
   return (
     <div className="min-h-screen bg-background">
-      {showNavigation && <MainNavigation />}
+      {showNavigation && (
+        <React.Suspense fallback={<div className="h-16 border-b border-border/50" />}>
+          <MainNavigation />
+        </React.Suspense>
+      )}
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           {showHeader && (
@@ -209,4 +217,3 @@ export function PageSkeleton({
     </div>
   );
 }
-

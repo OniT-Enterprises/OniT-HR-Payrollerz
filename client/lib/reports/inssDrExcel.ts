@@ -16,10 +16,27 @@
 
 import ExcelJS from 'exceljs';
 import type { MonthlyINSSReturn } from '@/types/tax-filing';
+import { subtractMoney } from '@/lib/currency';
+import {
+  MissingStatutoryPayrollDataError,
+  requireStatutoryPayrollAmount,
+  requireStatutoryPayrollEmployeeId,
+  requireStatutoryPayrollResidency,
+} from '@/lib/tax/statutory-payroll-record';
 
 const MONTHS_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 const MONEY_FMT = '#,##0.00';
@@ -86,10 +103,7 @@ export interface InssDrExportOptions {
   employerNISS?: string;
 }
 
-export function buildInssDrWorkbook(
-  ret: MonthlyINSSReturn,
-  options: InssDrExportOptions = {},
-): ExcelJS.Workbook {
+export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExportOptions = {}): ExcelJS.Workbook {
   const [yearStr, monthStr] = ret.reportingPeriod.split('-');
   const monthName = MONTHS_PT[Number(monthStr) - 1] || monthStr;
 
@@ -124,39 +138,64 @@ export function buildInssDrWorkbook(
     const cell = headerRow.getCell(col);
     cell.value = label;
     cell.font = { bold: true, size: 9 };
-    cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
-    cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EDF5' } };
+    cell.alignment = {
+      wrapText: true,
+      vertical: 'middle',
+      horizontal: 'center',
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
+    };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE8EDF5' },
+    };
   }
   headerRow.height = 48;
 
   let rowIdx = headerRowIdx + 1;
   for (const emp of ret.employees) {
     const row = ws.getRow(rowIdx);
-    const gross = emp.grossWages ?? emp.contributionBase;
-    const annualSubsidy = emp.annualSubsidy ?? 0;
+    const employeeId = requireStatutoryPayrollEmployeeId(emp);
+    const gross = requireStatutoryPayrollAmount(emp, 'grossWages');
+    const annualSubsidy = requireStatutoryPayrollAmount(emp, 'annualSubsidy');
+    const incomeTax = requireStatutoryPayrollAmount(emp, 'incomeTax');
+    const netPay = requireStatutoryPayrollAmount(emp, 'netPay');
+    const isResident = requireStatutoryPayrollResidency(emp);
+    if (annualSubsidy > gross) {
+      throw new MissingStatutoryPayrollDataError('annualSubsidy not exceeding grossWages');
+    }
 
-    row.getCell(COL.employeeNo).value = emp.employeeId;
+    row.getCell(COL.employeeNo).value = employeeId;
     row.getCell(COL.niss).value = emp.inssNumber || '';
     row.getCell(COL.fullName).value = emp.fullName;
-    row.getCell(COL.laborSituation).value =
-      emp.isResident === false ? 'Contratado estrangeiro' : 'Contratado nacional';
-    row.getCell(COL.resident).value = emp.isResident === false ? 'Não' : 'Sim';
+    row.getCell(COL.laborSituation).value = isResident ? 'Contratado nacional' : 'Contratado estrangeiro';
+    row.getCell(COL.resident).value = isResident ? 'Sim' : 'Não';
     row.getCell(COL.contributesSS).value = 'Sim';
     // Full contributory month by SS convention; adjust in the file if needed.
     row.getCell(COL.contractDays).value = 30;
-    row.getCell(COL.baseSalary).value = Math.max(0, gross - annualSubsidy);
+    row.getCell(COL.baseSalary).value = subtractMoney(gross, annualSubsidy);
     if (annualSubsidy > 0) row.getCell(COL.annualSubsidy).value = annualSubsidy;
     row.getCell(COL.totalDeclared).value = gross;
-    row.getCell(COL.incomeTax).value = emp.incomeTax ?? 0;
+    row.getCell(COL.incomeTax).value = incomeTax;
     row.getCell(COL.employerSS).value = emp.employerContribution;
     row.getCell(COL.workerSS).value = emp.employeeContribution;
-    row.getCell(COL.netPay).value =
-      emp.netPay ?? Math.max(0, gross - (emp.incomeTax ?? 0) - emp.employeeContribution);
+    row.getCell(COL.netPay).value = netPay;
 
     for (const col of [
-      COL.baseSalary, COL.annualSubsidy, COL.regimeSupplements, COL.otherSupplements,
-      COL.totalDeclared, COL.incomeTax, COL.employerSS, COL.workerSS, COL.netPay,
+      COL.baseSalary,
+      COL.annualSubsidy,
+      COL.regimeSupplements,
+      COL.otherSupplements,
+      COL.totalDeclared,
+      COL.incomeTax,
+      COL.employerSS,
+      COL.workerSS,
+      COL.netPay,
     ]) {
       row.getCell(col).numFmt = MONEY_FMT;
     }
@@ -167,7 +206,15 @@ export function buildInssDrWorkbook(
   ws.getColumn(COL.niss).width = 18;
   ws.getColumn(COL.tin).width = 16;
   ws.getColumn(COL.laborSituation).width = 20;
-  for (const col of [COL.baseSalary, COL.annualSubsidy, COL.totalDeclared, COL.incomeTax, COL.employerSS, COL.workerSS, COL.netPay]) {
+  for (const col of [
+    COL.baseSalary,
+    COL.annualSubsidy,
+    COL.totalDeclared,
+    COL.incomeTax,
+    COL.employerSS,
+    COL.workerSS,
+    COL.netPay,
+  ]) {
     ws.getColumn(col).width = 14;
   }
 
@@ -201,10 +248,7 @@ export function buildInssDrWorkbook(
 }
 
 /** Build the DR workbook and trigger a browser download. */
-export async function downloadInssDrExcel(
-  ret: MonthlyINSSReturn,
-  options: InssDrExportOptions = {},
-): Promise<void> {
+export async function downloadInssDrExcel(ret: MonthlyINSSReturn, options: InssDrExportOptions = {}): Promise<void> {
   const wb = buildInssDrWorkbook(ret, options);
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

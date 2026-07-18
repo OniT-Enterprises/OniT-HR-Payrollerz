@@ -596,7 +596,7 @@ export default function LeaveRequests() {
           <PageHeader
             title={t("timeLeave.leaveRequests.title")}
             subtitle={t("timeLeave.leaveRequests.subtitle")}
-            icon={Calendar}
+            cardIcon="tl-leave" icon={Calendar}
             iconColor="text-cyan-500"
             actions={
               <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowRequestDialog(true)}>

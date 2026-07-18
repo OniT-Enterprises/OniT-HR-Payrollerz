@@ -40,6 +40,7 @@ import {
   History,
   Banknote,
   FileSpreadsheet,
+  ClipboardCheck,
   Heart,
   MinusCircle,
   // Money
@@ -80,6 +81,8 @@ interface NavItem {
   requiredAllModules?: ModulePermission[];
   manageOnly?: boolean;
   managerOnly?: boolean;
+  /** Hidden unless the user has accountant-grade tax controls (useAdvancedTax). */
+  advancedTaxOnly?: boolean;
 }
 
 export interface ModuleSection {
@@ -95,6 +98,8 @@ export interface ModuleSection {
   requiredAllModules?: ModulePermission[];
   manageOnly?: boolean;
   managerOnly?: boolean;
+  /** Hidden unless the user has accountant-grade tax controls (useAdvancedTax). */
+  advancedTaxOnly?: boolean;
 }
 
 export interface ModuleNavConfig {
@@ -130,7 +135,7 @@ export const peopleNavConfig: ModuleNavConfig = {
         { label: "Candidates", labelKey: "candidates", path: "/people/candidates", icon: UserCheck },
         { label: "Interviews", labelKey: "interviews", path: "/people/interviews", icon: Calendar },
         { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus },
-        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus },
+        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus, manageOnly: true },
       ],
       requiredModule: "hiring",
     },
@@ -292,12 +297,13 @@ export const payrollNavConfig: ModuleNavConfig = {
       labelKey: "taxInss",
       icon: FileSpreadsheet,
       path: "/payroll/tax",
-      matchPaths: ["/payroll/tax", "/payroll/tax/monthly-wit", "/payroll/tax/inss-monthly", "/payroll/tax/inss-annual"],
+      matchPaths: ["/payroll/tax", "/payroll/tax/monthly-wit", "/payroll/tax/inss-monthly", "/payroll/tax/inss-annual", "/payroll/tax/clearance"],
       subPages: [
         { label: "Dashboard", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
-        { label: "Monthly WIT", labelKey: "monthlyWit", path: "/payroll/tax/monthly-wit", icon: FileSpreadsheet },
+        { label: "Monthly WIT", labelKey: "monthlyWit", path: "/payroll/tax/monthly-wit", icon: FileSpreadsheet, advancedTaxOnly: true },
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },
+        { label: "Tax Clearance", labelKey: "taxClearance", path: "/payroll/tax/clearance", icon: ClipboardCheck, advancedTaxOnly: true },
       ],
       manageOnly: true,
     },
@@ -363,8 +369,11 @@ export const moneyNavConfig: ModuleNavConfig = {
       labelKey: "expenses",
       icon: ShoppingCart,
       path: "/money/expenses",
-      matchPaths: ["/money/expenses"],
-      subPages: [],
+      matchPaths: ["/money/expenses", "/money/cash-advances"],
+      subPages: [
+        { label: "Expenses", labelKey: "expenses", path: "/money/expenses", icon: ShoppingCart, managerOnly: true },
+        { label: "Cash Advances", labelKey: "cashAdvances", path: "/money/cash-advances", icon: Banknote, manageOnly: true },
+      ],
       managerOnly: true,
     },
     {
@@ -389,7 +398,7 @@ export const moneyNavConfig: ModuleNavConfig = {
         { label: "AR Aging", labelKey: "arAging", path: "/money/financials/ar-aging", icon: ClipboardList },
         { label: "AP Aging", labelKey: "apAging", path: "/money/financials/ap-aging", icon: ClipboardList },
         { label: "Reconciliation", labelKey: "reconciliation", path: "/money/financials/reconciliation", icon: CheckSquare, manageOnly: true },
-        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/financials/vat-returns", icon: FileSpreadsheet, manageOnly: true },
+        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/financials/vat-returns", icon: FileSpreadsheet, manageOnly: true, advancedTaxOnly: true },
       ],
     },
   ],
@@ -568,11 +577,16 @@ function canViewNavEntry(
     requiredAllModules?: ModulePermission[];
     manageOnly?: boolean;
     managerOnly?: boolean;
+    advancedTaxOnly?: boolean;
   },
   hasModule: (module: ModulePermission) => boolean,
   canManageTenant: boolean,
   canManageTeam: boolean,
+  showAdvancedTax: boolean,
 ) {
+  if (entry.advancedTaxOnly && !showAdvancedTax) {
+    return false;
+  }
   if (entry.manageOnly && !canManageTenant) {
     return false;
   }
@@ -598,19 +612,20 @@ export function filterModuleNavConfigByPermissions(
   hasModule: (module: ModulePermission) => boolean,
   canManageTenant: boolean = true,
   canManageTeam: boolean = canManageTenant,
+  showAdvancedTax: boolean = false,
 ): ModuleNavConfig {
   return {
     ...config,
     overview:
-      config.overview && canViewNavEntry(config.overview, hasModule, canManageTenant, canManageTeam)
+      config.overview && canViewNavEntry(config.overview, hasModule, canManageTenant, canManageTeam, showAdvancedTax)
         ? config.overview
         : undefined,
     sections: config.sections
-      .filter((section) => canViewNavEntry(section, hasModule, canManageTenant, canManageTeam))
+      .filter((section) => canViewNavEntry(section, hasModule, canManageTenant, canManageTeam, showAdvancedTax))
       .map((section) => ({
         ...section,
         subPages: section.subPages.filter((page) =>
-          canViewNavEntry(page, hasModule, canManageTenant, canManageTeam)
+          canViewNavEntry(page, hasModule, canManageTenant, canManageTeam, showAdvancedTax)
         ),
       })),
   };

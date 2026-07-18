@@ -382,10 +382,10 @@ export default function RunPayrollWizard() {
       <div className="min-h-screen bg-background">
         <SEO {...seoConfig.runPayroll} />
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("runPayroll.title")}
-            icon={Calculator}
+            cardIcon="payroll" icon={Calculator}
             iconColor="text-primary"
           />
           <section
@@ -442,18 +442,20 @@ export default function RunPayrollWizard() {
       <SEO {...seoConfig.runPayroll} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("runPayroll.title")}
           subtitle={t("runPayroll.processPayrollFor", { count: String(activeEmployees.length) })}
-          icon={Calculator}
+          cardIcon="payroll" icon={Calculator}
           iconColor="text-primary"
         />
-        {canManageTenant && subscribed === false && (
+        {canManageTenant &&
+          subscribed === false &&
+          (currentStep === 0 || currentStep === wizardSteps.length - 1) && (
           <button
             type="button"
             onClick={() => navigate("/billing")}
-            className="mb-4 flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-left text-sm transition-colors hover:bg-primary/10"
+            className="mb-4 flex min-h-11 w-full items-center gap-2 rounded-xl border border-primary/25 bg-primary/5 px-3 py-2 text-left text-xs transition-colors hover:bg-primary/10 sm:gap-3 sm:px-4 sm:text-sm"
           >
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span className="flex-1 text-foreground/90">{t("runPayroll.freePlanNotice")}</span>
@@ -523,6 +525,7 @@ export default function RunPayrollWizard() {
               setSearchTerm={calc.setSearchTerm}
               onToggleExpand={calc.toggleRowExpansion}
               onInputChange={calc.handleInputChange}
+              onBonusCategoryChange={calc.handleBonusCategoryChange}
               onReset={calc.handleResetRow}
               onSyncAttendance={calc.handleSyncFromAttendance}
               syncingAttendance={calc.syncingAttendance}

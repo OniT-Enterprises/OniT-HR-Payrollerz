@@ -6,14 +6,9 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import { User } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  Timestamp,
-} from "firebase/firestore";
+import type { User } from "firebase/auth";
 import { useQueryClient } from "@tanstack/react-query";
-import { db, auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-core";
 import { paths } from "@/lib/paths";
 import { clearPersistedQueryCache } from "@/lib/queryCache";
 import {
@@ -55,6 +50,8 @@ interface TenantContextType {
   hasModule: (module: ModulePermission) => boolean;
   canWrite: () => boolean;
   canManage: () => boolean;
+  /** Single source of truth for the accountant/simple UI split. */
+  showAdvancedTax: boolean;
 
   // Refresh functions
   refreshSession: () => Promise<void>;
@@ -63,6 +60,14 @@ interface TenantContextType {
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
+
+async function getFirestoreClient() {
+  const [{ doc, getDoc }, { db }] = await Promise.all([
+    import("firebase/firestore"),
+    import("@/lib/firebase-firestore"),
+  ]);
+  return { db, doc, getDoc };
+}
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTenant() {
@@ -96,6 +101,22 @@ export function useTenantId(): string {
   }
 
   return context.session.tid;
+}
+
+/**
+ * Whether the current user should see accountant-grade tax controls
+ * (supplier withholding, treaty rates, ATTL filing forms, VAT).
+ * True for the 'accountant' role, or for any user of a tenant that opted in
+ * via `advancedTaxMode`. Everyone else gets the simple flow with safe
+ * defaults that produce no withholding.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAdvancedTax(): boolean {
+  const context = useContext(TenantContext);
+  if (context === undefined) {
+    throw new Error("useAdvancedTax must be used within a TenantProvider");
+  }
+  return context.showAdvancedTax;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -256,11 +277,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const loadAvailableTenants = useCallback(async (
     firebaseUser: User,
   ): Promise<Array<{ id: string; name: string; role: TenantRole }>> => {
-    if (!db) {
-      throw new Error("Database is unavailable");
-    }
-
     try {
+      const { db, doc, getDoc } = await getFirestoreClient();
       const { claims } = await getCurrentUserAndClaims();
       const claimTenantIds = claims?.tenants
         ? (Array.isArray(claims.tenants)
@@ -313,11 +331,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
     firebaseUser: User,
     bypassMembershipCheck = false,
   ): Promise<TenantSession | null> => {
-    if (!db) {
-      throw new Error("Database is unavailable");
-    }
-
     try {
+      const { db, doc, getDoc } = await getFirestoreClient();
       // Load tenant config
       const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
 
@@ -390,7 +405,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
       if (impersonatedSession && isCurrentAccount()) {
         // Audit trail: superadmin access to tenant data must be accountable
-        const { adminService } = await import("@/services/adminService");
+        const [{ adminService }, { Timestamp }] = await Promise.all([
+          import("@/services/adminService"),
+          import("firebase/firestore"),
+        ]);
         await adminService.logAdminAction({
           action: "impersonation_started",
           actorUid: user.uid,
@@ -450,7 +468,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
       clearImpersonationStorage();
 
       if (endedTenantId) {
-        const { adminService } = await import("@/services/adminService");
+        const [{ adminService }, { Timestamp }] = await Promise.all([
+          import("@/services/adminService"),
+          import("firebase/firestore"),
+        ]);
         try {
           await adminService.logAdminAction({
             action: "impersonation_ended",
@@ -758,13 +779,24 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   const canWrite = (): boolean => {
     if (!session) return false;
-    return session.role === "owner" || session.role === "hr-admin";
+    return (
+      session.role === "owner" ||
+      session.role === "hr-admin" ||
+      session.role === "accountant"
+    );
   };
 
   const canManage = (): boolean => {
     if (!session) return false;
-    return session.role === "owner" || session.role === "hr-admin";
+    return (
+      session.role === "owner" ||
+      session.role === "hr-admin" ||
+      session.role === "accountant"
+    );
   };
+
+  const showAdvancedTax =
+    session?.role === "accountant" || session?.config?.advancedTaxMode === true;
 
   const value: TenantContextType = {
     session,
@@ -781,6 +813,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     hasModule,
     canWrite,
     canManage,
+    showAdvancedTax,
     refreshSession,
     refreshTenants,
     retryInitialization,

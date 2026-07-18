@@ -4,7 +4,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-core";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useChatStore, type ProgressStep, type ChatMessage, type StepStatus } from "@/stores/chatStore";
 import { cn } from "@/lib/utils";

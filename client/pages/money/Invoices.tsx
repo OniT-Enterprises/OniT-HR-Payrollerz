@@ -38,7 +38,6 @@ import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 
 
-import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
 import { SendReminderDialog } from '@/components/money/SendReminderDialog';
@@ -331,7 +330,7 @@ export default function Invoices() {
         <PageHeader
           title={t('money.invoices.title') || 'Invoices'}
           subtitle={t('money.invoices.subtitle') || 'Create and manage invoices'}
-          icon={FileText}
+          cardIcon="money" icon={FileText}
           iconColor="text-indigo-500"
           actions={
             <>
@@ -499,7 +498,24 @@ export default function Invoices() {
                             </span>
                           )}
                         </p>
-                        <InvoiceStatusTimeline invoice={invoice} compact className="mt-1" />
+                        <p className="mt-1 text-xs text-muted-foreground sm:hidden">
+                          {t('money.invoices.due') || 'Due'}: {formatDate(invoice.dueDate)}
+                        </p>
+                        {canManageTenant && getDisplayStatus(invoice) === 'draft' && (
+                          <p className="mt-1 text-xs font-medium text-primary sm:hidden">
+                            {t('money.invoices.markSent') || 'Mark as sent'}
+                          </p>
+                        )}
+                        {canManageTenant && getDisplayStatus(invoice) === 'overdue' && (
+                          <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400 sm:hidden">
+                            {t('money.invoices.sendReminder') || 'Send reminder'}
+                          </p>
+                        )}
+                        {canManageTenant && ['sent', 'viewed', 'partial'].includes(getDisplayStatus(invoice)) && (
+                          <p className="mt-1 text-xs font-medium text-primary sm:hidden">
+                            {t('money.invoices.recordPayment') || 'Record payment'}
+                          </p>
+                        )}
                       </div>
                     </div>
 

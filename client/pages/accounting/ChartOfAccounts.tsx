@@ -487,10 +487,11 @@ export default function ChartOfAccounts() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:p-6">
         <PageHeader
           title={t("accounting.chartOfAccounts.title")}
           subtitle={t("accounting.chartOfAccounts.subtitle")}
+          cardIcon="ac-chart"
           icon={BookOpen}
           iconColor="text-orange-500"
           actions={canManageTenant ? (
@@ -810,7 +811,10 @@ export default function ChartOfAccounts() {
               {accounts.length === 0 ? (
                 <div className="text-center py-12">
                   <img src="/images/illustrations/empty-accounting.webp" alt="No accounts yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
-                  <p className="text-muted-foreground mb-4">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
+                  <p className="font-medium">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
+                  <p className="mx-auto mb-4 mt-1 max-w-md text-sm text-muted-foreground">
+                    {t("accounting.chartOfAccounts.noAccountsDescription")}
+                  </p>
                   {canManageTenant && <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (
                       <>

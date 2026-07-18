@@ -144,6 +144,37 @@ class FileUploadService {
     return this.uploadFile(file, path);
   }
 
+  async uploadSupplierWithholdingProof(
+    file: File,
+    tenantId: string,
+    remittanceId: string,
+  ): Promise<string> {
+    const timestamp = Date.now();
+    const extension = (file.name.split('.').pop() || 'pdf').replace(/[^a-zA-Z0-9]/g, '');
+    const path = `tenants/${tenantId}/supplier-withholding/${remittanceId}/proof_${timestamp}.${extension}`;
+    return this.uploadFile(file, path, { contentType: file.type || undefined });
+  }
+
+  async uploadTaxClearanceCertificate(
+    file: File,
+    tenantId: string,
+    requestId: string,
+  ): Promise<string> {
+    const path = `tenants/${tenantId}/tax-clearance/${requestId}/certificate_${Date.now()}.pdf`;
+    return this.uploadFile(file, path, { contentType: 'application/pdf' });
+  }
+
+  async uploadCashAdvanceEvidence(
+    file: File,
+    tenantId: string,
+    advanceId: string,
+    evidenceId: string,
+  ): Promise<string> {
+    const extension = (file.name.split('.').pop() || 'pdf').replace(/[^a-zA-Z0-9]/g, '');
+    const path = `tenants/${tenantId}/cash-advances/${advanceId}/${evidenceId}_${Date.now()}.${extension}`;
+    return this.uploadFile(file, path, { contentType: file.type || undefined });
+  }
+
   /**
    * Upload company logo for tenant branding
    * @param file - The image file to upload

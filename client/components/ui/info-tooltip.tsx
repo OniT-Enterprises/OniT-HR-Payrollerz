@@ -56,7 +56,7 @@ export function InfoTooltip({
             role="button"
             tabIndex={0}
             className={cn(
-              'inline-flex items-center justify-center rounded-full cursor-help',
+              '-m-4 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full cursor-help',
               'text-muted-foreground hover:text-foreground transition-colors',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               className
@@ -167,4 +167,3 @@ export const MoneyTooltips = {
     banks: 'Common TL banks: BNU (Banco Nacional Ultramarino), BNCTL (Central Bank), Mandiri, ANZ.',
   },
 } as const;
-

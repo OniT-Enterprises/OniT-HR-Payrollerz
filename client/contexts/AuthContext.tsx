@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import { User, getIdTokenResult } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getIdTokenResult, type User } from "firebase/auth";
 import { useQueryClient } from "@tanstack/react-query";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-core";
 import { authService } from "@/services/authService";
 import {
   clearPersistedQueryCache,
@@ -130,11 +129,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Fetch user profile from Firestore (does NOT auto-create)
   const fetchUserProfile = useCallback(async (firebaseUser: User): Promise<UserProfile | null> => {
-    if (!db) {
-      throw new Error("Database is unavailable");
-    }
-
     try {
+      const [{ doc, getDoc, setDoc, serverTimestamp }, { db }] = await Promise.all([
+        import("firebase/firestore"),
+        import("@/lib/firebase-firestore"),
+      ]);
       const userDocRef = doc(db, paths.user(firebaseUser.uid));
       const userDocSnap = await getDoc(userDocRef);
 

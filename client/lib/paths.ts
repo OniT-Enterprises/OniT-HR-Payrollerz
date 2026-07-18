@@ -149,6 +149,24 @@ export const paths = {
   billPayments: (tid: string) => `tenants/${tid}/bill_payments`,
   billPayment: (tid: string, paymentId: string) => `tenants/${tid}/bill_payments/${paymentId}`,
 
+  supplierWithholdingPeriods: (tid: string) => `tenants/${tid}/supplierWithholdingPeriods`,
+  supplierWithholdingPeriod: (tid: string, period: string) =>
+    `tenants/${tid}/supplierWithholdingPeriods/${period}`,
+  supplierWithholdingRemittances: (tid: string) =>
+    `tenants/${tid}/supplierWithholdingRemittances`,
+  supplierWithholdingRemittance: (tid: string, remittanceId: string) =>
+    `tenants/${tid}/supplierWithholdingRemittances/${remittanceId}`,
+
+  taxClearanceRequests: (tid: string) => `tenants/${tid}/taxClearanceRequests`,
+  taxClearanceRequest: (tid: string, requestId: string) =>
+    `tenants/${tid}/taxClearanceRequests/${requestId}`,
+
+  cashAdvances: (tid: string) => `tenants/${tid}/cashAdvances`,
+  cashAdvance: (tid: string, advanceId: string) => `tenants/${tid}/cashAdvances/${advanceId}`,
+  cashAdvanceClearings: (tid: string) => `tenants/${tid}/cashAdvanceClearings`,
+  cashAdvanceClearing: (tid: string, clearingId: string) =>
+    `tenants/${tid}/cashAdvanceClearings/${clearingId}`,
+
   expenses: (tid: string) => `tenants/${tid}/expenses`,
   expense: (tid: string, expenseId: string) => `tenants/${tid}/expenses/${expenseId}`,
 
@@ -199,4 +217,3 @@ export const paths = {
   faceEmbeddings: (tid: string) => `tenants/${tid}/face_embeddings`,
   faceEmbedding: (tid: string, empId: string) => `tenants/${tid}/face_embeddings/${empId}`,
 } as const;
-

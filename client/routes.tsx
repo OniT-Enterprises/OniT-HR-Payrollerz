@@ -19,7 +19,7 @@ function lazyWithRetry<P extends object>(
     try {
       return await importFn();
     } catch (error) {
-      const KEY = "meza-chunk-reload-at";
+      const KEY = "xefe-chunk-reload-at";
       const last = Number(sessionStorage.getItem(KEY) || 0);
       if (Date.now() - last > 60_000) {
         sessionStorage.setItem(KEY, String(Date.now()));
@@ -31,17 +31,12 @@ function lazyWithRetry<P extends object>(
   });
 }
 
-// Essential routes - eagerly loaded (first paint)
-// Dashboard + Landing are the `/` destinations — loading them lazily causes a
-// Suspense pass to fire inside AppLayout right after tenant/auth resolve,
-// which looks like a second loader flicker in the main content area.
-import Login from "@/pages/auth/Login";
-import NotFound from "@/pages/NotFound";
-import Landing from "@/pages/Landing";
-import Dashboard from "@/pages/Dashboard";
-
 // Lazy loaded routes - code split by section
+const Login = lazyWithRetry(() => import("@/pages/auth/Login"));
+const NotFound = lazyWithRetry(() => import("@/pages/NotFound"));
+const Landing = lazyWithRetry(() => import("@/pages/Landing"));
 const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
+const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
 const Billing = lazyWithRetry(() => import("@/pages/Billing"));
 const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
@@ -97,6 +92,7 @@ const BankTransfers = lazyWithRetry(() => import("@/pages/payroll/BankTransfers"
 const BenefitsEnrollment = lazyWithRetry(() => import("@/pages/payroll/BenefitsEnrollment"));
 const DeductionsAdvances = lazyWithRetry(() => import("@/pages/payroll/DeductionsAdvances"));
 const PayrollSettings = lazyWithRetry(() => import("@/pages/payroll/PayrollSettings"));
+const TaxClearance = lazyWithRetry(() => import("@/pages/payroll/TaxClearance"));
 
 // Money (Invoicing)
 const MoneyDashboard = lazyWithRetry(() => import("@/pages/MoneyDashboard"));
@@ -109,6 +105,7 @@ const RecurringInvoiceForm = lazyWithRetry(() => import("@/pages/money/Recurring
 const Payments = lazyWithRetry(() => import("@/pages/money/Payments"));
 const Vendors = lazyWithRetry(() => import("@/pages/money/Vendors"));
 const Expenses = lazyWithRetry(() => import("@/pages/money/Expenses"));
+const CashAdvances = lazyWithRetry(() => import("@/pages/money/CashAdvances"));
 const Bills = lazyWithRetry(() => import("@/pages/money/Bills"));
 const BillForm = lazyWithRetry(() => import("@/pages/money/BillForm"));
 const ProfitLoss = lazyWithRetry(() => import("@/pages/money/ProfitLoss"));
@@ -348,7 +345,7 @@ export const peopleRoutes = (
     <Route
       path="/people/offboarding"
       element={
-        <FeatureRoute requiredModule="hiring">
+        <FeatureRoute requiredModule="hiring" requireManage>
           <Offboarding />
         </FeatureRoute>
       }
@@ -636,6 +633,14 @@ export const moneyRoutes = (
       }
     />
     <Route
+      path="/money/cash-advances"
+      element={
+        <FeatureRoute requiredModule="money" requireManage>
+          <CashAdvances />
+        </FeatureRoute>
+      }
+    />
+    <Route
       path="/money/bills"
       element={
         <FeatureRoute requiredModule="money">
@@ -718,7 +723,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/vat-settings"
       element={
-        <FeatureRoute requiredModule="money" requireManage>
+        <FeatureRoute requiredModule="money" requireManage requireAdvancedTax="money">
           <VATSettings />
         </FeatureRoute>
       }
@@ -726,7 +731,7 @@ export const moneyRoutes = (
     <Route
       path="/money/financials/vat-returns"
       element={
-        <FeatureRoute requiredModule="money" requireManage>
+        <FeatureRoute requiredModule="money" requireManage requireAdvancedTax="money">
           <VATReturns />
         </FeatureRoute>
       }
@@ -919,7 +924,7 @@ export const reportsRoutes = (
     <Route
       path="/payroll/tax/monthly-wit"
       element={
-        <FeatureRoute requiredModule="payroll" requireManage>
+        <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
           <ATTLMonthlyWIT />
         </FeatureRoute>
       }
@@ -937,6 +942,14 @@ export const reportsRoutes = (
       element={
         <FeatureRoute requiredModule="payroll" requireManage>
           <INSSAnnual />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/tax/clearance"
+      element={
+        <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
+          <TaxClearance />
         </FeatureRoute>
       }
     />

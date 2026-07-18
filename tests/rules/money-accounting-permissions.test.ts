@@ -15,7 +15,7 @@ import {
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const PROJECT_ID = 'test-money-accounting-perms';
 const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8081);
@@ -55,6 +55,11 @@ describe('Money + Accounting Rules', () => {
         uid: 'viewer-a',
         role: 'viewer',
         modules: ['money', 'accounting'],
+      });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/members/reporter-a'), {
+        uid: 'reporter-a',
+        role: 'viewer',
+        modules: ['reports'],
       });
 
       // Seed global platform vatConfig
@@ -195,5 +200,72 @@ describe('Money + Accounting Rules', () => {
       voidedBy: 'viewer-a',
       voidReason: 'Nope',
     }));
+  });
+
+  it('keeps supplier withholding payments immutable while allowing money-module reads', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const viewerDb = testEnv.authenticatedContext('viewer-a').firestore();
+    const periodRef = doc(ownerDb, 'tenants/tenant-a/supplierWithholdingPeriods/2026-03');
+    const paymentRef = doc(ownerDb, 'tenants/tenant-a/supplierWithholdingRemittances/remit-1');
+
+    await assertSucceeds(setDoc(periodRef, {
+      period: '2026-03', totalLiability: 100, totalRemitted: 40,
+    }));
+    await assertSucceeds(setDoc(paymentRef, {
+      period: '2026-03', paymentDate: '2026-04-10', amount: 40,
+      paymentReference: 'BANK-001', proofUrl: 'https://example.invalid/proof.pdf',
+    }));
+    await assertSucceeds(getDoc(doc(viewerDb, periodRef.path)));
+    await assertSucceeds(getDoc(doc(viewerDb, paymentRef.path)));
+
+    await assertFails(updateDoc(paymentRef, { amount: 41 }));
+    await assertFails(deleteDoc(paymentRef));
+    await assertFails(deleteDoc(periodRef));
+    await assertFails(setDoc(
+      doc(viewerDb, 'tenants/tenant-a/supplierWithholdingRemittances/remit-2'),
+      { period: '2026-03', amount: 10 },
+    ));
+  });
+
+  it('limits tax-clearance records to report/payroll readers and admin writers', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const reporterDb = testEnv.authenticatedContext('reporter-a').firestore();
+    const viewerDb = testEnv.authenticatedContext('viewer-a').firestore();
+    const requestRef = doc(ownerDb, 'tenants/tenant-a/taxClearanceRequests/request-1');
+
+    await assertSucceeds(setDoc(requestRef, {
+      purpose: 'commercial_3_months', requestedDate: '2026-07-17', status: 'requested',
+    }));
+    await assertSucceeds(getDoc(doc(reporterDb, requestRef.path)));
+    await assertFails(getDoc(doc(viewerDb, requestRef.path)));
+    await assertFails(updateDoc(doc(reporterDb, requestRef.path), { status: 'issued' }));
+    await assertFails(deleteDoc(requestRef));
+  });
+
+  it('allows only clearing totals to change on cash advances and keeps clearings immutable', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const viewerDb = testEnv.authenticatedContext('viewer-a').firestore();
+    const advanceRef = doc(ownerDb, 'tenants/tenant-a/cashAdvances/advance-1');
+    const clearingRef = doc(ownerDb, 'tenants/tenant-a/cashAdvanceClearings/clearing-1');
+
+    await assertSucceeds(setDoc(advanceRef, {
+      employeeId: 'emp-1', purpose: 'Field supplies', amount: 100,
+      expenseCleared: 0, cashReturned: 0, outstanding: 100, status: 'open',
+    }));
+    await assertSucceeds(setDoc(clearingRef, {
+      advanceId: 'advance-1', type: 'expense', amount: 60,
+      proofUrl: 'https://example.invalid/receipt.pdf',
+    }));
+    await assertSucceeds(getDoc(doc(viewerDb, advanceRef.path)));
+    await assertSucceeds(getDoc(doc(viewerDb, clearingRef.path)));
+
+    await assertSucceeds(updateDoc(advanceRef, {
+      expenseCleared: 60, cashReturned: 0, outstanding: 40,
+      status: 'open', updatedAt: new Date(),
+    }));
+    await assertFails(updateDoc(advanceRef, { purpose: 'Changed purpose' }));
+    await assertFails(updateDoc(clearingRef, { amount: 61 }));
+    await assertFails(deleteDoc(advanceRef));
+    await assertFails(deleteDoc(clearingRef));
   });
 });

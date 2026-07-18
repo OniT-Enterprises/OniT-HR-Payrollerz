@@ -40,9 +40,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
-import { useTenant, useTenantId } from '@/contexts/TenantContext';
+import { useAdvancedTax, useTenant, useTenantId } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
 import { useAllVendors, vendorKeys } from '@/hooks/useVendors';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
+import {
+  normalizeTLVendorTaxProfile,
+  type TLVendorTaxProfile,
+} from '@/lib/tax/bill-withholding';
 
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
@@ -67,12 +72,18 @@ export default function Vendors() {
   const { t } = useI18n();
   const { session, canManage } = useTenant();
   const canManageTenant = canManage();
+  const showAdvancedTax = useAdvancedTax();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [saving, setSaving] = useState(false);
+  const [taxResidence, setTaxResidence] = useState<'' | 'resident' | 'non_resident'>('');
+  const [taxRegime, setTaxRegime] = useState<'' | 'domestic' | 'petroleum'>('');
+  const [permanentEstablishment, setPermanentEstablishment] = useState<'' | 'yes' | 'no'>('');
+  const [treatyRatePercent, setTreatyRatePercent] = useState('');
+  const [treatyReference, setTreatyReference] = useState('');
   const saveInFlight = useRef(false);
   const deleteInFlight = useRef(false);
   const [formData, setFormData] = useState<VendorFormData>({
@@ -118,14 +129,71 @@ export default function Vendors() {
     saveInFlight.current = true;
     setSaving(true);
     try {
+      if (!showAdvancedTax) {
+        // Simple flow: the tax section is hidden, so never rebuild (or
+        // re-validate) the profile — new vendors get none, existing vendors
+        // keep whatever their accountant saved, even an imperfect one.
+        const vendorData: VendorFormData = {
+          ...formData,
+          taxProfile: editingVendor?.taxProfile ?? null,
+        };
+        if (editingVendor) {
+          await vendorService.updateVendor(session.tid, editingVendor.id, vendorData);
+          toast({
+            title: t('common.success') || 'Success',
+            description: t('money.vendors.updated') || 'Vendor updated successfully',
+          });
+        } else {
+          await vendorService.createVendor(session.tid, vendorData);
+          toast({
+            title: t('common.success') || 'Success',
+            description: t('money.vendors.created') || 'Vendor created successfully',
+          });
+        }
+        setShowAddDialog(false);
+        setEditingVendor(null);
+        resetForm();
+        queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
+        return;
+      }
+      const hasTaxDetails = Boolean(
+        taxResidence
+        || taxRegime
+        || permanentEstablishment
+        || treatyRatePercent.trim()
+        || treatyReference.trim(),
+      );
+      let taxProfile: TLVendorTaxProfile | null = null;
+      if (hasTaxDetails) {
+        if (!taxResidence) throw new Error('Select the vendor\'s tax residence.');
+        if (!taxRegime) throw new Error('Select the vendor\'s tax regime.');
+        if (taxResidence === 'non_resident' && !permanentEstablishment) {
+          throw new Error(
+            'Confirm whether the non-resident vendor has a permanent establishment in Timor-Leste.',
+          );
+        }
+        const parsedTreatyRate = treatyRatePercent.trim() === ''
+          ? undefined
+          : Number(treatyRatePercent);
+        taxProfile = normalizeTLVendorTaxProfile({
+          recipientResidence: taxResidence,
+          taxRegime,
+          ...(taxResidence === 'non_resident'
+            ? { recipientHasTimorLestePermanentEstablishment: permanentEstablishment === 'yes' }
+            : {}),
+          ...(parsedTreatyRate === undefined ? {} : { treatyRatePercent: parsedTreatyRate }),
+          ...(treatyReference.trim() ? { treatyReference: treatyReference.trim() } : {}),
+        });
+      }
+      const vendorData: VendorFormData = { ...formData, taxProfile };
       if (editingVendor) {
-        await vendorService.updateVendor(session.tid, editingVendor.id, formData);
+        await vendorService.updateVendor(session.tid, editingVendor.id, vendorData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.vendors.updated') || 'Vendor updated successfully',
         });
       } else {
-        await vendorService.createVendor(session.tid, formData);
+        await vendorService.createVendor(session.tid, vendorData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.vendors.created') || 'Vendor created successfully',
@@ -139,7 +207,9 @@ export default function Vendors() {
       console.error('Error saving vendor:', error);
       toast({
         title: t('common.error') || 'Error',
-        description: t('money.vendors.saveError') || 'Failed to save vendor',
+        description: error instanceof Error
+          ? error.message
+          : t('money.vendors.saveError') || 'Failed to save vendor',
         variant: 'destructive',
       });
     } finally {
@@ -161,6 +231,20 @@ export default function Vendors() {
       tin: vendor.tin || '',
       notes: vendor.notes || '',
     });
+    setTaxResidence(vendor.taxProfile?.recipientResidence || '');
+    setTaxRegime(vendor.taxProfile?.taxRegime || '');
+    setPermanentEstablishment(
+      vendor.taxProfile?.recipientResidence === 'non_resident'
+        && typeof vendor.taxProfile.recipientHasTimorLestePermanentEstablishment === 'boolean'
+        ? vendor.taxProfile.recipientHasTimorLestePermanentEstablishment ? 'yes' : 'no'
+        : '',
+    );
+    setTreatyRatePercent(
+      vendor.taxProfile?.treatyRatePercent === undefined
+        ? ''
+        : String(vendor.taxProfile.treatyRatePercent),
+    );
+    setTreatyReference(vendor.taxProfile?.treatyReference || '');
     setShowAddDialog(true);
   };
 
@@ -201,6 +285,11 @@ export default function Vendors() {
       tin: '',
       notes: '',
     });
+    setTaxResidence('');
+    setTaxRegime('');
+    setPermanentEstablishment('');
+    setTreatyRatePercent('');
+    setTreatyReference('');
   };
 
   const openAddDialog = () => {
@@ -387,7 +476,7 @@ export default function Vendors() {
 
       {/* Add/Edit Vendor Dialog */}
       <Dialog open={canManageTenant && showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
               {editingVendor
@@ -453,6 +542,137 @@ export default function Vendors() {
                 />
               </div>
             </div>
+
+            {/* Residence/regime/treaty facts are accountant classifications. The
+                simple flow leaves taxProfile unset ("not configured") — which the
+                bill calculator treats as no supplier withholding. A profile saved
+                by an accountant survives normalo edits: handleEdit populates the
+                state above regardless of this gate. */}
+            {showAdvancedTax && (
+            <MoreDetailsSection
+              title={t('money.vendors.supplierTaxDetails') || 'Supplier tax details'}
+            >
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('money.vendors.supplierTaxHelp')
+                    || 'Required only when a bill may be subject to supplier withholding tax.'}
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>{t('money.vendors.taxResidence') || 'Tax residence'}</Label>
+                    <Select
+                      value={taxResidence || 'not_set'}
+                      onValueChange={(value) => {
+                        const residence = value === 'not_set'
+                          ? ''
+                          : value as 'resident' | 'non_resident';
+                        setTaxResidence(residence);
+                        if (residence !== 'non_resident') {
+                          setPermanentEstablishment('');
+                          setTreatyRatePercent('');
+                          setTreatyReference('');
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_set">
+                          {t('money.vendors.notConfigured') || 'Not configured'}
+                        </SelectItem>
+                        <SelectItem value="resident">
+                          {t('money.vendors.resident') || 'Timor-Leste resident'}
+                        </SelectItem>
+                        <SelectItem value="non_resident">
+                          {t('money.vendors.nonResident') || 'Non-resident'}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('money.vendors.taxRegime') || 'Tax regime'}</Label>
+                    <Select
+                      value={taxRegime || 'not_set'}
+                      onValueChange={(value) => {
+                        const regime = value === 'not_set'
+                          ? ''
+                          : value as 'domestic' | 'petroleum';
+                        setTaxRegime(regime);
+                        if (regime !== 'domestic') {
+                          setTreatyRatePercent('');
+                          setTreatyReference('');
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_set">
+                          {t('money.vendors.notConfigured') || 'Not configured'}
+                        </SelectItem>
+                        <SelectItem value="domestic">
+                          {t('money.vendors.domesticRegime') || 'Domestic tax regime'}
+                        </SelectItem>
+                        <SelectItem value="petroleum">
+                          {t('money.vendors.petroleumRegime') || 'Petroleum tax regime'}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {taxResidence === 'non_resident' && (
+                  <div className="space-y-2">
+                    <Label>
+                      {t('money.vendors.permanentEstablishment')
+                        || 'Permanent establishment in Timor-Leste?'}
+                    </Label>
+                    <Select
+                      value={permanentEstablishment || 'not_set'}
+                      onValueChange={(value) => setPermanentEstablishment(
+                        value === 'not_set' ? '' : value as 'yes' | 'no',
+                      )}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_set">
+                          {t('money.vendors.selectAnswer') || 'Select an answer'}
+                        </SelectItem>
+                        <SelectItem value="yes">{t('common.yes') || 'Yes'}</SelectItem>
+                        <SelectItem value="no">{t('common.no') || 'No'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {taxResidence === 'non_resident'
+                  && permanentEstablishment === 'no'
+                  && taxRegime === 'domestic' && (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{t('money.vendors.treatyRate') || 'Treaty rate'} (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={treatyRatePercent}
+                          onChange={(event) => setTreatyRatePercent(event.target.value)}
+                          placeholder={t('common.optional') || 'Optional'}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t('money.vendors.treatyReference') || 'Treaty evidence'}</Label>
+                        <Input
+                          value={treatyReference}
+                          onChange={(event) => setTreatyReference(event.target.value)}
+                          placeholder={t('money.vendors.treatyReferencePlaceholder')
+                            || 'Treaty and article'}
+                        />
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </MoreDetailsSection>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="address">{t('common.address') || 'Address'}</Label>

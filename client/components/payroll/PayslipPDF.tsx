@@ -445,8 +445,13 @@ const EARNING_CODES: Record<string, string> = {
   overtime: 'C_O',
   double_time: 'HD',
   holiday: 'FER',
+  night_shift: 'T_K',
+  rest_day: 'D_D',
+  sick_pay: 'D_M',
   bonus: 'BON',
   subsidio_anual: 'SB_A',
+  service_compensation: 'C_S',
+  non_cash_benefit: 'B_NM',
   commission: 'COM',
   tip: 'GOR',
   reimbursement: 'REM',
@@ -792,7 +797,9 @@ function CombinedLineItemsTable({
   const earnings: Row[] = record.earnings.map((e) => ({
     code: EARNING_CODES[e.type] || 'OUT',
     description: e.description,
-    ref: e.hours ? `${e.hours.toFixed(2)} ${s.hrs}` : undefined,
+    ref: e.hours
+      ? `${e.hours.toFixed(2)} ${s.hrs}${e.rate ? ` × ${formatCurrency(e.rate)}` : ''}`
+      : undefined,
     earning: e.amount,
   }));
 

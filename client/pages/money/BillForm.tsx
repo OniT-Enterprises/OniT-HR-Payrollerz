@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant, useTenantId } from '@/contexts/TenantContext';
+import { useAdvancedTax, useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
@@ -50,6 +50,10 @@ import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { addDaysISO, getTodayTL, formatDateTL } from '@/lib/dateUtils';
 import { calculateTaxedTotal } from '@/lib/accounting/calculations';
+import {
+  calculateTLBillSettlement,
+  type TLBillWithholdingCategory,
+} from '@/lib/tax/bill-withholding';
 import {
   ArrowLeft,
   Save,
@@ -84,6 +88,20 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
+const WITHHOLDING_CATEGORIES: Array<{
+  value: TLBillWithholdingCategory;
+  label: string;
+}> = [
+  { value: 'general_service', label: 'General service — non-resident' },
+  { value: 'construction', label: 'Construction activities' },
+  { value: 'construction_consulting', label: 'Construction consulting' },
+  { value: 'air_or_sea_transport', label: 'Air or sea transport' },
+  { value: 'mining_or_mining_support', label: 'Mining or mining support' },
+  { value: 'royalty', label: 'Royalty' },
+  { value: 'rent', label: 'Land or building rent' },
+  { value: 'prize', label: 'Prize or lottery winning' },
+];
+
 export default function BillForm() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -93,6 +111,7 @@ export default function BillForm() {
   const { canManage } = useTenant();
   const tenantId = useTenantId();
   const canManageTenant = canManage();
+  const showAdvancedTax = useAdvancedTax();
 
   const isNew = !id || id === 'new';
   const isEdit =
@@ -155,6 +174,7 @@ export default function BillForm() {
       amount: 0,
       taxRate: 0,
       category: 'other',
+      withholdingCategory: 'none',
       notes: '',
     },
   });
@@ -181,6 +201,7 @@ export default function BillForm() {
         amount: bill.amount,
         taxRate: bill.taxAmount > 0 ? (bill.taxAmount / bill.amount) * 100 : 0,
         category: bill.category,
+        withholdingCategory: bill.withholding?.category || 'none',
         notes: bill.notes || '',
       });
     }
@@ -198,6 +219,24 @@ export default function BillForm() {
   };
 
   const { taxAmount, total } = calculateTotals();
+  const selectedVendor = vendors.find((vendor) => vendor.id === formData.vendorId);
+  const selectedWithholdingCategory = formData.withholdingCategory || 'none';
+
+  const getWithholdingCategoryLabel = (category: TLBillWithholdingCategory) =>
+    t(`money.bills.withholdingCategories.${category}`)
+    || WITHHOLDING_CATEGORIES.find((option) => option.value === category)?.label
+    || category;
+
+  let paymentPreview: ReturnType<typeof calculateTLBillSettlement> | null = null;
+  let paymentPreviewError = '';
+  const parsedPaymentAmount = Number(paymentAmount);
+  if (bill && Number.isFinite(parsedPaymentAmount) && parsedPaymentAmount > 0) {
+    try {
+      paymentPreview = calculateTLBillSettlement(parsedPaymentAmount, bill.withholding);
+    } catch (error) {
+      paymentPreviewError = error instanceof Error ? error.message : 'Invalid withholding setup.';
+    }
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -247,6 +286,7 @@ export default function BillForm() {
         amount: Number(data.amount),
         taxRate: Number(data.taxRate),
         category: data.category as ExpenseCategory,
+        withholdingCategory: data.withholdingCategory,
         notes: data.notes || '',
       };
 
@@ -280,10 +320,12 @@ export default function BillForm() {
         });
         navigate(`/money/bills/${id}`);
       }
-    } catch (_error) {
+    } catch (error) {
       toast({
         title: t('common.error') || 'Error',
-        description: t('money.bills.saveError') || 'Failed to save bill',
+        description: error instanceof Error
+          ? error.message
+          : t('money.bills.saveError') || 'Failed to save bill',
         variant: 'destructive',
       });
     } finally {
@@ -304,7 +346,7 @@ export default function BillForm() {
   const handleRecordPayment = async () => {
     if (!bill || !canManageTenant || writeInFlight.current) return;
 
-    const amount = parseFloat(paymentAmount);
+    const amount = Number(paymentAmount);
     if (isNaN(amount) || amount <= 0) {
       toast({
         title: t('common.error') || 'Error',
@@ -333,10 +375,12 @@ export default function BillForm() {
       });
 
       setShowPaymentDialog(false);
-    } catch {
+    } catch (error) {
       toast({
         title: t('common.error') || 'Error',
-        description: t('money.payments.recordError') || 'Failed to record payment',
+        description: error instanceof Error
+          ? error.message
+          : t('money.payments.recordError') || 'Failed to record payment',
         variant: 'destructive',
       });
     } finally {
@@ -483,6 +527,28 @@ export default function BillForm() {
                   <p className="font-medium">{bill.description}</p>
                 </div>
 
+                {bill.withholding && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      {t('money.bills.supplierWithholding') || 'Supplier withholding'}
+                    </p>
+                    <p className="font-medium">
+                      {getWithholdingCategoryLabel(bill.withholding.category)} ·{' '}
+                      {(bill.withholding.rate * 100).toLocaleString(undefined, {
+                        maximumFractionDigits: 4,
+                      })}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {bill.withholding.collectionMethod === 'payer_withholding'
+                        ? t('money.bills.payerWithholds') || 'Your business withholds the tax when paying.'
+                        : bill.withholding.collectionMethod === 'recipient_self_withholding'
+                          ? t('money.bills.supplierSelfWithholds')
+                            || 'The supplier is responsible for the tax; do not reduce the payment.'
+                          : t('money.bills.noWithholdingDue') || 'No withholding is due for these saved facts.'}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">{t('money.bills.billDate') || 'Bill Date'}</p>
@@ -555,7 +621,11 @@ export default function BillForm() {
                 {bill.amountPaid > 0 && (
                   <>
                     <div className="flex justify-between text-green-600">
-                      <span>{t('money.bills.paid') || 'Paid'}</span>
+                      <span>
+                        {bill.withholding
+                          ? t('money.bills.grossSettled') || 'Gross bill amount settled'
+                          : t('money.bills.paid') || 'Paid'}
+                      </span>
                       <span>-{formatCurrency(bill.amountPaid)}</span>
                     </div>
                     <Separator />
@@ -583,10 +653,30 @@ export default function BillForm() {
                       className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
                       <div>
-                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
+                        <p className="font-medium">
+                          {payment.withholding
+                            ? `${t('money.bills.supplierReceives') || 'Supplier receives'}: `
+                            : ''}
+                          {formatCurrency(payment.cashPaid ?? payment.amount)}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {t(`money.payments.${payment.method}`) || payment.method} - {formatDate(payment.date)}
                         </p>
+                        {payment.withholdingTax !== undefined && payment.withholdingTax > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {t('money.bills.grossSettled') || 'Gross bill settled'}:{' '}
+                            {formatCurrency(payment.amount)} ·{' '}
+                            {t('money.bills.taxWithheld') || 'Tax withheld'}:{' '}
+                            {formatCurrency(payment.withholdingTax)}
+                          </p>
+                        )}
+                        {payment.withholding?.collectionMethod === 'recipient_self_withholding'
+                          && payment.taxDue !== undefined && payment.taxDue > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {t('money.bills.supplierTaxResponsibility') || 'Supplier tax responsibility'}:{' '}
+                              {formatCurrency(payment.taxDue)}
+                            </p>
+                          )}
                       </div>
                       {payment.notes && (
                         <p className="text-sm text-muted-foreground">{payment.notes}</p>
@@ -629,7 +719,7 @@ export default function BillForm() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>{t('common.amount') || 'Amount'}</Label>
+                <Label>{t('money.bills.grossSettled') || 'Gross bill amount settled'}</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -638,6 +728,34 @@ export default function BillForm() {
                   placeholder="0.00"
                 />
               </div>
+              {bill.withholding && paymentPreview && (
+                <div className="space-y-2 rounded-lg border bg-muted/40 p-3 text-sm">
+                  {paymentPreview.withholdingTax > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        {t('money.bills.taxWithheld') || 'Tax withheld'}
+                      </span>
+                      <span>{formatCurrency(paymentPreview.withholdingTax)}</span>
+                    </div>
+                  )}
+                  {paymentPreview.withholding?.collectionMethod === 'recipient_self_withholding'
+                    && paymentPreview.taxDue > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {t('money.bills.supplierTaxResponsibility') || 'Supplier tax responsibility'}
+                        </span>
+                        <span>{formatCurrency(paymentPreview.taxDue)}</span>
+                      </div>
+                    )}
+                  <div className="flex justify-between font-medium">
+                    <span>{t('money.bills.supplierReceives') || 'Supplier receives'}</span>
+                    <span>{formatCurrency(paymentPreview.cashPaid)}</span>
+                  </div>
+                </div>
+              )}
+              {paymentPreviewError && (
+                <p className="text-sm text-destructive" role="alert">{paymentPreviewError}</p>
+              )}
               <div className="space-y-2">
                 <Label>{t('money.payments.paymentMethod') || 'Payment Method'}</Label>
                 <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -804,7 +922,7 @@ export default function BillForm() {
               </div>
               <MoreDetailsSection>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>{t('money.bills.billNumber') || 'Bill Number'}</Label>
                       <Input
@@ -835,7 +953,7 @@ export default function BillForm() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>{t('money.invoices.taxRate') || 'Tax Rate'} (%)</Label>
                       <Controller
@@ -859,6 +977,49 @@ export default function BillForm() {
                         )}
                       />
                     </div>
+                    {/* Supplier withholding is an accountant classification. The simple
+                        flow keeps the safe default ('none' — no withholding); values set
+                        by an accountant survive edits because react-hook-form keeps
+                        unmounted field state. */}
+                    {showAdvancedTax && (
+                      <div className="space-y-2">
+                        <Label>
+                          {t('money.bills.supplierWithholding') || 'Supplier withholding'}
+                        </Label>
+                        <Controller
+                          name="withholdingCategory"
+                          control={control}
+                          render={({ field }) => (
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  {t('money.bills.noSupplierWithholding') || 'Not applicable'}
+                                </SelectItem>
+                                {WITHHOLDING_CATEGORIES.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {getWithholdingCategoryLabel(option.value)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {selectedWithholdingCategory !== 'none' && !selectedVendor?.taxProfile && (
+                          <p className="text-xs text-amber-700 dark:text-amber-400">
+                            {t('money.bills.vendorTaxProfileRequired')
+                              || 'Add tax residence and regime to this vendor before saving.'}
+                          </p>
+                        )}
+                        {selectedWithholdingCategory !== 'none'
+                          && selectedVendor?.taxProfile?.taxRegime === 'petroleum' && (
+                            <p className="text-xs text-destructive">
+                              {t('money.bills.petroleumUnsupported')
+                                || 'Petroleum-regime withholding is not supported by the domestic calculator.'}
+                            </p>
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

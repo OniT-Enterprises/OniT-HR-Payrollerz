@@ -15,13 +15,16 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useAdvancedTax } from "@/contexts/TenantContext";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
 
 import {
+  calculateHourlyRate,
   calculateTLPayroll,
   calculateSubsidioAnual,
   validateTLPayrollInput,
   type TLPayrollInput,
+  type TLBonusINSSCategory,
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
 import {
@@ -76,6 +79,7 @@ export function usePayrollCalculator({
 }: UsePayrollCalculatorOptions) {
   const { toast } = useToast();
   const { t } = useI18n();
+  const showAdvancedTax = useAdvancedTax();
 
   const [employeePayrollData, setEmployeePayrollData] = useState<EmployeePayrollData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -125,7 +129,13 @@ export function usePayrollCalculator({
     overtime: {
       standard: payrollConfig.overtimeRates.standard,
       sundayHoliday: payrollConfig.overtimeRates.sundayHoliday,
+      rounding: payrollConfig.hourlyRateConvention === 'fixed_190_round_up'
+        ? 'aggregate' as const
+        : 'per_component' as const,
     },
+    hourlyRate: payrollConfig.hourlyRateConvention === 'fixed_190_round_up'
+      ? { monthlyHoursDivisor: 190, rounding: 'up' as const }
+      : undefined,
     minimumWage: payrollConfig.minimumWage,
   }) : undefined, [payrollConfig]);
   const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
@@ -150,8 +160,7 @@ export function usePayrollCalculator({
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
     const monthlySalary = data.employee.compensation.monthlySalary || 0;
-    const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-    const hourlyRate = monthlySalary / monthlyHours;
+    const hourlyRate = calculateHourlyRate(monthlySalary, calculationConfig?.hourlyRate);
     const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
     const monthsWorkedThisYear = asOfDate.getMonth() + 1;
     const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
@@ -185,12 +194,15 @@ export function usePayrollCalculator({
       sickDaysUsed: data.sickDays,
       ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
       bonus: data.bonus,
+      bonusINSSCategory: data.bonusINSSCategory,
       commission: 0,
       perDiem: data.perDiem,
       foodAllowance: 0,
       transportAllowance: data.allowances,
       otherEarnings: 0,
       subsidioAnual,
+      nonCashBenefits: 0,
+      nonCashBenefitINSSCategory: null,
       taxInfo: {
         isResident,
         hasTaxExemption: isShareholder(data.employee),
@@ -254,6 +266,7 @@ export function usePayrollCalculator({
         sickDays: 0,
         perDiem: 0,
         bonus: 0,
+        bonusINSSCategory: null,
         allowances: 0,
         calculation: null,
         isEdited: false,
@@ -264,6 +277,7 @@ export function usePayrollCalculator({
           absenceHours: 0,
           lateArrivalMinutes: 0,
           bonus: 0,
+          bonusINSSCategory: null,
           perDiem: 0,
           allowances: 0,
         },
@@ -304,6 +318,7 @@ export function usePayrollCalculator({
     updated.absenceHours !== updated.originalValues.absenceHours ||
     updated.lateArrivalMinutes !== updated.originalValues.lateArrivalMinutes ||
     updated.bonus !== updated.originalValues.bonus ||
+    updated.bonusINSSCategory !== updated.originalValues.bonusINSSCategory ||
     updated.perDiem !== updated.originalValues.perDiem ||
     updated.allowances !== updated.originalValues.allowances;
 
@@ -331,10 +346,33 @@ export function usePayrollCalculator({
         if (d.employee.id !== employeeId) return d;
 
         const updated = { ...d, [field]: value };
+        // Simple flow never shows the INSS category select, so a paid bonus is
+        // auto-classified as individual performance — DL 20/2017 Art. 8's
+        // contributable case, the conservative default (never under-remits
+        // INSS). Accountants (advanced mode) must classify it themselves.
+        if (field === "bonus" && !showAdvancedTax) {
+          updated.bonusINSSCategory = value > 0
+            ? (d.bonusINSSCategory ?? "individual_performance")
+            : null;
+        }
         const isEdited = checkIsEdited(updated);
         const withEdit = { ...updated, isEdited };
         return { ...withEdit, calculation: calculateForEmployee(withEdit) };
       })
+    );
+  }, [calculateForEmployee, showAdvancedTax]);
+
+  const handleBonusCategoryChange = useCallback((
+    employeeId: string,
+    category: TLBonusINSSCategory,
+  ) => {
+    setEmployeePayrollData((previous) =>
+      previous.map((data) => {
+        if (data.employee.id !== employeeId) return data;
+        const updated = { ...data, bonusINSSCategory: category };
+        const withEdit = { ...updated, isEdited: checkIsEdited(updated) };
+        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
+      }),
     );
   }, [calculateForEmployee]);
 
@@ -352,6 +390,7 @@ export function usePayrollCalculator({
           absenceHours: d.originalValues.absenceHours,
           lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
           bonus: d.originalValues.bonus,
+          bonusINSSCategory: d.originalValues.bonusINSSCategory,
           perDiem: d.originalValues.perDiem,
           allowances: d.originalValues.allowances,
           isEdited: false,
@@ -611,8 +650,7 @@ export function usePayrollCalculator({
     const allErrors: string[] = [];
     for (const data of includedData) {
       const monthlySalary = data.employee.compensation.monthlySalary || 0;
-      const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-      const hourlyRate = monthlySalary / monthlyHours;
+      const hourlyRate = calculateHourlyRate(monthlySalary, calculationConfig?.hourlyRate);
       const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
       const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
@@ -645,12 +683,15 @@ export function usePayrollCalculator({
         sickDaysUsed: data.sickDays,
         ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
         bonus: data.bonus,
+        bonusINSSCategory: data.bonusINSSCategory,
         commission: 0,
         perDiem: data.perDiem,
         foodAllowance: 0,
         transportAllowance: data.allowances,
         otherEarnings: 0,
         subsidioAnual,
+        nonCashBenefits: 0,
+        nonCashBenefitINSSCategory: null,
         taxInfo: {
           isResident,
           hasTaxExemption: isShareholder(data.employee),
@@ -714,10 +755,13 @@ export function usePayrollCalculator({
       holidayHours: d.holidayHours,
       ptoHoursUsed: 0,
       sickHoursUsed: d.sickDays * 8,
-      hourlyRate: (d.employee.compensation.monthlySalary || 0) / ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
+      hourlyRate: calculateHourlyRate(
+        d.employee.compensation.monthlySalary || 0,
+        calculationConfig?.hourlyRate,
+      ),
       overtimeRate: calculationConfig?.overtime?.standard ?? TL_OVERTIME_RATES.standard,
       earnings: d.calculation!.earnings.map((earning) => ({
-        type: (['regular','overtime','double_time','holiday','bonus','subsidio_anual','commission','tip','reimbursement','allowance'].includes(earning.type)
+        type: (['regular','overtime','double_time','holiday','night_shift','rest_day','sick_pay','bonus','subsidio_anual','service_compensation','non_cash_benefit','commission','tip','reimbursement','allowance'].includes(earning.type)
           ? earning.type
           : ['per_diem','food_allowance','transport_allowance','housing_allowance','travel_allowance'].includes(earning.type)
             ? 'allowance'
@@ -800,6 +844,7 @@ export function usePayrollCalculator({
 
     // Actions
     handleInputChange,
+    handleBonusCategoryChange,
     handleResetRow,
     toggleRowExpansion,
     handleSyncFromAttendance,

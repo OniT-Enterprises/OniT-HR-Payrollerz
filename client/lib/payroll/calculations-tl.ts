@@ -17,12 +17,17 @@ import {
   TL_WORKING_HOURS,
   TL_SICK_LEAVE,
   TL_SUBSIDIO_ANUAL,
+  TL_SERVICE_COMPENSATION,
+  TL_NON_CASH_BENEFITS,
   TL_PAY_PERIODS,
   TLPayFrequency,
 } from './constants-tl';
 import {
   divideMoney,
+  divideMoneyRoundUp,
   multiplyMoney,
+  multiplyMoneyByFactors,
+  multiplyMoneyPartsToRoundedTotal,
   applyRate,
   addMoney,
   subtractMoney,
@@ -48,10 +53,31 @@ export interface TLPayrollCalculationConfig {
     residentThreshold: number;
   };
   inss?: { employeeRate: number; employerRate: number };
-  overtime?: { standard: number; sundayHoliday: number };
+  overtime?: {
+    standard: number;
+    sundayHoliday: number;
+    /** Whether overtime categories round separately or once as a combined total. */
+    rounding?: 'per_component' | 'aggregate';
+  };
   minimumWage?: number;
   maxOvertimePerWeek?: number;
+  nonCashBenefits?: { monthlyTaxableThreshold: number };
+  /** Contract/accounting convention for deriving a salaried worker's hourly rate. */
+  hourlyRate?: {
+    monthlyHoursDivisor: number;
+    rounding: 'nearest' | 'up';
+  };
 }
+
+export type TLBonusINSSCategory =
+  | 'individual_performance'
+  | 'company_profit'
+  | 'extraordinary';
+
+export type TLNonCashBenefitINSSCategory =
+  | 'regular_remuneration'
+  | 'expense_allowance'
+  | 'extraordinary';
 
 export interface TLPayrollInput {
   employeeId: string;
@@ -83,12 +109,23 @@ export interface TLPayrollInput {
 
   // Additional earnings
   bonus: number;
+  /**
+   * INSS classification required by DL 20/2017 Arts. 8-9. It may be null only
+   * when bonus is zero; payroll refuses to guess the treatment of a paid award.
+   */
+  bonusINSSCategory: TLBonusINSSCategory | null;
   commission: number;
   perDiem: number;               // Per diem / travel allowance (excluded from INSS base)
   foodAllowance: number;         // Food subsidy (excluded from INSS base)
   transportAllowance: number;
   otherEarnings: number;
   subsidioAnual?: number;        // 13th month salary / annual subsidy (paid in a specific run)
+  /** When present, Art. 56 service compensation is derived from salary and service dates. */
+  terminationDate?: string;
+  /** Monthly benefit in kind. It is compensation, but is not cash paid in payroll. */
+  nonCashBenefits: number;
+  /** Required for a non-zero benefit because the $20 rule governs WIT, not INSS. */
+  nonCashBenefitINSSCategory: TLNonCashBenefitINSSCategory | null;
 
   // Tax info
   taxInfo: TLEmployeeTaxInfo;
@@ -121,6 +158,8 @@ export interface TLPayrollEarning {
   amount: number;
   isTaxable: boolean;
   isINSSBase: boolean;
+  /** False for benefits in kind that affect tax but must not inflate cash net pay. */
+  isCash?: boolean;
 }
 
 export interface TLPayrollDeduction {
@@ -146,9 +185,13 @@ export interface TLPayrollResult {
   transportAllowance: number;
   otherEarnings: number;
   subsidioAnual: number;
+  serviceCompensation: number;
+  nonCashBenefits: number;
 
   // Totals
-  grossPay: number;              // Total earnings
+  grossPay: number;              // Cash earnings before attendance reductions
+  cashGrossPay: number;          // Explicit alias for grossPay at integration boundaries
+  totalCompensation: number;     // Cash plus benefits in kind
   wagesPaid: number;             // Gross earnings less unpaid absence/late reductions
   taxableIncome: number;         // Taxable wages after absence/late reductions
   witTaxableAmount: number;      // Amount to which the WIT rate was applied
@@ -222,7 +265,7 @@ function calculateRegularPay(
  * Calculate overtime pay
  * Uses decimal.js for precise currency calculations
  */
-function calculateOvertimePay(
+export function calculateOvertimePay(
   hourlyRate: number,
   overtimeHours: number,
   nightShiftHours: number,
@@ -235,22 +278,40 @@ function calculateOvertimePay(
   holiday: number;
   restDay: number;
 } {
+  const standardRate = config?.standard ?? TL_OVERTIME_RATES.standard;
+  const sundayHolidayRate = config?.sundayHoliday ?? TL_OVERTIME_RATES.publicHoliday;
+
+  if (config?.rounding === 'aggregate') {
+    const [overtime, nightShift, holiday, restDay] =
+      multiplyMoneyPartsToRoundedTotal(hourlyRate, [
+        [overtimeHours, standardRate],
+        [nightShiftHours, TL_OVERTIME_RATES.nightShiftPremium],
+        [holidayHours, sundayHolidayRate],
+        [restDayHours, sundayHolidayRate],
+      ]);
+    return { overtime, nightShift, holiday, restDay };
+  }
+
   return {
-    overtime: multiplyMoney(
-      multiplyMoney(hourlyRate, overtimeHours),
-      config?.standard ?? TL_OVERTIME_RATES.standard,
+    overtime: multiplyMoneyByFactors(
+      hourlyRate,
+      overtimeHours,
+      standardRate,
     ),
-    nightShift: multiplyMoney(
-      multiplyMoney(hourlyRate, nightShiftHours),
+    nightShift: multiplyMoneyByFactors(
+      hourlyRate,
+      nightShiftHours,
       TL_OVERTIME_RATES.nightShiftPremium,
     ),
-    holiday: multiplyMoney(
-      multiplyMoney(hourlyRate, holidayHours),
-      config?.sundayHoliday ?? TL_OVERTIME_RATES.publicHoliday,
+    holiday: multiplyMoneyByFactors(
+      hourlyRate,
+      holidayHours,
+      sundayHolidayRate,
     ),
-    restDay: multiplyMoney(
-      multiplyMoney(hourlyRate, restDayHours),
-      config?.sundayHoliday ?? TL_OVERTIME_RATES.restDay,
+    restDay: multiplyMoneyByFactors(
+      hourlyRate,
+      restDayHours,
+      sundayHolidayRate,
     ),
   };
 }
@@ -259,10 +320,21 @@ function calculateOvertimePay(
  * Calculate hourly rate from monthly salary
  * Uses decimal.js for precise currency calculations
  */
-export function calculateHourlyRate(monthlySalary: number): number {
-  // 44 hours/week * ~4.33 weeks/month = ~190.5 hours/month
-  const monthlyHours = TL_WORKING_HOURS.standardWeeklyHours * (52 / 12);
-  return divideMoney(monthlySalary, monthlyHours);
+export function calculateHourlyRate(
+  monthlySalary: number,
+  convention?: TLPayrollCalculationConfig['hourlyRate'],
+): number {
+  // Labour Law 4/2012 fixes the maximum at 44 hours/week but does not prescribe
+  // a monthly conversion divisor. Keep the annualized default and allow the
+  // contract/accounting convention to be selected explicitly.
+  const monthlyHours = convention?.monthlyHoursDivisor
+    ?? TL_WORKING_HOURS.standardWeeklyHours * (52 / 12);
+  if (!Number.isFinite(monthlyHours) || monthlyHours <= 0) {
+    throw new RangeError('Monthly hours divisor must be a positive finite number.');
+  }
+  return convention?.rounding === 'up'
+    ? divideMoneyRoundUp(monthlySalary, monthlyHours)
+    : divideMoney(monthlySalary, monthlyHours);
 }
 
 /**
@@ -297,7 +369,7 @@ function calculateSickPay(
  * - Non-residents: 10% on all income
  * Uses decimal.js for precise currency calculations
  */
-function calculateIncomeTax(
+export function calculateIncomeTax(
   taxableIncome: number,
   isResident: boolean,
   payFrequency: TLPayFrequency,
@@ -358,6 +430,106 @@ export function calculateINSS(
     employee,
     employer,
     total: addMoney(employee, employer),
+  };
+}
+
+interface PlainISODate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+function parsePlainISODate(value: string, fieldName: string): PlainISODate {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) {
+    throw new RangeError(`${fieldName} must use YYYY-MM-DD format.`);
+  }
+
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (
+    check.getUTCFullYear() !== year ||
+    check.getUTCMonth() !== month - 1 ||
+    check.getUTCDate() !== day
+  ) {
+    throw new RangeError(`${fieldName} is not a valid calendar date.`);
+  }
+
+  return { year, month, day };
+}
+
+/**
+ * Calculate the universal service compensation due on termination.
+ *
+ * Labour Law 4/2012, Art. 56 grants one monthly salary for each completed
+ * five-year period, regardless of the cause of termination. This is distinct
+ * from a court-awarded unlawful-dismissal indemnity under Art. 55.
+ */
+export function calculateServiceCompensation(
+  monthlySalary: number,
+  hireDate: string,
+  terminationDate: string,
+): number {
+  return calculateServiceCompensationDetails(
+    monthlySalary,
+    hireDate,
+    terminationDate,
+  ).amount;
+}
+
+export interface TLServiceCompensationDetails {
+  monthlySalary: number;
+  hireDate: string;
+  terminationDate: string;
+  completedYears: number;
+  completedFiveYearPeriods: number;
+  salaryMonths: number;
+  amount: number;
+}
+
+/** Return the auditable service facts behind the Article 56 amount. */
+export function calculateServiceCompensationDetails(
+  monthlySalary: number,
+  hireDate: string,
+  terminationDate: string,
+): TLServiceCompensationDetails {
+  if (!Number.isFinite(monthlySalary)) {
+    throw new RangeError('Monthly salary must be a finite amount.');
+  }
+  if (monthlySalary < 0) {
+    throw new RangeError('Monthly salary cannot be negative.');
+  }
+
+  const hire = parsePlainISODate(hireDate, 'Hire date');
+  const termination = parsePlainISODate(terminationDate, 'Termination date');
+  const hireKey = hire.year * 10_000 + hire.month * 100 + hire.day;
+  const terminationKey = termination.year * 10_000 + termination.month * 100 + termination.day;
+  if (terminationKey < hireKey) {
+    throw new RangeError('Termination date cannot be before hire date.');
+  }
+
+  let completedYears = termination.year - hire.year;
+  if (
+    termination.month < hire.month ||
+    (termination.month === hire.month && termination.day < hire.day)
+  ) {
+    completedYears -= 1;
+  }
+
+  const completedFiveYearPeriods = Math.floor(
+    completedYears / TL_SERVICE_COMPENSATION.completedYearsPerSalaryMonth,
+  );
+  return {
+    monthlySalary,
+    hireDate,
+    terminationDate,
+    completedYears,
+    completedFiveYearPeriods,
+    salaryMonths: completedFiveYearPeriods,
+    amount: multiplyMoney(monthlySalary, completedFiveYearPeriods),
   };
 }
 
@@ -437,7 +609,7 @@ export function calculateTLPayroll(
   // Calculate hourly rate for overtime/deductions
   const hourlyRate = input.isHourly && input.hourlyRate
     ? input.hourlyRate
-    : calculateHourlyRate(input.monthlySalary);
+    : calculateHourlyRate(input.monthlySalary, config?.hourlyRate);
 
   const dailyRate = multiplyMoney(hourlyRate, TL_WORKING_HOURS.standardDailyHours);
 
@@ -559,13 +731,20 @@ export function calculateTLPayroll(
 
   // Bonus
   if (input.bonus > 0) {
+    if (!input.bonusINSSCategory) {
+      throw new RangeError(
+        'Bonus INSS category is required: individual performance, company profit, or extraordinary.',
+      );
+    }
     earnings.push({
       type: 'bonus',
       description: 'Bonus',
       descriptionTL: 'Bónus',
       amount: input.bonus,
       isTaxable: true,
-      isINSSBase: false,
+      // DL 20/2017 Art. 8 includes individual performance/productivity pay;
+      // Art. 9 excludes company-profit awards and extraordinary benefits.
+      isINSSBase: input.bonusINSSCategory === 'individual_performance',
     });
   }
 
@@ -577,8 +756,9 @@ export function calculateTLPayroll(
       descriptionTL: 'Komisaun',
       amount: input.commission,
       isTaxable: true,
-      // INSS excludes commissions/gratuities per INSS contribution guidance.
-      isINSSBase: false,
+      // Commission is individual performance/productivity remuneration under
+      // DL 20/2017 Art. 8, rather than an Art. 9 company-profit gratuity.
+      isINSSBase: true,
     });
   }
 
@@ -643,10 +823,58 @@ export function calculateTLPayroll(
     });
   }
 
+  // Universal service compensation (Labour Law 4/2012, Art. 56). Tax Law
+  // 8/2008 Art. 1 includes termination compensation in salary for WIT. This
+  // Art. 56 payment is not the fixed-term unlawful-dismissal indemnity added to
+  // the INSS base by DL 30/2021, so it is not contributable here.
+  const serviceCompensation = Math.max(
+    0,
+    input.terminationDate
+      ? calculateServiceCompensation(input.monthlySalary, input.hireDate, input.terminationDate)
+      : 0,
+  );
+  if (serviceCompensation > 0) {
+    earnings.push({
+      type: 'service_compensation',
+      description: 'Termination Service Compensation',
+      descriptionTL: 'Kompensasaun Servisu Terminasaun',
+      amount: serviceCompensation,
+      isTaxable: true,
+      isINSSBase: false,
+    });
+  }
+
+  const nonCashBenefits = Math.max(0, input.nonCashBenefits);
+  const nonCashThreshold =
+    config?.nonCashBenefits?.monthlyTaxableThreshold ??
+    TL_NON_CASH_BENEFITS.monthlyTaxableThreshold;
+  if (nonCashBenefits > 0) {
+    if (!input.nonCashBenefitINSSCategory) {
+      throw new RangeError(
+        'Non-cash benefit INSS category is required: regular remuneration, expense allowance, or extraordinary.',
+      );
+    }
+    earnings.push({
+      type: 'non_cash_benefit',
+      description: 'Non-cash Benefits',
+      descriptionTL: 'Benefísiu La-Os Osan',
+      amount: nonCashBenefits,
+      // Tax Law 8/2008 Art. 1 uses a strict "greater than $20" test. Once
+      // crossed, the benefit is salary; the law does not state an excess-only rule.
+      isTaxable: nonCashBenefits > nonCashThreshold,
+      // Labour Law Art. 2(t) includes regular pay in cash or in kind;
+      // DL 20/2017 Art. 9 excludes expense allowances and extraordinary benefits.
+      isINSSBase: input.nonCashBenefitINSSCategory === 'regular_remuneration',
+      isCash: false,
+    });
+  }
+
   // ========== CALCULATE TOTALS ==========
   // Use decimal.js for precise currency summation
 
-  const grossPay = sumMoney(earnings.map(e => e.amount));
+  const totalCompensation = sumMoney(earnings.map(e => e.amount));
+  const grossPay = sumMoney(earnings.filter(e => e.isCash !== false).map(e => e.amount));
+  const cashGrossPay = grossPay;
   const taxableEarnings = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
   const inssBase = sumMoney(earnings.filter(e => e.isINSSBase).map(e => e.amount));
 
@@ -680,7 +908,7 @@ export function calculateTLPayroll(
   // payslip deductions, but report statutory wages and employer cost after the
   // reduction. This also nets the separate sick-pay earning against the absent
   // hours for salaried staff.
-  const wagesPaid = Math.max(0, subtractMoney(grossPay, absenceDeduction, lateDeduction));
+  const wagesPaid = Math.max(0, subtractMoney(cashGrossPay, absenceDeduction, lateDeduction));
   const taxableIncome = Math.max(
     0,
     subtractMoney(taxableEarnings, absenceDeduction, lateDeduction),
@@ -828,8 +1056,12 @@ export function calculateTLPayroll(
   // Use decimal.js for precise final totals
 
   const totalDeductions = sumMoney(finalDeductions.map(d => d.amount));
-  const netPay = subtractMoney(grossPay, totalDeductions);
-  const totalEmployerCost = addMoney(wagesPaid, inss.employer);
+  const netPay = subtractMoney(cashGrossPay, totalDeductions);
+  const totalCompensationPaid = Math.max(
+    0,
+    subtractMoney(totalCompensation, absenceDeduction, lateDeduction),
+  );
+  const totalEmployerCost = addMoney(totalCompensationPaid, inss.employer);
   const finalDeductionAmount = (type: string): number => sumMoney(
     finalDeductions.filter(deduction => deduction.type === type).map(deduction => deduction.amount),
   );
@@ -864,9 +1096,13 @@ export function calculateTLPayroll(
     transportAllowance: input.transportAllowance,
     otherEarnings: input.otherEarnings,
     subsidioAnual,
+    serviceCompensation,
+    nonCashBenefits,
 
     // Totals
     grossPay,
+    cashGrossPay,
+    totalCompensation,
     wagesPaid,
     taxableIncome,
     witTaxableAmount,
@@ -1010,6 +1246,30 @@ export function validateTLPayrollInput(
 
   if (input.regularHours < 0) {
     errors.push('Regular hours cannot be negative.');
+  }
+
+  if (input.nonCashBenefits < 0) {
+    errors.push('Non-cash benefits cannot be negative.');
+  }
+
+  if (input.nonCashBenefits > 0 && !input.nonCashBenefitINSSCategory) {
+    errors.push(
+      'Non-cash benefit INSS category is required: regular remuneration, expense allowance, or extraordinary.',
+    );
+  }
+
+  if (input.bonus > 0 && !input.bonusINSSCategory) {
+    errors.push(
+      'Bonus INSS category is required: individual performance, company profit, or extraordinary.',
+    );
+  }
+
+  if (input.terminationDate) {
+    try {
+      calculateServiceCompensation(input.monthlySalary, input.hireDate, input.terminationDate);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : 'Termination dates are invalid.');
+    }
   }
 
   const maxOvertimePerWeek = config?.maxOvertimePerWeek ?? TL_WORKING_HOURS.maxOvertimePerWeek;

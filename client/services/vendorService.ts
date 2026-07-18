@@ -22,6 +22,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { omitUndefinedValues } from '@/lib/firestorePayload';
+import { normalizeTLVendorTaxProfile } from '@/lib/tax/bill-withholding';
 import type { Vendor, VendorFormData } from '@/types/money';
 
 /**
@@ -197,8 +199,18 @@ class VendorService {
    * Create a new vendor
    */
   async createVendor(tenantId: string, data: VendorFormData): Promise<string> {
-    const vendor: Omit<Vendor, 'id'> = {
+    const normalizedData = omitUndefinedValues({
       ...data,
+      ...(data.taxProfile === undefined
+        ? {}
+        : {
+            taxProfile: data.taxProfile === null
+              ? null
+              : normalizeTLVendorTaxProfile(data.taxProfile),
+          }),
+    });
+    const vendor: Omit<Vendor, 'id'> = {
+      ...normalizedData,
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -221,9 +233,19 @@ class VendorService {
     id: string,
     data: Partial<VendorFormData>
   ): Promise<boolean> {
+    const normalizedData = omitUndefinedValues({
+      ...data,
+      ...(data.taxProfile === undefined
+        ? {}
+        : {
+            taxProfile: data.taxProfile === null
+              ? null
+              : normalizeTLVendorTaxProfile(data.taxProfile),
+          }),
+    });
     const docRef = doc(db, paths.vendor(tenantId, id));
     await updateDoc(docRef, {
-      ...data,
+      ...normalizedData,
       updatedAt: serverTimestamp(),
     });
     return true;

@@ -75,7 +75,7 @@ export function WizardStepPeriod({
                 <div className={cn(
                   "p-3 rounded-2xl transition-all",
                   isSelected
-                    ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/25"
+                    ? "border-primary bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground"
                 )}>
                   <Icon className="h-6 w-6" />

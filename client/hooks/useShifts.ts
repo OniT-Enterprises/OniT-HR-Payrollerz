@@ -16,14 +16,14 @@ const shiftKeys = {
 /**
  * Fetch shifts for a date range (typically a week)
  */
-export function useShiftsByRange(startDate: string, endDate: string) {
+export function useShiftsByRange(startDate: string, endDate: string, enabled = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: shiftKeys.byRange(tenantId, startDate, endDate),
     queryFn: () => shiftService.getShiftsByDateRange(tenantId, startDate, endDate),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    enabled: !!tenantId && !!startDate && !!endDate,
+    enabled: !!tenantId && !!startDate && !!endDate && enabled,
   });
 }
 

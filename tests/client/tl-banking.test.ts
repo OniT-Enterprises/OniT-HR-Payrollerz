@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateTLIban } from '@/lib/tlBanking';
+import { ATTL_TAX_ACCOUNTS, validateTLIban } from '@/lib/tlBanking';
 import {
   generateBankFile,
   validateBankTransferRecords,
@@ -15,6 +15,13 @@ describe('TL IBAN validation', () => {
     expect(result.bankCode).toBe('002');
     expect(result.bankName).toContain('BNU');
     expect(result.formatted).toBe('TL38 0020 0028 6442 1000 162');
+  });
+
+  it('accepts the published ATTL special-withholding account', () => {
+    const result = validateTLIban(ATTL_TAX_ACCOUNTS.accounts.specialWithholdingTax);
+    expect(result.valid).toBe(true);
+    expect(result.iban).toBe('TL380020002868301000162');
+    expect(result.bankName).toContain('BNU');
   });
 
   it('rejects wrong check digits, wrong length, and non-TL prefixes', () => {

@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import {
-  FileText,
+  SquarePen,
   Plus,
   Search,
   Eye,
@@ -582,7 +582,8 @@ export default function JournalEntries() {
         <PageHeader
           title={t("accounting.journalEntries.title")}
           subtitle={t("accounting.journalEntries.subtitle")}
-          icon={FileText}
+          cardIcon="ac-journal"
+          icon={SquarePen}
           iconColor="text-orange-500"
           actions={canManageTenant ? (
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

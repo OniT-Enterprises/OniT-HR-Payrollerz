@@ -68,6 +68,7 @@ import {
   useMarkTaxFilingAsFiled,
 } from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
 import type {
   FilingDueDate,
   MonthlyINSSReturn,
@@ -196,9 +197,14 @@ export default function INSSMonthly() {
       });
     } catch (error) {
       console.error("Failed to generate INSS return:", error);
+      const reviewFlag = getStatutoryReviewFlag(error);
       toast({
-        title: t("reports.inssMonthly.toast.generateErrorTitle"),
-        description: t("reports.inssMonthly.toast.generateErrorDescription"),
+        title: reviewFlag
+          ? t("common.needsReviewTitle")
+          : t("reports.inssMonthly.toast.generateErrorTitle"),
+        description: reviewFlag
+          ? t("common.needsReviewDesc", { field: reviewFlag.field })
+          : t("reports.inssMonthly.toast.generateErrorDescription"),
         variant: "destructive",
       });
     }
@@ -282,9 +288,14 @@ export default function INSSMonthly() {
       });
     } catch (error) {
       console.error("Error exporting INSS DR Excel:", error);
+      const reviewFlag = getStatutoryReviewFlag(error);
       toast({
-        title: t("common.error") || "Error",
-        description: t("reports.inssMonthly.toast.drExportError") || "Could not export the DR Excel file",
+        title: reviewFlag
+          ? t("common.needsReviewTitle")
+          : t("common.error") || "Error",
+        description: reviewFlag
+          ? t("common.needsReviewDesc", { field: reviewFlag.field })
+          : t("reports.inssMonthly.toast.drExportError") || "Could not export the DR Excel file",
         variant: "destructive",
       });
     }

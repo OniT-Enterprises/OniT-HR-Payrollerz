@@ -125,7 +125,7 @@ export default function Cashflow() {
             openingCutoff,
           ))),
           invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
-          billService.getPaidBillAmountByDateRange(tenantId, startStr, endStr),
+          billService.getCashPaidByDateRange(tenantId, startStr, endStr),
           expenseService.getTotalExpenses(tenantId, startStr, endStr),
         ]);
         const cashIds = new Set(cashAccounts.map((account) => account.id));
@@ -174,10 +174,10 @@ export default function Cashflow() {
         priorExpenses,
       ] = await Promise.all([
         invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
-        billService.getPaidBillAmountByDateRange(tenantId, startStr, endStr),
+        billService.getCashPaidByDateRange(tenantId, startStr, endStr),
         expenseService.getTotalExpenses(tenantId, startStr, endStr),
         invoiceService.getPaidInvoiceTotalAsOf(tenantId, openingCutoff),
-        billService.getPaidBillAmountAsOf(tenantId, openingCutoff),
+        billService.getCashPaidAsOf(tenantId, openingCutoff),
         expenseService.getTotalExpensesAsOf(tenantId, openingCutoff),
       ]);
 

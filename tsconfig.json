@@ -27,7 +27,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./client/*"],
-      "@shared/*": ["./shared/*"]
+      "@shared/*": ["./shared/*"],
+      "lucide-react": ["./client/lib/lucide-react-shim.tsx"]
     }
   },
   "include": [

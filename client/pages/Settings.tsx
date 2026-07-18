@@ -30,6 +30,7 @@ import {
   CompanyDetailsTab,
   CompanyStructureTab,
   PaymentStructureTab,
+  AdvancedTaxModeCard,
 } from "@/components/settings";
 
 export default function Settings() {
@@ -207,6 +208,8 @@ export default function Settings() {
             {tenantId && <QuickBooksSettings tenantId={tenantId} />}
           </TabsContent>
         </Tabs>
+
+        <AdvancedTaxModeCard />
       </div>
     </div>
   );

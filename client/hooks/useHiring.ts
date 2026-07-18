@@ -278,6 +278,18 @@ export function useUpdateChecklistItem() {
   });
 }
 
+export function useSaveArticle56FinalPay() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ caseId, calculatedBy }: { caseId: string; calculatedBy: string }) =>
+      offboardingService.saveArticle56FinalPay(tenantId, caseId, calculatedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
+    },
+  });
+}
+
 export function useUpdateExitInterviewField() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();

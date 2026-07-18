@@ -505,7 +505,7 @@ const sitemapData: SitemapSection[] = [
 ];
 
 export default function Sitemap() {
-  const { session, hasModule, canManage } = useTenant();
+  const { session, hasModule, canManage, showAdvancedTax } = useTenant();
   const { isSuperAdmin } = useAuth();
   const canManageTenant = canManage();
   const canManageTeam = canManageTenant || session?.role === 'manager';
@@ -587,6 +587,13 @@ export default function Sitemap() {
       return hasModule('payroll') && canManageTenant;
     }
 
+    if (
+      path === '/payroll/tax/monthly-wit' ||
+      path === '/payroll/tax/clearance'
+    ) {
+      return hasModule('payroll') && canManageTenant && showAdvancedTax;
+    }
+
     if (path.startsWith('/payroll/tax')) {
       return hasModule('payroll') && canManageTenant;
     }
@@ -630,15 +637,17 @@ export default function Sitemap() {
         return hasModule('money') && canManageTeam;
       }
       if (
-        path === '/money/financials/reconciliation' ||
-        path === '/money/financials/vat-returns'
+        path === '/money/financials/vat-returns' ||
+        path === '/money/financials/vat-settings'
       ) {
+        return hasModule('money') && canManageTenant && showAdvancedTax;
+      }
+      if (path === '/money/financials/reconciliation') {
         return hasModule('money') && canManageTenant;
       }
       if (
         path === '/money/invoices/settings' ||
-        path === '/money/invoices/recurring' ||
-        path === '/money/financials/vat-settings'
+        path === '/money/invoices/recurring'
       ) {
         return hasModule('money') && canManageTenant;
       }

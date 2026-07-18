@@ -5,7 +5,7 @@
  * the same infrastructure as the chat widget.
  */
 
-import { auth } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-core";
 
 const API_BASE = import.meta.env.VITE_XEFE_API_URL || import.meta.env.VITE_MEZA_API_URL || "https://xefe.tl";
 

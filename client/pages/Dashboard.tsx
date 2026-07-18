@@ -89,13 +89,13 @@ function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={t("dashboard.botPlaceholder")}
-          className="flex-1 h-9 px-4 rounded-full border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          className="h-11 flex-1 rounded-full border border-border bg-background px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary md:h-9 md:text-sm"
         />
         <button
           type="submit"
           disabled={!input.trim()}
           aria-label={t("dashboard.botPlaceholder")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 md:h-9 md:w-9"
         >
           <Send className="h-3.5 w-3.5" />
         </button>
@@ -122,7 +122,7 @@ function DashboardSkeleton() {
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
+            <Card key={i} className={i === 3 ? "hidden sm:block" : undefined}>
               <CardContent className="p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <Skeleton className="h-8 w-8 rounded-lg" />
@@ -376,7 +376,10 @@ export default function Dashboard() {
               </button>
             )}
             {hasTimeleave && (
-              <button onClick={() => navigate("/time-leave/leave")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-cyan-400/40 hover:shadow-md">
+              <button
+                onClick={() => navigate("/time-leave/leave")}
+                className={`group rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-cyan-400/40 ${hasPayroll && hasStaff ? "hidden sm:block" : ""}`}
+              >
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10">
                     <CalendarDays className="h-4 w-4 text-cyan-500" />

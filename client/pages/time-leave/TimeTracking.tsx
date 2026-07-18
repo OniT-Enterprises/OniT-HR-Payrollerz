@@ -483,7 +483,7 @@ export default function TimeTracking() {
         <PageHeader
           title={t("timeLeave.timeTracking.title")}
           subtitle={t("timeLeave.timeTracking.subtitle")}
-          icon={Clock}
+          cardIcon="tl-timetracking" icon={Clock}
           iconColor="text-cyan-500"
           actions={
             <Button

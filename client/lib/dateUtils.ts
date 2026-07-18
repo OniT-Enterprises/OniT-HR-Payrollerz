@@ -9,6 +9,15 @@
 
 // Timor-Leste timezone
 const TL_TIMEZONE = 'Asia/Dili';
+const APP_LOCALE_STORAGE_KEY = 'onit:locale';
+
+function getDisplayLocale(): string {
+  if (typeof window === 'undefined') return 'en-GB';
+  const locale = window.localStorage.getItem(APP_LOCALE_STORAGE_KEY);
+  if (locale === 'pt') return 'pt-PT';
+  if (locale === 'tet') return 'pt-TL';
+  return 'en-GB';
+}
 
 /**
  * Format a date for display in TL timezone
@@ -31,7 +40,7 @@ export function formatDateTL(
     ...options,
   };
 
-  return dateObj.toLocaleDateString('en-GB', defaultOptions);
+  return dateObj.toLocaleDateString(getDisplayLocale(), defaultOptions);
 }
 
 /**
@@ -126,5 +135,4 @@ export function getWeekStartTL(dateStr?: string): string {
   d.setUTCDate(d.getUTCDate() - daysSinceMonday);
   return formatDateISO(d);
 }
-
 

@@ -1,6 +1,7 @@
 /**
  * Setup Wizard - Guided setup for new tenants
- * 5-step wizard: Company Details -> Bank Accounts -> Leave Policies -> Payroll Config -> Complete
+ * Focused wizard: Company -> Salary payment -> Payroll basics -> Complete.
+ * Optional profile details stay in Settings so first-run setup remains short.
  */
 
 import React, { useState, useEffect, useRef } from "react";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -26,7 +26,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Building2,
   CreditCard,
-  Calendar,
   Settings,
   CheckCircle,
   ArrowRight,
@@ -44,7 +43,6 @@ import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import type {
   BusinessSector,
-  BusinessType,
   CompanyDetails,
   CompanyStructure,
   EmployeeGradeConfig,
@@ -54,37 +52,9 @@ import { TL_DEFAULT_LEAVE_POLICIES } from "@/types/settings";
 const STEPS = [
   { id: "company", labelKey: "setupWizard.steps.companyDetails", icon: Building2 },
   { id: "bank", labelKey: "setupWizard.steps.bankAccounts", icon: CreditCard },
-  { id: "leave", labelKey: "setupWizard.steps.leavePolicies", icon: Calendar },
   { id: "payroll", labelKey: "setupWizard.steps.payrollConfig", icon: Settings },
   { id: "complete", labelKey: "setupWizard.steps.complete", icon: CheckCircle },
 ] as const;
-
-const BUSINESS_TYPES: { value: BusinessType; labelKey: string }[] = [
-  { value: "Lda", labelKey: "settings.company.businessTypes.lda" },
-  { value: "SA", labelKey: "settings.company.businessTypes.sa" },
-  { value: "Unipessoal", labelKey: "settings.company.businessTypes.unipessoal" },
-  { value: "ENIN", labelKey: "settings.company.businessTypes.enin" },
-  { value: "NGO", labelKey: "settings.company.businessTypes.ngo" },
-  { value: "Government", labelKey: "settings.company.businessTypes.government" },
-  { value: "Other", labelKey: "settings.company.businessTypes.other" },
-];
-
-const BUSINESS_SECTORS: { value: BusinessSector; labelKey: string }[] = [
-  { value: "security", labelKey: "settings.structure.sectors.security" },
-  { value: "hotel", labelKey: "settings.structure.sectors.hotel" },
-  { value: "restaurant", labelKey: "settings.structure.sectors.restaurant" },
-  { value: "trading", labelKey: "settings.structure.sectors.trading" },
-  { value: "manufacturing", labelKey: "settings.structure.sectors.manufacturing" },
-  { value: "construction", labelKey: "settings.structure.sectors.construction" },
-  { value: "retail", labelKey: "settings.structure.sectors.retail" },
-  { value: "healthcare", labelKey: "settings.structure.sectors.healthcare" },
-  { value: "education", labelKey: "settings.structure.sectors.education" },
-  { value: "finance", labelKey: "settings.structure.sectors.finance" },
-  { value: "technology", labelKey: "settings.structure.sectors.technology" },
-  { value: "ngo", labelKey: "settings.structure.sectors.ngo" },
-  { value: "government", labelKey: "settings.structure.sectors.government" },
-  { value: "other", labelKey: "settings.structure.sectors.other" },
-];
 
 const DEFAULT_EMPLOYEE_GRADES: EmployeeGradeConfig[] = [
   { grade: "director", label: "Director", isActive: true },
@@ -109,7 +79,6 @@ export default function SetupWizard() {
     ]);
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([
-    false,
     false,
     false,
     false,
@@ -227,8 +196,7 @@ export default function SetupWizard() {
         const loadedCompletedSteps = [
           progress.progress.companyDetails && progress.progress.companyStructure,
           progress.progress.paymentStructure,
-          progress.progress.timeOffPolicies,
-          progress.progress.payrollConfig,
+          progress.progress.timeOffPolicies && progress.progress.payrollConfig,
           false,
         ];
         setCompletedSteps(loadedCompletedSteps);
@@ -367,24 +335,6 @@ export default function SetupWizard() {
     }
   };
 
-  const handleSaveLeavePolicy = async () => {
-    setSaving(true);
-    try {
-      // Save the same complete TL defaults that the review screen describes.
-      await settingsService.updateTimeOffPolicies(tenantId, TL_DEFAULT_LEAVE_POLICIES);
-      return true;
-    } catch {
-      toast({
-        title: t("setupWizard.error"),
-        description: t("setupWizard.failedSaveLeave"),
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleSavePayrollConfig = async () => {
     const enteredPayDay = Number.parseInt(payrollForm.payDay, 10);
     if (!Number.isInteger(enteredPayDay) || enteredPayDay < 1 || enteredPayDay > 28) {
@@ -404,6 +354,9 @@ export default function SetupWizard() {
       const payDay = enteredPayDay;
 
       await Promise.all([
+        // TL defaults are safe to apply without making a new user decode a
+        // separate policy screen. They remain editable in Settings.
+        settingsService.updateTimeOffPolicies(tenantId, TL_DEFAULT_LEAVE_POLICIES),
         settingsService.updatePaymentStructure(tenantId, {
           ...settings.paymentStructure,
           payrollFrequencies: [frequency],
@@ -489,12 +442,9 @@ export default function SetupWizard() {
           success = await handleSaveBankAccount();
           break;
         case 2:
-          success = await handleSaveLeavePolicy();
-          break;
-        case 3:
           success = await handleSavePayrollConfig();
           break;
-        case 4:
+        case 3:
           await handleCompleteSetup();
           return;
       }
@@ -563,112 +513,57 @@ export default function SetupWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
-      <div className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-12">
-        <div className="mb-6 flex justify-end">
-          <LocaleSwitcher variant="buttons" className="justify-end" />
-        </div>
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25 mb-4">
-            <Sparkles className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-2xl px-4 py-5 sm:px-6 sm:py-10">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <div>
+              <h1 className="text-xl font-bold sm:text-2xl">{t("setupWizard.welcome")}</h1>
+              <p className="text-sm text-muted-foreground">{t("setupWizard.welcomeDesc")}</p>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold sm:text-3xl">{t("setupWizard.welcome")}</h1>
-          <p className="text-muted-foreground mt-2">
-            {t("setupWizard.welcomeDesc")}
-          </p>
+          <LocaleSwitcher className="shrink-0" />
         </div>
 
-        <div className="mb-6">
-          <Card className="border-green-200 bg-white/80 dark:border-green-900/40 dark:bg-background/80">
-            <CardContent className="pt-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {t("setupWizard.progressTitle")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("setupWizard.stepOf", {
-                      current: String(currentStep + 1),
-                      total: String(STEPS.length),
-                    })}
-                  </p>
-                </div>
-                <p className="text-2xl font-bold text-green-600">{progressPercent}%</p>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                <div
-                  role="progressbar"
-                  aria-label={t("setupWizard.progressTitle")}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={progressPercent}
-                  className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {t("setupWizard.progressHint")}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Step Indicator */}
-        <div className="mb-8 hidden items-center justify-center gap-2 sm:flex">
-          {STEPS.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = index === currentStep;
-            const isCompleted = completedSteps[index];
-            return (
-              <React.Fragment key={step.id}>
-                {index > 0 && (
-                  <div className={`h-0.5 w-8 ${completedSteps[index - 1] ? "bg-green-500" : "bg-border"}`} />
-                )}
-                <div className="flex min-w-16 flex-col items-center gap-2 text-center">
-                  <div
-                    className={`
-                      flex items-center justify-center w-10 h-10 rounded-full transition-all
-                      ${isActive ? "bg-green-500 text-white shadow-lg shadow-green-500/25" : ""}
-                      ${isCompleted ? "bg-green-500 text-white" : ""}
-                      ${!isActive && !isCompleted ? "bg-muted text-muted-foreground" : ""}
-                    `}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle className="h-5 w-5" />
-                    ) : (
-                      <Icon className="h-5 w-5" />
-                    )}
-                  </div>
-                  <span
-                    className={`text-[11px] leading-tight ${
-                      isActive ? "font-medium text-foreground" : "text-muted-foreground"
-                    }`}
-                  >
-                    {t(step.labelKey)}
-                  </span>
-                </div>
-              </React.Fragment>
-            );
-          })}
+        {/* One progress signal is enough; the step card below names the task. */}
+        <div className="mb-4" aria-label={t("setupWizard.progressTitle")}>
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="font-medium">
+              {t("setupWizard.stepOf", {
+                current: String(currentStep + 1),
+                total: String(STEPS.length),
+              })}
+            </span>
+            <span className="text-muted-foreground">{progressPercent}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              role="progressbar"
+              aria-label={t("setupWizard.progressTitle")}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPercent}
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
 
         {/* Step Content */}
-        <Card className="border-border/50 shadow-xl">
-          <CardHeader>
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">
-              {React.createElement(STEPS[currentStep].icon, { className: "h-5 w-5 text-green-600" })}
+              {React.createElement(STEPS[currentStep].icon, { className: "h-5 w-5 text-primary" })}
               {t(STEPS[currentStep].labelKey)}
             </CardTitle>
-            <CardDescription>
-              {t("setupWizard.stepOf", { current: String(currentStep + 1), total: String(STEPS.length) })}
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {currentStep < STEPS.length - 1 && completedSteps[currentStep] && (
-              <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center dark:border-green-900/50 dark:bg-green-950/20">
-                <CheckCircle className="mx-auto h-7 w-7 text-green-600" />
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center">
+                <CheckCircle className="mx-auto h-7 w-7 text-primary" />
                 <p className="mt-2 font-medium">{t("setupWizard.stepAlreadySaved")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t("setupWizard.stepAlreadySavedDesc")}
@@ -691,123 +586,11 @@ export default function SetupWizard() {
                     />
                   </div>
                   <div>
-                    <Label>{t("setupWizard.tradingName")}</Label>
-                    <Input
-                      value={companyForm.tradingName}
-                      onChange={(e) => setCompanyForm((p) => ({ ...p, tradingName: e.target.value }))}
-                      placeholder={t("setupWizard.tradingNamePlaceholder")}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>{t("settings.company.businessType")}</Label>
-                    <Select
-                      value={companyForm.businessType}
-                      onValueChange={(value: BusinessType) =>
-                        setCompanyForm((prev) => ({ ...prev, businessType: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BUSINESS_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {t(type.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>{t("settings.structure.businessSector")}</Label>
-                    <Select
-                      value={companyStructureForm.businessSector}
-                      onValueChange={(value: BusinessSector) =>
-                        setCompanyStructureForm((prev) => ({ ...prev, businessSector: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BUSINESS_SECTORS.map((sector) => (
-                          <SelectItem key={sector.value} value={sector.value}>
-                            {t(sector.labelKey)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
                     <Label>{t("setupWizard.tinNumber")}</Label>
                     <Input
                       value={companyForm.tinNumber}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, tinNumber: e.target.value }))}
                       placeholder={t("setupWizard.tinPlaceholder")}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t("setupWizard.teamSize")}</Label>
-                    <Select
-                      value={companyStructureForm.approximateEmployeeCount}
-                      onValueChange={(value) =>
-                        setCompanyStructureForm((prev) => ({ ...prev, approximateEmployeeCount: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("setupWizard.selectTeamSize")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">1-5</SelectItem>
-                        <SelectItem value="20">6-20</SelectItem>
-                        <SelectItem value="50">21-50</SelectItem>
-                        <SelectItem value="100">51+</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="mt-1 text-xs text-muted-foreground">{t("setupWizard.teamSizeHint")}</p>
-                  </div>
-                </div>
-                <div>
-                  <Label>{t("setupWizard.address")}</Label>
-                  <Input
-                    value={companyForm.registeredAddress}
-                    onChange={(e) => setCompanyForm((p) => ({ ...p, registeredAddress: e.target.value }))}
-                    placeholder={t("setupWizard.addressPlaceholder")}
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>{t("setupWizard.city")}</Label>
-                    <Input
-                      value={companyForm.city}
-                      onChange={(e) => setCompanyForm((p) => ({ ...p, city: e.target.value }))}
-                      placeholder={t("setupWizard.cityPlaceholder")}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t("setupWizard.country")}</Label>
-                    <Input value={companyForm.country} disabled />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>{t("setupWizard.phone")}</Label>
-                    <Input
-                      value={companyForm.phone}
-                      onChange={(e) => setCompanyForm((p) => ({ ...p, phone: e.target.value }))}
-                      placeholder={t("setupWizard.phonePlaceholder")}
-                    />
-                  </div>
-                  <div>
-                    <Label>{t("setupWizard.email")}</Label>
-                    <Input
-                      value={companyForm.email}
-                      onChange={(e) => setCompanyForm((p) => ({ ...p, email: e.target.value }))}
-                      placeholder={t("setupWizard.emailPlaceholder")}
                     />
                   </div>
                 </div>
@@ -896,33 +679,8 @@ export default function SetupWizard() {
               </div>
             )}
 
-            {/* Step 3: Leave Policies */}
+            {/* Step 3: Payroll basics + safe TL leave defaults */}
             {currentStep === 2 && !completedSteps[2] && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {t("setupWizard.leaveIntro")}
-                </p>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {[
-                    { labelKey: "setupWizard.annualLeave", valueKey: "setupWizard.annualLeaveValue" },
-                    { labelKey: "setupWizard.sickLeave", valueKey: "setupWizard.sickLeaveValue" },
-                    { labelKey: "setupWizard.maternityLeave", valueKey: "setupWizard.maternityLeaveValue" },
-                    { labelKey: "setupWizard.paternityLeave", valueKey: "setupWizard.paternityLeaveValue" },
-                  ].map((policy) => (
-                    <div key={policy.labelKey} className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm font-medium">{t(policy.labelKey)}</p>
-                      <p className="text-lg font-bold text-green-600">{t(policy.valueKey)}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("setupWizard.leaveNote")}
-                </p>
-              </div>
-            )}
-
-            {/* Step 4: Payroll Config */}
-            {currentStep === 3 && !completedSteps[3] && (
               <div className="space-y-4">
                 <div>
                   <Label>{t("setupWizard.payFrequency")}</Label>
@@ -959,16 +717,19 @@ export default function SetupWizard() {
                   <p className="text-muted-foreground">{t("setupWizard.inssInfo")}</p>
                   <p className="text-muted-foreground">{t("setupWizard.hoursInfo")}</p>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("setupWizard.leaveIntro")} {t("setupWizard.leaveNote")}
+                </p>
               </div>
             )}
 
-            {/* Step 5: Complete */}
-            {currentStep === 4 && (
-              <div className="text-center py-8 space-y-4">
+            {/* Step 4: Complete */}
+            {currentStep === 3 && (
+              <div className="space-y-4 py-6 text-center">
                 <img
                   src="/images/illustrations/setup-complete.webp"
                   alt={t("setupWizard.allSet")}
-                  className="w-40 h-40 mx-auto mb-2 drop-shadow-xl"
+                  className="mx-auto mb-2 h-32 w-32"
                 />
                 <h3 className="text-xl font-bold">{t("setupWizard.allSet")}</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
@@ -1004,7 +765,7 @@ export default function SetupWizard() {
           <Button
             onClick={handleNext}
             disabled={saving || transitioning}
-            className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto"
+            className="w-full sm:w-auto"
           >
             {saving || transitioning ? (
               <>
@@ -1026,9 +787,6 @@ export default function SetupWizard() {
         </div>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {t("setupWizard.savedAutomaticallyDesc")}
-        </p>
-        <p className="mt-1 text-center text-xs text-muted-foreground">
-          {t("setupWizard.finishLaterHint")}
         </p>
       </div>
     </div>

@@ -3,7 +3,7 @@
  * Tax rates, INSS, and labor law requirements
  * Based on:
  * - Tax Law: Law 8/2008 (Income Tax)
- * - Social Security: Decree-Law 19/2016 (INSS)
+ * - Social Security: Law 12/2016, Decree-Law 20/2017, and Decree-Law 30/2021
  * - Labor Code: Law 4/2012
  */
 
@@ -43,11 +43,14 @@ export const TL_INCOME_TAX = {
 // ============================================
 
 /**
- * INSS Contribution Rates (Decree-Law 19/2016)
+ * INSS Contribution Rates (Decree-Law 20/2017, Arts. 8-10, as amended by
+ * Decree-Law 30/2021)
  * Total: 10% (4% employee + 6% employer)
- * Base: remuneracao contributiva (remuneração base + certain supplements per INSS guidance)
- * Excluded (per INSS guidance): overtime; bonuses/gratuities/profit-sharing; food subsidies; subsistence subsidies
- * (transport/board/lodging/travel); representation expenses; and other extraordinary allowances.
+ * Base: remuneracao contributiva (recurring remuneration, individual
+ * performance/productivity pay, annual subsidy, and contractual/legal supplements).
+ * Excluded by Art. 9: overtime; employer-economic-performance profit awards;
+ * food/transport/board/lodging/travel expense allowances; representation expenses;
+ * and other extraordinary benefits. A generic bonus must therefore be classified.
  */
 export const TL_INSS = {
   // Employee contribution
@@ -62,7 +65,7 @@ export const TL_INSS = {
   // Minimum salary for INSS
   minimumSalary: 115,  // Current minimum wage ~$115
 
-  // Items excluded from INSS contribution base (see INSS guidance)
+  // Items excluded from the contribution base by DL 20/2017 Art. 9.
   excludedItems: [
     'per_diem',
     'travel_allowance',
@@ -70,10 +73,8 @@ export const TL_INSS = {
     'transport_allowance',
     'housing_allowance',
     'overtime',
-    'bonus',
-    'commission',
-    'gratuity',
-    'profit_sharing',
+    'company_profit_award',
+    'extraordinary_benefit',
     'reimbursement',
     'representation_expense',
   ],
@@ -121,7 +122,7 @@ export const getDefaultTLInssOptionalContributionBase = (
 // ============================================
 
 /**
- * Subsidio Anual Rules (Labor Code Article 40)
+ * Subsidio Anual Rules (Labor Code Article 44)
  * - One full month's salary
  * - Due by December 20th
  * - Pro-rated for employees with less than 12 months
@@ -143,7 +144,7 @@ export const TL_SUBSIDIO_ANUAL = {
 // ============================================
 
 /**
- * Working Hours (Labor Code Article 18-22)
+ * Working Hours (Labor Code Article 25)
  * - Maximum: 44 hours per week
  * - Daily: 8 hours standard
  * - Overtime must be compensated
@@ -161,7 +162,7 @@ export const TL_WORKING_HOURS = {
 };
 
 /**
- * Overtime Rates (Labor Code Article 24)
+ * Overtime Rates (Labor Code Article 27)
  */
 export const TL_OVERTIME_RATES = {
   // Standard overtime (beyond 44 hours/week)
@@ -179,6 +180,26 @@ export const TL_OVERTIME_RATES = {
 
   // Night + overtime combined
   nightOvertime: 1.75,  // 175%
+};
+
+// ============================================
+// TERMINATION AND NON-CASH BENEFITS
+// ============================================
+
+/**
+ * Service compensation on termination (Labour Law 4/2012, Art. 56): one
+ * monthly salary for every completed five-year period of service.
+ */
+export const TL_SERVICE_COMPENSATION = {
+  completedYearsPerSalaryMonth: 5,
+};
+
+/**
+ * Tax Law 8/2008, Art. 1: non-cash benefits enter salary only when their
+ * monthly value is greater than US$20. Exactly US$20 remains outside the WIT base.
+ */
+export const TL_NON_CASH_BENEFITS = {
+  monthlyTaxableThreshold: 20,
 };
 
 // ============================================
@@ -298,7 +319,9 @@ export const TL_BANKS = [
 // ============================================
 
 export const TL_MINIMUM_WAGE = {
-  monthly: 115,  // $115 USD (effective 2012-06-22; still current in sources as of 2026)
+  // Government decision: https://timor-leste.gov.tl/?lang=en&p=6964&print=1
+  // A 2026 increase is proposed, not enacted; keep this runtime-overridable and recheck.
+  monthly: 115,  // $115 USD (effective 2012-06-22; still current as of 2026-07-17)
   lastUpdated: '2012-06-22',
-  // Note: Check for updates annually
+  // Note: Check the Jornal da República before every release.
 };

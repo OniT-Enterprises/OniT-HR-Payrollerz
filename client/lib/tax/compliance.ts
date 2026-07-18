@@ -8,6 +8,49 @@ const defaultAdjustDate: AdjustDateFn = (isoDate) => adjustToNextBusinessDayTL(i
 
 const pad2 = (value: number): string => String(value).padStart(2, "0");
 
+function parseMonthlyTaxPeriod(period: string): { year: number; month: number } {
+  const match = /^(\d{4})-(\d{2})$/.exec(period);
+  if (!match) {
+    throw new RangeError("Tax period must use YYYY-MM format.");
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) {
+    throw new RangeError("Tax period month must be between 01 and 12.");
+  }
+  return { year, month };
+}
+
+/** Law 8/2008 Art. 23: monthly WIT is due on day 15 of the following month. */
+export function getMonthlyWITDueDateBase(period: string): string {
+  const { year, month } = parseMonthlyTaxPeriod(period);
+  const dueYear = month === 12 ? year + 1 : year;
+  const dueMonth = month === 12 ? 1 : month + 1;
+  return `${dueYear}-${pad2(dueMonth)}-15`;
+}
+
+/** Annual employer withholding return: 31 March following the tax year. */
+export function getAnnualWITDueDateBase(taxYear: number): string {
+  if (!Number.isInteger(taxYear) || taxYear < 1900 || taxYear > 9998) {
+    throw new RangeError("Tax year must be a four-digit year.");
+  }
+  return `${taxYear + 1}-03-31`;
+}
+
+export function getMonthlyWITDueDate(
+  period: string,
+  adjustDate: AdjustDateFn = defaultAdjustDate,
+): string {
+  return adjustDate(getMonthlyWITDueDateBase(period));
+}
+
+export function getAnnualWITDueDate(
+  taxYear: number,
+  adjustDate: AdjustDateFn = defaultAdjustDate,
+): string {
+  return adjustDate(getAnnualWITDueDateBase(taxYear));
+}
+
 export function getDaysUntilDueIso(todayIso: string, dueIso: string): number {
   const today = parseDateISO(todayIso);
   const due = parseDateISO(dueIso);

@@ -58,6 +58,7 @@ import {
   useActiveCases,
   useCompletedCases,
   useCreateOffboardingCase,
+  useSaveArticle56FinalPay,
   useUpdateChecklistItem,
   useUpdateExitInterviewField,
 } from "@/hooks/useHiring";
@@ -74,6 +75,7 @@ import {
   type OnboardingCase,
 } from "@/services/onboardingService";
 import { useTenantId } from "@/contexts/TenantContext";
+import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
 export default function Offboarding() {
   const navigate = useNavigate();
@@ -89,6 +91,7 @@ export default function Offboarding() {
   const createOffboardingMutation = useCreateOffboardingCase();
   const updateChecklistMutation = useUpdateChecklistItem();
   const updateExitInterviewMutation = useUpdateExitInterviewField();
+  const saveArticle56Mutation = useSaveArticle56FinalPay();
 
   const loading = activeCasesLoading || completedCasesLoading;
 
@@ -171,7 +174,11 @@ export default function Offboarding() {
   ).sort();
 
   const handleStartOffboarding = () => {
-    if (!newOffboarding.employeeId || !newOffboarding.departureReason) {
+    if (
+      !newOffboarding.employeeId
+      || !newOffboarding.departureReason
+      || !newOffboarding.lastWorkingDay
+    ) {
       toast({
         title: t("hiring.offboarding.toast.validationTitle"),
         description: t("hiring.offboarding.toast.validationDesc"),
@@ -270,6 +277,44 @@ export default function Offboarding() {
           }
         },
       }
+    );
+  };
+
+  const saveArticle56FinalPay = () => {
+    if (!selectedCase?.id || !user?.uid) return;
+    saveArticle56Mutation.mutate(
+      { caseId: selectedCase.id, calculatedBy: user.uid },
+      {
+        onSuccess: (snapshot) => {
+          const checklist = { ...selectedCase.checklist, finalPayCalculated: true };
+          if (getChecklistProgress(checklist) === 100) {
+            setSelectedCase(null);
+          } else {
+            setSelectedCase({
+              ...selectedCase,
+              article56FinalPay: snapshot,
+              checklist,
+              status: "in_progress",
+            });
+          }
+          toast({
+            title: t("hiring.offboarding.finalPay.savedTitle") || "Article 56 calculation saved",
+            description: t("hiring.offboarding.finalPay.savedDescription")
+              || "The source salary, service dates, and statutory result were frozen on this case.",
+          });
+        },
+        onError: (error) => {
+          // Engine RangeErrors (bad dates on the source records) mean the
+          // record needs fixing, not that the app failed — frame them that way.
+          toast({
+            title: error instanceof RangeError
+              ? t("common.needsReviewTitle")
+              : t("hiring.offboarding.finalPay.errorTitle") || "Could not calculate final pay",
+            description: error instanceof Error ? error.message : "Unknown error",
+            variant: "destructive",
+          });
+        },
+      },
     );
   };
 
@@ -458,6 +503,7 @@ export default function Offboarding() {
                   <Input
                     type="date"
                     value={newOffboarding.lastWorkingDay}
+                    required
                     onChange={(e) =>
                       setNewOffboarding((prev) => ({ ...prev, lastWorkingDay: e.target.value }))
                     }
@@ -725,6 +771,71 @@ export default function Offboarding() {
                         </div>
                       )}
 
+                      {/* Article 56 calculation is source-derived, never a manual checkbox. */}
+                      <div className="space-y-3 rounded-lg border border-border/70 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <h4 className="flex items-center gap-2 text-sm font-medium">
+                              <DollarSign className="h-4 w-4 text-primary" />
+                              {t("hiring.offboarding.finalPay.title") || "Article 56 service compensation"}
+                            </h4>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {t("hiring.offboarding.finalPay.description")
+                                || "One monthly salary for each completed five-year period of service, for every termination cause."}
+                            </p>
+                          </div>
+                          {selectedCase.article56FinalPay ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle className="mr-1 h-3 w-3" />
+                              {t("hiring.offboarding.finalPay.saved") || "Calculated"}
+                            </Badge>
+                          ) : null}
+                        </div>
+
+                        {selectedCase.article56FinalPay ? (
+                          <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
+                            <div className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">{t("hiring.offboarding.finalPay.salary") || "Monthly salary"}</span>
+                              <span className="font-medium">{formatCurrencyTL(selectedCase.article56FinalPay.monthlySalary)}</span>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">{t("hiring.offboarding.finalPay.service") || "Completed service"}</span>
+                              <span className="font-medium">
+                                {selectedCase.article56FinalPay.completedYears} {t("hiring.offboarding.finalPay.years") || "years"}
+                                {" · "}{selectedCase.article56FinalPay.completedFiveYearPeriods} × 5
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-4 border-t border-border/70 pt-2">
+                              <span className="font-medium">{t("hiring.offboarding.finalPay.amount") || "Service compensation"}</span>
+                              <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.serviceCompensation)}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1 text-xs text-muted-foreground">
+                            <p>{t("hiring.offboarding.finalPay.sourceHint") || "Uses the saved employee monthly salary and hire date, plus this case's last working day."}</p>
+                            <p>
+                              {t("hiring.offboarding.finalPay.lastDay") || "Last working day"}: {selectedCase.lastWorkingDay || (t("hiring.offboarding.progress.tbd") || "Not set")}
+                            </p>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-muted-foreground">
+                          {t("hiring.offboarding.finalPay.taxNote")
+                            || "WIT-taxable under Tax Law Art. 1. This universal Art. 56 payment is not included in the INSS base. Saving it does not run or pay payroll."}
+                        </p>
+                        <Button
+                          variant={selectedCase.article56FinalPay ? "outline" : "default"}
+                          className="min-h-11 w-full sm:w-auto"
+                          onClick={saveArticle56FinalPay}
+                          disabled={saveArticle56Mutation.isPending}
+                        >
+                          {saveArticle56Mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {selectedCase.article56FinalPay
+                            ? (t("hiring.offboarding.finalPay.recalculate") || "Recalculate from saved employee data")
+                            : (t("hiring.offboarding.finalPay.calculate") || "Calculate and save")}
+                        </Button>
+                      </div>
+
                       {/* Checklist Items */}
                       <div className="space-y-4">
                         {[
@@ -732,7 +843,6 @@ export default function Offboarding() {
                           { id: "equipmentReturned", label: t("hiring.offboarding.checklist.items.equipment"), icon: <Building className="h-4 w-4" /> },
                           { id: "documentsSigned", label: t("hiring.offboarding.checklist.items.documents"), icon: <FileText className="h-4 w-4" /> },
                           { id: "knowledgeTransfer", label: t("hiring.offboarding.checklist.items.knowledge"), icon: <Archive className="h-4 w-4" /> },
-                          { id: "finalPayCalculated", label: t("hiring.offboarding.checklist.items.finalPay"), icon: <DollarSign className="h-4 w-4" /> },
                           { id: "benefitsCancelled", label: t("hiring.offboarding.checklist.items.benefits"), icon: <CreditCard className="h-4 w-4" /> },
                           { id: "exitInterviewCompleted", label: t("hiring.offboarding.checklist.items.exitInterview"), icon: <Mail className="h-4 w-4" /> },
                           { id: "referenceLetter", label: t("hiring.offboarding.checklist.items.reference"), icon: <Download className="h-4 w-4" /> },

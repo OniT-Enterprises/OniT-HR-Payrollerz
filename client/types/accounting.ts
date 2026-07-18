@@ -99,6 +99,8 @@ export type JournalEntrySource =
   | 'invoice'
   | 'bill'
   | 'payment'
+  | 'tax_payment'
+  | 'cash_advance'
   | 'receipt'
   | 'adjustment'
   | 'closing'

@@ -16,9 +16,10 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAdvancedTax, useTenantId } from "@/contexts/TenantContext";
 import { taxFilingService } from "@/services/taxFilingService";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatDateTL, parseDateISO } from "@/lib/dateUtils";
 import {
   ArrowRight,
   Building,
@@ -32,6 +33,7 @@ import {
 export default function TaxReports() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
 
   const { data: dueDates = [], isLoading: loading } = useQuery({
@@ -59,6 +61,16 @@ export default function TaxReports() {
   const hasOverdue = useMemo(() => dueDates.some((d) => d.isOverdue), [dueDates]);
   const getInssTaskLabel = (task?: "statement" | "payment") =>
     task === "payment" ? t("taxReports.inssPaymentTask") : t("taxReports.inssStatementTask");
+  const getDeadlineLabel = (deadline: (typeof dueDates)[number] | undefined) => {
+    if (!deadline) return "—";
+    if (deadline.isOverdue) {
+      return t("taxReports.daysOverdue", { days: Math.abs(deadline.daysUntilDue) });
+    }
+    if (deadline.daysUntilDue === 0) return t("taxReports.dueToday");
+    return t("taxReports.daysRemaining", { days: deadline.daysUntilDue });
+  };
+  const formatDueDate = (value: string) =>
+    formatDateTL(parseDateISO(value), { day: "numeric", month: "short", year: "numeric" });
 
   if (loading) {
     return (
@@ -88,11 +100,11 @@ export default function TaxReports() {
       <SEO {...seoConfig.taxes} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("taxReports.title")}
           subtitle={t("taxReports.subtitle")}
-          icon={Shield}
+          cardIcon="pr-tax" icon={Shield}
           iconColor="text-primary"
           actions={
             hasOverdue ? (
@@ -127,13 +139,16 @@ export default function TaxReports() {
                     <Building className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{t("taxReports.monthlyWit")}</span>
                   </div>
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge
+                    variant="secondary"
+                    className={`gap-1 ${nextWit?.isOverdue ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" : ""}`}
+                  >
                     <Clock className="h-3 w-3" />
-                    {nextWit ? `${nextWit.daysUntilDue}d` : "—"}
+                    {getDeadlineLabel(nextWit)}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {t("taxReports.next")}: {nextWit ? `${nextWit.period} • ${t("taxReports.due")} ${nextWit.dueDate}` : t("taxReports.noPeriodsFound")}
+                  {t("taxReports.next")}: {nextWit ? `${nextWit.period} • ${t("taxReports.due")} ${formatDueDate(nextWit.dueDate)}` : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
 
@@ -143,14 +158,17 @@ export default function TaxReports() {
                     <Shield className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">{t("taxReports.monthlyInss")}</span>
                   </div>
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge
+                    variant="secondary"
+                    className={`gap-1 ${nextInss?.isOverdue ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" : ""}`}
+                  >
                     <Clock className="h-3 w-3" />
-                    {nextInss ? `${nextInss.daysUntilDue}d` : "—"}
+                    {getDeadlineLabel(nextInss)}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
                   {t("taxReports.next")}: {nextInss
-                    ? `${nextInss.period} • ${getInssTaskLabel(nextInss.task)} • ${t("taxReports.due")} ${nextInss.dueDate}`
+                    ? `${nextInss.period} • ${getInssTaskLabel(nextInss.task)} • ${t("taxReports.due")} ${formatDueDate(nextInss.dueDate)}`
                     : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
@@ -159,20 +177,24 @@ export default function TaxReports() {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("taxReports.attlTitle")}</CardTitle>
-              <CardDescription>
-                {t("taxReports.attlDesc")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between">
-              <Button onClick={() => navigate("/payroll/tax/monthly-wit")}>
-                {t("taxReports.openWitFiling")}
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
+          {/* ATTL form generator is accountant-grade — the deadline card above
+              still shows the WIT obligation to everyone. */}
+          {showAdvancedTax && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("taxReports.attlTitle")}</CardTitle>
+                <CardDescription>
+                  {t("taxReports.attlDesc")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center justify-between">
+                <Button onClick={() => navigate("/payroll/tax/monthly-wit")}>
+                  {t("taxReports.openWitFiling")}
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

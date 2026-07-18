@@ -416,7 +416,7 @@ export default function Reviews() {
         <PageHeader
           title="Performance Reviews"
           subtitle="Manage and track employee performance evaluations"
-          icon={Star}
+          cardIcon="performance" icon={Star}
           iconColor="text-blue-500"
           actions={
             employees.length > 0 ? (

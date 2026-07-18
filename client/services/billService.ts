@@ -40,12 +40,21 @@ import type {
   BillPayment,
   BillPaymentFormData,
   ExpenseCategory,
+  Vendor,
 } from '@/types/money';
 import type { JournalEntry } from '@/types/accounting';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
 import { firestoreBillSchema } from '@/lib/validations';
+import { settingsService } from './settingsService';
+import {
+  aggregateTLBillWithholdingPayments,
+  buildTLBillWithholdingInstruction,
+  calculateTLBillSettlement,
+  type TLBillWithholdingCategory,
+  type TLBillWithholdingTotals,
+} from '@/lib/tax/bill-withholding';
 
 /**
  * Filter options for bill queries
@@ -78,6 +87,26 @@ export interface PaginatedResult<T> {
 
 const PAYMENT_EPSILON = 0.00001;
 const UNPAID_BILL_STATUSES: BillStatus[] = ['pending', 'partial', 'overdue'];
+
+function readStoredCashPaid(data: Record<string, unknown>): number | undefined {
+  if (typeof data.cashPaid === 'number' && Number.isFinite(data.cashPaid) && data.cashPaid >= 0) {
+    return data.cashPaid;
+  }
+  if (data.cashPaid !== undefined && data.cashPaid !== null) {
+    throw new Error('A bill payment contains an invalid supplier cash amount.');
+  }
+  if (data.withholding !== undefined && data.withholding !== null) {
+    throw new Error('A withholding payment is missing its supplier cash snapshot.');
+  }
+  return undefined;
+}
+
+function readSupplierWithholdingControlAmount(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    throw new Error(`Supplier withholding period has an invalid ${field}.`);
+  }
+  return value;
+}
 
 /**
  * Maps Firestore document to Bill with Zod validation
@@ -115,6 +144,24 @@ class BillService {
 
   private paymentsRef(tenantId: string) {
     return collection(db, paths.billPayments(tenantId));
+  }
+
+  private async buildWithholdingInstruction(
+    tenantId: string,
+    category: TLBillWithholdingCategory | 'none' | undefined,
+    vendor: Vendor,
+  ) {
+    if (!category || category === 'none') return null;
+
+    const settings = await settingsService.getSettings(tenantId);
+    return buildTLBillWithholdingInstruction({
+      category,
+      recipientName: vendor.name,
+      recipientTin: vendor.tin,
+      vendorTaxProfile: vendor.taxProfile,
+      payerBusinessType: settings?.companyDetails.businessType,
+      companyDetailsComplete: settings?.setupProgress.companyDetails === true,
+    });
   }
 
   // ----------------------------------------
@@ -337,6 +384,53 @@ class BillService {
     );
   }
 
+  /** Actual supplier cash outflow; gross `amount` continues to represent AP cleared. */
+  async getCashPaidByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<number> {
+    const snapshot = await getDocs(query(
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+    ));
+    return snapshot.docs.reduce((total, paymentDoc) => {
+      const data = paymentDoc.data();
+      const cashPaid = readStoredCashPaid(data) ?? (Number(data.amount) || 0);
+      return addMoney(total, cashPaid);
+    }, 0);
+  }
+
+  async getCashPaidAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const snapshot = await getDocs(query(
+      this.paymentsRef(tenantId),
+      where('date', '<=', asOfDate),
+    ));
+    return snapshot.docs.reduce((total, paymentDoc) => {
+      const data = paymentDoc.data();
+      const cashPaid = readStoredCashPaid(data) ?? (Number(data.amount) || 0);
+      return addMoney(total, cashPaid);
+    }, 0);
+  }
+
+  async getWithholdingSummary(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<TLBillWithholdingTotals> {
+    const snapshot = await getDocs(query(
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+    ));
+    return aggregateTLBillWithholdingPayments(
+      snapshot.docs.map((paymentDoc) => ({
+        withholding: paymentDoc.data().withholding || null,
+      })),
+    );
+  }
+
   async getVATSummary(
     tenantId: string,
     startDate: string,
@@ -490,6 +584,11 @@ class BillService {
     if (!vendor) {
       throw new Error('Vendor not found');
     }
+    const withholding = await this.buildWithholdingInstruction(
+      tenantId,
+      data.withholdingCategory,
+      vendor,
+    );
 
     // Calculate totals
     const { netAmount, taxAmount, total } = calculateTaxedTotal(data.amount, data.taxRate);
@@ -513,6 +612,7 @@ class BillService {
       category: data.category,
       notes: data.notes,
       attachmentUrls: data.attachmentUrls ?? [],
+      withholding,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -621,13 +721,30 @@ class BillService {
       }
     }
 
-    // Update vendor if changed
-    if (data.vendorId && data.vendorId !== bill.vendorId) {
-      const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
-      if (vendor) {
-        updates.vendorId = data.vendorId;
-        updates.vendorName = vendor.name;
-      }
+    // Resolve the effective vendor once. A vendor change also rebuilds the
+    // immutable tax instruction so tax identity cannot drift from the bill.
+    const vendorChanged = Boolean(data.vendorId && data.vendorId !== bill.vendorId);
+    let effectiveVendor: Vendor | null = null;
+    if (vendorChanged || data.withholdingCategory !== undefined) {
+      effectiveVendor = await vendorService.getVendorById(
+        tenantId,
+        vendorChanged ? data.vendorId! : bill.vendorId,
+      );
+      if (!effectiveVendor) throw new Error('Vendor not found');
+    }
+    if (vendorChanged && effectiveVendor) {
+      updates.vendorId = effectiveVendor.id;
+      updates.vendorName = effectiveVendor.name;
+    }
+    if (data.withholdingCategory !== undefined || vendorChanged) {
+      const category = data.withholdingCategory !== undefined
+        ? data.withholdingCategory
+        : bill.withholding?.category || 'none';
+      updates.withholding = await this.buildWithholdingInstruction(
+        tenantId,
+        category,
+        effectiveVendor!,
+      );
     }
 
     // Only amounts, category (expense account), and billDate (entry date /
@@ -924,30 +1041,56 @@ class BillService {
   ): Promise<string> {
     const billRef = doc(db, paths.bill(tenantId, billId));
 
-    // Check if chart of accounts is set up (read BEFORE transaction)
-    const accounts = await accountService.getAllAccounts(tenantId);
+    // Resolve accounts before the transaction; Firestore queries cannot be
+    // performed inside the posting transaction.
+    const [accounts, billForAccounts] = await Promise.all([
+      accountService.getAllAccounts(tenantId, true),
+      this.getBillById(tenantId, billId),
+    ]);
+    if (!billForAccounts) throw new Error('Bill not found');
     const hasAccounts = accounts.length > 0;
+    const needsWithholdingLiability =
+      billForAccounts.withholding?.collectionMethod === 'payer_withholding'
+      && (billForAccounts.withholding.rate || 0) > 0;
+    if (needsWithholdingLiability && !hasAccounts) {
+      throw new Error(
+        'Set up the chart of accounts before recording a supplier payment with tax withheld.',
+      );
+    }
     let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
 
     if (hasAccounts) {
       // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
       const cashCode = payment.method === 'cash' ? '1110' : '1120';
-      const [apAccount, cashAccount] = await Promise.all([
+      const [apAccount, cashAccount, withholdingAccount] = await Promise.all([
         accountService.getAccountByCode(tenantId, '2110'),
         accountService.getAccountByCode(tenantId, cashCode),
+        needsWithholdingLiability
+          ? accountService.ensureSystemAccountByCode(tenantId, '2320')
+          : Promise.resolve(null),
       ]);
-      if (apAccount?.id && cashAccount?.id) {
-        resolvedAccounts = {
-          '2110': { id: apAccount.id, name: apAccount.name },
-          [cashCode]: { id: cashAccount.id, name: cashAccount.name },
-        };
-      }
+      if (!apAccount?.id) throw new Error('Missing account for code 2110');
+      if (!cashAccount?.id) throw new Error(`Missing account for code ${cashCode}`);
+      resolvedAccounts = {
+        '2110': { id: apAccount.id, name: apAccount.name },
+        [cashCode]: { id: cashAccount.id, name: cashAccount.name },
+        ...(withholdingAccount?.id
+          ? { '2320': { id: withholdingAccount.id, name: withholdingAccount.name } }
+          : {}),
+      };
     }
 
     // Atomic: payment + bill update + journal entry in one transaction
+    const paymentPeriod = payment.date.slice(0, 7);
+    const withholdingPeriodRef = needsWithholdingLiability
+      ? doc(db, paths.supplierWithholdingPeriod(tenantId, paymentPeriod))
+      : null;
     const paymentId = await runTransaction(db, async (transaction) => {
-      // Read bill within transaction
-      const billDoc = await transaction.get(billRef);
+      // All transaction reads happen before journal/payment writes.
+      const [billDoc, withholdingPeriodDoc] = await Promise.all([
+        transaction.get(billRef),
+        withholdingPeriodRef ? transaction.get(withholdingPeriodRef) : Promise.resolve(null),
+      ]);
       if (!billDoc.exists()) {
         throw new Error('Bill not found');
       }
@@ -968,12 +1111,44 @@ class BillService {
         bill.amountPaid || 0,
         payment.amount,
       );
+      const settlement = calculateTLBillSettlement(nextPayment.amount, bill.withholding);
+      if (settlement.withholdingTax > 0 && !resolvedAccounts?.['2320']) {
+        throw new Error(
+          'Supplier withholding account was not resolved. Retry after checking the bill tax setup.',
+        );
+      }
+
+      const paymentDocRef = doc(this.paymentsRef(tenantId));
+      // Allocate the journal entry before queuing document writes because the
+      // journal service reads its annual counter in this transaction.
+      if (resolvedAccounts) {
+        await journalEntryService.createFromBillPayment(
+          tenantId,
+          {
+            billId: bill.id,
+            billNumber: bill.billNumber,
+            vendorName: bill.vendorName,
+            date: payment.date,
+            amount: nextPayment.amount,
+            cashPaid: settlement.cashPaid,
+            withholdingTax: settlement.withholdingTax,
+            method: payment.method,
+            reference: payment.reference,
+          },
+          userId || 'system',
+          transaction,
+          resolvedAccounts
+        );
+      }
 
       // Create payment record within transaction
-      const paymentDocRef = doc(this.paymentsRef(tenantId));
       transaction.set(paymentDocRef, {
         date: payment.date,
         amount: nextPayment.amount,
+        cashPaid: settlement.cashPaid,
+        taxDue: settlement.taxDue,
+        withholdingTax: settlement.withholdingTax,
+        ...(settlement.withholding ? { withholding: settlement.withholding } : {}),
         method: payment.method,
         reference: payment.reference,
         notes: payment.notes,
@@ -990,23 +1165,28 @@ class BillService {
         updatedAt: serverTimestamp(),
       });
 
-      // Create journal entry within same transaction
-      if (resolvedAccounts) {
-        await journalEntryService.createFromBillPayment(
-          tenantId,
-          {
-            billId: bill.id,
-            billNumber: bill.billNumber,
-            vendorName: bill.vendorName,
-            date: payment.date,
-            amount: nextPayment.amount,
-            method: payment.method,
-            reference: payment.reference,
-          },
-          userId || 'system',
-          transaction,
-          resolvedAccounts
-        );
+      if (settlement.withholdingTax > 0) {
+        if (!withholdingPeriodRef || !withholdingPeriodDoc) {
+          throw new Error('Supplier withholding period control was not loaded.');
+        }
+        const currentLiability = withholdingPeriodDoc.exists()
+          ? readSupplierWithholdingControlAmount(
+              withholdingPeriodDoc.data().totalLiability,
+              'liability',
+            )
+          : 0;
+        const currentRemitted = withholdingPeriodDoc.exists()
+          ? readSupplierWithholdingControlAmount(
+              withholdingPeriodDoc.data().totalRemitted,
+              'remitted amount',
+            )
+          : 0;
+        transaction.set(withholdingPeriodRef, {
+          period: paymentPeriod,
+          totalLiability: addMoney(currentLiability, settlement.withholdingTax),
+          totalRemitted: currentRemitted,
+          updatedAt: serverTimestamp(),
+        });
       }
 
       return paymentDocRef.id;
@@ -1032,6 +1212,10 @@ class BillService {
         id: doc.id,
         date: data.date,
         amount: data.amount,
+        cashPaid: readStoredCashPaid(data),
+        taxDue: data.taxDue,
+        withholdingTax: data.withholdingTax,
+        withholding: data.withholding,
         method: data.method,
         reference: data.reference,
         notes: data.notes,
@@ -1058,6 +1242,10 @@ class BillService {
         billId: data.billId,
         date: data.date,
         amount: data.amount,
+        cashPaid: readStoredCashPaid(data),
+        taxDue: data.taxDue,
+        withholdingTax: data.withholdingTax,
+        withholding: data.withholding,
         method: data.method,
         reference: data.reference,
         notes: data.notes,
@@ -1093,6 +1281,10 @@ class BillService {
         billId: data.billId,
         date: data.date,
         amount: data.amount,
+        cashPaid: readStoredCashPaid(data),
+        taxDue: data.taxDue,
+        withholdingTax: data.withholdingTax,
+        withholding: data.withholding,
         method: data.method,
         reference: data.reference,
         notes: data.notes,

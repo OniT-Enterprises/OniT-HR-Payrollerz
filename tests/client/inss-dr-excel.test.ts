@@ -36,6 +36,10 @@ const ret: MonthlyINSSReturn = {
       employeeContribution: 20,
       employerContribution: 30,
       totalContribution: 50,
+      grossWages: 500,
+      annualSubsidy: 0,
+      incomeTax: 0,
+      netPay: 480,
       isResident: false,
     },
   ],
@@ -58,15 +62,15 @@ describe('INSS DR Excel export', () => {
     expect(first.getCell(6).value).toBe('NISS001');
     expect(first.getCell(8).value).toBe('Contratado nacional');
     expect(first.getCell(14).value).toBe('Sim');
-    expect(first.getCell(21).value).toBe(900);   // base = gross − 13th
-    expect(first.getCell(22).value).toBe(100);   // subsídio anual
-    expect(first.getCell(25).value).toBe(1000);  // total declared
-    expect(first.getCell(26).value).toBe(50);    // 10% imposto
-    expect(first.getCell(27).value).toBe(60);    // 6% EE
-    expect(first.getCell(28).value).toBe(40);    // 4% worker
-    expect(first.getCell(29).value).toBe(910);   // líquido
+    expect(first.getCell(21).value).toBe(900); // base = gross − 13th
+    expect(first.getCell(22).value).toBe(100); // subsídio anual
+    expect(first.getCell(25).value).toBe(1000); // total declared
+    expect(first.getCell(26).value).toBe(50); // 10% imposto
+    expect(first.getCell(27).value).toBe(60); // 6% EE
+    expect(first.getCell(28).value).toBe(40); // 4% worker
+    expect(first.getCell(29).value).toBe(910); // líquido
 
-    // Second worker: no enrichment — falls back to contribution base, foreign
+    // Second worker: explicitly stored zero-tax values, foreign
     const second = dr.getRow(11);
     expect(second.getCell(8).value).toBe('Contratado estrangeiro');
     expect(second.getCell(14).value).toBe('Não');
@@ -75,5 +79,23 @@ describe('INSS DR Excel export', () => {
 
     const resumo = wb.getWorksheet('Resumo')!;
     expect(resumo.getCell('D10').value).toBe(150); // total contributions row
+  });
+
+  it('refuses a legacy snapshot with missing DR source values', () => {
+    const incomplete = {
+      ...ret,
+      employees: [
+        {
+          employeeId: 'EMP-3',
+          fullName: 'Incomplete Record',
+          contributionBase: 500,
+          employeeContribution: 20,
+          employerContribution: 30,
+          totalContribution: 50,
+        },
+      ],
+    } as MonthlyINSSReturn;
+
+    expect(() => buildInssDrWorkbook(incomplete)).toThrow(/will not infer compliance values/);
   });
 });

@@ -49,8 +49,8 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-orange-500/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-amber-500/6 rounded-full blur-[100px]" />
+        <div className="absolute left-1/4 top-1/3 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[120px]" />
+        <div className="absolute bottom-1/3 right-1/4 h-[400px] w-[400px] rounded-full bg-primary/5 blur-[100px]" />
       </div>
 
       {/* Grid pattern */}
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
               </p>
               <Link
                 to="/auth/login"
-                className="inline-flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 font-medium transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t("auth.backToLogin")}
@@ -124,7 +124,7 @@ export default function ForgotPassword() {
                       placeholder={t("auth.emailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full h-11 pl-10 pr-4 rounded-lg bg-white/5 border border-white/10 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/40 transition-colors text-sm"
+                      className="h-11 w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 text-base text-white placeholder:text-zinc-600 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/40 md:text-sm"
                       required
                       autoFocus
                       disabled={loading}
@@ -135,7 +135,7 @@ export default function ForgotPassword() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all"
+                  className="h-11 w-full font-semibold"
                 >
                   {loading ? t("auth.sendingResetLink") : t("auth.sendResetLink")}
                 </Button>
@@ -143,7 +143,7 @@ export default function ForgotPassword() {
                 <div className="text-center pt-1">
                   <Link
                     to="/auth/login"
-                    className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-orange-400 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-primary"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     {t("auth.backToLogin")}

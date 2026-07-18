@@ -16,7 +16,7 @@
 
 @layer base {
   :root {
-    /* Light mode — Primos Books brand (#6A9C29) */
+    /* Light mode — Xefe. The darker action green keeps white button text legible. */
     --background: 80 10% 97%;
     --foreground: 210 18% 18%;
 
@@ -26,14 +26,14 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 18% 18%;
 
-    --primary: 86 58% 39%;
+    --primary: 87 58% 32%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 80 8% 95%;
     --secondary-foreground: 210 18% 18%;
 
     --muted: 80 8% 95%;
-    --muted-foreground: 210 8% 46%;
+    --muted-foreground: 210 9% 42%;
 
     --accent: 80 12% 94%;
     --accent-foreground: 210 18% 18%;
@@ -43,22 +43,22 @@
 
     --border: 80 8% 88%;
     --input: 80 8% 88%;
-    --ring: 86 58% 39%;
+    --ring: 87 58% 32%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 80 8% 99%;
     --sidebar-foreground: 210 18% 18%;
-    --sidebar-primary: 86 58% 39%;
+    --sidebar-primary: 87 58% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 80 12% 94%;
     --sidebar-accent-foreground: 210 18% 18%;
     --sidebar-border: 80 8% 90%;
-    --sidebar-ring: 86 58% 39%;
+    --sidebar-ring: 87 58% 32%;
   }
 
   .dark {
-    /* Dark mode — Primos Books brand */
+    /* Dark mode — Xefe */
     --background: 220 20% 10%;
     --foreground: 210 15% 95%;
 
@@ -69,13 +69,13 @@
     --popover-foreground: 210 15% 95%;
 
     --primary: 86 50% 48%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 220 20% 10%;
 
     --secondary: 220 15% 18%;
     --secondary-foreground: 210 15% 95%;
 
     --muted: 220 15% 18%;
-    --muted-foreground: 210 10% 55%;
+    --muted-foreground: 210 10% 62%;
 
     --accent: 220 15% 18%;
     --accent-foreground: 210 15% 95%;
@@ -87,13 +87,13 @@
     --input: 220 15% 20%;
     --ring: 86 50% 48%;
 
-    --sidebar-background: 220 20% 10%;
+    --sidebar-background: 220 24% 7%;
     --sidebar-foreground: 210 15% 95%;
     --sidebar-primary: 86 50% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 18%;
+    --sidebar-primary-foreground: 220 20% 10%;
+    --sidebar-accent: 220 17% 14%;
     --sidebar-accent-foreground: 210 15% 95%;
-    --sidebar-border: 220 15% 20%;
+    --sidebar-border: 220 18% 15%;
     --sidebar-ring: 86 50% 48%;
   }
 }
@@ -116,6 +116,17 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     /* Smooth theme transitions */
     transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Prevent mobile browser zoom and keep raw HTML controls consistent with
+     the shared form primitives. Checkboxes/radios keep their native sizing. */
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+    select,
+    textarea,
+    [role="combobox"] {
+      font-size: 1rem !important;
+    }
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -141,41 +152,41 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   MEZA SPOTLIGHT CHAT - Centered overlay panel
+   XEFE SPOTLIGHT CHAT - Centered overlay panel
 ═══════════════════════════════════════════════════════════════ */
 
 /* Backdrop */
-@keyframes mezaSpotlightBackdropIn {
+@keyframes xefeSpotlightBackdropIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-@keyframes mezaSpotlightBackdropOut {
+@keyframes xefeSpotlightBackdropOut {
   from { opacity: 1; }
   to { opacity: 0; }
 }
-.meza-spotlight-backdrop-in {
+.xefe-spotlight-backdrop-in {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
-  animation: mezaSpotlightBackdropIn 0.2s ease-out both;
+  animation: xefeSpotlightBackdropIn 0.2s ease-out both;
 }
-.meza-spotlight-backdrop-out {
+.xefe-spotlight-backdrop-out {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
-  animation: mezaSpotlightBackdropOut 0.15s ease-in both;
+  animation: xefeSpotlightBackdropOut 0.15s ease-in both;
 }
 
 /* Glass panel */
-@keyframes mezaSpotlightPanelIn {
+@keyframes xefeSpotlightPanelIn {
   from { opacity: 0; transform: scale(0.96) translateY(-8px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
-@keyframes mezaSpotlightPanelOut {
+@keyframes xefeSpotlightPanelOut {
   from { opacity: 1; transform: scale(1) translateY(0); }
   to { opacity: 0; transform: scale(0.97) translateY(-6px); }
 }
-.meza-spotlight-panel {
+.xefe-spotlight-panel {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 1rem;
@@ -184,7 +195,7 @@
     0 2px 6px -1px rgba(0, 0, 0, 0.1),
     0 8px 24px -4px rgba(0, 0, 0, 0.2);
 }
-.dark .meza-spotlight-panel {
+.dark .xefe-spotlight-panel {
   background: rgba(20, 27, 38, 0.88);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -195,11 +206,11 @@
     0 16px 48px -8px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-.meza-spotlight-panel-in { animation: mezaSpotlightPanelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.meza-spotlight-panel-out { animation: mezaSpotlightPanelOut 0.15s ease-in both; }
+.xefe-spotlight-panel-in { animation: xefeSpotlightPanelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.xefe-spotlight-panel-out { animation: xefeSpotlightPanelOut 0.15s ease-in both; }
 
 /* Keyboard hint badges */
-.meza-spotlight-kbd {
+.xefe-spotlight-kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -215,7 +226,7 @@
 }
 
 /* Footer */
-.meza-spotlight-footer {
+.xefe-spotlight-footer {
   padding: 8px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(0, 0, 0, 0.25);
@@ -236,15 +247,13 @@
   animation: fade-in 0.3s ease-out forwards;
 }
 
-/* Fade Up - The signature page load animation */
+/* Legacy fade-up now fades only; translating full pages adds visual noise. */
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -388,13 +397,9 @@
   @apply bg-background/80 backdrop-blur-xl;
 }
 
-/* Subtle card hover lift */
+/* Legacy class retained for compatibility; surfaces no longer jump on hover. */
 .hover-lift {
-  @apply transition-all duration-200;
-}
-
-.hover-lift:hover {
-  @apply -translate-y-0.5 shadow-md;
+  @apply transition-colors duration-200;
 }
 
 /* Gradient text utility */

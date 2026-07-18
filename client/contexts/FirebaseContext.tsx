@@ -6,8 +6,6 @@ import React, {
   useContext,
   ReactNode,
 } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, limit, query } from "firebase/firestore";
 
 interface FirebaseContextType {
   isOnline: boolean;
@@ -42,6 +40,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
 
       // Test Firestore connection with a simple query
+      const [{ collection, getDocs, limit, query }, { db }] = await Promise.all([
+        import("firebase/firestore"),
+        import("@/lib/firebase-firestore"),
+      ]);
       const testQuery = query(collection(db, "_connection_test"), limit(1));
       await getDocs(testQuery);
 

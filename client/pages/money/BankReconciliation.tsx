@@ -200,12 +200,13 @@ export default function BankReconciliation() {
         ]);
 
         billPayments.forEach((payment) => {
-          if (payment.amount <= 0) return;
+          const cashPaid = payment.cashPaid ?? payment.amount;
+          if (cashPaid <= 0) return;
             options.push({
               type: 'bill_payment',
               id: payment.billId,
               description: `Bill: ${payment.billDescription || payment.billNumber || payment.billId} - ${payment.vendorName || 'Vendor payment'}`,
-              amount: -payment.amount,
+              amount: -cashPaid,
               date: payment.date,
             });
           });

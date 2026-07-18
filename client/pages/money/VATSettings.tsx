@@ -9,42 +9,23 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
+import { isVATConfigOperational, type VATConfig } from '@onit/shared';
 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import {
-  Receipt,
-  Save,
-  ArrowLeft,
-  Loader2,
-  Building2,
-  AlertTriangle,
-  CheckCircle,
-} from 'lucide-react';
+import { Receipt, Save, ArrowLeft, Loader2, Building2, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface VATSettingsData {
   isRegistered: boolean;
@@ -58,9 +39,9 @@ interface VATSettingsData {
 const DEFAULT_VAT_SETTINGS: VATSettingsData = {
   isRegistered: false,
   vatRegistrationNumber: '',
-  defaultRate: 10,
-  pricesIncludeVAT: true,
-  filingFrequency: 'monthly',
+  defaultRate: 0,
+  pricesIncludeVAT: false,
+  filingFrequency: 'quarterly',
 };
 
 export default function VATSettingsPage() {
@@ -79,30 +60,56 @@ export default function VATSettingsPage() {
       // Check platform VAT status
       const platformRef = doc(db, paths.vatConfig());
       const platformSnap = await getDoc(platformRef);
-      const isPlatformActive = platformSnap.exists() && platformSnap.data().isActive === true;
+      const platformConfig = platformSnap.exists() ? (platformSnap.data() as Partial<VATConfig>) : null;
+      const operationalPlatformConfig = isVATConfigOperational(platformConfig) ? platformConfig : null;
+      const isPlatformActive = operationalPlatformConfig !== null;
+      const platformDefaultRate = operationalPlatformConfig?.standardRate ?? 0;
+      const platformFilingFrequency = operationalPlatformConfig
+        ? operationalPlatformConfig.filingFrequency
+        : 'quarterly';
 
       // Load tenant VAT settings
       const tenantRef = doc(db, paths.vatSettings(tenantId));
       const tenantSnap = await getDoc(tenantRef);
-      let tenantSettings = DEFAULT_VAT_SETTINGS;
+      let tenantSettings: VATSettingsData = {
+        ...DEFAULT_VAT_SETTINGS,
+        defaultRate: platformDefaultRate,
+        filingFrequency: platformFilingFrequency,
+      };
       if (tenantSnap.exists()) {
         const data = tenantSnap.data();
         tenantSettings = {
-          isRegistered: data.isRegistered ?? false,
-          vatRegistrationNumber: data.vatRegistrationNumber ?? '',
-          defaultRate: data.defaultRate ?? 10,
-          pricesIncludeVAT: data.pricesIncludeVAT ?? true,
-          filingFrequency: data.filingFrequency ?? 'monthly',
+          isRegistered: data.vatRegistered === true,
+          vatRegistrationNumber: typeof data.vatRegistrationNumber === 'string' ? data.vatRegistrationNumber : '',
+          defaultRate: typeof data.defaultVATRate === 'number' ? data.defaultVATRate : platformDefaultRate,
+          pricesIncludeVAT: data.pricesIncludeVAT === true,
+          filingFrequency:
+            data.filingFrequency === 'monthly' || data.filingFrequency === 'quarterly'
+              ? data.filingFrequency
+              : platformFilingFrequency,
           updatedAt: data.updatedAt?.toDate?.(),
         };
       }
 
-      return { platformActive: isPlatformActive, settings: tenantSettings };
+      return {
+        platformActive: isPlatformActive,
+        platformConfig: operationalPlatformConfig,
+        settings: tenantSettings,
+      };
     },
     staleTime: 5 * 60 * 1000,
   });
 
   const platformActive = loadedData?.platformActive ?? false;
+  const configuredRates =
+    platformActive && loadedData?.platformConfig
+      ? Array.from(
+          new Set([
+            loadedData.platformConfig.standardRate,
+            ...loadedData.platformConfig.reducedRates.map((entry) => entry.rate),
+          ])
+        )
+      : [];
 
   useEffect(() => {
     if (!loadedData?.settings || hasLocalChanges) {
@@ -116,12 +123,35 @@ export default function VATSettingsPage() {
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (data: VATSettingsData) => {
+      if (!platformActive) {
+        throw new Error('VAT settings are locked until an enacted configuration is effective.');
+      }
+      if (!configuredRates.includes(data.defaultRate)) {
+        throw new Error('The selected VAT rate is not present in the enacted platform configuration.');
+      }
+      if (data.isRegistered && data.vatRegistrationNumber.trim().length === 0) {
+        throw new Error('A VAT registration number is required for a registered business.');
+      }
       const ref = doc(db, paths.vatSettings(tenantId));
-      await setDoc(ref, { ...data, updatedAt: new Date() }, { merge: true });
+      await setDoc(
+        ref,
+        {
+          vatEnabled: data.isRegistered,
+          vatRegistered: data.isRegistered,
+          vatRegistrationNumber: data.vatRegistrationNumber.trim(),
+          defaultVATRate: data.defaultRate,
+          pricesIncludeVAT: data.pricesIncludeVAT,
+          filingFrequency: data.filingFrequency,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
     },
     onSuccess: () => {
       setHasLocalChanges(false);
-      queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'vatSettings'] });
+      queryClient.invalidateQueries({
+        queryKey: ['tenants', tenantId, 'vatSettings'],
+      });
       toast({
         title: 'Saved',
         description: 'VAT settings updated successfully',
@@ -139,13 +169,11 @@ export default function VATSettingsPage() {
   const saving = saveMutation.isPending;
 
   const saveSettings = () => {
+    if (!platformActive) return;
     saveMutation.mutate(settings);
   };
 
-  const updateField = <K extends keyof VATSettingsData>(
-    key: K,
-    value: VATSettingsData[K]
-  ) => {
+  const updateField = <K extends keyof VATSettingsData>(key: K, value: VATSettingsData[K]) => {
     setHasLocalChanges(true);
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
@@ -162,21 +190,15 @@ export default function VATSettingsPage() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/money')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => navigate('/money')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Button onClick={saveSettings} disabled={saving || loading}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Save
-              </Button>
+              {platformActive && (
+                <Button onClick={saveSettings} disabled={saving || loading}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save
+                </Button>
+              )}
             </>
           }
         />
@@ -190,11 +212,7 @@ export default function VATSettingsPage() {
           <>
             {/* Platform Status */}
             <Card
-              className={
-                platformActive
-                  ? 'border-green-500/30 bg-green-500/5'
-                  : 'border-amber-500/30 bg-amber-500/5'
-              }
+              className={platformActive ? 'border-green-500/30 bg-green-500/5' : 'border-amber-500/30 bg-amber-500/5'}
             >
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -205,20 +223,15 @@ export default function VATSettingsPage() {
                   )}
                   <div>
                     <p className="font-medium">
-                      {platformActive
-                        ? 'VAT is active in Timor-Leste'
-                        : 'VAT is not yet active in Timor-Leste'}
+                      {platformActive ? 'VAT is active in Timor-Leste' : 'VAT is not yet active in Timor-Leste'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {platformActive
                         ? 'All transactions will capture VAT data.'
-                        : 'You can configure settings now. VAT will apply when the government activates it.'}
+                        : 'Settings stay locked until an enacted VAT law, effective date, and complete rate configuration are published.'}
                     </p>
                   </div>
-                  <Badge
-                    variant={platformActive ? 'default' : 'secondary'}
-                    className="ml-auto"
-                  >
+                  <Badge variant={platformActive ? 'default' : 'secondary'} className="ml-auto">
                     {platformActive ? 'Active' : 'Pending'}
                   </Badge>
                 </div>
@@ -226,50 +239,35 @@ export default function VATSettingsPage() {
             </Card>
 
             {/* Registration */}
-            <Card>
+            <Card className={platformActive ? undefined : 'hidden'}>
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                   <CardTitle className="text-lg">VAT Registration</CardTitle>
                 </div>
-                <CardDescription>
-                  Register your business for VAT to collect and file returns.
-                </CardDescription>
+                <CardDescription>Register your business for VAT to collect and file returns.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">
-                      VAT Registered
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Toggle if your business is registered for VAT
-                    </p>
+                    <Label className="text-base font-medium">VAT Registered</Label>
+                    <p className="text-sm text-muted-foreground">Toggle if your business is registered for VAT</p>
                   </div>
                   <Switch
                     checked={settings.isRegistered}
-                    onCheckedChange={(checked) =>
-                      updateField('isRegistered', checked)
-                    }
+                    onCheckedChange={(checked) => updateField('isRegistered', checked)}
                   />
                 </div>
 
                 {settings.isRegistered && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="vatRegNumber">
-                        VAT Registration Number
-                      </Label>
+                      <Label htmlFor="vatRegNumber">VAT Registration Number</Label>
                       <Input
                         id="vatRegNumber"
                         placeholder="e.g. TL-VAT-000123"
                         value={settings.vatRegistrationNumber}
-                        onChange={(e) =>
-                          updateField(
-                            'vatRegistrationNumber',
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => updateField('vatRegistrationNumber', e.target.value)}
                       />
                     </div>
                   </>
@@ -278,55 +276,42 @@ export default function VATSettingsPage() {
             </Card>
 
             {/* Rate & Preferences */}
-            <Card>
+            <Card className={platformActive ? undefined : 'hidden'}>
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <Receipt className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle className="text-lg">
-                    Rate & Preferences
-                  </CardTitle>
+                  <CardTitle className="text-lg">Rate & Preferences</CardTitle>
                 </div>
-                <CardDescription>
-                  Set your default VAT rate and pricing preferences.
-                </CardDescription>
+                <CardDescription>Set your default VAT rate and pricing preferences.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Default VAT Rate</Label>
                   <Select
                     value={String(settings.defaultRate)}
-                    onValueChange={(val) =>
-                      updateField('defaultRate', Number(val))
-                    }
+                    onValueChange={(val) => updateField('defaultRate', Number(val))}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="0">0% (Exempt)</SelectItem>
-                      <SelectItem value="2.5">2.5%</SelectItem>
-                      <SelectItem value="5">5%</SelectItem>
-                      <SelectItem value="10">
-                        10% (Standard TL Rate)
-                      </SelectItem>
+                      {configuredRates.map((rate) => (
+                        <SelectItem key={rate} value={String(rate)}>
+                          {rate}%{rate === loadedData?.platformConfig?.standardRate ? ' (Standard)' : ''}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-base font-medium">
-                      Prices Include VAT
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      When enabled, entered prices already include VAT
-                    </p>
+                    <Label className="text-base font-medium">Prices Include VAT</Label>
+                    <p className="text-sm text-muted-foreground">When enabled, entered prices already include VAT</p>
                   </div>
                   <Switch
                     checked={settings.pricesIncludeVAT}
-                    onCheckedChange={(checked) =>
-                      updateField('pricesIncludeVAT', checked)
-                    }
+                    onCheckedChange={(checked) => updateField('pricesIncludeVAT', checked)}
                   />
                 </div>
 
@@ -334,12 +319,7 @@ export default function VATSettingsPage() {
                   <Label>Filing Frequency</Label>
                   <Select
                     value={settings.filingFrequency}
-                    onValueChange={(val) =>
-                      updateField(
-                        'filingFrequency',
-                        val as 'monthly' | 'quarterly'
-                      )
-                    }
+                    onValueChange={(val) => updateField('filingFrequency', val as 'monthly' | 'quarterly')}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -349,9 +329,7 @@ export default function VATSettingsPage() {
                       <SelectItem value="quarterly">Quarterly</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">
-                    How often you file VAT returns with tax authorities
-                  </p>
+                  <p className="text-xs text-muted-foreground">How often you file VAT returns with tax authorities</p>
                 </div>
               </CardContent>
             </Card>

@@ -17,9 +17,12 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  runTransaction,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
+import { calculateServiceCompensationDetails } from '@/lib/payroll/calculations-tl';
 
 // ============================================
 // Types
@@ -57,6 +60,23 @@ export interface ExitInterview {
   completed: boolean;
 }
 
+export interface Article56FinalPaySnapshot {
+  version: 1;
+  monthlySalary: number;
+  hireDate: string;
+  terminationDate: string;
+  completedYears: number;
+  completedFiveYearPeriods: number;
+  salaryMonths: number;
+  serviceCompensation: number;
+  witTaxable: true;
+  inssContributable: false;
+  legalBasis: 'Labour Law 4/2012 Art. 56';
+  taxBasis: 'Tax Law 8/2008 Art. 1';
+  calculatedBy: string;
+  calculatedAt: Date;
+}
+
 export interface OffboardingCase {
   id?: string;
   tenantId: string;
@@ -79,6 +99,9 @@ export interface OffboardingCase {
 
   // Exit interview
   exitInterview: ExitInterview;
+
+  // Frozen source values and result for the universal Art. 56 service payment.
+  article56FinalPay?: Article56FinalPaySnapshot;
 
   // Audit
   createdBy: string;
@@ -336,7 +359,10 @@ class OffboardingService {
       if (updates.status === 'completed' && existing.status !== 'completed' && existing.employeeId) {
         const { employeeService } = await import('./employeeService');
         await employeeService
-          .updateEmployee(tenantId, existing.employeeId, { status: 'terminated' })
+          .updateEmployee(tenantId, existing.employeeId, {
+            status: 'terminated',
+            terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
+          })
           .catch((err) => {
             console.error('Offboarding completed but employee could not be marked terminated:', err);
           });
@@ -378,6 +404,11 @@ class OffboardingService {
     item: keyof OffboardingChecklist,
     value: boolean
   ): Promise<void> {
+    if (item === 'finalPayCalculated') {
+      throw new Error(
+        'Article 56 final pay must be calculated and saved from employee source data; it cannot be ticked manually.',
+      );
+    }
     const existing = await this.getCase(tenantId, caseId);
     if (!existing) {
       throw new Error('Offboarding case not found');
@@ -396,6 +427,93 @@ class OffboardingService {
       ...(newStatus === 'completed' && {
         completedAt: new Date(),
       }),
+    });
+  }
+
+  /**
+   * Calculate and freeze the Article 56 service compensation from employee
+   * master data and the case's last working day. No salary/date fallback is
+   * permitted and saving the snapshot is what completes the checklist item.
+   */
+  async saveArticle56FinalPay(
+    tenantId: string,
+    caseId: string,
+    calculatedBy: string,
+  ): Promise<Article56FinalPaySnapshot> {
+    if (!calculatedBy.trim()) throw new Error('A signed-in user is required to save final pay.');
+    const caseRef = doc(db, OFFBOARDING_COLLECTION, caseId);
+
+    return runTransaction(db, async (transaction) => {
+      const caseDoc = await transaction.get(caseRef);
+      if (!caseDoc.exists() || caseDoc.data().tenantId !== tenantId) {
+        throw new Error('Offboarding case not found');
+      }
+      const caseData = caseDoc.data();
+      if (caseData.status === 'cancelled') {
+        throw new Error('Cannot calculate final pay for a cancelled offboarding case.');
+      }
+      const employeeId = String(caseData.employeeId || '');
+      if (!employeeId) throw new Error('Offboarding case is missing its employee.');
+      const employeeRef = doc(db, paths.employee(tenantId, employeeId));
+      const employeeDoc = await transaction.get(employeeRef);
+      if (!employeeDoc.exists()) throw new Error('Employee master record not found.');
+      const employee = employeeDoc.data();
+      const monthlySalary = employee.compensation?.monthlySalary;
+      const hireDate = employee.jobDetails?.hireDate;
+      const terminationDate = caseData.lastWorkingDay;
+      if (!Number.isFinite(monthlySalary) || monthlySalary <= 0) {
+        throw new Error('Employee monthly salary must be completed before calculating Article 56 final pay.');
+      }
+      if (typeof hireDate !== 'string' || !hireDate.trim()) {
+        throw new Error('Employee hire date must be completed before calculating Article 56 final pay.');
+      }
+      if (typeof terminationDate !== 'string' || !terminationDate.trim()) {
+        throw new Error('Last working day is required before calculating Article 56 final pay.');
+      }
+
+      const details = calculateServiceCompensationDetails(
+        monthlySalary,
+        hireDate,
+        terminationDate,
+      );
+      const snapshot: Article56FinalPaySnapshot = {
+        version: 1,
+        monthlySalary: details.monthlySalary,
+        hireDate: details.hireDate,
+        terminationDate: details.terminationDate,
+        completedYears: details.completedYears,
+        completedFiveYearPeriods: details.completedFiveYearPeriods,
+        salaryMonths: details.salaryMonths,
+        serviceCompensation: details.amount,
+        witTaxable: true,
+        inssContributable: false,
+        legalBasis: 'Labour Law 4/2012 Art. 56',
+        taxBasis: 'Tax Law 8/2008 Art. 1',
+        calculatedBy: calculatedBy.trim(),
+        calculatedAt: new Date(),
+      };
+      const currentChecklist = caseData.checklist || DEFAULT_CHECKLIST;
+      const checklist = { ...currentChecklist, finalPayCalculated: true };
+      const status = calculateStatus(checklist);
+
+      transaction.update(caseRef, {
+        article56FinalPay: {
+          ...snapshot,
+          calculatedAt: serverTimestamp(),
+        },
+        checklist,
+        status,
+        ...(status === 'completed' ? { completedAt: serverTimestamp() } : {}),
+        updatedAt: serverTimestamp(),
+      });
+      if (status === 'completed') {
+        transaction.update(employeeRef, {
+          status: 'terminated',
+          terminationDate,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return snapshot;
     });
   }
 
@@ -603,6 +721,14 @@ class OffboardingService {
       status: data.status,
       checklist: data.checklist || DEFAULT_CHECKLIST,
       exitInterview: data.exitInterview || DEFAULT_EXIT_INTERVIEW,
+      article56FinalPay: data.article56FinalPay
+        ? {
+            ...data.article56FinalPay,
+            calculatedAt: data.article56FinalPay.calculatedAt instanceof Timestamp
+              ? data.article56FinalPay.calculatedAt.toDate()
+              : data.article56FinalPay.calculatedAt,
+          }
+        : undefined,
       createdBy: data.createdBy,
       completedBy: data.completedBy,
       completedAt: data.completedAt instanceof Timestamp

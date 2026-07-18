@@ -7,17 +7,26 @@ import React from "react";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { Employee } from "@/services/employeeService";
-import type { TLPayrollResult } from "@/lib/payroll/calculations-tl";
+import type { TLBonusINSSCategory, TLPayrollResult } from "@/lib/payroll/calculations-tl";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useAdvancedTax } from "@/contexts/TenantContext";
 
 interface OriginalValues {
   regularHours: number;
   overtimeHours: number;
   nightShiftHours: number;
   bonus: number;
+  bonusINSSCategory: TLBonusINSSCategory | null;
   perDiem: number;
   allowances: number;
 }
@@ -31,6 +40,7 @@ interface EmployeePayrollRowData {
   sickDays: number;
   perDiem: number;
   bonus: number;
+  bonusINSSCategory: TLBonusINSSCategory | null;
   allowances: number;
   calculation: TLPayrollResult | null;
   isEdited: boolean;
@@ -42,6 +52,7 @@ interface PayrollEmployeeRowProps {
   isExpanded: boolean;
   onToggleExpand: (employeeId: string) => void;
   onInputChange: (employeeId: string, field: string, value: number) => void;
+  onBonusCategoryChange: (employeeId: string, category: TLBonusINSSCategory) => void;
   onReset: (employeeId: string) => void;
 }
 
@@ -138,6 +149,80 @@ function EditableInputCell({
         min={0}
         step={step}
       />
+    </TableCell>
+  );
+}
+
+function BonusInputCell({
+  data,
+  employeeId,
+  employeeName,
+  onInputChange,
+  onBonusCategoryChange,
+  t,
+}: {
+  data: EmployeePayrollRowData;
+  employeeId: string;
+  employeeName: string;
+  onInputChange: (employeeId: string, field: string, value: number) => void;
+  onBonusCategoryChange: (employeeId: string, category: TLBonusINSSCategory) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
+  const showAdvancedTax = useAdvancedTax();
+  const isModified =
+    data.bonus !== data.originalValues.bonus ||
+    data.bonusINSSCategory !== data.originalValues.bonusINSSCategory;
+
+  return (
+    <TableCell className="text-right">
+      <div className="flex min-w-36 flex-col items-end gap-1.5">
+        <Input
+          type="number"
+          value={data.bonus}
+          onChange={(event) =>
+            onInputChange(employeeId, "bonus", parseFloat(event.target.value) || 0)
+          }
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+          aria-label={`${t("runPayroll.bonus")} - ${employeeName}`}
+          className={`w-24 text-right ${
+            isModified
+              ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
+              : "border-border/50"
+          }`}
+          min={0}
+          step={50}
+        />
+        {/* Simple flow auto-classifies the bonus (usePayrollCalculator); only
+            accountant-grade users pick the DL 20/2017 INSS category. */}
+        {showAdvancedTax && data.bonus > 0 && (
+          <Select
+            value={data.bonusINSSCategory ?? ""}
+            onValueChange={(value) =>
+              onBonusCategoryChange(employeeId, value as TLBonusINSSCategory)
+            }
+          >
+            <SelectTrigger
+              className="h-8 w-36 text-xs"
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`${t("runPayroll.bonusType")} - ${employeeName}`}
+            >
+              <SelectValue placeholder={t("runPayroll.bonusTypeRequired")} />
+            </SelectTrigger>
+            <SelectContent onClick={(event) => event.stopPropagation()}>
+              <SelectItem value="individual_performance">
+                {t("runPayroll.bonusPerformance")}
+              </SelectItem>
+              <SelectItem value="company_profit">
+                {t("runPayroll.bonusCompanyProfit")}
+              </SelectItem>
+              <SelectItem value="extraordinary">
+                {t("runPayroll.bonusExtraordinary")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
     </TableCell>
   );
 }
@@ -273,12 +358,14 @@ function PayrollEditableCells({
   employeeId,
   employeeName,
   onInputChange,
+  onBonusCategoryChange,
   t,
 }: {
   data: EmployeePayrollRowData;
   employeeId: string;
   employeeName: string;
   onInputChange: (employeeId: string, field: string, value: number) => void;
+  onBonusCategoryChange: (employeeId: string, category: TLBonusINSSCategory) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
@@ -308,15 +395,13 @@ function PayrollEditableCells({
         ariaLabel={`${t('runPayroll.night')} - ${employeeName}`}
         onInputChange={onInputChange}
       />
-      <EditableInputCell
-        value={data.bonus}
-        originalValue={data.originalValues.bonus}
+      <BonusInputCell
+        data={data}
         employeeId={employeeId}
-        field="bonus"
-        ariaLabel={`${t('runPayroll.bonus')} - ${employeeName}`}
+        employeeName={employeeName}
         onInputChange={onInputChange}
-        width="w-24"
-        step={50}
+        onBonusCategoryChange={onBonusCategoryChange}
+        t={t}
       />
     </>
   );
@@ -329,6 +414,7 @@ export function PayrollEmployeeRow({
   isExpanded,
   onToggleExpand,
   onInputChange,
+  onBonusCategoryChange,
   onReset,
 }: PayrollEmployeeRowProps) {
   const { t } = useI18n();
@@ -369,6 +455,7 @@ export function PayrollEmployeeRow({
           employeeId={employeeId}
           employeeName={employeeName}
           onInputChange={onInputChange}
+          onBonusCategoryChange={onBonusCategoryChange}
           t={t}
         />
         <PaySummaryCell

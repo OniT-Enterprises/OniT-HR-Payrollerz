@@ -7,6 +7,7 @@ import {
   collection,
   doc,
   addDoc,
+  setDoc,
   updateDoc,
   getDoc,
   getDocs,
@@ -23,7 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import { addMoney, subtractMoney, sumMoney, toDecimal, toMoney } from '@/lib/currency';
+import { addMoney, roundMoney, subtractMoney, sumMoney, toDecimal, toMoney } from '@/lib/currency';
 import { auditLogService } from '@/services/auditLogService';
 import type {
   Account,
@@ -50,6 +51,7 @@ import {
 import { getTodayTL } from '@/lib/dateUtils';
 import {
   addToMoneyMap,
+  calculateBillPaymentPostingAmounts,
   getAccountNet,
   getFiscalDateParts,
   normalizeJournalAmounts,
@@ -169,6 +171,55 @@ class AccountService {
   async getAccountByCode(tenantId: string, code: string): Promise<Account | null> {
     const accounts = await this.getCachedAccounts(tenantId);
     return accounts.find((account) => account.code === code) ?? null;
+  }
+
+  /**
+   * Add a newly introduced system account to an existing tenant chart.
+   * Uses a deterministic document ID so concurrent first use is idempotent.
+   */
+  async ensureSystemAccountByCode(tenantId: string, code: string): Promise<Account> {
+    const existing = (await this.getAllAccounts(tenantId, true))
+      .find((account) => account.code === code) ?? null;
+    if (existing) {
+      if (!existing.isActive) {
+        throw new Error(`Required system account ${code} is inactive. Reactivate it before posting.`);
+      }
+      return existing;
+    }
+
+    const definition = getDefaultAccounts().find(
+      (account) => account.code === code && account.isSystem,
+    );
+    if (!definition) {
+      throw new Error(`No system account definition exists for code ${code}.`);
+    }
+
+    const accountRef = doc(this.collectionRef(tenantId), `system-${code}`);
+    const deterministicDoc = await getDoc(accountRef);
+    if (deterministicDoc.exists()) {
+      const data = deterministicDoc.data() as Partial<Account>;
+      if (data.code !== code) {
+        throw new Error(`Account document system-${code} is already used by code ${data.code || 'unknown'}.`);
+      }
+      if (data.isActive === false) {
+        throw new Error(`Required system account ${code} is inactive. Reactivate it before posting.`);
+      }
+      this.invalidateCache(tenantId);
+      return { id: deterministicDoc.id, ...data } as Account;
+    }
+
+    await setDoc(accountRef, {
+      ...definition,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    this.invalidateCache(tenantId);
+    return {
+      id: accountRef.id,
+      ...definition,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   async getAllAccounts(tenantId: string, forceRefresh: boolean = false): Promise<Account[]> {
@@ -1496,6 +1547,8 @@ class JournalEntryService {
       vendorName: string;
       date: string;
       amount: number;
+      cashPaid?: number;
+      withholdingTax?: number;
       method: PaymentMethod;
       reference?: string;
     },
@@ -1519,6 +1572,14 @@ class JournalEntryService {
     // Use Cash on Hand for cash payments, Bank for others
     const cashCode = payment.method === 'cash' ? '1110' : '1120';
     const cashAccount = await getAccountId(cashCode);
+    const { grossAmount, cashPaid, withholdingTax } = calculateBillPaymentPostingAmounts(
+      payment.amount,
+      payment.cashPaid,
+      payment.withholdingTax,
+    );
+    const withholdingAccount = withholdingTax > 0
+      ? await getAccountId('2320')
+      : null;
 
     const refLabel = payment.billNumber || `Bill-${payment.billId.slice(0, 8)}`;
 
@@ -1528,20 +1589,33 @@ class JournalEntryService {
         accountId: apAccount.id,
         accountCode: '2110',
         accountName: apAccount.name,
-        debit: payment.amount,
+        debit: grossAmount,
         credit: 0,
         description: `Clear AP - ${refLabel}`,
       },
-      {
-        lineNumber: 2,
+    ];
+    if (cashPaid > 0) {
+      lines.push({
+        lineNumber: lines.length + 1,
         accountId: cashAccount.id,
         accountCode: cashCode,
         accountName: cashAccount.name,
         debit: 0,
-        credit: payment.amount,
+        credit: cashPaid,
         description: `Payment to ${payment.vendorName}`,
-      },
-    ];
+      });
+    }
+    if (withholdingAccount) {
+      lines.push({
+        lineNumber: lines.length + 1,
+        accountId: withholdingAccount.id,
+        accountCode: '2320',
+        accountName: withholdingAccount.name,
+        debit: 0,
+        credit: withholdingTax,
+        description: `Supplier withholding tax - ${refLabel}`,
+      });
+    }
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,
@@ -1551,8 +1625,8 @@ class JournalEntryService {
       sourceId: payment.billId,
       sourceRef: payment.reference || refLabel,
       lines,
-      totalDebit: payment.amount,
-      totalCredit: payment.amount,
+      totalDebit: grossAmount,
+      totalCredit: grossAmount,
       status: 'posted',
       postedAt: serverTimestamp(),
       postedBy: createdBy,
@@ -1561,6 +1635,214 @@ class JournalEntryService {
     };
 
     return await this.createJournalEntry(tenantId, journalEntry, txn);
+  }
+
+  /**
+   * Clear supplier withholding only when an actual ATTL payment is recorded.
+   * A filed return is not a cash event and must never call this method.
+   */
+  async createFromSupplierWithholdingRemittance(
+    tenantId: string,
+    remittance: {
+      id: string;
+      period: string;
+      paymentDate: string;
+      amount: number;
+      method: 'bank_transfer' | 'cash_at_bnu';
+      paymentReference: string;
+      proofUrl: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(remittance.paymentDate);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+    const withholdingAccount = resolvedAccounts['2320'];
+    const cashCode = remittance.method === 'cash_at_bnu' ? '1110' : '1120';
+    const cashAccount = resolvedAccounts[cashCode];
+    if (!withholdingAccount?.id) {
+      throw new Error('Missing account for code 2320.');
+    }
+    if (!cashAccount?.id) {
+      throw new Error(`Missing account for code ${cashCode}.`);
+    }
+
+    const amount = roundMoney(remittance.amount);
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: remittance.paymentDate,
+      description: `Supplier withholding remittance - ${remittance.period}`,
+      source: 'tax_payment',
+      sourceId: remittance.id,
+      sourceRef: remittance.paymentReference,
+      attachments: [remittance.proofUrl],
+      lines: [
+        {
+          lineNumber: 1,
+          accountId: withholdingAccount.id,
+          accountCode: '2320',
+          accountName: withholdingAccount.name,
+          debit: amount,
+          credit: 0,
+          description: `Clear supplier withholding payable - ${remittance.period}`,
+        },
+        {
+          lineNumber: 2,
+          accountId: cashAccount.id,
+          accountCode: cashCode,
+          accountName: cashAccount.name,
+          debit: 0,
+          credit: amount,
+          description: `ATTL payment - ${remittance.paymentReference}`,
+        },
+      ],
+      totalDebit: amount,
+      totalCredit: amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+      createdBy,
+    };
+
+    return this.createJournalEntry(tenantId, journalEntry, txn);
+  }
+
+  async createFromCashAdvanceIssue(
+    tenantId: string,
+    advance: {
+      id: string;
+      employeeName: string;
+      purpose: string;
+      issueDate: string;
+      amount: number;
+      fundingMethod: 'cash' | 'bank_transfer';
+      issueReference: string;
+      issueProofUrl: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(advance.issueDate);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+    const advanceAccount = resolvedAccounts['1230'];
+    const cashCode = advance.fundingMethod === 'cash' ? '1110' : '1120';
+    const cashAccount = resolvedAccounts[cashCode];
+    if (!advanceAccount?.id || !cashAccount?.id) {
+      throw new Error('Cash advance accounts were not resolved.');
+    }
+    const amount = roundMoney(advance.amount);
+    return this.createJournalEntry(tenantId, {
+      entryNumber,
+      date: advance.issueDate,
+      description: `Expense advance to ${advance.employeeName}`,
+      source: 'cash_advance',
+      sourceId: advance.id,
+      sourceRef: advance.issueReference,
+      attachments: [advance.issueProofUrl],
+      lines: [
+        {
+          lineNumber: 1,
+          accountId: advanceAccount.id,
+          accountCode: '1230',
+          accountName: advanceAccount.name,
+          debit: amount,
+          credit: 0,
+          description: advance.purpose,
+        },
+        {
+          lineNumber: 2,
+          accountId: cashAccount.id,
+          accountCode: cashCode,
+          accountName: cashAccount.name,
+          debit: 0,
+          credit: amount,
+          description: `Advance issued - ${advance.issueReference}`,
+        },
+      ],
+      totalDebit: amount,
+      totalCredit: amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+      createdBy,
+    }, txn);
+  }
+
+  async createFromCashAdvanceClearing(
+    tenantId: string,
+    clearing: {
+      id: string;
+      advanceId: string;
+      employeeName: string;
+      type: 'expense' | 'return';
+      date: string;
+      amount: number;
+      description: string;
+      proofUrl: string;
+      expenseAccountCode?: string;
+      returnMethod?: 'cash' | 'bank_transfer';
+      reference?: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(clearing.date);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+    const advanceAccount = resolvedAccounts['1230'];
+    if (!advanceAccount?.id) throw new Error('Missing account for code 1230.');
+    const debitCode = clearing.type === 'expense'
+      ? clearing.expenseAccountCode
+      : clearing.returnMethod === 'cash' ? '1110' : '1120';
+    if (!debitCode || !resolvedAccounts[debitCode]?.id) {
+      throw new Error('Cash advance clearing account was not resolved.');
+    }
+    const debitAccount = resolvedAccounts[debitCode];
+    const amount = roundMoney(clearing.amount);
+    const sourceRef = clearing.reference || `Advance-${clearing.advanceId.slice(0, 8)}`;
+    return this.createJournalEntry(tenantId, {
+      entryNumber,
+      date: clearing.date,
+      description: `${clearing.type === 'expense' ? 'Expense receipt' : 'Unused cash returned'} - ${clearing.employeeName}`,
+      source: 'cash_advance',
+      sourceId: clearing.id,
+      sourceRef,
+      attachments: [clearing.proofUrl],
+      lines: [
+        {
+          lineNumber: 1,
+          accountId: debitAccount.id,
+          accountCode: debitCode,
+          accountName: debitAccount.name,
+          debit: amount,
+          credit: 0,
+          description: clearing.description,
+        },
+        {
+          lineNumber: 2,
+          accountId: advanceAccount.id,
+          accountCode: '1230',
+          accountName: advanceAccount.name,
+          debit: 0,
+          credit: amount,
+          description: `Clear staff expense advance - ${clearing.employeeName}`,
+        },
+      ],
+      totalDebit: amount,
+      totalCredit: amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+      createdBy,
+    }, txn);
   }
 
   /**

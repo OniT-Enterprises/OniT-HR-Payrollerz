@@ -182,7 +182,7 @@ export default function Landing() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <LocaleSwitcher className="h-9 w-9 gap-0 border-white/10 bg-white/5 px-0 text-zinc-200 hover:bg-white/10 hover:text-white [&>span]:hidden [&>svg:last-child]:hidden sm:w-auto sm:gap-2 sm:px-3 sm:[&>span]:inline sm:[&>svg:last-child]:block" />
+            <LocaleSwitcher className="h-11 w-11 gap-0 border-white/10 bg-white/5 px-0 text-zinc-200 hover:bg-white/10 hover:text-white [&>span]:hidden [&>svg:last-child]:hidden sm:h-9 sm:w-auto sm:gap-2 sm:px-3 sm:[&>span]:inline sm:[&>svg:last-child]:block" />
             <Button
               variant="ghost"
               asChild

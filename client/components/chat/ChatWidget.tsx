@@ -60,15 +60,15 @@ function SpotlightPanel({
     <div
       className={cn(
         "fixed inset-0 z-[100] flex items-start justify-center print:hidden",
-        isClosing ? "meza-spotlight-backdrop-out" : "meza-spotlight-backdrop-in",
+        isClosing ? "xefe-spotlight-backdrop-out" : "xefe-spotlight-backdrop-in",
       )}
       onClick={onBackdropClick}
     >
       <div
         className={cn(
-          "meza-spotlight-panel mt-[12vh] w-full max-w-[680px] mx-4 flex flex-col overflow-hidden",
+          "xefe-spotlight-panel mt-[12vh] w-full max-w-[680px] mx-4 flex flex-col overflow-hidden",
           "h-[520px] max-sm:mt-[6vh] max-sm:mx-3 max-sm:max-w-none max-sm:h-[70vh]",
-          isClosing ? "meza-spotlight-panel-out" : "meza-spotlight-panel-in",
+          isClosing ? "xefe-spotlight-panel-out" : "xefe-spotlight-panel-in",
         )}
       >
         <Suspense fallback={<ChatPanelFallback />}>
@@ -85,14 +85,14 @@ function SpotlightPanel({
             }
           />
         </Suspense>
-        <div className="meza-spotlight-footer">
+        <div className="xefe-spotlight-footer">
           <div className="flex items-center gap-3 text-[11px] text-white/30">
-            <span className="flex items-center gap-1"><kbd className="meza-spotlight-kbd">Esc</kbd>close</span>
+            <span className="flex items-center gap-1"><kbd className="xefe-spotlight-kbd">Esc</kbd>close</span>
             <span className="flex items-center gap-1">
-              <kbd className="meza-spotlight-kbd"><Command className="h-2.5 w-2.5" /></kbd>
-              <kbd className="meza-spotlight-kbd">K</kbd>toggle
+              <kbd className="xefe-spotlight-kbd"><Command className="h-2.5 w-2.5" /></kbd>
+              <kbd className="xefe-spotlight-kbd">K</kbd>toggle
             </span>
-            <span className="flex items-center gap-1"><kbd className="meza-spotlight-kbd">↵</kbd>send</span>
+            <span className="flex items-center gap-1"><kbd className="xefe-spotlight-kbd">↵</kbd>send</span>
           </div>
         </div>
       </div>

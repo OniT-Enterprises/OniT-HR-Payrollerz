@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFirebase } from "@/contexts/FirebaseContext";
@@ -44,6 +44,7 @@ import {
   ChevronsUpDown,
   Check,
   CreditCard,
+  X,
 } from "lucide-react";
 import { PlanBadge } from "@/components/layout/MainNavigation";
 import { useIsSubscribed } from "@/hooks/useBilling";
@@ -115,7 +116,7 @@ function NotificationsDropdown({ counts, onNavigate, t }: NotificationsDropdownP
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative" aria-label={t("common.notifications")}>
+        <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground" aria-label={t("common.notifications")}>
           <Bell className="h-4 w-4" />
           {total > 0 && (
             <span aria-hidden className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
@@ -191,15 +192,30 @@ interface TopBarUserMenuProps {
   t: (key: string) => string;
   canManageTenant: boolean;
   subscribed: boolean | undefined;
+  isDark: boolean;
+  onToggleTheme: () => void;
+  onAskAI: () => void;
 }
 
-function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOut, t, canManageTenant, subscribed }: TopBarUserMenuProps) {
+function TopBarUserMenu({
+  user,
+  userInitials,
+  isSuperAdmin,
+  onNavigate,
+  onSignOut,
+  t,
+  canManageTenant,
+  subscribed,
+  isDark,
+  onToggleTheme,
+  onAskAI,
+}: TopBarUserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" aria-label={t("common.accountMenu")}>
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary text-white text-sm font-semibold">
+        <Button variant="ghost" size="icon" className="relative rounded-full p-0" aria-label={t("common.accountMenu")}>
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
               {userInitials}
             </AvatarFallback>
           </Avatar>
@@ -235,6 +251,15 @@ function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOu
           <LocaleSwitcher variant="buttons" />
         </div>
         <DropdownMenuSeparator className="sm:hidden" />
+        <DropdownMenuItem onClick={onAskAI} className="sm:hidden">
+          <Bot className="h-4 w-4 mr-2" />
+          {t("common.askAI")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onToggleTheme}>
+          {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+          {isDark ? t("common.switchToLight") : t("common.switchToDark")}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {canManageTenant && (
           <DropdownMenuItem onClick={() => onNavigate("/settings")}>
             <Settings className="h-4 w-4 mr-2" />
@@ -301,10 +326,31 @@ function ConnectionBanner({ isOnline, retryConnection, t }: ConnectionBannerProp
 interface SetupBannerProps {
   setupPercent: number;
   onNavigate: (path: string) => void;
+  onHide: () => void;
+  compact: boolean;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function SetupBanner({ setupPercent, onNavigate, t }: SetupBannerProps) {
+function SetupBanner({ setupPercent, onNavigate, onHide, compact, t }: SetupBannerProps) {
+  if (compact) {
+    return (
+      <div className="flex min-h-12 flex-1 items-center gap-2 rounded-xl border border-sky-200 bg-sky-50/80 px-3 py-1.5 dark:border-sky-900/40 dark:bg-sky-950/20">
+        <AlertTriangle className="h-4 w-4 shrink-0 text-sky-700 dark:text-sky-300" />
+        <button
+          type="button"
+          onClick={() => onNavigate("/setup")}
+          className="min-h-11 min-w-0 flex-1 text-left text-sm font-medium text-foreground"
+        >
+          <span className="block truncate">{t("dashboard.finishSetup")}</span>
+          <span className="block text-xs font-normal text-muted-foreground">{setupPercent}%</span>
+        </button>
+        <Button variant="ghost" size="icon" onClick={onHide} aria-label={t("common.hide")}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50/80 p-3 dark:border-sky-900/40 dark:bg-sky-950/20 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
@@ -316,13 +362,18 @@ function SetupBanner({ setupPercent, onNavigate, t }: SetupBannerProps) {
           <p className="text-sm text-muted-foreground">{t("nav.setupBannerDesc", { percent: setupPercent })}</p>
         </div>
       </div>
-      <Button
-        size="sm"
-        onClick={() => onNavigate("/setup")}
-        className="self-start bg-sky-600 text-white hover:bg-sky-700 sm:self-auto"
-      >
-        {setupPercent > 0 ? t("dashboard.resumeSetup") : t("dashboard.startSetup")}
-      </Button>
+      <div className="flex items-center gap-1 self-start sm:self-auto">
+        <Button
+          size="sm"
+          onClick={() => onNavigate("/setup")}
+          className="bg-sky-700 text-white hover:bg-sky-800"
+        >
+          {setupPercent > 0 ? t("dashboard.resumeSetup") : t("dashboard.startSetup")}
+        </Button>
+        <Button variant="ghost" size="icon" onClick={onHide} aria-label={t("common.hide")}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -377,6 +428,7 @@ function BusinessSelector({ currentName, availableTenants, onSwitch, currentTena
 
 export default function TopBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut, isSuperAdmin } = useAuth();
   const { isOnline, isConnected, retryConnection } = useFirebase();
   const { hasModule, canManage, availableTenants, switchTenant, session } = useTenant();
@@ -386,6 +438,7 @@ export default function TopBar() {
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
   const { toast } = useToast();
+  const [setupBannerHidden, setSetupBannerHidden] = useState(false);
   const canManageTenant = canManage();
   // Billing visibility: admins always see where they stand (free vs subscribed)
   const subscribed = useIsSubscribed(canManageTenant);
@@ -404,6 +457,17 @@ export default function TopBar() {
   });
 
   const handleNavigate = (path: string) => navigate(path);
+
+  useEffect(() => {
+    setSetupBannerHidden(
+      sessionStorage.getItem(`xefe-setup-banner-hidden:${tenantId}`) === "true",
+    );
+  }, [tenantId]);
+
+  const hideSetupBanner = () => {
+    sessionStorage.setItem(`xefe-setup-banner-hidden:${tenantId}`, "true");
+    setSetupBannerHidden(true);
+  };
 
   const handleTenantSwitch = async (tid: string) => {
     try {
@@ -434,18 +498,25 @@ export default function TopBar() {
 
   const userInitials = user ? getUserInitials(user) : "U";
   const hasConnectionIssue = !isOnline || !isConnected;
-  const setupIncomplete = canManageTenant && setupProgress?.isComplete === false;
+  const setupProgressIsAlreadyVisible =
+    location.pathname === "/setup" || location.pathname.startsWith("/settings");
+  const setupIncomplete =
+    canManageTenant &&
+    setupProgress?.isComplete === false &&
+    !setupBannerHidden &&
+    !setupProgressIsAlreadyVisible;
   const setupPercent = setupProgress?.percentComplete ?? 0;
+  const isDashboard = location.pathname === "/" || location.pathname === "/dashboard";
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="px-4 sm:px-6">
-        <div className="flex h-14 items-center gap-4">
+        <div className="flex h-14 items-center gap-2 sm:gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
+            className="shrink-0 text-muted-foreground hover:text-foreground md:hidden"
             aria-label={t("common.openMenu")}
             aria-expanded={sidebarOpen}
             aria-controls="app-mobile-sidebar"
@@ -462,29 +533,19 @@ export default function TopBar() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <LocaleSwitcher className="hidden sm:flex" />
             <NotificationsDropdown counts={notifCounts} onNavigate={handleNavigate} t={t} />
 
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setChatOpen(true)}
-              className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
+              className="hidden h-9 w-9 text-muted-foreground hover:text-foreground sm:inline-flex"
               aria-label={t("common.askAI")}
+              title={t("common.askAI")}
             >
               <Bot className="h-4 w-4" />
-              <span className="hidden sm:inline text-xs">{t("common.askAI")}</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9 text-muted-foreground hover:text-foreground"
-              aria-label={isDark ? t("common.switchToLight") : t("common.switchToDark")}
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
             <TopBarUserMenu
@@ -496,6 +557,9 @@ export default function TopBar() {
               t={t}
               canManageTenant={canManageTenant}
               subscribed={subscribed}
+              isDark={isDark}
+              onToggleTheme={toggleTheme}
+              onAskAI={() => setChatOpen(true)}
             />
           </div>
         </div>
@@ -508,7 +572,13 @@ export default function TopBar() {
               <ConnectionBanner isOnline={isOnline} retryConnection={retryConnection} t={t} />
             )}
             {setupIncomplete && (
-              <SetupBanner setupPercent={setupPercent} onNavigate={handleNavigate} t={t} />
+              <SetupBanner
+                setupPercent={setupPercent}
+                onNavigate={handleNavigate}
+                onHide={hideSetupBanner}
+                compact={!isDashboard}
+                t={t}
+              />
             )}
           </div>
         </div>

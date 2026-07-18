@@ -8,3 +8,4 @@ export { SetupProgress } from './SetupProgress';
 export { CompanyDetailsTab } from './CompanyDetailsTab';
 export { CompanyStructureTab } from './CompanyStructureTab';
 export { PaymentStructureTab } from './PaymentStructureTab';
+export { AdvancedTaxModeCard } from './AdvancedTaxModeCard';

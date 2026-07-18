@@ -11,12 +11,21 @@ import type ExcelJS from "exceljs";
 import type { MonthlyWITReturn } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { getTodayTL } from "@/lib/dateUtils";
+import { calculateTLServicesTax } from "@/lib/tax/services-tax-tl";
+import { addMoney, roundWholeMoney } from "@/lib/currency";
 
 // ============================================
 // TYPES
 // ============================================
 
-interface ATTLFormData {
+export interface ATTLWithholdingLine {
+  payment: number;
+  tax: number;
+  /** Actual frozen rate, including a documented treaty override. */
+  rateLabel?: string;
+}
+
+export interface ATTLFormData {
   // Header
   month: string; // 01-12
   year: string; // YYYY
@@ -29,14 +38,14 @@ interface ATTLFormData {
   totalWITWithheld: number; // Line 10
 
   // Section 2: Withholding Tax (all optional)
-  prizesLotteries?: { payment: number; tax: number };
-  royalties?: { payment: number; tax: number };
-  rentLandBuildings?: { payment: number; tax: number };
-  constructionActivities?: { payment: number; tax: number };
-  constructionConsulting?: { payment: number; tax: number };
-  miningServices?: { payment: number; tax: number };
-  airSeaTransport?: { payment: number; tax: number };
-  nonResidentPayments?: { payment: number; tax: number };
+  prizesLotteries?: ATTLWithholdingLine;
+  royalties?: ATTLWithholdingLine;
+  rentLandBuildings?: ATTLWithholdingLine;
+  constructionActivities?: ATTLWithholdingLine;
+  constructionConsulting?: ATTLWithholdingLine;
+  miningServices?: ATTLWithholdingLine;
+  airSeaTransport?: ATTLWithholdingLine;
+  nonResidentPayments?: ATTLWithholdingLine;
 
   // Section 3: Services Tax (optional)
   hotelServices?: number;
@@ -71,7 +80,7 @@ const BNU_ACCOUNTS = {
 /**
  * Generate ATTL Consolidated Monthly Taxes Form as Excel
  */
-async function generateATTLExcel(
+export async function generateATTLExcel(
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,
   additionalData?: Partial<ATTLFormData>
@@ -86,8 +95,8 @@ async function generateATTLExcel(
     tin: company?.tinNumber || witReturn.employerTIN || "",
     taxpayerName: company?.legalName || witReturn.employerName || "",
     establishmentName: company?.tradingName,
-    totalGrossWages: Math.round(witReturn.totalGrossWages), // Whole dollars
-    totalWITWithheld: Math.round(witReturn.totalWITWithheld), // Whole dollars
+    totalGrossWages: roundWholeMoney(witReturn.totalGrossWages),
+    totalWITWithheld: roundWholeMoney(witReturn.totalWITWithheld),
     declarantName: additionalData?.declarantName,
     declarantPhone: additionalData?.declarantPhone,
     declarationDate: additionalData?.declarationDate || getTodayTL(),
@@ -159,22 +168,63 @@ function createFormSheet(wb: ExcelJS.Workbook, data: ATTLFormData): void {
   ws.addRow(["Line", "Payment Type", "Gross Payment", "Tax Rate", "Tax Withheld"]);
 
   const withholdingItems = [
-    { line: "45/50", type: "Prizes and Lotteries", rate: "10%", data: data.prizesLotteries },
+    {
+      line: "45/50",
+      type: "Prizes and Lotteries",
+      rate: "10%",
+      data: data.prizesLotteries,
+    },
     { line: "55/60", type: "Royalties", rate: "10%", data: data.royalties },
-    { line: "65/70", type: "Rent land and buildings", rate: "10%", data: data.rentLandBuildings },
-    { line: "75/80", type: "Construction and building activities", rate: "2%", data: data.constructionActivities },
-    { line: "85/90", type: "Construction consulting services", rate: "4%", data: data.constructionConsulting },
-    { line: "95/100", type: "Mining and mining support services", rate: "4%", data: data.miningServices },
-    { line: "105/110", type: "Transportation - Air and Sea", rate: "2.64%", data: data.airSeaTransport },
-    { line: "115/120", type: "Non-resident without permanent establishment", rate: "10%", data: data.nonResidentPayments },
+    {
+      line: "65/70",
+      type: "Rent land and buildings",
+      rate: "10%",
+      data: data.rentLandBuildings,
+    },
+    {
+      line: "75/80",
+      type: "Construction and building activities",
+      rate: "2%",
+      data: data.constructionActivities,
+    },
+    {
+      line: "85/90",
+      type: "Construction consulting services",
+      rate: "4%",
+      data: data.constructionConsulting,
+    },
+    {
+      line: "95/100",
+      type: "Mining and mining support services",
+      rate: "4.5%",
+      data: data.miningServices,
+    },
+    {
+      line: "105/110",
+      type: "Transportation - Air and Sea",
+      rate: "2.64%",
+      data: data.airSeaTransport,
+    },
+    {
+      line: "115/120",
+      type: "Non-resident without permanent establishment",
+      rate: "10%",
+      data: data.nonResidentPayments,
+    },
   ];
 
   let totalWithholdingTax = 0;
   for (const item of withholdingItems) {
-    const payment = item.data?.payment || 0;
-    const tax = item.data?.tax || 0;
-    totalWithholdingTax += tax;
-    ws.addRow([item.line, item.type, payment || "", item.rate, tax || ""]);
+    const payment = roundWholeMoney(item.data?.payment ?? 0);
+    const tax = roundWholeMoney(item.data?.tax ?? 0);
+    totalWithholdingTax = addMoney(totalWithholdingTax, tax);
+    ws.addRow([
+      item.line,
+      item.type,
+      payment || "",
+      item.data?.rateLabel || item.rate,
+      tax || "",
+    ]);
   }
 
   ws.addRow([130, "TOTAL WITHHOLDING TAX", "", "", totalWithholdingTax || ""]);
@@ -185,23 +235,52 @@ function createFormSheet(wb: ExcelJS.Workbook, data: ATTLFormData): void {
   ws.addRow([]);
   ws.addRow(["Line", "Service Type", "Total Sales", "Rate", "Tax"]);
 
-  const hotelSales = data.hotelServices || 0;
-  const restaurantSales = data.restaurantBarServices || 0;
-  const telecomSales = data.telecomServices || 0;
-  const totalServiceSales = hotelSales + restaurantSales + telecomSales;
-  const servicesTaxPayable = Math.round(totalServiceSales * 0.05);
+  const servicesTax = calculateTLServicesTax({
+    hotelServices: data.hotelServices ?? 0,
+    restaurantBarServices: data.restaurantBarServices ?? 0,
+    telecommunicationsServices: data.telecomServices ?? 0,
+  });
+  const {
+    receipts: {
+      hotelServices: hotelSales,
+      restaurantBarServices: restaurantSales,
+      telecommunicationsServices: telecomSales,
+    },
+    taxByService,
+    totalDesignatedReceipts: totalServiceSales,
+    taxDue: servicesTaxPayable,
+  } = servicesTax;
 
-  ws.addRow([15, "Hotel services", hotelSales || "", "5%", hotelSales ? Math.round(hotelSales * 0.05) : ""]);
-  ws.addRow([20, "Restaurant and bar services", restaurantSales || "", "5%", restaurantSales ? Math.round(restaurantSales * 0.05) : ""]);
-  ws.addRow([30, "Telecommunications services", telecomSales || "", "5%", telecomSales ? Math.round(telecomSales * 0.05) : ""]);
-  ws.addRow([35, "Total Sales (before tax)", totalServiceSales || ""]);
-  ws.addRow([40, "Services Tax Payable", "", "", servicesTaxPayable || ""]);
+  ws.addRow([
+    15,
+    "Hotel services",
+    hotelSales ? roundWholeMoney(hotelSales) : "",
+    "5%",
+    taxByService.hotelServices ? roundWholeMoney(taxByService.hotelServices) : "",
+  ]);
+  ws.addRow([
+    20,
+    "Restaurant and bar services",
+    restaurantSales ? roundWholeMoney(restaurantSales) : "",
+    "5%",
+    taxByService.restaurantBarServices ? roundWholeMoney(taxByService.restaurantBarServices) : "",
+  ]);
+  ws.addRow([
+    30,
+    "Telecommunications services",
+    telecomSales ? roundWholeMoney(telecomSales) : "",
+    "5%",
+    taxByService.telecommunicationsServices ? roundWholeMoney(taxByService.telecommunicationsServices) : "",
+  ]);
+  ws.addRow([35, "Total designated-service receipts", totalServiceSales ? roundWholeMoney(totalServiceSales) : ""]);
+  ws.addRow([40, "Services Tax Payable", "", "", servicesTaxPayable ? roundWholeMoney(servicesTaxPayable) : ""]);
   ws.addRow([]);
 
   // === SECTION 4: ANNUAL INCOME TAX INSTALLMENT ===
   ws.addRow(["SECTION 4: ANNUAL INCOME TAX INSTALLMENT"]);
   ws.addRow([]);
-  ws.addRow([20, "Installment Amount (0.5% of turnover)", data.annualTaxInstallment || ""]);
+  const installmentPayment = roundWholeMoney(data.annualTaxInstallment ?? 0);
+  ws.addRow([20, "Installment Amount (0.5% of turnover)", installmentPayment || ""]);
   ws.addRow([]);
 
   // === SECTION 5: PAYMENT ADVICE ===
@@ -210,10 +289,16 @@ function createFormSheet(wb: ExcelJS.Workbook, data: ATTLFormData): void {
   ws.addRow(["Tax Type", "Amount", "BNU Account"]);
   ws.addRow(["Wages Income Tax (Line 10)", data.totalWITWithheld, BNU_ACCOUNTS.wagesIncomeTax]);
   ws.addRow(["Withholding Tax (Line 130)", totalWithholdingTax || "", BNU_ACCOUNTS.withholdingTax]);
-  ws.addRow(["Services Tax (Line 40)", servicesTaxPayable || "", BNU_ACCOUNTS.servicesTax]);
-  ws.addRow(["Income Tax Installment (Line 20)", data.annualTaxInstallment || "", BNU_ACCOUNTS.incomeTaxInstallment]);
+  const wholeServicesTaxPayable = roundWholeMoney(servicesTaxPayable);
+  ws.addRow(["Services Tax (Line 40)", wholeServicesTaxPayable || "", BNU_ACCOUNTS.servicesTax]);
+  ws.addRow(["Income Tax Installment (Line 20)", installmentPayment || "", BNU_ACCOUNTS.incomeTaxInstallment]);
 
-  const totalPayment = (data.totalWITWithheld || 0) + totalWithholdingTax + servicesTaxPayable + (data.annualTaxInstallment || 0);
+  const totalPayment = addMoney(
+    data.totalWITWithheld || 0,
+    totalWithholdingTax,
+    wholeServicesTaxPayable,
+    installmentPayment
+  );
   ws.addRow(["TOTAL TO PAY", totalPayment, ""]);
   ws.addRow([]);
 
@@ -267,18 +352,16 @@ function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITRe
 
   // Employee rows
   for (const emp of witReturn.employees) {
-    const effectiveRate = emp.taxableWages > 0
-      ? ((emp.witWithheld / emp.taxableWages) * 100).toFixed(1) + "%"
-      : "0%";
+    const effectiveRate = emp.taxableWages > 0 ? ((emp.witWithheld / emp.taxableWages) * 100).toFixed(1) + "%" : "0%";
 
     ws.addRow([
       emp.employeeId,
       emp.fullName,
       emp.tinNumber || "",
       emp.isResident ? "Yes" : "No",
-      Math.round(emp.grossWages),
-      Math.round(emp.taxableWages),
-      Math.round(emp.witWithheld),
+      roundWholeMoney(emp.grossWages),
+      roundWholeMoney(emp.taxableWages),
+      roundWholeMoney(emp.witWithheld),
       effectiveRate,
     ]);
   }
@@ -290,9 +373,9 @@ function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITRe
     "TOTAL",
     "",
     "",
-    Math.round(witReturn.totalGrossWages),
-    Math.round(witReturn.totalTaxableWages),
-    Math.round(witReturn.totalWITWithheld),
+    roundWholeMoney(witReturn.totalGrossWages),
+    roundWholeMoney(witReturn.totalTaxableWages),
+    roundWholeMoney(witReturn.totalWITWithheld),
     "",
   ]);
 
@@ -314,9 +397,10 @@ function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITRe
 export async function downloadATTLExcel(
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,
-  filename?: string
+  filename?: string,
+  additionalData?: Partial<ATTLFormData>,
 ): Promise<void> {
   const { downloadBlob } = await import("@/lib/downloadBlob");
-  const blob = await generateATTLExcel(witReturn, company);
+  const blob = await generateATTLExcel(witReturn, company, additionalData);
   downloadBlob(blob, filename || `ATTL_Monthly_Tax_${witReturn.reportingPeriod}.xlsx`);
 }

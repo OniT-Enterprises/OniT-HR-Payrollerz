@@ -51,6 +51,14 @@ service cloud.firestore {
         getTenantRole(tenantId) == 'owner';
     }
 
+    // Finance-power roles: 'accountant' writes money/accounting/payroll
+    // records like an admin, but has no member/employee/tenant administration.
+    function isTenantFinanceAdmin(tenantId) {
+      return isAuthenticated() &&
+        isTenantMember(tenantId) &&
+        getTenantRole(tenantId) in ['owner', 'hr-admin', 'accountant'];
+    }
+
     function getTenantMember(tenantId) {
       return get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
@@ -322,7 +330,10 @@ service cloud.firestore {
           (docId == 'integrations' && isTenantAdmin(tenantId)) ||
           (docId != 'integrations' && isTenantMember(tenantId))
         );
-        allow write: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Accountants manage payroll/tax configuration but not integrations
+        // (external credentials stay owner/hr-admin only).
+        allow write: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (docId != 'integrations' && isTenantFinanceAdmin(tenantId));
       }
 
       // ============================================
@@ -502,11 +513,11 @@ service cloud.firestore {
       // ============================================
       match /payruns/{payrunId} {
         allow read: if isSuperAdmin() || canAccessPayrollRecords(tenantId);
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         // Prevent createdBy tampering + two-person approval rule
         // (unless tenant opted in to solo self-approval)
         allow update: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           request.resource.data.createdBy == resource.data.createdBy &&
           (request.resource.data.status != 'approved' ||
            request.resource.data.approvedBy != resource.data.createdBy ||
@@ -517,7 +528,7 @@ service cloud.firestore {
            resource.data.status == 'approved' ||
            tenantHasActiveSubscription(tenantId))
         );
-        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
 
         // Payslips under payrun
         match /payslips/{payslipId} {
@@ -526,7 +537,7 @@ service cloud.firestore {
             isSelfEmployee(tenantId, payslipId) ||
             (resource.data.employeeId != null &&
              isSelfEmployee(tenantId, resource.data.employeeId));
-          allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+          allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         }
       }
 
@@ -604,8 +615,8 @@ service cloud.firestore {
       // QUICKBOOKS EXPORT LOGS SUBCOLLECTION (Tenant-scoped)
       // ============================================
       match /qbExportLogs/{logId} {
-        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow read: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         // Export logs are immutable
         allow update, delete: if false;
       }
@@ -615,7 +626,7 @@ service cloud.firestore {
       // ============================================
       match /accounts/{accountId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /journalEntries/{entryId} {
@@ -623,11 +634,11 @@ service cloud.firestore {
         // Balance validation (totalDebit == totalCredit) is enforced client-side
         // with 0.01 tolerance. Rules use strict == which fails on float rounding,
         // so we only enforce role-based access here.
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         // Draft entries can be edited and posted.
         // Posted entries can be voided (immutable amounts/lines).
         allow update: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) && (
+          isTenantFinanceAdmin(tenantId) && (
             // Draft -> Draft or Draft -> Posted
             (
               resource.data.status == 'draft' &&
@@ -644,7 +655,7 @@ service cloud.firestore {
           )
         );
         allow delete: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           resource.data.status == 'draft'
         );
       }
@@ -652,24 +663,24 @@ service cloud.firestore {
       match /generalLedger/{glId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         // Ledger rows are append-only.
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         allow update, delete: if false;
       }
 
       match /fiscalYears/{yearId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /fiscalPeriods/{periodId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /balanceSnapshots/{snapshotId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
-        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
-        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       // ============================================
@@ -792,37 +803,78 @@ service cloud.firestore {
       // ============================================
       match /customers/{customerId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /invoices/{invoiceId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /payments_received/{paymentId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /recurring_invoices/{recurringId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /vendors/{vendorId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /bills/{billId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /bill_payments/{paymentId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+      }
+
+      match /supplierWithholdingPeriods/{periodId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId) || canAccessPayrollRecords(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow delete: if false;
+      }
+
+      match /supplierWithholdingRemittances/{remittanceId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId) || canAccessPayrollRecords(tenantId);
+        // Payment records are evidence and immutable after the atomic posting.
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow update, delete: if false;
+      }
+
+      match /taxClearanceRequests/{requestId} {
+        allow read: if isSuperAdmin() || canAccessPayrollRecords(tenantId) || hasTenantModule(tenantId, 'reports');
+        allow create, update: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow delete: if false;
+      }
+
+      match /cashAdvances/{advanceId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow update: if isSuperAdmin() || (
+          isTenantFinanceAdmin(tenantId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'expenseCleared',
+            'cashReturned',
+            'outstanding',
+            'status',
+            'updatedAt'
+          ])
+        );
+        allow delete: if false;
+      }
+
+      match /cashAdvanceClearings/{clearingId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow update, delete: if false;
       }
 
       // ============================================
@@ -831,7 +883,7 @@ service cloud.firestore {
       match /transactions/{transactionId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           request.resource.data.tenantId == tenantId &&
           request.resource.data.createdBy == request.auth.uid &&
           request.resource.data.type in ['in', 'out'] &&
@@ -840,7 +892,7 @@ service cloud.firestore {
         );
         // Financial values stay immutable. Kaixa may only attach receipt/sync metadata.
         allow update: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           resource.data.tenantId == tenantId &&
           request.resource.data.tenantId == resource.data.tenantId &&
           request.resource.data.createdBy == resource.data.createdBy &&
@@ -857,23 +909,23 @@ service cloud.firestore {
 
       match /products/{productId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /customerTabs/{tabId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /receiptCounters/{year} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           request.resource.data.year == year &&
           request.resource.data.seq == 1
         );
         allow update: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
+          isTenantFinanceAdmin(tenantId) &&
           request.resource.data.year == resource.data.year &&
           request.resource.data.seq == resource.data.seq + 1 &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -887,12 +939,12 @@ service cloud.firestore {
 
       match /vatReturns/{periodId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       match /bankTransactions/{txId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
       // ============================================
@@ -1597,11 +1649,13 @@ service cloud.firestore {
     // ============================================
     match /mail/{emailId} {
       // Tenant admins AND managers can queue emails for their tenant
-      // (managers approve/reject leave, which emails the staff member)
+      // (managers approve/reject leave, which emails the staff member).
+      // Accountants queue invoice/payslip emails.
       allow create: if isSuperAdmin() || (
         isAuthenticated() &&
         request.resource.data.tenantId != null &&
-        isTenantManagerOrAdmin(request.resource.data.tenantId)
+        (isTenantManagerOrAdmin(request.resource.data.tenantId) ||
+         isTenantFinanceAdmin(request.resource.data.tenantId))
       );
 
       // Tenant admins can read email history for their tenant
@@ -1658,12 +1712,12 @@ service cloud.firestore {
       allow get: if resource == null ||
         resource.data.revoked == false ||
         isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
       allow list: if isSuperAdmin();
 
       allow create: if isSuperAdmin() || (
         request.resource.data.tenantId != null &&
-        isTenantAdmin(request.resource.data.tenantId) &&
+        isTenantFinanceAdmin(request.resource.data.tenantId) &&
         request.resource.data.keys().hasAll(['tenantId', 'invoiceId', 'invoice', 'settings', 'revoked', 'viewedAt']) &&
         request.resource.data.revoked == false
       );
@@ -1676,7 +1730,7 @@ service cloud.firestore {
       allow update: if isSuperAdmin() || (
           resource.data.tenantId != null &&
           request.resource.data.tenantId == resource.data.tenantId &&
-          isTenantAdmin(resource.data.tenantId)
+          isTenantFinanceAdmin(resource.data.tenantId)
         ) || (
           resource.data.revoked == false &&
           resource.data.viewedAt == null &&
@@ -1687,7 +1741,7 @@ service cloud.firestore {
       // Deletes have no request.resource — never reference it here
       // (see tests/rules/legacy-collection-deletes.test.ts).
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     // ============================================
@@ -1788,7 +1842,16 @@ service cloud.firestore {
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         (canAccessStaffRecords(resource.data.tenantId) ||
-         canAccessHiringRecords(resource.data.tenantId))
+         canAccessHiringRecords(resource.data.tenantId)) &&
+        (
+          isTenantAdmin(resource.data.tenantId) ||
+          (
+            !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['article56FinalPay']) &&
+            request.resource.data.get('checklist', {}).get('finalPayCalculated', false) ==
+              resource.data.get('checklist', {}).get('finalPayCalculated', false)
+          )
+        )
       );
 
       allow delete: if isSuperAdmin() || (

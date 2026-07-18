@@ -342,6 +342,17 @@ export const billFormSchema = z.object({
   amount: z.preprocess(coerceToNumber, z.number({ required_error: 'Amount is required' }).min(0.01, 'Amount must be greater than 0')),
   taxRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).default(0)),
   category: z.string().min(1, 'Category is required'),
+  withholdingCategory: z.enum([
+    'none',
+    'general_service',
+    'construction',
+    'construction_consulting',
+    'air_or_sea_transport',
+    'mining_or_mining_support',
+    'royalty',
+    'rent',
+    'prize',
+  ]).default('none'),
   notes: z.string().max(1000).optional().or(z.literal('')),
 }).refine(
   (data) => new Date(data.dueDate) >= new Date(data.billDate),

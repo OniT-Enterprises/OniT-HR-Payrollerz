@@ -33,7 +33,6 @@ export default function GuidancePanel({ section }: GuidancePanelProps) {
       className={`
         border border-border/60 rounded-lg px-5 py-4 mb-6
         ${theme.bgSubtle}
-        animate-fade-up
       `}
     >
       <div className="flex items-start gap-3">

@@ -84,7 +84,9 @@ import { SEO } from "@/components/SEO";
 import { ATTL_TAX_ACCOUNTS } from "@/lib/tlBanking";
 import { AssistedEtaxFiling } from "@/components/reports/AssistedEtaxFiling";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
 import { downloadBlob } from "@/lib/downloadBlob";
+import { SupplierWithholdingRemittancePanel } from "@/components/reports/SupplierWithholdingRemittancePanel";
 
 // ============================================
 // COMPONENT
@@ -93,6 +95,7 @@ import { downloadBlob } from "@/lib/downloadBlob";
 export default function ATTLMonthlyWIT() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const { t } = useI18n();
 
   // React Query hooks
@@ -324,11 +327,38 @@ export default function ATTLMonthlyWIT() {
     }
 
     try {
-      const { downloadATTLExcel } = await import("@/lib/excel/attlExport");
+      const [
+        { downloadATTLExcel },
+        { billService },
+        { mapTLBillWithholdingToATTL },
+      ] = await Promise.all([
+        import("@/lib/excel/attlExport"),
+        import("@/services/billService"),
+        import("@/lib/tax/bill-withholding"),
+      ]);
+      const [year, month] = selectedReturn.reportingPeriod.split("-");
+      const yearNumber = Number(year);
+      const monthNumber = Number(month);
+      if (
+        !/^\d{4}$/.test(year)
+        || !/^\d{2}$/.test(month)
+        || !Number.isInteger(monthNumber)
+        || monthNumber < 1
+        || monthNumber > 12
+      ) {
+        throw new Error('The return has an invalid reporting period.');
+      }
+      const lastDay = new Date(yearNumber, monthNumber, 0).getDate();
+      const withholdingTotals = await billService.getWithholdingSummary(
+        tenantId,
+        `${year}-${month}-01`,
+        `${year}-${month}-${String(lastDay).padStart(2, '0')}`,
+      );
       await downloadATTLExcel(
         selectedReturn,
         company || undefined,
-        `ATTL_Monthly_Tax_${selectedReturn.reportingPeriod}.xlsx`
+        `ATTL_Monthly_Tax_${selectedReturn.reportingPeriod}.xlsx`,
+        mapTLBillWithholdingToATTL(withholdingTotals),
       );
 
       toast({
@@ -339,7 +369,9 @@ export default function ATTLMonthlyWIT() {
       console.error("Failed to export Excel:", error);
       toast({
         title: t("reports.attlMonthlyWit.toast.exportFailedTitle"),
-        description: t("reports.attlMonthlyWit.toast.officialExportFailedDescription"),
+        description: error instanceof Error
+          ? error.message
+          : t("reports.attlMonthlyWit.toast.officialExportFailedDescription"),
         variant: "destructive",
       });
     }
@@ -699,12 +731,23 @@ export default function ATTLMonthlyWIT() {
                 <span className="font-mono font-medium">{ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax}</span>
               </div>
               <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">
+                  {t("reports.attlMonthlyWit.payment.withholdingAccount")
+                    || "Supplier withholding tax account (IBAN)"}
+                </span>
+                <span className="font-mono font-medium text-right">
+                  {ATTL_TAX_ACCOUNTS.accounts.specialWithholdingTax}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">SWIFT</span>
                 <span className="font-mono font-medium">{ATTL_TAX_ACCOUNTS.swift}</span>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        <SupplierWithholdingRemittancePanel period={`${selectedYear}-${selectedMonth}`} />
 
         {/* Return Preview */}
         {selectedReturn && (

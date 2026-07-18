@@ -303,7 +303,7 @@ export default function Bills() {
         <PageHeader
           title={t('money.bills.title') || 'Bills'}
           subtitle={t('money.bills.subtitle') || 'Manage accounts payable'}
-          icon={FileText}
+          cardIcon="mn-bills" icon={FileText}
           iconColor="text-indigo-500"
           actions={canManageTenant ? (
             <>

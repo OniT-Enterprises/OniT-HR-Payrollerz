@@ -14,7 +14,12 @@ export interface CompanyDetails {
   registeredAddress: string;
   city: string;
   country: string;
-  tinNumber: string; // Tax Identification Number
+  /**
+   * Canonical Timor-Leste company identifier. Business Registration DL 16/2017
+   * Art. 38 makes the SERVE Número Único da Empresa the same number as the NIF/TIN.
+   * Do not introduce a second SERVE registration-number field.
+   */
+  tinNumber: string;
   logoUrl?: string;
   businessType: BusinessType;
   businessTypeOther?: string;
@@ -186,6 +191,8 @@ export interface PayrollConfig {
   currency: string; // USD
   currencySymbol: string; // $
   maxWorkHoursPerWeek: number; // 44 in TL
+  /** Workpaper method used for hourly-rate derivation and overtime rounding. */
+  hourlyRateConvention: 'weekly_average' | 'fixed_190_round_up';
   overtimeRates: {
     standard: number; // 1.5 (normal hourly pay + 50%)
     sundayHoliday: number; // 2.0 (100% extra)
@@ -261,6 +268,7 @@ export const TL_DEFAULT_PAYROLL_CONFIG: PayrollConfig = {
   currency: 'USD',
   currencySymbol: '$',
   maxWorkHoursPerWeek: 44,
+  hourlyRateConvention: 'weekly_average',
   overtimeRates: {
     standard: 1.5,
     sundayHoliday: 2.0,

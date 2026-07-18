@@ -411,7 +411,7 @@ export default function Expenses() {
         <PageHeader
           title={t('money.expenses.title') || 'Expenses'}
           subtitle={t('money.expenses.subtitle') || 'Track business expenses'}
-          icon={Receipt}
+          cardIcon="mn-expenses" icon={Receipt}
           iconColor="text-indigo-500"
           actions={
             <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">

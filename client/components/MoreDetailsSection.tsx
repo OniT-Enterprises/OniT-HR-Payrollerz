@@ -30,7 +30,7 @@ export default function MoreDetailsSection({
       <CollapsibleTrigger asChild>
         <button
           type="button"
-          className="mb-3 flex w-full items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+          className="mb-3 flex min-h-11 w-full items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
         >
           <span>{open ? t("common.hide") : title || t("common.moreDetails")}</span>
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />

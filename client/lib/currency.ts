@@ -60,11 +60,86 @@ export function multiplyMoney(value: number, factor: number): number {
 }
 
 /**
+ * Multiply a monetary value by several non-money factors, rounding only once.
+ * Use this for lines such as hourly rate × hours × overtime multiplier; rounding
+ * between factors can introduce a one-cent payroll error.
+ */
+export function multiplyMoneyByFactors(value: number, ...factors: number[]): number {
+  const result = factors.reduce(
+    (amount, factor) => amount.times(toDecimal(factor)),
+    toDecimal(value),
+  );
+  return toMoney(result);
+}
+
+/**
+ * Multiply one value into several money lines, round their combined total once,
+ * then allocate any rounding cent back to the lines. This keeps the displayed
+ * lines equal to the displayed total for accounting conventions that aggregate
+ * before rounding.
+ */
+export function multiplyMoneyPartsToRoundedTotal(
+  value: number,
+  factorSets: readonly (readonly number[])[],
+): number[] {
+  const exactParts = factorSets.map((factors) =>
+    factors.reduce(
+      (amount, factor) => amount.times(toDecimal(factor)),
+      toDecimal(value),
+    ),
+  );
+  const roundedParts = exactParts.map(toMoney);
+  const targetTotal = toMoney(
+    exactParts.reduce((total, amount) => total.plus(amount), new Decimal(0)),
+  );
+  let differenceInCents = toDecimal(targetTotal)
+    .minus(roundedParts.reduce((total, amount) => total.plus(amount), new Decimal(0)))
+    .times(100)
+    .toNumber();
+
+  while (differenceInCents !== 0) {
+    const direction = Math.sign(differenceInCents);
+    let selectedIndex = -1;
+    let selectedResidual: Decimal | undefined;
+
+    exactParts.forEach((exact, index) => {
+      if (exact.isZero()) return;
+      const residual = exact.minus(roundedParts[index]);
+      if (
+        selectedResidual === undefined
+        || (direction > 0 && residual.greaterThan(selectedResidual))
+        || (direction < 0 && residual.lessThan(selectedResidual))
+      ) {
+        selectedIndex = index;
+        selectedResidual = residual;
+      }
+    });
+
+    if (selectedIndex < 0) break;
+    roundedParts[selectedIndex] = toMoney(
+      toDecimal(roundedParts[selectedIndex]).plus(toDecimal(direction).dividedBy(100)),
+    );
+    differenceInCents -= direction;
+  }
+
+  return roundedParts;
+}
+
+/**
  * Divide currency value by a divisor
  */
 export function divideMoney(value: number, divisor: number): number {
   if (divisor === 0) return 0;
   return toMoney(toDecimal(value).dividedBy(divisor));
+}
+
+/** Divide and round a non-negative monetary rate upward to the next cent. */
+export function divideMoneyRoundUp(value: number, divisor: number): number {
+  if (divisor === 0) return 0;
+  return toDecimal(value)
+    .dividedBy(divisor)
+    .toDecimalPlaces(2, Decimal.ROUND_CEIL)
+    .toNumber();
 }
 
 /**
@@ -96,6 +171,11 @@ export function sumMoney(values: number[]): number {
  */
 export function roundMoney(value: number): number {
   return toMoney(toDecimal(value));
+}
+
+/** Round a monetary amount to whole dollars using the configured half-up rule. */
+export function roundWholeMoney(value: number): number {
+  return toDecimal(value).toDecimalPlaces(0, Decimal.ROUND_HALF_UP).toNumber();
 }
 
 /** Compare currency values without binary floating-point drift. */

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CardIcon, hasCardIcon } from "@/components/ui/CardIcon";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -40,10 +41,10 @@ function PayrollDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={payrollNavConfig} />
-      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-40 w-full rounded-2xl" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-2xl" />
           ))}
@@ -57,7 +58,7 @@ export default function PayrollDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { hasModule, canManage, session } = useTenant();
+  const { hasModule, canManage, session, showAdvancedTax } = useTenant();
   const canManageTenant = canManage();
   const hasTimeleave = hasModule("timeleave");
   const canReadEmployeeDirectory =
@@ -202,7 +203,8 @@ export default function PayrollDashboard() {
           {formatDateTL(witDate, { month: "short", day: "numeric" })}
         </>
       ),
-      path: "/payroll/tax/monthly-wit",
+      // The ATTL WIT form is accountant-only; the simple flow lands on the tax hub
+      path: showAdvancedTax ? "/payroll/tax/monthly-wit" : "/payroll/tax",
       icon: FileSpreadsheet,
       tone: urgencyTone(witUrgency),
     },
@@ -231,6 +233,7 @@ export default function PayrollDashboard() {
     {
       title: t("moduleDashboards.payroll.cards.runPayroll"),
       art: "/images/illustrations/xefe-card-payroll.webp",
+      svg: "payroll",
       meta: t("moduleDashboards.payroll.cards.staffInCycle", { count: activeEmployees }),
       path: "/payroll/run",
       icon: Play,
@@ -238,6 +241,7 @@ export default function PayrollDashboard() {
     {
       title: t("moduleDashboards.payroll.cards.history"),
       art: "/images/illustrations/xefe-card-pr-history.webp",
+      svg: "pr-history",
       meta:
         payrollRuns.length > 0
           ? t(
@@ -253,6 +257,7 @@ export default function PayrollDashboard() {
     {
       title: t("moduleDashboards.payroll.cards.bankTransfers"),
       art: "/images/illustrations/xefe-card-pr-bank.webp",
+      svg: "pr-bank",
       meta:
         readyToPay > 0
           ? t("moduleDashboards.payroll.cards.readyToPay", { count: readyToPay })
@@ -263,6 +268,7 @@ export default function PayrollDashboard() {
     {
       title: t("moduleDashboards.payroll.cards.taxInss"),
       art: "/images/illustrations/xefe-card-pr-tax.webp",
+      svg: "pr-tax",
       meta: t("moduleDashboards.payroll.cards.taxDue", {
         witDays,
         inssDays,
@@ -284,7 +290,7 @@ export default function PayrollDashboard() {
       />
       <ModuleSectionNav config={payrollNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -367,23 +373,30 @@ export default function PayrollDashboard() {
         </section>
 
         {/* Module hub */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubCards.map((card) => (
             <button
               key={card.path}
               onClick={() => navigate(card.path)}
-              className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40"
+              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
             >
-              <img
-                src={card.art}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
-              />
+              {hasCardIcon(card.svg) ? (
+                <CardIcon
+                  name={card.svg}
+                  className="h-12 w-12 text-foreground [--card-icon-accent:#6A9C29] dark:[--card-icon-accent:#8cc63f] sm:h-16 sm:w-16"
+                />
+              ) : (
+                <img
+                  src={card.art}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
+                />
+              )}
               <div>
-                <p className="text-base font-semibold">{card.title}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
                   {card.meta}
                 </p>
               </div>

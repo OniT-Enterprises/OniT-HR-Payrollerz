@@ -76,5 +76,6 @@ export const ATTL_TAX_ACCOUNTS = {
   swift: 'CGDITLDI',
   accounts: {
     wageIncomeTax: 'TL38 0020 0028 6442 1000 162',
+    specialWithholdingTax: 'TL38 0020 0028 6830 1000 162',
   },
 } as const;

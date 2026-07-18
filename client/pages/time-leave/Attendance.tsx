@@ -500,7 +500,7 @@ export default function Attendance() {
           ) : (
             formatDateLabel(selectedDate)
           )}
-          icon={Clock}
+          cardIcon="tl-attendance" icon={Clock}
           iconColor="text-cyan-500"
           actions={
             <>

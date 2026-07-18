@@ -23,11 +23,14 @@ function makeBaseInput(overrides: Partial<TLPayrollInput> = {}): TLPayrollInput 
     sickDaysUsed: 0,
     ytdSickDaysUsed: 0,
     bonus: 0,
+    bonusINSSCategory: null,
     commission: 0,
     perDiem: 0,
     foodAllowance: 0,
     transportAllowance: 0,
     otherEarnings: 0,
+    nonCashBenefits: 0,
+    nonCashBenefitINSSCategory: null,
     taxInfo: { isResident: true, hasTaxExemption: false },
     loanRepayment: 0,
     advanceRepayment: 0,
@@ -110,11 +113,12 @@ describe("TL payroll calculations", () => {
     expect(result.inssEmployee).toBe(20);
   });
 
-  it("excludes bonus from INSS base (mandatory registration)", () => {
+  it("excludes a company-profit award from the INSS base", () => {
     const result = calculateTLPayroll(
       makeBaseInput({
         monthlySalary: 500,
         bonus: 100,
+        bonusINSSCategory: "company_profit",
       })
     );
     expect(result.inssBase).toBe(500);
@@ -188,7 +192,12 @@ describe("Statutory exemptions (shareholders)", () => {
 
   it("pays fully exempt payees gross with no statutory deductions", () => {
     const result = calculateTLPayroll(
-      makeBaseInput({ monthlySalary: 1000, bonus: 5000, taxInfo: exemptTaxInfo })
+      makeBaseInput({
+        monthlySalary: 1000,
+        bonus: 5000,
+        bonusINSSCategory: "company_profit",
+        taxInfo: exemptTaxInfo,
+      })
     );
     expect(result.grossPay).toBe(6000);
     expect(result.netPay).toBe(6000);
@@ -487,7 +496,12 @@ describe("Edge cases", () => {
 
   it("net pay = gross - total deductions", () => {
     const result = calculateTLPayroll(
-      makeBaseInput({ monthlySalary: 800, bonus: 200, loanRepayment: 50 })
+      makeBaseInput({
+        monthlySalary: 800,
+        bonus: 200,
+        bonusINSSCategory: "individual_performance",
+        loanRepayment: 50,
+      })
     );
     expect(result.netPay).toBeCloseTo(result.grossPay - result.totalDeductions, 1);
   });

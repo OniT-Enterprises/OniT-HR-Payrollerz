@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CardIcon, hasCardIcon, cardIconNameFromArt } from "@/components/ui/CardIcon";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -26,10 +27,10 @@ function MoneyDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={moneyNavConfig} />
-      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-40 w-full rounded-2xl" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-2xl" />
           ))}
@@ -198,7 +199,7 @@ export default function MoneyDashboard() {
       />
       <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -257,23 +258,30 @@ export default function MoneyDashboard() {
         </section>
 
         {/* Module hub */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubCards.map((card) => (
             <button
               key={card.path}
               onClick={() => navigate(card.path)}
-              className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-indigo-400/40"
+              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-indigo-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
             >
-              <img
-                src={card.art}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
-              />
+              {hasCardIcon(cardIconNameFromArt(card.art)) ? (
+                <CardIcon
+                  name={cardIconNameFromArt(card.art)!}
+                  className="h-12 w-12 text-foreground [--card-icon-accent:#4f46e5] dark:[--card-icon-accent:#818cf8] sm:h-16 sm:w-16"
+                />
+              ) : (
+                <img
+                  src={card.art}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
+                />
+              )}
               <div>
-                <p className="text-base font-semibold">{card.title}</p>
-                <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>
+                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.meta}</p>
               </div>
             </button>
           ))}

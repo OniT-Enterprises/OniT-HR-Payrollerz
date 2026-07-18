@@ -142,6 +142,23 @@ service firebase.storage {
       allow write: if isTenantMember(tenantId) && isUnderSizeLimit() && isAllowedDocType();
     }
 
+    // Evidence for actual ATTL supplier-withholding payments.
+    match /tenants/{tenantId}/supplier-withholding/{remittanceId}/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+    }
+
+    match /tenants/{tenantId}/tax-clearance/{requestId}/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() &&
+        request.resource.contentType == 'application/pdf';
+    }
+
+    match /tenants/{tenantId}/cash-advances/{advanceId}/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+    }
+
     // As-sent customer invoice PDFs, frozen at send time. Customers reach
     // them through the tokenized download URL stored on invoice_links docs.
     match /tenants/{tenantId}/invoices/{invoiceId}/{document} {

@@ -108,14 +108,20 @@ copy for the external accountant (fillable decision/approval tables) lives at
 so a tenant can override WIT resident/non-resident rates + threshold, INSS
 employee/employer rates, overtime multipliers (standard + Sunday/holiday),
 minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged.
+As of 2026-07-17, the tenant can also explicitly select the firm's verified
+190-hour workpaper method (hourly rate rounded upward and combined overtime
+rounded once). The ordinary weekly-average method remains the default because
+the Labour Law does not prescribe a monthly divisor and other corpus workbooks
+use different divisors. See `TL_ACCOUNTING_EVIDENCE_MATRIX.md`.
 
 ### Statutory filings & YTD
 
 - Records now persist `wagesPaid`, `taxableIncome`, `witTaxableAmount`,
-  `inssBase`, and `isResident`. The INSS monthly declaration and the ATTL wage
-  income-tax return prefer these stored values, falling back to a rate-based
-  reconstruction only for legacy records. WIT/INSS are summed across **all**
-  matching lines on a record (previously only the first match was read).
+  `inssBase`, and `isResident`. As of 2026-07-17, the INSS monthly declaration
+  and ATTL wage-income-tax returns require the relevant stored statutory fields.
+  Missing legacy fields raise a backfill/reprocess error; the filing service no
+  longer divides tax by a rate, inspects free-text deductions, assumes residency,
+  or reconstructs net pay.
 - The run loads each employee's real **year-to-date** gross/WIT/INSS/sick-days
   from that year's *paid* records (previously hard-coded to 0). YTD sick days
   drive the tiered sick-pay steps; YTD totals feed annual reconciliation.
@@ -142,6 +148,9 @@ minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged
 - Daily and premium rates now go through the Decimal money helpers. The rounding
   mode is documented accurately as `ROUND_HALF_UP`, not “banker's rounding”
   (`ROUND_HALF_EVEN`).
+- The optional 190-hour workpaper method reconciles rounded overtime category
+  lines to the once-rounded combined total, so visible lines still add exactly
+  to gross pay. This reproduces all 85 representable emailed overtime amounts.
 
 ### Constant corrections (`taxConfig.ts` / `constants-tl.ts`)
 
@@ -158,10 +167,10 @@ minimum wage, and max overtime/week. Defaults in `constants-tl.ts` are unchanged
 
 ### VAT
 
-- The VAT Returns screen is now gated behind a **platform-active flag**: it will
-  not calculate, save, or mark a return filed until TL activates a national VAT
-  regime. This supersedes the earlier concern about the VAT input-credit model —
-  there is currently no live VAT math. See `VAT_ARCHITECTURE.md`.
+- VAT is gated by an enacted/effective/complete platform ruleset and an explicitly
+  registered, enabled tenant. A legacy boolean cannot activate it; settings stay
+  locked and returns cannot calculate, save, or be marked filed while VAT remains
+  draft policy. See `VAT_ARCHITECTURE.md`.
 
 ### Open questions — need Nico / accountant sign-off
 
@@ -181,6 +190,8 @@ The highest-risk decisions are summarized here:
    non-resident wage cases, not the superseded 20% flat (UNTAET Reg. 2000/32).
 5. **Employer cost net of absence** — confirm wages-paid (not gross) is the right
    basis for cost reporting and the employer-INSS expense.
-6. **INSS base exclusions** — confirm the excluded-items list (overtime,
-   bonuses, commissions, gratuities, profit-sharing, per-diem/travel/food/
-   housing/transport/representation) matches current INSS guidance.
+6. **INSS classification** — individual performance/productivity pay and
+   commissions are included; employer-economic-performance profit awards and
+   genuinely extraordinary gratuities are excluded, as are overtime and the
+   listed expense/food/transport/accommodation/representation allowances. Do
+   not treat a generic “bonus” label as enough to decide.

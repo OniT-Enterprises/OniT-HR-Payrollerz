@@ -13,8 +13,6 @@ interface SectionTheme {
   bg: string;             // Background for badges, pills
   bgSubtle: string;       // Very subtle background tint
   border: string;         // Border accent color
-  borderLeft: string;     // Left border for cards (4px accent)
-  gradient: string;       // Gradient for headers/accents
   ring: string;           // Focus ring color
 }
 
@@ -26,8 +24,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-primary/10 dark:bg-primary/20",
     bgSubtle: "bg-primary/5 dark:bg-primary/10",
     border: "border-primary/30 dark:border-primary/30",
-    borderLeft: "border-l-4 border-l-primary",
-    gradient: "from-primary to-primary",
     ring: "ring-primary",
   },
   people: {
@@ -37,8 +33,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-blue-100 dark:bg-blue-900/30",
     bgSubtle: "bg-blue-50 dark:bg-blue-950/30",
     border: "border-blue-300 dark:border-blue-800",
-    borderLeft: "border-l-4 border-l-blue-500",
-    gradient: "from-blue-500 to-blue-600",
     ring: "ring-blue-500",
   },
   scheduling: {
@@ -48,8 +42,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-cyan-100 dark:bg-cyan-900/30",
     bgSubtle: "bg-cyan-50 dark:bg-cyan-950/30",
     border: "border-cyan-300 dark:border-cyan-800",
-    borderLeft: "border-l-4 border-l-cyan-500",
-    gradient: "from-cyan-500 to-teal-500",
     ring: "ring-cyan-500",
   },
   payroll: {
@@ -59,8 +51,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-primary/10 dark:bg-primary/20",
     bgSubtle: "bg-primary/5 dark:bg-primary/10",
     border: "border-primary/30 dark:border-primary/30",
-    borderLeft: "border-l-4 border-l-primary",
-    gradient: "from-primary to-primary",
     ring: "ring-primary",
   },
   money: {
@@ -70,8 +60,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-indigo-100 dark:bg-indigo-900/30",
     bgSubtle: "bg-indigo-50 dark:bg-indigo-950/30",
     border: "border-indigo-300 dark:border-indigo-800",
-    borderLeft: "border-l-4 border-l-indigo-500",
-    gradient: "from-indigo-500 to-indigo-600",
     ring: "ring-indigo-500",
   },
   accounting: {
@@ -81,8 +69,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-orange-100 dark:bg-orange-900/30",
     bgSubtle: "bg-orange-50 dark:bg-orange-950/30",
     border: "border-orange-300 dark:border-orange-800",
-    borderLeft: "border-l-4 border-l-orange-500",
-    gradient: "from-orange-500 to-amber-500",
     ring: "ring-orange-500",
   },
   reports: {
@@ -92,8 +78,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     bg: "bg-violet-100 dark:bg-violet-900/30",
     bgSubtle: "bg-violet-50 dark:bg-violet-950/30",
     border: "border-violet-300 dark:border-violet-800",
-    borderLeft: "border-l-4 border-l-violet-500",
-    gradient: "from-violet-500 to-purple-500",
     ring: "ring-violet-500",
   },
 };

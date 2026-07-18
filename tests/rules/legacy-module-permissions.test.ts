@@ -93,6 +93,17 @@ describe('Legacy Root Collection Permissions', () => {
         severity: 'medium',
         createdAt: new Date(),
       });
+      await setDoc(doc(adminDb, 'offboarding/offboarding-a-1'), {
+        tenantId: 'tenant-a',
+        employeeId: 'emp-basic',
+        status: 'in_progress',
+        notes: '',
+        checklist: {
+          accessRevoked: false,
+          finalPayCalculated: false,
+        },
+        createdAt: new Date(),
+      });
       await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-basic'), {
         firstName: 'Legacy',
         lastName: 'User',
@@ -164,6 +175,30 @@ describe('Legacy Root Collection Permissions', () => {
       address: 'Dili',
       emergencyContactName: 'Ana',
       emergencyContactPhone: '+67070000000',
+      updatedAt: new Date(),
+    }));
+  });
+
+  it('reserves Article 56 final-pay evidence for tenant admins', async () => {
+    const hiringDb = testEnv.authenticatedContext('hiring-viewer').firestore();
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const path = 'offboarding/offboarding-a-1';
+
+    await assertSucceeds(updateDoc(doc(hiringDb, path), {
+      notes: 'Interview scheduled',
+      updatedAt: new Date(),
+    }));
+    await assertFails(updateDoc(doc(hiringDb, path), {
+      'checklist.finalPayCalculated': true,
+      updatedAt: new Date(),
+    }));
+    await assertFails(updateDoc(doc(hiringDb, path), {
+      article56FinalPay: { serviceCompensation: 999 },
+      updatedAt: new Date(),
+    }));
+    await assertSucceeds(updateDoc(doc(ownerDb, path), {
+      'checklist.finalPayCalculated': true,
+      article56FinalPay: { serviceCompensation: 1_400 },
       updatedAt: new Date(),
     }));
   });

@@ -67,6 +67,13 @@ export interface TenantConfig {
     overtimeRate?: number; // multiplier (e.g., 1.5)
     payrollCycle?: 'weekly' | 'biweekly' | 'monthly';
   };
+  /**
+   * Tenant-wide opt-in that reveals accountant-grade tax controls (supplier
+   * withholding, treaty rates, filing forms) to every manage-capable user.
+   * Members with the 'accountant' role always see them. UX mode, not a
+   * security boundary — owner-editable per firestore.rules.
+   */
+  advancedTaxMode?: boolean;
   settings?: {
     timezone?: string;
     currency?: string;
@@ -93,7 +100,9 @@ export const PLAN_LIMITS: Record<TenantPlan, TenantConfig['limits']> = {
 };
 
 // RBAC types
-export type TenantRole = 'owner' | 'hr-admin' | 'manager' | 'viewer';
+// 'accountant' is the finance power role (external bookkeeper/accountant):
+// full money/accounting/payroll control, no member or tenant administration.
+export type TenantRole = 'owner' | 'hr-admin' | 'accountant' | 'manager' | 'viewer';
 
 export type ModulePermission = 
   | 'hiring' 
@@ -140,6 +149,9 @@ export interface TenantSession {
 export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, ModulePermission[]> = {
   owner: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
   'hr-admin': ['hiring', 'staff', 'timeleave', 'payroll', 'performance', 'money', 'accounting', 'reports'],
+  // staff + timeleave are included so payroll runs can read the employee
+  // directory and sync attendance/leave; writes there stay admin-only in rules
+  accountant: ['staff', 'timeleave', 'payroll', 'money', 'accounting', 'reports'],
   manager: ['staff', 'timeleave', 'performance'], // Limited to own team
   viewer: [], // Read-only access, defined by explicit modules
 };

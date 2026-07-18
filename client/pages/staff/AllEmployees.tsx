@@ -968,7 +968,7 @@ export default function AllEmployees() {
         <PageHeader
           title={t("employees.title")}
           subtitle={t("employees.subtitle")}
-          icon={Users}
+          cardIcon="people" icon={Users}
           iconColor="text-blue-500"
           actions={canManageTenant ? (
             <>

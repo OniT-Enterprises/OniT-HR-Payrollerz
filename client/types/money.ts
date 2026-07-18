@@ -6,6 +6,12 @@
  * tenant has vatEnabled = true in their settings.
  */
 import type { VATCategory } from '@onit/shared';
+import type {
+  TLBillWithholdingCategory,
+  TLBillWithholdingInstruction,
+  TLBillWithholdingSnapshot,
+  TLVendorTaxProfile,
+} from '@/lib/tax/bill-withholding';
 
 // ============================================
 // CUSTOMERS
@@ -256,6 +262,7 @@ export interface Vendor {
   city?: string;
   tin?: string;
   notes?: string;
+  taxProfile?: TLVendorTaxProfile | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -270,6 +277,7 @@ export interface VendorFormData {
   city?: string;
   tin?: string;
   notes?: string;
+  taxProfile?: TLVendorTaxProfile | null;
 }
 
 // ============================================
@@ -370,6 +378,9 @@ export interface Bill {
   vatCategory?: VATCategory;
   supplierVatId?: string;          // Vendor's VAT ID
   hasValidVATInvoice?: boolean;    // Valid for input credit?
+
+  // Supplier withholding (optional, immutable classification snapshot)
+  withholding?: TLBillWithholdingInstruction | null;
 }
 
 export interface BillFormData {
@@ -383,12 +394,18 @@ export interface BillFormData {
   category: ExpenseCategory;
   notes?: string;
   attachmentUrls?: string[];
+  withholdingCategory?: TLBillWithholdingCategory | 'none';
 }
 
 export interface BillPayment {
   id: string;
   date: string;
   amount: number;
+  /** Actual cash delivered to the supplier; `amount` remains gross AP cleared. */
+  cashPaid?: number;
+  taxDue?: number;
+  withholdingTax?: number;
+  withholding?: TLBillWithholdingSnapshot | null;
   method: PaymentMethod;
   reference?: string;
   notes?: string;

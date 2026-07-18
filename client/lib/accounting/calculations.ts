@@ -102,6 +102,24 @@ export function calculateBillPaymentState(
   };
 }
 
+/** Validate the three-way settlement used by supplier-withholding postings. */
+export function calculateBillPaymentPostingAmounts(
+  grossAmountInput: number,
+  cashPaidInput?: number,
+  withholdingTaxInput?: number,
+): { grossAmount: number; cashPaid: number; withholdingTax: number } {
+  const grossAmount = roundMoney(grossAmountInput);
+  const cashPaid = roundMoney(cashPaidInput ?? grossAmount);
+  const withholdingTax = roundMoney(withholdingTaxInput ?? 0);
+  if (grossAmount <= 0 || cashPaid < 0 || withholdingTax < 0) {
+    throw new Error('Bill settlement amounts must be non-negative and gross AP cleared must be positive.');
+  }
+  if (compareMoney(addMoney(cashPaid, withholdingTax), grossAmount) !== 0) {
+    throw new Error('Bill settlement must balance gross AP cleared to cash plus withholding tax.');
+  }
+  return { grossAmount, cashPaid, withholdingTax };
+}
+
 function validatePaymentAmount(requestedAmount: number, balanceDue: number): number {
   if (!Number.isFinite(requestedAmount)) {
     throw new Error('Payment amount must be a finite number');

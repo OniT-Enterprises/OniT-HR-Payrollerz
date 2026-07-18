@@ -133,6 +133,8 @@ export interface Employee {
   };
   photoUrl?: string;
   status: "active" | "inactive" | "terminated";
+  /** Last working day captured by offboarding; required for terminated-worker filings. */
+  terminationDate?: string;
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;
   compliance?: EmployeeComplianceSnapshot;

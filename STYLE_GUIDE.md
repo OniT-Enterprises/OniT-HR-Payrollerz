@@ -1,684 +1,208 @@
-# HR/Payroll System - UI Style Guide
+# Xefe Interface Style Guide
 
-## Design Philosophy: Refined Professional
+This guide describes the visual and interaction rules for the Xefe product.
+Read `AGENTS.md` first. For landing-dashboard decisions, also read
+`docs/DASHBOARD_DESIGN.md`.
 
-A modern, premium HR platform that feels trustworthy and polished:
+## Product standard
 
-- **Typography**: Plus Jakarta Sans - geometric, modern, warm personality
-- **Colors**: Warm neutrals with confident gradient accents
-- **Motion**: Subtle animations that delight without distracting
-- **Consistency**: Same patterns across all modules with module-specific accent colors
+Xefe is used by Timor-Leste small businesses, often on a phone, over a slow
+connection, by people who are new to business software.
 
----
+The interface must be:
+
+- calm before impressive;
+- understandable without accounting knowledge;
+- usable with one thumb;
+- resilient on a narrow or slow connection;
+- explicit about status and the next action;
+- shorter over time, especially on dashboards.
+
+When two designs solve the same problem, ship the one with fewer decisions,
+less text, and less data on screen.
+
+## Brand and color
+
+The Xefe logo owns the top-left position in app chrome. Tenant logos belong on
+customer documents, invoices, and PDFs only.
+
+- Brand green: `#6A9C29`, used in logos and decorative brand moments.
+- Action green: the accessible `primary` token, used for buttons, links, focus,
+  and selection.
+- Module colors identify destinations and small icons. They do not replace the
+  primary action color.
+- Red means blocking, overdue, destructive, or failed.
+- Amber means attention or pending.
+- Green means complete or healthy.
+
+Always use semantic tokens such as `bg-background`, `bg-card`, `text-foreground`,
+`text-muted-foreground`, `border-border`, and `bg-primary`. Do not hardcode gray
+surfaces or use white text on an unverified color.
+
+Gradients are reserved for public marketing artwork. Do not use gradients for
+authenticated-app buttons, page headers, setup steps, dashboard cards, or icon
+badges.
 
 ## Typography
 
-We use **Plus Jakarta Sans** loaded from Google Fonts:
+Xefe uses Plus Jakarta Sans with the system stack as fallback.
 
 ```css
 font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 ```
 
-### Heading Hierarchy
+Use a compact hierarchy:
+
+- Page title: `text-2xl font-bold tracking-tight`
+- Section title: `text-base` or `text-lg font-semibold`
+- Card title: `text-sm` or `text-base font-semibold`
+- Body: `text-sm`
+- Supporting text: `text-xs text-muted-foreground`
+
+Do not use oversized hero headings inside the authenticated app. Labels must
+remain readable at 200% zoom and in English, Tetun, and Portuguese.
+
+## Page layout
+
+Use the established authenticated shell and `PageHeader`.
 
 ```tsx
-// Page title - 4xl, bold, tight tracking
-<h1 className="text-4xl font-bold tracking-tight">Dashboard</h1>
-
-// Section title - lg, semibold
-<h2 className="text-lg font-semibold">Department Breakdown</h2>
-
-// Card title - uses CardTitle component
-<CardTitle className="text-lg">Recent Hires</CardTitle>
-
-// Stat value - 3xl, bold
-<p className="text-3xl font-bold tracking-tight">247</p>
-```
-
-### Text Colors
-
-```
-Primary text (values, titles):  text-foreground
-Labels/secondary:               text-muted-foreground
-Subtle/tertiary:                text-muted-foreground/70
-```
-
-**Never use hardcoded colors** like `text-white`, `text-gray-400`, or `text-gray-900`.
-
----
-
-## Theme System
-
-### Using the Theme Context
-
-```tsx
-import { useTheme } from "@/contexts/ThemeContext";
-
-function MyComponent() {
-  const { theme, isDark, toggleTheme, setTheme } = useTheme();
-
-  return (
-    <Button onClick={toggleTheme}>
-      {isDark ? <Sun /> : <Moon />}
-    </Button>
-  );
-}
-```
-
-### Theme Values
-- `"light"` - Light mode
-- `"dark"` - Dark mode
-- `"system"` - Follow system preference
-
-Preference is persisted in localStorage.
-
----
-
-## Color Palette
-
-### CSS Variables (global.css)
-
-```css
-:root {
-  /* Clean, crisp light mode - QuickBooks inspired */
-  --background: 0 0% 97%;        /* Clean off-white */
-  --foreground: 210 20% 20%;     /* Rich dark text */
-  --card: 0 0% 100%;             /* Pure white cards */
-  --muted: 210 15% 96%;          /* Subtle backgrounds */
-  --muted-foreground: 210 10% 50%;
-  --border: 210 15% 90%;
-  --primary: 145 63% 42%;        /* Green (QuickBooks style) */
-}
-
-.dark {
-  /* Clean dark mode */
-  --background: 220 20% 10%;     /* Deep blue-gray */
-  --foreground: 210 15% 95%;
-  --card: 220 18% 13%;
-  --muted: 220 15% 18%;
-  --muted-foreground: 210 10% 55%;
-  --border: 220 15% 20%;
-  --primary: 145 60% 45%;
-}
-```
-
-### Module Theme Colors
-
-Each module has a signature color palette used consistently across hero sections, buttons, borders, and icons:
-
-| Module | Tinted BG | Gradient | Border Accent |
-|--------|-----------|----------|---------------|
-| **People** | `bg-blue-50 dark:bg-blue-950/30` | `from-blue-500 to-indigo-500` | `border-l-blue-500` |
-| **Payroll** | `bg-green-50 dark:bg-green-950/30` | `from-green-500 to-emerald-500` | `border-l-green-500` |
-| **Money** | `bg-indigo-50 dark:bg-indigo-950/30` | `from-indigo-500 to-indigo-600` | `border-l-indigo-500` |
-| **Accounting** | `bg-orange-50 dark:bg-orange-950/30` | `from-orange-500 to-amber-500` | `border-l-orange-500` |
-| **Reports** | `bg-violet-50 dark:bg-violet-950/30` | `from-violet-500 to-purple-500` | `border-l-violet-500` |
-
-**Note:** These colors are defined in `lib/sectionTheme.ts` and used throughout the app for consistent theming.
-
----
-
-## Page Layout
-
-### Hero Section Pattern (Clean Style)
-
-Every page has a hero section with a **tinted background** that extends under the nav through the breadcrumbs. Uses the module's theme color.
-
-```tsx
-{/* Hero Section */}
-<div className="border-b bg-orange-50 dark:bg-orange-950/30">
-  <div className="max-w-7xl mx-auto px-6 py-8">
-    <AutoBreadcrumb className="mb-4" />
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        {/* Gradient icon badge */}
-        <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-          <PageIcon className="h-8 w-8 text-white" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Page Title</h1>
-          <p className="text-muted-foreground mt-1">Page description</p>
-        </div>
-      </div>
-      {/* Primary action button - uses module gradient */}
-      <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-        <Plus className="h-4 w-4 mr-2" />
-        Primary Action
-      </Button>
-    </div>
-  </div>
-</div>
-
-{/* Main Content */}
-<div className="p-6 max-w-7xl mx-auto">
-  {/* Page content here */}
+<div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+  <PageHeader title={title} subtitle={subtitle} icon={Icon} />
+  <div className="space-y-6">...</div>
 </div>
 ```
 
-**Key Points:**
-- Tinted background uses module color (e.g., `bg-orange-50 dark:bg-orange-950/30`)
-- Breadcrumbs are **inside** the tinted area
-- Icon badge uses gradient with matching shadow
-- Title uses `text-foreground` (not white) for readability
-- Action button uses module gradient
+- Phone padding: 16px.
+- Desktop padding: 24px.
+- Default vertical rhythm: 24px.
+- Prefer one content column on phones.
+- Introduce two or more form columns only at `sm`, `md`, or `lg` when fields
+  retain a useful width.
+- Never force a two-, three-, or four-column form on a phone.
 
----
+Do not add colored hero bands, decorative orbs, large shadows, or left-border
+accent cards to product pages.
 
-## Stat Cards
+## Dashboards
 
-### Standard Stat Card
+Dashboards answer only:
 
-```tsx
-<Card className="relative overflow-hidden border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-  {/* Background gradient overlay */}
-  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 opacity-50" />
+1. What needs attention?
+2. What is the one useful number?
+3. Where should I go next?
 
-  <CardContent className="relative p-6">
-    <div className="flex items-start justify-between">
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
-        <div className="space-y-1">
-          <p className="text-3xl font-bold tracking-tight">247</p>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center text-xs font-medium px-1.5 py-0.5 rounded text-emerald-600 bg-emerald-500/10">
-              <ArrowUpRight className="h-3 w-3 mr-0.5" />
-              +12%
-            </span>
-            <span className="text-xs text-muted-foreground">vs last month</span>
-          </div>
-        </div>
-      </div>
+Use the existing order: greeting, one compact row of tappable numbers, things
+to do, and module destinations. On phones, cut lower-priority cards instead of
+wrapping an orphan card into another row.
 
-      {/* Gradient icon badge */}
-      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
-        <Users className="h-5 w-5 text-white" />
-      </div>
-    </div>
-  </CardContent>
-</Card>
-```
+Never put charts, filter bars, date pickers, report summaries, or a second KPI
+grid on a dashboard. Link to the relevant report page.
 
----
+## Cards and navigation surfaces
 
-## Module Dashboard Pattern
-
-Module dashboards (e.g., `/accounting`, `/payroll`) have a specific visual hierarchy:
-
-### 1. Stat Cards - Use Semantic Colors
-
-Stat cards display key metrics. Use **semantic colors** that communicate meaning at a glance:
+Cards are neutral containers, not decoration.
 
 ```tsx
-const quickStats = [
-  {
-    label: "Total Assets",
-    value: "$245,000",
-    icon: DollarSign,
-    iconColor: "text-blue-600",      // Blue = stable/positive
-    iconBg: "bg-blue-100 dark:bg-blue-900/30",
-  },
-  {
-    label: "Total Liabilities",
-    value: "$82,500",
-    icon: ArrowUpDown,
-    iconColor: "text-red-600",       // Red = debt/outflow
-    iconBg: "bg-red-100 dark:bg-red-900/30",
-  },
-  {
-    label: "Net Income",
-    value: "$18,450",
-    icon: TrendingUp,
-    iconColor: "text-green-600",     // Green = profit/growth
-    iconBg: "bg-green-100 dark:bg-green-900/30",
-  },
-  {
-    label: "Pending Items",
-    value: "3",
-    icon: Clock,
-    iconColor: "text-amber-600",     // Amber = needs attention
-    iconBg: "bg-amber-100 dark:bg-amber-900/30",
-  },
-];
-```
-
-**Semantic Color Meanings:**
-- **Blue** - Assets, stable values, informational
-- **Green** - Profit, growth, positive outcomes
-- **Red** - Liabilities, debt, negative values
-- **Amber** - Pending, warnings, needs attention
-
-### 2. Link Cards - Use Neutral Icons
-
-Navigation link cards should be **visually secondary** to stat cards. Use neutral/muted icon styling with the module's border accent:
-
-```tsx
-<Card
-  className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-orange-500/50 hover:border-l-orange-500"
-  onClick={() => navigate(link.path)}
->
-  <CardContent className="pt-6">
-    <div className="flex items-start gap-4">
-      {/* Neutral icon - doesn't compete with stats */}
-      <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-        <LinkIcon className="h-6 w-6 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold">{link.title}</h3>
-        <p className="text-sm text-muted-foreground">{link.description}</p>
-      </div>
-      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-    </div>
-  </CardContent>
-</Card>
-```
-
-**Why This Works:**
-1. **Visual hierarchy** - Stats pop, links are secondary
-2. **Semantic meaning** - Colors in stats communicate data meaning
-3. **Section identity** - Orange border accent ties cards to module theme
-4. **Avoids rainbow chaos** - Not every icon needs a unique bright color
-
----
-
-## Cards & Containers
-
-### Standard Card
-
-```tsx
-<Card className="border-border/50">
+<Card className="border-border/70 shadow-sm">
   <CardHeader>
-    <div className="flex items-center justify-between">
-      <div>
-        <CardTitle className="text-lg">Card Title</CardTitle>
-        <CardDescription>Card description text</CardDescription>
-      </div>
-      <Badge variant="secondary" className="font-normal">Status</Badge>
-    </div>
+    <CardTitle className="text-base">Title</CardTitle>
   </CardHeader>
-  <CardContent>
-    {/* Content */}
-  </CardContent>
+  <CardContent>...</CardContent>
 </Card>
 ```
 
-### List Item Pattern
-
-```tsx
-<div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-  {/* Color indicator bar */}
-  <div className="w-1 h-12 bg-blue-500 rounded-full" />
-
-  {/* Or icon with background */}
-  <div className="p-2.5 rounded-lg bg-blue-500/10">
-    <Icon className="h-4 w-4 text-blue-500" />
-  </div>
-
-  <div className="flex-1 min-w-0">
-    <p className="text-sm font-medium truncate">Item Title</p>
-    <p className="text-xs text-muted-foreground truncate">Subtitle text</p>
-  </div>
-
-  <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-    Label
-  </Badge>
-</div>
-```
-
----
-
-## Buttons
-
-### Primary Button (Gradient)
-
-```tsx
-<Button className="gap-2 bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 text-white shadow-lg shadow-primary/25">
-  <Plus className="h-4 w-4" />
-  Add Employee
-</Button>
-```
-
-### Module-Specific Primary Button
-
-```tsx
-// Hiring module (emerald)
-<Button className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-
-// Staff module (blue)
-<Button className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-```
-
-### Outline Button
-
-```tsx
-<Button variant="outline" className="gap-2 shadow-sm">
-  <Download className="h-4 w-4" />
-  Export
-</Button>
-```
-
-### Ghost Button
-
-```tsx
-<Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground gap-1">
-  View All
-  <ChevronRight className="h-4 w-4" />
-</Button>
-```
-
----
-
-## Quick Action Buttons
-
-```tsx
-<button
-  onClick={() => navigate(path)}
-  className="group flex flex-col items-center gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-primary/50 hover:shadow-md hover:shadow-primary/5 transition-all duration-200"
->
-  <div className="p-3 rounded-xl bg-muted group-hover:bg-gradient-to-br group-hover:from-primary group-hover:to-violet-500 transition-all duration-200">
-    <Icon className="h-5 w-5 text-muted-foreground group-hover:text-white transition-colors" />
-  </div>
-  <span className="text-sm font-medium text-foreground">Action Label</span>
-</button>
-```
-
----
-
-## Badges
-
-### Status Badges
-
-```tsx
-// Success/Complete
-<Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-  Complete
-</Badge>
-
-// Info/Active
-<Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-  Active
-</Badge>
-
-// Warning/Pending
-<Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-  Pending
-</Badge>
-
-// Neutral
-<Badge variant="secondary" className="font-normal">
-  Label
-</Badge>
-```
-
----
-
-## Animations
-
-### Available Animation Classes
-
-```css
-/* Core animations */
-.animate-fade-in         /* Simple fade in */
-.animate-fade-up         /* Fade in + slide up (signature page load) */
-.animate-scale-in        /* Fade in + scale up (modals, dropdowns) */
-.animate-slide-in-right  /* Fade in + slide from right (sidebars) */
-.animate-pulse-subtle    /* Gentle pulse (attention indicators) */
-.animate-shimmer         /* Loading shimmer effect */
-.animate-bounce-subtle   /* Micro bounce (success states) */
-```
-
-### Utility Classes
-
-```css
-.glass          /* Glass morphism background */
-.hover-lift     /* Subtle lift on hover */
-.text-gradient  /* Primary-to-violet gradient text */
-```
-
-### Stagger Animation Delays
-
-Use with animations for sequential reveals:
-
-```tsx
-<div className="animate-fade-up stagger-1">First</div>
-<div className="animate-fade-up stagger-2">Second</div>
-<div className="animate-fade-up stagger-3">Third</div>
-// stagger-1 through stagger-6 available
-```
-
-### Hover Effects
-
-```tsx
-// Lift on hover
-<Card className="hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-
-// Scale on hover
-<Avatar className="transition-transform duration-200 group-hover:scale-105">
-```
-
----
-
-## Icon Sizing
-
-| Size | Class | Usage |
-|------|-------|-------|
-| Tiny | `h-3 w-3` | Inline indicators, change arrows |
-| Standard | `h-4 w-4` | Buttons, nav items, badges |
-| Medium | `h-5 w-5` | List items, card icons |
-| Large | `h-6 w-6` | Hero section icons |
-| XL | `h-8 w-8` | Stat cards (inside gradient badge) |
-| Hero | `h-12 w-12` | Empty states |
-
----
-
-## Navigation
-
-### Header Navigation
-
-The main navigation uses a glass-morphism effect:
-
-```tsx
-<nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-```
-
-### Dropdown Menus
-
-```tsx
-<DropdownMenuContent className="w-56 p-2 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20 animate-scale-in">
-  <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-    <Icon className="h-4 w-4" />
-    <span className="font-medium">Menu Item</span>
-  </DropdownMenuItem>
-</DropdownMenuContent>
-```
-
----
-
-## Progress Bars
-
-```tsx
-<div className="space-y-2">
-  <div className="flex justify-between text-sm">
-    <span className="font-medium">Engineering</span>
-    <span className="text-muted-foreground">45 employees (35%)</span>
-  </div>
-  <div className="h-2 bg-muted rounded-full overflow-hidden">
-    <div
-      className="h-full bg-blue-500 rounded-full transition-all duration-500"
-      style={{ width: '35%' }}
-    />
-  </div>
-</div>
-```
-
----
-
-## Empty States
-
-```tsx
-<div className="text-center py-8">
-  <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-  <p className="text-muted-foreground">No employees yet</p>
-  <Button variant="link" className="mt-2" onClick={() => navigate("/admin/seed")}>
-    Seed database
-  </Button>
-</div>
-```
-
----
-
-## Loading States
-
-```tsx
-<div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-  <div className="relative">
-    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-violet-500/20 rounded-full blur-2xl animate-pulse" />
-    <Loader2 className="h-12 w-12 animate-spin text-primary relative" />
-  </div>
-  <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
-</div>
-```
-
----
-
-## Subpage Pattern
-
-Subpages (forms, detail views, secondary pages) use a constrained width layout with a colored hero section. The hero uses the **module's gradient colors** for consistency.
-
-### Full Subpage Template
-
-```tsx
-export default function SubpageName() {
-  return (
-    <div className="min-h-screen bg-background">
-      <MainNavigation />
-
-      {/* Hero Section - Uses module gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
-        {/* Decorative orb */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
-
-        <div className="relative max-w-5xl mx-auto px-6 py-12">
-          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
-
-          <div className="flex items-center gap-4 animate-fade-up">
-            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
-              <PageIcon className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Page Title</h1>
-              <p className="text-emerald-100 mt-1">Page subtitle or description</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Constrained width */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Cards for form sections */}
-        <Card className="border-border/50 animate-fade-up stagger-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-                <SectionIcon className="h-5 w-5 text-emerald-600" />
-              </div>
-              Section Title
-            </CardTitle>
-            <CardDescription>Section description</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Form fields, content, etc. */}
-          </CardContent>
-        </Card>
-
-        {/* Gradient submit button */}
-        <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-          Submit Action
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-```
-
-### Module-Specific Hero Gradients
-
-Each module uses its signature colors for subpage heroes:
-
-| Module | Hero Gradient | Text Color | Icon BG | Button Gradient |
-|--------|---------------|------------|---------|-----------------|
-| **People** | `from-blue-600 via-blue-500 to-indigo-500` | `text-blue-100` | `bg-white/10` | `from-blue-500 to-indigo-500` |
-| **Payroll** | `from-green-600 via-green-500 to-emerald-500` | `text-green-100` | `bg-white/10` | `from-green-500 to-emerald-500` |
-| **Money** | `from-indigo-600 via-indigo-500 to-indigo-600` | `text-indigo-100` | `bg-white/10` | `from-indigo-500 to-indigo-600` |
-| **Accounting** | `from-orange-600 via-orange-500 to-amber-500` | `text-orange-100` | `bg-white/10` | `from-orange-500 to-amber-500` |
-| **Reports** | `from-violet-600 via-violet-500 to-purple-500` | `text-violet-100` | `bg-white/10` | `from-violet-500 to-purple-500` |
-
-### Subpage Key Patterns
-
-1. **Max Width**: Use `max-w-5xl` or `max-w-6xl` for constrained content
-2. **Hero Breadcrumb**: Style breadcrumbs for visibility on colored backgrounds
-3. **Card Section Icons**: Wrap section icons in gradient background div
-4. **Form Labels with Icons**: Add small icons to labels for visual clarity
-5. **Gradient Buttons**: Match button gradients to module colors
-6. **Border Styling**: Use `border-border/50` for subtle card borders
-7. **Input Styling**: Add `border-border/50` class to inputs
-8. **Animations**: Use `animate-fade-up` with stagger classes
-
-### Form Field with Icon Label
-
-```tsx
-<div className="space-y-2">
-  <Label htmlFor="fieldName" className="flex items-center gap-2">
-    <FieldIcon className="h-4 w-4 text-muted-foreground" />
-    Field Label
-  </Label>
-  <Input
-    id="fieldName"
-    className="border-border/50"
-    placeholder="Placeholder text"
-  />
-</div>
-```
-
-### File Upload Area
-
-```tsx
-<div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-emerald-300 transition-colors cursor-pointer bg-muted/30">
-  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-  <input type="file" className="hidden" id="fileUpload" />
-  <label htmlFor="fileUpload" className="cursor-pointer">
-    <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
-    <p className="text-xs text-muted-foreground/70">PDF, JPG, PNG up to 10MB</p>
-  </label>
-</div>
-```
-
-### Checkbox with Theme Styling
-
-```tsx
-<Checkbox
-  id="checkboxId"
-  className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-/>
-```
-
----
-
-## Quick Reference
-
-### DO
-- Use `text-foreground` for primary text
-- Use `text-muted-foreground` for secondary text
-- Use `bg-background` and `bg-card` for surfaces
-- Use `border-border/50` for subtle borders
-- Use gradient buttons for primary actions
-- Use `animate-fade-up` with stagger classes for page loads
-- Use `transition-all duration-300` for smooth interactions
-
-### DON'T
-- Never use hardcoded colors like `bg-gray-900`, `text-white`
-- Never use `bg-gray-50` - use `bg-background` or `bg-muted`
-- Never skip the hero section pattern on dashboard pages
-- Never use plain colored icons - wrap in gradient badge or use muted color
-- Never forget hover states on interactive elements
+Tappable navigation cards must have a clear label, one short supporting line,
+and a minimum 44px target. On phones, module cards use a compact two-column
+grid; illustrations are 48px and supporting copy is clamped to two lines.
+
+Do not lift, bounce, or scale cards on hover. A border or background color
+change is enough.
+
+## Buttons and actions
+
+- One primary action per page or decision step.
+- Use the default `Button` variant for the primary action.
+- Use `outline` for a legitimate secondary action.
+- Use `ghost` for navigation, dismissal, and low-emphasis utilities.
+- Move rarely used actions into an overflow menu.
+- Destructive actions require a destructive style and confirmation when data
+  cannot be recovered.
+
+On phones, keep the primary and secondary completion actions in a sticky bottom
+bar when a form is long. Important targets are at least 44px high and wide.
+
+## Forms
+
+- Mobile input, select, and textarea text is at least 16px.
+- Labels sit above controls and remain visible; placeholders are examples, not
+  labels.
+- Required fields are limited to what the current workflow truly needs.
+- Explain why tax, payroll, or identity information is required.
+- Defer optional fields behind “More details” or a later settings screen.
+- Checkbox and radio labels are part of the tap target.
+- Errors appear next to the field and in plain language.
+
+For long workflows, use a stepper with one decision per step. Phones show
+“step X of Y” plus the current step name; the full diagram is desktop-only.
+
+## Status and language
+
+Status must never rely on color or an unexplained dot. Pair color with an icon
+and explicit words such as:
+
+- `64 days overdue`
+- `Due today`
+- `Draft — send when ready`
+- `Paid — no action needed`
+
+Use localized date and currency helpers. Never expose raw ISO dates, negative
+day counts, database identifiers, or accounting implementation terms when a
+plain phrase exists.
+
+Prefer “Set up accounts for me” over “Initialize default chart of accounts.”
+Introduce legal Portuguese terms in parentheses only when customers need them.
+
+## Loading, empty, and error states
+
+- Use skeletons that match the final layout.
+- Do not preload optional PDF, spreadsheet, or upload code.
+- Empty states say what happened and offer one next action.
+- Connection errors preserve entered data and offer Retry.
+- Avoid decorative animation during loading; a spinner or shimmer is enough.
+
+## Motion
+
+Motion communicates state, not polish.
+
+- Keep transitions at 150–250ms.
+- Prefer color and opacity transitions.
+- No page-load slide-ups, staggered card entrances, hover translation, bouncing,
+  or ambient animation in the authenticated app.
+- Respect `prefers-reduced-motion`.
+
+## Accessibility and localization
+
+- Normal text contrast must be at least 4.5:1.
+- Keyboard focus is visible on every interactive element.
+- Icon-only buttons have an accessible name.
+- Tap targets are 44px where practical and never depend on pixel-perfect aim.
+- Tables convert to cards or controlled horizontal regions on phones; the page
+  itself must not scroll horizontally.
+- Test representative screens at 390px in English, Tetun, and Portuguese.
+- Do not concatenate sentence fragments when a translated template is possible.
+
+## Review checklist
+
+Before merging interface work, verify:
+
+- the phone view exposes the main task above the fold;
+- no required interaction is smaller than the shared mobile target;
+- there is only one obvious primary action;
+- optional detail is deferred;
+- statuses have words, not only colors or dots;
+- dates, money, and deadlines are formatted for display;
+- dark and light themes pass contrast checks;
+- English, Tetun, and Portuguese do not clip;
+- loading and error states preserve user confidence;
+- `pnpm typecheck && pnpm test` pass.

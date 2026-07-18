@@ -209,3 +209,7 @@ payroll.db
 .playwright-mcp/
 ref-employees.png
 firestore-debug.log
+
+# Confidential mail-corpus working docs — never commit (client identifiers)
+docs/HANDOFF.md
+docs/MINED_TL_ACCOUNTING_INTEL.md

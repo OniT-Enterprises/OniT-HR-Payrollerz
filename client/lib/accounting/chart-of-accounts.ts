@@ -121,6 +121,16 @@ const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
     isSystem: true,
     parentCode: '1200',
   },
+  {
+    code: '1230',
+    name: 'Staff Expense Advances',
+    nameTL: 'Adiantamentu Despeza ba Empregadu',
+    type: 'asset',
+    subType: 'other_asset',
+    description: 'Accountable advances issued before expense receipts are submitted',
+    isSystem: true,
+    parentCode: '1200',
+  },
 
   // Prepaid Expenses
   {
@@ -337,6 +347,16 @@ const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
     type: 'liability',
     subType: 'tax_payable',
     isSystem: false,
+    parentCode: '2300',
+  },
+  {
+    code: '2320',
+    name: 'Supplier Withholding Tax Payable',
+    nameTL: 'Impostu Retidu Fornesedór nian a Pagar',
+    type: 'liability',
+    subType: 'tax_payable',
+    description: 'Tax withheld from supplier payments awaiting remittance to ATTL',
+    isSystem: true,
     parentCode: '2300',
   },
 

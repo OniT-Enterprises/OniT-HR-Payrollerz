@@ -20,6 +20,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -71,6 +77,8 @@ import {
   Eye,
   Landmark,
   Palette,
+  MoreHorizontal,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export default function InvoiceForm() {
@@ -83,14 +91,6 @@ export default function InvoiceForm() {
   const tenantId = useTenantId();
   const canManageTenant = canManage();
 
-  // Preload PDF module so download resolves instantly from cache
-  const preloaded = useRef(false);
-  useEffect(() => {
-    if (preloaded.current) return;
-    preloaded.current = true;
-    import('@/components/money/InvoicePDF');
-  }, []);
-
   const isNew = !id || id === 'new';
   const duplicateId = searchParams.get('duplicate');
   const preselectedCustomerId = searchParams.get('customer');
@@ -100,6 +100,7 @@ export default function InvoiceForm() {
   const [showPreview, setShowPreview] = useState(false);
   const queryClient = useQueryClient();
   const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [expandedLineItems, setExpandedLineItems] = useState<Record<string, boolean>>({});
   const [newCustomer, setNewCustomer] = useState({ name: '', phone: '', email: '' });
   const [creatingCustomer, setCreatingCustomer] = useState(false);
 
@@ -621,7 +622,7 @@ export default function InvoiceForm() {
       />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-xl mx-auto">
+      <div className="mx-auto max-w-screen-xl px-4 py-5 sm:p-6">
         <PageHeader
           title={isNew ? t('money.invoices.newInvoice') || 'New Invoice' : t('money.invoices.editInvoice') || 'Edit Invoice'}
           icon={FileText}
@@ -632,22 +633,35 @@ export default function InvoiceForm() {
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 {t('common.back') || 'Back'}
               </Button>
-              <Button variant="outline" onClick={() => setShowPreview(true)}>
+              <Button className="hidden sm:inline-flex" variant="outline" onClick={() => setShowPreview(true)}>
                 <Eye className="h-4 w-4 mr-2" />
                 {t('money.invoices.preview') || 'Preview'}
               </Button>
-              <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+              <Button className="hidden sm:inline-flex" variant="outline" onClick={() => handleSave(false)} disabled={saving}>
                 <Save className="h-4 w-4 mr-2" />
                 {t('money.invoices.saveDraft') || 'Save Draft'}
               </Button>
               <Button
                 onClick={() => handleSave(true)}
                 disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="hidden sm:inline-flex"
               >
                 <Send className="h-4 w-4 mr-2" />
                 {t('money.invoices.saveAndSend') || 'Save & Send'}
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="sm:hidden" aria-label={t('common.more') || 'More'}>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowPreview(true)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    {t('money.invoices.preview') || 'Preview'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           }
         />
@@ -799,7 +813,7 @@ export default function InvoiceForm() {
               </CardHeader>
               <CardContent>
                 {/* Column labels */}
-                <div className="mb-2 hidden gap-3 pr-12 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:flex">
+                <div className="mb-2 hidden gap-3 pr-12 text-[11px] font-medium uppercase tracking-wide text-muted-foreground lg:flex">
                   <span className="flex-1">{t('money.invoices.description') || 'Description'}</span>
                   <span className="w-16 text-right">{t('money.invoices.qty') || 'Qty'}</span>
                   <span className="w-28 text-right">{t('money.invoices.price') || 'Price'}</span>
@@ -812,8 +826,11 @@ export default function InvoiceForm() {
                     const itemValues = formData.items?.[index];
                     const lineTotal = itemValues ? lineNetAmount(itemValues) : 0;
                     return (
-                      <div key={field.id} className="flex gap-3 items-start">
-                        <div className="flex-1">
+                      <div key={field.id} className="grid grid-cols-2 gap-3 rounded-xl border border-border/70 bg-muted/10 p-3 lg:flex lg:items-start lg:border-0 lg:bg-transparent lg:p-0">
+                        <div className="col-span-2 lg:min-w-0 lg:flex-1">
+                          <Label className="mb-1.5 block text-xs lg:hidden">
+                            {t('money.invoices.description') || 'Description'}
+                          </Label>
                           <Input
                             {...register(`items.${index}.description`)}
                             placeholder={
@@ -827,7 +844,10 @@ export default function InvoiceForm() {
                             </p>
                           )}
                         </div>
-                        <div className="w-16">
+                        <div className="lg:w-16">
+                          <Label className="mb-1.5 block text-xs lg:hidden">
+                            {t('money.invoices.qty') || 'Qty'}
+                          </Label>
                           <Input
                             type="number"
                             {...register(`items.${index}.quantity`, { valueAsNumber: true })}
@@ -837,7 +857,10 @@ export default function InvoiceForm() {
                             className={errors.items?.[index]?.quantity ? 'border-red-500' : ''}
                           />
                         </div>
-                        <div className="w-28">
+                        <div className="lg:w-28">
+                          <Label className="mb-1.5 block text-xs lg:hidden">
+                            {t('money.invoices.price') || 'Price'}
+                          </Label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                               $
@@ -852,44 +875,72 @@ export default function InvoiceForm() {
                             />
                           </div>
                         </div>
-                        <div className="w-16">
-                          <Input
-                            type="number"
-                            {...register(`items.${index}.discount`, { valueAsNumber: true })}
-                            placeholder="0%"
-                            min="0"
-                            max="100"
-                            step="0.5"
-                            title={t('money.invoices.discountTitle') || 'Discount %'}
-                            className={`text-xs ${errors.items?.[index]?.discount ? 'border-red-500' : ''}`}
-                          />
-                        </div>
-                        <div className="w-16">
-                          <Input
-                            type="number"
-                            {...register(`items.${index}.vatRate`, { valueAsNumber: true })}
-                            placeholder={`${formData.taxRate || 0}%`}
-                            min="0"
-                            max="100"
-                            step="0.5"
-                            title={t('money.invoices.vatTitle') || 'VAT %'}
-                            className="text-xs"
-                          />
-                        </div>
-                        <div className="w-28 text-right pt-2 font-medium">
-                          {formatCurrency(lineTotal)}
-                        </div>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
-                          onClick={() => removeLineItem(index)}
-                          disabled={fields.length === 1}
-                          className="shrink-0"
-                          title={t('common.remove') || 'Remove'}
+                          onClick={() =>
+                            setExpandedLineItems((previous) => ({
+                              ...previous,
+                              [field.id]: !previous[field.id],
+                            }))
+                          }
+                          aria-expanded={Boolean(expandedLineItems[field.id])}
+                          className="col-span-2 justify-start px-2 text-muted-foreground lg:hidden"
                         >
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          <SlidersHorizontal className="h-4 w-4" />
+                          {t('common.more') || 'More'}
                         </Button>
+                        <div className={`col-span-2 grid-cols-2 gap-3 ${expandedLineItems[field.id] ? 'grid' : 'hidden'} lg:contents`}>
+                          <div className="lg:w-16">
+                            <Label className="mb-1.5 block text-xs lg:hidden">
+                              {t('money.invoices.discountShort') || 'Disc %'}
+                            </Label>
+                            <Input
+                              type="number"
+                              {...register(`items.${index}.discount`, { valueAsNumber: true })}
+                              placeholder="0%"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              title={t('money.invoices.discountTitle') || 'Discount %'}
+                              className={`text-xs ${errors.items?.[index]?.discount ? 'border-red-500' : ''}`}
+                            />
+                          </div>
+                          <div className="lg:w-16">
+                            <Label className="mb-1.5 block text-xs lg:hidden">
+                              {t('money.invoices.vatShort') || 'VAT %'}
+                            </Label>
+                            <Input
+                              type="number"
+                              {...register(`items.${index}.vatRate`, { valueAsNumber: true })}
+                              placeholder={`${formData.taxRate || 0}%`}
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              title={t('money.invoices.vatTitle') || 'VAT %'}
+                              className="text-xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-between border-t border-border/60 pt-2 lg:contents">
+                          <div className="font-medium lg:w-28 lg:pt-2 lg:text-right">
+                            <span className="mr-2 text-xs font-normal text-muted-foreground lg:hidden">
+                              {t('money.invoices.amount') || 'Amount'}
+                            </span>
+                            {formatCurrency(lineTotal)}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeLineItem(index)}
+                            disabled={fields.length === 1}
+                            className="shrink-0"
+                            title={t('common.remove') || 'Remove'}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -977,7 +1028,7 @@ export default function InvoiceForm() {
                     {paymentAccounts.length === 0 && canManageTenant && (
                       <Button
                         variant="link"
-                        className="p-0 h-auto text-xs text-indigo-600"
+                        className="min-h-11 p-0 text-xs text-primary"
                         type="button"
                         onClick={() => navigate('/money/invoices/settings')}
                       >
@@ -1011,10 +1062,10 @@ export default function InvoiceForm() {
                                     : [...current, option.value]
                                 );
                               }}
-                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                              className={`min-h-11 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
                                 selected
-                                  ? 'border-indigo-600 bg-indigo-600 text-white'
-                                  : 'border-border bg-background text-muted-foreground hover:border-indigo-300 hover:text-foreground'
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground'
                               }`}
                             >
                               {t(option.labelKey) || option.fallbackLabel}
@@ -1170,6 +1221,27 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Keep the two decisions that matter within thumb reach on phones. */}
+          <div className="sticky bottom-0 z-20 -mx-4 flex gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:hidden">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => handleSave(false)}
+              disabled={saving}
+            >
+              <Save className="h-4 w-4" />
+              {t('money.invoices.saveDraft') || 'Save Draft'}
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={() => handleSave(true)}
+              disabled={saving}
+            >
+              <Send className="h-4 w-4" />
+              {t('money.invoices.saveAndSend') || 'Save & Send'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -1209,7 +1281,7 @@ export default function InvoiceForm() {
                 autoFocus
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="new-customer-phone">{t('money.customers.phone') || 'Phone'}</Label>
                 <Input

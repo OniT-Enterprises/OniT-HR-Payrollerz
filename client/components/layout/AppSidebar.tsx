@@ -233,7 +233,7 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
             aria-label={displayLabel}
             aria-current={active ? "page" : undefined}
             className={`
-              w-full flex items-center justify-center h-10 rounded-lg transition-all
+              w-full flex items-center justify-center h-11 rounded-lg transition-all md:h-10
               ${active
                 ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -259,7 +259,7 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
       onClick={() => onNavigate(path)}
       aria-current={active ? "page" : undefined}
       className={`
-        w-full flex items-center gap-3 h-9 ${pl} pr-3 text-sm transition-all relative
+        w-full flex items-center gap-3 h-11 ${pl} pr-3 text-sm transition-all relative md:h-9
         ${indent > 0 ? "rounded-r-lg" : "rounded-lg"}
         ${active
           ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -295,7 +295,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
     <div key={sectionKey} className="space-y-0.5">
       <div
         className={`
-          w-full flex items-center gap-3 h-9 pl-4 pr-3 rounded-r-lg text-sm transition-colors
+          w-full flex items-center gap-3 h-11 pl-4 pr-1 rounded-r-lg text-sm transition-colors md:h-9 md:pr-3
           ${sectionActive
             ? "text-sidebar-foreground font-medium"
             : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -305,7 +305,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
         <button
           onClick={() => onNavigate(section.path)}
           aria-current={pathname === section.path ? "page" : undefined}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          className="flex min-h-11 min-w-0 flex-1 items-center gap-3 self-stretch text-left md:min-h-0"
         >
           <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
           <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
@@ -315,7 +315,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
           aria-label={`${sectionExpanded ? t("common.collapse") : t("common.more")} ${section.labelKey ? t(`nav.${section.labelKey}`) || section.label : section.label}`}
           aria-expanded={sectionExpanded}
           aria-controls={contentId}
-          className="-mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md hover:bg-sidebar-accent"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-sidebar-accent md:-mr-2 md:h-8 md:w-8"
         >
           <ChevronRight className={`h-3 w-3 shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
         </button>
@@ -374,7 +374,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
             aria-label={t(mod.labelKey)}
             aria-current={pathname === dashboardPath ? "page" : undefined}
             className={`
-              w-full flex items-center justify-center h-10 rounded-lg transition-colors
+              w-full flex items-center justify-center h-11 rounded-lg transition-colors md:h-10
               ${moduleActive
                 ? "bg-sidebar-accent text-sidebar-accent-foreground"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
@@ -395,7 +395,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
     <div key={mod.id} className="space-y-0.5">
       <div
         className={`
-          w-full flex items-center h-10 rounded-lg text-sm font-medium transition-colors
+          w-full flex items-center h-11 rounded-lg text-sm font-medium transition-colors md:h-10
           ${moduleActive
             ? "bg-sidebar-accent/70 text-sidebar-foreground"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -405,14 +405,14 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         <button
           onClick={() => onNavigate(dashboardPath)}
           aria-current={pathname === dashboardPath ? "page" : undefined}
-          className="flex min-w-0 flex-1 items-center gap-3 pl-3 pr-2 text-left"
+          className="flex min-w-0 flex-1 self-stretch items-center gap-3 pl-3 pr-2 text-left"
         >
           <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
           <span className="truncate">{t(mod.labelKey)}</span>
         </button>
         <button
           onClick={() => onToggleModule(mod.id)}
-          className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          className="mr-0 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground md:mr-1 md:h-8 md:w-8"
           aria-label={`${isExpanded ? t("common.collapse") : t("common.more")} ${t(mod.labelKey)}`}
           aria-expanded={isExpanded}
           aria-controls={contentId}
@@ -476,7 +476,7 @@ interface SidebarHeaderProps {
 function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose, closeLabel }: SidebarHeaderProps) {
   return (
     <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
-      <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
+      <button onClick={() => onNavigate("/")} className="flex min-h-11 min-w-0 items-center" title="Go to dashboard">
         {collapsed ? (
           <img
             src={isDark ? "/images/illustrations/xefe-mark-light.webp" : "/images/illustrations/xefe-mark-dark.webp"}
@@ -495,7 +495,7 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose, close
         <button
           onClick={onClose}
           data-sidebar-close
-          className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           aria-label={closeLabel}
         >
           <X className="h-5 w-5" />
@@ -537,7 +537,7 @@ function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pat
             <TooltipTrigger asChild>
               <button
                 onClick={onToggleCollapsed}
-                className="h-9 w-9 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors shrink-0"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/40 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground md:h-9 md:w-9"
                 aria-label={collapsed ? t("common.expandSidebar") : t("common.collapseSidebar")}
               >
                 <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
@@ -732,7 +732,7 @@ export default function AppSidebar() {
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
   const isMobile = useIsMobile();
   const { isDark } = useTheme();
-  const { hasModule, canManage, session } = useTenant();
+  const { hasModule, canManage, session, showAdvancedTax } = useTenant();
   const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
@@ -756,6 +756,7 @@ export default function AppSidebar() {
         hasModule,
         canManageTenant,
         canManageTeam,
+        showAdvancedTax,
       );
 
       if (!canManageTenant) {
@@ -793,7 +794,7 @@ export default function AppSidebar() {
       if (filteredConfig.sections.length === 0) return [];
       return [{ ...module, config: filteredConfig }];
     });
-  }, [canManageTeam, canManageTenant, hasModule, session]);
+  }, [canManageTeam, canManageTenant, hasModule, session, showAdvancedTax]);
 
   const { expandedModules, expandedSections, toggleModule, toggleSection } = useSidebarExpansion(visibleModules);
 

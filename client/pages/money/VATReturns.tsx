@@ -8,35 +8,18 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
-import {
-  Timestamp,
-  doc,
-  setDoc,
-  getDoc,
-} from 'firebase/firestore';
+import { Timestamp, doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateTL, toDateStringTL } from '@/lib/dateUtils';
@@ -45,6 +28,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
+import { isVATConfigOperational, type VATConfig } from '@onit/shared';
 import {
   Receipt,
   ArrowLeft,
@@ -111,14 +95,24 @@ export default function VATReturnsPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
-  const { data: platformActive = false, isLoading: platformLoading } = useQuery({
-    queryKey: ['config', 'vat', 'platformActive'],
+  const { data: vatStatus = { platformActive: false, tenantActive: false }, isLoading: platformLoading } = useQuery({
+    queryKey: ['config', 'vat', 'status', tenantId],
     queryFn: async () => {
-      const platformSnap = await getDoc(doc(db, paths.vatConfig()));
-      return platformSnap.exists() && platformSnap.data().isActive === true;
+      const [platformSnap, tenantSnap] = await Promise.all([
+        getDoc(doc(db, paths.vatConfig())),
+        getDoc(doc(db, paths.vatSettings(tenantId))),
+      ]);
+      const platformActive = platformSnap.exists() && isVATConfigOperational(platformSnap.data() as Partial<VATConfig>);
+      const tenantData = tenantSnap.exists() ? tenantSnap.data() : null;
+      return {
+        platformActive,
+        tenantActive: tenantData?.vatEnabled === true && tenantData.vatRegistered === true,
+      };
     },
     staleTime: 5 * 60 * 1000,
+    enabled: !!tenantId,
   });
+  const vatActive = vatStatus.platformActive && vatStatus.tenantActive;
 
   // Fetch saved VAT return for the selected period
   const { data: savedReturn, isLoading: returnLoading } = useQuery({
@@ -141,7 +135,7 @@ export default function VATReturnsPage() {
       } as VATReturnRecord;
     },
     staleTime: 0,
-    enabled: !!tenantId && platformActive,
+    enabled: !!tenantId && vatActive,
   });
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
@@ -169,13 +163,13 @@ export default function VATReturnsPage() {
     },
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
-    enabled: !!tenantId && platformActive,
+    enabled: !!tenantId && vatActive,
   });
 
-  const loading = platformLoading || (platformActive && (summaryLoading || returnLoading));
+  const loading = platformLoading || (vatActive && (summaryLoading || returnLoading));
 
   const saveReturn = async (markAsFiled = false) => {
-    if (!tenantId || !summary || !platformActive) return;
+    if (!tenantId || !summary || !vatActive) return;
     setSaving(true);
     try {
       const [year, month] = selectedPeriod.split('-').map(Number);
@@ -192,9 +186,7 @@ export default function VATReturnsPage() {
         expenseCount: summary.expenseCount,
         status: markAsFiled ? 'filed' : 'draft',
         ...(markAsFiled && { filedAt: Timestamp.fromDate(new Date()) }),
-        createdAt: savedReturn
-          ? Timestamp.fromDate(savedReturn.createdAt)
-          : Timestamp.fromDate(new Date()),
+        createdAt: savedReturn ? Timestamp.fromDate(savedReturn.createdAt) : Timestamp.fromDate(new Date()),
         updatedAt: Timestamp.fromDate(new Date()),
       };
 
@@ -209,7 +201,9 @@ export default function VATReturnsPage() {
       });
 
       // Invalidate the saved return query to refetch
-      queryClient.invalidateQueries({ queryKey: ['vatReturn', tenantId, selectedPeriod] });
+      queryClient.invalidateQueries({
+        queryKey: ['vatReturn', tenantId, selectedPeriod],
+      });
     } catch (err) {
       console.error(err);
       toast({
@@ -235,17 +229,10 @@ export default function VATReturnsPage() {
           iconColor="text-indigo-500"
           actions={
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/money')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => navigate('/money')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Select
-                value={selectedPeriod}
-                onValueChange={setSelectedPeriod}
-              >
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
@@ -261,15 +248,20 @@ export default function VATReturnsPage() {
           }
         />
 
-        {!loading && !platformActive ? (
+        {!loading && !vatActive ? (
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-6 flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
               <div>
-                <p className="font-semibold">VAT filing is not active in Timor-Leste</p>
+                <p className="font-semibold">
+                  {vatStatus.platformActive
+                    ? 'VAT filing is not enabled for this business'
+                    : 'VAT filing is not active in Timor-Leste'}
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  This page is kept ready for the future VAT rollout. Xefe will not calculate,
-                  save, or mark a VAT return as filed until the national VAT platform flag is active.
+                  {vatStatus.platformActive
+                    ? 'Register and enable VAT in settings before Xefe calculates or files a return.'
+                    : 'This page is kept ready for the future VAT rollout. Xefe will not calculate, save, or mark a VAT return as filed until an enacted, effective configuration is published.'}
                 </p>
               </div>
             </CardContent>
@@ -288,8 +280,7 @@ export default function VATReturnsPage() {
                   <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 gap-1">
                     <CheckCircle className="h-3 w-3" />
                     Filed
-                    {savedReturn.filedAt &&
-                      ` on ${formatDateTL(savedReturn.filedAt)}`}
+                    {savedReturn.filedAt && ` on ${formatDateTL(savedReturn.filedAt)}`}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="gap-1">
@@ -302,76 +293,64 @@ export default function VATReturnsPage() {
 
             {/* Summary Cards */}
             <MoreDetailsSection className="mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Output VAT */}
-              <Card className="border-green-500/20">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      Output VAT (Collected)
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(summary.outputVAT)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    from {summary.salesCount} invoice
-                    {summary.salesCount !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Output VAT */}
+                <Card className="border-green-500/20">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 text-green-600 mb-2">
+                      <TrendingUp className="h-4 w-4" />
+                      <span className="text-sm font-medium">Output VAT (Collected)</span>
+                    </div>
+                    <p className="text-2xl font-bold">{formatCurrency(summary.outputVAT)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      from {summary.salesCount} invoice
+                      {summary.salesCount !== 1 ? 's' : ''}
+                    </p>
+                  </CardContent>
+                </Card>
 
-              {/* Input VAT */}
-              <Card className="border-red-500/20">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 text-red-600 mb-2">
-                    <TrendingDown className="h-4 w-4" />
-                    <span className="text-sm font-medium">
-                      Input VAT (Paid)
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(summary.inputVAT)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    from {summary.expenseCount} expense
-                    {summary.expenseCount !== 1 ? 's' : ''} / bill
-                    {summary.expenseCount !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
+                {/* Input VAT */}
+                <Card className="border-red-500/20">
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <TrendingDown className="h-4 w-4" />
+                      <span className="text-sm font-medium">Input VAT (Paid)</span>
+                    </div>
+                    <p className="text-2xl font-bold">{formatCurrency(summary.inputVAT)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      from {summary.expenseCount} expense
+                      {summary.expenseCount !== 1 ? 's' : ''} / bill
+                      {summary.expenseCount !== 1 ? 's' : ''}
+                    </p>
+                  </CardContent>
+                </Card>
 
-              {/* Net Due */}
-              <Card
-                className={
-                  summary.netDue > 0
-                    ? 'border-amber-500/20 bg-amber-500/5'
-                    : 'border-green-500/20 bg-green-500/5'
-                }
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      {summary.netDue > 0 ? 'Net VAT Due' : 'VAT Refund Due'}
-                    </span>
-                  </div>
-                  <p
-                    className={`text-2xl font-bold ${summary.netDue > 0 ? 'text-amber-600' : 'text-green-600'}`}
-                  >
-                    {formatCurrency(Math.abs(summary.netDue))}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {summary.netDue > 0
-                      ? 'Amount to pay to tax authority'
-                      : summary.netDue < 0
-                        ? 'Amount to claim from tax authority'
-                        : 'No VAT liability this period'}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+                {/* Net Due */}
+                <Card
+                  className={
+                    summary.netDue > 0 ? 'border-amber-500/20 bg-amber-500/5' : 'border-green-500/20 bg-green-500/5'
+                  }
+                >
+                  <CardContent className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calculator className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        {summary.netDue > 0 ? 'Net VAT Due' : 'VAT Refund Due'}
+                      </span>
+                    </div>
+                    <p className={`text-2xl font-bold ${summary.netDue > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                      {formatCurrency(Math.abs(summary.netDue))}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {summary.netDue > 0
+                        ? 'Amount to pay to tax authority'
+                        : summary.netDue < 0
+                          ? 'Amount to claim from tax authority'
+                          : 'No VAT liability this period'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </MoreDetailsSection>
 
             {/* Breakdown */}
@@ -382,40 +361,22 @@ export default function VATReturnsPage() {
                   VAT Calculation
                 </CardTitle>
                 <CardDescription>
-                  Summary for{' '}
-                  {monthOptions.find((m) => m.value === selectedPeriod)
-                    ?.label || selectedPeriod}
+                  Summary for {monthOptions.find((m) => m.value === selectedPeriod)?.label || selectedPeriod}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Output VAT (from invoices)
-                  </span>
-                  <span className="font-medium text-green-600">
-                    {formatCurrency(summary.outputVAT)}
-                  </span>
+                  <span className="text-muted-foreground">Output VAT (from invoices)</span>
+                  <span className="font-medium text-green-600">{formatCurrency(summary.outputVAT)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Input VAT (from expenses & bills)
-                  </span>
-                  <span className="font-medium text-red-600">
-                    ({formatCurrency(summary.inputVAT)})
-                  </span>
+                  <span className="text-muted-foreground">Input VAT (from expenses & bills)</span>
+                  <span className="font-medium text-red-600">({formatCurrency(summary.inputVAT)})</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
-                  <span>
-                    {summary.netDue >= 0 ? 'Net VAT Payable' : 'Net VAT Refundable'}
-                  </span>
-                  <span
-                    className={
-                      summary.netDue >= 0
-                        ? 'text-amber-600'
-                        : 'text-green-600'
-                    }
-                  >
+                  <span>{summary.netDue >= 0 ? 'Net VAT Payable' : 'Net VAT Refundable'}</span>
+                  <span className={summary.netDue >= 0 ? 'text-amber-600' : 'text-green-600'}>
                     {formatCurrency(Math.abs(summary.netDue))}
                   </span>
                 </div>
@@ -424,16 +385,8 @@ export default function VATReturnsPage() {
 
             {/* Actions */}
             <div className="flex gap-3 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => saveReturn(false)}
-                disabled={saving}
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
+              <Button variant="outline" onClick={() => saveReturn(false)} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
                 Save Draft
               </Button>
               {savedReturn?.status !== 'filed' && (

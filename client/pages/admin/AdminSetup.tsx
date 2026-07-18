@@ -31,7 +31,7 @@ export default function AdminSetup() {
 
   // Company/Tenant info
   const [companyName, setCompanyName] = useState("Xefe Demo Company");
-  const [companySlug, setCompanySlug] = useState("meza-demo");
+  const [companySlug, setCompanySlug] = useState("xefe-demo");
 
   // Check if bootstrap has already occurred
   useEffect(() => {

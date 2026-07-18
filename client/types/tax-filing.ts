@@ -29,8 +29,8 @@ export interface MonthlyWITEmployeeRecord {
   tinNumber?: string;
   isResident: boolean;
   grossWages: number;
-  taxableWages: number;       // Gross - $500 threshold for residents
-  witWithheld: number;        // 10% of taxable wages
+  taxableWages: number; // Gross - $500 threshold for residents
+  witWithheld: number; // 10% of taxable wages
 }
 
 export interface MonthlyWITReturn {
@@ -38,7 +38,7 @@ export interface MonthlyWITReturn {
   employerTIN: string;
   employerName: string;
   employerAddress: string;
-  reportingPeriod: string;    // "2025-01"
+  reportingPeriod: string; // "2025-01"
   periodStartDate: string;
   periodEndDate: string;
 
@@ -63,8 +63,8 @@ export interface AnnualWITEmployeeRecord {
   fullName: string;
   tinNumber?: string;
   isResident: boolean;
-  startDate?: string;         // If hired during year
-  endDate?: string;           // If terminated during year
+  startDate?: string; // If hired during year
+  endDate?: string; // If terminated during year
   monthsWorked: number;
   totalGrossWages: number;
   totalWITWithheld: number;
@@ -75,7 +75,7 @@ export interface AnnualWITReturn {
   employerTIN: string;
   employerName: string;
   employerAddress: string;
-  taxYear: number;            // e.g., 2025
+  taxYear: number; // e.g., 2025
 
   // Summary
   totalEmployeesInYear: number;
@@ -99,13 +99,13 @@ export interface MonthlyINSSEmployeeRecord {
   employerContribution: number;
   totalContribution: number;
 
-  // DR (Declaração de Remunerações) export enrichment — optional so
-  // previously stored filing snapshots keep validating.
-  grossWages?: number;
-  annualSubsidy?: number;          // subsídio anual (13th month) portion of gross
-  incomeTax?: number;              // WIT withheld in the period
-  netPay?: number;
-  isResident?: boolean;
+  // Required source values for the DR export. Legacy snapshots missing any of
+  // these must be explicitly backfilled; the export does not reconstruct them.
+  grossWages: number;
+  annualSubsidy: number; // subsídio anual (13th month) portion of gross
+  incomeTax: number; // WIT withheld in the period
+  netPay: number;
+  isResident: boolean;
 }
 
 export interface MonthlyINSSReturn {
@@ -169,7 +169,7 @@ export interface TaxFiling {
 
   // Filing Info
   type: TaxFilingType;
-  period: string;             // "2025-01" for monthly, "2024" for annual
+  period: string; // "2025-01" for monthly, "2024" for annual
   status: TaxFilingStatus;
   dueDate: string;
   statementStatus?: TaxFilingStatus;
@@ -237,12 +237,7 @@ export interface FilingDueDate {
 
 type VisaType = 'C' | 'other';
 
-export type WorkPermitStatus =
-  | 'not_required'
-  | 'pending'
-  | 'approved'
-  | 'expired'
-  | 'renewal_pending';
+export type WorkPermitStatus = 'not_required' | 'pending' | 'approved' | 'expired' | 'renewal_pending';
 
 export interface WorkVisa {
   number: string;
@@ -270,14 +265,41 @@ export interface WorkPermit {
 export interface ForeignWorkerDocumentChecklist {
   employmentContract: { provided: boolean; documentUrl?: string };
   companyBusinessRegistration: { provided: boolean; documentUrl?: string };
-  taxComplianceCertificate: { provided: boolean; documentUrl?: string; validUntil?: string };
-  passportCopy: { provided: boolean; documentUrl?: string; passportNumber?: string; expiryDate?: string };
+  taxComplianceCertificate: {
+    provided: boolean;
+    documentUrl?: string;
+    validUntil?: string;
+  };
+  passportCopy: {
+    provided: boolean;
+    documentUrl?: string;
+    passportNumber?: string;
+    expiryDate?: string;
+  };
   qualificationsCertificates: { provided: boolean; documentUrls?: string[] };
   curriculumVitae: { provided: boolean; documentUrl?: string };
-  medicalCertificate: { provided: boolean; documentUrl?: string; issuedDate?: string; validUntil?: string };
-  policeClearance: { provided: boolean; documentUrl?: string; issuedDate?: string; issuingCountry?: string };
-  accommodationProof: { provided: boolean; documentUrl?: string; address?: string };
-  returnTicketOrFunds: { provided: boolean; documentUrl?: string; type?: 'ticket' | 'funds_proof' };
+  medicalCertificate: {
+    provided: boolean;
+    documentUrl?: string;
+    issuedDate?: string;
+    validUntil?: string;
+  };
+  policeClearance: {
+    provided: boolean;
+    documentUrl?: string;
+    issuedDate?: string;
+    issuingCountry?: string;
+  };
+  accommodationProof: {
+    provided: boolean;
+    documentUrl?: string;
+    address?: string;
+  };
+  returnTicketOrFunds: {
+    provided: boolean;
+    documentUrl?: string;
+    type?: 'ticket' | 'funds_proof';
+  };
 }
 
 export interface RenewalHistoryEntry {
@@ -309,4 +331,3 @@ export interface ForeignWorkerData {
   // History
   renewalHistory: RenewalHistoryEntry[];
 }
-

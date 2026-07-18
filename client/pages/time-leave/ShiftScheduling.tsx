@@ -1191,7 +1191,7 @@ export default function ShiftScheduling() {
           <PageHeader
             title={t("timeLeave.shiftScheduling.title")}
             subtitle={t("timeLeave.shiftScheduling.subtitle")}
-            icon={Calendar}
+            cardIcon="tl-shifts" icon={Calendar}
             iconColor="text-cyan-500"
             actions={
               <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowCreateDialog(true)}>

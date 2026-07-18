@@ -25,15 +25,15 @@ Every business above the registration threshold must:
 ### 1. VAT is a Feature Flag, Not a Rebuild
 - Meza web: VAT **disabled by default** — toggled on per tenant when TL implements it
 - Kaixa mobile: Built **VAT-ready from day one** — data model captures VAT fields even when rate is 0%
-- When VAT goes live: flip the flag, set the rate, existing data is already structured correctly
+- When an enacted law becomes effective: publish the complete legal config, then let registered tenants opt in
 
-> **Status (2026-07-11, commit `2102cdd`):** the flag is now **enforced** on the
-> VAT Returns page (`client/pages/money/VATReturns.tsx`). While the platform
-> `vatConfig.isActive` flag is off, the page shows a "VAT filing is not active in
-> Timor-Leste" notice and will **not** compute the summary, save, or mark a
-> return filed. This intentionally parks the earlier concern that the returns
-> screen used an EU-style input-credit model — no VAT math runs until the flag
-> is switched on. Flip `vatConfig.isActive` to re-enable.
+> **Status (2026-07-17):** VAT activation now fails closed in web and mobile.
+> `enabled: true` alone is insufficient. The platform config must state
+> `legalStatus: 'enacted'`, contain a valid effective date that has been reached
+> in Timor-Leste, and provide a complete positive-rate ruleset. The tenant must
+> then be both registered and enabled. Legacy `isActive` data is ignored. Until
+> all conditions hold, settings are locked and Xefe cannot calculate, save, or
+> mark a VAT return filed.
 
 ### 2. Three User Levels
 ```
@@ -68,7 +68,8 @@ VAT rates, thresholds, exemptions, and filing templates live in a config that ca
 // Firestore: platform/vatConfig
 interface VATConfig {
   enabled: boolean;                    // Global kill switch
-  effectiveDate: string;               // "2027-01-01" — when VAT starts
+  legalStatus: 'draft' | 'enacted';    // Draft policy cannot activate calculations
+  effectiveDate: string;               // Blank until law sets an actual YYYY-MM-DD date
 
   standardRate: number;                // e.g., 10 (percent)
   reducedRates: {                      // If TL implements multiple rates
@@ -426,9 +427,15 @@ tenants/{tenantId}/settings/vat: {
 ### Activation Flow
 
 ```
-Admin → Settings → Tax Configuration
+Superadmin publishes config from the enacted VAT law
   ↓
-  "Enable VAT" toggle (with confirmation dialog)
+  legalStatus = enacted + effectiveDate + rates/thresholds/categories
+  ↓
+  Effective date is reached in Asia/Dili
+  ↓
+Tenant admin → Settings → Tax Configuration
+  ↓
+  Confirm VAT registration
   ↓
   Enter VAT registration number
   Set default VAT rate (from platform config)
@@ -513,7 +520,7 @@ Based on international standards (likely requirements):
 - Kaixa transactions capture VAT fields (all zeros)
 - No UI changes in Meza (vatEnabled = false)
 
-### Phase 2: Kaixa VAT UI (Before 2027)
+### Phase 2: Kaixa VAT UI (after enacted specifications exist, before the effective date)
 - VAT dashboard in Kaixa
 - Receipt VAT breakdown
 - Business VAT registration in profile

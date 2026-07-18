@@ -38,11 +38,14 @@ function makeEmployee(overrides: Partial<TLPayrollInput> = {}): TLPayrollInput {
     sickDaysUsed: 0,
     ytdSickDaysUsed: 0,
     bonus: 0,
+    bonusINSSCategory: null,
     commission: 0,
     perDiem: 0,
     foodAllowance: 0,
     transportAllowance: 0,
     otherEarnings: 0,
+    nonCashBenefits: 0,
+    nonCashBenefitINSSCategory: null,
     taxInfo: { isResident: true, hasTaxExemption: false },
     loanRepayment: 0,
     advanceRepayment: 0,
@@ -126,6 +129,7 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
       regularHours: 190,
       overtimeHours: 20,
       bonus: 200,
+      bonusINSSCategory: "individual_performance",
     }),
 
     // Employee 4: Non-resident (flat 10%, no threshold)

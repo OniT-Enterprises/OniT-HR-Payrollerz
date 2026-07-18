@@ -43,12 +43,13 @@ export default function DashboardShell({
     <div className="min-h-screen bg-background">
       <div className={cn("relative border-b", theme.bgSubtle)}>
         <AmbientOrbs />
-        <div className="relative mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="relative mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="min-w-0 flex items-start gap-4">
             <div
               className={cn(
-                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white",
-                theme.gradient,
+                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:h-14 sm:w-14 sm:rounded-2xl",
+                theme.bg,
+                theme.text,
               )}
             >
               <Icon className="h-7 w-7" />
@@ -65,8 +66,8 @@ export default function DashboardShell({
         </div>
       </div>
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
-        {guidance ? <div className="mb-6 animate-fade-up stagger-1">{guidance}</div> : null}
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+        {guidance ? <div className="mb-6">{guidance}</div> : null}
 
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">{main}</div>
@@ -75,7 +76,7 @@ export default function DashboardShell({
 
         {children ? <div className="mt-6 space-y-6">{children}</div> : null}
 
-        <div className="mt-8 min-h-[18vh] animate-fade-up stagger-5">{brief}</div>
+        <div className="mt-8 min-h-[18vh]">{brief}</div>
       </div>
     </div>
   );

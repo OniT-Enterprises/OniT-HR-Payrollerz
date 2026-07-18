@@ -3,7 +3,7 @@
  * Extracted from RunPayroll.tsx to reduce file size
  */
 import type { Employee } from '@/services/employeeService';
-import type { TLPayrollResult } from '@/lib/payroll/calculations-tl';
+import type { TLBonusINSSCategory, TLPayrollResult } from '@/lib/payroll/calculations-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
 
 export interface EmployeePayrollData {
@@ -17,6 +17,7 @@ export interface EmployeePayrollData {
   sickDays: number;
   perDiem: number;
   bonus: number;
+  bonusINSSCategory: TLBonusINSSCategory | null;
   allowances: number;
   calculation: TLPayrollResult | null;
   isEdited: boolean;
@@ -27,6 +28,7 @@ export interface EmployeePayrollData {
     absenceHours: number;
     lateArrivalMinutes: number;
     bonus: number;
+    bonusINSSCategory: TLBonusINSSCategory | null;
     perDiem: number;
     allowances: number;
   };

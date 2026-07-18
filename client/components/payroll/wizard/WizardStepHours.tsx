@@ -20,6 +20,7 @@ import { PayrollEmployeeRow } from "@/components/payroll";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
 import { useI18n } from "@/i18n/I18nProvider";
+import type { TLBonusINSSCategory } from "@/lib/payroll/calculations-tl";
 
 interface PayrollWarning {
   employeeName: string;
@@ -36,6 +37,7 @@ interface WizardStepHoursProps {
   setSearchTerm: (v: string) => void;
   onToggleExpand: (id: string) => void;
   onInputChange: (employeeId: string, field: string, value: number) => void;
+  onBonusCategoryChange: (employeeId: string, category: TLBonusINSSCategory) => void;
   onReset: (employeeId: string) => void;
   onSyncAttendance: () => void;
   syncingAttendance: boolean;
@@ -56,6 +58,7 @@ export function WizardStepHours({
   setSearchTerm,
   onToggleExpand,
   onInputChange,
+  onBonusCategoryChange,
   onReset,
   onSyncAttendance,
   syncingAttendance,
@@ -151,6 +154,7 @@ export function WizardStepHours({
                 isExpanded={expandedRows.has(data.employee.id || "")}
                 onToggleExpand={onToggleExpand}
                 onInputChange={onInputChange}
+                onBonusCategoryChange={onBonusCategoryChange}
                 onReset={onReset}
               />
             ))}

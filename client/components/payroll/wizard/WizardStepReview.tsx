@@ -71,7 +71,7 @@ export function WizardStepReview({
       </div>
 
       {/* Hero Number — the one thing they care about most */}
-      <div className="text-center py-6 px-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 border border-green-200 dark:border-green-800">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-6 text-center">
         <p className="text-sm font-medium text-muted-foreground mb-1">{t("runPayroll.netToEmployees")}</p>
         <p className="text-4xl font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">
           {formatCurrencyTL(totals.netPay)}
@@ -192,7 +192,7 @@ export function WizardStepReview({
           size="lg"
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
+          className=""
         >
           {processing ? (
             <>
