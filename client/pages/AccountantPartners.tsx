@@ -149,6 +149,7 @@ export default function AccountantPartners() {
       <main id="main-content">
         <section className="relative overflow-hidden pb-20 pt-40 sm:pb-24 sm:pt-44 lg:pb-28 lg:pt-52">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(56,189,248,0.10),transparent_38%),radial-gradient(circle_at_15%_78%,rgba(110,142,44,0.08),transparent_34%)]" />
+          <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-sky-400/[0.05] md:block" />
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16 lg:px-8">
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-3.5 py-2 text-sm text-sky-200">

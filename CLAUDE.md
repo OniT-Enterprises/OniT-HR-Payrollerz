@@ -1,7 +1,7 @@
 # CLAUDE.md - Project Context
 
 ## Important
-- **Frontend work**: Check `STYLE_GUIDE.md` for design patterns and colors before UI changes.
+- **Frontend work**: Check `STYLE_GUIDE.md` for design patterns and colors before UI changes. For the PUBLIC marketing pages (/, /how-it-works, /pricing, /accountants), also read `docs/DESIGN_MARKETING.md` — the codified marketing design language (per-page accents, crescent motif, anti-vibe-code bans).
 - **Dashboards / simplicity**: Read `docs/DASHBOARD_DESIGN.md` before adding to any dashboard or customer-facing screen. Our users are first-time, mobile, often non-accountant TL small businesses — **simplicity is a hard requirement**. No charts on dashboards/report summaries; push back on over-complication instead of building it.
 - **Roadmap**: See `docs/IMPLEMENTATION_ROADMAP.md` for feature plans and TL legal requirements.
 - **Code quality**: See `docs/CODE_REVIEW_JAN2026.md` for technical debt and pending items.

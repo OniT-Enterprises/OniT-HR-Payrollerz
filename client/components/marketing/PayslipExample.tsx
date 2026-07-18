@@ -62,7 +62,7 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-xl bg-white text-zinc-800 shadow-2xl shadow-black/50 ring-1 ring-black/5">
+    <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-xl bg-white text-zinc-800 shadow-2xl shadow-black/50 ring-1 ring-black/5 tabular-nums">
       {/* Header */}
       <div className="flex flex-col items-start justify-between gap-3 border-b-2 border-blue-600 px-4 py-4 sm:flex-row sm:gap-4 sm:px-6">
         <div>

@@ -87,7 +87,7 @@ export function PackagePicker({ showHeader = true }: { showHeader?: boolean }) {
           </div>
         )}
 
-        <div className="mt-12 overflow-hidden rounded-2xl border border-amber-400/25 bg-amber-400/[0.035]">
+        <div className="mt-12 overflow-hidden rounded-2xl border border-amber-400/25 bg-amber-400/[0.035] tabular-nums">
           <div className="p-6 text-center sm:p-8 lg:p-10">
             <p className="text-5xl font-extrabold text-white">
               {formatMoney(rate, locale)}

@@ -452,7 +452,7 @@ export default function Landing() {
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
               {t("landing.simple.pricing.title")}
             </h2>
-            <p className="mt-6 text-5xl font-extrabold text-white">
+            <p className="mt-6 text-5xl font-extrabold tabular-nums text-white">
               ${DEFAULT_PACKAGES_CONFIG.pricePerEmployee}
               <span className="mt-2 block text-base font-medium text-zinc-400 sm:ml-2 sm:mt-0 sm:inline">
                 {t("landing.simple.pricing.perEmployeeMonth")}
