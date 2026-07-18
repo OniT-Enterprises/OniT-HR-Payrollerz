@@ -95,6 +95,115 @@ export async function activateSubscription(tenantId: string): Promise<void> {
 }
 
 /**
+ * Seed active employees directly (Admin SDK). The main E2E already proves
+ * employee creation through the UI; the month replay uses this to load a
+ * whole schedule quickly and drive only the payroll wizard. Shapes match
+ * what the directory hook and the TL payroll calculator read.
+ */
+export async function markSetupComplete(tenantId: string): Promise<void> {
+  // The payroll wizard redirects to /setup when settings/config is absent.
+  // Seed a minimal completed-setup doc so the replay can drive the wizard
+  // (setup itself is exercised by the main E2E).
+  await adminDb()
+    .doc(`tenants/${tenantId}/settings/config`)
+    .set(
+      {
+        tenantId,
+        setupComplete: true,
+        companyDetails: {
+          legalName: "Replay Co Lda",
+          tinNumber: "1234567890",
+          registeredAddress: "Rua de Dili 1, Dili",
+        },
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true },
+    );
+}
+
+export async function seedEmployees(
+  tenantId: string,
+  employees: Array<{ ref: string; monthlySalary: number }>,
+): Promise<void> {
+  const db = adminDb();
+  await Promise.all(
+    employees.map((e, index) =>
+      db.doc(`tenants/${tenantId}/employees/${e.ref}`).set({
+        status: "active",
+        personalInfo: { firstName: "Worker", lastName: e.ref.toUpperCase() },
+        jobDetails: {
+          employeeId: `E${String(index + 1).padStart(3, "0")}`,
+          department: "Operations",
+          position: "Staff",
+          hireDate: "2020-01-01",
+          employmentType: "full_time",
+        },
+        compensation: {
+          monthlySalary: e.monthlySalary,
+          payFrequency: "monthly",
+          isResident: true,
+        },
+        documents: {
+          residencyStatus: "citizen",
+          socialSecurityNumber: { number: `NISS${index + 1}`, required: true },
+          bilheteIdentidade: { number: `BI${index + 1}`, required: true },
+        },
+        contract: { fileUrl: "seeded://contract", signed: true },
+        createdAt: Timestamp.now(),
+      }),
+    ),
+  );
+}
+
+/** Read the created payroll run's aggregate totals from Firestore. */
+export async function getLatestRunTotals(tenantId: string): Promise<{
+  totalGrossPay: number;
+  totalNetPay: number;
+  totalDeductions: number;
+  employeeCount: number;
+} | null> {
+  const snapshot = await adminDb()
+    .collection("payrollRuns")
+    .where("tenantId", "==", tenantId)
+    .limit(5)
+    .get();
+  if (snapshot.empty) return null;
+  const run = snapshot.docs[0].data();
+  return {
+    totalGrossPay: Number(run.totalGrossPay ?? 0),
+    totalNetPay: Number(run.totalNetPay ?? 0),
+    totalDeductions: Number(run.totalDeductions ?? 0),
+    employeeCount: Number(run.employeeCount ?? 0),
+  };
+}
+
+/** Sum the employee income tax + INSS across the run's saved records. */
+export async function getLatestRunRecordTotals(tenantId: string): Promise<{
+  incomeTax: number;
+  inssEmployee: number;
+  count: number;
+}> {
+  const snapshot = await adminDb()
+    .collection("payrollRecords")
+    .where("tenantId", "==", tenantId)
+    .get();
+  let incomeTax = 0;
+  let inssEmployee = 0;
+  for (const doc of snapshot.docs) {
+    const rec = doc.data();
+    for (const d of (rec.deductions ?? []) as Array<{ type: string; amount: number }>) {
+      if (d.type === "income_tax") incomeTax += Number(d.amount ?? 0);
+      if (d.type === "inss_employee") inssEmployee += Number(d.amount ?? 0);
+    }
+  }
+  return {
+    incomeTax: Math.round(incomeTax * 100) / 100,
+    inssEmployee: Math.round(inssEmployee * 100) / 100,
+    count: snapshot.size,
+  };
+}
+
+/**
  * Ground-truth check: poll the tenant's payroll run until it reaches the
  * expected status (the approve flow ends at 'paid'). Returns the final
  * status; throws with the actual status on timeout so failures name the
