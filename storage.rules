@@ -198,18 +198,11 @@ service firebase.storage {
         && request.resource.contentType.matches('image/jpeg');
     }
 
-    // ============================================
-    // LEGACY PATHS (pre-tenant-isolation, read-only for migration)
-    // Remove once all existing files are migrated
-    // ============================================
-    match /employees/{employeeId}/documents/{document} {
-      allow read: if isAuthenticated();
-      allow write: if false;
-    }
-    match /expenses/{expenseId}/{document} {
-      allow read: if isAuthenticated();
-      allow write: if false;
-    }
+    // Legacy pre-tenant-isolation paths (/employees/**, /expenses/**) were
+    // removed 2026-07-18 after verifying both prefixes are empty in the
+    // production bucket — they allowed cross-tenant reads to any signed-in
+    // user. The catch-all below now denies them (pinned by
+    // tests/rules/storage-rules.test.ts).
 
     // Deny everything else
     match /{allPaths=**} {
