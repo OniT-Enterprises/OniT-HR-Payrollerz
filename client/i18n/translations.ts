@@ -5979,6 +5979,12 @@ export const translations = {
         "treatyReference": "Treaty evidence",
         "treatyReferencePlaceholder": "Treaty and article"
       },
+      "ai": {
+        "reading": "XefeBot is reading your file…",
+        "filled": "XefeBot filled in the details from your file — check them before saving.",
+        "failed": "XefeBot couldn't read this file — fill in the details manually.",
+        "vendorOnFile": "On the document: {{name}} — not in your vendor list yet."
+      },
       "expenses": {
         "title": "Expenses",
         "subtitle": "Track business expenses",
@@ -5986,6 +5992,7 @@ export const translations = {
         "addExpense": "Add Expense",
         "editExpense": "Edit Expense",
         "searchPlaceholder": "Search expenses...",
+        "dropStrip": "Drag & drop a receipt here (PDF or photo) — XefeBot fills in the details",
         "noResults": "No expenses found",
         "empty": "No expenses recorded yet",
         "addFirst": "Record your first expense",
@@ -13335,6 +13342,12 @@ export const translations = {
         "treatyReference": "Evidénsia tratadu",
         "treatyReferencePlaceholder": "Tratadu no artigu"
       },
+      "ai": {
+        "reading": "XefeBot lee hela ita-nia fixeiru…",
+        "filled": "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
+        "failed": "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
+        "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor."
+      },
       "expenses": {
         "title": "Despeza",
         "subtitle": "Akompanha despeza negosiu",
@@ -13342,6 +13355,7 @@ export const translations = {
         "addExpense": "Tau Despeza",
         "editExpense": "Edita Despeza",
         "searchPlaceholder": "Buka despeza...",
+        "dropStrip": "Arrasta resibu ida mai iha ne'e (PDF ka foto) — XefeBot sei prenxe detallu sira",
         "noResults": "Despeza la hetan",
         "empty": "Seidauk iha despeza rejistadu",
         "addFirst": "Rejista ita nia despeza primeiru",
@@ -20691,6 +20705,12 @@ export const translations = {
         "treatyReference": "Prova do tratado",
         "treatyReferencePlaceholder": "Tratado e artigo"
       },
+      "ai": {
+        "reading": "O XefeBot está a ler o seu ficheiro…",
+        "filled": "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
+        "failed": "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
+        "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores."
+      },
       "expenses": {
         "title": "Despesas",
         "subtitle": "Acompanhar despesas do negócio",
@@ -20698,6 +20718,7 @@ export const translations = {
         "addExpense": "Adicionar Despesa",
         "editExpense": "Editar Despesa",
         "searchPlaceholder": "Pesquisar despesas...",
+        "dropStrip": "Arraste um recibo para aqui (PDF ou foto) — o XefeBot preenche os detalhes",
         "noResults": "Nenhuma despesa encontrada",
         "empty": "Sem despesas registadas ainda",
         "addFirst": "Registe a sua primeira despesa",

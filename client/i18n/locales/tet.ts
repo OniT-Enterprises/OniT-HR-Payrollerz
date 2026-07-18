@@ -5975,6 +5975,12 @@ const messages = {
       "treatyReference": "Evidénsia tratadu",
       "treatyReferencePlaceholder": "Tratadu no artigu"
     },
+    "ai": {
+      "reading": "XefeBot lee hela ita-nia fixeiru…",
+      "filled": "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
+      "failed": "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
+      "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor."
+    },
     "expenses": {
       "title": "Despeza",
       "subtitle": "Akompanha despeza negosiu",
@@ -5982,6 +5988,7 @@ const messages = {
       "addExpense": "Tau Despeza",
       "editExpense": "Edita Despeza",
       "searchPlaceholder": "Buka despeza...",
+      "dropStrip": "Arrasta resibu ida mai iha ne'e (PDF ka foto) — XefeBot sei prenxe detallu sira",
       "noResults": "Despeza la hetan",
       "empty": "Seidauk iha despeza rejistadu",
       "addFirst": "Rejista ita nia despeza primeiru",

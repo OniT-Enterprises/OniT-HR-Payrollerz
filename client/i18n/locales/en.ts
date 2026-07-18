@@ -5975,6 +5975,12 @@ const messages = {
       "treatyReference": "Treaty evidence",
       "treatyReferencePlaceholder": "Treaty and article"
     },
+    "ai": {
+      "reading": "XefeBot is reading your file…",
+      "filled": "XefeBot filled in the details from your file — check them before saving.",
+      "failed": "XefeBot couldn't read this file — fill in the details manually.",
+      "vendorOnFile": "On the document: {{name}} — not in your vendor list yet."
+    },
     "expenses": {
       "title": "Expenses",
       "subtitle": "Track business expenses",
@@ -5982,6 +5988,7 @@ const messages = {
       "addExpense": "Add Expense",
       "editExpense": "Edit Expense",
       "searchPlaceholder": "Search expenses...",
+      "dropStrip": "Drag & drop a receipt here (PDF or photo) — XefeBot fills in the details",
       "noResults": "No expenses found",
       "empty": "No expenses recorded yet",
       "addFirst": "Record your first expense",

@@ -78,7 +78,15 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'X-API-Key', 'Authorization'],
 }));
-app.use(express.json({ limit: '1mb' }));
+// Document extraction uploads carry a base64 file (photos of bills), so that
+// one route gets a larger body limit; everything else stays tight at 1mb.
+const jsonParser = express.json({ limit: '1mb' });
+const extractJsonParser = express.json({ limit: '15mb' });
+app.use((req, res, next) =>
+  req.path.endsWith('/ai/extract-document')
+    ? extractJsonParser(req, res, next)
+    : jsonParser(req, res, next),
+);
 app.use(morgan('combined'));
 
 // Rate limiting
@@ -5156,6 +5164,76 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
     sendEvent({ type: 'error', content: error.message || 'Failed to communicate with AI gateway' });
   } finally {
     if (!res.writableEnded) res.end();
+  }
+});
+
+// ============================================================================
+// POST /api/tenants/:tenantId/ai/extract-document — bill/receipt field extraction
+// ============================================================================
+// Reads an uploaded bill/receipt (photo or PDF) with the Claude Agent SDK and
+// returns structured fields for pre-filling the Bill/Expense forms. Runs
+// directly on this host (no OpenClaw), so unlike chat/compose it works for
+// EVERY tenant. The user always confirms the fields before anything is saved.
+
+const EXTRACT_MIME_EXT = {
+  'application/pdf': 'pdf',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
+const EXTRACT_MAX_BYTES = 10 * 1024 * 1024;
+
+const extractLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many extraction requests, please slow down.' },
+});
+
+app.post('/api/tenants/:tenantId/ai/extract-document', extractLimiter, authenticateFirebaseToken, requireFirebaseTenantAccess, async (req, res) => {
+  const requestId = genId();
+  const { role, canWrite, isSuperAdmin } = req.tenantAccess || {};
+  if (!canWrite && role !== 'accountant' && !isSuperAdmin) {
+    return res.status(403).json({ success: false, message: 'Not allowed to create bills or expenses', requestId });
+  }
+
+  const { fileBase64, mimeType, kind } = req.body || {};
+  const ext = EXTRACT_MIME_EXT[mimeType];
+  if (!ext || typeof fileBase64 !== 'string' || fileBase64.length === 0) {
+    return res.status(400).json({ success: false, message: 'Send fileBase64 and a supported mimeType (PDF, JPEG, PNG, WebP)', requestId });
+  }
+
+  let buffer;
+  try {
+    buffer = Buffer.from(fileBase64, 'base64');
+  } catch {
+    return res.status(400).json({ success: false, message: 'Invalid base64 payload', requestId });
+  }
+  if (buffer.length === 0 || buffer.length > EXTRACT_MAX_BYTES) {
+    return res.status(400).json({ success: false, message: 'File must be between 1 byte and 10 MB', requestId });
+  }
+
+  req.setTimeout(150000);
+
+  const fs = require('fs');
+  const os = require('os');
+  let tmpDir = null;
+  try {
+    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'xefe-extract-'));
+    const filePath = path.join(tmpDir, `document.${ext}`);
+    await fs.promises.writeFile(filePath, buffer);
+
+    const { extractDocumentFields } = require('./extract');
+    const fields = await extractDocumentFields(filePath, kind === 'expense' ? 'expense' : 'bill');
+
+    console.log(`[extract] ${requestId} tenant=${req.params.tenantId} kind=${kind} type=${fields.documentType} confidence=${fields.confidence}`);
+    return res.json({ success: true, fields, requestId });
+  } catch (error) {
+    console.error(`[extract] ${requestId} failed:`, error.message);
+    return res.status(502).json({ success: false, message: 'Could not read the document', requestId });
+  } finally {
+    if (tmpDir) fs.promises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 });
 

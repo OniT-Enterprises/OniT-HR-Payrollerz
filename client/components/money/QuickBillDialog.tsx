@@ -35,8 +35,9 @@ import { useCreateBill } from '@/hooks/useBills';
 import { fileUploadService } from '@/services/fileUploadService';
 import BillAttachmentsInput from '@/components/money/BillAttachmentsInput';
 import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
+import { canExtractFile, extractDocument } from '@/lib/aiExtract';
 import type { ExpenseCategory } from '@/types/money';
-import { Building2 } from 'lucide-react';
+import { Building2, Loader2, Sparkles } from 'lucide-react';
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: 'rent', label: 'Rent' },
@@ -101,6 +102,12 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
   const submitInFlight = useRef(false);
   const vendorsUnavailable = vendorsLoadError && vendors.length === 0;
 
+  // AI prefill: XefeBot reads the dropped file server-side and fills the form;
+  // the user reviews and confirms — extraction never saves anything itself.
+  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed'>('idle');
+  const [aiVendorName, setAiVendorName] = useState<string | null>(null);
+  const aiRun = useRef(0);
+
   // Seed state each time the dialog opens with a fresh batch of files
   useEffect(() => {
     if (open) {
@@ -114,6 +121,54 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
       setBillNumber('');
     }
   }, [open, initialFiles]);
+
+  useEffect(() => {
+    if (!open) {
+      aiRun.current += 1;
+      setAiStatus('idle');
+      setAiVendorName(null);
+      return;
+    }
+    const file = initialFiles[0];
+    if (!file || !canExtractFile(file)) return;
+    const run = ++aiRun.current;
+    setAiStatus('reading');
+    setAiVendorName(null);
+    extractDocument(file, tenantId, 'bill')
+      .then((fields) => {
+        if (aiRun.current !== run) return;
+        if (fields.documentType === 'other' || fields.confidence < 0.3) {
+          setAiStatus('failed');
+          return;
+        }
+        if (fields.amount != null) setAmount(String(fields.amount));
+        if (fields.billDate) setBillDate(fields.billDate);
+        if (fields.dueDate) setDueDate(fields.dueDate);
+        if (fields.description) setDescription(fields.description);
+        if (fields.category) setCategory(fields.category as ExpenseCategory);
+        if (fields.billNumber) setBillNumber(fields.billNumber);
+        if (fields.vendorName) setAiVendorName(fields.vendorName);
+        setAiStatus('done');
+      })
+      .catch(() => {
+        if (aiRun.current === run) setAiStatus('failed');
+      });
+  }, [open, initialFiles, tenantId]);
+
+  // Match the extracted vendor name against the vendor list once both exist.
+  useEffect(() => {
+    if (!aiVendorName || vendorId || vendors.length === 0) return;
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = norm(aiVendorName);
+    if (!target) return;
+    const match =
+      vendors.find((v) => norm(v.name) === target) ??
+      vendors.find((v) => target.includes(norm(v.name)) || norm(v.name).includes(target));
+    if (match) {
+      setVendorId(match.id);
+      setAiVendorName(null);
+    }
+  }, [aiVendorName, vendors, vendorId]);
 
   const reportInvalidFiles = (errors: string[]) => {
     toast({
@@ -224,6 +279,24 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {aiStatus === 'reading' && (
+            <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm text-foreground/80">
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+              {t('money.ai.reading') || 'XefeBot is reading your file…'}
+            </div>
+          )}
+          {aiStatus === 'done' && (
+            <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm text-foreground/80">
+              <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+              {t('money.ai.filled') || 'XefeBot filled in the details from your file — check them before saving.'}
+            </div>
+          )}
+          {aiStatus === 'failed' && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+              {t('money.ai.failed') || "XefeBot couldn't read this file — fill in the details manually."}
+            </div>
+          )}
+
           <BillAttachmentsInput
             files={files}
             onFilesChange={setFiles}
@@ -279,6 +352,14 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            {aiVendorName && !vendorId && vendors.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {(t('money.ai.vendorOnFile') || 'On the document: {{name}} — not in your vendor list yet.').replace(
+                  '{{name}}',
+                  aiVendorName,
+                )}
+              </p>
             )}
           </div>
 

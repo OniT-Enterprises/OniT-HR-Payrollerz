@@ -5975,6 +5975,12 @@ const messages = {
       "treatyReference": "Prova do tratado",
       "treatyReferencePlaceholder": "Tratado e artigo"
     },
+    "ai": {
+      "reading": "O XefeBot está a ler o seu ficheiro…",
+      "filled": "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
+      "failed": "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
+      "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores."
+    },
     "expenses": {
       "title": "Despesas",
       "subtitle": "Acompanhar despesas do negócio",
@@ -5982,6 +5988,7 @@ const messages = {
       "addExpense": "Adicionar Despesa",
       "editExpense": "Editar Despesa",
       "searchPlaceholder": "Pesquisar despesas...",
+      "dropStrip": "Arraste um recibo para aqui (PDF ou foto) — o XefeBot preenche os detalhes",
       "noResults": "Nenhuma despesa encontrada",
       "empty": "Sem despesas registadas ainda",
       "addFirst": "Registe a sua primeira despesa",

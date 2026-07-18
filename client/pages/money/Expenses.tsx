@@ -45,6 +45,7 @@ import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
+import { canExtractFile, extractDocument } from '@/lib/aiExtract';
 import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -67,6 +68,8 @@ import {
   DollarSign,
   Camera,
   Upload,
+  Loader2,
+  Sparkles,
   X,
   FileText,
   Image,
@@ -218,6 +221,111 @@ export default function Expenses() {
     setReceiptFile(null);
     setReceiptPreview(null);
     setExistingReceiptUrl(null);
+  };
+
+  // ── Drop a receipt anywhere on the page: XefeBot reads it and pre-fills
+  //    the add-expense form; the user reviews and confirms. ──
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepth = useRef(0);
+  const dropInputRef = useRef<HTMLInputElement>(null);
+  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed'>('idle');
+  const [aiVendorName, setAiVendorName] = useState<string | null>(null);
+  const aiRun = useRef(0);
+
+  const handleDroppedReceipt = (incoming: File[]) => {
+    if (!canManageTenant) return;
+    const file = incoming[0];
+    if (!file) return;
+
+    const validation = fileUploadService.validateReceiptFile(file);
+    if (!validation.valid) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setEditingExpense(null);
+    resetForm();
+    setReceiptFile(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => setReceiptPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+    setShowAddDialog(true);
+
+    if (!canExtractFile(file)) {
+      setAiStatus('idle');
+      return;
+    }
+    const run = ++aiRun.current;
+    setAiStatus('reading');
+    setAiVendorName(null);
+    extractDocument(file, tenantId, 'expense')
+      .then((fields) => {
+        if (aiRun.current !== run) return;
+        if (fields.documentType === 'other' || fields.confidence < 0.3) {
+          setAiStatus('failed');
+          return;
+        }
+        setFormData((prev) => ({
+          ...prev,
+          date: fields.billDate || prev.date,
+          description: fields.description || prev.description,
+          amount: fields.amount ?? prev.amount,
+          category: (fields.category as ExpenseFormData['category']) || prev.category,
+        }));
+        if (fields.vendorName) setAiVendorName(fields.vendorName);
+        setAiStatus('done');
+      })
+      .catch(() => {
+        if (aiRun.current === run) setAiStatus('failed');
+      });
+  };
+
+  // Match the extracted vendor name against the vendor list once both exist.
+  useEffect(() => {
+    if (!aiVendorName || formData.vendorId || vendors.length === 0) return;
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const target = norm(aiVendorName);
+    if (!target) return;
+    const match =
+      vendors.find((v) => norm(v.name) === target) ??
+      vendors.find((v) => target.includes(norm(v.name)) || norm(v.name).includes(target));
+    if (match) {
+      setFormData((prev) => ({ ...prev, vendorId: match.id }));
+      setAiVendorName(null);
+    }
+  }, [aiVendorName, vendors, formData.vendorId]);
+
+  const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
+  const handlePageDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+  const handlePageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+  };
+  const handlePageDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    dragDepth.current -= 1;
+    if (dragDepth.current <= 0) {
+      dragDepth.current = 0;
+      setDragActive(false);
+    }
+  };
+  const handlePageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth.current = 0;
+    setDragActive(false);
+    handleDroppedReceipt(Array.from(e.dataTransfer.files));
   };
 
   const [saving, setSaving] = useState(false);
@@ -448,7 +556,13 @@ export default function Expenses() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className={`min-h-screen bg-background ${dragActive ? 'ring-2 ring-inset ring-indigo-400/60' : ''}`}
+      onDragEnter={canManageTenant ? handlePageDragEnter : undefined}
+      onDragOver={canManageTenant ? handlePageDragOver : undefined}
+      onDragLeave={canManageTenant ? handlePageDragLeave : undefined}
+      onDrop={canManageTenant ? handlePageDrop : undefined}
+    >
       <SEO title="Expenses - Xefe" description="Track and manage business expenses" />
       <MainNavigation />
 
@@ -459,7 +573,7 @@ export default function Expenses() {
           cardIcon="mn-expenses" icon={Receipt}
           iconColor="text-indigo-500"
           actions={
-            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+            <Button onClick={openAddDialog}>
               <Plus className="h-4 w-4 mr-2" />
               {t('money.expenses.add') || 'Add Expense'}
             </Button>
@@ -512,6 +626,38 @@ export default function Expenses() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Quick-add dropzone */}
+        {canManageTenant && (
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => dropInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                dropInputRef.current?.click();
+              }
+            }}
+            className="mb-6 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 px-4 py-3 border-2 border-dashed border-muted-foreground/25 rounded-lg text-sm text-muted-foreground hover:border-indigo-400 hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+          >
+            <Upload className="h-4 w-4 shrink-0" />
+            <span className="text-center">
+              {t('money.expenses.dropStrip') ||
+                'Drag & drop a receipt here (PDF or photo) — XefeBot fills in the details'}
+            </span>
+          </div>
+        )}
+        <input
+          ref={dropInputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            handleDroppedReceipt(Array.from(e.target.files ?? []));
+            e.target.value = '';
+          }}
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -662,7 +808,17 @@ export default function Expenses() {
       </div>
 
       {/* Add/Edit Expense Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={(next) => {
+          setShowAddDialog(next);
+          if (!next) {
+            aiRun.current += 1;
+            setAiStatus('idle');
+            setAiVendorName(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -676,6 +832,23 @@ export default function Expenses() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {!editingExpense && aiStatus === 'reading' && (
+              <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm text-foreground/80">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                {t('money.ai.reading') || 'XefeBot is reading your file\u2026'}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'done' && (
+              <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] p-3 text-sm text-foreground/80">
+                <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+                {t('money.ai.filled') || 'XefeBot filled in the details from your file \u2014 check them before saving.'}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'failed' && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                {t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">{t('common.date') || 'Date'} *</Label>
@@ -884,7 +1057,7 @@ export default function Expenses() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={uploadingReceipt}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700" disabled={uploadingReceipt || saving}>
+            <Button onClick={handleSubmit} disabled={uploadingReceipt || saving}>
               {uploadingReceipt || saving ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
