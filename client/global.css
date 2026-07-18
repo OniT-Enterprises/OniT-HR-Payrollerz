@@ -343,6 +343,25 @@
   animation: bounce-subtle 0.5s ease-in-out;
 }
 
+/* Reduced motion: entrance animations complete instantly. Without this, the
+   stagger-* classes would strand elements at opacity: 0 when the browser
+   suppresses animations. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-up,
+  .animate-scale-in,
+  .animate-slide-in-right,
+  .animate-bounce-subtle,
+  .animate-pulse-subtle {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .stagger-1, .stagger-2, .stagger-3,
+  .stagger-4, .stagger-5, .stagger-6 {
+    animation-delay: 0s !important;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SELECTION & SCROLLBARS - Refined details
 ═══════════════════════════════════════════════════════════════ */
@@ -434,6 +453,58 @@
 .dashboard-report-band {
   background:
     linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 65%, hsl(var(--muted) / 0.4) 100%);
+}
+
+/* Marketing-page motion (public pages only — the authenticated app stays
+   still per STYLE_GUIDE.md). One-time entrances in the Stripe/Linear vein:
+   nothing loops, nothing parallaxes. */
+@keyframes public-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-public-rise {
+  animation: public-rise 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Scroll-into-view reveal: pair with data-reveal + useScrollReveal(). */
+.public-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.public-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-public-rise {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+  .public-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Film grain for the public marketing canvas (design doc backlog #4): a
+   faint noise tile that kills the flat "AI dark mode" look. Pure CSS,
+   ~1KB data URI, no JS, no motion. */
+.public-grain {
+  background-color: #0a0a0b;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
 @keyframes dashboard-float {

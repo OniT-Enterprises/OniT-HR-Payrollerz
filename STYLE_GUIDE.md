@@ -181,6 +181,19 @@ Motion communicates state, not polish.
   or ambient animation in the authenticated app.
 - Respect `prefers-reduced-motion`.
 
+Sanctioned micro-interactions (each communicates a state; all are
+reduced-motion safe — see the guard in `global.css`):
+
+- **Pressed**: tappable cards/rows/chips may use `active:scale-[0.98]`
+  (≤150ms). Pair with a visible `focus-visible:ring-2 ring-primary` ring.
+  (Dashboard uses the shared `PRESSABLE` classes.)
+- **Loaded**: when a skeleton resolves to content, the content region may fade
+  in once (`animate-fade-in`, opacity only) — never staggered, never translated.
+- **Fresh data**: overview-card numbers may settle with a one-time ≤450ms
+  count-up (`useCountUp`). No other number animation.
+- **Hover** stays border + surface tint (`hover:border-…`, `hover:bg-muted/40`);
+  prefer border contrast over adding shadow.
+
 ## Accessibility and localization
 
 - Normal text contrast must be at least 4.5:1.

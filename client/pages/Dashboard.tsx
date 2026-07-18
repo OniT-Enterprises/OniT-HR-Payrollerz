@@ -8,10 +8,6 @@ import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChatStore } from "@/stores/chatStore";
 import { Send } from "lucide-react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
@@ -48,13 +44,51 @@ import {
   FileText,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useCountUp } from "@/hooks/useCountUp";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
-import { AccountantPartnerCard } from "@/components/settings/AccountantPartnerCard";
+import { AccountantPartnerBanner } from "@/components/settings/AccountantPartnerCard";
+import { useInvoiceStats } from "@/hooks/useInvoices";
 
-function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
+function formatCurrencyShort(amount: number, locale: "en" | "tet" | "pt") {
+  const numberLocale =
+    locale === "en" ? "en-US" : locale === "pt" ? "pt-PT" : "pt-TL";
+  return new Intl.NumberFormat(numberLocale, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/* Tactile feedback for tappable surfaces: quick press scale + visible focus
+   ring. Hover feedback stays border + fill (no shadows, no translation) per
+   the style guide's motion rules. */
+const PRESSABLE =
+  "transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
+function AnimatedNumber({
+  value,
+  format,
+}: {
+  value: number;
+  format?: (n: number) => string;
+}) {
+  const animated = Math.round(useCountUp(value));
+  return <>{format ? format(animated) : animated}</>;
+}
+
+function XefeBotInline({
+  t,
+  firstName,
+  summary,
+}: {
+  t: (key: string) => string;
+  firstName: string;
+  summary: string;
+}) {
   const { setOpen, setPendingQuery } = useChatStore();
   const [input, setInput] = useState("");
   const hour = new Date().getHours();
@@ -73,13 +107,19 @@ function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName
     setInput("");
   }, [setPendingQuery, setOpen]);
 
+  const prompts = [
+    t("dashboard.botPromptPayroll"),
+    t("dashboard.botPromptStaff"),
+    t("dashboard.botPromptLeave"),
+  ];
+
   return (
-    <div className="min-w-0 flex-1 space-y-3">
+    <div className="min-w-0 flex-1 space-y-2.5">
       <div>
         <h2 className="text-lg font-bold tracking-tight">
           {greeting}{firstName ? `, ${firstName}` : ""}!
         </h2>
-        <p className="mt-0.5 text-sm text-muted-foreground">{t("dashboard.botIntro")}</p>
+        <p className="mt-0.5 text-sm text-foreground/75">{summary}</p>
       </div>
       <form
         onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
@@ -96,50 +136,107 @@ function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName
           type="submit"
           disabled={!input.trim()}
           aria-label={t("dashboard.botPlaceholder")}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 md:h-9 md:w-9"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all duration-150 hover:bg-primary/90 active:scale-95 disabled:opacity-40 md:h-9 md:w-9"
         >
           <Send className="h-3.5 w-3.5" />
         </button>
       </form>
+      <div className="flex flex-wrap gap-1.5">
+        {prompts.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => handleSend(prompt)}
+            className="rounded-full border border-border/70 bg-background px-3 py-1 text-xs text-foreground/75 transition-all duration-150 hover:border-primary/40 hover:text-foreground active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-function DashboardSkeleton() {
+function DashboardSkeleton({ cardCount }: { cardCount: number }) {
+  const cards = Array.from({ length: Math.max(cardCount, 3) });
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
-        <Card className="mb-6">
-          <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
-            <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-5 w-44" />
-              <Skeleton className="h-4 w-64 max-w-full" />
-              <Skeleton className="h-9 w-full max-w-xl rounded-full" />
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-10 sm:px-6 sm:py-6 sm:pb-12">
+        {/* ── Assistant strip ── */}
+        <div className="mb-6 rounded-2xl border border-border/70 bg-card p-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Skeleton className="h-12 w-12 shrink-0 rounded-xl sm:h-14 sm:w-14" />
+            <div className="min-w-0 flex-1 space-y-2.5">
+              <div className="space-y-1">
+                <Skeleton className="h-5 w-44" />
+                <Skeleton className="h-4 w-64 max-w-full" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-11 flex-1 rounded-full md:h-9" />
+                <Skeleton className="h-11 w-11 shrink-0 rounded-full md:h-9 md:w-9" />
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <Skeleton className="h-6 w-28 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className={i === 3 ? "hidden sm:block" : undefined}>
-              <CardContent className="p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <Skeleton className="h-8 w-8 rounded-lg" />
-                  <Skeleton className="h-7 w-12" />
-                </div>
-                <Skeleton className="h-4 w-28" />
-              </CardContent>
-            </Card>
+        {/* ── Overview cards ── */}
+        <div
+          className={`mb-6 grid grid-cols-2 gap-3 ${
+            cards.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+          }`}
+        >
+          {cards.map((_, index) => (
+            <div
+              key={index}
+              className={`flex flex-col rounded-xl border border-border/70 bg-card p-4 ${
+                index >= 2 ? "hidden sm:flex" : ""
+              }`}
+            >
+              <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
+              <Skeleton className="h-7 w-16" />
+              <Skeleton className="mt-1.5 h-3 w-24" />
+              <Skeleton className="mt-1 h-3 w-28" />
+              <Skeleton className="mt-auto h-3 w-16 pt-2" />
+            </div>
           ))}
         </div>
 
-        <Skeleton className="mb-3 h-5 w-24" />
-        <div className="space-y-2">
-          {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-[74px] rounded-xl" />
-          ))}
+        {/* ── Things to do: mirrors the two urgency groups of the loaded list ── */}
+        <div className="mt-8">
+          <Skeleton className="mb-3 h-5 w-28" />
+          <Skeleton className="mb-2 h-3.5 w-32" />
+          <div className="space-y-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 sm:gap-4"
+              >
+                <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56 max-w-full" />
+                </div>
+                <Skeleton className="h-4 w-4 shrink-0" />
+              </div>
+            ))}
+          </div>
+          <Skeleton className="mb-2 mt-5 h-3.5 w-24" />
+          <div className="space-y-2">
+            <div className="flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 sm:gap-4">
+              <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56 max-w-full" />
+              </div>
+              <Skeleton className="h-4 w-4 shrink-0" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -154,7 +251,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { hasModule, canManage, session } = useTenant();
   const canManageTenant = canManage();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const hasStaff = hasModule("staff");
   const hasHiring = hasModule("hiring");
   const hasPerformance = hasModule("performance");
@@ -173,29 +270,34 @@ export default function Dashboard() {
   const dueDatesQuery = useTaxFilingsDueSoon(2, hasPayroll);
   const payrollRunsQuery = usePayrollRuns({ limit: 10 }, hasPayroll);
   const settingsQuery = useSettings(hasPayroll);
+  const invoiceStatsQuery = useInvoiceStats(hasMoney);
 
   const employeeSummary = employeeSummaryQuery.data;
   const leaveStats = leaveStatsQuery.data;
   const filingDueDates = dueDatesQuery.data ?? [];
   const payrollRuns = payrollRunsQuery.data ?? [];
+  const moneyStats = hasMoney ? invoiceStatsQuery.data : undefined;
   const loading =
     (shouldLoadEmployeeSummary && employeeSummaryQuery.isLoading) ||
     (hasTimeleave && leaveStatsQuery.isLoading) ||
     (hasPayroll && dueDatesQuery.isLoading) ||
     (hasPayroll && payrollRunsQuery.isLoading) ||
-    (hasPayroll && settingsQuery.isLoading);
+    (hasPayroll && settingsQuery.isLoading) ||
+    (hasMoney && invoiceStatsQuery.isLoading);
   const loadError =
     (shouldLoadEmployeeSummary && employeeSummaryQuery.isError && employeeSummary === undefined) ||
     (hasTimeleave && leaveStatsQuery.isError && leaveStats === undefined) ||
     (hasPayroll && dueDatesQuery.isError && dueDatesQuery.data === undefined) ||
     (hasPayroll && payrollRunsQuery.isError && payrollRunsQuery.data === undefined) ||
-    (hasPayroll && settingsQuery.isError && settingsQuery.data === undefined);
+    (hasPayroll && settingsQuery.isError && settingsQuery.data === undefined) ||
+    (hasMoney && invoiceStatsQuery.isError && invoiceStatsQuery.data === undefined);
   const retrying =
     employeeSummaryQuery.isFetching ||
     leaveStatsQuery.isFetching ||
     dueDatesQuery.isFetching ||
     payrollRunsQuery.isFetching ||
-    (hasPayroll && settingsQuery.isFetching);
+    (hasPayroll && settingsQuery.isFetching) ||
+    (hasMoney && invoiceStatsQuery.isFetching);
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -278,6 +380,35 @@ export default function Dashboard() {
     shouldFixEmployees ||
     shouldAddEmployee ||
     Boolean(canManageTenant && urgentCompliance);
+  const hasNeedsAttention =
+    Boolean(canManageTenant && urgentCompliance) || shouldFixEmployees;
+  const hasComingUp = shouldRunPayroll || shouldReviewLeave || shouldAddEmployee;
+
+  const formatMoney = (amount: number) => formatCurrencyShort(amount, locale);
+
+  // One-line proactive summary for the assistant strip: the two most
+  // important signals, in the same priority order as the to-do list.
+  const summaryParts: string[] = [];
+  if (canManageTenant && urgentCompliance && urgentCompliance.days < 0) {
+    summaryParts.push(
+      t("dashboard.botSummaryCompliance", {
+        label: urgentCompliance.label,
+        days: Math.abs(urgentCompliance.days),
+      }),
+    );
+  }
+  if (shouldRunPayroll) {
+    summaryParts.push(t("dashboard.botSummaryPayroll", { days: daysUntilPayday }));
+  }
+  if (canManageTenant && employeesWithIssues > 0) {
+    summaryParts.push(t("dashboard.botSummaryEmployees", { count: employeesWithIssues }));
+  }
+  if (shouldReviewLeave) {
+    summaryParts.push(t("dashboard.botSummaryLeave", { count: pendingLeave }));
+  }
+  const botSummary =
+    summaryParts.slice(0, 2).join(" ") ||
+    (canManageTenant ? t("dashboard.botSummaryAllGood") : t("dashboard.botIntro"));
 
   const retryDashboard = useCallback(async () => {
     const requests: Array<Promise<unknown>> = [];
@@ -287,6 +418,7 @@ export default function Dashboard() {
     if (hasPayroll) {
       requests.push(dueDatesQuery.refetch(), payrollRunsQuery.refetch());
     }
+    if (hasMoney) requests.push(invoiceStatsQuery.refetch());
     await Promise.all(requests);
   }, [
     settingsQuery,
@@ -297,6 +429,8 @@ export default function Dashboard() {
     hasPayroll,
     dueDatesQuery,
     payrollRunsQuery,
+    hasMoney,
+    invoiceStatsQuery,
   ]);
 
   useEffect(() => {
@@ -315,7 +449,13 @@ export default function Dashboard() {
   }, [setPageHeader, clearPageHeader, t]);
 
   if (loading) {
-    return <DashboardSkeleton />;
+    return (
+      <DashboardSkeleton
+        cardCount={
+          [hasPayroll, hasStaff, hasTimeleave, hasMoney].filter(Boolean).length
+        }
+      />
+    );
   }
 
   if (loadError) {
@@ -328,68 +468,152 @@ export default function Dashboard() {
     );
   }
 
+  const totalMonthlySalary = employeeSummary?.totalMonthlySalary ?? 0;
+
+  const overviewCards: Array<{
+    key: string;
+    icon: React.ComponentType<{ className?: string }>;
+    big: React.ReactNode;
+    label: string;
+    context?: string;
+    contextTone?: "warn";
+    action: string;
+    onClick: () => void;
+  }> = [];
+
+  if (hasPayroll) {
+    overviewCards.push({
+      key: "payroll",
+      icon: Calculator,
+      big: (
+        <>
+          <AnimatedNumber value={daysUntilPayday} />{" "}
+          <span className="text-sm font-normal text-muted-foreground">
+            {t("dashboard.days")}
+          </span>
+        </>
+      ),
+      label: t("dashboard.untilPayday"),
+      context: payrollPrepared
+        ? t("dashboard.cardPayrollPrepared")
+        : activeEmployeeCount > 0
+          ? t("dashboard.cardPayrollContext", {
+              count: activeEmployeeCount,
+              amount: formatMoney(totalMonthlySalary),
+            })
+          : undefined,
+      action: payrollPrepared
+        ? t("dashboard.viewPayroll")
+        : t("dashboard.preparePayroll"),
+      onClick: () => navigate(canManageTenant ? "/payroll/run" : "/payroll"),
+    });
+  }
+  if (hasStaff) {
+    overviewCards.push({
+      key: "staff",
+      icon: Users,
+      big: <AnimatedNumber value={activeEmployeeCount} />,
+      label: t("dashboard.activeEmployees"),
+      context:
+        employeesWithIssues > 0
+          ? t("dashboard.cardEmployeesIssues", { count: employeesWithIssues })
+          : t("dashboard.cardEmployeesOk"),
+      contextTone: employeesWithIssues > 0 ? "warn" : undefined,
+      action: t("dashboard.viewEmployees"),
+      onClick: () => navigate("/people/employees"),
+    });
+  }
+  if (hasTimeleave) {
+    overviewCards.push({
+      key: "leave",
+      icon: CalendarDays,
+      big: <AnimatedNumber value={pendingLeave} />,
+      label: t("dashboard.pendingRequests"),
+      context:
+        pendingLeave > 0
+          ? t("dashboard.cardLeaveWaiting")
+          : t("dashboard.cardLeaveOk"),
+      action: t("dashboard.viewRequests"),
+      onClick: () => navigate("/time-leave/leave"),
+    });
+  }
+  if (hasMoney && moneyStats) {
+    overviewCards.push({
+      key: "money",
+      icon: Wallet,
+      big: (
+        <AnimatedNumber
+          value={moneyStats.revenueThisMonth}
+          format={formatMoney}
+        />
+      ),
+      label: t("dashboard.cardMoneyLabel"),
+      context:
+        moneyStats.totalOutstanding > 0
+          ? t("dashboard.cardMoneyOutstanding", {
+              amount: formatMoney(moneyStats.totalOutstanding),
+            })
+          : t("dashboard.cardMoneyOk"),
+      action: t("dashboard.viewMoney"),
+      onClick: () => navigate("/money"),
+    });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-10 sm:px-6 sm:py-6 sm:pb-12">
-        {/* ── Calm greeting and one direct route into XefeBot ── */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
-          <div className="flex items-start gap-3 sm:gap-4">
+      <div className="mx-auto max-w-screen-2xl animate-fade-in px-4 py-5 pb-10 sm:px-6 sm:py-6 sm:pb-12">
+        {/* ── Compact assistant strip: greeting, proactive summary, ask box ── */}
+        <div className="mb-6 rounded-2xl border border-border/70 bg-card p-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <img
               src="/images/illustrations/xefebot.webp"
               alt="XefeBot"
-              className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+              className="h-12 w-12 shrink-0 object-contain sm:h-14 sm:w-14"
             />
-            <XefeBotInline t={t} firstName={firstName} />
+            <XefeBotInline t={t} firstName={firstName} summary={botSummary} />
           </div>
         </div>
 
         {/* ── Overview cards ── */}
-        {(hasPayroll || hasStaff || hasTimeleave) && (
-          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {hasPayroll && (
-              <button onClick={() => navigate(canManageTenant ? "/payroll/run" : "/payroll")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-md">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Calculator className="h-4 w-4 text-primary" />
-                  </div>
-                  {payrollPrepared
-                    ? <CheckCircle className="h-4 w-4 text-primary" />
-                    : <AlertCircle className="h-4 w-4 text-amber-500" />
-                  }
-                </div>
-                <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}{" "}<span className="text-sm font-normal text-muted-foreground">{t("dashboard.days")}</span></p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.untilPayday")}</p>
-              </button>
-            )}
-            {hasStaff && (
-              <button onClick={() => navigate("/people/employees")} className="group rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-blue-400/40 hover:shadow-md">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-                    <Users className="h-4 w-4 text-blue-500" />
-                  </div>
-                  {employeesWithIssues > 0 && <AlertCircle className="h-4 w-4 text-amber-500" />}
-                </div>
-                <p className="text-2xl font-bold tabular-nums">{activeEmployeeCount}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.activeEmployees")}</p>
-              </button>
-            )}
-            {hasTimeleave && (
+        {overviewCards.length > 0 && (
+          <div
+            className={`mb-6 grid grid-cols-2 gap-3 ${
+              overviewCards.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
+            }`}
+          >
+            {overviewCards.map((card, index) => (
               <button
-                onClick={() => navigate("/time-leave/leave")}
-                className={`group rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-cyan-400/40 ${hasPayroll && hasStaff ? "hidden sm:block" : ""}`}
+                key={card.key}
+                onClick={card.onClick}
+                className={`group flex flex-col rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} ${
+                  index >= 2 ? "hidden sm:flex" : ""
+                }`}
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10">
-                    <CalendarDays className="h-4 w-4 text-cyan-500" />
-                  </div>
+                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                  <card.icon className="h-4 w-4 text-primary" />
                 </div>
-                <p className="text-2xl font-bold tabular-nums">{pendingLeave}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t("dashboard.pendingRequests")}</p>
+                <p className="text-2xl font-bold tabular-nums">{card.big}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{card.label}</p>
+                {card.context && (
+                  <p
+                    className={`mt-1 text-xs ${
+                      card.contextTone === "warn"
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-foreground/70"
+                    }`}
+                  >
+                    {card.context}
+                  </p>
+                )}
+                <p className="mt-auto flex items-center gap-1 pt-2 text-xs font-medium text-primary">
+                  {card.action}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </p>
               </button>
-            )}
+            ))}
           </div>
         )}
 
@@ -432,86 +656,122 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Things to do ── */}
-        <div>
+        {/* ── Things to do: the hero of the page, grouped by urgency ── */}
+        <div className="mt-8">
           <p className="mb-3 text-sm font-semibold">{t("dashboard.thingsToDo")}</p>
-          <div className="space-y-2">
-            {canManageTenant && urgentCompliance && (
-              <button onClick={() => navigate("/payroll/tax")} className="flex w-full items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-left transition-all hover:shadow-sm dark:border-red-900/40 dark:bg-red-950/20 sm:gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15">
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.compliance")}: {urgentCompliance.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {urgentCompliance.days < 0
-                      ? t("dashboard.overdueBy", { days: Math.abs(urgentCompliance.days) })
-                      : t("dashboard.dueIn", { days: urgentCompliance.days })}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-            {shouldRunPayroll && (
-              <button onClick={() => navigate("/payroll/run")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm sm:gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <Play className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoRunPayrollDesc", { days: daysUntilPayday })}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-            {shouldReviewLeave && (
-              <button onClick={() => navigate("/time-leave/leave")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-cyan-400/30 hover:shadow-sm sm:gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-500/10">
-                  <CalendarDays className="h-4 w-4 text-cyan-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.todoLeaveTitle")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoLeaveDesc", { count: pendingLeave })}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-            {shouldFixEmployees && (
-              <button onClick={() => navigate("/people/employees?filter=issues")} className="flex w-full items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left transition-all hover:shadow-sm dark:border-amber-900/40 dark:bg-amber-950/20 sm:gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.todoBlockingTitle")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: employeesWithIssues })}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-            {shouldAddEmployee && (
-              <button onClick={() => navigate("/people/add")} className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-blue-400/30 hover:shadow-sm sm:gap-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-                  <UserPlus className="h-4 w-4 text-blue-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoAddEmployeeDesc")}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-            )}
-            {!hasThingsToDo && (
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-                <CheckCircle className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>{t("dashboard.allGood")}</span>
+
+          {hasNeedsAttention && (
+            <>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("dashboard.needsAttention")}
+              </p>
+              <div className="space-y-2">
+                {canManageTenant && urgentCompliance && (
+                  <button onClick={() => navigate("/payroll/tax")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-red-400/40 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">{t("dashboard.compliance")}: {urgentCompliance.label}</p>
+                        <span className="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium leading-4 text-red-600 dark:text-red-400">
+                          {urgentCompliance.days < 0
+                            ? t("dashboard.overdueBy", { days: Math.abs(urgentCompliance.days) })
+                            : t("dashboard.dueIn", { days: urgentCompliance.days })}
+                        </span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )}
+                {shouldFixEmployees && (
+                  <button onClick={() => navigate("/people/employees?filter=issues")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-amber-400/40 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">{t("dashboard.todoBlockingTitle")}</p>
+                        <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium leading-4 text-amber-600 dark:text-amber-400">
+                          {t("dashboard.issuesBadge", { count: employeesWithIssues })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground/70">{t("dashboard.todoBlockingDesc", { count: employeesWithIssues })}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
+
+          {hasComingUp && (
+            <>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground ${hasNeedsAttention ? "mt-5" : ""}`}>
+                {t("dashboard.comingUp")}
+              </p>
+              <div className="space-y-2">
+                {shouldRunPayroll && (
+                  <button onClick={() => navigate("/payroll/run")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Play className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium leading-4 text-muted-foreground">
+                          {t("dashboard.dueIn", { days: daysUntilPayday })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground/70">{t("dashboard.todoRunPayrollDesc", { days: daysUntilPayday })}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )}
+                {shouldReviewLeave && (
+                  <button onClick={() => navigate("/time-leave/leave")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">{t("dashboard.todoLeaveTitle")}</p>
+                        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium leading-4 text-muted-foreground">
+                          {t("dashboard.pendingBadge", { count: pendingLeave })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground/70">{t("dashboard.todoLeaveDesc", { count: pendingLeave })}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )}
+                {shouldAddEmployee && (
+                  <button onClick={() => navigate("/people/add")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <UserPlus className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
+                      <p className="text-xs text-foreground/70">{t("dashboard.todoAddEmployeeDesc")}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
+          {!hasThingsToDo && (
+            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-sm text-muted-foreground">
+              <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+              <span>{t("dashboard.allGood")}</span>
+            </div>
+          )}
         </div>
 
-        {/* Keep optional professional support visible without adding another
-            dashboard metric or interrupting the things-to-do hierarchy. */}
-        <AccountantPartnerCard />
+        {/* Optional professional support stays visible, but as a quiet
+            one-line banner that never competes with the to-do hierarchy. */}
+        <AccountantPartnerBanner />
       </div>
 
       <KeyboardShortcutsDialog

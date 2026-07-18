@@ -99,13 +99,14 @@ export function useInvoicePayments(invoiceId: string | undefined) {
   });
 }
 
-export function useInvoiceStats() {
+export function useInvoiceStats(enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: [...invoiceKeys.all(tenantId), 'stats'] as const,
     queryFn: () => invoiceService.getStats(tenantId),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 

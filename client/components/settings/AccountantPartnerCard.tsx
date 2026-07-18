@@ -26,6 +26,61 @@ import { accountantPartnerService } from "@/services/accountantPartnerService";
 
 type ConfirmAction = "grant" | "revoke" | null;
 
+/**
+ * Compact one-line version for the main dashboard: no action buttons, no
+ * disabled CTA — just what it is, its status, and a link to learn more.
+ * The full interactive card stays on the Settings page.
+ */
+export function AccountantPartnerBanner() {
+  const { session } = useTenant();
+  const { t } = useI18n();
+
+  if (
+    !session ||
+    !["owner", "hr-admin"].includes(session.role) ||
+    isAccountantPartnerTenant(session.tid)
+  ) {
+    return null;
+  }
+
+  const connection = session.config.accountantPartner;
+  const status: AccountantPartnerConnectionStatus | "none" =
+    connection?.partnerId === PRIMOS_BOOT_PARTNER.id
+      ? connection.status
+      : "none";
+  const hasConnection = status !== "none";
+
+  return (
+    <div className="mt-8 flex items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3">
+      <Building2
+        className="h-4 w-4 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">
+          {hasConnection
+            ? PRIMOS_BOOT_PARTNER.name
+            : t("accountantPartners.connection.bannerTitle")}
+        </p>
+        <p className="hidden truncate text-xs text-muted-foreground sm:block">
+          {t("accountantPartners.connection.bannerDescription")}
+        </p>
+      </div>
+      {hasConnection && (
+        <Badge variant="secondary" className="shrink-0">
+          {t(`accountantPartners.connection.status.${status}`)}
+        </Badge>
+      )}
+      <Button variant="ghost" size="sm" className="shrink-0" asChild>
+        <Link to={hasConnection ? "/settings#accountant-partner" : "/accountants"}>
+          {t("accountantPartners.connection.bannerAction")}
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
+      </Button>
+    </div>
+  );
+}
+
 export function AccountantPartnerCard() {
   const { session, refreshSession } = useTenant();
   const { t } = useI18n();
