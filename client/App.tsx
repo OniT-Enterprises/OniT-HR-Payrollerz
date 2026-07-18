@@ -17,6 +17,7 @@ import { I18nProvider, useI18n } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { RouteLoadingFallback } from "@/components/RouteLoadingFallback";
+import { MarketingRouteFallback } from "@/components/marketing/MarketingRouteFallback";
 
 import ChatWidget from "@/components/chat/ChatWidget";
 import AppLayout from "@/components/layout/AppLayout";
@@ -149,9 +150,14 @@ function HomeRoute() {
     return <RouteLoadingFallback />;
   }
 
-  // Not logged in - show landing page
+  // Not logged in - show landing page (dark marketing skeleton while the
+  // chunk loads; the app-style RouteLoadingFallback would flash light here)
   if (!user) {
-    return <Landing />;
+    return (
+      <Suspense fallback={<MarketingRouteFallback />}>
+        <Landing />
+      </Suspense>
+    );
   }
 
   if (profileStatus === "idle" || profileStatus === "loading") {

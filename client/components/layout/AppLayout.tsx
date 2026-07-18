@@ -12,25 +12,13 @@ import { LayoutProvider } from "@/contexts/LayoutContext";
 import AppSidebar from "./AppSidebar";
 import { ImpersonationBanner } from "./ImpersonationBanner";
 import { useI18n } from "@/i18n/I18nProvider";
+import { isPublicPath } from "@/lib/publicPaths";
 
 // TopBar owns setup/notification data queries. Do not load that Firestore
 // surface for landing and authentication pages that never render app chrome.
 const TopBar = React.lazy(() => import("./TopBar"));
 
 // Routes that should NOT show the sidebar layout
-const PUBLIC_PATHS = [
-  "/auth/",
-  "/landing",
-  "/how-it-works",
-  "/pricing",
-  "/accountants",
-  "/features",
-  "/unauthorized",
-  "/apply/",
-  "/i/",
-  "/privacy",
-  "/terms",
-];
 const ADMIN_PATHS = ["/admin"];
 
 interface AppLayoutProps {
@@ -50,7 +38,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
 
-  const isPublicRoute = PUBLIC_PATHS.some((p) => location.pathname.startsWith(p));
+  const isPublicRoute = isPublicPath(location.pathname);
   const isTenantDocumentAlerts = location.pathname.startsWith(
     "/admin/document-alerts"
   );

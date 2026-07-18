@@ -42,12 +42,14 @@ describe("accountant partner funnel", () => {
 
   it("publishes one discoverable, shell-free accountant page", () => {
     const routes = read("client/routes.tsx");
-    const layout = read("client/components/layout/AppLayout.tsx");
+    // The shell-skipping public path list lives in publicPaths.ts (shared by
+    // AppLayout and the boot-splash dismissal in TenantContext).
+    const publicPaths = read("client/lib/publicPaths.ts");
     const landing = read("client/pages/Landing.tsx");
     const seo = read("client/lib/seo-config.ts");
 
-    expect(routes).toContain('<Route path="/accountants" element={<AccountantPartners />} />');
-    expect(layout).toContain('"/accountants"');
+    expect(routes).toContain('<Route path="/accountants" element={marketingRoute(<AccountantPartners />)} />');
+    expect(publicPaths).toContain('"/accountants"');
     expect(landing).toContain('<Link to="/accountants">');
     expect(landing).toContain("PRIMOS_BOOT_PARTNER.name");
     expect(seo).toContain("url: '/accountants'");

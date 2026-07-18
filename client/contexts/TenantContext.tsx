@@ -10,6 +10,7 @@ import type { User } from "firebase/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { auth } from "@/lib/firebase-core";
 import { paths } from "@/lib/paths";
+import { isPublicPath } from "@/lib/publicPaths";
 import { clearPersistedQueryCache } from "@/lib/queryCache";
 import {
   TenantConfig,
@@ -819,9 +820,12 @@ export function TenantProvider({ children }: TenantProviderProps) {
     retryInitialization,
   };
 
-  // Dismiss the HTML splash overlay once we're past the loading gate
+  // Dismiss the HTML splash overlay once we're past the loading gate.
+  // Public pages (marketing, auth, token links) render without a session, so
+  // there the splash goes as soon as React paints — their route skeletons
+  // take over instead of a full-page loader held up by session restore.
   useEffect(() => {
-    if (loading) return;
+    if (loading && !isPublicPath(window.location.pathname)) return;
 
     let removeTimer: number | null = null;
 

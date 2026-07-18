@@ -8,6 +8,19 @@ import React, { lazy } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 import { FeatureRoute } from "@/components/auth/FeatureRoute";
+import { MarketingRouteFallback } from "@/components/marketing/MarketingRouteFallback";
+
+// The boot splash is dismissed immediately on public paths, so the lazy
+// marketing chunks need a dark, hero-shaped fallback of their own — the
+// generic in-app RouteLoadingFallback would flash a light skeleton over the
+// near-black marketing canvas.
+function marketingRoute(page: React.ReactNode) {
+  return (
+    <React.Suspense fallback={<MarketingRouteFallback />}>
+      {page}
+    </React.Suspense>
+  );
+}
 
 // After a deploy, hashed chunk filenames change; users holding a stale
 // index.html hit a failed dynamic import and land on a dead page. Reload once
@@ -183,10 +196,10 @@ export const authRoutes = (
         </FeatureRoute>
       }
     />
-    <Route path="/landing" element={<Landing />} />
-    <Route path="/how-it-works" element={<ProductDetails />} />
-    <Route path="/pricing" element={<Pricing />} />
-    <Route path="/accountants" element={<AccountantPartners />} />
+    <Route path="/landing" element={marketingRoute(<Landing />)} />
+    <Route path="/how-it-works" element={marketingRoute(<ProductDetails />)} />
+    <Route path="/pricing" element={marketingRoute(<Pricing />)} />
+    <Route path="/accountants" element={marketingRoute(<AccountantPartners />)} />
     <Route path="/features" element={<Navigate to="/how-it-works" replace />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route

@@ -135,7 +135,70 @@
     <style>
       @keyframes sp{to{transform:rotate(360deg)}}
       @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+      /* Marketing-path splash skeleton (mirrors MarketingRouteFallback) */
+      @keyframes skp{0%,100%{opacity:1}50%{opacity:.5}}
+      #splash .skb{background:rgba(255,255,255,0.06);border-radius:6px;animation:skp 2s ease-in-out infinite}
+      #splash .sk-nav{max-width:80rem;margin:0 auto;display:flex;height:64px;align-items:center;justify-content:space-between;padding:0 16px}
+      #splash .sk-hero{max-width:80rem;margin:0 auto;padding:160px 20px 0}
+      #splash .sk-desk{display:none;align-items:center;gap:24px}
+      #splash .sk-h1{height:40px}
+      #splash .sk-btnrow{display:flex;flex-direction:column;gap:12px;margin-top:32px}
+      #splash .sk-btn,#splash .sk-btn2{height:48px;width:100%}
+      @media (min-width:640px){#splash .sk-nav{padding:0 24px}#splash .sk-hero{padding:176px 24px 0}#splash .sk-h1{height:56px}#splash .sk-btnrow{flex-direction:row}#splash .sk-btn{width:176px}#splash .sk-btn2{width:160px}}
+      @media (min-width:768px){#splash .sk-desk{display:flex}#splash .sk-mob{display:none}}
+      @media (min-width:1024px){#splash .sk-nav{padding:0 32px}#splash .sk-hero{padding:208px 32px 0}}
     </style>
+    <script>
+      // Public marketing pages get a page-shaped skeleton instead of the
+      // logo+spinner splash — they never wait on session restore, so the
+      // splash's only job there is to hold the layout until React paints the
+      // identical MarketingRouteFallback.
+      (function(){
+        var p=location.pathname;
+        var m=["/landing","/how-it-works","/pricing","/accountants","/features"];
+        var hit=false;
+        for(var i=0;i<m.length;i++){if(p===m[i]||p.indexOf(m[i]+"/")===0){hit=true;break}}
+        if(!hit)return;
+        var s=document.getElementById("splash");
+        if(!s)return;
+        s.style.display="block";
+        s.style.background="#0a0a0b";
+        s.innerHTML=
+          '<div style="position:absolute;top:0;left:0;right:0;height:64px;border-bottom:1px solid rgba(255,255,255,0.06)">'+
+            '<div class="sk-nav">'+
+              '<img src="/images/illustrations/xefe-logo-light.webp" alt="Xefe" style="height:32px;width:auto"/>'+
+              '<div class="sk-desk">'+
+                '<div class="skb" style="height:14px;width:48px"></div>'+
+                '<div class="skb" style="height:14px;width:80px"></div>'+
+                '<div class="skb" style="height:14px;width:56px"></div>'+
+                '<div class="skb" style="height:14px;width:96px"></div>'+
+                '<div class="skb" style="height:36px;width:112px"></div>'+
+              '</div>'+
+              '<div class="skb sk-mob" style="height:36px;width:36px"></div>'+
+            '</div>'+
+          '</div>'+
+          '<div style="position:absolute;top:64px;left:0;right:0;height:44px;border-bottom:1px solid rgba(255,255,255,0.06)">'+
+            '<div class="sk-nav" style="height:44px;justify-content:flex-start;gap:16px">'+
+              '<div class="skb" style="height:12px;width:64px"></div>'+
+              '<div style="height:16px;width:1px;background:rgba(255,255,255,0.1)"></div>'+
+              '<div class="skb" style="height:12px;width:80px"></div>'+
+              '<div class="skb" style="height:12px;width:64px"></div>'+
+              '<div class="skb" style="height:12px;width:56px"></div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="sk-hero">'+
+            '<div class="skb" style="height:36px;width:224px;max-width:100%;border-radius:999px;margin-bottom:24px"></div>'+
+            '<div class="skb sk-h1" style="width:100%;max-width:672px"></div>'+
+            '<div class="skb sk-h1" style="width:75%;max-width:576px;margin-top:12px"></div>'+
+            '<div class="skb" style="height:20px;width:100%;max-width:672px;margin-top:24px"></div>'+
+            '<div class="skb" style="height:20px;width:66%;max-width:576px;margin-top:8px"></div>'+
+            '<div class="sk-btnrow">'+
+              '<div class="skb sk-btn"></div>'+
+              '<div class="skb sk-btn2"></div>'+
+            '</div>'+
+          '</div>';
+      })();
+    </script>
     <script>
       (function(){
         var msgs=[

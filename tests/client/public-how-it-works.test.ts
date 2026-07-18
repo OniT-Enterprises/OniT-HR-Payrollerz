@@ -12,15 +12,17 @@ const read = (relativePath: string) =>
 describe("public how Xefe works page", () => {
   it("uses one canonical public route and keeps the old URL compatible", () => {
     const routes = read("client/routes.tsx");
-    const layout = read("client/components/layout/AppLayout.tsx");
+    // The shell-skipping public path list lives in publicPaths.ts (shared by
+    // AppLayout and the boot-splash dismissal in TenantContext).
+    const publicPaths = read("client/lib/publicPaths.ts");
 
     expect(routes).toContain(
-      '<Route path="/how-it-works" element={<ProductDetails />} />',
+      '<Route path="/how-it-works" element={marketingRoute(<ProductDetails />)} />',
     );
     expect(routes).toContain(
       '<Route path="/features" element={<Navigate to="/how-it-works" replace />} />',
     );
-    expect(layout).toContain('"/how-it-works"');
+    expect(publicPaths).toContain('"/how-it-works"');
   });
 
   it("links the landing page and public discovery files to the canonical page", () => {
