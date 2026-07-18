@@ -51,6 +51,7 @@ import {
 import { getTodayTL } from '@/lib/dateUtils';
 import {
   addToMoneyMap,
+  buildBillPaymentJournalLines,
   buildInvoiceJournalLines,
   buildPayrollJournalLines,
   calculateBillPaymentPostingAmounts,
@@ -1388,54 +1389,37 @@ class JournalEntryService {
       return { id: account.id, name: account.name };
     };
 
-    const apAccount = await getAccountId('2110');
-    // Use Cash on Hand for cash payments, Bank for others
-    const cashCode = payment.method === 'cash' ? '1110' : '1120';
-    const cashAccount = await getAccountId(cashCode);
-    const { grossAmount, cashPaid, withholdingTax } = calculateBillPaymentPostingAmounts(
-      payment.amount,
-      payment.cashPaid,
-      payment.withholdingTax,
+    // Pre-resolve accounts: AP, the method-appropriate cash account, and the
+    // withholding account only when tax is withheld. Then hand the pure,
+    // unit-tested builder a synchronous resolver.
+    const { withholdingTax } = calculateBillPaymentPostingAmounts(
+      payment.amount, payment.cashPaid, payment.withholdingTax,
     );
-    const withholdingAccount = withholdingTax > 0
-      ? await getAccountId('2320')
-      : null;
+    const codes = { payable: '2110', cashOnHand: '1110', bank: '1120', withholding: '2320' };
+    const resolved = new Map<string, { id: string; name: string }>();
+    resolved.set(codes.payable, await getAccountId(codes.payable));
+    const cashCode = payment.method === 'cash' ? codes.cashOnHand : codes.bank;
+    resolved.set(cashCode, await getAccountId(cashCode));
+    if (withholdingTax > 0) {
+      resolved.set(codes.withholding, await getAccountId(codes.withholding));
+    }
 
     const refLabel = payment.billNumber || `Bill-${payment.billId.slice(0, 8)}`;
-
-    const lines: JournalEntryLine[] = [
+    const { lines, totalDebit, totalCredit } = buildBillPaymentJournalLines(
       {
-        lineNumber: 1,
-        accountId: apAccount.id,
-        accountCode: '2110',
-        accountName: apAccount.name,
-        debit: grossAmount,
-        credit: 0,
-        description: `Clear AP - ${refLabel}`,
+        amount: payment.amount, cashPaid: payment.cashPaid, withholdingTax: payment.withholdingTax,
+        method: payment.method, vendorName: payment.vendorName,
+        billNumber: payment.billNumber, billId: payment.billId,
       },
-    ];
-    if (cashPaid > 0) {
-      lines.push({
-        lineNumber: lines.length + 1,
-        accountId: cashAccount.id,
-        accountCode: cashCode,
-        accountName: cashAccount.name,
-        debit: 0,
-        credit: cashPaid,
-        description: `Payment to ${payment.vendorName}`,
-      });
-    }
-    if (withholdingAccount) {
-      lines.push({
-        lineNumber: lines.length + 1,
-        accountId: withholdingAccount.id,
-        accountCode: '2320',
-        accountName: withholdingAccount.name,
-        debit: 0,
-        credit: withholdingTax,
-        description: `Supplier withholding tax - ${refLabel}`,
-      });
-    }
+      (code) => {
+        const account = resolved.get(code);
+        if (!account) {
+          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        }
+        return account;
+      },
+      codes,
+    );
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,
@@ -1445,8 +1429,8 @@ class JournalEntryService {
       sourceId: payment.billId,
       sourceRef: payment.reference || refLabel,
       lines,
-      totalDebit: grossAmount,
-      totalCredit: grossAmount,
+      totalDebit,
+      totalCredit,
       status: 'posted',
       postedAt: serverTimestamp(),
       postedBy: createdBy,

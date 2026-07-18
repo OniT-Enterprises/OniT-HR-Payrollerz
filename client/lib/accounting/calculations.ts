@@ -429,6 +429,73 @@ export function buildInvoiceJournalLines(
   };
 }
 
+/** Minimal bill-payment shape the journal builder needs. */
+export interface BillPaymentJournalInput {
+  amount: number;
+  cashPaid?: number;
+  withholdingTax?: number;
+  method: string;
+  vendorName: string;
+  billNumber?: string;
+  billId: string;
+}
+
+/**
+ * Build the balanced journal for a bill payment — pure and Firestore-free.
+ * Clears trade payables for the gross, and splits the settlement into cash paid
+ * to the supplier plus supplier withholding tax owed to the state. The split is
+ * balanced by calculateBillPaymentPostingAmounts (gross = cash + withheld), so
+ * the entry always balances: AP debit == cash credit + withholding credit.
+ * Cash goes to on-hand (1110) for cash method, bank (1120) otherwise.
+ */
+export function buildBillPaymentJournalLines(
+  payment: BillPaymentJournalInput,
+  resolve: AccountResolver,
+  codes: { payable: string; cashOnHand: string; bank: string; withholding: string },
+): { lines: JournalEntryLine[]; totalDebit: number; totalCredit: number } {
+  const { grossAmount, cashPaid, withholdingTax } = calculateBillPaymentPostingAmounts(
+    payment.amount,
+    payment.cashPaid,
+    payment.withholdingTax,
+  );
+  const cashCode = payment.method === 'cash' ? codes.cashOnHand : codes.bank;
+  const refLabel = payment.billNumber || `Bill-${payment.billId.slice(0, 8)}`;
+  const ap = resolve(codes.payable);
+
+  const lines: JournalEntryLine[] = [
+    {
+      lineNumber: 1,
+      accountId: ap.id, accountCode: codes.payable, accountName: ap.name,
+      debit: grossAmount, credit: 0,
+      description: `Clear AP - ${refLabel}`,
+    },
+  ];
+  if (cashPaid > 0) {
+    const cash = resolve(cashCode);
+    lines.push({
+      lineNumber: lines.length + 1,
+      accountId: cash.id, accountCode: cashCode, accountName: cash.name,
+      debit: 0, credit: cashPaid,
+      description: `Payment to ${payment.vendorName}`,
+    });
+  }
+  if (withholdingTax > 0) {
+    const wht = resolve(codes.withholding);
+    lines.push({
+      lineNumber: lines.length + 1,
+      accountId: wht.id, accountCode: codes.withholding, accountName: wht.name,
+      debit: 0, credit: withholdingTax,
+      description: `Supplier withholding tax - ${refLabel}`,
+    });
+  }
+
+  return {
+    lines,
+    totalDebit: grossAmount,
+    totalCredit: sumMoney(lines.map((l) => l.credit)),
+  };
+}
+
 /** Account fields the financial-report derivations read. */
 export interface ReportAccount {
   id?: string;

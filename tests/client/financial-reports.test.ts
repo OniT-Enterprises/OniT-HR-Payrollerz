@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  buildBillPaymentJournalLines,
   buildInvoiceJournalLines,
   buildPayrollJournalLines,
   deriveBalanceSheet,
@@ -73,6 +74,47 @@ describe("invoice journal builder", () => {
     expect(lines.some((l) => l.accountCode === "2310")).toBe(false);
     expect(lines.find((l) => l.accountCode === "4100")?.credit).toBe(250);
     expect(totalDebit).toBe(totalCredit);
+  });
+});
+
+describe("bill payment journal builder (the supplier-withholding split)", () => {
+  const codes = { payable: "2110", cashOnHand: "1110", bank: "1120", withholding: "2320" };
+
+  it("no withholding: clears AP in full against cash, and balances", () => {
+    const { lines, totalDebit, totalCredit } = buildBillPaymentJournalLines(
+      { amount: 500, method: "bank_transfer", vendorName: "Vendor", billId: "bill-1" },
+      resolve,
+      codes,
+    );
+    expect(lines.find((l) => l.accountCode === "2110")?.debit).toBe(500); // AP cleared
+    expect(lines.find((l) => l.accountCode === "1120")?.credit).toBe(500); // paid from bank
+    expect(lines.some((l) => l.accountCode === "2320")).toBe(false); // no WHT line
+    expect(totalDebit).toBe(500);
+    expect(totalCredit).toBe(500);
+  });
+
+  it("with withholding: AP debit splits into cash paid + tax withheld, and balances", () => {
+    // Gross $1000: supplier receives $960, $40 (4%) withheld and owed to the state.
+    const { lines, totalDebit, totalCredit } = buildBillPaymentJournalLines(
+      { amount: 1000, cashPaid: 960, withholdingTax: 40, method: "bank_transfer", vendorName: "Supplier Lda", billId: "bill-2" },
+      resolve,
+      codes,
+    );
+    expect(lines.find((l) => l.accountCode === "2110")?.debit).toBe(1000); // full AP cleared
+    expect(lines.find((l) => l.accountCode === "1120")?.credit).toBe(960); // supplier gets net
+    expect(lines.find((l) => l.accountCode === "2320")?.credit).toBe(40); // WHT payable to state
+    expect(totalDebit).toBe(1000);
+    expect(totalCredit).toBe(1000); // 960 + 40 — the split balances the AP cleared
+  });
+
+  it("routes cash payments to cash-on-hand, not the bank account", () => {
+    const { lines } = buildBillPaymentJournalLines(
+      { amount: 100, method: "cash", vendorName: "V", billId: "bill-3" },
+      resolve,
+      codes,
+    );
+    expect(lines.some((l) => l.accountCode === "1110")).toBe(true); // cash on hand
+    expect(lines.some((l) => l.accountCode === "1120")).toBe(false);
   });
 });
 
