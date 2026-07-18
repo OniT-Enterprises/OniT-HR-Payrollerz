@@ -6666,6 +6666,12 @@ const messages = {
   "bankTransfers": {
     "title": "Transferências Bancárias",
     "subtitle": "Gerir transferências bancárias de folha e histórico de transações",
+    "coverEmail": {
+      "title": "Agora envie o email ao banco",
+      "description": "O BNU e o BNCTL executam os salários a partir de uma instrução por email. Envie o ficheiro descarregado ao seu balcão com esta mensagem, e imprima e assine a folha de Ordem de Pagamento incluída no ficheiro para anexar.",
+      "copy": "Copiar texto do email",
+      "copied": "Texto do email copiado"
+    },
     "thisMonth": "Este Mês",
     "pendingTransfers": "Transferências Pendentes",
     "completed": "Concluídas",

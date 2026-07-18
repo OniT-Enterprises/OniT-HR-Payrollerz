@@ -6670,6 +6670,12 @@ export const translations = {
     "bankTransfers": {
       "title": "Bank Transfers",
       "subtitle": "Manage payroll bank transfers and transaction history",
+      "coverEmail": {
+        "title": "Now email the bank",
+        "description": "BNU and BNCTL execute salary batches from an emailed instruction. Send the downloaded file to your branch with this message, and print and sign the Ordem de Pagamento sheet inside the file to attach.",
+        "copy": "Copy email text",
+        "copied": "Email text copied"
+      },
       "thisMonth": "This Month",
       "pendingTransfers": "Pending Transfers",
       "completed": "Completed",
@@ -13979,6 +13985,12 @@ export const translations = {
     "bankTransfers": {
       "title": "Transferensia Banku",
       "subtitle": "Jere transferensia banku folha pagamentu no istória transasaun",
+      "coverEmail": {
+        "title": "Agora haruka email ba banku",
+        "description": "BNU no BNCTL prosesa saláriu husi instrusaun liu husi email. Haruka ficheiru ne'ebé download ona ba Ita-nia balcão ho mensajen ida-ne'e, no imprime no asina folha Ordem de Pagamento iha ficheiru laran atu anexa.",
+        "copy": "Kopia testu email",
+        "copied": "Testu email kopia ona"
+      },
       "thisMonth": "Fulan Ida-ne'e",
       "pendingTransfers": "Transferensia Pendente",
       "completed": "Kompletu",
@@ -21288,6 +21300,12 @@ export const translations = {
     "bankTransfers": {
       "title": "Transferências Bancárias",
       "subtitle": "Gerir transferências bancárias de folha e histórico de transações",
+      "coverEmail": {
+        "title": "Agora envie o email ao banco",
+        "description": "O BNU e o BNCTL executam os salários a partir de uma instrução por email. Envie o ficheiro descarregado ao seu balcão com esta mensagem, e imprima e assine a folha de Ordem de Pagamento incluída no ficheiro para anexar.",
+        "copy": "Copiar texto do email",
+        "copied": "Texto do email copiado"
+      },
       "thisMonth": "Este Mês",
       "pendingTransfers": "Transferências Pendentes",
       "completed": "Concluídas",

@@ -39,6 +39,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   Plus,
+  Copy,
   Download,
   Send,
   CheckCircle,
@@ -67,6 +68,12 @@ import {
   downloadBankFile,
   validateBankTransferRecords,
 } from "@/lib/bank-transfers";
+import {
+  buildBankCoverEmail,
+  generatePaymentPackXlsx,
+  supportsPaymentPack,
+} from "@/lib/bank-transfers/payment-pack";
+import { downloadBlob } from "@/lib/downloadBlob";
 import { TL_BANKS } from "@/lib/payroll/constants-tl";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
@@ -131,6 +138,9 @@ export default function BankTransfers() {
   const [selectedBankFileRun, setSelectedBankFileRun] = useState<string>("");
   const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
   const [generatingFiles, setGeneratingFiles] = useState(false);
+  // Cover emails for banks that take salary batches by emailed instruction
+  // (BNU/BNCTL) — shown with a copy button after the packs download.
+  const [coverEmails, setCoverEmails] = useState<{ bankCode: BankCode; text: string }[]>([]);
   const bankFilesInFlight = useRef(false);
   const shouldLoadEmployees =
     canManageTenant && (showBankFileDialog || !!selectedBankFileRun);
@@ -291,12 +301,26 @@ export default function BankTransfers() {
         }),
       );
 
+      const packEmails: { bankCode: BankCode; text: string }[] = [];
       for (const result of results) {
-        downloadBankFile(result);
+        if (supportsPaymentPack(result.summary.bankCode)) {
+          // BNU/BNCTL execute salary batches from an emailed Excel list plus a
+          // signed payment order — generate that pack instead of a CSV.
+          const company = { name: companyName, accountNumber: companyAccount };
+          const pack = await generatePaymentPackXlsx(result.summary, company);
+          downloadBlob(pack.blob, pack.fileName);
+          packEmails.push({
+            bankCode: result.summary.bankCode,
+            text: buildBankCoverEmail(result.summary, company),
+          });
+        } else {
+          downloadBankFile(result);
+        }
 
         // Small delay between downloads to prevent browser blocking
         await new Promise(resolve => setTimeout(resolve, 300));
       }
+      setCoverEmails(packEmails);
 
       toast({
         title: t("bankTransfers.toastTransferSuccess"),
@@ -330,6 +354,20 @@ export default function BankTransfers() {
     } finally {
       bankFilesInFlight.current = false;
       setGeneratingFiles(false);
+    }
+  };
+
+  const copyCoverEmail = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: t("bankTransfers.coverEmail.copied"),
+      });
+    } catch {
+      toast({
+        title: t("bankTransfers.toastErrorTitle"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -1097,6 +1135,40 @@ export default function BankTransfers() {
             </CardContent>
           </Card>
         </div>
+
+        {/* BNU/BNCTL run on emailed instructions — hand the user the exact
+            message their branch already accepts, next to the downloaded pack. */}
+        <Dialog
+          open={coverEmails.length > 0}
+          onOpenChange={(open) => {
+            if (!open) setCoverEmails([]);
+          }}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{t("bankTransfers.coverEmail.title")}</DialogTitle>
+              <DialogDescription>
+                {t("bankTransfers.coverEmail.description")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {coverEmails.map(({ bankCode, text }) => (
+                <div key={bankCode} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">{bankCode}</p>
+                    <Button variant="outline" size="sm" onClick={() => copyCoverEmail(text)}>
+                      <Copy className="mr-2 h-3.5 w-3.5" />
+                      {t("bankTransfers.coverEmail.copy")}
+                    </Button>
+                  </div>
+                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-5">
+                    {text}
+                  </pre>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }

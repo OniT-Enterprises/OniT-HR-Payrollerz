@@ -6666,6 +6666,12 @@ const messages = {
   "bankTransfers": {
     "title": "Transferensia Banku",
     "subtitle": "Jere transferensia banku folha pagamentu no istória transasaun",
+    "coverEmail": {
+      "title": "Agora haruka email ba banku",
+      "description": "BNU no BNCTL prosesa saláriu husi instrusaun liu husi email. Haruka ficheiru ne'ebé download ona ba Ita-nia balcão ho mensajen ida-ne'e, no imprime no asina folha Ordem de Pagamento iha ficheiru laran atu anexa.",
+      "copy": "Kopia testu email",
+      "copied": "Testu email kopia ona"
+    },
     "thisMonth": "Fulan Ida-ne'e",
     "pendingTransfers": "Transferensia Pendente",
     "completed": "Kompletu",

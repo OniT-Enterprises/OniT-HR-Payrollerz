@@ -6666,6 +6666,12 @@ const messages = {
   "bankTransfers": {
     "title": "Bank Transfers",
     "subtitle": "Manage payroll bank transfers and transaction history",
+    "coverEmail": {
+      "title": "Now email the bank",
+      "description": "BNU and BNCTL execute salary batches from an emailed instruction. Send the downloaded file to your branch with this message, and print and sign the Ordem de Pagamento sheet inside the file to attach.",
+      "copy": "Copy email text",
+      "copied": "Email text copied"
+    },
     "thisMonth": "This Month",
     "pendingTransfers": "Pending Transfers",
     "completed": "Completed",
