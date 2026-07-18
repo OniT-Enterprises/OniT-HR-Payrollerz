@@ -20,6 +20,9 @@ const ALLOWED_MODULE_SET = new Set(ALLOWED_MODULES);
 const DEFAULT_MODULES_BY_ROLE = {
     owner: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
     "hr-admin": ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+    // Mirrors client DEFAULT_ROLE_PERMISSIONS: finance power role; staff +
+    // timeleave are the read paths payroll needs.
+    accountant: ["staff", "timeleave", "payroll", "money", "accounting", "reports"],
     manager: ["staff", "timeleave", "performance"],
     viewer: [],
 };
