@@ -41,6 +41,11 @@ export const DEFAULT_TL_WITHHOLDING_CONFIG: TLWithholdingConfig = {
   rentRate: 0.10,
   prizeRate: 0.10,
   specifiedServiceRates: {
+    // 2% and 4% are corroborated by ATTL "Aviso de Avaliação" assessment
+    // notices (the tax authority's own computation) — see
+    // tests/client/attl-assessment-parity.test.ts. The 2.64% and 4.5% rates
+    // are NOT yet confirmed against a primary source or an assessment; a TL
+    // accountant must bless them (docs/TL_ACCOUNTING_EVIDENCE_MATRIX.md).
     construction: 0.02,
     construction_consulting: 0.04,
     air_or_sea_transport: 0.0264,

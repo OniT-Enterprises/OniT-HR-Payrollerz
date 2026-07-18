@@ -38,6 +38,30 @@ describe("ATTL rent withholding assessments (LN65 × 10% = LN70)", () => {
   }
 });
 
+describe("ATTL specified-service withholding assessments", () => {
+  // Government "Aviso de Avaliação" notices for de-identified taxpayers.
+  // The assessment states the base (form line) and the authority's computed
+  // tax; Xefe's Annex VIII specified-service rates must reproduce it.
+  const cases = [
+    { label: "construction 2% (LN75 -> LN80)", category: "construction" as const, base: 205224.72, assessed: 4104.49 },
+    { label: "construction consulting 4% (LN85 -> LN90)", category: "construction_consulting" as const, base: 781.25, assessed: 31.25 },
+  ];
+  for (const { label, category, base, assessed } of cases) {
+    it(`matches the authority's ${label}`, () => {
+      const result = calculateTLWithholding({
+        grossAmount: base,
+        category,
+        recipientResidence: "resident",
+        recipientHasTimorLestePermanentEstablishment: false,
+        payerIsIndividual: false,
+        taxRegime: "domestic",
+      });
+      expect(result.taxDue).toBe(assessed);
+      expect(result.collectionMethod).toBe("payer_withholding");
+    });
+  }
+});
+
 describe("ATTL wage income tax assessments (form line 10 = tax on line 5 wages)", () => {
   it("non-resident: authority ASSESSED flat 10% on $10,450 of wages (Apr 2025)", () => {
     // The submission carried $0; the assessment notice records the authority
