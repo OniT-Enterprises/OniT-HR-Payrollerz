@@ -129,5 +129,9 @@ The fastest tells that a site was generated, and therefore banned:
    Accountants heroes now carry it in their page accent.
 3. ☐ Real TL photography or drawn Dili scenes for the support/local sections
    instead of icon grids, when assets exist (content task, not code).
-4. ☐ Consider a subtle grain/texture on the canvas to kill the "flat AI dark
-   mode" look — test on low-end phones first.
+4. ✅ (2026-07-18) Subtle grain on the canvas (`.public-grain` in global.css,
+   ~1KB SVG noise tile, no JS) — applied to all four public page roots.
+5. ✅ (2026-07-18) Section-nav strip added to the Home page (amber accent);
+   landing workflow numerals enlarged to the oversized ghost style; off-palette
+   blue icon on the payslip block corrected to amber; WhatsApp number updated
+   sitewide to +670 7337 1307.

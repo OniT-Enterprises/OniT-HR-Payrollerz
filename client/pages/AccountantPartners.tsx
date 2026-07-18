@@ -109,7 +109,7 @@ export default function AccountantPartners() {
           : t("accountantPartners.connection.prelaunchAction");
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0b] text-white">
+    <div className="public-grain min-h-screen overflow-x-hidden text-white">
       <SEO {...seoConfig.accountantPartners} />
 
       <a

@@ -266,7 +266,7 @@ export default function ProductDetails() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0b] text-white">
+    <div className="public-grain min-h-screen overflow-x-hidden text-white">
       <SEO {...seoConfig.howItWorks} />
 
       <a
@@ -702,7 +702,7 @@ export default function ProductDetails() {
                 asChild
                 className="h-12 border-white/10 bg-white/5 px-8 text-base text-white hover:bg-white/10 hover:text-white"
               >
-                <a href="https://wa.me/6707701234" target="_blank" rel="noreferrer">
+                <a href="https://wa.me/67073371307" target="_blank" rel="noreferrer">
                   <MessageCircle className="h-5 w-5 text-lime-400" />
                   {t("howItWorks.cta.whatsapp")}
                 </a>

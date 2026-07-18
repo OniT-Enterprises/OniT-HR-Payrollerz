@@ -42,7 +42,7 @@ export function PublicFooter() {
             {t("landing.footer.links.terms")}
           </Link>
           <a
-            href="https://wa.me/6707701234"
+            href="https://wa.me/67073371307"
             className="transition-colors hover:text-white"
           >
             {t("landing.footer.links.support")}

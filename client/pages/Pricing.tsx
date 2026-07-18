@@ -20,7 +20,7 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0b] text-white">
+    <div className="public-grain min-h-screen overflow-x-hidden text-white">
       <SEO {...seoConfig.pricing} />
 
       <a
@@ -82,7 +82,7 @@ export default function Pricing() {
                 asChild
                 className="h-12 border-white/10 bg-white/5 px-7 text-base text-white hover:bg-white/10 hover:text-white"
               >
-                <a href="https://wa.me/6707701234">
+                <a href="https://wa.me/67073371307">
                   {t("landing.simple.support.whatsapp")}
                 </a>
               </Button>

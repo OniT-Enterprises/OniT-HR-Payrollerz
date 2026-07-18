@@ -171,7 +171,7 @@ export function PackagePicker({ showHeader = true }: { showHeader?: boolean }) {
                   {t("landing.simple.pricing.localPaymentDescription")}
                 </p>
                 <a
-                  href="https://wa.me/6707701234"
+                  href="https://wa.me/67073371307"
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200"

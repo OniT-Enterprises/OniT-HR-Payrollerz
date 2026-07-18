@@ -19,10 +19,12 @@ import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PayslipExample } from "@/components/marketing/PayslipExample";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
+import { PublicSectionNav } from "@/components/marketing/PublicSectionNav";
 import { DEFAULT_PACKAGES_CONFIG } from "@/lib/packagePricing";
 import { SEO, seoConfig } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { PRIMOS_BOOT_PARTNER } from "@/lib/accountantPartners";
 
 
@@ -37,7 +39,7 @@ function OutcomeCard({
   description: string;
 }) {
   return (
-    <article className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+    <article className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 transition-colors duration-200 hover:border-white/[0.12] hover:bg-white/[0.035]">
       <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-amber-400/15 bg-amber-400/10">
         <Icon className="h-5 w-5 text-amber-300" />
       </div>
@@ -49,6 +51,7 @@ function OutcomeCard({
 
 export default function Landing() {
   const { t, locale } = useI18n();
+  useScrollReveal();
 
   const workflow = [
     {
@@ -111,7 +114,7 @@ export default function Landing() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0b] text-white">
+    <div className="public-grain min-h-screen overflow-x-hidden text-white">
       <SEO {...seoConfig.landing} />
 
       <style>{`
@@ -130,31 +133,40 @@ export default function Landing() {
       </a>
 
       <PublicNav />
+      <PublicSectionNav
+        pageLabelKey="landing.nav.home"
+        accent="amber"
+        sections={[
+          { id: "how-it-works", labelKey: "landing.simple.nav.howItWorks" },
+          { id: "features", labelKey: "landing.nav.features" },
+          { id: "pricing", labelKey: "landing.nav.pricing" },
+        ]}
+      />
 
       <main id="main-content">
-        <section className="relative overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-28 lg:pt-40">
+        <section className="relative overflow-hidden pb-20 pt-40 sm:pb-24 sm:pt-44 lg:pb-28 lg:pt-52">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(251,191,36,0.09),transparent_36%),radial-gradient(circle_at_15%_75%,rgba(106,156,41,0.07),transparent_30%)]" />
           <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-amber-400/[0.045] md:block" />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-8">
             <div>
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3.5 py-2 text-sm text-amber-200">
+              <div className="animate-public-rise stagger-1 mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3.5 py-2 text-sm text-amber-200">
                 <Landmark className="h-4 w-4" />
                 {t("landing.simple.hero.eyebrow")}
               </div>
 
-              <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[4.1rem]">
+              <h1 className="animate-public-rise stagger-2 max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[4.1rem]">
                 {t("landing.simple.hero.title")}
                 <span className="mt-1 block bg-gradient-to-r from-amber-200 via-amber-400 to-lime-300 bg-clip-text text-transparent">
                   {t("landing.simple.hero.titleAccent")}
                 </span>
               </h1>
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-400 lg:text-xl">
+              <p className="animate-public-rise stagger-3 mt-6 max-w-2xl text-lg leading-8 text-zinc-400 lg:text-xl">
                 {t("landing.simple.hero.description")}
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="animate-public-rise stagger-4 mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button
                   size="lg"
                   asChild
@@ -178,7 +190,7 @@ export default function Landing() {
                 </Button>
               </div>
 
-              <div className="mt-8 flex flex-col gap-3 text-sm text-zinc-400 sm:flex-row sm:flex-wrap sm:gap-x-6">
+              <div className="animate-public-rise stagger-5 mt-8 flex flex-col gap-3 text-sm text-zinc-400 sm:flex-row sm:flex-wrap sm:gap-x-6">
                 {trustItems.map((item) => (
                   <div key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-lime-400" />
@@ -188,7 +200,7 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md">
+            <div className="animate-public-rise stagger-3 relative mx-auto w-full max-w-md">
               <Crescent className="absolute -left-7 -top-14 h-16 w-16 -rotate-[25deg] text-amber-400/80 drop-shadow-[0_0_20px_rgba(251,191,36,0.25)]" />
               <div className="relative rounded-2xl border border-white/10 bg-zinc-900 p-5 shadow-2xl shadow-black/50 sm:p-7">
                 <div className="mb-5 flex items-center justify-between gap-4">
@@ -249,9 +261,9 @@ export default function Landing() {
 
         <section
           id="how-it-works"
-          className="lp-defer scroll-mt-16 border-t border-white/[0.06] py-20 lg:py-24"
+          className="lp-defer scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24"
         >
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <SectionEyebrow>
                 {t("landing.simple.workflow.eyebrow")}
@@ -270,13 +282,13 @@ export default function Landing() {
                 return (
                   <article
                     key={step.title}
-                    className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6"
+                    className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 transition-colors duration-200 hover:border-white/[0.12] hover:bg-white/[0.035]"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between">
                       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-lime-400/10">
                         <Icon className="h-5 w-5 text-lime-400" />
                       </div>
-                      <span className="font-mono text-sm text-zinc-700">
+                      <span className="select-none font-mono text-5xl font-bold leading-none text-white/[0.06]">
                         0{index + 1}
                       </span>
                     </div>
@@ -295,9 +307,9 @@ export default function Landing() {
 
         <section
           id="features"
-          className="lp-defer scroll-mt-16 border-t border-white/[0.06] py-20 lg:py-24"
+          className="lp-defer scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24"
         >
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <SectionEyebrow>
                 {t("landing.simple.features.eyebrow")}
@@ -332,7 +344,7 @@ export default function Landing() {
         </section>
 
         <section className="lp-defer border-t border-white/[0.06] py-20 lg:py-24">
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <SectionEyebrow>
                 {t("landing.simple.local.eyebrow")}
@@ -352,7 +364,7 @@ export default function Landing() {
                   return (
                     <article
                       key={benefit.title}
-                      className="flex gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-5"
+                      className="flex gap-4 rounded-xl border border-white/[0.07] bg-white/[0.025] p-5 transition-colors duration-200 hover:border-white/[0.12] hover:bg-white/[0.035]"
                     >
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/10">
                         <Icon className="h-5 w-5 text-amber-300" />
@@ -372,8 +384,8 @@ export default function Landing() {
 
               <div>
                 <div className="mb-5 flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-400/10">
-                    <FileText className="h-5 w-5 text-blue-300" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/10">
+                    <FileText className="h-5 w-5 text-amber-300" />
                   </div>
                   <div>
                     <h3 className="font-bold text-white">
@@ -391,7 +403,7 @@ export default function Landing() {
         </section>
 
         <section className="lp-defer border-t border-white/[0.06] py-16 lg:py-20">
-          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="grid items-center gap-8 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 sm:p-8 lg:grid-cols-[0.72fr_1.28fr] lg:p-10">
               {/* Partner identity withheld until the agreement is signed. */}
               <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-10">
@@ -427,9 +439,9 @@ export default function Landing() {
 
         <section
           id="pricing"
-          className="lp-defer scroll-mt-16 border-t border-white/[0.06] py-20 lg:py-24"
+          className="lp-defer scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24"
         >
-          <div className="mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
             <SectionEyebrow>{t("landing.simple.pricing.eyebrow")}</SectionEyebrow>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
               {t("landing.simple.pricing.title")}
@@ -468,7 +480,7 @@ export default function Landing() {
 
         <section className="lp-defer relative overflow-hidden border-t border-white/[0.06] py-20 lg:py-24">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_48%)]" />
-          <div className="relative mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
+          <div data-reveal className="public-reveal relative mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
             <SectionEyebrow>
               {t("landing.simple.support.eyebrow")}
             </SectionEyebrow>
@@ -497,7 +509,7 @@ export default function Landing() {
                 className="h-12 border-white/10 bg-white/5 px-8 text-base text-white hover:bg-white/10 hover:text-white"
               >
                 <a
-                  href="https://wa.me/6707701234"
+                  href="https://wa.me/67073371307"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -509,11 +521,11 @@ export default function Landing() {
 
             <div className="mt-10 flex flex-col items-center justify-center gap-3 text-sm text-zinc-400 sm:flex-row sm:gap-6">
               <a
-                href="https://wa.me/6707701234"
+                href="https://wa.me/67073371307"
                 className="flex items-center gap-2 hover:text-white"
               >
                 <MessageCircle className="h-4 w-4 text-lime-400" />
-                +670 770 1234
+                +670 7337 1307
               </a>
               <a
                 href="mailto:suporte@onit.tl"
