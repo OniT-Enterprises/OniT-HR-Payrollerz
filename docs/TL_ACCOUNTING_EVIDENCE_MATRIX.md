@@ -159,3 +159,16 @@ and net. New behaviors corroborated by real computations:
 - Remaining unmined: supplier-WHT calculation attachments (bodies reference
   them; bytes not yet fetched), declaração row-level totals, and a
   through-the-UI replay of a mined month via the E2E harness.
+
+## Government-assessed values (2026-07-18): the strongest evidence tier
+
+Official ATTL "Aviso de Avaliação" assessment notices (fetched from the
+corpus, de-identified) state, in the authority's own computation, the rent
+withholding base (form line 65) and tax (line 70 = LN65 × 10%) for four
+fiscal periods between Dec 2024 and Apr 2025 — bases from $0 (nil month,
+filed as zero) to $33,575.23, every one matching Xefe's Art. 55 calculation
+to the cent including rounding (`tests/client/attl-assessment-parity.test.ts`).
+This tier sits above practitioner workpapers: it is the tax authority's own
+arithmetic. Related tax-account statements on the same client show separate
+resident ($55) and non-resident ($1,045) monthly wage-WIT accounts,
+consistent with the split-form filing model Xefe's ATTL export follows.
