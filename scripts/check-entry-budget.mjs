@@ -8,7 +8,10 @@ const INDEX_PATH = join(BUILD_DIR, "index.html");
 // paths are richer than Lucide's, adding ~4 KiB gzip to the initial page across
 // the ~166 shimmed icons (already minified: integer coords, dead nodes stripped).
 // Deliberate trade for one consistent icon family app-wide. Keep this tight.
-const MAX_INITIAL_GZIP_KIB = 308;
+// Raised 308 -> 310 (2026-07-18): marketing grain tile + sanctioned motion
+// utilities in the entry CSS, plus the publicPaths/boot-splash refactor,
+// added ~0.3 KiB gzip. Deliberate features, not creep. Keep this tight.
+const MAX_INITIAL_GZIP_KIB = 310;
 const FORBIDDEN_INITIAL_CHUNKS = [
   "firebase-firestore",
   "react-pdf",
