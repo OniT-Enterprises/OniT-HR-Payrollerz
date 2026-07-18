@@ -7319,17 +7319,17 @@ export const translations = {
       "privacy": {
         "title": "Polítika Privasidade",
         "updated": "Atualiza ikus: 10 Juñu 2026",
-        "intro": "Xefe mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
+        "intro": "Xefe mak servisu RH no folha pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
         "s1Title": "Informasaun ne'ebé ami rai",
-        "s1Body": "Detallu konta hanesan naran no email, no rejistu sira ne'ebé Ita-nia empregadór hatama atu jere sira-nia negósiu — perfil funsionáriu, númeru dokumentu identidade, saláriu, prezensa, lisensa, no istória folla pagamentu. Se Ita aplika ba serbisu liu husi link públiku, ami rai aplikasaun ne'ebé Ita haruka, inklui Ita-nia CV.",
+        "s1Body": "Detallu konta hanesan naran no email, no rejistu sira ne'ebé Ita-nia empregadór hatama atu jere sira-nia negósiu — perfil funsionáriu, númeru dokumentu identidade, saláriu, prezensa, lisensa, no istória folha pagamentu. Se Ita aplika ba serbisu liu husi link públiku, ami rai aplikasaun ne'ebé Ita haruka, inklui Ita-nia CV.",
         "s2Title": "Oinsá ami uza",
-        "s2Body": "De'it atu fornese servisu — kalkula folla pagamentu, akompaña lisensa no prezensa, no prodús payslip no relatóriu. Ami la fa'an Ita-nia informasaun no la fahe ho ema halo publisidade.",
+        "s2Body": "De'it atu fornese servisu — kalkula folha pagamentu, akompaña lisensa no prezensa, no prodús payslip no relatóriu. Ami la fa'an Ita-nia informasaun no la fahe ho ema halo publisidade.",
         "s3Title": "Sé mak bele haree",
         "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Xefe asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
         "s4Title": "Iha ne'ebé mak rai",
         "s4Body": "Dadus rai iha Google Firebase no proteje ho enkriptasaun, ho regra asesu ba kada empreza.",
         "s5Title": "Kleur oinsá ami rai",
-        "s5Body": "Rejistu sira rai nafatin enkuantu konta empregadór nian sei ativu. Rejistu folla pagamentu bele rai kleur liu bainhira lei Timor-Leste ezije. Empregadór bele husu atu hamoos sira-nia konta empreza no dadus.",
+        "s5Body": "Rejistu sira rai nafatin enkuantu konta empregadór nian sei ativu. Rejistu folha pagamentu bele rai kleur liu bainhira lei Timor-Leste ezije. Empregadór bele husu atu hamoos sira-nia konta empreza no dadus.",
         "s6Title": "Ita-nia direitu",
         "s6Body": "Se Ita mak funsionáriu, husu ba Ita-nia empregadór nia administradór atu haree ka hadia Ita-nia informasaun — empregadór mak kontrola rejistu sira-ne'e. Kandidatu ba serbisu bele kontaktu empreza ne'ebé sira aplika ba.",
         "s7Title": "Pergunta",
@@ -7340,9 +7340,9 @@ export const translations = {
         "updated": "Atualiza ikus: 10 Juñu 2026",
         "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Xefe.",
         "s1Title": "Servisu",
-        "s1Body": "Xefe fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
+        "s1Body": "Xefe fornese ferramenta RH, folha pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
         "s2Title": "Ita-nia responsabilidade",
-        "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Xefe mak ferramenta ida — la'ós konsellu legál ka fiskál.",
+        "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folha molok selu staf ka deklara ba autoridade. Xefe mak ferramenta ida — la'ós konsellu legál ka fiskál.",
         "s3Title": "Ita-nia dadus",
         "s3Body": "Ita-nia empreza nia dadus pertense ba Ita. Ita bele esporta kualkér tempu no husu ami atu hamoos Ita-nia konta.",
         "s4Title": "Uzu aseitável",
@@ -7359,7 +7359,7 @@ export const translations = {
     },
     "common": {
       "needsReviewTitle": "Presiza revizaun molok deklara",
-      "needsReviewDesc": "Rejistu folla-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folla ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
+      "needsReviewDesc": "Rejistu folha-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folha ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
       "greetingMorning": "Bondia",
       "greetingAfternoon": "Botardi",
       "greetingEvening": "Bonite",
@@ -7467,8 +7467,8 @@ export const translations = {
       "applications": "Aplikasaun",
       "candidates": "Kandidatu",
       "interviews": "Entrevista",
-      "onboarding": "Onboarding",
-      "offboarding": "Offboarding",
+      "onboarding": "Integrasaun",
+      "offboarding": "Saida",
       "reviews": "Revizaun",
       "goals": "Objetivu",
       "training": "Formasaun",
@@ -7497,10 +7497,10 @@ export const translations = {
       "profitLoss": "Lukru & Lakon",
       "balanceSheet": "Balansu",
       "cashflow": "Fluxu Osan",
-      "arAging": "AR Aging",
-      "apAging": "AP Aging",
+      "arAging": "Konta Simu",
+      "apAging": "Konta Selu",
       "reconciliation": "Rekonsiliasaun",
-      "vatReturns": "VAT Returns",
+      "vatReturns": "Deklarasaun VAT",
       "chartOfAccounts": "Planu Konta",
       "journalEntries": "Lansu Jornál",
       "generalLedger": "Livru Razaun",
@@ -7553,7 +7553,7 @@ export const translations = {
       "selectType": "Hili tipu subsidiu",
       "setMonthlyAllowance": "Konfigura subsidiu fulan ba funsionariu",
       "startDate": "Data Hahu",
-      "status": "Status",
+      "status": "Estadu",
       "suggested": "Sujere",
       "type": "Tipu",
       "types": {
@@ -7708,7 +7708,7 @@ export const translations = {
         "document": "Dokumentu",
         "expiryDate": "Data remata",
         "timeRemaining": "Tempu restante",
-        "status": "Status",
+        "status": "Estadu",
         "adjustFilters": "Koko muda filtru sira."
       },
       "actions": {
@@ -7777,7 +7777,7 @@ export const translations = {
         "newTitle": "Avisu foun",
         "editTitle": "Edita avisu",
         "newDescription": "Ne'e sei hare hosi empregadu hotu iha app Ekipa.",
-        "editDescription": "Atualiza detalhu avisu iha kraik.",
+        "editDescription": "Atualiza detallu avisu iha kraik.",
         "titleLabel": "Titulu *",
         "titlePlaceholder": "Ezemplu: Mudansa orariu feriadu",
         "bodyLabel": "Konteudu *",
@@ -7815,7 +7815,7 @@ export const translations = {
       "loginTitle": "Tama ba Xefe",
       "loginSubtitle": "Tama atu asesu painael",
       "email": "Email",
-      "password": "Password",
+      "password": "Senha",
       "emailPlaceholder": "Hatama email",
       "passwordPlaceholder": "Hatama password",
       "signingIn": "Tama hela...",
@@ -7840,7 +7840,7 @@ export const translations = {
       },
       "demoCredentials": "Kredensial demonstrasaun:",
       "demoEmail": "Email: {{email}}",
-      "demoPassword": "Password: {{password}}",
+      "demoPassword": "Senha: {{password}}",
       "errors": {
         "signInFailed": "Labele tama",
         "passwordTooShort": "Password tenke iha karakter 6 pelumenus",
@@ -8140,19 +8140,19 @@ export const translations = {
         "upcomingHolidays": "Feriadu sira mai",
         "holidays": {
           "nov12": {
-            "date": "Nov 12",
+            "date": "12 Nov",
             "name": "Loron Juventude"
           },
           "nov28": {
-            "date": "Nov 28",
+            "date": "28 Nov",
             "name": "Proklamasaun"
           },
           "dec7": {
-            "date": "Dec 7",
+            "date": "7 Dez",
             "name": "Loron Heroi"
           },
           "dec25": {
-            "date": "Dec 25",
+            "date": "25 Dez",
             "name": "Natal"
           }
         }
@@ -8170,7 +8170,7 @@ export const translations = {
           "description": "Komformidade ho Kodigu Laboral. Semana 44 oras, oras extra 150%/200%, regra deskansu no seluk."
         },
         "witInss": {
-          "title": "WIT & INSS",
+          "title": "WIT no INSS",
           "subtitle": "Impostu no Seguransa Sosial",
           "description": "Kalkula WIT automatik ho limite $500 ba residente. INSS 4% empregadu + 6% empregador."
         },
@@ -8239,13 +8239,13 @@ export const translations = {
       "holidays": {
         "title": "Feriadu Nasional (13 feriadu publiku)",
         "more": "+ 6 tan...",
-        "newYear": "Loron Tinan Foun (New Year)",
-        "laborDay": "Loron Trabalhador (Labor Day)",
+        "newYear": "Loron Tinan Foun",
+        "laborDay": "Loron Trabalhador",
         "restoration": "Loron Restaurasaun Independensia",
         "popularConsultation": "Loron Konsulta Popular",
         "proclamation": "Loron Proklamasaun Independensia",
         "heroesDay": "Loron Heroi Nasional",
-        "christmas": "Loron Natal (Christmas)"
+        "christmas": "Loron Natal"
       },
       "tax": {
         "badge": "Kalkulasaun automatik",
@@ -9061,7 +9061,7 @@ export const translations = {
         "position": "Kargu",
         "employmentType": "Tipu Kontratu",
         "workLocation": "Lokal Servisu",
-        "status": "Status",
+        "status": "Estadu",
         "minSalary": "Saláriu Minimu",
         "maxSalary": "Saláriu Maximu"
       },
@@ -9081,7 +9081,7 @@ export const translations = {
         "position": "Kargu: {{value}}",
         "employmentType": "Tipu: {{value}}",
         "workLocation": "Lokal: {{value}}",
-        "status": "Status: {{value}}",
+        "status": "Estadu: {{value}}",
         "salary": "Saláriu: {{range}}"
       },
       "idLabel": "ID: {{id}}",
@@ -9177,7 +9177,7 @@ export const translations = {
         "employee": "Empregadu",
         "department": "Departamentu",
         "position": "Kargu",
-        "status": "Status",
+        "status": "Estadu",
         "salary": "Saláriu",
         "actions": "Asaun"
       }
@@ -9227,7 +9227,7 @@ export const translations = {
     },
     "orgChart": {
       "title": "Organograma",
-      "subtitle": "Haree estrutura kompanhia no linha reportajen",
+      "subtitle": "Haree estrutura kompanhia no liña reportajen",
       "reorganize": "Reorganiza",
       "exitReorganize": "Sai reorganiza",
       "manage": "Gere",
@@ -9330,7 +9330,7 @@ export const translations = {
         "employmentType": "Tipu Kontratu",
         "employmentTypes": {
           "fullTime": "Tempo tomak",
-          "partTime": "Part-time",
+          "partTime": "Tempo parsial",
           "contractor": "Kontratadu",
           "shareholder": "Asionista"
         },
@@ -9421,7 +9421,7 @@ export const translations = {
           "document": "Dokumentu",
           "number": "Numero",
           "expiry": "Validade",
-          "status": "Status"
+          "status": "Estadu"
         },
         "required": "Presiza",
         "numberPlaceholder": "Hatama numero",
@@ -9479,7 +9479,7 @@ export const translations = {
         },
         "options": {
           "fullTime": "Tempo tomak",
-          "partTime": "Part-time",
+          "partTime": "Tempo parsial",
           "contract": "Kontratu",
           "intern": "Estajiariu",
           "permanent": "Permanente",
@@ -9557,7 +9557,7 @@ export const translations = {
           },
           "upload": {
             "cta": "Klik atu upload dokumentu",
-            "types": "PDF, JPG, PNG (max 5MB)"
+            "types": "PDF, JPG, PNG (máx 5MB)"
           },
           "actions": {
             "saveContinue": "Rai no kontinua ba Politika"
@@ -9880,7 +9880,7 @@ export const translations = {
           "interview": "Entrevista",
           "score": "Pontu",
           "total": "Total",
-          "status": "Status",
+          "status": "Estadu",
           "documents": "Dokumentu",
           "actions": "Asaun"
         },
@@ -10067,7 +10067,7 @@ export const translations = {
           "duration": "Durasaun",
           "durationValue": "{{days}} loron",
           "halfDay": "{{type}}",
-          "status": "Status",
+          "status": "Estadu",
           "actions": "Asaun",
           "viewReason": "Haree razao"
         },
@@ -10175,7 +10175,7 @@ export const translations = {
           "date": "Data",
           "department": "Departamentu",
           "allDepartments": "Departamentu hotu",
-          "status": "Status",
+          "status": "Estadu",
           "allStatuses": "Status hotu"
         },
         "empty": {
@@ -10194,7 +10194,7 @@ export const translations = {
           "regular": "Normal",
           "overtime": "Extra",
           "late": "Atrasu",
-          "status": "Status"
+          "status": "Estadu"
         },
         "status": {
           "present": "Presente",
@@ -10213,7 +10213,7 @@ export const translations = {
           "regularHours": "Oras normal",
           "overtimeHours": "Oras extra",
           "lateMinutes": "Atrasu (min)",
-          "status": "Status",
+          "status": "Estadu",
           "notAvailable": "N/A"
         },
         "toast": {
@@ -10345,7 +10345,7 @@ export const translations = {
         },
         "edit": {
           "title": "Hadia Turnu",
-          "description": "Hadia detalhu turnu ka hamoos",
+          "description": "Hadia detallu turnu ka hamoos",
           "employee": "Empregadu *",
           "employeePlaceholder": "Hili empregadu",
           "position": "Funsaun *",
@@ -11670,7 +11670,7 @@ export const translations = {
           "yes": "Sin",
           "no": "Lae",
           "ready": "Prontu",
-          "setup": "Setup",
+          "setup": "Konfigurasaun",
           "configured": "Konfigura ona",
           "pending": "Pendente",
           "complete": "Kompletu",
@@ -11893,7 +11893,7 @@ export const translations = {
             "title": "Resumo Departamentu",
             "description": "Lista kompletu departamentu ho total empregadu",
             "departments": "Departamentu",
-            "totalStaff": "Total Staff",
+            "totalStaff": "Totál Staf",
             "withDirector": "Iha Diretór",
             "export": "Exporta Resumo"
           },
@@ -11990,7 +11990,7 @@ export const translations = {
             "allDepartments": "Departamentu hotu",
             "benefits": "Pakote benefisiu",
             "allBenefits": "Benefisiu hotu",
-            "status": "Status",
+            "status": "Estadu",
             "allStatuses": "Status hotu",
             "clearAll": "Hamós hotu",
             "apply": "Aplika filtru"
@@ -12025,7 +12025,7 @@ export const translations = {
           "position": "Funsaun",
           "monthlySalary": "Saláriu mensal",
           "benefits": "Benefisiu",
-          "status": "Status",
+          "status": "Estadu",
           "viewAll": "Haree hotu {{count}} empregadu",
           "showLess": "Hatudu menus",
           "emptyFiltered": "Laiha empregadu ne'ebé tuir filtru sira ne'e."
@@ -12075,7 +12075,7 @@ export const translations = {
           "monthlySalary": "Saláriu Mensal",
           "annualSalary": "Saláriu Anual",
           "benefitsPackage": "Pakote Benefisiu",
-          "status": "Status",
+          "status": "Estadu",
           "irpsTax": "Impostu IRPS (10% > $500)",
           "inssEmployee": "INSS Empregadu (4%)",
           "inssEmployer": "INSS Empregadór (6%)",
@@ -12411,7 +12411,7 @@ export const translations = {
           "employeeBreakdown": "{{residents}} residente, {{nonResidents}} la'ós residente",
           "totalGrossWages": "Total Saláriu Brutu",
           "taxableWages": "Saláriu tributável",
-          "totalWit": "Total WIT"
+          "totalWit": "Totál WIT"
         },
         "table": {
           "total": "TOTAL",
@@ -12429,7 +12429,7 @@ export const translations = {
           "description": "Akompaña ita-boot nia submisaun WIT mensal.",
           "period": "Períodu",
           "dueDate": "Data vensimentu",
-          "status": "Status",
+          "status": "Estadu",
           "totalWages": "Total Saláriu",
           "wit": "WIT",
           "employees": "Empregadu",
@@ -12554,7 +12554,7 @@ export const translations = {
           },
           "performance": {
             "title": "Dezempenu",
-            "description": "Objetivu, avaliasaun dezempenhu, formasaun, sertifikasaun, no asaun disiplinár."
+            "description": "Objetivu, avaliasaun dezempeñu, formasaun, sertifikasaun, no asaun disiplinár."
           }
         }
       }
@@ -12936,7 +12936,7 @@ export const translations = {
         "balanceDue": "Saldo Divida",
         "paid": "Selu tiha",
         "billTo": "Fatura ba",
-        "status": "Status",
+        "status": "Estadu",
         "saveError": "Falha rai fatura",
         "itemDescription": "Deskrisaun item",
         "terms": "Termu no Kondisaun",
@@ -13331,7 +13331,7 @@ export const translations = {
         "type": "Tipu",
         "amountPerMonth": "Valor/Fulan",
         "startDate": "Data Hahu",
-        "status": "Status",
+        "status": "Estadu",
         "actions": "Asaun",
         "selectEmployee": "Hili empregadu",
         "selectType": "Hili tipu",
@@ -13383,7 +13383,7 @@ export const translations = {
         "showing": "Hatudu",
         "bill": "fatura",
         "bills": "fatura",
-        "status": "Status",
+        "status": "Estadu",
         "totalPayables": "Total Selu",
         "unpaidBills": "fatura seidauk selu",
         "overdue": "Liu Prazu",
