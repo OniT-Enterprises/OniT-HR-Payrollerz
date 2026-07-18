@@ -99,6 +99,25 @@ wrapping an orphan card into another row.
 Never put charts, filter bars, date pickers, report summaries, or a second KPI
 grid on a dashboard. Link to the relevant report page.
 
+## Page headers — one exact spec per level
+
+Every screen's header follows its level's spec; never restyle per page.
+
+- **Level 0 — Home dashboard only**: the assistant strip is the app's single
+  brand moment — `bg-primary/[0.06]` tint, `border-primary/20`, ghosted
+  crescent-X mark (`xefe-mark-*.webp`, ≤8% opacity, top-right, theme-aware).
+  The crescent and brand-tinted surfaces appear nowhere else in the
+  authenticated app.
+- **Level 1 — Module dashboards**: 56px `rounded-2xl` tile in the module
+  accent at /10 with a 28px icon, beside a `text-2xl font-bold tracking-tight`
+  title and a `text-sm text-foreground/70` subtitle. Accents: People blue,
+  Time & Leave cyan, Payroll green (primary), Money indigo, Accounting orange,
+  Reports violet.
+- **Level 2 — Working pages** (`PageHeader` component): 44px `rounded-xl`
+  tile in the same module accent (duotone card-icon at 32px, or Lucide at
+  20px), `text-lg` title, subtitle, accent underline. Both icon modes use the
+  same tile size — the size step (56 → 44) is what signals the level change.
+
 ## Cards and navigation surfaces
 
 Cards are neutral containers, not decoration.

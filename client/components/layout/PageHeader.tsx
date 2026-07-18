@@ -26,6 +26,18 @@ const ACCENT: Record<string, string> = {
   primary: "[--card-icon-accent:#6A9C29] dark:[--card-icon-accent:#8cc63f]",
 };
 
+// Accent-tinted icon tile (matches the module-dashboard headers, one size
+// down so the hierarchy still reads: big tile = module home, small = page).
+const TILE_BG: Record<string, string> = {
+  blue: "bg-blue-500/10",
+  cyan: "bg-cyan-500/10",
+  green: "bg-primary/10",
+  indigo: "bg-indigo-500/10",
+  orange: "bg-orange-500/10",
+  violet: "bg-violet-500/10",
+  primary: "bg-primary/10",
+};
+
 interface PageHeaderProps {
   /** Page title */
   title: string;
@@ -65,15 +77,23 @@ export default function PageHeader({
   return (
     <div className={`mb-4 ${className}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Level-2 header tile: uniform 44px rounded-xl regardless of icon
+              type. (Module dashboards use the level-1 size: 56px rounded-2xl.) */}
           {showCardIcon ? (
-            <CardIcon
-              name={cardIcon!}
-              className={`h-9 w-9 shrink-0 text-foreground sm:h-10 sm:w-10 ${colorKey ? ACCENT[colorKey] : ""}`}
-            />
+            <div
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+            >
+              <CardIcon
+                name={cardIcon!}
+                className={`h-8 w-8 text-foreground ${colorKey ? ACCENT[colorKey] : ""}`}
+              />
+            </div>
           ) : Icon ? (
-            <div className="shrink-0 rounded-lg bg-muted p-1.5">
-              <Icon className={`h-4.5 w-4.5 ${iconColor}`} />
+            <div
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+            >
+              <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
           ) : null}
           <div className="min-w-0">

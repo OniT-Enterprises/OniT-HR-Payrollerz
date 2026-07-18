@@ -20,6 +20,7 @@ import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { FilingDueDate } from "@/types/tax-filing";
 import {
+  BarChart3,
   CheckCircle2,
   ChevronRight,
   Clock3,
@@ -283,25 +284,32 @@ export default function ReportsDashboard() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("moduleDashboards.reports.title")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {canManageTenant
-                ? t(
-                    familyCards.length === 1
-                      ? "moduleDashboards.reports.summarySingle"
-                      : "moduleDashboards.reports.summaryPlural",
-                    { count: familyCards.length, compliance: compliancePhrase },
-                  )
-                : t(
-                    familyCards.length === 1
-                      ? "moduleDashboards.reports.summaryReadOnlySingle"
-                      : "moduleDashboards.reports.summaryReadOnlyPlural",
-                    { count: familyCards.length },
-                  )}
-            </p>
+          {/* Header — module icon in the page's accent tile anchors the title
+              (same tinted-tile treatment as the hub cards below) */}
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-500/10">
+              <BarChart3 className="h-7 w-7 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {t("moduleDashboards.reports.title")}
+              </h1>
+              <p className="mt-0.5 text-sm text-foreground/70">
+                {canManageTenant
+                  ? t(
+                      familyCards.length === 1
+                        ? "moduleDashboards.reports.summarySingle"
+                        : "moduleDashboards.reports.summaryPlural",
+                      { count: familyCards.length, compliance: compliancePhrase },
+                    )
+                  : t(
+                      familyCards.length === 1
+                        ? "moduleDashboards.reports.summaryReadOnlySingle"
+                        : "moduleDashboards.reports.summaryReadOnlyPlural",
+                      { count: familyCards.length },
+                    )}
+              </p>
+            </div>
           </div>
           <div className="w-full sm:w-auto">
             <Button

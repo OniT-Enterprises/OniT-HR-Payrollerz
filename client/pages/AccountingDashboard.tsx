@@ -199,20 +199,27 @@ export default function AccountingDashboard() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("moduleDashboards.accounting.title")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {hasPayroll
-                ? dashboardData.payrollPosted && lastPayrollDate
-                  ? t("moduleDashboards.accounting.summaryPosted", {
-                      date: lastPayrollDate,
-                      amount: formatCurrencyTL(dashboardData.lastPayrollAmount),
-                    })
-                  : t("moduleDashboards.accounting.summaryNotPosted")
-                : t("moduleDashboards.accounting.summaryNoPayroll")}
-            </p>
+          {/* Header — module icon in the page's accent tile anchors the title
+              (same tinted-tile treatment as the hub cards below) */}
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10">
+              <Landmark className="h-7 w-7 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {t("moduleDashboards.accounting.title")}
+              </h1>
+              <p className="mt-0.5 text-sm text-foreground/70">
+                {hasPayroll
+                  ? dashboardData.payrollPosted && lastPayrollDate
+                    ? t("moduleDashboards.accounting.summaryPosted", {
+                        date: lastPayrollDate,
+                        amount: formatCurrencyTL(dashboardData.lastPayrollAmount),
+                      })
+                    : t("moduleDashboards.accounting.summaryNotPosted")
+                  : t("moduleDashboards.accounting.summaryNoPayroll")}
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             {canManageTenant && (

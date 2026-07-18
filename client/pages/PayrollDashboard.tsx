@@ -27,6 +27,7 @@ import {
 } from "@/lib/payroll/payroll-schedule";
 import {
   Banknote,
+  Calculator,
   CalendarClock,
   CheckCircle2,
   ChevronRight,
@@ -334,11 +335,17 @@ export default function PayrollDashboard() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+          {/* Header — module icon in the page's accent tile anchors the title
+              (same tinted-tile treatment as the hub cards below) */}
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+              <Calculator className="h-7 w-7 text-primary" />
+            </div>
+            <div>
             <h1 className="text-2xl font-bold tracking-tight">
               {t("moduleDashboards.payroll.title")}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-0.5 text-sm text-foreground/70">
               {canReadEmployeeDirectory && (
                 <>
                   {t("moduleDashboards.payroll.estimatedGross", {
@@ -358,6 +365,7 @@ export default function PayrollDashboard() {
               </span>{" "}
               ({formatDateTL(nextPayDate, { month: "long", day: "numeric" })}).
             </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button

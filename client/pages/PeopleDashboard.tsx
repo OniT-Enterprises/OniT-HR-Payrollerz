@@ -311,15 +311,22 @@ export default function PeopleDashboard() {
         {/* Header + search */}
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {t("moduleDashboards.people.title")}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {hasStaff
-                  ? t("moduleDashboards.people.subtitle", { count: activeEmployees })
-                  : t("moduleDashboards.people.subtitleNoStaff")}
-              </p>
+            {/* Header — module icon in the page's accent tile anchors the title
+                (same tinted-tile treatment as the hub cards below) */}
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10">
+                <Users className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {t("moduleDashboards.people.title")}
+                </h1>
+                <p className="mt-0.5 text-sm text-foreground/70">
+                  {hasStaff
+                    ? t("moduleDashboards.people.subtitle", { count: activeEmployees })
+                    : t("moduleDashboards.people.subtitleNoStaff")}
+                </p>
+              </div>
             </div>
             {hasStaff && canManageTenant && (
               <Button

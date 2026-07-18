@@ -485,13 +485,17 @@ export default function Dashboard() {
     overviewCards.push({
       key: "payroll",
       icon: Calculator,
+      // The payday countdown tile — shared signature with the Ekipa app's
+      // greeting card (soft tinted square, number over a small DAYS label).
       big: (
-        <>
-          <AnimatedNumber value={daysUntilPayday} />{" "}
-          <span className="text-sm font-normal text-muted-foreground">
+        <span className="inline-flex flex-col items-center rounded-xl bg-primary/10 px-3 py-1.5">
+          <span className="text-2xl font-bold leading-7 tabular-nums">
+            <AnimatedNumber value={daysUntilPayday} />
+          </span>
+          <span className="text-[10px] font-semibold uppercase leading-3 tracking-wider text-primary">
             {t("dashboard.days")}
           </span>
-        </>
+        </span>
       ),
       label: t("dashboard.untilPayday"),
       context: payrollPrepared
@@ -565,9 +569,23 @@ export default function Dashboard() {
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl animate-fade-in px-4 py-5 pb-10 sm:px-6 sm:py-6 sm:pb-12">
-        {/* ── Compact assistant strip: greeting, proactive summary, ask box ── */}
-        <div className="mb-6 rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-center gap-3 sm:gap-4">
+        {/* ── Compact assistant strip: greeting, proactive summary, ask box.
+            Xefe's warm corner of the page — a whisper of brand green and the
+            ghosted crescent-X mark, echoing the Ekipa greeting card. ── */}
+        <div className="relative mb-6 overflow-hidden rounded-2xl border border-primary/20 bg-primary/[0.06] p-4">
+          <img
+            src="/images/illustrations/xefe-mark-light.webp"
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute -right-3 -top-8 hidden h-40 w-auto opacity-[0.07] dark:block"
+          />
+          <img
+            src="/images/illustrations/xefe-mark-dark.webp"
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute -right-3 -top-8 h-40 w-auto opacity-[0.06] dark:hidden"
+          />
+          <div className="relative flex items-center gap-3 sm:gap-4">
             <img
               src="/images/illustrations/xefebot.webp"
               alt="XefeBot"

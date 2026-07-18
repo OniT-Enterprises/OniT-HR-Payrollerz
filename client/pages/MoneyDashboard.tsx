@@ -240,16 +240,23 @@ export default function MoneyDashboard() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("moduleDashboards.money.title")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("moduleDashboards.money.summary", {
-                collected: formatMoney(stats.revenueThisMonth),
-                outstanding: formatMoney(stats.totalOutstanding),
-              })}
-            </p>
+          {/* Header — module icon in the page's accent tile anchors the title
+              (same tinted-tile treatment as the hub cards below) */}
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10">
+              <Wallet className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {t("moduleDashboards.money.title")}
+              </h1>
+              <p className="mt-0.5 text-sm text-foreground/70">
+                {t("moduleDashboards.money.summary", {
+                  collected: formatMoney(stats.revenueThisMonth),
+                  outstanding: formatMoney(stats.totalOutstanding),
+                })}
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate("/money/bills")}>
