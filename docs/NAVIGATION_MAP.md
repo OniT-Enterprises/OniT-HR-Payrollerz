@@ -115,15 +115,14 @@ OniT HR/Payroll
 │   │   ├── Employees (/people/employees)  [WORK PAGE]
 │   │   │   └── Employee Profile (modal)
 │   │   ├── Add Employee (/people/add)     [WORK PAGE - Form]
+│   │   ├── Offboarding (/people/offboarding) [WORK PAGE]
 │   │   ├── Announcements (/people/announcements) [WORK PAGE]
 │   │   └── Grievances (/people/grievances) [WORK PAGE]
 │   │
 │   ├── Hiring                             [Section]
-│   │   ├── Jobs (/people/jobs)
-│   │   ├── Candidates (/people/candidates)
-│   │   ├── Interviews (/people/interviews)
-│   │   ├── Onboarding (/people/onboarding)
-│   │   └── Offboarding (/people/offboarding)
+│   │   └── Jobs & Applicants (/people/jobs) [WORK PAGE]
+│   │       ├── New Job (/people/jobs/new)
+│   │       └── Onboarding checklist (contextual handoff; not in sidebar)
 │   │
 │   └── Performance                        [Section]
 │       ├── Goals (/people/goals)

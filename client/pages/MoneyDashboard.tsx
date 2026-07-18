@@ -232,13 +232,13 @@ export default function MoneyDashboard() {
             {t("moduleDashboards.common.needsAttention")}
           </h2>
           {attention.length > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+            <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
               {attention.map((item, idx) => (
                 <button
                   key={item.text}
                   onClick={() => navigate(item.path)}
                   className={`flex w-full items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 ${
-                    idx !== attention.length - 1 ? "border-b border-border/60" : ""
+                    idx !== attention.length - 1 ? "border-b border-border/70" : ""
                   }`}
                 >
                   <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
@@ -250,8 +250,8 @@ export default function MoneyDashboard() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
-              <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/[0.06] px-4 py-5 text-sm text-foreground/75 shadow-sm dark:bg-primary/10">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
               {t("moduleDashboards.money.allGood")}
             </div>
           )}
@@ -263,7 +263,7 @@ export default function MoneyDashboard() {
             <button
               key={card.path}
               onClick={() => navigate(card.path)}
-              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-indigo-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
+              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:border-indigo-400/40 dark:hover:bg-indigo-950/20 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
             >
               {hasCardIcon(cardIconNameFromArt(card.art)) ? (
                 <CardIcon

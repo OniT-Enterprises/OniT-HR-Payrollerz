@@ -9,8 +9,10 @@ import { candidateService } from '@/services/candidateService';
 import { jobService } from '@/services/jobService';
 import { interviewService } from '@/services/interviewService';
 import { offboardingService } from '@/services/offboardingService';
+import { jobApplicationService } from '@/services/jobApplicationService';
 import type { Candidate } from '@/services/candidateService';
 import type { Job } from '@/services/jobService';
+import type { JobApplication } from '@/services/jobApplicationService';
 import type { Interview, InterviewFeedback, InterviewDecision, InterviewFilters, PreInterviewCheck } from '@/services/interviewService';
 import type { OffboardingCase, OffboardingChecklist, ExitInterview } from '@/services/offboardingService';
 
@@ -26,6 +28,11 @@ const jobKeys = {
   lists: (tenantId: string) => [...jobKeys.all(tenantId), 'list'] as const,
   details: (tenantId: string) => [...jobKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...jobKeys.details(tenantId), id] as const,
+};
+
+const applicationKeys = {
+  all: (tenantId: string) => ['tenants', tenantId, 'job-applications'] as const,
+  lists: (tenantId: string) => [...applicationKeys.all(tenantId), 'list'] as const,
 };
 
 const interviewKeys = {
@@ -63,7 +70,29 @@ export function useAddCandidate() {
   });
 }
 
+export function useUpdateCandidate() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Candidate> }) =>
+      candidateService.updateCandidate(tenantId, id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: candidateKeys.all(tenantId) });
+    },
+  });
+}
+
 // ─── Job hooks ───────────────────────────────────────────────────
+
+export function useJobs() {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: jobKeys.lists(tenantId),
+    queryFn: () => jobService.getAllJobs(tenantId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!tenantId,
+  });
+}
 
 export function useCreateJob() {
   const queryClient = useQueryClient();
@@ -75,6 +104,36 @@ export function useCreateJob() {
       queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
     },
   });
+}
+
+export function useUpdateJob() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Job> }) =>
+      jobService.updateJob(tenantId, id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
+    },
+  });
+}
+
+// ─── Application hooks ──────────────────────────────────────────
+
+export function useJobApplications() {
+  const tenantId = useTenantId();
+  return useQuery<JobApplication[]>({
+    queryKey: applicationKeys.lists(tenantId),
+    queryFn: () => jobApplicationService.getAll(tenantId),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!tenantId,
+  });
+}
+
+export function useInvalidateJobApplications() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return () => queryClient.invalidateQueries({ queryKey: applicationKeys.all(tenantId) });
 }
 
 // ─── Interview hooks ─────────────────────────────────────────────

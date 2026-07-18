@@ -3,6 +3,7 @@
  * Functions; the client only invokes callables and redirects to Stripe.
  */
 import { getFunctionsLazy } from "@/lib/firebase";
+import type { BillingInterval } from "@/lib/packagePricing";
 
 async function callable<TReq, TRes>(name: string, data: TReq): Promise<TRes> {
   const [{ httpsCallable }, functions] = await Promise.all([
@@ -16,14 +17,19 @@ async function callable<TReq, TRes>(name: string, data: TReq): Promise<TRes> {
 
 export const billingService = {
   /**
-   * Create a Stripe Checkout session (flat per-employee subscription) and
-   * redirect the browser to it.
+   * Create a Stripe Checkout session for the chosen billing cycle and redirect
+   * the browser to it. Stripe recalculates seats server-side; the client does
+   * not submit a price or quantity.
    */
-  async startCheckout(tenantId: string): Promise<void> {
+  async startCheckout(tenantId: string, billingInterval: BillingInterval): Promise<void> {
     const { url } = await callable<
-      { tenantId: string; returnUrl: string },
+      { tenantId: string; returnUrl: string; billingInterval: BillingInterval },
       { url: string | null }
-    >("createCheckoutSession", { tenantId, returnUrl: window.location.origin });
+    >("createCheckoutSession", {
+      tenantId,
+      returnUrl: window.location.origin,
+      billingInterval,
+    });
     if (!url) throw new Error("Stripe did not return a checkout URL");
     window.location.assign(url);
   },

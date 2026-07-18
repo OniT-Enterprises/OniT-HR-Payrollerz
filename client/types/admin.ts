@@ -1,12 +1,16 @@
 import { FirestoreTimestamp } from "./firebase";
 
 /**
- * One product, one price. Every account has every feature; a single flat
- * per-employee rate is charged once a tenant subscribes (which is what unlocks
- * finalizing payroll). No tiers, no per-module pricing.
+ * One product, one pricing formula. Every account has every feature; a flat
+ * per-employee rate with a minimum and annual discount is charged once a tenant
+ * subscribes. No tiers and no per-module pricing.
  */
 export interface PackagesConfig {
   pricePerEmployee: number;
+  /** Minimum number of seats billed each cycle (five = $20 at the default rate). */
+  minimumEmployees: number;
+  /** Number of monthly payments charged for twelve months of annual access. */
+  annualMonthsCharged: number;
   updatedAt?: FirestoreTimestamp;
   updatedBy?: string;
   updatedByEmail?: string;

@@ -1,4 +1,7 @@
 import type { PackagesConfig } from "@/types/admin";
+import { multiplyMoney, roundMoney, subtractMoney } from "@/lib/currency";
+
+export type BillingInterval = "month" | "year";
 
 export interface PackageEstimateInput {
   employeeCount: number;
@@ -6,16 +9,25 @@ export interface PackageEstimateInput {
 
 export interface PackageEstimate {
   pricePerEmployee: number;
+  minimumEmployees: number;
+  annualMonthsCharged: number;
   employeeCount: number;
+  billedEmployees: number;
   monthlyTotal: number;
+  annualTotal: number;
+  annualSavings: number;
 }
 
-// Single flat per-employee rate (USD/month). Tuned for Timor-Leste; editable in
-// the admin price editor.
+// One simple price with a small-company minimum and a two-month annual discount.
+// All three values remain editable by a superadmin in the pricing screen.
 export const DEFAULT_PRICE_PER_EMPLOYEE = 4;
+export const DEFAULT_MINIMUM_EMPLOYEES = 5;
+export const DEFAULT_ANNUAL_MONTHS_CHARGED = 10;
 
 export const DEFAULT_PACKAGES_CONFIG: PackagesConfig = {
   pricePerEmployee: DEFAULT_PRICE_PER_EMPLOYEE,
+  minimumEmployees: DEFAULT_MINIMUM_EMPLOYEES,
+  annualMonthsCharged: DEFAULT_ANNUAL_MONTHS_CHARGED,
 };
 
 // Everything the product includes — shown on pricing surfaces. All accounts,
@@ -35,23 +47,53 @@ export const ALL_FEATURES: string[] = [
 export function normalizeBillingPackagesConfig(raw: unknown): PackagesConfig {
   const input = raw && typeof raw === "object" ? (raw as Partial<PackagesConfig>) : {};
   const rate =
-    typeof input.pricePerEmployee === "number" && Number.isFinite(input.pricePerEmployee)
-      ? Math.max(0, input.pricePerEmployee)
+    typeof input.pricePerEmployee === "number" &&
+    Number.isFinite(input.pricePerEmployee) &&
+    input.pricePerEmployee > 0
+      ? input.pricePerEmployee
       : DEFAULT_PRICE_PER_EMPLOYEE;
-  return { pricePerEmployee: rate };
+  const minimumEmployees =
+    typeof input.minimumEmployees === "number" && Number.isFinite(input.minimumEmployees)
+      ? Math.max(1, Math.floor(input.minimumEmployees))
+      : DEFAULT_MINIMUM_EMPLOYEES;
+  const annualMonthsCharged =
+    typeof input.annualMonthsCharged === "number" && Number.isFinite(input.annualMonthsCharged)
+      ? Math.min(12, Math.max(1, Math.floor(input.annualMonthsCharged)))
+      : DEFAULT_ANNUAL_MONTHS_CHARGED;
+  return {
+    pricePerEmployee: roundMoney(rate),
+    minimumEmployees,
+    annualMonthsCharged,
+  };
 }
 
 export function calculatePackageEstimate(
   configInput: PackagesConfig,
   input: PackageEstimateInput,
 ): PackageEstimate {
-  const { pricePerEmployee } = normalizeBillingPackagesConfig(configInput);
+  const { pricePerEmployee, minimumEmployees, annualMonthsCharged } =
+    normalizeBillingPackagesConfig(configInput);
   const employeeCount = Math.max(0, Math.floor(input.employeeCount || 0));
+  const billedEmployees = Math.max(minimumEmployees, employeeCount, 1);
+  const monthlyTotal = multiplyMoney(pricePerEmployee, billedEmployees);
+  const annualTotal = multiplyMoney(monthlyTotal, annualMonthsCharged);
   return {
     pricePerEmployee,
+    minimumEmployees,
+    annualMonthsCharged,
     employeeCount,
-    monthlyTotal: pricePerEmployee * employeeCount,
+    billedEmployees,
+    monthlyTotal,
+    annualTotal,
+    annualSavings: subtractMoney(multiplyMoney(monthlyTotal, 12), annualTotal),
   };
+}
+
+export function getPackageBillingAmount(
+  estimate: PackageEstimate,
+  interval: BillingInterval,
+): number {
+  return interval === "year" ? estimate.annualTotal : estimate.monthlyTotal;
 }
 
 function toDateMaybe(value: unknown): Date | null {

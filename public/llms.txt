@@ -10,7 +10,7 @@
 ## Product
 
 - [Landing page](https://xefe.tl/): product overview and Timor-Leste compliance details
-- [Features](https://xefe.tl/features): full feature list across the nine modules
+- [How Xefe works](https://xefe.tl/how-it-works): plain-language workflow, inspectable payroll example, accounting controls, outputs, and validation approach
 - [Sign up](https://xefe.tl/auth/signup): self-serve organization creation with a free trial
 
 ## Family

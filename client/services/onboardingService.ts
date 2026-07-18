@@ -16,6 +16,7 @@ import {
   limit,
   Timestamp,
   serverTimestamp,
+  deleteField,
   type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -59,6 +60,13 @@ export interface OnboardingAcknowledgements {
   handbookRead: boolean;
 }
 
+export interface OnboardingChecklist {
+  employeeRecordConfirmed: boolean;
+  contractReady: boolean;
+  policiesExplained: boolean;
+  firstDayReady: boolean;
+}
+
 export type OnboardingStatus = "in_progress" | "completed" | "cancelled";
 
 export interface OnboardingCase {
@@ -82,10 +90,10 @@ export interface OnboardingCase {
   managerName?: string;
 
   companyEmail?: string;
-  tempPassword?: string;
 
   equipment: EquipmentAsset[];
   benefits: OnboardingBenefits;
+  checklist?: OnboardingChecklist;
 
   acknowledgements: OnboardingAcknowledgements;
   handbookSignatureDate?: string;
@@ -118,6 +126,13 @@ const DEFAULT_ACKNOWLEDGEMENTS: OnboardingAcknowledgements = {
   handbookRead: false,
 };
 
+const DEFAULT_CHECKLIST: OnboardingChecklist = {
+  employeeRecordConfirmed: false,
+  contractReady: false,
+  policiesExplained: false,
+  firstDayReady: false,
+};
+
 function mapDoc(id: string, data: DocumentData): OnboardingCase {
   return {
     id,
@@ -137,9 +152,9 @@ function mapDoc(id: string, data: DocumentData): OnboardingCase {
     managerEmployeeId: data.managerEmployeeId,
     managerName: data.managerName,
     companyEmail: data.companyEmail,
-    tempPassword: data.tempPassword,
     equipment: Array.isArray(data.equipment) ? data.equipment : [],
     benefits: { ...DEFAULT_BENEFITS, ...(data.benefits || {}) },
+    checklist: { ...DEFAULT_CHECKLIST, ...(data.checklist || {}) },
     acknowledgements: { ...DEFAULT_ACKNOWLEDGEMENTS, ...(data.acknowledgements || {}) },
     handbookSignatureDate: data.handbookSignatureDate,
     handbookContent: data.handbookContent,
@@ -209,7 +224,13 @@ class OnboardingService {
     const existing = await this.getCase(tenantId, caseId);
     if (!existing) throw new Error("Onboarding case not found");
     const docRef = doc(db, COLLECTION, caseId);
-    await updateDoc(docRef, { ...updates, updatedAt: serverTimestamp() });
+    await updateDoc(docRef, {
+      ...updates,
+      // Older onboarding records may contain this legacy secret. Remove it
+      // whenever the record is next touched; new writes are blocked by rules.
+      tempPassword: deleteField(),
+      updatedAt: serverTimestamp(),
+    });
   }
 
   async deleteCase(tenantId: string, caseId: string): Promise<void> {

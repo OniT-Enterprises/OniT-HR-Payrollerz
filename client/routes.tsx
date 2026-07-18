@@ -61,15 +61,13 @@ const Announcements = lazyWithRetry(() => import("@/pages/staff/Announcements"))
 const GrievanceInbox = lazyWithRetry(() => import("@/pages/staff/GrievanceInbox"));
 
 // People - Hiring
+const HiringWorkspace = lazyWithRetry(() => import("@/pages/hiring/HiringWorkspace"));
 const CreateJobLocal = lazyWithRetry(() => import("@/pages/hiring/CreateJobLocal"));
-const CandidateSelection = lazyWithRetry(() => import("@/pages/hiring/CandidateSelection"));
-const Interviews = lazyWithRetry(() => import("@/pages/hiring/Interviews"));
 const Onboarding = lazyWithRetry(() => import("@/pages/hiring/Onboarding"));
 const Offboarding = lazyWithRetry(() => import("@/pages/hiring/Offboarding"));
 const PublicApply = lazyWithRetry(() => import("@/pages/hiring/PublicApply"));
 const PublicInvoice = lazyWithRetry(() => import("@/pages/money/PublicInvoice"));
 const LegalPage = lazyWithRetry(() => import("@/pages/legal/LegalPage"));
-const JobApplicationsReview = lazyWithRetry(() => import("@/pages/hiring/JobApplicationsReview"));
 
 // People - Time & Leave
 const TimeTracking = lazyWithRetry(() => import("@/pages/time-leave/TimeTracking"));
@@ -184,7 +182,8 @@ export const authRoutes = (
       }
     />
     <Route path="/landing" element={<Landing />} />
-    <Route path="/features" element={<ProductDetails />} />
+    <Route path="/how-it-works" element={<ProductDetails />} />
+    <Route path="/features" element={<Navigate to="/how-it-works" replace />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route
       path="/settings"
@@ -306,38 +305,25 @@ export const peopleRoutes = (
       path="/people/jobs"
       element={
         <FeatureRoute requiredModule="hiring">
+          <HiringWorkspace />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/jobs/new"
+      element={
+        <FeatureRoute requiredModule="hiring">
           <CreateJobLocal />
         </FeatureRoute>
       }
     />
-    <Route
-      path="/people/candidates"
-      element={
-        <FeatureRoute requiredModule="hiring">
-          <CandidateSelection />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/applications"
-      element={
-        <FeatureRoute requiredModule="hiring">
-          <JobApplicationsReview />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/interviews"
-      element={
-        <FeatureRoute requiredModule="hiring">
-          <Interviews />
-        </FeatureRoute>
-      }
-    />
+    <Route path="/people/candidates" element={<Navigate to="/people/jobs" replace />} />
+    <Route path="/people/applications" element={<Navigate to="/people/jobs" replace />} />
+    <Route path="/people/interviews" element={<Navigate to="/people/jobs" replace />} />
     <Route
       path="/people/onboarding"
       element={
-        <FeatureRoute requiredModule="hiring">
+        <FeatureRoute requiredModule="staff" requireManage>
           <Onboarding />
         </FeatureRoute>
       }
@@ -345,7 +331,7 @@ export const peopleRoutes = (
     <Route
       path="/people/offboarding"
       element={
-        <FeatureRoute requiredModule="hiring" requireManage>
+        <FeatureRoute requiredModule="staff" requireManage>
           <Offboarding />
         </FeatureRoute>
       }
@@ -970,10 +956,10 @@ export const legacyRedirects = (
 
     {/* Old Hiring routes */}
     <Route path="/hiring" element={<Navigate to="/people/hiring" replace />} />
-    <Route path="/hiring/create-job" element={<Navigate to="/people/jobs" replace />} />
-    <Route path="/hiring/jobs/create" element={<Navigate to="/people/jobs" replace />} />
-    <Route path="/hiring/candidates" element={<Navigate to="/people/candidates" replace />} />
-    <Route path="/hiring/interviews" element={<Navigate to="/people/interviews" replace />} />
+    <Route path="/hiring/create-job" element={<Navigate to="/people/jobs/new" replace />} />
+    <Route path="/hiring/jobs/create" element={<Navigate to="/people/jobs/new" replace />} />
+    <Route path="/hiring/candidates" element={<Navigate to="/people/jobs" replace />} />
+    <Route path="/hiring/interviews" element={<Navigate to="/people/jobs" replace />} />
     <Route path="/hiring/onboarding" element={<Navigate to="/people/onboarding" replace />} />
     <Route path="/hiring/offboarding" element={<Navigate to="/people/offboarding" replace />} />
 

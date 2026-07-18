@@ -241,9 +241,9 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
     match /platform/packagesConfig {
-      // Pricing is not sensitive — any authenticated user may read it to render
-      // the in-app billing page. Only superadmins edit the price matrix.
-      allow read: if isAuthenticated();
+      // Published pricing is not sensitive. Guests may read it so the public
+      // landing page and authenticated checkout always show the same values.
+      allow read: if true;
       allow write: if isSuperAdmin();
     }
 
@@ -291,7 +291,10 @@ service cloud.firestore {
         !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'status', 'plan', 'limits', 'stripeCustomerId',
           'stripeSubscriptionId', 'subscriptionPaidUntil',
-          'manualSubscription', 'monthlySubscriptionAmount'
+          'manualSubscription', 'monthlySubscriptionAmount',
+          'subscriptionBillingAmount', 'subscriptionBillingInterval',
+          'subscriptionBillingMonths', 'subscriptionBilledSeats',
+          'subscriptionAnnualMonthsCharged'
         ]);
 
       // Creating new tenants requires authentication and self-ownership
@@ -596,7 +599,15 @@ service cloud.firestore {
       match /auditLogs/{logId} {
         allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
         // Cloud Functions write audit entries with a trusted actor identity.
-        allow create: if false;
+        // Clients may also write them — the accounting service records the
+        // journal-post audit inside the posting transaction (atomicity) — but
+        // only for finance admins and only self-attributed: a client can never
+        // write an entry naming anyone but itself.
+        allow create: if isSuperAdmin() || (
+          isTenantFinanceAdmin(tenantId) &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.tenantId == tenantId
+        );
         // Audit logs are immutable.
         allow update, delete: if false;
       }
@@ -1755,7 +1766,7 @@ service cloud.firestore {
         (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
 
       allow create: if
-        request.resource.data.keys().hasAll(['tenantId', 'jobId', 'jobTitle', 'name', 'email', 'phone', 'status']) &&
+        request.resource.data.keys().hasAll(['tenantId', 'jobId', 'jobTitle', 'name', 'email', 'phone', 'resumePath', 'status']) &&
         request.resource.data.keys().hasOnly([
           'tenantId',
           'jobId',
@@ -1767,12 +1778,15 @@ service cloud.firestore {
           'linkedInUrl',
           'referredBy',
           'resumePath',
-          'idDocumentPath',
           'status',
           'createdAt',
           'updatedAt',
         ]) &&
         request.resource.data.status == 'pending' &&
+        exists(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)) &&
+        get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.status == 'open' &&
+        get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.tenantId == request.resource.data.tenantId &&
+        get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.title == request.resource.data.jobTitle &&
         request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 200 &&
         request.resource.data.email is string && request.resource.data.email.size() < 200 &&
         request.resource.data.phone is string && request.resource.data.phone.size() < 80 &&
@@ -1782,8 +1796,9 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['coverNote']) || (request.resource.data.coverNote is string && request.resource.data.coverNote.size() < 5000)) &&
         (!request.resource.data.keys().hasAny(['linkedInUrl']) || (request.resource.data.linkedInUrl is string && request.resource.data.linkedInUrl.size() < 500)) &&
         (!request.resource.data.keys().hasAny(['referredBy']) || (request.resource.data.referredBy is string && request.resource.data.referredBy.size() < 200)) &&
-        (!request.resource.data.keys().hasAny(['resumePath']) || (request.resource.data.resumePath is string && request.resource.data.resumePath.size() < 1000)) &&
-        (!request.resource.data.keys().hasAny(['idDocumentPath']) || (request.resource.data.idDocumentPath is string && request.resource.data.idDocumentPath.size() < 1000));
+        request.resource.data.resumePath is string &&
+        request.resource.data.resumePath.size() < 1000 &&
+        request.resource.data.resumePath.matches('public/jobApplications/' + request.resource.data.tenantId + '/' + request.resource.data.jobId + '/.*');
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1806,17 +1821,21 @@ service cloud.firestore {
           (canAccessStaffRecords(resource.data.tenantId) ||
            canAccessHiringRecords(resource.data.tenantId)));
 
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null &&
-          (canAccessStaffRecords(request.resource.data.tenantId) ||
-           canAccessHiringRecords(request.resource.data.tenantId)));
+      allow create: if
+        !request.resource.data.keys().hasAny(['tempPassword']) &&
+        (isSuperAdmin() ||
+          (request.resource.data.tenantId != null &&
+            (canAccessStaffRecords(request.resource.data.tenantId) ||
+             canAccessHiringRecords(request.resource.data.tenantId))));
 
-      allow update: if isSuperAdmin() || (
-        resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
-        (canAccessStaffRecords(resource.data.tenantId) ||
-         canAccessHiringRecords(resource.data.tenantId))
-      );
+      allow update: if
+        !request.resource.data.keys().hasAny(['tempPassword']) &&
+        (isSuperAdmin() || (
+          resource.data.tenantId != null &&
+          request.resource.data.tenantId == resource.data.tenantId &&
+          (canAccessStaffRecords(resource.data.tenantId) ||
+           canAccessHiringRecords(resource.data.tenantId))
+        ));
 
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&

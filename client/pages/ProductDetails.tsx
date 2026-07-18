@@ -1,972 +1,811 @@
-/**
- * ProductDetails - Comprehensive product information page
- * Full details on all features, modules, TL-specific capabilities
- */
-
-import React, { useState } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { SEO } from "@/components/SEO";
-import { useI18n } from "@/i18n/I18nProvider";
 import {
-  Users,
-  Calculator,
-  Clock,
-  BarChart3,
-  CheckCircle2,
   ArrowRight,
-  Building2,
-  Globe,
+  BookOpen,
+  Calculator,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardCheck,
+  FileSpreadsheet,
   FileText,
-  Calendar,
   Landmark,
   Languages,
-  MapPin,
-  Briefcase,
-  Target,
-  Wallet,
-  MessageCircle,
+  ClipboardList,
   Lock,
-  Cloud,
-  Smartphone,
-  ChevronDown,
-  ChevronUp,
-  Zap,
-  Settings,
+  MessageCircle,
+  Scale,
+  Search,
+  ShieldCheck,
+  UsersRound,
+  type LucideIcon,
 } from "lucide-react";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { SEO, seoConfig } from "@/components/SEO";
+import { Button } from "@/components/ui/button";
+import { useI18n } from "@/i18n/I18nProvider";
 
-// Module data
-const modules = [
-  {
-    id: "people",
-    name: "People Management",
-    icon: Users,
-    color: "emerald",
-    description: "Complete workforce management from hiring to retirement",
-    features: [
-      {
-        title: "Staff Directory",
-        items: [
-          "Complete employee profiles with photos",
-          "Personal details, employment history, documents",
-          "Emergency contacts and custom fields",
-          "Advanced search and filtering",
-          "Bulk CSV import with column mapping",
-        ],
-      },
-      {
-        title: "Department Management",
-        items: [
-          "Hierarchical department structure",
-          "Department heads and reporting lines",
-          "Budget allocation per department",
-          "Visual organization chart",
-          "Drag-and-drop org editing",
-        ],
-      },
-      {
-        title: "Document Tracking",
-        items: [
-          "Digital storage for all documents",
-          "Automatic expiry alerts for passports",
-          "Work permit and visa tracking",
-          "Electoral card (Kartaun Eleitoral) management",
-          "Professional license monitoring",
-        ],
-      },
-    ],
-  },
-  {
-    id: "hiring",
-    name: "Hiring & Recruitment",
-    icon: Briefcase,
-    color: "violet",
-    description: "Streamline recruitment from job posting to onboarding",
-    features: [
-      {
-        title: "Job Management",
-        items: [
-          "Create and manage job postings",
-          "Define requirements and salary ranges",
-          "Track posting status",
-          "Job templates for common positions",
-        ],
-      },
-      {
-        title: "Candidate Pipeline",
-        items: [
-          "Applicant tracking system (ATS)",
-          "Resume storage and parsing",
-          "Interview scheduling",
-          "Candidate scoring and comparison",
-          "Email templates for communication",
-        ],
-      },
-      {
-        title: "Onboarding & Offboarding",
-        items: [
-          "Customizable onboarding checklists",
-          "Task assignment to HR, IT, managers",
-          "Progress tracking dashboard",
-          "Exit interview management",
-          "Asset return and knowledge transfer",
-        ],
-      },
-    ],
-  },
-  {
-    id: "time",
-    name: "Time & Attendance",
-    icon: Clock,
-    color: "orange",
-    description: "Track working hours, attendance, and leave requests",
-    features: [
-      {
-        title: "Time Tracking",
-        items: [
-          "Clock in/out via web interface",
-          "GPS location capture (optional)",
-          "Break time tracking",
-          "Automatic overtime calculation",
-          "Timesheet approval workflow",
-        ],
-      },
-      {
-        title: "Attendance",
-        items: [
-          "Daily attendance dashboard",
-          "Late arrival tracking",
-          "Early departure logging",
-          "Absence recording with reasons",
-          "Attendance patterns analytics",
-        ],
-      },
-      {
-        title: "Leave Management",
-        items: [
-          "Leave request and approval",
-          "Annual, sick, maternity leave types",
-          "TL public holidays built-in",
-          "Leave balance tracking",
-          "Team calendar view",
-        ],
-      },
-      {
-        title: "Shift Scheduling",
-        items: [
-          "Visual shift planner",
-          "Drag-and-drop scheduling",
-          "Shift templates and rotations",
-          "Availability management",
-          "Coverage alerts",
-        ],
-      },
-    ],
-  },
-  {
-    id: "performance",
-    name: "Performance Management",
-    icon: Target,
-    color: "pink",
-    description: "Develop your team with goals, reviews, and training",
-    features: [
-      {
-        title: "Goals & OKRs",
-        items: [
-          "Individual and team goals",
-          "Goal alignment with company objectives",
-          "Progress tracking and updates",
-          "Goal completion analytics",
-        ],
-      },
-      {
-        title: "Performance Reviews",
-        items: [
-          "Configurable review cycles",
-          "360-degree feedback support",
-          "Self-assessment forms",
-          "Competency-based assessments",
-          "Review history and trends",
-        ],
-      },
-      {
-        title: "Training & Development",
-        items: [
-          "Training program management",
-          "Course assignment and tracking",
-          "Certification tracking with expiry",
-          "Training budget management",
-          "Compliance training requirements",
-        ],
-      },
-    ],
-  },
-  {
-    id: "payroll",
-    name: "Payroll",
-    icon: Calculator,
-    color: "blue",
-    description: "Fully compliant payroll processing for Timor-Leste",
-    features: [
-      {
-        title: "Payroll Processing",
-        items: [
-          "Monthly and bi-weekly cycles",
-          "Automatic INSS calculation (4% + 6%)",
-          "Withholding tax (10% above $500 threshold)",
-          "Overtime (1.5x and 2x per TL law)",
-          "Allowances, bonuses, commissions",
-          "Payroll preview and approval",
-        ],
-      },
-      {
-        title: "Payslips & Distribution",
-        items: [
-          "PDF payslips with branding",
-          "Email distribution to employees",
-          "Employee self-service portal",
-          "Historical payslip archive",
-          "Bilingual payslips (EN/PT/TET)",
-        ],
-      },
-      {
-        title: "Bank Transfers",
-        items: [
-          "BNU file format generation",
-          "BNCTL payment files",
-          "Mandiri and ANZ support",
-          "Bulk transfer processing",
-          "Mobile money ready (Telkomcel/Telemor)",
-        ],
-      },
-      {
-        title: "Tax Filing",
-        items: [
-          "ATTL Monthly Withholding Tax Report",
-          "INSS Monthly Contribution Report",
-          "Annual tax summaries per employee",
-          "Government-compatible export formats",
-        ],
-      },
-    ],
-  },
-  {
-    id: "money",
-    name: "Money (Invoicing)",
-    icon: Wallet,
-    color: "indigo",
-    description: "Complete accounts receivable and payable",
-    features: [
-      {
-        title: "Invoicing",
-        items: [
-          "Professional invoice creation",
-          "Customizable templates",
-          "10% TL sales tax calculation",
-          "Status tracking (Draft → Paid)",
-          "Partial payments support",
-          "Recurring invoices",
-          "PDF generation and email",
-        ],
-      },
-      {
-        title: "Customer Management",
-        items: [
-          "Customer database",
-          "Credit terms per customer",
-          "Transaction history",
-          "Outstanding balance tracking",
-        ],
-      },
-      {
-        title: "Bills & Expenses",
-        items: [
-          "Bill entry from vendors",
-          "Expense recording by category",
-          "Bill payment tracking",
-          "Receipt attachment",
-          "AP aging reports",
-        ],
-      },
-      {
-        title: "Financial Reports",
-        items: [
-          "Profit & Loss statement",
-          "Cash flow report",
-          "AR/AP Aging reports",
-          "Bank reconciliation",
-        ],
-      },
-    ],
-  },
-  {
-    id: "accounting",
-    name: "Accounting",
-    icon: Landmark,
-    color: "slate",
-    description: "Double-entry accounting for formal financial management",
-    features: [
-      {
-        title: "Chart of Accounts",
-        items: [
-          "Pre-configured for TL businesses",
-          "Assets, Liabilities, Equity, Revenue, Expenses",
-          "Custom account creation",
-          "Account hierarchies",
-        ],
-      },
-      {
-        title: "Journal Entries",
-        items: [
-          "Manual journal entry creation",
-          "Automatic entries from invoices/bills",
-          "Entry approval workflow",
-          "Reversing entries",
-        ],
-      },
-      {
-        title: "Reporting",
-        items: [
-          "General Ledger",
-          "Trial Balance",
-          "Financial statements",
-          "Period comparison",
-        ],
-      },
-    ],
-  },
-  {
-    id: "reports",
-    name: "Reports & Analytics",
-    icon: BarChart3,
-    color: "cyan",
-    description: "Comprehensive reporting across all modules",
-    features: [
-      {
-        title: "Payroll Reports",
-        items: [
-          "Payroll summary by department",
-          "INSS contribution reports",
-          "Tax withholding summaries",
-          "Year-to-date earnings",
-        ],
-      },
-      {
-        title: "HR Reports",
-        items: [
-          "Headcount and turnover",
-          "Demographics analysis",
-          "New hire and termination reports",
-          "Attendance summaries",
-        ],
-      },
-      {
-        title: "Custom Reports",
-        items: [
-          "Flexible report builder",
-          "Export to Excel, PDF, CSV",
-          "Scheduled report delivery",
-          "Report templates",
-        ],
-      },
-    ],
-  },
-];
+type Locale = "en" | "tet" | "pt";
 
-// TL-specific features
-const tlFeatures = [
-  {
-    icon: Calculator,
-    title: "INSS (Social Security)",
-    description: "Automatic calculation of contributions",
-    details: [
-      "Employee contribution: 4% of contributable remuneration",
-      "Employer contribution: 6% of contributable remuneration",
-      "Monthly INSS report generation",
-      "INSS number tracking per employee",
-    ],
-  },
-  {
-    icon: FileText,
-    title: "Wage Income Tax (WIT)",
-    description: "10% above $500 threshold for residents",
-    details: [
-      "Residents: $0-$500 = No tax",
-      "Residents: Above $500 = 10% of excess",
-      "Non-residents: 10% on all income",
-      "Monthly filing due by 15th",
-      "ATTL monthly report generation",
-    ],
-  },
-  {
-    icon: Landmark,
-    title: "Local Bank Integration",
-    description: "Direct payment file generation",
-    details: [
-      "BNU (Banco Nacional Ultramarino)",
-      "BNCTL (Banco Nacional de Comércio de Timor-Leste)",
-      "Bank Mandiri Timor-Leste",
-      "ANZ Bank",
-    ],
-  },
-  {
-    icon: Smartphone,
-    title: "Mobile Money Ready",
-    description: "Pay employees without bank accounts",
-    details: [
-      "Telkomcel mobile money integration",
-      "Telemor mobile money integration",
-      "Direct wallet disbursement",
-      "Transaction tracking",
-    ],
-  },
-  {
-    icon: Languages,
-    title: "Trilingual Interface",
-    description: "Full support for local languages",
-    details: [
-      "English - Complete translation",
-      "Portuguese - Complete translation",
-      "Tetum - First HR system with Tetum!",
-      "Instant language switching",
-    ],
-  },
-  {
-    icon: Globe,
-    title: "Foreign Worker Compliance",
-    description: "Track permits and visas",
-    details: [
-      "Work permit expiry tracking",
-      "Visa type recording",
-      "SEPFOPE reporting support",
-      "Automatic expiry alerts",
-    ],
-  },
-];
-
-// Public holidays
-const publicHolidays = [
-  { date: "Jan 1", name: "New Year's Day" },
-  { date: "Mar 3", name: "Veterans Day" },
-  { date: "Variable", name: "Good Friday" },
-  { date: "May 20", name: "Restoration of Independence" },
-  { date: "Variable", name: "Corpus Christi" },
-  { date: "Aug 30", name: "Popular Consultation Day" },
-  { date: "Nov 28", name: "Independence Day" },
-  { date: "Dec 7", name: "National Heroes Day" },
-  { date: "Dec 8", name: "Immaculate Conception" },
-  { date: "Dec 25", name: "Christmas Day" },
-];
-
-// Benefits by stakeholder
-const benefits = [
-  {
-    stakeholder: "For Businesses",
-    icon: Building2,
-    items: [
-      { benefit: "Time Savings", desc: "Automate payroll from days to minutes" },
-      { benefit: "Error Reduction", desc: "Eliminate manual calculation errors" },
-      { benefit: "Compliance", desc: "Never miss a tax filing or permit expiry" },
-      { benefit: "Cost Reduction", desc: "Replace multiple systems with one" },
-      { benefit: "Visibility", desc: "Real-time dashboards and reports" },
-      { benefit: "Scalability", desc: "Grows with your business" },
-    ],
-  },
-  {
-    stakeholder: "For Employees",
-    icon: Users,
-    items: [
-      { benefit: "Self-Service", desc: "View payslips, request leave anytime" },
-      { benefit: "Transparency", desc: "Clear breakdown of pay" },
-      { benefit: "Tetum Interface", desc: "Use in their language" },
-      { benefit: "Mobile Access", desc: "Check from phone" },
-      { benefit: "Accurate Pay", desc: "Correct calculations always" },
-    ],
-  },
-  {
-    stakeholder: "For Government",
-    icon: Landmark,
-    items: [
-      { benefit: "Tax Compliance", desc: "Easier INSS and tax collection" },
-      { benefit: "Labor Law", desc: "Businesses follow overtime rules" },
-      { benefit: "Foreign Workers", desc: "Better permit visibility" },
-      { benefit: "Economic Data", desc: "Employment statistics" },
-    ],
-  },
-  {
-    stakeholder: "For Accounting Firms",
-    icon: Calculator,
-    items: [
-      { benefit: "New Revenue", desc: "Offer HR/Payroll as service" },
-      { benefit: "Client Stickiness", desc: "Deeper engagement" },
-      { benefit: "Efficiency", desc: "Reduce manual data entry" },
-      { benefit: "Standardization", desc: "All clients on same system" },
-    ],
-  },
-];
-
-
-// Expandable module section component
-function ModuleSection({ module, index }: { module: typeof modules[0]; index: number }) {
-  const [expanded, setExpanded] = useState(index === 0);
-  const Icon = module.icon;
-
-  const colorClasses: Record<string, { bg: string; text: string; border: string }> = {
-    emerald: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-    violet: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20" },
-    orange: { bg: "bg-orange-500/10", text: "text-orange-400", border: "border-orange-500/20" },
-    pink: { bg: "bg-pink-500/10", text: "text-pink-400", border: "border-pink-500/20" },
-    blue: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
-    indigo: { bg: "bg-indigo-500/10", text: "text-indigo-400", border: "border-indigo-500/20" },
-    slate: { bg: "bg-slate-500/10", text: "text-slate-400", border: "border-slate-500/20" },
-    cyan: { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
-  };
-
-  const colors = colorClasses[module.color] || colorClasses.emerald;
-
+/** Gold crescent — the small mark used throughout Xefe's public identity. */
+function Crescent({ className }: { className?: string }) {
   return (
-    <div className={`rounded-2xl border ${colors.border} bg-white/[0.02] overflow-hidden`}>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
-      >
-        <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-xl ${colors.bg}`}>
-            <Icon className={`h-6 w-6 ${colors.text}`} />
-          </div>
-          <div className="text-left">
-            <h3 className="text-xl font-bold text-white">{module.name}</h3>
-            <p className="text-sm text-zinc-500">{module.description}</p>
-          </div>
-        </div>
-        {expanded ? (
-          <ChevronUp className="h-5 w-5 text-zinc-500" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-zinc-500" />
-        )}
-      </button>
-
-      {expanded && (
-        <div className="px-6 pb-6 pt-2">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {module.features.map((feature, i) => (
-              <div key={i} className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
-                <h4 className={`font-semibold ${colors.text} mb-3`}>{feature.title}</h4>
-                <ul className="space-y-2">
-                  {feature.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-zinc-400">
-                      <CheckCircle2 className={`h-4 w-4 ${colors.text} flex-shrink-0 mt-0.5`} />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
+      <path
+        d="M12 62 A46 46 0 0 1 88 40 A60 60 0 0 0 12 62 Z"
+        fill="currentColor"
+      />
+    </svg>
   );
 }
 
+function SectionEyebrow({ children }: { children: ReactNode }) {
+  return (
+    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
+      <Crescent className="h-3.5 w-3.5 text-amber-400" />
+      {children}
+    </p>
+  );
+}
+
+function formatUSD(amount: number, locale: Locale): string {
+  const locales: Record<Locale, string> = {
+    en: "en-US",
+    tet: "pt-TL",
+    pt: "pt-TL",
+  };
+  return new Intl.NumberFormat(locales[locale], {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+interface WorkflowItem {
+  icon: LucideIcon;
+  title: string;
+  you: string;
+  xefe: string;
+  verify: string;
+}
+
+interface JournalLine {
+  code: string;
+  account: string;
+  debit: number;
+  credit: number;
+}
+
 export default function ProductDetails() {
-  const { t, locale, setLocale, localeLabels } = useI18n();
-  const [langOpen, setLangOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"modules" | "tl" | "benefits">("modules");
+  const { t, locale } = useI18n();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
+  const heroProof = [
+    {
+      icon: UsersRound,
+      title: t("howItWorks.hero.proof.people.title"),
+      description: t("howItWorks.hero.proof.people.description"),
+    },
+    {
+      icon: Calculator,
+      title: t("howItWorks.hero.proof.payroll.title"),
+      description: t("howItWorks.hero.proof.payroll.description"),
+    },
+    {
+      icon: Landmark,
+      title: t("howItWorks.hero.proof.outputs.title"),
+      description: t("howItWorks.hero.proof.outputs.description"),
+    },
+    {
+      icon: BookOpen,
+      title: t("howItWorks.hero.proof.accounts.title"),
+      description: t("howItWorks.hero.proof.accounts.description"),
+    },
+  ];
+
+  const audienceCards = [
+    {
+      icon: UsersRound,
+      title: t("howItWorks.audience.everyday.title"),
+      description: t("howItWorks.audience.everyday.description"),
+      points: [
+        t("howItWorks.audience.everyday.points.guided"),
+        t("howItWorks.audience.everyday.points.defaults"),
+        t("howItWorks.audience.everyday.points.language"),
+      ],
+      tone: "lime",
+    },
+    {
+      icon: Search,
+      title: t("howItWorks.audience.professional.title"),
+      description: t("howItWorks.audience.professional.description"),
+      points: [
+        t("howItWorks.audience.professional.points.calculations"),
+        t("howItWorks.audience.professional.points.accounting"),
+        t("howItWorks.audience.professional.points.compliance"),
+      ],
+      tone: "amber",
+    },
+  ];
+
+  const workflow: WorkflowItem[] = [
+    {
+      icon: UsersRound,
+      title: t("howItWorks.workflow.people.title"),
+      you: t("howItWorks.workflow.people.you"),
+      xefe: t("howItWorks.workflow.people.xefe"),
+      verify: t("howItWorks.workflow.people.verify"),
+    },
+    {
+      icon: Calculator,
+      title: t("howItWorks.workflow.payroll.title"),
+      you: t("howItWorks.workflow.payroll.you"),
+      xefe: t("howItWorks.workflow.payroll.xefe"),
+      verify: t("howItWorks.workflow.payroll.verify"),
+    },
+    {
+      icon: Landmark,
+      title: t("howItWorks.workflow.payments.title"),
+      you: t("howItWorks.workflow.payments.you"),
+      xefe: t("howItWorks.workflow.payments.xefe"),
+      verify: t("howItWorks.workflow.payments.verify"),
+    },
+    {
+      icon: BookOpen,
+      title: t("howItWorks.workflow.accounting.title"),
+      you: t("howItWorks.workflow.accounting.you"),
+      xefe: t("howItWorks.workflow.accounting.xefe"),
+      verify: t("howItWorks.workflow.accounting.verify"),
+    },
+  ];
+
+  const calculationRows = [
+    { label: t("landing.tax.example.basicSalary"), value: 1200 },
+    { label: t("landing.tax.example.overtime"), value: 180 },
+    { label: t("landing.tax.example.foodAllowance"), value: 100 },
+    { label: t("landing.tax.example.gross"), value: 1480, strong: true },
+    { label: t("landing.tax.example.wit"), value: -98 },
+    { label: t("landing.tax.example.inss"), value: -55.2 },
+    { label: t("landing.tax.example.net"), value: 1326.8, total: true },
+    { label: t("howItWorks.example.employerInss"), value: 82.8 },
+    { label: t("howItWorks.example.employerCost"), value: 1562.8, strong: true },
+  ];
+
+  const journalLines: JournalLine[] = [
+    {
+      code: "5110",
+      account: t("howItWorks.example.accounts.wages"),
+      debit: 1480,
+      credit: 0,
+    },
+    {
+      code: "5150",
+      account: t("howItWorks.example.accounts.employerInssExpense"),
+      debit: 82.8,
+      credit: 0,
+    },
+    {
+      code: "2210",
+      account: t("howItWorks.example.accounts.netPayable"),
+      debit: 0,
+      credit: 1326.8,
+    },
+    {
+      code: "2220",
+      account: t("howItWorks.example.accounts.witPayable"),
+      debit: 0,
+      credit: 98,
+    },
+    {
+      code: "2230",
+      account: t("howItWorks.example.accounts.employeeInssPayable"),
+      debit: 0,
+      credit: 55.2,
+    },
+    {
+      code: "2240",
+      account: t("howItWorks.example.accounts.employerInssPayable"),
+      debit: 0,
+      credit: 82.8,
+    },
+  ];
+
+  const controls = [
+    {
+      icon: Calculator,
+      title: t("howItWorks.controls.items.visible.title"),
+      description: t("howItWorks.controls.items.visible.description"),
+    },
+    {
+      icon: ClipboardCheck,
+      title: t("howItWorks.controls.items.approval.title"),
+      description: t("howItWorks.controls.items.approval.description"),
+    },
+    {
+      icon: ShieldCheck,
+      title: t("howItWorks.controls.items.noGuessing.title"),
+      description: t("howItWorks.controls.items.noGuessing.description"),
+    },
+    {
+      icon: BookOpen,
+      title: t("howItWorks.controls.items.journals.title"),
+      description: t("howItWorks.controls.items.journals.description"),
+    },
+    {
+      icon: Lock,
+      title: t("howItWorks.controls.items.audit.title"),
+      description: t("howItWorks.controls.items.audit.description"),
+    },
+    {
+      icon: FileSpreadsheet,
+      title: t("howItWorks.controls.items.exports.title"),
+      description: t("howItWorks.controls.items.exports.description"),
+    },
+  ];
+
+  const outputs = [
+    t("howItWorks.controls.outputs.payslips"),
+    t("howItWorks.controls.outputs.bankFiles"),
+    t("howItWorks.controls.outputs.payrollRegister"),
+    t("howItWorks.controls.outputs.wit"),
+    t("howItWorks.controls.outputs.inss"),
+    t("howItWorks.controls.outputs.journal"),
+    t("howItWorks.controls.outputs.ledger"),
+    t("howItWorks.controls.outputs.statements"),
+  ];
+
+  const evidence = [
+    {
+      icon: Scale,
+      title: t("howItWorks.evidence.items.sources.title"),
+      description: t("howItWorks.evidence.items.sources.description"),
+    },
+    {
+      icon: ClipboardList,
+      title: t("howItWorks.evidence.items.testing.title"),
+      description: t("howItWorks.evidence.items.testing.description"),
+    },
+    {
+      icon: ShieldCheck,
+      title: t("howItWorks.evidence.items.guardrails.title"),
+      description: t("howItWorks.evidence.items.guardrails.description"),
+    },
+    {
+      icon: Search,
+      title: t("howItWorks.evidence.items.review.title"),
+      description: t("howItWorks.evidence.items.review.description"),
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white">
-      <SEO
-        title="Features & Modules"
-        description="HR, payroll & accounting built for Timor-Leste — INSS, WIT, subsídio anual, Lei Trabalho compliance, bank payroll files (BNU, BNCTL, Mandiri, ANZ), and double-entry accounting. Full feature and module breakdown."
-        keywords="HR software Timor-Leste, payroll software Timor-Leste, INSS, WIT, subsidio anual, Lei Trabalho, sistema folha de pagamento, accounting software Timor-Leste"
-        url="/features"
-      />
+    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0b] text-white">
+      <SEO {...seoConfig.howItWorks} />
 
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0b]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <img
-                src="/images/illustrations/xefe-logo-light.webp"
-                alt="Xefe"
-                className="h-9 w-auto"
-              />
-            </Link>
+      <a
+        href="#main-content"
+        className="sr-only z-50 rounded-md bg-white px-4 py-2 text-zinc-950 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        {t("common.skipToContent")}
+      </a>
 
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-8">
-              <Link to="/features" className="text-sm text-white font-medium transition-colors">
-                {t("landing.nav.features")}
+      <nav
+        aria-label={t("common.mainNavigation")}
+        className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#0a0a0b]/95 md:bg-[#0a0a0b]/85 md:backdrop-blur-lg"
+      >
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" aria-label="Xefe" className="shrink-0">
+            <img
+              src="/images/illustrations/xefe-logo-light.webp"
+              alt="Xefe"
+              width="109"
+              height="54"
+              className="h-8 w-auto sm:h-9"
+            />
+          </Link>
+
+          <div className="hidden items-center gap-6 lg:flex">
+            <a href="#workflow" className="text-sm text-zinc-400 transition-colors hover:text-white">
+              {t("howItWorks.nav.workflow")}
+            </a>
+            <a href="#example" className="text-sm text-zinc-400 transition-colors hover:text-white">
+              {t("howItWorks.nav.example")}
+            </a>
+            <a href="#controls" className="text-sm text-zinc-400 transition-colors hover:text-white">
+              {t("howItWorks.nav.controls")}
+            </a>
+            <a href="#evidence" className="text-sm text-zinc-400 transition-colors hover:text-white">
+              {t("howItWorks.nav.evidence")}
+            </a>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LocaleSwitcher className="h-11 w-11 gap-0 border-white/10 bg-white/5 px-0 text-zinc-200 hover:bg-white/10 hover:text-white [&>span]:hidden [&>svg:last-child]:hidden sm:h-9 sm:w-auto sm:gap-2 sm:px-3 sm:[&>span]:inline sm:[&>svg:last-child]:block" />
+            <Button
+              variant="ghost"
+              asChild
+              className="hidden text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
+            >
+              <Link to="/auth/login">{t("auth.signIn")}</Link>
+            </Button>
+            <Button
+              asChild
+              className="h-10 bg-amber-400 px-3 font-bold text-zinc-950 hover:bg-amber-300 sm:px-4"
+            >
+              <Link to="/auth/signup">
+                {t("landing.nav.getStarted")}
+                <ArrowRight className="hidden h-4 w-4 sm:block" />
               </Link>
-              <Link to="/landing#labor-law" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                {t("landing.nav.laborLaw")}
-              </Link>
-            </div>
-
-            {/* Language & Auth */}
-            <div className="flex items-center gap-3">
-              <div className="relative hidden sm:block">
-                <button
-                  onClick={() => setLangOpen(!langOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                >
-                  <Languages className="h-4 w-4 text-zinc-400" />
-                  <span className="text-xs text-zinc-300 font-medium uppercase">{locale}</span>
-                  <ChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {langOpen && (
-                  <div className="absolute top-full right-0 mt-2 py-1 rounded-lg bg-zinc-900 border border-white/10 shadow-xl z-50 min-w-[140px]">
-                    {(Object.keys(localeLabels) as Array<keyof typeof localeLabels>).map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setLocale(lang);
-                          setLangOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/10 transition-colors ${
-                          locale === lang ? 'text-amber-400' : 'text-zinc-300'
-                        }`}
-                      >
-                        {localeLabels[lang]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <Button variant="ghost" asChild className="text-zinc-300 hover:text-white hover:bg-white/5">
-                <Link to="/auth/login">{t("auth.signIn")}</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-red-500/25">
-                <Link to="/auth/signup">
-                  {t("landing.nav.getStarted")}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
+            </Button>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="py-16 lg:py-24 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px]" />
-        </div>
+      <main id="main-content">
+        <section className="relative overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-28 lg:pt-40">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(251,191,36,0.09),transparent_36%),radial-gradient(circle_at_15%_78%,rgba(106,156,41,0.08),transparent_32%)]" />
+          <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-amber-400/[0.045] md:block" />
 
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
-            <FileText className="h-4 w-4 text-emerald-400" />
-            <span className="text-sm text-zinc-300">Complete Platform Documentation</span>
-          </div>
-
-          <h1 className="text-4xl lg:text-6xl font-black mb-6">
-            Everything You Need to Know
-            <span className="block bg-gradient-to-r from-emerald-400 via-yellow-400 to-amber-300 bg-clip-text text-transparent">
-              About Xefe
-            </span>
-          </h1>
-
-          <p className="text-xl text-zinc-400 max-w-3xl mx-auto mb-10">
-            The most comprehensive HR and Payroll system built specifically for Timor-Leste.
-            Explore all 9 modules, 65+ features, and TL-specific capabilities.
-          </p>
-
-          {/* Quick stats */}
-          <div className="flex flex-wrap justify-center gap-8 mb-12">
-            {[
-              { value: "9", label: "Modules" },
-              { value: "65+", label: "Features" },
-              { value: "3", label: "Languages" },
-              { value: "4", label: "Banks Supported" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl font-black text-white">{stat.value}</div>
-                <div className="text-sm text-zinc-500">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Navigation Tabs */}
-      <div className="sticky top-16 z-40 bg-[#0a0a0b]/95 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex gap-1 py-2 overflow-x-auto">
-            {[
-              { id: "modules", label: "All Modules", icon: Settings },
-              { id: "tl", label: "TL-Specific", icon: MapPin },
-              { id: "benefits", label: "Benefits", icon: Zap },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "bg-white/10 text-white"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Content Sections */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-
-        {/* Modules Section */}
-        {activeTab === "modules" && (
-          <div className="space-y-4">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">Platform Modules</h2>
-              <p className="text-zinc-400">Click each module to explore its features in detail</p>
-            </div>
-            {modules.map((module, i) => (
-              <ModuleSection key={module.id} module={module} index={i} />
-            ))}
-          </div>
-        )}
-
-        {/* TL-Specific Section */}
-        {activeTab === "tl" && (
-          <div className="space-y-12">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-8">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Built for Timor-Leste</h2>
-              <p className="text-zinc-400 mb-8">Features designed specifically for TL compliance and operations</p>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {tlFeatures.map((feature, i) => {
-                  const Icon = feature.icon;
-                  return (
-                    <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/20 transition-colors">
-                      <div className="p-3 rounded-xl bg-emerald-500/10 inline-flex mb-4">
-                        <Icon className="h-6 w-6 text-emerald-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white mb-1">{feature.title}</h3>
-                      <p className="text-sm text-zinc-500 mb-4">{feature.description}</p>
-                      <ul className="space-y-2">
-                        {feature.details.map((detail, j) => (
-                          <li key={j} className="flex items-center gap-2 text-sm text-zinc-400">
-                            <CheckCircle2 className="h-3 w-3 text-emerald-400 flex-shrink-0" />
-                            {detail}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  );
-                })}
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3.5 py-2 text-sm text-amber-200">
+                <UsersRound className="h-4 w-4" />
+                {t("howItWorks.hero.eyebrow")}
               </div>
-            </div>
 
-            {/* Public Holidays */}
-            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="flex items-center gap-3 mb-6">
-                <Calendar className="h-5 w-5 text-amber-400" />
-                <h3 className="text-lg font-bold text-white">TL Public Holidays (Pre-configured)</h3>
+              <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.8rem]">
+                {t("howItWorks.hero.title")}
+                <span className="mt-1 block bg-gradient-to-r from-amber-200 via-amber-400 to-lime-300 bg-clip-text text-transparent">
+                  {t("howItWorks.hero.titleAccent")}
+                </span>
+              </h1>
+
+              <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-400 lg:text-xl">
+                {t("howItWorks.hero.description")}
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Button
+                  size="lg"
+                  asChild
+                  className="h-12 bg-amber-400 px-7 text-base font-bold text-zinc-950 shadow-xl shadow-amber-500/20 hover:bg-amber-300"
+                >
+                  <Link to="/auth/signup">
+                    {t("howItWorks.hero.primary")}
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="h-12 border-white/10 bg-white/5 px-7 text-base text-white hover:bg-white/10 hover:text-white"
+                >
+                  <a href="#workflow">
+                    {t("howItWorks.hero.secondary")}
+                    <ChevronRight className="h-4 w-4" />
+                  </a>
+                </Button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {publicHolidays.map((holiday, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
-                    <div className="text-xs text-amber-400 font-mono mb-1">{holiday.date}</div>
-                    <div className="text-sm text-zinc-300">{holiday.name}</div>
+
+              <div className="mt-8 flex flex-col gap-3 text-sm text-zinc-400 sm:flex-row sm:flex-wrap sm:gap-x-6">
+                {[
+                  t("howItWorks.hero.trust.plain"),
+                  t("howItWorks.hero.trust.detail"),
+                  t("howItWorks.hero.trust.languages"),
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-lime-400" />
+                    <span>{item}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Mobile Payments */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-red-500/5 via-amber-500/5 to-red-500/5 border border-amber-500/20">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="flex items-center gap-4">
-                  <img
-                    src="/images/tpay-logo.png"
-                    alt="T-PAY Mobile Money"
-                    className="h-16 w-16 rounded-full"
-                  />
+            <div className="relative mx-auto w-full max-w-lg">
+              <div className="rounded-2xl border border-white/10 bg-zinc-900/90 p-5 shadow-2xl shadow-black/50 sm:p-7">
+                <div className="mb-6 flex items-center justify-between gap-4">
                   <div>
-                    <h4 className="font-bold text-white text-lg">Mobile Money Ready</h4>
-                    <p className="text-sm text-zinc-400">Pay employees without bank accounts</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                      {t("howItWorks.hero.proof.eyebrow")}
+                    </p>
+                    <h2 className="mt-2 text-lg font-bold">
+                      {t("howItWorks.hero.proof.title")}
+                    </h2>
                   </div>
+                  <span className="rounded-full bg-lime-400 px-2.5 py-1 text-[11px] font-bold text-zinc-950">
+                    {t("howItWorks.hero.proof.status")}
+                  </span>
                 </div>
-                <div className="flex-1 grid grid-cols-2 gap-3 w-full md:w-auto">
-                  <div className="p-3 rounded-lg bg-white/5 text-center">
-                    <span className="text-sm font-medium text-white">T-PAY</span>
-                    <p className="text-xs text-zinc-500">Telkomcel</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/5 text-center">
-                    <span className="text-sm font-medium text-white">Telemor</span>
-                    <p className="text-xs text-zinc-500">Coming Soon</p>
-                  </div>
-                </div>
-              </div>
-              <p className="mt-4 text-xs text-zinc-500 text-center md:text-left">
-                Disbursement directly to employee mobile wallets. No bank account required.
-              </p>
-            </div>
 
-            {/* Tax Reference */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-                <h3 className="text-lg font-bold text-white mb-4">Wage Income Tax (WIT)</h3>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Residents (Monthly)</p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03]">
-                        <span className="text-zinc-400">$0 - $500</span>
-                        <span className="font-mono text-emerald-400">0%</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                        <span className="text-zinc-300">Above $500</span>
-                        <span className="font-mono text-blue-400 font-medium">10% of excess</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Non-Residents (Monthly)</p>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <span className="text-zinc-300">All income</span>
-                      <span className="font-mono text-amber-400 font-medium">10%</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-zinc-500">Due by 15th of following month via e-Tax</p>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-                <h3 className="text-lg font-bold text-white mb-4">INSS Contributions</h3>
                 <div className="space-y-2">
-                  {[
-                    { label: "Employee Contribution", rate: "4%" },
-                    { label: "Employer Contribution", rate: "6%" },
-                    { label: "Total Contribution", rate: "10%", highlight: true },
-                  ].map((item, i) => (
-                    <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${item.highlight ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-white/[0.03]'}`}>
-                      <span className={item.highlight ? 'text-emerald-300 font-medium' : 'text-zinc-400'}>{item.label}</span>
-                      <span className={`font-mono ${item.highlight ? 'text-emerald-400 font-bold' : 'text-emerald-400'}`}>{item.rate}</span>
+                  {heroProof.map(({ icon: Icon, title, description }, index) => (
+                    <div
+                      key={title}
+                      className="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-400/10">
+                        <Icon className="h-4 w-4 text-amber-300" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold">{title}</p>
+                          <span className="font-mono text-xs text-zinc-600">0{index + 1}</span>
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-zinc-400">{description}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-zinc-500 mt-3">Statement due by 10th of following month</p>
-                <p className="text-xs text-zinc-500">Payment window closes by 20th (next business day if needed)</p>
               </div>
             </div>
           </div>
-        )}
+        </section>
 
-        {/* Benefits Section */}
-        {activeTab === "benefits" && (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-2">Benefits by Stakeholder</h2>
-              <p className="text-zinc-400 mb-8">How Xefe helps everyone in your organization</p>
+        <section className="border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <SectionEyebrow>{t("howItWorks.audience.eyebrow")}</SectionEyebrow>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
+                {t("howItWorks.audience.title")}
+              </h2>
+              <p className="mt-4 text-zinc-400">{t("howItWorks.audience.description")}</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {benefits.map((group, i) => {
-                const Icon = group.icon;
-                return (
-                  <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 rounded-lg bg-amber-500/10">
-                        <Icon className="h-5 w-5 text-amber-400" />
-                      </div>
-                      <h3 className="text-lg font-bold text-white">{group.stakeholder}</h3>
+            <div className="mt-12 grid gap-4 lg:grid-cols-2">
+              {audienceCards.map(({ icon: Icon, title, description, points, tone }) => (
+                <article
+                  key={title}
+                  className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 sm:p-7"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone === "lime" ? "bg-lime-400/10" : "bg-amber-400/10"}`}>
+                      <Icon className={`h-5 w-5 ${tone === "lime" ? "text-lime-400" : "text-amber-300"}`} />
                     </div>
-                    <div className="space-y-3">
-                      {group.items.map((item, j) => (
-                        <div key={j} className="flex items-start gap-3">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-1" />
-                          <div>
-                            <span className="text-white font-medium">{item.benefit}</span>
-                            <span className="text-zinc-500"> — {item.desc}</span>
-                          </div>
-                        </div>
-                      ))}
+                    <div>
+                      <h3 className="text-lg font-bold">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
                     </div>
                   </div>
+                  <ul className="mt-6 space-y-3">
+                    {points.map((point) => (
+                      <li key={point} className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
+                        <CheckCircle2 className={`mt-1 h-4 w-4 shrink-0 ${tone === "lime" ? "text-lime-400" : "text-amber-300"}`} />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 flex items-start gap-3 rounded-xl border border-blue-400/15 bg-blue-400/[0.06] p-5">
+              <Languages className="mt-0.5 h-5 w-5 shrink-0 text-blue-300" />
+              <p className="text-sm leading-6 text-zinc-300">
+                <span className="font-bold text-white">{t("howItWorks.audience.modeTitle")}</span>{" "}
+                {t("howItWorks.audience.modeDescription")}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="workflow" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <SectionEyebrow>{t("howItWorks.workflow.eyebrow")}</SectionEyebrow>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
+                {t("howItWorks.workflow.title")}
+              </h2>
+              <p className="mt-4 text-zinc-400">{t("howItWorks.workflow.description")}</p>
+            </div>
+
+            <div className="mt-12 grid gap-4 lg:grid-cols-2">
+              {workflow.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <article key={item.title} className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400/10">
+                          <Icon className="h-5 w-5 text-amber-300" />
+                        </div>
+                        <h3 className="text-lg font-bold">{item.title}</h3>
+                      </div>
+                      <span className="font-mono text-sm text-zinc-700">0{index + 1}</span>
+                    </div>
+
+                    <dl className="mt-6 space-y-4">
+                      <WorkflowDetail label={t("howItWorks.workflow.labels.you")} value={item.you} />
+                      <WorkflowDetail label={t("howItWorks.workflow.labels.xefe")} value={item.xefe} />
+                      <WorkflowDetail label={t("howItWorks.workflow.labels.verify")} value={item.verify} />
+                    </dl>
+                  </article>
                 );
               })}
             </div>
+          </div>
+        </section>
 
-            {/* Technical highlights */}
-            <div className="mt-12">
-              <h3 className="text-xl font-bold text-white mb-6">Technical Highlights</h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                {[
-                  { icon: Cloud, label: "Cloud Hosted", desc: "99.9% uptime SLA" },
-                  { icon: Zap, label: "Data Cached", desc: "Fast loads with local caching" },
-                  { icon: Lock, label: "Secure", desc: "End-to-end encryption" },
-                  { icon: Smartphone, label: "Mobile Ready", desc: "Responsive design" },
-                ].map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={i} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                      <Icon className="h-8 w-8 text-blue-400 mx-auto mb-2" />
-                      <div className="font-medium text-white">{item.label}</div>
-                      <div className="text-xs text-zinc-500">{item.desc}</div>
+        <section id="example" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <SectionEyebrow>{t("howItWorks.example.eyebrow")}</SectionEyebrow>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
+                {t("howItWorks.example.title")}
+              </h2>
+              <p className="mt-4 text-zinc-400">{t("howItWorks.example.description")}</p>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3.5 py-2 text-xs font-medium text-amber-200">
+                <ShieldCheck className="h-4 w-4" />
+                {t("howItWorks.example.synthetic")}
+              </div>
+            </div>
+
+            <div className="mt-12 grid items-start gap-6 lg:grid-cols-[0.82fr_1.18fr]">
+              <article className="rounded-2xl border border-white/[0.07] bg-zinc-900/70 p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                      {t("howItWorks.example.calculationEyebrow")}
+                    </p>
+                    <h3 className="mt-2 text-lg font-bold">{t("howItWorks.example.calculationTitle")}</h3>
+                  </div>
+                  <Calculator className="h-5 w-5 text-amber-300" />
+                </div>
+
+                <div className="mt-6 space-y-3 font-mono text-sm">
+                  {calculationRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className={`flex items-baseline justify-between gap-4 ${row.strong || row.total ? "border-t border-white/10 pt-3" : ""}`}
+                    >
+                      <span className={`font-sans ${row.total ? "font-bold text-amber-300" : "text-zinc-400"}`}>
+                        {row.label}
+                      </span>
+                      <span className={row.total ? "text-lg font-bold text-amber-300" : row.strong ? "font-bold text-white" : row.value < 0 ? "text-red-300" : "text-white"}>
+                        {formatUSD(row.value, locale)}
+                      </span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+
+                <div className="mt-6 space-y-2 rounded-xl bg-black/25 p-4 text-xs leading-5 text-zinc-400">
+                  <p>{t("howItWorks.example.formulas.wit")}</p>
+                  <p>{t("howItWorks.example.formulas.employeeInss")}</p>
+                  <p>{t("howItWorks.example.formulas.employerInss")}</p>
+                </div>
+              </article>
+
+              <article className="rounded-2xl border border-white/[0.07] bg-zinc-900/70 p-5 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                      {t("howItWorks.example.journalEyebrow")}
+                    </p>
+                    <h3 className="mt-2 text-lg font-bold">{t("howItWorks.example.journalTitle")}</h3>
+                  </div>
+                  <BookOpen className="h-5 w-5 text-lime-400" />
+                </div>
+
+                <div className="mt-6 overflow-x-auto rounded-xl border border-white/[0.07]">
+                  <table className="w-full min-w-[560px] text-left text-sm">
+                    <thead className="bg-white/[0.04] text-xs uppercase tracking-wider text-zinc-500">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">{t("howItWorks.example.table.account")}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t("howItWorks.example.table.debit")}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t("howItWorks.example.table.credit")}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.06]">
+                      {journalLines.map((line) => (
+                        <tr key={line.code}>
+                          <td className="px-4 py-3">
+                            <span className="mr-2 font-mono text-xs text-zinc-500">{line.code}</span>
+                            <span className="text-zinc-300">{line.account}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-zinc-300">
+                            {line.debit ? formatUSD(line.debit, locale) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-zinc-300">
+                            {line.credit ? formatUSD(line.credit, locale) : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="border-t border-amber-400/20 bg-amber-400/[0.06] font-bold text-amber-200">
+                      <tr>
+                        <td className="px-4 py-3">{t("howItWorks.example.table.total")}</td>
+                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1562.8, locale)}</td>
+                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1562.8, locale)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-zinc-400">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
+                  {t("howItWorks.example.journalNote")}
+                </p>
+              </article>
+            </div>
+
+            <p className="mx-auto mt-6 max-w-4xl text-center text-xs leading-5 text-zinc-500">
+              {t("howItWorks.example.disclaimer")}
+            </p>
+          </div>
+        </section>
+
+        <section id="controls" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <SectionEyebrow>{t("howItWorks.controls.eyebrow")}</SectionEyebrow>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
+                {t("howItWorks.controls.title")}
+              </h2>
+              <p className="mt-4 text-zinc-400">{t("howItWorks.controls.description")}</p>
+            </div>
+
+            <div className="mt-12 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {controls.map(({ icon: Icon, title, description }) => (
+                  <article key={title} className="rounded-xl border border-white/[0.07] bg-white/[0.025] p-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-400/10">
+                      <Icon className="h-5 w-5 text-amber-300" />
+                    </div>
+                    <h3 className="mt-4 font-bold">{title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
+                  </article>
+                ))}
+              </div>
+
+              <aside className="rounded-2xl border border-white/[0.07] bg-zinc-900/70 p-6 lg:sticky lg:top-24 lg:self-start">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-lime-400/10">
+                    <FileText className="h-5 w-5 text-lime-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                      {t("howItWorks.controls.outputsEyebrow")}
+                    </p>
+                    <h3 className="mt-1 text-lg font-bold">{t("howItWorks.controls.outputsTitle")}</h3>
+                  </div>
+                </div>
+
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  {outputs.map((output) => (
+                    <li key={output} className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
+                      <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-lime-400" />
+                      <span>{output}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-6 rounded-xl border border-blue-400/15 bg-blue-400/[0.06] p-4">
+                  <p className="text-sm font-bold text-blue-200">{t("howItWorks.controls.accountantModeTitle")}</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-400">
+                    {t("howItWorks.controls.accountantModeDescription")}
+                  </p>
+                </div>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section id="evidence" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <SectionEyebrow>{t("howItWorks.evidence.eyebrow")}</SectionEyebrow>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight lg:text-[2.6rem]">
+                {t("howItWorks.evidence.title")}
+              </h2>
+              <p className="mt-4 text-zinc-400">{t("howItWorks.evidence.description")}</p>
+            </div>
+
+            <div className="mt-12 grid gap-4 md:grid-cols-2">
+              {evidence.map(({ icon: Icon, title, description }, index) => (
+                <article key={title} className="flex gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-400/10">
+                    <Icon className="h-5 w-5 text-amber-300" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-zinc-600">0{index + 1}</span>
+                      <h3 className="font-bold">{title}</h3>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-start gap-4 rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] p-6">
+              <Scale className="mt-0.5 h-6 w-6 shrink-0 text-amber-300" />
+              <div>
+                <h3 className="font-bold text-amber-100">{t("howItWorks.evidence.honestyTitle")}</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-300">{t("howItWorks.evidence.honestyDescription")}</p>
               </div>
             </div>
           </div>
-        )}
+        </section>
 
-      </div>
+        <section className="relative overflow-hidden border-t border-white/[0.06] py-20 lg:py-24">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_48%)]" />
+          <div className="relative mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
+            <SectionEyebrow>{t("howItWorks.cta.eyebrow")}</SectionEyebrow>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              {t("howItWorks.cta.title")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-zinc-400">
+              {t("howItWorks.cta.description")}
+            </p>
 
-      {/* CTA Section */}
-      <section className="py-16 border-t border-white/5">
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-black mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-zinc-400 mb-8">
-            Join businesses across Timor-Leste using Xefe for compliant HR and Payroll.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400">
-              <Link to="/auth/signup">
-                Start 30-Day Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild className="border-white/10 hover:bg-white/5">
-              <a href="https://wa.me/6707701234">
-                <MessageCircle className="mr-2 h-5 w-5" />
-                WhatsApp Us
-              </a>
-            </Button>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                asChild
+                className="h-12 bg-amber-400 px-8 text-base font-bold text-zinc-950 hover:bg-amber-300"
+              >
+                <Link to="/auth/signup">
+                  {t("howItWorks.cta.primary")}
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="h-12 border-white/10 bg-white/5 px-8 text-base text-white hover:bg-white/10 hover:text-white"
+              >
+                <a href="https://wa.me/6707701234" target="_blank" rel="noreferrer">
+                  <MessageCircle className="h-5 w-5 text-lime-400" />
+                  {t("howItWorks.cta.whatsapp")}
+                </a>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+      <footer className="border-t border-white/[0.06] bg-black/40 py-10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 sm:px-6 md:flex-row lg:px-8">
+          <div className="flex items-center gap-3">
             <img
               src="/images/illustrations/xefe-logo-light.webp"
               alt="Xefe"
+              width="85"
+              height="42"
               className="h-7 w-auto"
+              loading="lazy"
             />
-            <span className="text-zinc-600 text-sm">Dili, Timor-Leste</span>
+            <span className="text-sm text-zinc-500">{t("landing.footer.location")}</span>
           </div>
-          <div className="text-sm text-zinc-600">
-            © 2026 OniT Enterprises. Built for Timor-Leste.
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-400">
+            <Link to="/" className="transition-colors hover:text-white">
+              {t("howItWorks.footer.home")}
+            </Link>
+            <Link to="/privacy" className="transition-colors hover:text-white">
+              {t("landing.footer.links.privacy")}
+            </Link>
+            <Link to="/terms" className="transition-colors hover:text-white">
+              {t("landing.footer.links.terms")}
+            </Link>
+            <a href="https://wa.me/6707701234" className="transition-colors hover:text-white">
+              {t("landing.footer.links.support")}
+            </a>
           </div>
+          <div className="text-sm text-zinc-500">{t("landing.footer.copyright")}</div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function WorkflowDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[132px_1fr] sm:gap-4">
+      <dt className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">{label}</dt>
+      <dd className="text-sm leading-6 text-zinc-300">{value}</dd>
     </div>
   );
 }

@@ -394,7 +394,7 @@ export default function Landing() {
                 variant="outline"
                 className="border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
               >
-                <Link to="/features">
+                <Link to="/how-it-works">
                   {t("landing.simple.features.viewAll")}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -541,6 +541,12 @@ export default function Landing() {
             </span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-400">
+            <Link
+              to="/how-it-works"
+              className="transition-colors hover:text-white"
+            >
+              {t("landing.footer.links.howItWorks")}
+            </Link>
             <Link to="/privacy" className="transition-colors hover:text-white">
               {t("landing.footer.links.privacy")}
             </Link>

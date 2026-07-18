@@ -1,0 +1,44 @@
+# Repeatable, human-triggered deploy for Cloud Functions. Replaces the
+# ad-hoc laptop `firebase deploy --only functions` (which breaks whenever the
+# local CLI login expires).
+#
+# Auth: uses the FIREBASE_ADMINSDK_JSON service account already stored for the
+# rules deploy. If the first run fails with a permissions error, grant that
+# service account these roles in IAM (one-time, console or gcloud):
+#   roles/cloudfunctions.developer, roles/iam.serviceAccountUser,
+#   roles/artifactregistry.reader, roles/cloudbuild.builds.editor
+name: Deploy Cloud Functions (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-functions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies (firebase-tools)
+        run: npm ci
+
+      - name: Install + build functions
+        run: |
+          npm ci --prefix functions
+          npm --prefix functions run build
+
+      - name: Write service account credentials
+        run: printf '%s' "$FIREBASE_ADMINSDK_JSON" > "$RUNNER_TEMP/sa.json"
+        env:
+          FIREBASE_ADMINSDK_JSON: ${{ secrets.FIREBASE_ADMINSDK_JSON }}
+
+      - name: Deploy functions
+        run: npx firebase deploy --only functions --project onit-hr-payroll --non-interactive --force
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json

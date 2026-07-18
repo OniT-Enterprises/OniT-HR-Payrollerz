@@ -268,7 +268,10 @@ export default function PeopleDashboard() {
               </p>
             </div>
             {hasStaff && canManageTenant && (
-              <Button onClick={() => navigate("/people/add")}>
+              <Button
+                onClick={() => navigate("/people/add")}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
                 <UserPlus className="mr-2 h-4 w-4" />
                 {t("moduleDashboards.people.addEmployee")}
               </Button>

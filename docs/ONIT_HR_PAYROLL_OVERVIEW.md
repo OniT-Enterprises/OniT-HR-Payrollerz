@@ -78,35 +78,30 @@ The foundation of the system - managing your entire workforce from a single dash
 
 ### 2. Hiring & Recruitment
 
-Streamline the entire hiring process from job posting to employee onboarding.
+Run a small-business hiring process without a separate ATS-style workspace for
+every stage. Jobs, applicants, and interviews stay together on one screen.
 
 #### Job Management
-- Create and manage job postings
-- Define requirements, qualifications, and salary ranges
-- Track posting status (draft, active, closed)
-- Job templates for common positions
+- Create, share, close, and reopen job postings
+- Define the role, contract, location, and salary range
+- Share a public application link by WhatsApp, Facebook, or email
 
 #### Candidate Pipeline
-- Applicant tracking system (ATS)
-- Resume/CV storage and parsing
-- Candidate status workflow:
-  - Applied → Screening → Interview → Offer → Hired/Rejected
-- Interview scheduling with calendar integration
-- Candidate scoring and comparison
-- Email templates for candidate communication
+- Private CV storage; identity documents are requested only after selection
+- Clear status workflow: New → Shortlisted → Interview → Ready to hire → Hired
+- Interview scheduling and respectful applicant email updates
+- One-tap handoff from an accepted applicant to the employee form
 
 #### Onboarding
-- Customizable onboarding checklists
-- Task assignment to HR, IT, and managers
-- Progress tracking dashboard
-- Document collection workflow
-- Welcome packet generation
-- First-day scheduling
+- One first-day readiness checklist linked to the employee record
+- Manager assignment and company email capture
+- Contract, policy, and first-day confirmations
+- Issued-equipment recording for later recovery during offboarding
 
 #### Offboarding
 - Exit interview management
 - Asset return tracking
-- Knowledge transfer checklists
+- First-day and knowledge-transfer checklists
 - Final payroll calculation
 - Clearance workflow
 
@@ -682,12 +677,11 @@ Automatic holiday detection for payroll and scheduling.
 ### Model 1: Direct SaaS Subscription
 
 **Pricing Structure:**
-| Tier | Employees | Monthly Price |
-|------|-----------|---------------|
-| Starter | 1-10 | $29/month |
-| Small Business | 11-50 | $99/month |
-| Medium | 51-200 | $249/month |
-| Enterprise | 200+ | Custom |
+
+- $4 per active employee per month
+- $20 monthly minimum, including up to five employees
+- Annual payment: twelve months of access for the price of ten
+- One product with every feature included; the subscription unlocks finalizing payroll
 
 **Includes:**
 - All modules

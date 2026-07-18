@@ -88,9 +88,18 @@ export function useTenantStats(id: string | undefined) {
 export function useRecordManualSubscription() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ tenantId, months, monthlyAmount, actorUid, actorEmail }: {
-      tenantId: string; months: number; monthlyAmount: number; actorUid: string; actorEmail: string;
-    }) => adminService.recordManualSubscription(tenantId, { months, monthlyAmount }, actorUid, actorEmail),
+    mutationFn: ({ tenantId, months, amountReceived, actorUid, actorEmail }: {
+      tenantId: string;
+      months: number;
+      amountReceived: number;
+      actorUid: string;
+      actorEmail: string;
+    }) => adminService.recordManualSubscription(
+      tenantId,
+      { months, amountReceived },
+      actorUid,
+      actorEmail,
+    ),
     onSuccess: (_, { tenantId }) => {
       queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
       queryClient.invalidateQueries({ queryKey: adminKeys.tenant(tenantId) });

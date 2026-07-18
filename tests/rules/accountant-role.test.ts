@@ -218,6 +218,57 @@ describe('Accountant role rules', () => {
     });
   });
 
+  describe('audit log entries (journal-post transaction writes these client-side)', () => {
+    it('finance admin can create a self-attributed audit entry', async () => {
+      await assertSucceeds(
+        setDoc(doc(asAccountant(), 'tenants/tenant-a/auditLogs/acct_je1_post'), {
+          userId: ACCOUNTANT,
+          tenantId: 'tenant-a',
+          action: 'accounting.journal_post',
+          module: 'accounting',
+        }),
+      );
+    });
+
+    it('cannot attribute an audit entry to someone else', async () => {
+      await assertFails(
+        setDoc(doc(asAccountant(), 'tenants/tenant-a/auditLogs/acct_je2_post'), {
+          userId: OWNER,
+          tenantId: 'tenant-a',
+          action: 'accounting.journal_post',
+        }),
+      );
+    });
+
+    it('manager cannot create audit entries', async () => {
+      await assertFails(
+        setDoc(doc(asManager(), 'tenants/tenant-a/auditLogs/acct_je3_post'), {
+          userId: MANAGER,
+          tenantId: 'tenant-a',
+          action: 'accounting.journal_post',
+        }),
+      );
+    });
+
+    it('audit entries stay immutable', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'tenants/tenant-a/auditLogs/existing'), {
+          userId: OWNER,
+          tenantId: 'tenant-a',
+          action: 'accounting.journal_post',
+        });
+      });
+      await assertFails(
+        updateDoc(doc(asOwner(), 'tenants/tenant-a/auditLogs/existing'), {
+          action: 'tampered',
+        }),
+      );
+      await assertFails(
+        deleteDoc(doc(asOwner(), 'tenants/tenant-a/auditLogs/existing')),
+      );
+    });
+  });
+
   describe('other roles unchanged', () => {
     it('manager still cannot create bills', async () => {
       await assertFails(

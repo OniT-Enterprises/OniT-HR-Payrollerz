@@ -122,6 +122,11 @@ const sitemapData: SitemapSection[] = [
         description: 'Review anonymous employee concerns and complaints submitted via Ekipa',
         badge: 'Ekipa',
       },
+      {
+        name: 'Offboarding',
+        path: '/people/offboarding',
+        description: 'Manage employee departures, final pay tasks, and company equipment returns',
+      },
     ],
   },
   {
@@ -132,34 +137,9 @@ const sitemapData: SitemapSection[] = [
     bgColor: 'bg-violet-100 dark:bg-violet-900',
     pages: [
       {
-        name: 'Hiring Overview',
-        path: '/people/hiring',
-        description: 'Hiring hub — job postings, candidates, interviews, and workforce transitions',
-      },
-      {
-        name: 'Job Postings',
+        name: 'Jobs & Applicants',
         path: '/people/jobs',
-        description: 'Create and manage job openings, requirements, and posting status',
-      },
-      {
-        name: 'Candidates',
-        path: '/people/candidates',
-        description: 'Track applicants through your hiring pipeline with status updates',
-      },
-      {
-        name: 'Interviews',
-        path: '/people/interviews',
-        description: 'Schedule and manage interview rounds with feedback tracking',
-      },
-      {
-        name: 'Onboarding',
-        path: '/people/onboarding',
-        description: 'Guide new hires through orientation with checklists and tasks',
-      },
-      {
-        name: 'Offboarding',
-        path: '/people/offboarding',
-        description: 'Manage employee departures with exit checklists and knowledge transfer',
+        description: 'Post jobs, review applicants, and schedule interviews in one place',
       },
     ],
   },
@@ -550,13 +530,13 @@ export default function Sitemap() {
       return hasModule('staff');
     }
 
+    if (path === '/people/onboarding' || path === '/people/offboarding') {
+      return hasModule('staff') && canManageTenant;
+    }
+
     if (
       path === '/people/hiring' ||
-      path === '/people/jobs' ||
-      path === '/people/candidates' ||
-      path === '/people/interviews' ||
-      path === '/people/onboarding' ||
-      path === '/people/offboarding'
+      path === '/people/jobs'
     ) {
       return hasModule('hiring');
     }

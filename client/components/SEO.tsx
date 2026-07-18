@@ -75,6 +75,12 @@ export const seoConfig = {
     keywords: 'HR software Timor-Leste, payroll software Timor-Leste, sistema folha de pagamento, INSS, WIT, subsidio anual, Lei Trabalho, accounting software Timor-Leste, Tetun payroll',
     url: '/',
   },
+  howItWorks: {
+    title: 'How Xefe Works for Businesses and Accountants',
+    description: 'See how Xefe connects people, Timor-Leste payroll, bank files, WIT and INSS reporting, and balanced accounting — simple for everyday users and reviewable by accountants.',
+    keywords: 'how Xefe works, Timor-Leste payroll workflow, payroll accounting Timor-Leste, INSS reporting, WIT reporting, accounting software for accountants',
+    url: '/how-it-works',
+  },
   login: {
     title: 'Login',
     description: 'Sign in to your Xefe account to manage your workforce.',
@@ -133,9 +139,9 @@ export const seoConfig = {
 
   // Hiring
   jobs: {
-    title: 'Job Postings',
-    description: 'Create and manage job postings to attract top talent to your organization.',
-    keywords: 'job postings, recruitment, hiring, job listings, careers',
+    title: 'Jobs & Applicants',
+    description: 'Post jobs, review applicants, and schedule interviews in one simple workspace.',
+    keywords: 'job postings, applicants, interviews, recruitment, hiring',
     url: '/people/jobs',
   },
   candidates: {
@@ -151,8 +157,8 @@ export const seoConfig = {
     url: '/people/interviews',
   },
   onboarding: {
-    title: 'Onboarding',
-    description: 'Streamline new employee onboarding with checklists and task management.',
+    title: 'Onboarding Checklist',
+    description: 'Prepare a new employee for their first day with one focused checklist.',
     keywords: 'onboarding, new hire, employee orientation, onboarding checklist',
     url: '/people/onboarding',
   },

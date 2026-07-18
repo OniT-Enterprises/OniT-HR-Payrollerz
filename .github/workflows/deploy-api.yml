@@ -1,0 +1,34 @@
+# Repeatable, human-triggered deploy for the Xefe REST API (Hetzner, PM2).
+# Replaces the ad-hoc laptop rsync. The excludes are load-bearing:
+# /opt/xefe-api holds the production .env and serviceAccountKey.json, which
+# exist ONLY on the server — a bare --delete rsync would destroy them.
+name: Deploy Xefe API (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Syntax check
+        run: node --check server/xefe-api/index.js
+
+      - name: Rsync API to Hetzner
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HETZNER_HOST }}
+          REMOTE_USER: ${{ secrets.HETZNER_USER }}
+          SOURCE: "server/xefe-api/"
+          TARGET: "/opt/xefe-api/"
+          ARGS: "-avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules --exclude .DS_Store"
+          SCRIPT_AFTER: |
+            cd /opt/xefe-api
+            npm ci --omit=dev
+            pm2 restart xefe-api
+            sleep 3
+            curl -sf http://localhost:3201/api/health

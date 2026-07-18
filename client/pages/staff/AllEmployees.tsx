@@ -694,7 +694,7 @@ export default function AllEmployees() {
   const handleDeleteEmployee = async (employee: Employee) => {
     if (!canManageTenant) return;
     // Navigate to offboarding page
-    navigate(`/hiring/offboarding?employee=${employee.id}`);
+    navigate(`/people/offboarding?employeeId=${employee.id}`);
   };
 
   const handleCreateEkipaAccount = (employee: Employee) => {
@@ -976,7 +976,10 @@ export default function AllEmployees() {
                 <Upload className="h-4 w-4 mr-2" />
                 {t("employees.tooltips.importCsv")}
               </Button>
-              <Button onClick={() => navigate("/people/add")}>
+              <Button
+                onClick={() => navigate("/people/add")}
+                className="bg-blue-600 text-white hover:bg-blue-700"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 {t("dashboard.addEmployee")}
               </Button>

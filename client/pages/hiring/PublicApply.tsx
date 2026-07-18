@@ -32,6 +32,8 @@ export default function PublicApply() {
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [formStartedAt] = useState(() => Date.now());
+  const [website, setWebsite] = useState("");
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -40,13 +42,7 @@ export default function PublicApply() {
     linkedInUrl: "",
     referredBy: "",
   });
-  const [documents, setDocuments] = useState<{
-    resume: File | null;
-    idDocument: File | null;
-  }>({
-    resume: null,
-    idDocument: null,
-  });
+  const [resume, setResume] = useState<File | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +81,11 @@ export default function PublicApply() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!job || !job.id) return;
+    // Quietly absorb basic form bots. App Check remains the server-side layer.
+    if (website || Date.now() - formStartedAt < 1_000) {
+      setSubmitted(true);
+      return;
+    }
     if (!form.name.trim() || !form.email.trim() || !form.phone.trim()) {
       toast({
         title: "Missing details",
@@ -93,10 +94,18 @@ export default function PublicApply() {
       });
       return;
     }
-    if (!documents.resume || !documents.idDocument) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       toast({
-        title: "Documents required",
-        description: "Upload your CV/resume and one ID document before submitting.",
+        title: "Check your email",
+        description: "Enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!resume) {
+      toast({
+        title: "CV required",
+        description: "Upload your CV or resume before submitting.",
         variant: "destructive",
       });
       return;
@@ -104,7 +113,7 @@ export default function PublicApply() {
     setSaving(true);
     try {
       const resumeValidation = fileUploadService.validateDocumentFile(
-        documents.resume,
+        resume,
         [
           "application/pdf",
           "application/msword",
@@ -116,32 +125,16 @@ export default function PublicApply() {
         throw new Error(resumeValidation.error);
       }
 
-      const idValidation = fileUploadService.validateDocumentFile(
-        documents.idDocument,
-        ["image/jpeg", "image/png", "image/webp", "application/pdf"],
-        10,
-      );
-      if (!idValidation.valid) {
-        throw new Error(idValidation.error);
-      }
-
       const uid =
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const resumeExt = documents.resume.name.split(".").pop() || "pdf";
-      const idExt = documents.idDocument.name.split(".").pop() || "pdf";
+      const resumeExt = (resume.name.split(".").pop() || "pdf").toLowerCase();
       const basePath = `public/jobApplications/${job.tenantId}/${job.id}/${uid}`;
-      const [resumePath, idDocumentPath] = await Promise.all([
-        fileUploadService.uploadFileAndReturnPath(
-          documents.resume,
-          `${basePath}/resume.${resumeExt}`,
-        ),
-        fileUploadService.uploadFileAndReturnPath(
-          documents.idDocument,
-          `${basePath}/id_document.${idExt}`,
-        ),
-      ]);
+      const resumePath = await fileUploadService.uploadFileAndReturnPath(
+        resume,
+        `${basePath}/resume.${resumeExt}`,
+      );
 
       await jobApplicationService.submitPublic({
         tenantId: job.tenantId,
@@ -154,7 +147,6 @@ export default function PublicApply() {
         linkedInUrl: form.linkedInUrl.trim() || undefined,
         referredBy: form.referredBy.trim() || undefined,
         resumePath,
-        idDocumentPath,
       });
       setSubmitted(true);
     } catch (err) {
@@ -279,6 +271,17 @@ export default function PublicApply() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="hidden" aria-hidden="true">
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  id="website"
+                  name="website"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="name">
                   Full name <span className="text-destructive">*</span>
@@ -353,45 +356,22 @@ export default function PublicApply() {
                   />
                 </div>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="resume">
-                    CV / resume <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="resume"
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) =>
-                      setDocuments((prev) => ({
-                        ...prev,
-                        resume: e.target.files?.[0] ?? null,
-                      }))
-                    }
-                  />
-                  {documents.resume && (
-                    <p className="text-xs text-muted-foreground">{documents.resume.name}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="idDocument">
-                    ID document <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="idDocument"
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                    onChange={(e) =>
-                      setDocuments((prev) => ({
-                        ...prev,
-                        idDocument: e.target.files?.[0] ?? null,
-                      }))
-                    }
-                  />
-                  {documents.idDocument && (
-                    <p className="text-xs text-muted-foreground">{documents.idDocument.name}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="resume">
+                  CV / resume <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="resume"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setResume(e.target.files?.[0] ?? null)}
+                />
+                {resume && (
+                  <p className="text-xs text-muted-foreground">{resume.name}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  We’ll ask for identity and employment documents only if you move forward.
+                </p>
               </div>
               <Button
                 type="submit"
@@ -418,7 +398,7 @@ export default function PublicApply() {
                 .
               </p>
               <p className="text-xs text-muted-foreground text-center">
-                By submitting you agree your details and uploaded documents will be reviewed by the hiring team.
+                By submitting you agree your details and CV will be reviewed by the hiring team.
               </p>
             </form>
           </CardContent>

@@ -123,11 +123,12 @@ service firebase.storage {
 
     // Public candidate application uploads.
     // Files are stored privately; only internal hiring/staff users can read them later.
-    match /public/jobApplications/{tenantId}/{jobId}/{allPaths=**} {
+    match /public/jobApplications/{tenantId}/{jobId}/{applicationId}/{fileName} {
       allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
       allow write: if isOpenJob(tenantId, jobId) &&
         isUnderSizeLimit() &&
-        isAllowedDocType();
+        isAllowedDocType() &&
+        fileName.matches('resume\\.(pdf|doc|docx)');
     }
 
     // Expense receipts

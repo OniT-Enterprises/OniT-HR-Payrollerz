@@ -1,13 +1,20 @@
 # Billing & Monetization — architecture
 
-_Last updated: 2026-07-17. Audience: agents and developers working on billing._
+_Last updated: 2026-07-18. Audience: agents and developers working on billing._
 
 ## The model (one sentence)
 
-**Everything is free; a subscription ($4/employee/month, superadmin-editable
-at `platform/packagesConfig`) unlocks exactly one action: finalizing a payroll
-run.** Reports, exports, and compliance filings are never gated — they are the
-deliverable of the run the tenant paid for.
+**Everything is free; a subscription unlocks exactly one action: finalizing a
+payroll run.** The published price is $4/active employee/month with a five-seat
+minimum ($20/month). Annual billing provides twelve months of access for ten
+monthly payments. Reports, exports, and compliance filings are never gated —
+they are the deliverable of the run the tenant paid for.
+
+The three superadmin-editable values in `platform/packagesConfig` are
+`pricePerEmployee`, `minimumEmployees`, and `annualMonthsCharged`. The public
+landing page may read this one document so marketing, the billing screen, and
+server-side checkout all use the same published values; only a superadmin may
+write it.
 
 ## What "subscribed" means
 
@@ -32,6 +39,9 @@ of truth, mirrored by `tenantHasActiveSubscription()` in `firestore.rules`
 
 **Tamper protection**: tenant owners cannot write `stripeSubscriptionId`,
 `subscriptionPaidUntil`, `manualSubscription`, `monthlySubscriptionAmount`,
+`subscriptionBillingAmount`, `subscriptionBillingInterval`,
+`subscriptionBillingMonths`, `subscriptionBilledSeats`,
+`subscriptionAnnualMonthsCharged`,
 `stripeCustomerId`, `status`, `plan`, or `limits` on their own tenant doc
 (they could otherwise self-activate the paywall). Only the webhook and
 superadmins set those fields.
@@ -44,31 +54,42 @@ superadmins set those fields.
 - **Settings**: "Billing & Plan" quick-link card.
 - **Run Payroll wizard**: free tenants see a quiet strip — build/review is
   free, finalizing needs a subscription — so the paywall is never a surprise.
-- **`/billing` page**: price × live active-employee count, subscribe (Stripe
-  Checkout), billing portal (Stripe subs only), "No card? Pay by bank
-  transfer or cash" → invoice-request email to info@naroman.tl.
+- **`/billing` page**: shows active and billed seats, the five-seat minimum,
+  monthly/annual choice and exact cycle total; subscribes through Stripe
+  Checkout; opens the billing portal for Stripe subscribers; and offers "No
+  card?" invoice requests for bank transfer or cash.
 
 ## Stripe flow
 
-- `createCheckoutSession` (callable): quantity = **live count of
-  `status=='active'` employees** (never the manually curated
-  `currentEmployeeCount` field — it goes stale; checkout self-heals it).
-  Superadmins may run billing for any tenant (impersonation support).
+- `createCheckoutSession` (callable): accepts only `month` or `year`; price and
+  quantity are never accepted from the browser. Quantity is
+  `max(live status=='active' employee count, minimumEmployees)` (never the
+  manually curated `currentEmployeeCount` field — checkout self-heals it).
+  If that live count cannot be verified, checkout stops without charging; it
+  never falls back to a potentially stale seat count.
+  The annual Stripe unit price is `pricePerEmployee × annualMonthsCharged`.
+  A tenant with an active Stripe subscription cannot accidentally create a
+  second one. Superadmins may run billing for any tenant while impersonating.
 - `stripeWebhook`: signature-verified; syncs `stripeCustomerId`,
-  `stripeSubscriptionId` (set while active/trialing, deleted otherwise),
-  `monthlySubscriptionAmount`, `subscriptionPaidUntil`.
+  `stripeSubscriptionId` (set while active/trialing, deleted otherwise), cycle,
+  cycle amount, standard monthly value, billed seats and `subscriptionPaidUntil`.
 - `syncSubscriptionQuantities` (daily 03:00 Dili): true-up — sets each Stripe
-  sub's quantity to the current active-employee count with
-  `proration_behavior: 'none'`, so the next invoice bills the real team size.
+  subscription to the current billed-seat count. Monthly changes apply on the
+  next invoice without part-month charges. Added annual seats are prorated and
+  invoiced immediately; annual seat reductions apply at renewal.
 
 ## Offline (bank transfer / cash) flow — the main TL path
 
-1. Tenant clicks "Request an invoice" on `/billing` → email to
-   info@naroman.tl (purpose `billing-invoice-request`).
+1. Tenant selects monthly or annual and clicks "Request an invoice" on
+   `/billing` → email to info@naroman.tl with the published rate, active
+   employees, billed seats, cycle amount and annual saving (purpose
+   `billing-invoice-request`).
 2. Payment arrives → superadmin records it: **Admin → Tenants → tenant →
-   "Record offline payment"** (months 1/3/6/12 + monthly amount) → sets
-   `manualSubscription: true` + extends `subscriptionPaidUntil` from
-   max(now, current) — with an admin audit entry.
+   "Record offline payment"**. The form calculates the expected total for
+   monthly or annual payment, applies the annual discount, records the amount
+   actually received (which must cover the published total), sets
+   `manualSubscription: true`, and extends
+   `subscriptionPaidUntil` from max(now, current), with an admin audit entry.
 3. `sendRenewalReminders` (daily 08:00 Dili) emails the tenant at 7 days out,
    1 day out, and once after lapse (+ ops copy to info@naroman.tl).
    Idempotent per stage per paid-until value; recording a new payment re-arms
@@ -78,9 +99,14 @@ superadmins set those fields.
 
 TenantList/TenantDetail show **real** subscription state via
 `isTenantSubscribed` (same source as the app chip): Active/Free badges,
-live active-employee counts (= billed seats), no fabricated $/mo for free
-tenants, employee-count field read-only (auto-synced). "Record offline
+live active-employee and billed-seat counts, billing cycle and cycle amount, no
+fabricated price for free tenants, employee-count field read-only (auto-synced). "Record offline
 payment" / "End manual subscription" live on TenantDetail.
+
+Stripe and offline subscriptions are mutually exclusive: checkout refuses a
+tenant with an unexpired offline subscription, and Admin refuses an offline
+activation while a Stripe subscription is active. This prevents accidental
+double billing during payment-method changes.
 
 ## Gotchas
 

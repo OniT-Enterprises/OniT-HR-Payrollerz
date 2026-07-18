@@ -652,7 +652,7 @@ export const translations = {
             "title": "Invoices and everyday payments",
             "description": "Create customer invoices and record cash, bank transfer, card, mobile-money or cheque payments."
           },
-          "viewAll": "View all features"
+          "viewAll": "See exactly how Xefe works"
         },
         "local": {
           "eyebrow": "Made for Timor-Leste",
@@ -680,6 +680,8 @@ export const translations = {
           "perEmployeeMonth": "/employee/month",
           "example": "Example: {{total}}/month for {{employees}} employees",
           "billedMonthly": "billed monthly",
+          "minimum": "{{total}} monthly minimum includes {{employees}} employees",
+          "annualSaving": "Annual: {{total}} — save {{savings}}",
           "cta": "Start free",
           "includedTitle": "Included with every account",
           "benefits": {
@@ -908,6 +910,7 @@ export const translations = {
         "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
+          "howItWorks": "How Xefe works",
           "privacy": "Privacy",
           "terms": "Terms",
           "support": "Support",
@@ -1192,6 +1195,220 @@ export const translations = {
             "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
           }
         }
+      }
+    },
+    "howItWorks": {
+      "nav": {
+        "workflow": "How work flows",
+        "example": "Worked example",
+        "controls": "Controls and reports",
+        "evidence": "How we validate"
+      },
+      "hero": {
+        "eyebrow": "For businesses and accountants",
+        "title": "Simple enough to run yourself.",
+        "titleAccent": "Detailed enough for your accountant.",
+        "description": "Xefe guides everyday payroll, people and money work in plain language, while keeping every calculation, report and journal available for professional review.",
+        "primary": "Start free",
+        "secondary": "Follow the workflow",
+        "trust": {
+          "plain": "Plain language for everyday work",
+          "detail": "Full calculation and accounting detail",
+          "languages": "Tetun, English and Portuguese"
+        },
+        "proof": {
+          "eyebrow": "One connected record",
+          "title": "From employee details to the books",
+          "status": "Reviewable",
+          "people": {
+            "title": "People data ready",
+            "description": "Salary, time, leave and payment details stay together."
+          },
+          "payroll": {
+            "title": "Payroll calculated",
+            "description": "WIT, INSS, overtime and annual subsidy remain visible."
+          },
+          "outputs": {
+            "title": "Payments and filings prepared",
+            "description": "Payslips, bank files and compliance reports come from the run."
+          },
+          "accounts": {
+            "title": "Journal balanced",
+            "description": "Payroll expenses and liabilities post into double-entry accounts."
+          }
+        }
+      },
+      "audience": {
+        "eyebrow": "One product, two levels of detail",
+        "title": "Clear for the person doing the work",
+        "description": "Xefe keeps the normal path calm without hiding the evidence an accountant needs.",
+        "everyday": {
+          "title": "For everyday business work",
+          "description": "Owners and staff get guided tasks, clear words and one next action at a time.",
+          "points": {
+            "guided": "Guided employee, payroll, invoice and payment screens",
+            "defaults": "Safe defaults keep specialist tax decisions out of the normal flow",
+            "language": "Phone-friendly screens in Tetun, English and Portuguese"
+          }
+        },
+        "professional": {
+          "title": "For accountants and reviewers",
+          "description": "Professional detail stays available when someone needs to inspect, reconcile or file.",
+          "points": {
+            "calculations": "Calculation bases, rates, classifications and rounding are visible",
+            "accounting": "Balanced journals, general ledger, trial balance and statements",
+            "compliance": "WIT, INSS and advanced tax reports with audit history"
+          }
+        },
+        "modeTitle": "Advanced detail appears only when it helps.",
+        "modeDescription": "Accountants see specialist tax controls automatically. An owner can enable the same mode when their accountant asks for it; everyone else keeps the simpler workflow."
+      },
+      "workflow": {
+        "eyebrow": "How work moves through Xefe",
+        "title": "Do the task once. Keep the evidence connected.",
+        "description": "Each step begins with the everyday action, then shows what Xefe handles and what a professional can verify.",
+        "labels": {
+          "you": "What you do",
+          "xefe": "What Xefe handles",
+          "verify": "What can be verified"
+        },
+        "people": {
+          "title": "Keep people and time together",
+          "you": "Add the employee, salary, schedule, bank details, attendance and leave.",
+          "xefe": "Xefe keeps the employment record and payroll inputs in one place.",
+          "verify": "Contracts, pay settings, attendance changes and the source of each payroll input."
+        },
+        "payroll": {
+          "title": "Review and approve payroll",
+          "you": "Choose the period, review changes and approve when every employee is ready.",
+          "xefe": "Xefe calculates gross pay, WIT, employee and employer INSS, overtime, deductions and net pay.",
+          "verify": "Every employee calculation, statutory basis, rounding result and approval record."
+        },
+        "payments": {
+          "title": "Pay people and prepare filings",
+          "you": "Confirm the payment date and download the outputs you need.",
+          "xefe": "Xefe prepares clear payslips, local bank files and WIT and INSS reports from the approved run.",
+          "verify": "Payroll totals reconcile to employees, bank payments and statutory liabilities."
+        },
+        "accounting": {
+          "title": "Keep the books in step",
+          "you": "Review the generated entry and continue normal reconciliation and period review.",
+          "xefe": "Xefe posts salary expense, employer INSS, net salaries and statutory payables as balanced journal lines.",
+          "verify": "Journal source, account codes, debits, credits, general ledger and trial balance."
+        }
+      },
+      "example": {
+        "eyebrow": "A calculation you can inspect",
+        "title": "One payroll result, followed into the journal",
+        "description": "The same numbers should make sense to the person paying the team and to the accountant reviewing the books.",
+        "synthetic": "Synthetic illustrative example",
+        "employerInss": "Employer INSS (6%)",
+        "employerCost": "Total employer cost",
+        "calculationEyebrow": "Monthly payroll example",
+        "calculationTitle": "Resident employee calculation",
+        "formulas": {
+          "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
+          "employeeInss": "Employee INSS: 4% × $1,380 = $55.20",
+          "employerInss": "Employer INSS: 6% × $1,380 = $82.80"
+        },
+        "journalEyebrow": "Generated accounting entry",
+        "journalTitle": "Balanced payroll journal",
+        "accounts": {
+          "wages": "Salaries and wages",
+          "employerInssExpense": "Employer INSS expense",
+          "netPayable": "Net salaries payable",
+          "witPayable": "WIT payable",
+          "employeeInssPayable": "Employee INSS payable",
+          "employerInssPayable": "Employer INSS payable"
+        },
+        "table": {
+          "account": "Account",
+          "debit": "Debit",
+          "credit": "Credit",
+          "total": "Balanced total"
+        },
+        "journalNote": "The journal totals match the employer cost and keep employee and employer INSS liabilities separate.",
+        "disclaimer": "Illustrative synthetic monthly example for a resident employee. The food allowance is shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
+      },
+      "controls": {
+        "eyebrow": "Controls and useful outputs",
+        "title": "Easy to operate. Serious about review.",
+        "description": "The normal workflow stays short, while controls and reports preserve the trail behind each result.",
+        "items": {
+          "visible": {
+            "title": "Visible calculations",
+            "description": "Gross pay, each earning, deduction, statutory amount and net pay can be reviewed before finalizing."
+          },
+          "approval": {
+            "title": "Approval controls",
+            "description": "Payroll records who prepared and approved a run, with a two-person option for teams that require it."
+          },
+          "noGuessing": {
+            "title": "No invented compliance values",
+            "description": "When required statutory data is missing, Xefe asks for review instead of silently estimating it."
+          },
+          "journals": {
+            "title": "Source-linked journals",
+            "description": "Approved payroll creates balanced accounting lines tied back to the originating run."
+          },
+          "audit": {
+            "title": "Audit and period discipline",
+            "description": "Audit history, posting status and fiscal-period controls help protect completed accounting work."
+          },
+          "exports": {
+            "title": "Practical exports",
+            "description": "PDF, spreadsheet and bank-ready outputs let businesses and advisers continue required external work."
+          }
+        },
+        "outputsEyebrow": "From the same records",
+        "outputsTitle": "What Xefe prepares",
+        "outputs": {
+          "payslips": "Employee payslips with line-by-line earnings and deductions",
+          "bankFiles": "Payroll payment files for supported Timor-Leste banks",
+          "payrollRegister": "Payroll registers and accounting summaries",
+          "wit": "Monthly WIT review and filing reports",
+          "inss": "Monthly and annual INSS reports, including DR spreadsheet output",
+          "journal": "Balanced payroll journal entries",
+          "ledger": "General ledger and trial balance",
+          "statements": "Income statement, balance sheet and cash-flow reports"
+        },
+        "accountantModeTitle": "Accountant mode without accountant clutter",
+        "accountantModeDescription": "Supplier withholding, treaty rates, VAT and specialist filing controls stay out of the everyday path. They appear for the accountant role or when an owner deliberately enables advanced tax mode."
+      },
+      "evidence": {
+        "eyebrow": "How Xefe earns trust",
+        "title": "Evidence before confident claims",
+        "description": "Accounting software should make its basis clear, especially when a result affects pay, tax or the ledger.",
+        "items": {
+          "sources": {
+            "title": "Primary-source rules",
+            "description": "Timor-Leste payroll rules are checked against legislation and official ATTL or INSS guidance before they become product logic."
+          },
+          "testing": {
+            "title": "Repeatable test coverage",
+            "description": "The calculation engine is regression-tested with fully synthetic standard and edge cases. Expected results stay fixed so changes cannot silently alter payroll."
+          },
+          "guardrails": {
+            "title": "Exceptions stay visible",
+            "description": "Unsupported or incomplete statutory cases are marked for review rather than converted into a convenient but unsupported answer."
+          },
+          "review": {
+            "title": "Professional judgment has a place",
+            "description": "Accountants can inspect the inputs, conventions, reports and resulting entries instead of accepting a black-box total."
+          }
+        },
+        "honestyTitle": "What Xefe does not pretend to do",
+        "honestyDescription": "Xefe calculates and records from the information provided. Unusual contracts, exemptions, treaty positions, disputed classifications and new legal changes may still require advice from a qualified Timor-Leste professional."
+      },
+      "cta": {
+        "eyebrow": "Use only the detail you need",
+        "title": "Start simple. Bring your accountant when you need them.",
+        "description": "Set up the business and explore every feature free. Xefe keeps the everyday work clear and the professional evidence ready.",
+        "primary": "Start free",
+        "whatsapp": "Ask for a walkthrough"
+      },
+      "footer": {
+        "home": "Product overview"
       }
     },
     "settings": {
@@ -7487,7 +7704,7 @@ export const translations = {
             "title": "Fatura no pagamentu loroloron",
             "description": "Kria fatura ba kliente no rejista pagamentu osan-kontante, transferénsia bankária, kartaun, osan móvel ka xeke."
           },
-          "viewAll": "Haree funsaun hotu"
+          "viewAll": "Haree loos oinsá Xefe servisu"
         },
         "local": {
           "eyebrow": "Hadia ba Timor-Leste",
@@ -7515,6 +7732,8 @@ export const translations = {
           "perEmployeeMonth": "/funsionáriu/fulan",
           "example": "Ezemplu: {{total}}/fulan ba funsionáriu {{employees}}",
           "billedMonthly": "selu kada fulan",
+          "minimum": "Mínimu {{total}} kada fulan inklui funsionáriu {{employees}}",
+          "annualSaving": "Anuál: {{total}} — poupa {{savings}}",
           "cta": "Hahú grátis",
           "includedTitle": "Inklui iha konta hotu",
           "benefits": {
@@ -7743,6 +7962,7 @@ export const translations = {
         "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
+          "howItWorks": "Oinsá Xefe servisu",
           "privacy": "Privasidade",
           "terms": "Termus",
           "support": "Suporte",
@@ -8027,6 +8247,220 @@ export const translations = {
             "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
           }
         }
+      }
+    },
+    "howItWorks": {
+      "nav": {
+        "workflow": "Fluxu servisu",
+        "example": "Ezemplu kalkulasaun",
+        "controls": "Kontrolu no relatóriu",
+        "evidence": "Oinsá ami valida"
+      },
+      "hero": {
+        "eyebrow": "Ba negósiu no kontabilista",
+        "title": "Simples atu uza rasik.",
+        "titleAccent": "Detallu natoon ba ita-nia kontabilista.",
+        "description": "Xefe orienta folha pagamentu, jestaun ema no osan loron-loron ho liafuan klaru, no rai kalkulasaun, relatóriu no lansu kontabil hotu atu profisionál bele haree.",
+        "primary": "Hahú grátis",
+        "secondary": "Haree fluxu servisu",
+        "trust": {
+          "plain": "Liafuan klaru ba servisu loron-loron",
+          "detail": "Kalkulasaun no kontabilidade ho detallu kompletu",
+          "languages": "Tetun, Inglés no Portugés"
+        },
+        "proof": {
+          "eyebrow": "Rejistu ida ne'ebé ligadu",
+          "title": "Husi dadus trabalhador to'o livru kontabil",
+          "status": "Bele reviza",
+          "people": {
+            "title": "Dadus ema prontu",
+            "description": "Saláriu, oras, lisensa no pagamentu hela hamutuk."
+          },
+          "payroll": {
+            "title": "Folha kalkuladu",
+            "description": "WIT, INSS, oras extra no subsídiu anuál nafatin vizível."
+          },
+          "outputs": {
+            "title": "Pagamentu no deklarasaun prontu",
+            "description": "Resibu, ficheiru banku no dokumentu konformidade mai husi folha."
+          },
+          "accounts": {
+            "title": "Lansu balansadu",
+            "description": "Despeza folha no dívida sira tama ba kontabilidade double-entry."
+          }
+        }
+      },
+      "audience": {
+        "eyebrow": "Produtu ida, nivel detallu rua",
+        "title": "Klaru ba ema ne'ebé halo servisu",
+        "description": "Xefe halo fluxu normal simples, maibé la subar evidénsia ne'ebé kontabilista presiza.",
+        "everyday": {
+          "title": "Ba servisu negósiu loron-loron",
+          "description": "Na'in no staf simu tarefa orientadu, liafuan klaru no asaun ida de'it iha kada etapa.",
+          "points": {
+            "guided": "Pájina orientadu ba trabalhador, folha, fatura no pagamentu",
+            "defaults": "Valór seguru automátiku hasai desizaun impostu espesialista husi fluxu normal",
+            "language": "Pájina ba telefone iha Tetun, Inglés no Portugés"
+          }
+        },
+        "professional": {
+          "title": "Ba kontabilista no revisor",
+          "description": "Detallu profisionál hela disponivel bainhira presiza inspeksaun, rekonsiliasaun ka deklarasaun.",
+          "points": {
+            "calculations": "Base kalkulasaun, taxa, klasifikasaun no arredondamentu vizível",
+            "accounting": "Lansu balansadu, livru jerál, balansu prova no demonstrasaun",
+            "compliance": "Dokumentu WIT, INSS no impostu avansadu ho istória auditoria"
+          }
+        },
+        "modeTitle": "Detallu avansadu mosu de'it bainhira útil.",
+        "modeDescription": "Kontabilista haree kontrolu impostu espesialista automatikamente. Na'in bele liga modu hanesan bainhira kontabilista husu; ema seluk kontinua ho fluxu simples."
+      },
+      "workflow": {
+        "eyebrow": "Oinsá servisu lao iha Xefe",
+        "title": "Halo tarefa dala ida. Rai evidénsia hotu ligadu.",
+        "description": "Kada etapa hahú ho asaun loron-loron, depois hatudu saida mak Xefe trata no saida mak profisionál bele verifika.",
+        "labels": {
+          "you": "Saida mak ita halo",
+          "xefe": "Saida mak Xefe trata",
+          "verify": "Saida mak bele verifika"
+        },
+        "people": {
+          "title": "Rai dadus ema no oras hamutuk",
+          "you": "Hatama trabalhador, saláriu, oráriu, dadus banku, prezensa no lisensa.",
+          "xefe": "Xefe rai rejistu empregu no dadus folha iha fatin ida.",
+          "verify": "Kontratu, konfigurasaun saláriu, mudansa prezensa no fonte ba kada dadus folha."
+        },
+        "payroll": {
+          "title": "Reviza no aprova folha",
+          "you": "Hili períodu, reviza mudansa no aprova bainhira trabalhador hotu prontu.",
+          "xefe": "Xefe kalkula saláriu brutu, WIT, INSS trabalhador no empregador, oras extra, dedusaun no saláriu líquidu.",
+          "verify": "Kalkulasaun kada trabalhador, base legal, arredondamentu no rejistu aprovasaun."
+        },
+        "payments": {
+          "title": "Selu trabalhador no prepara deklarasaun",
+          "you": "Konfirma data pagamentu no download rezultadu ne'ebé ita presiza.",
+          "xefe": "Xefe prepara resibu klaru, ficheiru banku lokál no dokumentu WIT no INSS husi folha aprovada.",
+          "verify": "Total folha konkorda ho trabalhador, pagamentu banku no dívida legal sira."
+        },
+        "accounting": {
+          "title": "Mantén livru kontabil atualizadu",
+          "you": "Reviza lansu ne'ebé sistema kria no kontinua rekonsiliasaun no reviza períodu.",
+          "xefe": "Xefe lansa despeza saláriu, INSS empregador, saláriu líquidu no dívida legal hanesan liña kontabil balansadu.",
+          "verify": "Fonte lansu, kódigu konta, débitu, kréditu, livru jerál no balansu prova."
+        }
+      },
+      "example": {
+        "eyebrow": "Kalkulasaun ne'ebé ita bele inspeksiona",
+        "title": "Rezultadu folha ida, tuir to'o lansu kontabil",
+        "description": "Númeru hanesan tenke klaru ba ema ne'ebé selu ekipa no ba kontabilista ne'ebé reviza livru.",
+        "synthetic": "Ezemplu ilustrativu sintétiku",
+        "employerInss": "INSS empregador (6%)",
+        "employerCost": "Kustu total empregador",
+        "calculationEyebrow": "Ezemplu folha fulan ida",
+        "calculationTitle": "Kalkulasaun trabalhador rezidente",
+        "formulas": {
+          "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
+          "employeeInss": "INSS trabalhador: 4% × $1,380 = $55.20",
+          "employerInss": "INSS empregador: 6% × $1,380 = $82.80"
+        },
+        "journalEyebrow": "Lansu kontabil ne'ebé sistema kria",
+        "journalTitle": "Lansu folha balansadu",
+        "accounts": {
+          "wages": "Saláriu no vensimentu",
+          "employerInssExpense": "Despeza INSS empregador",
+          "netPayable": "Saláriu líquidu a pagar",
+          "witPayable": "WIT a pagar",
+          "employeeInssPayable": "INSS trabalhador a pagar",
+          "employerInssPayable": "INSS empregador a pagar"
+        },
+        "table": {
+          "account": "Konta",
+          "debit": "Débitu",
+          "credit": "Kréditu",
+          "total": "Total balansadu"
+        },
+        "journalNote": "Total lansu konkorda ho kustu empregador no separa dívida INSS trabalhador no empregador.",
+        "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
+      },
+      "controls": {
+        "eyebrow": "Kontrolu no rezultadu útil",
+        "title": "Fásil atu opera. Sériu atu reviza.",
+        "description": "Fluxu normal nafatin badak, no kontrolu ho relatóriu rai dalan evidénsia ba kada rezultadu.",
+        "items": {
+          "visible": {
+            "title": "Kalkulasaun vizível",
+            "description": "Saláriu brutu, rendimentu, dedusaun, montante legal no saláriu líquidu bele reviza antes finaliza."
+          },
+          "approval": {
+            "title": "Kontrolu aprovasaun",
+            "description": "Folha rejista sé mak prepara no aprova, ho opsaun ema rua ba ekipa ne'ebé presiza."
+          },
+          "noGuessing": {
+            "title": "La inventa valór konformidade",
+            "description": "Bainhira dadus legal falta, Xefe husu reviza no la halo estimativa iha subar."
+          },
+          "journals": {
+            "title": "Lansu ligadu ba fonte",
+            "description": "Folha aprovada kria liña kontabil balansadu ne'ebé ligadu fali ba folha orijinal."
+          },
+          "audit": {
+            "title": "Auditoria no disiplina períodu",
+            "description": "Istória auditoria, estadu lansu no kontrolu períodu fiskál proteje servisu kontabil kompletu."
+          },
+          "exports": {
+            "title": "Esportasaun prátiku",
+            "description": "PDF, spreadsheet no ficheiru banku ajuda negósiu no konselleiru kontinua servisu esternu."
+          }
+        },
+        "outputsEyebrow": "Husi rejistu hanesan",
+        "outputsTitle": "Saida mak Xefe prepara",
+        "outputs": {
+          "payslips": "Resibu trabalhador ho rendimentu no dedusaun liña ba liña",
+          "bankFiles": "Ficheiru pagamentu folha ba banku Timor-Leste ne'ebé suportadu",
+          "payrollRegister": "Rejistu folha no rezumu kontabilidade",
+          "wit": "Reviza WIT fulan-fulan no dokumentu deklarasaun",
+          "inss": "Relatóriu INSS fulan no anu, inklui spreadsheet DR",
+          "journal": "Lansu kontabil folha balansadu",
+          "ledger": "Livru jerál no balansu prova",
+          "statements": "Demonstrasaun rezultadu, balansu no fluxu caixa"
+        },
+        "accountantModeTitle": "Modu kontabilista sem kompleksidade ba ema hotu",
+        "accountantModeDescription": "Retensaun fornesedór, taxa tratadu, VAT no kontrolu deklarasaun espesialista la mosu iha fluxu loron-loron. Sira mosu ba papel kontabilista ka bainhira na'in liga modu impostu avansadu."
+      },
+      "evidence": {
+        "eyebrow": "Oinsá Xefe hetan fiar",
+        "title": "Evidénsia antes de halo afirmasaun",
+        "description": "Software kontabilidade tenke hatudu nia baze, liuliu bainhira rezultadu afeta saláriu, impostu ka livru kontabil.",
+        "items": {
+          "sources": {
+            "title": "Regra husi fonte primária",
+            "description": "Regra folha Timor-Leste verifika ho lei no orientasaun ofisiál ATTL ka INSS antes tama ba lójika produtu."
+          },
+          "testing": {
+            "title": "Teste ne'ebé bele repete",
+            "description": "Motor kalkulasaun hetan teste regressaun ho kazu sintétiku normál no kazu limite. Rezultadu ne'ebé espera rai nafatin atu mudansa la bele muda folha ho nonook."
+          },
+          "guardrails": {
+            "title": "Exsepsaun nafatin vizível",
+            "description": "Kazu legal ne'ebé seidauk suportadu ka falta dadus marka atu reviza, la transforma ba resposta fásil maibé laiha baze."
+          },
+          "review": {
+            "title": "Julgamentu profisionál iha fatin",
+            "description": "Kontabilista bele inspeksiona dadus, konvensaun, relatóriu no lansu, la presiza simu total husi sistema ne'ebé la hatudu nia lójika."
+          }
+        },
+        "honestyTitle": "Saida mak Xefe la pretende halo",
+        "honestyDescription": "Xefe kalkula no rejista tuir informasaun ne'ebé hatama. Kontratu la komún, izensaun, pozisaun tratadu, klasifikasaun ho disputa no mudansa lei foun bele presiza konsellu husi profisionál kualifikadu iha Timor-Leste."
+      },
+      "cta": {
+        "eyebrow": "Uza de'it detallu ne'ebé ita presiza",
+        "title": "Hahú simples. Lori kontabilista bainhira presiza.",
+        "description": "Konfigura negósiu no esplora fitur hotu grátis. Xefe mantén servisu loron-loron klaru no evidénsia profisionál prontu.",
+        "primary": "Hahú grátis",
+        "whatsapp": "Husu demonstrasaun"
+      },
+      "footer": {
+        "home": "Vizaun jerál produtu"
       }
     },
     "settings": {
@@ -14322,7 +14756,7 @@ export const translations = {
             "title": "Faturas e pagamentos do dia a dia",
             "description": "Crie faturas de clientes e registe pagamentos em dinheiro, transferência, cartão, dinheiro móvel ou cheque."
           },
-          "viewAll": "Ver todas as funcionalidades"
+          "viewAll": "Veja exatamente como o Xefe funciona"
         },
         "local": {
           "eyebrow": "Feito para Timor-Leste",
@@ -14350,6 +14784,8 @@ export const translations = {
           "perEmployeeMonth": "/funcionário/mês",
           "example": "Exemplo: {{total}}/mês para {{employees}} funcionários",
           "billedMonthly": "faturado mensalmente",
+          "minimum": "O mínimo mensal de {{total}} inclui {{employees}} funcionários",
+          "annualSaving": "Anual: {{total}} — poupe {{savings}}",
           "cta": "Começar grátis",
           "includedTitle": "Incluído em todas as contas",
           "benefits": {
@@ -14578,6 +15014,7 @@ export const translations = {
         "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
+          "howItWorks": "Como o Xefe funciona",
           "privacy": "Privacidade",
           "terms": "Termos",
           "support": "Suporte",
@@ -14862,6 +15299,220 @@ export const translations = {
             "desc": "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo."
           }
         }
+      }
+    },
+    "howItWorks": {
+      "nav": {
+        "workflow": "Como o trabalho flui",
+        "example": "Exemplo prático",
+        "controls": "Controlos e relatórios",
+        "evidence": "Como validamos"
+      },
+      "hero": {
+        "eyebrow": "Para empresas e contabilistas",
+        "title": "Simples para usar por conta própria.",
+        "titleAccent": "Detalhado para o seu contabilista.",
+        "description": "O Xefe orienta o trabalho diário de folha de pagamento, pessoas e dinheiro em linguagem clara, mantendo cada cálculo, relatório e lançamento disponível para revisão profissional.",
+        "primary": "Começar grátis",
+        "secondary": "Seguir o fluxo",
+        "trust": {
+          "plain": "Linguagem clara para o trabalho diário",
+          "detail": "Detalhe completo de cálculos e contabilidade",
+          "languages": "Tétum, Inglês e Português"
+        },
+        "proof": {
+          "eyebrow": "Um registo conectado",
+          "title": "Dos dados do trabalhador à contabilidade",
+          "status": "Revisável",
+          "people": {
+            "title": "Dados de pessoas prontos",
+            "description": "Salário, tempo, licenças e dados de pagamento permanecem juntos."
+          },
+          "payroll": {
+            "title": "Folha calculada",
+            "description": "IRT, INSS, horas extra e subsídio anual permanecem visíveis."
+          },
+          "outputs": {
+            "title": "Pagamentos e declarações preparados",
+            "description": "Recibos, ficheiros bancários e mapas de conformidade saem do processamento."
+          },
+          "accounts": {
+            "title": "Lançamento equilibrado",
+            "description": "Despesas de folha e passivos entram na contabilidade de dupla entrada."
+          }
+        }
+      },
+      "audience": {
+        "eyebrow": "Um produto, dois níveis de detalhe",
+        "title": "Claro para quem faz o trabalho",
+        "description": "O Xefe mantém o percurso normal tranquilo sem esconder a evidência de que um contabilista precisa.",
+        "everyday": {
+          "title": "Para o trabalho diário da empresa",
+          "description": "Proprietários e equipas recebem tarefas guiadas, palavras claras e uma próxima ação de cada vez.",
+          "points": {
+            "guided": "Ecrãs guiados para trabalhadores, folha, faturas e pagamentos",
+            "defaults": "Valores seguros por defeito mantêm decisões fiscais especializadas fora do fluxo normal",
+            "language": "Ecrãs adaptados ao telemóvel em Tétum, Inglês e Português"
+          }
+        },
+        "professional": {
+          "title": "Para contabilistas e revisores",
+          "description": "O detalhe profissional fica disponível quando é preciso inspecionar, reconciliar ou declarar.",
+          "points": {
+            "calculations": "Bases de cálculo, taxas, classificações e arredondamentos visíveis",
+            "accounting": "Lançamentos equilibrados, razão geral, balancete e demonstrações",
+            "compliance": "Mapas de IRT, INSS e fiscalidade avançada com histórico de auditoria"
+          }
+        },
+        "modeTitle": "O detalhe avançado aparece apenas quando ajuda.",
+        "modeDescription": "Os contabilistas veem automaticamente os controlos fiscais especializados. Um proprietário pode ativar o mesmo modo quando o contabilista pedir; todos os outros mantêm o fluxo simples."
+      },
+      "workflow": {
+        "eyebrow": "Como o trabalho passa pelo Xefe",
+        "title": "Faça a tarefa uma vez. Mantenha a evidência ligada.",
+        "description": "Cada etapa começa pela ação quotidiana e mostra depois o que o Xefe trata e o que um profissional pode verificar.",
+        "labels": {
+          "you": "O que faz",
+          "xefe": "O que o Xefe trata",
+          "verify": "O que pode ser verificado"
+        },
+        "people": {
+          "title": "Mantenha pessoas e tempo juntos",
+          "you": "Adicione o trabalhador, salário, horário, dados bancários, assiduidade e licenças.",
+          "xefe": "O Xefe mantém o registo laboral e os dados da folha num só lugar.",
+          "verify": "Contratos, definições salariais, alterações de assiduidade e origem de cada dado da folha."
+        },
+        "payroll": {
+          "title": "Reveja e aprove a folha",
+          "you": "Escolha o período, reveja alterações e aprove quando todos os trabalhadores estiverem prontos.",
+          "xefe": "O Xefe calcula bruto, IRT, INSS do trabalhador e empregador, horas extra, deduções e líquido.",
+          "verify": "Cada cálculo por trabalhador, base legal, arredondamento e registo de aprovação."
+        },
+        "payments": {
+          "title": "Pague à equipa e prepare declarações",
+          "you": "Confirme a data de pagamento e descarregue os resultados necessários.",
+          "xefe": "O Xefe prepara recibos claros, ficheiros bancários locais e mapas de IRT e INSS a partir da folha aprovada.",
+          "verify": "Os totais da folha reconciliam com trabalhadores, pagamentos bancários e passivos legais."
+        },
+        "accounting": {
+          "title": "Mantenha a contabilidade alinhada",
+          "you": "Reveja o lançamento gerado e continue a reconciliação e revisão do período.",
+          "xefe": "O Xefe lança despesa salarial, INSS do empregador, salários líquidos e passivos legais em linhas equilibradas.",
+          "verify": "Origem do lançamento, códigos de conta, débitos, créditos, razão geral e balancete."
+        }
+      },
+      "example": {
+        "eyebrow": "Um cálculo que pode inspecionar",
+        "title": "Um resultado de folha, seguido até ao lançamento",
+        "description": "Os mesmos números devem fazer sentido para quem paga à equipa e para o contabilista que revê os livros.",
+        "synthetic": "Exemplo ilustrativo sintético",
+        "employerInss": "INSS do empregador (6%)",
+        "employerCost": "Custo total do empregador",
+        "calculationEyebrow": "Exemplo mensal de folha",
+        "calculationTitle": "Cálculo de trabalhador residente",
+        "formulas": {
+          "wit": "IRT: 10% × ($1,480 − $500) = $98.00",
+          "employeeInss": "INSS do trabalhador: 4% × $1,380 = $55.20",
+          "employerInss": "INSS do empregador: 6% × $1,380 = $82.80"
+        },
+        "journalEyebrow": "Lançamento contabilístico gerado",
+        "journalTitle": "Lançamento de folha equilibrado",
+        "accounts": {
+          "wages": "Salários e vencimentos",
+          "employerInssExpense": "Despesa de INSS do empregador",
+          "netPayable": "Salários líquidos a pagar",
+          "witPayable": "IRT a pagar",
+          "employeeInssPayable": "INSS do trabalhador a pagar",
+          "employerInssPayable": "INSS do empregador a pagar"
+        },
+        "table": {
+          "account": "Conta",
+          "debit": "Débito",
+          "credit": "Crédito",
+          "total": "Total equilibrado"
+        },
+        "journalNote": "Os totais do lançamento correspondem ao custo do empregador e mantêm separados os passivos de INSS do trabalhador e do empregador.",
+        "disclaimer": "Exemplo mensal sintético e ilustrativo para um trabalhador residente. O subsídio de alimentação aparece fora da base de INSS. O tratamento real depende da configuração do trabalhador e da rubrica, da lei aplicável e de eventuais isenções."
+      },
+      "controls": {
+        "eyebrow": "Controlos e resultados úteis",
+        "title": "Fácil de operar. Sério na revisão.",
+        "description": "O fluxo normal permanece curto, enquanto os controlos e relatórios preservam o percurso por trás de cada resultado.",
+        "items": {
+          "visible": {
+            "title": "Cálculos visíveis",
+            "description": "Salário bruto, cada rendimento, dedução, valor legal e líquido podem ser revistos antes de finalizar."
+          },
+          "approval": {
+            "title": "Controlos de aprovação",
+            "description": "A folha regista quem preparou e aprovou, com opção de duas pessoas para equipas que o exigem."
+          },
+          "noGuessing": {
+            "title": "Sem valores de conformidade inventados",
+            "description": "Quando faltam dados legais obrigatórios, o Xefe pede revisão em vez de estimar silenciosamente."
+          },
+          "journals": {
+            "title": "Lançamentos ligados à origem",
+            "description": "A folha aprovada cria linhas equilibradas ligadas ao processamento de origem."
+          },
+          "audit": {
+            "title": "Auditoria e disciplina de períodos",
+            "description": "Histórico de auditoria, estado de lançamento e controlos de período ajudam a proteger o trabalho concluído."
+          },
+          "exports": {
+            "title": "Exportações práticas",
+            "description": "PDF, folhas de cálculo e ficheiros bancários permitem continuar o trabalho externo obrigatório."
+          }
+        },
+        "outputsEyebrow": "A partir dos mesmos registos",
+        "outputsTitle": "O que o Xefe prepara",
+        "outputs": {
+          "payslips": "Recibos dos trabalhadores com rendimentos e deduções linha a linha",
+          "bankFiles": "Ficheiros de pagamento de folha para bancos suportados em Timor-Leste",
+          "payrollRegister": "Mapas de folha e resumos contabilísticos",
+          "wit": "Revisão mensal de IRT e mapas de declaração",
+          "inss": "Relatórios mensais e anuais de INSS, incluindo folha DR",
+          "journal": "Lançamentos de folha equilibrados",
+          "ledger": "Razão geral e balancete",
+          "statements": "Demonstração de resultados, balanço e fluxo de caixa"
+        },
+        "accountantModeTitle": "Modo contabilista sem complexidade para todos",
+        "accountantModeDescription": "Retenção a fornecedores, taxas de tratado, IVA e controlos especializados ficam fora do fluxo diário. Aparecem para o papel de contabilista ou quando um proprietário ativa deliberadamente o modo fiscal avançado."
+      },
+      "evidence": {
+        "eyebrow": "Como o Xefe ganha confiança",
+        "title": "Evidência antes de afirmações confiantes",
+        "description": "O software contabilístico deve tornar clara a sua base, sobretudo quando um resultado afeta salários, impostos ou o razão.",
+        "items": {
+          "sources": {
+            "title": "Regras de fontes primárias",
+            "description": "As regras salariais de Timor-Leste são verificadas com a legislação e orientação oficial da ATTL ou INSS antes de se tornarem lógica do produto."
+          },
+          "testing": {
+            "title": "Cobertura de testes repetível",
+            "description": "O motor de cálculo é testado por regressão com casos padrão e extremos totalmente sintéticos. Os resultados esperados ficam fixos para que alterações não modifiquem a folha silenciosamente."
+          },
+          "guardrails": {
+            "title": "As exceções ficam visíveis",
+            "description": "Casos legais não suportados ou incompletos são marcados para revisão, em vez de produzirem uma resposta conveniente sem base."
+          },
+          "review": {
+            "title": "Há lugar para julgamento profissional",
+            "description": "Os contabilistas podem inspecionar dados, convenções, relatórios e lançamentos em vez de aceitar um total de caixa-preta."
+          }
+        },
+        "honestyTitle": "O que o Xefe não finge fazer",
+        "honestyDescription": "O Xefe calcula e regista com a informação fornecida. Contratos invulgares, isenções, posições de tratado, classificações disputadas e alterações legais novas podem exigir aconselhamento de um profissional qualificado de Timor-Leste."
+      },
+      "cta": {
+        "eyebrow": "Use apenas o detalhe de que precisa",
+        "title": "Comece simples. Traga o contabilista quando precisar.",
+        "description": "Configure a empresa e explore todas as funcionalidades gratuitamente. O Xefe mantém o trabalho diário claro e a evidência profissional pronta.",
+        "primary": "Começar grátis",
+        "whatsapp": "Pedir uma demonstração"
+      },
+      "footer": {
+        "home": "Visão geral do produto"
       }
     },
     "settings": {

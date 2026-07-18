@@ -49,6 +49,7 @@ import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
+import { candidateService } from "@/services/candidateService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
@@ -97,6 +98,10 @@ export default function AddEmployee() {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const editEmployeeId = searchParams.get("edit");
+  const hiringCandidateId = searchParams.get("candidateId") || "";
+  const hiringApplicationId = searchParams.get("applicationId") || "";
+  const hiringJobId = searchParams.get("jobId") || "";
+  const isHiringHandoff = !editEmployeeId && !!(hiringCandidateId || hiringApplicationId);
   const { t } = useI18n();
   const tenantId = useTenantId();
 
@@ -145,16 +150,16 @@ export default function AddEmployee() {
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(addEmployeeFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
+      firstName: searchParams.get("firstName") || "",
+      lastName: searchParams.get("lastName") || "",
+      email: searchParams.get("email") || "",
+      phone: searchParams.get("phone") || "",
       phoneApp: "",
       appEligible: false,
       emergencyContactName: "",
       emergencyContactPhone: "",
       department: "",
-      jobTitle: "",
+      jobTitle: searchParams.get("jobTitle") || "",
       manager: "",
       startDate: "",
       employmentType: "Full-time",
@@ -480,6 +485,7 @@ export default function AddEmployee() {
     setIsSubmitting(true);
 
     try {
+      let savedEmployeeId = editingEmployee?.id || "";
       // Use BI number for Timorese, passport for foreigners as employeeId
       const primaryDocNumber = isTimorese
         ? docValues.bilheteIdentidade?.number
@@ -581,6 +587,7 @@ export default function AddEmployee() {
       // Save to Firebase
       if (isEditMode && editingEmployee) {
         await employeeService.updateEmployee(tenantId, editingEmployee.id!, newEmployee);
+        savedEmployeeId = editingEmployee.id!;
         toast({
           title: t("addEmployee.toast.updatedTitle"),
           description: t("addEmployee.toast.updatedDesc", {
@@ -590,6 +597,7 @@ export default function AddEmployee() {
       } else {
         const id = await employeeService.addEmployee(tenantId, newEmployee, undefined, employeeIdForUpload);
         if (!id) throw new Error("Failed to save");
+        savedEmployeeId = id;
         toast({
           title: t("addEmployee.toast.addedTitle"),
           description: t("addEmployee.toast.addedDesc", {
@@ -629,7 +637,21 @@ export default function AddEmployee() {
         });
       }
 
-      navigate("/people/employees");
+      if (isHiringHandoff && savedEmployeeId) {
+        if (hiringCandidateId) {
+          try {
+            await candidateService.updateCandidate(tenantId, hiringCandidateId, { status: "Hired" });
+          } catch (candidateError) {
+            console.error("Candidate status update failed:", candidateError);
+          }
+        }
+        const params = new URLSearchParams({ employeeId: savedEmployeeId });
+        if (hiringCandidateId) params.set("candidateId", hiringCandidateId);
+        if (hiringJobId) params.set("jobId", hiringJobId);
+        navigate(`/people/onboarding?${params.toString()}`);
+      } else {
+        navigate("/people/employees");
+      }
     } catch (error) {
       console.error("Error saving employee:", error);
       toast({

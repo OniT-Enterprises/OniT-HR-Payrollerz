@@ -776,6 +776,12 @@ export function usePayrollCalculator({
       taxableIncome: d.calculation!.taxableIncome,
       witTaxableAmount: d.calculation!.witTaxableAmount,
       inssBase: d.calculation!.inssBase,
+      // Statutory filing generators (ATTL WIT + INSS) read these off the
+      // saved record and refuse to infer them — without them every filing
+      // for a wizard-created run fails its strict-reader guard.
+      incomeTax: d.calculation!.incomeTax,
+      inssEmployee: d.calculation!.inssEmployee,
+      inssEmployer: d.calculation!.inssEmployer,
       deductions: d.calculation!.deductions.map((deduction) => ({
         type: deduction.type as PayrollRecord['deductions'][number]['type'],
         description: deduction.description,

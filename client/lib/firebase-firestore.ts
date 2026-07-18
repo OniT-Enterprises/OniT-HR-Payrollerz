@@ -23,6 +23,13 @@ export const db = initializeFirestore(app, {
     ? persistentLocalCache({ tabManager: persistentMultipleTabManager() })
     : memoryLocalCache(),
   ignoreUndefinedProperties: true,
+  // The Firestore emulator's WebChannel streams drop intermittently under
+  // many parallel listeners (E2E runs), leaving writes queued "offline" while
+  // the UI shows them applied. Long polling is reliable against the emulator;
+  // production keeps the SDK's default transport.
+  ...(firebaseEmulatorConfig.enabled
+    ? { experimentalForceLongPolling: true }
+    : {}),
 });
 
 if (firebaseEmulatorConfig.enabled) {

@@ -1273,8 +1273,20 @@ class JournalEntryService {
       });
     }
 
-    const totalDebit = sumMoney(lines.map((line) => line.debit));
-    const totalCredit = sumMoney(lines.map((line) => line.credit));
+    // Drop zero-amount lines and renumber: a run can legitimately owe no WIT
+    // (every resident under the $500/month threshold — the common case for
+    // small TL employers) or no INSS (exempt payees), and the journal
+    // validator rejects any line carrying neither a debit nor a credit.
+    // Removing zero lines cannot unbalance the entry.
+    const journalLines = lines.filter(
+      (line) => (line.debit || 0) > 0 || (line.credit || 0) > 0,
+    );
+    journalLines.forEach((line, index) => {
+      line.lineNumber = index + 1;
+    });
+
+    const totalDebit = sumMoney(journalLines.map((line) => line.debit));
+    const totalCredit = sumMoney(journalLines.map((line) => line.credit));
 
     const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
       entryNumber,
@@ -1283,7 +1295,7 @@ class JournalEntryService {
       source: 'payroll',
       sourceId: summary.sourceId,
       sourceRef: `Payroll Run - ${summary.employeeCount} employees`,
-      lines,
+      lines: journalLines,
       totalDebit,
       totalCredit,
       status: 'posted',

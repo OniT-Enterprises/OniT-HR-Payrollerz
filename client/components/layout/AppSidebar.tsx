@@ -102,6 +102,17 @@ const MODULES: ModuleDef[] = [
   },
 ];
 
+/** Light mode uses the current module color to make location obvious. */
+const moduleActiveStyles: Record<SectionId, string> = {
+  dashboard: "bg-primary/10 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  people: "bg-blue-50 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  scheduling: "bg-cyan-50 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  payroll: "bg-primary/10 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  money: "bg-indigo-50 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  accounting: "bg-orange-50 text-sidebar-foreground dark:bg-sidebar-accent/70",
+  reports: "bg-violet-50 text-sidebar-foreground dark:bg-sidebar-accent/70",
+};
+
 // --- Helpers ---
 
 function isPathActive(pathname: string, path: string): boolean {
@@ -362,6 +373,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
   const moduleActive = isModuleActive(pathname, mod.config);
   const Icon = mod.icon;
   const iconColor = navColors[mod.id];
+  const activeStyle = moduleActiveStyles[mod.id];
   const dashboardPath = mod.config.overview?.path || mod.config.sections[0]?.path || "/";
   const contentId = `sidebar-module-${mod.id}`;
 
@@ -376,7 +388,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
             className={`
               w-full flex items-center justify-center h-11 rounded-lg transition-colors md:h-10
               ${moduleActive
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                ? activeStyle
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
               }
             `}
@@ -397,7 +409,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         className={`
           w-full flex items-center h-11 rounded-lg text-sm font-medium transition-colors md:h-10
           ${moduleActive
-            ? "bg-sidebar-accent/70 text-sidebar-foreground"
+            ? activeStyle
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           }
         `}

@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
-import { isTenantSubscribed } from "@/lib/packagePricing";
+import {
+  calculatePackageEstimate,
+  isTenantSubscribed,
+  normalizeBillingPackagesConfig,
+} from "@/lib/packagePricing";
+import { multiplyMoney } from "@/lib/currency";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { TenantProfileForm } from "@/components/admin/TenantProfileForm";
 import { TenantMembersCard } from "@/components/admin/TenantMembersCard";
@@ -32,7 +37,6 @@ import {
   useTenantStats,
   useUpdateTenantProfile,
 } from "@/hooks/useAdmin";
-import { normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import {
   Dialog,
   DialogContent,
@@ -111,7 +115,17 @@ export default function TenantDetail() {
   const { data: packagesConfig } = usePackagesConfig();
   const [offlinePaymentOpen, setOfflinePaymentOpen] = useState(false);
   const [offlineMonths, setOfflineMonths] = useState("1");
-  const [offlineMonthlyAmount, setOfflineMonthlyAmount] = useState("");
+  const [offlineAmountReceived, setOfflineAmountReceived] = useState("");
+
+  const billingPricing = normalizeBillingPackagesConfig(packagesConfig);
+  const billingEstimate = calculatePackageEstimate(billingPricing, {
+    employeeCount: stats?.employeeCount ?? tenant?.currentEmployeeCount ?? 0,
+  });
+
+  const expectedOfflineAmount = (months: number): number =>
+    months === 12
+      ? billingEstimate.annualTotal
+      : multiplyMoney(billingEstimate.monthlyTotal, months);
 
   useEffect(() => {
     if (tenant) {
@@ -143,25 +157,23 @@ export default function TenantDetail() {
   }, [tenant]);
 
   const openOfflinePayment = () => {
-    const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
-    const employees = stats?.employeeCount ?? tenant?.currentEmployeeCount ?? 0;
-    setOfflineMonthlyAmount(String(Math.max(0, employees * rate)));
     setOfflineMonths("1");
+    setOfflineAmountReceived(String(expectedOfflineAmount(1)));
     setOfflinePaymentOpen(true);
   };
 
   const handleRecordOfflinePayment = async () => {
     if (!tenant || !user) return;
-    const monthlyAmount = Number(offlineMonthlyAmount);
-    if (!Number.isFinite(monthlyAmount) || monthlyAmount < 0) {
-      toast.error("Enter a valid monthly amount");
+    const amountReceived = Number(offlineAmountReceived);
+    if (!Number.isFinite(amountReceived) || amountReceived <= 0) {
+      toast.error("Enter a valid amount received");
       return;
     }
     try {
       await recordManualMutation.mutateAsync({
         tenantId: tenant.id,
         months: Number(offlineMonths),
-        monthlyAmount,
+        amountReceived,
         actorUid: user.uid,
         actorEmail: user.email || "",
       });
@@ -169,7 +181,7 @@ export default function TenantDetail() {
       setOfflinePaymentOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error("Could not record the payment");
+      toast.error(error instanceof Error ? error.message : "Could not record the payment");
     }
   };
 
@@ -423,35 +435,42 @@ export default function TenantDetail() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="offline-months">Months paid</Label>
-              <Select value={offlineMonths} onValueChange={setOfflineMonths}>
+              <Label htmlFor="offline-months">Billing period</Label>
+              <Select
+                value={offlineMonths}
+                onValueChange={(value) => {
+                  setOfflineMonths(value);
+                  setOfflineAmountReceived(String(expectedOfflineAmount(Number(value))));
+                }}
+              >
                 <SelectTrigger id="offline-months">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">1 month</SelectItem>
-                  <SelectItem value="3">3 months</SelectItem>
-                  <SelectItem value="6">6 months</SelectItem>
-                  <SelectItem value="12">12 months</SelectItem>
+                  <SelectItem value="12">
+                    12 months (annual — {12 - billingPricing.annualMonthsCharged} months free)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="offline-amount">Monthly amount (USD)</Label>
+              <Label htmlFor="offline-amount">Amount received (USD)</Label>
               <Input
                 id="offline-amount"
                 type="number"
                 min="0"
                 step="0.01"
-                value={offlineMonthlyAmount}
-                onChange={(event) => setOfflineMonthlyAmount(event.target.value)}
+                value={offlineAmountReceived}
+                onChange={(event) => setOfflineAmountReceived(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Total received:{" "}
+                Expected from current pricing:{" "}
                 <span className="font-medium text-foreground">
-                  ${(Number(offlineMonths) * (Number(offlineMonthlyAmount) || 0)).toFixed(2)}
+                  ${expectedOfflineAmount(Number(offlineMonths)).toFixed(2)}
                 </span>{" "}
                 for {offlineMonths} month{offlineMonths === "1" ? "" : "s"}
+                {offlineMonths === "12" ? ` (save $${billingEstimate.annualSavings.toFixed(2)})` : ""}
               </p>
             </div>
           </div>
@@ -512,11 +531,13 @@ export default function TenantDetail() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Monthly Subscription</p>
+                      <p className="text-sm text-muted-foreground">Subscription Value</p>
                       <p className="text-2xl font-bold">
-                        {typeof tenant.monthlySubscriptionAmount === "number"
-                          ? `$${tenant.monthlySubscriptionAmount.toFixed(2)}`
-                          : "-"}
+                        {typeof tenant.subscriptionBillingAmount === "number"
+                          ? `$${tenant.subscriptionBillingAmount.toFixed(2)}/${tenant.subscriptionBillingInterval === "year" ? "yr" : "mo"}`
+                          : typeof tenant.monthlySubscriptionAmount === "number"
+                            ? `$${tenant.monthlySubscriptionAmount.toFixed(2)}/mo`
+                            : "-"}
                       </p>
                     </div>
                     <CreditCard className="h-5 w-5 text-violet-500" />
@@ -581,14 +602,21 @@ export default function TenantDetail() {
                     <p className="font-medium">{tenant.billingEmail || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Active Employees (billed seats)</p>
-                    <p className="font-medium">{stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Active Employees / Billed Seats</p>
+                    <p className="font-medium">
+                      {stats?.employeeCount ?? tenant.currentEmployeeCount ?? 0} /{" "}
+                      {tenant.subscriptionBilledSeats ?? billingEstimate.billedEmployees}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Subscription</p>
                     <p className="font-medium">
                       {isTenantSubscribed(tenant)
-                        ? `Subscribed${typeof tenant.monthlySubscriptionAmount === "number" ? ` — $${tenant.monthlySubscriptionAmount.toFixed(2)}/mo` : ""}`
+                        ? `Subscribed${typeof tenant.subscriptionBillingAmount === "number"
+                          ? ` — $${tenant.subscriptionBillingAmount.toFixed(2)}/${tenant.subscriptionBillingInterval === "year" ? "yr" : "mo"}`
+                          : typeof tenant.monthlySubscriptionAmount === "number"
+                            ? ` — $${tenant.monthlySubscriptionAmount.toFixed(2)}/mo`
+                            : ""}`
                         : "Free plan"}
                     </p>
                   </div>
@@ -597,10 +625,12 @@ export default function TenantDetail() {
                     <p className="font-medium">{formatDateValue(tenant.subscriptionPaidUntil)}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-4 sm:col-span-2">
-                    <Button variant="outline" size="sm" onClick={openOfflinePayment}>
-                      <Landmark className="mr-2 h-4 w-4" />
-                      Record offline payment
-                    </Button>
+                    {!tenant.stripeSubscriptionId && (
+                      <Button variant="outline" size="sm" onClick={openOfflinePayment}>
+                        <Landmark className="mr-2 h-4 w-4" />
+                        Record offline payment
+                      </Button>
+                    )}
                     {tenant.manualSubscription && (
                       <Button
                         variant="ghost"

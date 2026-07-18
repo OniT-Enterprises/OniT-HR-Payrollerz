@@ -191,16 +191,18 @@ export default function TenantList() {
   };
 
   const getStatusLabel = (status: TenantStatus) => t(`admin.tenantList.status.${status}`);
-  const formatMonthlySubscription = (amount?: number): string => {
+  const formatSubscription = (tenant: TenantConfig): string => {
+    const amount = tenant.subscriptionBillingAmount ?? tenant.monthlySubscriptionAmount;
     if (typeof amount !== "number" || Number.isNaN(amount)) {
       return "-";
     }
 
-    return new Intl.NumberFormat("en-US", {
+    const formatted = new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 2,
     }).format(amount);
+    return `${formatted}/${tenant.subscriptionBillingInterval === "year" ? "yr" : "mo"}`;
   };
 
   return (
@@ -398,7 +400,7 @@ export default function TenantList() {
                             {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
+                            {formatSubscription(tenant)}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
                             {t("admin.tenantList.table.paidUntil")}: {formatDate(tenant.subscriptionPaidUntil)}
@@ -473,7 +475,7 @@ export default function TenantList() {
                               {isTenantSubscribed(tenant) ? t("nav.planActive") : t("nav.planFree")}
                             </Badge>
                             <span className="text-sm font-medium">
-                              {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
+                              {formatSubscription(tenant)}
                             </span>
                           </div>
                         </TableCell>

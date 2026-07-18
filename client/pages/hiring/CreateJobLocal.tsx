@@ -292,7 +292,7 @@ export default function CreateJobLocal() {
             <CardContent className="pt-6">
               <p className="text-destructive">{t("hiring.createJob.errors.loadDepartments")}</p>
               <Button
-                onClick={() => navigate("/hiring")}
+                onClick={() => navigate("/people/jobs")}
                 className="mt-4 gap-2"
                 variant="outline"
               >
@@ -604,7 +604,7 @@ export default function CreateJobLocal() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/hiring")}
+                onClick={() => navigate("/people/jobs")}
                 disabled={createJobMutation.isPending}
                 className="gap-2 shadow-sm"
               >
@@ -644,7 +644,12 @@ export default function CreateJobLocal() {
 
       <JobPostImage
         open={shareOpen}
-        onOpenChange={setShareOpen}
+        onOpenChange={(open) => {
+          setShareOpen(open);
+          if (!open && createdJobId) {
+            navigate(`/people/jobs?job=${createdJobId}`);
+          }
+        }}
         job={{
           title: formData.title,
           department: departments.find((d) => d.id === formData.department)?.name,

@@ -11,7 +11,14 @@ import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { usePackagesConfig } from "@/hooks/useAdmin";
 import { useTenantBilling } from "@/hooks/useBilling";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
-import { ALL_FEATURES, isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
+import {
+  ALL_FEATURES,
+  calculatePackageEstimate,
+  getPackageBillingAmount,
+  isTenantSubscribed,
+  normalizeBillingPackagesConfig,
+  type BillingInterval,
+} from "@/lib/packagePricing";
 import { billingService } from "@/services/billingService";
 import { notificationService } from "@/services/notificationService";
 import { toast } from "sonner";
@@ -36,9 +43,13 @@ export default function Billing() {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const [invoiceRequestState, setInvoiceRequestState] = useState<"idle" | "sending" | "sent">("idle");
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>(() =>
+    searchParams.get("cycle") === "year" ? "year" : "month",
+  );
   const autoCheckoutFired = useRef(false);
 
-  const rate = normalizeBillingPackagesConfig(packagesConfig).pricePerEmployee;
+  const pricing = normalizeBillingPackagesConfig(packagesConfig);
+  const rate = pricing.pricePerEmployee;
 
   const { data: tenant, isLoading, refetch } = useTenantBilling();
   // Live active-employee count — checkout bills this number (the stored
@@ -47,7 +58,14 @@ export default function Billing() {
 
   const subscribed = tenant ? isTenantSubscribed(tenant) : false;
   const employees = employeeSummary?.active ?? tenant?.currentEmployeeCount ?? 0;
-  const projected = rate * employees;
+  const estimate = calculatePackageEstimate(pricing, { employeeCount: employees });
+  const minimumMonthly = calculatePackageEstimate(pricing, { employeeCount: 0 }).monthlyTotal;
+  const projected = getPackageBillingAmount(estimate, billingInterval);
+  const activeBillingInterval = tenant?.subscriptionBillingInterval ?? "month";
+  const activeBillingAmount =
+    tenant?.subscriptionBillingAmount ??
+    tenant?.monthlySubscriptionAmount ??
+    estimate.monthlyTotal;
   const paidUntil = tenant?.subscriptionPaidUntil?.toDate?.();
 
   const startCheckout = async () => {
@@ -57,7 +75,7 @@ export default function Billing() {
     }
     setCheckoutBusy(true);
     try {
-      await billingService.startCheckout(tenantId);
+      await billingService.startCheckout(tenantId, billingInterval);
     } catch (error) {
       console.error(error);
       toast.error("Could not start checkout. Please try again.");
@@ -92,13 +110,18 @@ export default function Billing() {
         tenantId,
         to: BILLING_SUPPORT_EMAIL,
         replyTo: user?.email || undefined,
-        subject: `Xefe invoice request — ${companyName} (${employees} employees, ${formatMoney(projected)}/mo)`,
+        subject: `Xefe invoice request — ${companyName} (${employees} employees, ${formatMoney(projected)}/${billingInterval})`,
         text: [
           `Tenant: ${companyName} (${tenantId})`,
           `Requested by: ${contactEmail}`,
           `Active employees: ${employees}`,
+          `Billed seats: ${estimate.billedEmployees} (${estimate.minimumEmployees}-seat minimum)`,
           `Rate: ${formatMoney(rate)}/employee/month`,
-          `Monthly total: ${formatMoney(projected)}`,
+          `Selected billing: ${billingInterval === "year" ? "Annual" : "Monthly"}`,
+          `Amount due: ${formatMoney(projected)}`,
+          ...(billingInterval === "year"
+            ? [`Annual saving: ${formatMoney(estimate.annualSavings)}`]
+            : []),
           "",
           "The tenant wants to subscribe by bank transfer or cash.",
           "Send them an invoice, then record the payment in Admin → Tenants once it arrives.",
@@ -168,6 +191,31 @@ export default function Billing() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
+                {!subscribed && (
+                  <div className="grid w-full grid-cols-2 rounded-lg border border-border/60 bg-muted/30 p-1 sm:w-fit">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-auto py-2"
+                      variant={billingInterval === "month" ? "default" : "ghost"}
+                      onClick={() => setBillingInterval("month")}
+                    >
+                      Monthly
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-auto py-2"
+                      variant={billingInterval === "year" ? "default" : "ghost"}
+                      onClick={() => setBillingInterval("year")}
+                    >
+                      Annual{estimate.annualSavings > 0
+                        ? ` · save ${formatMoney(estimate.annualSavings)}`
+                        : ""}
+                    </Button>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Price</p>
@@ -177,15 +225,25 @@ export default function Billing() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Your employees</p>
-                    <p className="text-3xl font-bold">{employees}</p>
+                    <p className="text-sm text-muted-foreground">Minimum</p>
+                    <p className="text-3xl font-bold">{formatMoney(minimumMonthly)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      includes {estimate.minimumEmployees} employees
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      {subscribed ? "Billed monthly" : "Projected monthly"}
+                      {subscribed
+                        ? activeBillingInterval === "year" ? "Billed annually" : "Billed monthly"
+                        : billingInterval === "year" ? "Annual total" : "Monthly total"}
                     </p>
                     <p className="text-3xl font-bold">
-                      {formatMoney(tenant?.monthlySubscriptionAmount ?? projected)}
+                      {formatMoney(subscribed ? activeBillingAmount : projected)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {employees} active · {subscribed
+                        ? tenant?.subscriptionBilledSeats ?? estimate.billedEmployees
+                        : estimate.billedEmployees} billed
                     </p>
                   </div>
                 </div>
@@ -216,7 +274,7 @@ export default function Billing() {
                   ) : (
                     <Button className="gap-2" onClick={startCheckout} disabled={checkoutBusy || !canManage()}>
                       {checkoutBusy && <Loader2 className="h-4 w-4 animate-spin" />}
-                      Subscribe now
+                      Subscribe {billingInterval === "year" ? "annually" : "monthly"}
                     </Button>
                   )}
                   {!subscribed && tenant?.stripeCustomerId && (

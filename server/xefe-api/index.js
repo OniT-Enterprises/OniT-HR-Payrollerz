@@ -2,8 +2,9 @@
  * Xefe HR/Payroll API
  * REST API for OpenClaw bot integration with OniT HR system
  *
- * All Firestore collections are tenant subcollections under tenants/{tid}/
- * (no top-level collections with tenantId field).
+ * Most Firestore collections are tenant subcollections under tenants/{tid}/.
+ * Hiring remains in the app's legacy top-level jobs/candidates/interviews
+ * collections, with tenantId enforced on every document.
  */
 
 const path = require('path');
@@ -29,7 +30,13 @@ let db;
 let firebaseInitialized = false;
 
 try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    // Test mode: the Firestore emulator needs no credentials. Production never
+    // sets FIRESTORE_EMULATOR_HOST, so the cert branches below stay in charge.
+    admin.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID || 'onit-hr-payroll',
+    });
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
     const serviceAccount = require(path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PATH));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
@@ -68,7 +75,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'X-API-Key', 'Authorization'],
 }));
 app.use(express.json({ limit: '1mb' }));
@@ -314,6 +321,21 @@ function getCurrentMonthRange() {
 /** Tenant collection reference helper */
 function tenantCol(tenantId, collection) {
   return db.collection('tenants').doc(tenantId).collection(collection);
+}
+
+/** Hiring collections are top-level and carry tenantId on each document. */
+function hiringCol(tenantId, collection) {
+  return db.collection(collection).where('tenantId', '==', tenantId);
+}
+
+/** Resolve a top-level hiring record without ever crossing tenant boundaries. */
+async function hiringDoc(tenantId, collection, id) {
+  const ref = db.collection(collection).doc(id);
+  const snap = await ref.get();
+  if (!snap.exists || snap.data()?.tenantId !== tenantId) {
+    return { ref, snap: null };
+  }
+  return { ref, snap };
 }
 
 /**
@@ -731,15 +753,15 @@ router.get('/interviews', async (req, res) => {
     const { status, limit: limitStr } = req.query;
     const maxResults = Math.min(parseInt(limitStr) || 50, 200);
 
-    let query = tenantCol(req.tenantId, 'interviews').orderBy('scheduledDate', 'desc');
-
-    if (status) {
-      query = query.where('status', '==', status);
-    }
-
-    query = query.limit(maxResults);
-    const snapshot = await query.get();
-    const interviews = mapDocs(snapshot);
+    const snapshot = await hiringCol(req.tenantId, 'interviews').get();
+    const interviews = mapDocs(snapshot)
+      .filter((interview) => !status || interview.status === status)
+      .sort((a, b) => {
+        const aDate = `${a.interviewDate || a.scheduledDate || ''}T${a.interviewTime || ''}`;
+        const bDate = `${b.interviewDate || b.scheduledDate || ''}T${b.interviewTime || ''}`;
+        return bDate.localeCompare(aDate);
+      })
+      .slice(0, maxResults);
 
     res.json({ success: true, count: interviews.length, interviews });
   } catch (error) {
@@ -754,9 +776,9 @@ router.get('/interviews', async (req, res) => {
 router.get('/interviews/today', async (req, res) => {
   try {
     const today = getTodayTL();
-    const snapshot = await tenantCol(req.tenantId, 'interviews').get();
+    const snapshot = await hiringCol(req.tenantId, 'interviews').get();
     const interviews = mapDocs(snapshot).filter((i) => {
-      const date = (i.scheduledDate || i.date || '').split('T')[0];
+      const date = (i.interviewDate || i.scheduledDate || i.date || '').split('T')[0];
       return date === today;
     });
 
@@ -778,15 +800,15 @@ router.get('/interviews/upcoming', async (req, res) => {
       .toISOString()
       .split('T')[0];
 
-    const snapshot = await tenantCol(req.tenantId, 'interviews').get();
+    const snapshot = await hiringCol(req.tenantId, 'interviews').get();
     const interviews = mapDocs(snapshot).filter((i) => {
-      const date = (i.scheduledDate || i.date || '').split('T')[0];
+      const date = (i.interviewDate || i.scheduledDate || i.date || '').split('T')[0];
       return date >= today && date <= nextWeek;
     });
 
     interviews.sort((a, b) => {
-      const da = a.scheduledDate || a.date || '';
-      const db = b.scheduledDate || b.date || '';
+      const da = a.interviewDate || a.scheduledDate || a.date || '';
+      const db = b.interviewDate || b.scheduledDate || b.date || '';
       return da.localeCompare(db);
     });
 
@@ -810,15 +832,11 @@ router.get('/jobs', async (req, res) => {
     const { status, limit: limitStr } = req.query;
     const maxResults = Math.min(parseInt(limitStr) || 50, 200);
 
-    let query = tenantCol(req.tenantId, 'jobs').orderBy('createdAt', 'desc');
-
-    if (status) {
-      query = query.where('status', '==', status);
-    }
-
-    query = query.limit(maxResults);
-    const snapshot = await query.get();
-    const jobs = mapDocs(snapshot);
+    const snapshot = await hiringCol(req.tenantId, 'jobs').get();
+    const jobs = mapDocs(snapshot)
+      .filter((job) => !status || job.status === status)
+      .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+      .slice(0, maxResults);
 
     res.json({ success: true, count: jobs.length, jobs });
   } catch (error) {
@@ -832,11 +850,10 @@ router.get('/jobs', async (req, res) => {
  */
 router.get('/jobs/open', async (req, res) => {
   try {
-    const snapshot = await tenantCol(req.tenantId, 'jobs')
-      .where('status', '==', 'open')
-      .orderBy('createdAt', 'desc')
-      .get();
-    const jobs = mapDocs(snapshot);
+    const snapshot = await hiringCol(req.tenantId, 'jobs').get();
+    const jobs = mapDocs(snapshot)
+      .filter((job) => job.status === 'open')
+      .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
     res.json({ success: true, count: jobs.length, jobs });
   } catch (error) {
     console.error('[jobs/open]', error);
@@ -851,6 +868,10 @@ router.get('/jobs/open', async (req, res) => {
  */
 router.get('/jobs/:id/private', async (req, res) => {
   try {
+    const { snap: jobSnap } = await hiringDoc(req.tenantId, 'jobs', req.params.id);
+    if (!jobSnap) {
+      return res.status(404).json({ success: false, message: 'Job not found' });
+    }
     const snap = await db.collection('jobPrivateDetails').doc(req.params.id).get();
     if (!snap.exists) {
       return res.status(404).json({ success: false, message: 'No private details for job' });
@@ -1780,8 +1801,8 @@ router.get('/stats', async (req, res) => {
       tenantCol(req.tenantId, 'invoices').where('status', 'in', ['sent', 'viewed', 'partial']).get(),
       tenantCol(req.tenantId, 'bills').where('status', 'in', ['pending', 'partial', 'approved']).get(),
       tenantCol(req.tenantId, 'expenses').get(),
-      tenantCol(req.tenantId, 'interviews').get(),
-      tenantCol(req.tenantId, 'jobs').where('status', '==', 'open').get(),
+      hiringCol(req.tenantId, 'interviews').get(),
+      hiringCol(req.tenantId, 'jobs').get(),
     ]);
 
     // Employee counts
@@ -1841,15 +1862,17 @@ router.get('/stats', async (req, res) => {
     const todayInterviews = [];
     interviewsSnap.docs.forEach((doc) => {
       const data = doc.data();
-      const date = (data.scheduledDate || data.date || '').split('T')[0];
+      const date = (data.interviewDate || data.scheduledDate || data.date || '').split('T')[0];
       if (date === today) {
         todayInterviews.push({
           candidateName: data.candidateName || '',
           position: data.position || data.jobTitle || '',
-          time: data.scheduledTime || data.time || '',
+          time: data.interviewTime || data.scheduledTime || data.time || '',
         });
       }
     });
+
+    const openJobs = openJobsSnap.docs.filter((doc) => doc.data().status === 'open').length;
 
     // Fetch latest payroll run
     let latestPayroll = null;
@@ -1874,7 +1897,7 @@ router.get('/stats', async (req, res) => {
         onLeaveDetails: onLeaveToday,
       },
       recruitment: {
-        openJobs: openJobsSnap.size,
+        openJobs,
         interviewsToday: todayInterviews.length,
         interviewDetails: todayInterviews,
       },
@@ -3633,6 +3656,7 @@ router.post('/jobs', async (req, res) => {
     }
 
     const job = {
+      tenantId: tid,
       title, department, description, location,
       salaryMin: salaryMin != null ? Number(salaryMin) : null,
       salaryMax: salaryMax != null ? Number(salaryMax) : null,
@@ -3651,7 +3675,7 @@ router.post('/jobs', async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await tenantCol(tid, 'jobs').add(job);
+    const docRef = await db.collection('jobs').add(job);
 
     await writeAuditLog(tid, {
       userId: createdBy, userEmail: createdBy,
@@ -3677,9 +3701,8 @@ router.patch('/jobs/:id/close', async (req, res) => {
     const { id } = req.params;
     const { reason = '', updatedBy = 'bot' } = req.body || {};
 
-    const ref = tenantCol(tid, 'jobs').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) return res.status(404).json({ success: false, message: 'Job not found' });
+    const { ref, snap } = await hiringDoc(tid, 'jobs', id);
+    if (!snap) return res.status(404).json({ success: false, message: 'Job not found' });
 
     const current = snap.data();
     if (current.status === 'closed') {
@@ -3718,9 +3741,8 @@ router.patch('/candidates/:id', async (req, res) => {
     const { id } = req.params;
     const { status, notes, updatedBy = 'bot' } = req.body || {};
 
-    const ref = tenantCol(tid, 'candidates').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) return res.status(404).json({ success: false, message: 'Candidate not found' });
+    const { ref, snap } = await hiringDoc(tid, 'candidates', id);
+    if (!snap) return res.status(404).json({ success: false, message: 'Candidate not found' });
     const current = snap.data();
 
     const updates = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
@@ -3790,6 +3812,7 @@ router.post('/interviews', async (req, res) => {
     }
 
     const interview = {
+      tenantId: tid,
       candidateId, candidateName, candidateEmail,
       position, jobId,
       interviewDate, interviewTime,
@@ -3797,7 +3820,12 @@ router.post('/interviews', async (req, res) => {
       interviewType, location, meetingLink,
       interviewerIds: [],
       interviewerNames: Array.isArray(interviewerNames) ? interviewerNames : [interviewerNames].filter(Boolean),
-      preChecks: { hrReview: false, resumeChecked: false, backgroundCheck: false, referencesChecked: false },
+      preChecks: {
+        criminalRecord: false,
+        referencesChecked: false,
+        idVerified: false,
+        educationVerified: false,
+      },
       invitationSent: false, reminderSent: false,
       candidateConfirmed: false, followUpCall: false,
       status: 'scheduled',
@@ -3807,7 +3835,7 @@ router.post('/interviews', async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const docRef = await tenantCol(tid, 'interviews').add(interview);
+    const docRef = await db.collection('interviews').add(interview);
 
     await writeAuditLog(tid, {
       userId: createdBy, userEmail: createdBy,
@@ -3839,9 +3867,8 @@ router.patch('/interviews/:id/status', async (req, res) => {
       return res.status(400).json({ success: false, message: `status must be one of: ${allowed.join(', ')}` });
     }
 
-    const ref = tenantCol(tid, 'interviews').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) return res.status(404).json({ success: false, message: 'Interview not found' });
+    const { ref, snap } = await hiringDoc(tid, 'interviews', id);
+    if (!snap) return res.status(404).json({ success: false, message: 'Interview not found' });
     const current = snap.data();
 
     const updates = {
@@ -4374,11 +4401,9 @@ const PAGE_CONTEXT_MAP = {
   '/settings/foreign-workers': { name: 'Foreign Workers', description: 'Work permits and visa compliance for foreign employees.' },
   '/people/announcements': { name: 'Announcements', description: 'Company announcements and internal communications.' },
   '/people/grievances': { name: 'Grievance Inbox', description: 'Employee grievances and complaints.' },
-  '/people/jobs': { name: 'Job Postings', description: 'Active job listings and recruitment pipeline.' },
-  '/people/candidates': { name: 'Candidate Selection', description: 'Candidate applications and selection process.' },
-  '/people/interviews': { name: 'Interviews', description: 'Interview schedule and tracking.' },
-  '/people/onboarding': { name: 'Onboarding', description: 'New hire onboarding checklists and progress.' },
-  '/people/offboarding': { name: 'Offboarding', description: 'Employee exit/offboarding process tracking.' },
+  '/people/jobs': { name: 'Jobs & Applicants', description: 'One hiring workspace for jobs, applicants, interview scheduling, and hiring decisions.' },
+  '/people/onboarding': { name: 'Onboarding Checklist', description: 'First-day readiness checklist linked to an employee record.' },
+  '/people/offboarding': { name: 'Employee Offboarding', description: 'Employee departures, final-pay tasks, and equipment returns.' },
   '/scheduling': { name: 'Scheduling Dashboard', description: 'Overview of attendance, leave, and scheduling.' },
   '/scheduling/time-tracking': { name: 'Time Tracking', description: 'Employee time entries and timesheets.' },
   '/scheduling/attendance': { name: 'Attendance', description: 'Daily attendance records and patterns.' },
@@ -5016,7 +5041,13 @@ app.use((err, req, res, _next) => {
 // Start server
 // ============================================================================
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`[xefe-api] Listening on 127.0.0.1:${PORT}`);
-  console.log(`[xefe-api] Health check: http://127.0.0.1:${PORT}/api/health`);
-});
+// Export for tests (node:test boots the app on an ephemeral port); only
+// listen when launched directly (PM2 / npm start).
+module.exports = { app };
+
+if (require.main === module) {
+  app.listen(PORT, '127.0.0.1', () => {
+    console.log(`[xefe-api] Listening on 127.0.0.1:${PORT}`);
+    console.log(`[xefe-api] Health check: http://127.0.0.1:${PORT}/api/health`);
+  });
+}

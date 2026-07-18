@@ -648,7 +648,7 @@ const messages = {
           "title": "Invoices and everyday payments",
           "description": "Create customer invoices and record cash, bank transfer, card, mobile-money or cheque payments."
         },
-        "viewAll": "View all features"
+        "viewAll": "See exactly how Xefe works"
       },
       "local": {
         "eyebrow": "Made for Timor-Leste",
@@ -676,6 +676,8 @@ const messages = {
         "perEmployeeMonth": "/employee/month",
         "example": "Example: {{total}}/month for {{employees}} employees",
         "billedMonthly": "billed monthly",
+        "minimum": "{{total}} monthly minimum includes {{employees}} employees",
+        "annualSaving": "Annual: {{total}} — save {{savings}}",
         "cta": "Start free",
         "includedTitle": "Included with every account",
         "benefits": {
@@ -904,6 +906,7 @@ const messages = {
       "brand": "Xefe",
       "location": "Timor-Leste",
       "links": {
+        "howItWorks": "How Xefe works",
         "privacy": "Privacy",
         "terms": "Terms",
         "support": "Support",
@@ -1188,6 +1191,220 @@ const messages = {
           "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
         }
       }
+    }
+  },
+  "howItWorks": {
+    "nav": {
+      "workflow": "How work flows",
+      "example": "Worked example",
+      "controls": "Controls and reports",
+      "evidence": "How we validate"
+    },
+    "hero": {
+      "eyebrow": "For businesses and accountants",
+      "title": "Simple enough to run yourself.",
+      "titleAccent": "Detailed enough for your accountant.",
+      "description": "Xefe guides everyday payroll, people and money work in plain language, while keeping every calculation, report and journal available for professional review.",
+      "primary": "Start free",
+      "secondary": "Follow the workflow",
+      "trust": {
+        "plain": "Plain language for everyday work",
+        "detail": "Full calculation and accounting detail",
+        "languages": "Tetun, English and Portuguese"
+      },
+      "proof": {
+        "eyebrow": "One connected record",
+        "title": "From employee details to the books",
+        "status": "Reviewable",
+        "people": {
+          "title": "People data ready",
+          "description": "Salary, time, leave and payment details stay together."
+        },
+        "payroll": {
+          "title": "Payroll calculated",
+          "description": "WIT, INSS, overtime and annual subsidy remain visible."
+        },
+        "outputs": {
+          "title": "Payments and filings prepared",
+          "description": "Payslips, bank files and compliance reports come from the run."
+        },
+        "accounts": {
+          "title": "Journal balanced",
+          "description": "Payroll expenses and liabilities post into double-entry accounts."
+        }
+      }
+    },
+    "audience": {
+      "eyebrow": "One product, two levels of detail",
+      "title": "Clear for the person doing the work",
+      "description": "Xefe keeps the normal path calm without hiding the evidence an accountant needs.",
+      "everyday": {
+        "title": "For everyday business work",
+        "description": "Owners and staff get guided tasks, clear words and one next action at a time.",
+        "points": {
+          "guided": "Guided employee, payroll, invoice and payment screens",
+          "defaults": "Safe defaults keep specialist tax decisions out of the normal flow",
+          "language": "Phone-friendly screens in Tetun, English and Portuguese"
+        }
+      },
+      "professional": {
+        "title": "For accountants and reviewers",
+        "description": "Professional detail stays available when someone needs to inspect, reconcile or file.",
+        "points": {
+          "calculations": "Calculation bases, rates, classifications and rounding are visible",
+          "accounting": "Balanced journals, general ledger, trial balance and statements",
+          "compliance": "WIT, INSS and advanced tax reports with audit history"
+        }
+      },
+      "modeTitle": "Advanced detail appears only when it helps.",
+      "modeDescription": "Accountants see specialist tax controls automatically. An owner can enable the same mode when their accountant asks for it; everyone else keeps the simpler workflow."
+    },
+    "workflow": {
+      "eyebrow": "How work moves through Xefe",
+      "title": "Do the task once. Keep the evidence connected.",
+      "description": "Each step begins with the everyday action, then shows what Xefe handles and what a professional can verify.",
+      "labels": {
+        "you": "What you do",
+        "xefe": "What Xefe handles",
+        "verify": "What can be verified"
+      },
+      "people": {
+        "title": "Keep people and time together",
+        "you": "Add the employee, salary, schedule, bank details, attendance and leave.",
+        "xefe": "Xefe keeps the employment record and payroll inputs in one place.",
+        "verify": "Contracts, pay settings, attendance changes and the source of each payroll input."
+      },
+      "payroll": {
+        "title": "Review and approve payroll",
+        "you": "Choose the period, review changes and approve when every employee is ready.",
+        "xefe": "Xefe calculates gross pay, WIT, employee and employer INSS, overtime, deductions and net pay.",
+        "verify": "Every employee calculation, statutory basis, rounding result and approval record."
+      },
+      "payments": {
+        "title": "Pay people and prepare filings",
+        "you": "Confirm the payment date and download the outputs you need.",
+        "xefe": "Xefe prepares clear payslips, local bank files and WIT and INSS reports from the approved run.",
+        "verify": "Payroll totals reconcile to employees, bank payments and statutory liabilities."
+      },
+      "accounting": {
+        "title": "Keep the books in step",
+        "you": "Review the generated entry and continue normal reconciliation and period review.",
+        "xefe": "Xefe posts salary expense, employer INSS, net salaries and statutory payables as balanced journal lines.",
+        "verify": "Journal source, account codes, debits, credits, general ledger and trial balance."
+      }
+    },
+    "example": {
+      "eyebrow": "A calculation you can inspect",
+      "title": "One payroll result, followed into the journal",
+      "description": "The same numbers should make sense to the person paying the team and to the accountant reviewing the books.",
+      "synthetic": "Synthetic illustrative example",
+      "employerInss": "Employer INSS (6%)",
+      "employerCost": "Total employer cost",
+      "calculationEyebrow": "Monthly payroll example",
+      "calculationTitle": "Resident employee calculation",
+      "formulas": {
+        "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
+        "employeeInss": "Employee INSS: 4% × $1,380 = $55.20",
+        "employerInss": "Employer INSS: 6% × $1,380 = $82.80"
+      },
+      "journalEyebrow": "Generated accounting entry",
+      "journalTitle": "Balanced payroll journal",
+      "accounts": {
+        "wages": "Salaries and wages",
+        "employerInssExpense": "Employer INSS expense",
+        "netPayable": "Net salaries payable",
+        "witPayable": "WIT payable",
+        "employeeInssPayable": "Employee INSS payable",
+        "employerInssPayable": "Employer INSS payable"
+      },
+      "table": {
+        "account": "Account",
+        "debit": "Debit",
+        "credit": "Credit",
+        "total": "Balanced total"
+      },
+      "journalNote": "The journal totals match the employer cost and keep employee and employer INSS liabilities separate.",
+      "disclaimer": "Illustrative synthetic monthly example for a resident employee. The food allowance is shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
+    },
+    "controls": {
+      "eyebrow": "Controls and useful outputs",
+      "title": "Easy to operate. Serious about review.",
+      "description": "The normal workflow stays short, while controls and reports preserve the trail behind each result.",
+      "items": {
+        "visible": {
+          "title": "Visible calculations",
+          "description": "Gross pay, each earning, deduction, statutory amount and net pay can be reviewed before finalizing."
+        },
+        "approval": {
+          "title": "Approval controls",
+          "description": "Payroll records who prepared and approved a run, with a two-person option for teams that require it."
+        },
+        "noGuessing": {
+          "title": "No invented compliance values",
+          "description": "When required statutory data is missing, Xefe asks for review instead of silently estimating it."
+        },
+        "journals": {
+          "title": "Source-linked journals",
+          "description": "Approved payroll creates balanced accounting lines tied back to the originating run."
+        },
+        "audit": {
+          "title": "Audit and period discipline",
+          "description": "Audit history, posting status and fiscal-period controls help protect completed accounting work."
+        },
+        "exports": {
+          "title": "Practical exports",
+          "description": "PDF, spreadsheet and bank-ready outputs let businesses and advisers continue required external work."
+        }
+      },
+      "outputsEyebrow": "From the same records",
+      "outputsTitle": "What Xefe prepares",
+      "outputs": {
+        "payslips": "Employee payslips with line-by-line earnings and deductions",
+        "bankFiles": "Payroll payment files for supported Timor-Leste banks",
+        "payrollRegister": "Payroll registers and accounting summaries",
+        "wit": "Monthly WIT review and filing reports",
+        "inss": "Monthly and annual INSS reports, including DR spreadsheet output",
+        "journal": "Balanced payroll journal entries",
+        "ledger": "General ledger and trial balance",
+        "statements": "Income statement, balance sheet and cash-flow reports"
+      },
+      "accountantModeTitle": "Accountant mode without accountant clutter",
+      "accountantModeDescription": "Supplier withholding, treaty rates, VAT and specialist filing controls stay out of the everyday path. They appear for the accountant role or when an owner deliberately enables advanced tax mode."
+    },
+    "evidence": {
+      "eyebrow": "How Xefe earns trust",
+      "title": "Evidence before confident claims",
+      "description": "Accounting software should make its basis clear, especially when a result affects pay, tax or the ledger.",
+      "items": {
+        "sources": {
+          "title": "Primary-source rules",
+          "description": "Timor-Leste payroll rules are checked against legislation and official ATTL or INSS guidance before they become product logic."
+        },
+        "testing": {
+          "title": "Repeatable test coverage",
+          "description": "The calculation engine is regression-tested with fully synthetic standard and edge cases. Expected results stay fixed so changes cannot silently alter payroll."
+        },
+        "guardrails": {
+          "title": "Exceptions stay visible",
+          "description": "Unsupported or incomplete statutory cases are marked for review rather than converted into a convenient but unsupported answer."
+        },
+        "review": {
+          "title": "Professional judgment has a place",
+          "description": "Accountants can inspect the inputs, conventions, reports and resulting entries instead of accepting a black-box total."
+        }
+      },
+      "honestyTitle": "What Xefe does not pretend to do",
+      "honestyDescription": "Xefe calculates and records from the information provided. Unusual contracts, exemptions, treaty positions, disputed classifications and new legal changes may still require advice from a qualified Timor-Leste professional."
+    },
+    "cta": {
+      "eyebrow": "Use only the detail you need",
+      "title": "Start simple. Bring your accountant when you need them.",
+      "description": "Set up the business and explore every feature free. Xefe keeps the everyday work clear and the professional evidence ready.",
+      "primary": "Start free",
+      "whatsapp": "Ask for a walkthrough"
+    },
+    "footer": {
+      "home": "Product overview"
     }
   },
   "settings": {
@@ -2403,6 +2620,7 @@ const messages = {
     "leaveRequests": {
       "title": "Leave Requests",
       "subtitle": "Manage employee leave requests and approvals",
+      "scopeMissing": "Your manager account is not linked to a department yet. You can still see your own requests, but HR must set your department before team approvals appear.",
       "actions": {
         "newRequest": "New Request",
         "cancel": "Cancel",

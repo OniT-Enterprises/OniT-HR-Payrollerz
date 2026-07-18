@@ -16,6 +16,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useAllTenants, useAllUsers, useAuditLog, usePackagesConfig, useSuperAdminRequests } from "@/hooks/useAdmin";
+import { isTenantSubscribed, normalizeBillingPackagesConfig } from "@/lib/packagePricing";
 import { OptionalTimestamp } from "@/types/firebase";
 
 function formatDateValue(value: OptionalTimestamp): string {
@@ -84,10 +85,8 @@ export default function AdminConsoleHome() {
 
   const superAdmins = users.filter((user) => user.isSuperAdmin);
   const pendingRequests = requests.filter((request) => request.status !== "approved" && request.status !== "rejected");
-  const payingTenants = tenants.filter(
-    (tenant) => typeof tenant.monthlySubscriptionAmount === "number" && tenant.monthlySubscriptionAmount > 0,
-  );
-  const pricePerEmployee = packagesConfig?.pricePerEmployee ?? 0;
+  const payingTenants = tenants.filter((tenant) => isTenantSubscribed(tenant));
+  const pricing = normalizeBillingPackagesConfig(packagesConfig);
   const latestAudit = auditEntries[0];
 
   return (
@@ -163,8 +162,8 @@ export default function AdminConsoleHome() {
             title="Packages"
             description="Per-employee pricing"
             loading={loadingPackages}
-            value={`$${pricePerEmployee.toFixed(2)}`}
-            detail="per employee / month, all features"
+            value={`$${pricing.pricePerEmployee.toFixed(2)}`}
+            detail={`${pricing.minimumEmployees}-seat minimum, ${12 - pricing.annualMonthsCharged} months free annually`}
             onClick={() => navigate("/admin/packages")}
           />
           <SectionCard

@@ -5,11 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stripeWebhook = exports.sendRenewalReminders = exports.syncSubscriptionQuantities = exports.createBillingPortalSession = exports.createCheckoutSession = void 0;
 /**
- * Stripe billing — one flat per-employee subscription.
+ * Stripe billing — one flat per-employee subscription with a small-company
+ * minimum and an optional discounted annual cycle.
  *
  * Every account has every feature for free; a subscription is what unlocks
  * finalizing payroll runs. The subscription is a single line item priced at the
- * flat per-employee rate with quantity = the tenant's employee count.
+ * flat per-employee rate with quantity = max(active employees, minimum seats).
  *
  * Secrets (set with `firebase functions:secrets:set`):
  *   STRIPE_SECRET_KEY      — the secret key (sk_...)
@@ -21,32 +22,24 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const params_1 = require("firebase-functions/params");
 const stripe_1 = __importDefault(require("stripe"));
 const authz_1 = require("./authz");
+const billingPricing_1 = require("./billingPricing");
 const STRIPE_SECRET_KEY = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
 const DEFAULT_APP_URL = "https://xefe.tl";
-const DEFAULT_RATE = 4; // fallback per-employee rate if config is missing
 function stripeClient() {
     return new stripe_1.default(STRIPE_SECRET_KEY.value());
 }
-async function getPerEmployeeRate(db) {
-    var _a;
-    try {
-        const snap = await db.doc(PACKAGES_CONFIG_PATH).get();
-        const rate = (_a = snap.data()) === null || _a === void 0 ? void 0 : _a.pricePerEmployee;
-        if (typeof rate === "number" && Number.isFinite(rate) && rate > 0)
-            return rate;
-    }
-    catch (error) {
-        console.warn("Could not read packages config, using default rate:", error);
-    }
-    return DEFAULT_RATE;
+async function getBillingPricing(db) {
+    const snap = await db.doc(PACKAGES_CONFIG_PATH).get();
+    return (0, billingPricing_1.normalizeBillingPricing)(snap.data());
 }
 /**
  * Count the tenant's ACTIVE employees at checkout time. The source of truth is
  * the employees subcollection — tenants add staff themselves, so the manually
  * curated `currentEmployeeCount` field goes stale and must not drive billing.
- * Returns null if the aggregate query fails (caller falls back to the field).
+ * Returns null if the aggregate query fails. Checkout must stop rather than
+ * charge from a stale stored count; the daily sync simply retries tomorrow.
  */
 async function countActiveEmployees(db, tenantId) {
     try {
@@ -58,9 +51,30 @@ async function countActiveEmployees(db, tenantId) {
         return agg.data().count;
     }
     catch (error) {
-        console.error("Active-employee count failed, falling back to stored count:", error);
+        console.error("Active-employee count failed; billing action deferred:", error);
         return null;
     }
+}
+function safeReturnBase(value) {
+    if (typeof value !== "string")
+        return DEFAULT_APP_URL;
+    try {
+        const url = new URL(value);
+        const localDevelopment = (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+            url.protocol === "http:";
+        const xefeProduction = (url.hostname === "xefe.tl" || url.hostname === "www.xefe.tl") &&
+            url.protocol === "https:";
+        return localDevelopment || xefeProduction ? url.origin : DEFAULT_APP_URL;
+    }
+    catch (_a) {
+        return DEFAULT_APP_URL;
+    }
+}
+function hasActiveManualSubscription(tenant) {
+    if (tenant.manualSubscription !== true)
+        return false;
+    const paidUntil = tenant.subscriptionPaidUntil;
+    return typeof (paidUntil === null || paidUntil === void 0 ? void 0 : paidUntil.toMillis) === "function" && paidUntil.toMillis() > Date.now();
 }
 /**
  * Billing actions are for tenant owners/hr-admins — or superadmins, who can
@@ -77,6 +91,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
     var _a, _b;
     const auth = (0, authz_1.requireAuth)(request);
     const { tenantId, returnUrl } = ((_a = request.data) !== null && _a !== void 0 ? _a : {});
+    const billingInterval = ((_b = request.data) === null || _b === void 0 ? void 0 : _b.billingInterval) === "year" ? "year" : "month";
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
     }
@@ -88,14 +103,30 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
         throw new https_1.HttpsError("not-found", "Tenant not found");
     }
     const tenant = tenantSnap.data();
-    const rate = await getPerEmployeeRate(db);
+    if (typeof tenant.stripeSubscriptionId === "string" && tenant.stripeSubscriptionId) {
+        throw new https_1.HttpsError("failed-precondition", "This tenant already has an active Stripe subscription; use the billing portal instead");
+    }
+    if (hasActiveManualSubscription(tenant)) {
+        throw new https_1.HttpsError("failed-precondition", "This tenant already has an active offline subscription");
+    }
+    let pricing;
+    try {
+        pricing = await getBillingPricing(db);
+    }
+    catch (error) {
+        console.error("Could not verify current billing pricing:", error);
+        throw new https_1.HttpsError("unavailable", "Could not verify current pricing; no checkout session was created");
+    }
     // Bill for the REAL active-employee count (live query), not the manually
     // curated tenant field — self-serve tenants add staff without ever touching
-    // that field. Stripe requires quantity >= 1, so a tenant with 0 employees
-    // is billed for 1 seat until the count syncs upward.
+    // that field. Small teams are billed at the configured minimum, which is
+    // five seats ($20/month) by default.
     const activeCount = await countActiveEmployees(db, tenantId);
-    const employeeCount = Math.max(1, activeCount !== null && activeCount !== void 0 ? activeCount : Math.floor((_b = tenant.currentEmployeeCount) !== null && _b !== void 0 ? _b : 1));
-    if (activeCount !== null && activeCount !== tenant.currentEmployeeCount) {
+    if (activeCount === null) {
+        throw new https_1.HttpsError("unavailable", "Could not verify the active employee count; no checkout session was created");
+    }
+    const billedSeats = (0, billingPricing_1.calculateBilledSeats)(activeCount, pricing);
+    if (activeCount !== tenant.currentEmployeeCount) {
         // Self-heal the stored count so the billing page and admin console agree.
         await tenantRef.set({ currentEmployeeCount: activeCount }, { merge: true });
     }
@@ -110,23 +141,34 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
         customerId = customer.id;
         await tenantRef.set({ stripeCustomerId: customerId }, { merge: true });
     }
-    const base = returnUrl || DEFAULT_APP_URL;
+    const base = safeReturnBase(returnUrl);
+    const unitAmountCents = (0, billingPricing_1.getStripeUnitAmountCents)(pricing, billingInterval);
+    const subscriptionMetadata = {
+        tenantId,
+        billingInterval,
+        minimumEmployees: String(pricing.minimumEmployees),
+        annualMonthsCharged: String(pricing.annualMonthsCharged),
+    };
     const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: customerId,
         line_items: [
             {
-                quantity: employeeCount,
+                quantity: billedSeats,
                 price_data: {
                     currency: "usd",
-                    unit_amount: Math.round(rate * 100),
-                    recurring: { interval: "month" },
-                    product_data: { name: "Xefe — per employee" },
+                    unit_amount: unitAmountCents,
+                    recurring: { interval: billingInterval },
+                    product_data: {
+                        name: billingInterval === "year"
+                            ? "Xefe — annual subscription"
+                            : "Xefe — monthly subscription",
+                    },
                 },
             },
         ],
-        metadata: { tenantId },
-        subscription_data: { metadata: { tenantId } },
+        metadata: subscriptionMetadata,
+        subscription_data: { metadata: subscriptionMetadata },
         allow_promotion_codes: true,
         success_url: `${base}/billing?status=success`,
         cancel_url: `${base}/billing?status=cancel`,
@@ -149,21 +191,31 @@ exports.createBillingPortalSession = (0, https_1.onCall)({ secrets: [STRIPE_SECR
     const stripe = stripeClient();
     const portal = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${returnUrl || DEFAULT_APP_URL}/billing`,
+        return_url: `${safeReturnBase(returnUrl)}/billing`,
     });
     return { url: portal.url };
 });
 async function applySubscription(db, tenantId, sub) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const item = sub.items.data[0];
     const quantity = (_a = item === null || item === void 0 ? void 0 : item.quantity) !== null && _a !== void 0 ? _a : 1;
     const unitAmount = (_c = (_b = item === null || item === void 0 ? void 0 : item.price) === null || _b === void 0 ? void 0 : _b.unit_amount) !== null && _c !== void 0 ? _c : 0;
-    const amount = (unitAmount * quantity) / 100;
+    const billingInterval = ((_e = (_d = item === null || item === void 0 ? void 0 : item.price) === null || _d === void 0 ? void 0 : _d.recurring) === null || _e === void 0 ? void 0 : _e.interval) === "year" ? "year" : "month";
+    const annualMonthsChargedRaw = Number((_f = sub.metadata) === null || _f === void 0 ? void 0 : _f.annualMonthsCharged);
+    const annualMonthsCharged = Number.isInteger(annualMonthsChargedRaw) && annualMonthsChargedRaw >= 1 && annualMonthsChargedRaw <= 12
+        ? annualMonthsChargedRaw
+        : 10;
+    const { billingAmount, monthlyAmount, billingMonths } = (0, billingPricing_1.calculateSubscriptionAmounts)(unitAmount, quantity, billingInterval, annualMonthsCharged);
     const active = sub.status === "active" || sub.status === "trialing";
-    const periodEndSec = (_d = sub.current_period_end) !== null && _d !== void 0 ? _d : item === null || item === void 0 ? void 0 : item.current_period_end;
+    const periodEndSec = (_g = sub.current_period_end) !== null && _g !== void 0 ? _g : item === null || item === void 0 ? void 0 : item.current_period_end;
     const patch = {
-        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : (_e = sub.customer) === null || _e === void 0 ? void 0 : _e.id,
-        monthlySubscriptionAmount: amount,
+        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : (_h = sub.customer) === null || _h === void 0 ? void 0 : _h.id,
+        monthlySubscriptionAmount: monthlyAmount,
+        subscriptionBillingAmount: billingAmount,
+        subscriptionBillingInterval: billingInterval,
+        subscriptionBillingMonths: billingMonths,
+        subscriptionBilledSeats: quantity,
+        subscriptionAnnualMonthsCharged: annualMonthsCharged,
         // stripeSubscriptionId is the "can finalize payroll" gate; only set it while active.
         stripeSubscriptionId: active ? sub.id : firestore_1.FieldValue.delete(),
     };
@@ -173,19 +225,23 @@ async function applySubscription(db, tenantId, sub) {
 }
 /**
  * Daily true-up: keep each subscribed tenant's Stripe quantity equal to their
- * ACTIVE employee count, so "more employees cost more" stays true after
+ * billed employee count (active staff or the configured minimum), so "more
+ * employees cost more" stays true after
  * checkout day (quantity is otherwise frozen at whatever it was on subscribe).
- * proration_behavior 'none' means no mid-cycle part-charges — the next monthly
- * invoice simply bills the current team size. The customer.subscription.updated
- * webhook then syncs monthlySubscriptionAmount on the tenant doc.
+ * Monthly plans change on the next invoice without part-month charges. Annual
+ * plans immediately prorate added seats so a customer cannot add staff for free
+ * for the rest of a prepaid year; seat reductions take effect at renewal. The
+ * customer.subscription.updated webhook then syncs the tenant billing snapshot.
  */
 exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
     schedule: "0 3 * * *", // daily at 03:00 Dili time (quiet hours)
     timeZone: "Asia/Dili",
     secrets: [STRIPE_SECRET_KEY],
 }, async () => {
+    var _a, _b;
     const db = (0, firestore_1.getFirestore)();
     const stripe = stripeClient();
+    const pricing = await getBillingPricing(db);
     // Only tenants with a live subscription flag (non-empty string field).
     const subscribed = await db
         .collection("tenants")
@@ -198,15 +254,16 @@ exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
             const activeCount = await countActiveEmployees(db, tenantId);
             if (activeCount === null)
                 continue; // count failed; retry tomorrow
-            const quantity = Math.max(1, activeCount);
+            const quantity = (0, billingPricing_1.calculateBilledSeats)(activeCount, pricing);
             const sub = await stripe.subscriptions.retrieve(subId);
             if (sub.status !== "active" && sub.status !== "trialing")
                 continue;
             const item = sub.items.data[0];
             if (item && item.quantity !== quantity) {
+                const annualIncrease = ((_a = item.price.recurring) === null || _a === void 0 ? void 0 : _a.interval) === "year" && quantity > ((_b = item.quantity) !== null && _b !== void 0 ? _b : 0);
                 await stripe.subscriptions.update(subId, {
                     items: [{ id: item.id, quantity }],
-                    proration_behavior: "none",
+                    proration_behavior: annualIncrease ? "always_invoice" : "none",
                 });
                 console.log(`Tenant ${tenantId}: subscription quantity ${item.quantity} -> ${quantity}`);
             }
@@ -236,7 +293,7 @@ exports.sendRenewalReminders = (0, scheduler_1.onSchedule)({
     schedule: "0 8 * * *", // daily at 08:00 Dili time — lands in the morning
     timeZone: "Asia/Dili",
 }, async () => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     const db = (0, firestore_1.getFirestore)();
     const snapshot = await db
         .collection("tenants")
@@ -311,7 +368,8 @@ exports.sendRenewalReminders = (0, scheduler_1.onSchedule)({
                 text: [
                     `Tenant: ${name} (${tenantId})`,
                     `Paid until: ${paidUntilStr}`,
-                    `Monthly amount: $${Number((_b = data.monthlySubscriptionAmount) !== null && _b !== void 0 ? _b : 0)}`,
+                    `Standard monthly value: $${Number((_b = data.monthlySubscriptionAmount) !== null && _b !== void 0 ? _b : 0)}`,
+                    `Last payment: $${Number((_d = (_c = data.subscriptionBillingAmount) !== null && _c !== void 0 ? _c : data.monthlySubscriptionAmount) !== null && _d !== void 0 ? _d : 0)} for ${Number((_e = data.subscriptionBillingMonths) !== null && _e !== void 0 ? _e : 1)} month(s)`,
                     `Tenant contact: ${tenantEmail !== null && tenantEmail !== void 0 ? tenantEmail : "NO EMAIL ON FILE — contact them another way"}`,
                     "",
                     "Once payment arrives, record it in Admin -> Tenants -> Record offline payment.",
@@ -369,6 +427,11 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [STRIPE_SECRET_KEY, ST
                     // Revert to free usage: drop the payroll-unlock, zero the amount.
                     await db.doc(`tenants/${tenantId}`).set({
                         monthlySubscriptionAmount: 0,
+                        subscriptionBillingAmount: 0,
+                        subscriptionBillingInterval: firestore_1.FieldValue.delete(),
+                        subscriptionBillingMonths: firestore_1.FieldValue.delete(),
+                        subscriptionBilledSeats: firestore_1.FieldValue.delete(),
+                        subscriptionAnnualMonthsCharged: firestore_1.FieldValue.delete(),
                         stripeSubscriptionId: firestore_1.FieldValue.delete(),
                     }, { merge: true });
                 }

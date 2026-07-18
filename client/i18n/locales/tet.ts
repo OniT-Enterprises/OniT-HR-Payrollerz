@@ -648,7 +648,7 @@ const messages = {
           "title": "Fatura no pagamentu loroloron",
           "description": "Kria fatura ba kliente no rejista pagamentu osan-kontante, transferénsia bankária, kartaun, osan móvel ka xeke."
         },
-        "viewAll": "Haree funsaun hotu"
+        "viewAll": "Haree loos oinsá Xefe servisu"
       },
       "local": {
         "eyebrow": "Hadia ba Timor-Leste",
@@ -676,6 +676,8 @@ const messages = {
         "perEmployeeMonth": "/funsionáriu/fulan",
         "example": "Ezemplu: {{total}}/fulan ba funsionáriu {{employees}}",
         "billedMonthly": "selu kada fulan",
+        "minimum": "Mínimu {{total}} kada fulan inklui funsionáriu {{employees}}",
+        "annualSaving": "Anuál: {{total}} — poupa {{savings}}",
         "cta": "Hahú grátis",
         "includedTitle": "Inklui iha konta hotu",
         "benefits": {
@@ -904,6 +906,7 @@ const messages = {
       "brand": "Xefe",
       "location": "Timor-Leste",
       "links": {
+        "howItWorks": "Oinsá Xefe servisu",
         "privacy": "Privasidade",
         "terms": "Termus",
         "support": "Suporte",
@@ -1188,6 +1191,220 @@ const messages = {
           "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
         }
       }
+    }
+  },
+  "howItWorks": {
+    "nav": {
+      "workflow": "Fluxu servisu",
+      "example": "Ezemplu kalkulasaun",
+      "controls": "Kontrolu no relatóriu",
+      "evidence": "Oinsá ami valida"
+    },
+    "hero": {
+      "eyebrow": "Ba negósiu no kontabilista",
+      "title": "Simples atu uza rasik.",
+      "titleAccent": "Detallu natoon ba ita-nia kontabilista.",
+      "description": "Xefe orienta folha pagamentu, jestaun ema no osan loron-loron ho liafuan klaru, no rai kalkulasaun, relatóriu no lansu kontabil hotu atu profisionál bele haree.",
+      "primary": "Hahú grátis",
+      "secondary": "Haree fluxu servisu",
+      "trust": {
+        "plain": "Liafuan klaru ba servisu loron-loron",
+        "detail": "Kalkulasaun no kontabilidade ho detallu kompletu",
+        "languages": "Tetun, Inglés no Portugés"
+      },
+      "proof": {
+        "eyebrow": "Rejistu ida ne'ebé ligadu",
+        "title": "Husi dadus trabalhador to'o livru kontabil",
+        "status": "Bele reviza",
+        "people": {
+          "title": "Dadus ema prontu",
+          "description": "Saláriu, oras, lisensa no pagamentu hela hamutuk."
+        },
+        "payroll": {
+          "title": "Folha kalkuladu",
+          "description": "WIT, INSS, oras extra no subsídiu anuál nafatin vizível."
+        },
+        "outputs": {
+          "title": "Pagamentu no deklarasaun prontu",
+          "description": "Resibu, ficheiru banku no dokumentu konformidade mai husi folha."
+        },
+        "accounts": {
+          "title": "Lansu balansadu",
+          "description": "Despeza folha no dívida sira tama ba kontabilidade double-entry."
+        }
+      }
+    },
+    "audience": {
+      "eyebrow": "Produtu ida, nivel detallu rua",
+      "title": "Klaru ba ema ne'ebé halo servisu",
+      "description": "Xefe halo fluxu normal simples, maibé la subar evidénsia ne'ebé kontabilista presiza.",
+      "everyday": {
+        "title": "Ba servisu negósiu loron-loron",
+        "description": "Na'in no staf simu tarefa orientadu, liafuan klaru no asaun ida de'it iha kada etapa.",
+        "points": {
+          "guided": "Pájina orientadu ba trabalhador, folha, fatura no pagamentu",
+          "defaults": "Valór seguru automátiku hasai desizaun impostu espesialista husi fluxu normal",
+          "language": "Pájina ba telefone iha Tetun, Inglés no Portugés"
+        }
+      },
+      "professional": {
+        "title": "Ba kontabilista no revisor",
+        "description": "Detallu profisionál hela disponivel bainhira presiza inspeksaun, rekonsiliasaun ka deklarasaun.",
+        "points": {
+          "calculations": "Base kalkulasaun, taxa, klasifikasaun no arredondamentu vizível",
+          "accounting": "Lansu balansadu, livru jerál, balansu prova no demonstrasaun",
+          "compliance": "Dokumentu WIT, INSS no impostu avansadu ho istória auditoria"
+        }
+      },
+      "modeTitle": "Detallu avansadu mosu de'it bainhira útil.",
+      "modeDescription": "Kontabilista haree kontrolu impostu espesialista automatikamente. Na'in bele liga modu hanesan bainhira kontabilista husu; ema seluk kontinua ho fluxu simples."
+    },
+    "workflow": {
+      "eyebrow": "Oinsá servisu lao iha Xefe",
+      "title": "Halo tarefa dala ida. Rai evidénsia hotu ligadu.",
+      "description": "Kada etapa hahú ho asaun loron-loron, depois hatudu saida mak Xefe trata no saida mak profisionál bele verifika.",
+      "labels": {
+        "you": "Saida mak ita halo",
+        "xefe": "Saida mak Xefe trata",
+        "verify": "Saida mak bele verifika"
+      },
+      "people": {
+        "title": "Rai dadus ema no oras hamutuk",
+        "you": "Hatama trabalhador, saláriu, oráriu, dadus banku, prezensa no lisensa.",
+        "xefe": "Xefe rai rejistu empregu no dadus folha iha fatin ida.",
+        "verify": "Kontratu, konfigurasaun saláriu, mudansa prezensa no fonte ba kada dadus folha."
+      },
+      "payroll": {
+        "title": "Reviza no aprova folha",
+        "you": "Hili períodu, reviza mudansa no aprova bainhira trabalhador hotu prontu.",
+        "xefe": "Xefe kalkula saláriu brutu, WIT, INSS trabalhador no empregador, oras extra, dedusaun no saláriu líquidu.",
+        "verify": "Kalkulasaun kada trabalhador, base legal, arredondamentu no rejistu aprovasaun."
+      },
+      "payments": {
+        "title": "Selu trabalhador no prepara deklarasaun",
+        "you": "Konfirma data pagamentu no download rezultadu ne'ebé ita presiza.",
+        "xefe": "Xefe prepara resibu klaru, ficheiru banku lokál no dokumentu WIT no INSS husi folha aprovada.",
+        "verify": "Total folha konkorda ho trabalhador, pagamentu banku no dívida legal sira."
+      },
+      "accounting": {
+        "title": "Mantén livru kontabil atualizadu",
+        "you": "Reviza lansu ne'ebé sistema kria no kontinua rekonsiliasaun no reviza períodu.",
+        "xefe": "Xefe lansa despeza saláriu, INSS empregador, saláriu líquidu no dívida legal hanesan liña kontabil balansadu.",
+        "verify": "Fonte lansu, kódigu konta, débitu, kréditu, livru jerál no balansu prova."
+      }
+    },
+    "example": {
+      "eyebrow": "Kalkulasaun ne'ebé ita bele inspeksiona",
+      "title": "Rezultadu folha ida, tuir to'o lansu kontabil",
+      "description": "Númeru hanesan tenke klaru ba ema ne'ebé selu ekipa no ba kontabilista ne'ebé reviza livru.",
+      "synthetic": "Ezemplu ilustrativu sintétiku",
+      "employerInss": "INSS empregador (6%)",
+      "employerCost": "Kustu total empregador",
+      "calculationEyebrow": "Ezemplu folha fulan ida",
+      "calculationTitle": "Kalkulasaun trabalhador rezidente",
+      "formulas": {
+        "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
+        "employeeInss": "INSS trabalhador: 4% × $1,380 = $55.20",
+        "employerInss": "INSS empregador: 6% × $1,380 = $82.80"
+      },
+      "journalEyebrow": "Lansu kontabil ne'ebé sistema kria",
+      "journalTitle": "Lansu folha balansadu",
+      "accounts": {
+        "wages": "Saláriu no vensimentu",
+        "employerInssExpense": "Despeza INSS empregador",
+        "netPayable": "Saláriu líquidu a pagar",
+        "witPayable": "WIT a pagar",
+        "employeeInssPayable": "INSS trabalhador a pagar",
+        "employerInssPayable": "INSS empregador a pagar"
+      },
+      "table": {
+        "account": "Konta",
+        "debit": "Débitu",
+        "credit": "Kréditu",
+        "total": "Total balansadu"
+      },
+      "journalNote": "Total lansu konkorda ho kustu empregador no separa dívida INSS trabalhador no empregador.",
+      "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
+    },
+    "controls": {
+      "eyebrow": "Kontrolu no rezultadu útil",
+      "title": "Fásil atu opera. Sériu atu reviza.",
+      "description": "Fluxu normal nafatin badak, no kontrolu ho relatóriu rai dalan evidénsia ba kada rezultadu.",
+      "items": {
+        "visible": {
+          "title": "Kalkulasaun vizível",
+          "description": "Saláriu brutu, rendimentu, dedusaun, montante legal no saláriu líquidu bele reviza antes finaliza."
+        },
+        "approval": {
+          "title": "Kontrolu aprovasaun",
+          "description": "Folha rejista sé mak prepara no aprova, ho opsaun ema rua ba ekipa ne'ebé presiza."
+        },
+        "noGuessing": {
+          "title": "La inventa valór konformidade",
+          "description": "Bainhira dadus legal falta, Xefe husu reviza no la halo estimativa iha subar."
+        },
+        "journals": {
+          "title": "Lansu ligadu ba fonte",
+          "description": "Folha aprovada kria liña kontabil balansadu ne'ebé ligadu fali ba folha orijinal."
+        },
+        "audit": {
+          "title": "Auditoria no disiplina períodu",
+          "description": "Istória auditoria, estadu lansu no kontrolu períodu fiskál proteje servisu kontabil kompletu."
+        },
+        "exports": {
+          "title": "Esportasaun prátiku",
+          "description": "PDF, spreadsheet no ficheiru banku ajuda negósiu no konselleiru kontinua servisu esternu."
+        }
+      },
+      "outputsEyebrow": "Husi rejistu hanesan",
+      "outputsTitle": "Saida mak Xefe prepara",
+      "outputs": {
+        "payslips": "Resibu trabalhador ho rendimentu no dedusaun liña ba liña",
+        "bankFiles": "Ficheiru pagamentu folha ba banku Timor-Leste ne'ebé suportadu",
+        "payrollRegister": "Rejistu folha no rezumu kontabilidade",
+        "wit": "Reviza WIT fulan-fulan no dokumentu deklarasaun",
+        "inss": "Relatóriu INSS fulan no anu, inklui spreadsheet DR",
+        "journal": "Lansu kontabil folha balansadu",
+        "ledger": "Livru jerál no balansu prova",
+        "statements": "Demonstrasaun rezultadu, balansu no fluxu caixa"
+      },
+      "accountantModeTitle": "Modu kontabilista sem kompleksidade ba ema hotu",
+      "accountantModeDescription": "Retensaun fornesedór, taxa tratadu, VAT no kontrolu deklarasaun espesialista la mosu iha fluxu loron-loron. Sira mosu ba papel kontabilista ka bainhira na'in liga modu impostu avansadu."
+    },
+    "evidence": {
+      "eyebrow": "Oinsá Xefe hetan fiar",
+      "title": "Evidénsia antes de halo afirmasaun",
+      "description": "Software kontabilidade tenke hatudu nia baze, liuliu bainhira rezultadu afeta saláriu, impostu ka livru kontabil.",
+      "items": {
+        "sources": {
+          "title": "Regra husi fonte primária",
+          "description": "Regra folha Timor-Leste verifika ho lei no orientasaun ofisiál ATTL ka INSS antes tama ba lójika produtu."
+        },
+        "testing": {
+          "title": "Teste ne'ebé bele repete",
+          "description": "Motor kalkulasaun hetan teste regressaun ho kazu sintétiku normál no kazu limite. Rezultadu ne'ebé espera rai nafatin atu mudansa la bele muda folha ho nonook."
+        },
+        "guardrails": {
+          "title": "Exsepsaun nafatin vizível",
+          "description": "Kazu legal ne'ebé seidauk suportadu ka falta dadus marka atu reviza, la transforma ba resposta fásil maibé laiha baze."
+        },
+        "review": {
+          "title": "Julgamentu profisionál iha fatin",
+          "description": "Kontabilista bele inspeksiona dadus, konvensaun, relatóriu no lansu, la presiza simu total husi sistema ne'ebé la hatudu nia lójika."
+        }
+      },
+      "honestyTitle": "Saida mak Xefe la pretende halo",
+      "honestyDescription": "Xefe kalkula no rejista tuir informasaun ne'ebé hatama. Kontratu la komún, izensaun, pozisaun tratadu, klasifikasaun ho disputa no mudansa lei foun bele presiza konsellu husi profisionál kualifikadu iha Timor-Leste."
+    },
+    "cta": {
+      "eyebrow": "Uza de'it detallu ne'ebé ita presiza",
+      "title": "Hahú simples. Lori kontabilista bainhira presiza.",
+      "description": "Konfigura negósiu no esplora fitur hotu grátis. Xefe mantén servisu loron-loron klaru no evidénsia profisionál prontu.",
+      "primary": "Hahú grátis",
+      "whatsapp": "Husu demonstrasaun"
+    },
+    "footer": {
+      "home": "Vizaun jerál produtu"
     }
   },
   "settings": {
@@ -2403,6 +2620,7 @@ const messages = {
     "leaveRequests": {
       "title": "Pedidos Lisensa",
       "subtitle": "Jere pedidos lisensa no aprovasaun",
+      "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. Ita bele haree ita-nia pedidu rasik, maibé RH tenke define departamentu molok aprovasaun ekipa mosu.",
       "actions": {
         "newRequest": "Pedido Foun",
         "cancel": "Kansela",

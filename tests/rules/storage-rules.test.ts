@@ -77,6 +77,11 @@ describe('Storage rules', () => {
         uid: OWNER_B,
         role: 'owner',
       });
+      await setDoc(doc(adminDb, 'jobs/open-job'), {
+        tenantId: 'tenant-a',
+        title: 'Office Assistant',
+        status: 'open',
+      });
 
       // Seed files: one tenant-scoped employee document, one on each legacy path
       const adminStorage = context.storage();
@@ -154,6 +159,39 @@ describe('Storage rules', () => {
           '<script>alert(1)</script>',
           undefined,
           { contentType: 'text/html' },
+        ),
+      );
+    });
+  });
+
+  describe('public job application uploads', () => {
+    const resumePath = 'public/jobApplications/tenant-a/open-job/application-1/resume.pdf';
+
+    it('allows an anonymous CV upload for an open job and only hiring staff can read it', async () => {
+      await assertSucceeds(
+        uploadString(ref(anonStorage(), resumePath), 'pdf-bytes', undefined, {
+          contentType: 'application/pdf',
+        }),
+      );
+      await assertSucceeds(getBytes(ref(storageAs(OWNER_A), resumePath)));
+      await assertFails(getBytes(ref(anonStorage(), resumePath)));
+    });
+
+    it('rejects identity-document and non-CV uploads on the public path', async () => {
+      await assertFails(
+        uploadString(
+          ref(anonStorage(), 'public/jobApplications/tenant-a/open-job/application-1/id_document.pdf'),
+          'pdf-bytes',
+          undefined,
+          { contentType: 'application/pdf' },
+        ),
+      );
+      await assertFails(
+        uploadString(
+          ref(anonStorage(), 'public/jobApplications/tenant-a/open-job/application-1/resume.png'),
+          'image-bytes',
+          undefined,
+          { contentType: 'image/png' },
         ),
       );
     });

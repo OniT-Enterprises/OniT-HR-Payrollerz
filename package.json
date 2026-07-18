@@ -43,7 +43,10 @@
     "seed:prod": "node scripts/clearAndSeedData.mjs",
     "audit:data": "node scripts/auditData.mjs",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "test:api": "firebase emulators:exec --config firebase.dev.json --only firestore 'node --test server/xefe-api/test/api.test.mjs'"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -69,6 +72,7 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
     "@hookform/resolvers": "^3.9.0",
+    "@playwright/test": "^1.61.1",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-avatar": "^1.1.0",

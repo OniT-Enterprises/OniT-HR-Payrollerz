@@ -36,7 +36,15 @@ export interface TenantConfig {
   // requires an unexpired subscriptionPaidUntil to count as subscribed.
   manualSubscription?: boolean;
   subscriptionPaidUntil?: FirestoreTimestamp;
+  /** Standard monthly list value, retained for reporting across both cycles. */
   monthlySubscriptionAmount?: number;
+  /** Actual amount charged or received for the current billing cycle. */
+  subscriptionBillingAmount?: number;
+  subscriptionBillingInterval?: 'month' | 'year';
+  /** Manual prepayment duration; Stripe cycles use 1 or 12. */
+  subscriptionBillingMonths?: number;
+  subscriptionBilledSeats?: number;
+  subscriptionAnnualMonthsCharged?: number;
 
   // Plan limits
   limits?: {

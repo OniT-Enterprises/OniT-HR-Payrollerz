@@ -47,8 +47,9 @@ independence from GitHub, but the gap is closed.)
 ## Medium priority
 
 ### 4. Spam protection on the public apply form
-`/apply/:jobId` is constrained by Firestore rules (strict field validation) but has no
-CAPTCHA or rate limiting. App Check wiring already exists in `client/lib/firebase.ts`:
+`/apply/:jobId` now has a basic honeypot, validates the referenced open job in
+Firestore rules, and only accepts a CV path scoped to that job. CAPTCHA/rate limiting
+still requires console setup. App Check wiring already exists in `client/lib/firebase.ts`:
 
 - Create a **reCAPTCHA Enterprise** key (console.cloud.google.com/security/recaptcha)
 - Register it in Firebase Console → App Check

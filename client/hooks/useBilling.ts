@@ -12,6 +12,11 @@ import { isTenantSubscribed } from "@/lib/packagePricing";
 export interface TenantBilling {
   currentEmployeeCount: number;
   monthlySubscriptionAmount?: number;
+  subscriptionBillingAmount?: number;
+  subscriptionBillingInterval?: "month" | "year";
+  subscriptionBillingMonths?: number;
+  subscriptionBilledSeats?: number;
+  subscriptionAnnualMonthsCharged?: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   manualSubscription?: boolean;
@@ -29,6 +34,12 @@ export function useTenantBilling(enabled = true) {
       return {
         currentEmployeeCount: Math.max(0, (d.currentEmployeeCount as number) ?? 0),
         monthlySubscriptionAmount: d.monthlySubscriptionAmount as number | undefined,
+        subscriptionBillingAmount: d.subscriptionBillingAmount as number | undefined,
+        subscriptionBillingInterval:
+          d.subscriptionBillingInterval === "year" ? "year" : d.subscriptionBillingInterval === "month" ? "month" : undefined,
+        subscriptionBillingMonths: d.subscriptionBillingMonths as number | undefined,
+        subscriptionBilledSeats: d.subscriptionBilledSeats as number | undefined,
+        subscriptionAnnualMonthsCharged: d.subscriptionAnnualMonthsCharged as number | undefined,
         stripeCustomerId: d.stripeCustomerId as string | undefined,
         stripeSubscriptionId: d.stripeSubscriptionId as string | undefined,
         manualSubscription: d.manualSubscription === true,

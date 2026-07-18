@@ -259,6 +259,15 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
           subscriptionPaidUntil: new Date(Date.now() + 30 * DAY_MS),
         }),
       );
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), {
+          subscriptionBillingAmount: 20,
+          subscriptionBillingInterval: 'year',
+          subscriptionBillingMonths: 12,
+          subscriptionBilledSeats: 5,
+          subscriptionAnnualMonthsCharged: 10,
+        }),
+      );
       // Benign config updates by the owner must still work
       await assertSucceeds(
         updateDoc(doc(db, 'tenants/tenant-a'), { name: 'Tenant A (renamed)' }),

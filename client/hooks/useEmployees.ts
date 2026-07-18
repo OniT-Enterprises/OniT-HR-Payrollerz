@@ -59,6 +59,17 @@ export function useEmployeeDirectory(
   });
 }
 
+export function useEmployeeById(employeeId: string | undefined, enabled: boolean = true) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: employeeKeys.detail(tenantId, employeeId ?? ""),
+    queryFn: () => employeeService.getEmployeeById(tenantId, employeeId!),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: Boolean(tenantId && employeeId && enabled),
+  });
+}
+
 export function useActiveEmployeeSummary(enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({

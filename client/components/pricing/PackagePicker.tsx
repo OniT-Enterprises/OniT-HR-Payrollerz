@@ -4,10 +4,15 @@ import {
   MessageCircle,
   ReceiptText,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
-import { DEFAULT_PACKAGES_CONFIG } from "@/lib/packagePricing";
+import {
+  DEFAULT_PACKAGES_CONFIG,
+  calculatePackageEstimate,
+  normalizeBillingPackagesConfig,
+} from "@/lib/packagePricing";
 
 const DEMO_EMPLOYEES = 10;
 
@@ -23,7 +28,38 @@ function formatMoney(amount: number, locale: "en" | "tet" | "pt"): string {
 
 export function PackagePicker() {
   const { t, locale } = useI18n();
-  const rate = DEFAULT_PACKAGES_CONFIG.pricePerEmployee;
+  const [pricing, setPricing] = useState(DEFAULT_PACKAGES_CONFIG);
+
+  // Keep the public price in step with the superadmin-controlled billing
+  // configuration. Load it after first paint so Firestore is not part of the
+  // landing page's critical rendering path; defaults keep the price stable if
+  // the network is slow or unavailable.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void Promise.all([
+        import("firebase/firestore"),
+        import("@/lib/firebase-firestore"),
+        import("@/lib/paths"),
+      ]).then(async ([{ doc, getDoc }, { db }, { paths }]) => {
+        const snapshot = await getDoc(doc(db, paths.packagesConfig()));
+        if (!cancelled && snapshot.exists()) {
+          setPricing(normalizeBillingPackagesConfig(snapshot.data()));
+        }
+      }).catch(() => {
+        // Published defaults remain visible; checkout always prices server-side.
+      });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const rate = pricing.pricePerEmployee;
+  const demoEstimate = calculatePackageEstimate(pricing, { employeeCount: DEMO_EMPLOYEES });
+  const minimumEstimate = calculatePackageEstimate(pricing, { employeeCount: 0 });
   const benefits = [
     t("landing.simple.pricing.benefits.payroll"),
     t("landing.simple.pricing.benefits.bankFiles"),
@@ -59,11 +95,22 @@ export function PackagePicker() {
             </p>
             <p className="mt-3 text-sm text-zinc-500">
               {t("landing.simple.pricing.example", {
-                total: formatMoney(rate * DEMO_EMPLOYEES, locale),
+                total: formatMoney(demoEstimate.monthlyTotal, locale),
                 employees: DEMO_EMPLOYEES,
               })}
               {" · "}
               {t("landing.simple.pricing.billedMonthly")}
+            </p>
+            <p className="mt-2 text-sm font-medium text-amber-200">
+              {t("landing.simple.pricing.minimum", {
+                total: formatMoney(minimumEstimate.monthlyTotal, locale),
+                employees: pricing.minimumEmployees,
+              })}
+              {" · "}
+              {t("landing.simple.pricing.annualSaving", {
+                total: formatMoney(demoEstimate.annualTotal, locale),
+                savings: formatMoney(demoEstimate.annualSavings, locale),
+              })}
             </p>
 
             <Button

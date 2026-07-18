@@ -26,14 +26,14 @@
 - **Lines**: 64–106 (mock candidates), 178–194 (fake extraction), 239–243 (random scores)
 - **Issue**: `extractInfoFromFiles()` ignores uploaded files, returns random dummy data after 2s sleep. Scores use `Math.random()`.
 - **Fix**: Parse actual uploaded file names, set scores to 0 pending manual review.
-- **Status**: ✅ FIXED
+- **Status**: ✅ RETIRED — route now redirects to the real Jobs & Applicants workspace
 
 ### 1d. Onboarding.tsx — Mock SOPs
 - **File**: `client/pages/hiring/Onboarding.tsx`
 - **Lines**: 117–140
 - **Issue**: Hardcoded SOP array instead of Firestore data. However, these are i18n-translated static policies — acceptable as config.
-- **Fix**: Leave as-is (these are static policy references, not dynamic data).
-- **Status**: ⏭️ SKIPPED (by design)
+- **Fix**: Replaced the nine-step generic flow with a first-day checklist linked to an employee record.
+- **Status**: ✅ FIXED
 
 ---
 
@@ -89,7 +89,7 @@
 - **Line**: 62
 - **Issue**: `_showFilterPanel` state never used.
 - **Fix**: Removed.
-- **Status**: ✅ FIXED
+- **Status**: ✅ RETIRED — page is no longer routed
 
 ---
 

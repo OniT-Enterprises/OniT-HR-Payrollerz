@@ -123,7 +123,7 @@ Dashboard
 | Navigation structure | ✅ Complete | 3-pillar design |
 | Employee CRUD | ✅ Basic | Missing TL fields |
 | Department management | ✅ Basic | Org chart needs work |
-| Hiring workflow | ⚠️ Partial | Missing AI screening |
+| Hiring workflow | ✅ Core flow | One jobs/applicants/interviews workspace; AI screening intentionally deferred |
 | Time tracking UI | ⚠️ Shell | No actual tracking |
 | Leave requests UI | ⚠️ Shell | No workflow |
 | Payroll run UI | ⚠️ Shell | **No calculations** |
@@ -295,31 +295,31 @@ Dashboard
 
 ### Phase 5: Hiring Module
 
-**Goal**: Streamlined recruitment with AI assistance
+**Goal**: Streamlined recruitment for small teams; AI assistance is optional, not required for the core flow
 
 #### 5.1 Job Posting
-- [ ] Job creation form with all fields
+- [x] Job creation form with core fields
 - [ ] Two-person approval workflow
-- [ ] Social sharing (Facebook, LinkedIn)
+- [x] Shareable public application link
 - [ ] Job portal integration
 
 #### 5.2 Candidate Management
-- [ ] CV/cover letter upload
+- [x] CV/cover letter upload
 - [ ] AI screening and shortlisting
 - [ ] Candidate ranking
-- [ ] Interview selection letter (email)
+- [x] Shortlist and outcome email
 
 #### 5.3 Interview Management
-- [ ] Jury selection from staff
+- [x] Hiring manager recorded on interview
 - [ ] Calendar integration
-- [ ] Score card creation
+- [ ] Score card creation (defer until customer demand)
 - [ ] Criminal/reference check tracking
 
 #### 5.4 Onboarding
-- [ ] Onboarding checklist
-- [ ] Company handbook generation
-- [ ] Policy acknowledgment form
-- [ ] Document collection workflow
+- [x] First-day onboarding checklist
+- [ ] Company handbook generation (deferred; keep onboarding short)
+- [x] Policy confirmation
+- [x] Document-readiness confirmation
 - [ ] SEFOPE registration
 
 #### 5.5 Offboarding

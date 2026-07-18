@@ -1,0 +1,97 @@
+# Full-workflow browser E2E against the Firebase emulator suite running
+# PRODUCTION security rules. Non-gating: runs alongside the deploy workflow
+# rather than blocking it — promote to a required check once it has a stable
+# CI history.
+name: E2E (emulators)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install functions dependencies + build
+        run: |
+          npm ci --prefix functions
+          npm --prefix functions run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # The app requires the VITE_FIREBASE_* variables to be non-empty; against
+      # the emulators their values are never validated, so dummies suffice —
+      # only the project id must match the emulator suite's project.
+      - name: Write emulator env
+        run: |
+          cat > .env.local <<'EOF'
+          VITE_FIREBASE_API_KEY=emulator-fake-key
+          VITE_FIREBASE_AUTH_DOMAIN=localhost
+          VITE_FIREBASE_PROJECT_ID=onit-hr-payroll
+          VITE_FIREBASE_STORAGE_BUCKET=onit-hr-payroll.firebasestorage.app
+          VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
+          VITE_FIREBASE_APP_ID=1:000000000000:web:0000000000000000000000
+          EOF
+
+      - name: Run E2E
+        run: npm run e2e
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+  api-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix server/xefe-api
+
+      - name: API tests (auth, tenant scoping, data)
+        run: npm run test:api

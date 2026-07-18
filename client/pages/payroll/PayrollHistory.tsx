@@ -422,6 +422,14 @@ export default function PayrollHistory() {
       setNextStepsRun(approveRun);
       setApproveRun(null);
     } catch (error: unknown) {
+      // Kept in the console (not only a toast): the rollback below hides the
+      // root cause from the UI state, which made this failure invisible.
+      console.error(
+        "Payroll approval pipeline failed:",
+        (error as { code?: string })?.code,
+        error instanceof Error ? error.message : error,
+        error instanceof Error ? error.stack?.split("\n").slice(0, 4).join(" | ") : "",
+      );
       // Approval is not complete unless accounting and the paid transition both
       // succeed. Return the run to the approval queue so a transient accounting
       // failure cannot strand it in an unretryable approved state. The journal

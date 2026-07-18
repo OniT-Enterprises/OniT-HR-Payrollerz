@@ -25,6 +25,7 @@ import {
   isTenantSubscribed,
   normalizeBillingPackagesConfig,
 } from "@/lib/packagePricing";
+import { roundMoney } from "@/lib/currency";
 import { notificationService } from "@/services/notificationService";
 import { paths } from "@/lib/paths";
 import {
@@ -347,7 +348,7 @@ class AdminService {
     if (!db) throw new Error("Database not available");
 
     const sanitized: PackagesConfig = {
-      pricePerEmployee: normalizeBillingPackagesConfig(config).pricePerEmployee,
+      ...normalizeBillingPackagesConfig(config),
       updatedBy: actorUid,
       updatedByEmail: actorEmail,
     };
@@ -602,16 +603,42 @@ class AdminService {
    */
   async recordManualSubscription(
     tenantId: string,
-    input: { months: number; monthlyAmount: number },
+    input: { months: number; amountReceived: number },
     actorUid: string,
     actorEmail: string,
   ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
-    const months = Math.max(1, Math.floor(input.months));
+    const months = input.months === 12 ? 12 : 1;
+    if (!Number.isFinite(input.amountReceived) || input.amountReceived <= 0) {
+      throw new Error("Amount received must be greater than zero");
+    }
     const tenantRef = doc(db, paths.tenant(tenantId));
     const tenantSnap = await getDoc(tenantRef);
     if (!tenantSnap.exists()) throw new Error("Tenant not found");
+    if (tenantSnap.data().stripeSubscriptionId) {
+      throw new Error("End the active Stripe subscription before recording an offline payment");
+    }
+
+    const [packagesConfigSnapshot, activeEmployeeSnapshot] = await Promise.all([
+      getDoc(doc(db, paths.packagesConfig())),
+      getCountFromServer(query(
+        collection(db, paths.employees(tenantId)),
+        where("status", "==", "active"),
+      )),
+    ]);
+    const packagesConfig = normalizeBillingPackagesConfig(
+      packagesConfigSnapshot.exists() ? packagesConfigSnapshot.data() : undefined,
+    );
+    const activeEmployees = activeEmployeeSnapshot.data().count;
+    const estimate = calculatePackageEstimate(packagesConfig, {
+      employeeCount: activeEmployees,
+    });
+    const expectedAmount = months === 12 ? estimate.annualTotal : estimate.monthlyTotal;
+    const amountReceived = roundMoney(input.amountReceived);
+    if (amountReceived < expectedAmount) {
+      throw new Error(`Amount received must be at least $${expectedAmount.toFixed(2)}`);
+    }
 
     const current = tenantSnap.data()?.subscriptionPaidUntil as
       | { toDate?: () => Date }
@@ -624,7 +651,13 @@ class AdminService {
     await updateDoc(tenantRef, {
       manualSubscription: true,
       subscriptionPaidUntil: Timestamp.fromDate(paidUntil),
-      monthlySubscriptionAmount: Math.max(0, input.monthlyAmount),
+      monthlySubscriptionAmount: estimate.monthlyTotal,
+      subscriptionBillingAmount: amountReceived,
+      subscriptionBillingInterval: months === 12 ? "year" : "month",
+      subscriptionBillingMonths: months,
+      subscriptionBilledSeats: estimate.billedEmployees,
+      subscriptionAnnualMonthsCharged: estimate.annualMonthsCharged,
+      currentEmployeeCount: activeEmployees,
       updatedAt: serverTimestamp(),
     });
 
@@ -637,7 +670,11 @@ class AdminService {
       targetName: tenantSnap.data()?.name,
       details: {
         months,
-        monthlyAmount: input.monthlyAmount,
+        activeEmployees,
+        billedSeats: estimate.billedEmployees,
+        monthlyAmount: estimate.monthlyTotal,
+        expectedAmount,
+        amountReceived,
         paidUntil: paidUntil.toISOString(),
       },
       timestamp: Timestamp.now(),

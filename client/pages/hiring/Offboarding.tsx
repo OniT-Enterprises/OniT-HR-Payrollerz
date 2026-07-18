@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -79,6 +79,8 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
 export default function Offboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedEmployeeId = searchParams.get("employeeId") || searchParams.get("employee") || "";
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
@@ -96,7 +98,7 @@ export default function Offboarding() {
   const loading = activeCasesLoading || completedCasesLoading;
 
   const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(null);
-  const [showDialog, setShowDialog] = useState(false);
+  const [showDialog, setShowDialog] = useState(Boolean(requestedEmployeeId));
   const queryClient = useQueryClient();
 
   const onboardingQueryKey = ["onboarding", "byEmployee", tenantId, selectedCase?.employeeId ?? ""];
@@ -145,7 +147,7 @@ export default function Offboarding() {
 
   // New offboarding form data
   const [newOffboarding, setNewOffboarding] = useState({
-    employeeId: "",
+    employeeId: requestedEmployeeId,
     departureReason: "" as DepartureReason | "",
     lastWorkingDay: "",
     noticeDate: "",

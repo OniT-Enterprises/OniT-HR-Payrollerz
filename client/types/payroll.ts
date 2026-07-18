@@ -129,6 +129,12 @@ export interface PayrollRecord {
   taxableIncome?: number;
   /** Threshold-adjusted amount to which the WIT rate was applied. */
   witTaxableAmount?: number;
+  /** WIT withheld this period — required by the ATTL/INSS filing generators. */
+  incomeTax?: number;
+  /** Employee INSS (4%) withheld — required by the INSS filing generators. */
+  inssEmployee?: number;
+  /** Employer INSS (6%) contribution — required by the INSS filing generators. */
+  inssEmployer?: number;
   /** INSS contribution base used for the period. */
   inssBase?: number;
 

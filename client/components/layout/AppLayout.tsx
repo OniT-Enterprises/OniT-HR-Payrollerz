@@ -21,6 +21,7 @@ const TopBar = React.lazy(() => import("./TopBar"));
 const PUBLIC_PATHS = [
   "/auth/",
   "/landing",
+  "/how-it-works",
   "/features",
   "/unauthorized",
   "/apply/",
@@ -72,7 +73,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           {isImpersonating && <ImpersonationBanner />}
-          <React.Suspense fallback={<div className="h-14 shrink-0 border-b border-border/50" />}>
+          <React.Suspense fallback={<div className="h-14 shrink-0 border-b border-border/70 bg-card" />}>
             <TopBar />
           </React.Suspense>
           <main

@@ -393,7 +393,7 @@ function BusinessSelector({ currentName, availableTenants, onSwitch, currentTena
   if (!hasMultiple) {
     return (
       <div className="flex items-center gap-2 min-w-0">
-        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Building2 className="h-4 w-4 shrink-0 text-primary" />
         <span className="text-sm font-semibold truncate">{currentName}</span>
       </div>
     );
@@ -403,7 +403,7 @@ function BusinessSelector({ currentName, availableTenants, onSwitch, currentTena
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-9 gap-2 px-3 min-w-0 max-w-[240px]">
-          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Building2 className="h-4 w-4 shrink-0 text-primary" />
           <span className="text-sm font-semibold truncate">{currentName}</span>
           <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         </Button>
@@ -509,7 +509,7 @@ export default function TopBar() {
   const isDashboard = location.pathname === "/" || location.pathname === "/dashboard";
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-30 w-full border-b border-border/70 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
       <div className="px-4 sm:px-6">
         <div className="flex h-14 items-center gap-2 sm:gap-4">
           <Button

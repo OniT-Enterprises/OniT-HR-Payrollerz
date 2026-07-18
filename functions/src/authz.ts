@@ -1,11 +1,13 @@
 import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/v2/https";
 
-export type TenantRole = "owner" | "hr-admin" | "manager" | "viewer";
+export type TenantRole = "owner" | "hr-admin" | "accountant" | "manager" | "viewer";
 
 export interface TenantMemberData {
   role?: string;
   modules?: string[];
+  employeeId?: string;
+  departmentId?: string;
   [key: string]: unknown;
 }
 

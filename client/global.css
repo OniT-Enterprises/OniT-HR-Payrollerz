@@ -16,8 +16,13 @@
 
 @layer base {
   :root {
-    /* Light mode — Xefe. The darker action green keeps white button text legible. */
-    --background: 80 10% 97%;
+    /*
+     * Light mode — Xefe.
+     * A softly tinted canvas and firmer neutral borders keep white cards from
+     * dissolving into the page. The darker action green keeps white button
+     * text legible.
+     */
+    --background: 84 18% 95%;
     --foreground: 210 18% 18%;
 
     --card: 0 0% 100%;
@@ -29,31 +34,31 @@
     --primary: 87 58% 32%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 80 8% 95%;
+    --secondary: 84 14% 92%;
     --secondary-foreground: 210 18% 18%;
 
-    --muted: 80 8% 95%;
-    --muted-foreground: 210 9% 42%;
+    --muted: 84 14% 92%;
+    --muted-foreground: 210 10% 36%;
 
-    --accent: 80 12% 94%;
+    --accent: 86 18% 90%;
     --accent-foreground: 210 18% 18%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 80 8% 88%;
-    --input: 80 8% 88%;
+    --border: 84 12% 82%;
+    --input: 84 12% 82%;
     --ring: 87 58% 32%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 80 8% 99%;
+    --sidebar-background: 84 18% 98%;
     --sidebar-foreground: 210 18% 18%;
     --sidebar-primary: 87 58% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 80 12% 94%;
+    --sidebar-accent: 86 22% 91%;
     --sidebar-accent-foreground: 210 18% 18%;
-    --sidebar-border: 80 8% 90%;
+    --sidebar-border: 84 12% 84%;
     --sidebar-ring: 87 58% 32%;
   }
 
