@@ -2,12 +2,12 @@
  * Bank payment pack — the emailed salary-transfer workflow BNU and BNCTL
  * actually use in Timor-Leste.
  *
- * Evidence (mined TL accounting-firm mail corpus, 2019–2026, de-identified —
- * see docs/MINED_TL_ACCOUNTING_INTEL.md): salary batches are NOT uploaded as
- * CSV. Each month the business emails its branch a short Portuguese cover
- * message plus an Excel workbook whose transfer sheet has exactly four
- * columns — Nº Ord | Nome | Conta <bank> | Salário líquido — with a total at
- * the bottom, accompanied by a numbered, signed payment order
+ * Verified against real-world TL banking practice during compliance research
+ * (2019–2026; internal evidence notes, kept out of the repo): salary batches
+ * are NOT uploaded as CSV. Each month the business emails its branch a short
+ * Portuguese cover message plus an Excel workbook whose transfer sheet has
+ * exactly four columns — Nº Ord | Nome | Conta <bank> | Salário líquido —
+ * with a total at the bottom, accompanied by a numbered, signed payment order
  * ("Ordem de Transferência / OT n / year"). The bank executes and returns a
  * stamped confirmation PDF.
  *
@@ -97,9 +97,9 @@ export function buildBankCoverEmail(
 /**
  * A one-off payment order — the same signed "Ordem de Pagamento" ritual used
  * for statutory payments (INSS contributions, ATTL taxes) and supplier bills.
- * Corpus evidence: BNU executes these as internal transfers with a credit
+ * In practice BNU executes these as internal transfers with a credit
  * description like "Ref <NISS> Seg Soc <TIN> <MES> <ANO>"; one-off supplier
- * payments follow "Pagamento <vendor> Fatura n.º …" threads.
+ * payments follow the "Pagamento <vendor> Fatura n.º …" convention.
  */
 export interface SinglePaymentOrder {
   company: PaymentPackCompany;

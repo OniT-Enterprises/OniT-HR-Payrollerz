@@ -1,3 +1,4 @@
+import { Building2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -72,13 +73,9 @@ export function AccountantChoice({
             value={PRIMOS_BOOT_PARTNER.id}
             className="mt-1"
           />
-          <img
-            src={PRIMOS_BOOT_PARTNER.logoDarkText}
-            alt=""
-            width="64"
-            height="24"
-            className="h-7 w-16 shrink-0 rounded bg-white p-1 object-contain"
-          />
+          <span className="flex h-7 w-16 shrink-0 items-center justify-center rounded border bg-muted">
+            <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          </span>
           <span className="min-w-0">
             <span className="block text-sm font-medium">
               {t(

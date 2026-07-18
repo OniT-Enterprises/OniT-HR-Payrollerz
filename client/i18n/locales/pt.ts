@@ -7169,14 +7169,14 @@ const messages = {
     "partner": {
       "dili": "Sediada em Díli",
       "languages": "Inglês, Tétum e Português",
-      "since": "Fundada em 2013",
+      "since": "Firma timorense estabelecida",
       "accountingAudit": "Contabilidade e auditoria",
       "eyebrow": "Contabilista preferencial Xefe",
-      "title": "Conheça a Primos Bo'ot",
+      "title": "Conheça a firma parceira",
       "description": "Uma firma timorense de contabilidade e auditoria para empresas que procuram escrituração, processamento salarial, fiscalidade ou revisão financeira profissional.",
       "preferred": "Parceiro contabilístico preferencial Xefe",
-      "profile": "A Primos Bo'ot é uma firma de contabilidade, auditoria e serviços empresariais sediada em Díli, que serve empresas, ONG e outras organizações em Timor-Leste.",
-      "website": "Visitar primosboot.com",
+      "profile": "A nossa parceira é uma firma de contabilidade, auditoria e serviços empresariais sediada em Díli, que serve empresas, ONG e outras organizações em Timor-Leste.",
+      "website": "Detalhes completos no anúncio da parceria",
       "servicesTitle": "Serviços que pode discutir",
       "services": {
         "bookkeeping": "Contabilidade mensal e anual",
@@ -7187,7 +7187,7 @@ const messages = {
         "advisory": "Contabilidade de gestão e aconselhamento financeiro"
       },
       "beforeAccessTitle": "A escolha é apenas o primeiro passo.",
-      "beforeAccessDescription": "A Primos Bo'ot confirma consigo a disponibilidade, o âmbito e os honorários. Nenhum registo do Xefe é partilhado até o proprietário conceder acesso mais tarde."
+      "beforeAccessDescription": "A firma parceira confirma consigo a disponibilidade, o âmbito e os honorários. Nenhum registo do Xefe é partilhado até o proprietário conceder acesso mais tarde."
     },
     "process": {
       "eyebrow": "Uma ligação baseada em consentimento",
@@ -7196,11 +7196,11 @@ const messages = {
       "steps": {
         "choose": {
           "title": "Pedir uma consulta",
-          "description": "Escolha a Primos Bo'ot. O Xefe envia apenas o seu contacto e o nome da empresa para que a firma possa responder."
+          "description": "Escolha a firma parceira. O Xefe envia apenas o seu contacto e o nome da empresa para que a firma possa responder."
         },
         "agree": {
           "title": "Combinar o serviço",
-          "description": "Confirme o âmbito, os prazos e os honorários diretamente com a Primos Bo'ot, fora do software."
+          "description": "Confirme o âmbito, os prazos e os honorários diretamente com a firma, fora do software."
         },
         "review": {
           "title": "Conceder acesso para revisão",
@@ -7233,17 +7233,17 @@ const messages = {
       "description": "Opcional. Pode alterar isto mais tarde.",
       "self": "Gerir por mim",
       "selfDescription": "Mantenha o Xefe simples e convide um contabilista mais tarde.",
-      "primos": "Pedir contacto da Primos Bo'ot",
+      "primos": "Pedir contacto da firma parceira",
       "primosDescription": "Depois de criar a empresa, o Xefe envia por email apenas o nome e os dados de contacto.",
-      "primosPrelaunch": "Escolher a Primos Bo'ot para mais tarde",
+      "primosPrelaunch": "Escolher a firma parceira para mais tarde",
       "primosPrelaunchDescription": "Isto guarda apenas a sua preferência. Nenhum pedido ou dado de contacto é enviado enquanto a parceria está a ser preparada.",
       "privacy": "Esta escolha não concede acesso aos seus registos.",
-      "choose": "Escolher a Primos Bo'ot",
+      "choose": "Escolher a firma parceira",
       "requested": "Pedido enviado",
       "accepted": "Pedido aceite",
       "connected": "Contabilista ligado",
       "manage": "Gerir ligação",
-      "openPortfolio": "Abrir revisão de clientes Primos Bo'ot",
+      "openPortfolio": "Abrir revisão de clientes da parceira",
       "ownerOnly": "Apenas o proprietário ou administrador da empresa pode pedir um contabilista.",
       "failed": "Não foi possível enviar o pedido. Tente novamente."
     },
@@ -7253,11 +7253,11 @@ const messages = {
       "none": "Nenhum parceiro contabilístico selecionado.",
       "view": "Ver perfil do parceiro",
       "request": "Pedir uma consulta",
-      "requestNote": "A Primos Bo'ot receberá por email o nome da empresa e os dados de contacto. Nenhum registo é partilhado.",
+      "requestNote": "A firma parceira receberá por email o nome da empresa e os dados de contacto. Nenhum registo é partilhado.",
       "cancel": "Cancelar pedido",
       "status": {
         "selected": "Selecionado — pedido não enviado",
-        "requested": "A aguardar a Primos Bo'ot",
+        "requested": "A aguardar a firma parceira",
         "accepted": "Aceite — o proprietário pode conceder acesso",
         "connected": "Ligado com acesso de contabilista",
         "declined": "A firma não pôde aceitar",
@@ -7265,35 +7265,35 @@ const messages = {
         "revoked": "Acesso revogado"
       },
       "grant": "Conceder acesso ao contabilista",
-      "grantNote": "Isto concede à Primos Bo'ot acesso restrito à folha, dinheiro, contabilidade e relatórios. A firma será avisada por email.",
+      "grantNote": "Isto concede à firma parceira acesso restrito à folha, dinheiro, contabilidade e relatórios. A firma será avisada por email.",
       "ownerGrantOnly": "O pedido foi aceite. Apenas o proprietário pode conceder acesso aos registos.",
       "revoke": "Revogar acesso",
-      "confirmGrantTitle": "Conceder acesso à Primos Bo'ot?",
-      "confirmGrantDescription": "A Primos Bo'ot será avisada por email e adicionada com um papel de contabilista restrito. Pode rever a folha e os registos financeiros, mas não pode gerir utilizadores, trabalhadores, faturação ou integrações.",
+      "confirmGrantTitle": "Conceder acesso à firma parceira?",
+      "confirmGrantDescription": "A firma parceira será avisada por email e adicionada com um papel de contabilista restrito. Pode rever a folha e os registos financeiros, mas não pode gerir utilizadores, trabalhadores, faturação ou integrações.",
       "confirmRevokeTitle": "Revogar o acesso do contabilista?",
-      "confirmRevokeDescription": "A Primos Bo'ot perderá imediatamente o acesso a esta empresa. Os seus registos e o trabalho anterior permanecem no Xefe.",
+      "confirmRevokeDescription": "A firma parceira perderá imediatamente o acesso a esta empresa. Os seus registos e o trabalho anterior permanecem no Xefe.",
       "saved": "Ligação ao contabilista atualizada.",
       "error": "Não foi possível atualizar a ligação ao contabilista.",
       "prelaunch": "Em breve",
-      "prelaunchNote": "A ligação à Primos Bo'ot está em preparação. Nenhum pedido, email ou dado de contacto será enviado até ser ativada.",
+      "prelaunchNote": "A ligação à firma parceira está em preparação. Nenhum pedido, email ou dado de contacto será enviado até ser ativada.",
       "prelaunchAction": "Ligação disponível em breve"
     },
     "landing": {
       "nav": "Apoio contabilístico",
       "eyebrow": "Apoio contabilístico opcional",
       "title": "Faça por si — ou peça revisão a um contabilista",
-      "description": "O Xefe mantém-se simples no trabalho diário. Quando quiser apoio profissional, escolha a Primos Bo'ot e controle exatamente quando começa o acesso.",
+      "description": "O Xefe mantém-se simples no trabalho diário. Quando quiser apoio profissional, escolha a firma parceira e controle exatamente quando começa o acesso.",
       "cta": "Conhecer o parceiro contabilístico"
     },
     "cta": {
       "title": "Quer um contabilista ao seu lado?",
-      "description": "Escolha a Primos Bo'ot agora ou continue a gerir o Xefe por si. Nada é partilhado até aprovar o acesso."
+      "description": "Escolha a firma parceira agora ou continue a gerir o Xefe por si. Nada é partilhado até aprovar o acesso."
     }
   },
   "accountantPortfolio": {
-    "title": "Revisão de clientes Primos Bo'ot",
+    "title": "Revisão de clientes da parceira",
     "subtitle": "Pedidos de ligação e espaços Xefe de clientes aprovados.",
-    "impersonationNote": "Está a ver o mesmo espaço de parceiro que a equipa da Primos Bo'ot utilizará.",
+    "impersonationNote": "Está a ver o mesmo espaço de parceiro que a equipa da firma parceira utilizará.",
     "cards": {
       "requests": "Novos pedidos",
       "awaitingAccess": "A aguardar acesso do cliente",

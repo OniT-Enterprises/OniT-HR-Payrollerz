@@ -117,8 +117,8 @@ export default function AccountantPortfolioDashboard() {
         <div className="mb-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-28 items-center justify-center rounded-xl border bg-white p-2">
-                <img src={PRIMOS_BOOT_PARTNER.logoDarkText} alt="" className="h-full w-auto object-contain" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl border bg-muted">
+                <Building2 className="h-7 w-7 text-muted-foreground" />
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight">{t("accountantPortfolio.title")}</h1>

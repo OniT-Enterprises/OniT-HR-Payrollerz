@@ -40,19 +40,28 @@ export interface AccountantPartner {
   mark: string;
 }
 
+/**
+ * The partnership is NOT signed yet (2026-07-18): the firm's real name, logo,
+ * and contact details must not appear anywhere public until the agreement is
+ * in place. The internal ids stay stable so stored selections/connections
+ * survive the announcement — when it is signed, restore the identity fields
+ * here, the partner logo assets under public/images/partners/, and the
+ * partner-name strings in the three locales (grep "partner firm" /
+ * "firma parceira" / "firma parseira").
+ */
 export const PRIMOS_BOOT_PARTNER: AccountantPartner = {
   id: "primos-boot",
   tenantId: "primos-boot",
-  name: "Primos Bo'ot",
+  name: "Xefe partner accounting firm",
   connectionsOpen: false,
-  website: "https://primosboot.com",
-  email: "info@primosboot.com",
-  phone: "+670 7831 8131",
-  location: "Torreto Building, 6th Floor, Dili",
-  established: 2013,
-  logoDarkText: "/images/partners/primos-boot-logo-dark-text.png",
-  logoLightText: "/images/partners/primos-boot-logo-light-text.png",
-  mark: "/images/partners/primos-boot-mark.png",
+  website: "",
+  email: "",
+  phone: "",
+  location: "Dili",
+  established: 0,
+  logoDarkText: "",
+  logoLightText: "",
+  mark: "",
 };
 
 export const ACCOUNTANT_PARTNERS = [PRIMOS_BOOT_PARTNER] as const;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Loader2, ShieldCheck } from "lucide-react";
+import { Building2, ExternalLink, Loader2, ShieldCheck } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,14 +106,8 @@ export function AccountantPartnerCard() {
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
             <div className="flex min-w-0 flex-1 items-start gap-3">
-              <div className="flex h-11 w-20 shrink-0 items-center justify-center rounded-lg border bg-white p-1.5">
-                <img
-                  src={PRIMOS_BOOT_PARTNER.logoDarkText}
-                  alt=""
-                  width="72"
-                  height="24"
-                  className="h-full w-auto object-contain"
-                />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border bg-muted">
+                <Building2 className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">

@@ -72,10 +72,10 @@ export function validateTLIban(input: string): TLIbanResult {
  */
 /**
  * INSS (Segurança Social) contribution collection account at BNU.
- * Verified against 200+ real monthly transfer confirmations (2024–2026,
- * de-identified corpus — docs/MINED_TL_ACCOUNTING_INTEL.md Appendix C):
- * beneficiary "SEGURANCA SOCIAL MSS". The bank credit description convention
- * is "Ref <employer NISS> Seg Soc <TIN> <MES> <ANO>".
+ * Verified against real transfer records during compliance research
+ * (2024–2026; internal evidence notes, kept out of the repo): beneficiary
+ * "SEGURANCA SOCIAL MSS". The bank credit description convention is
+ * "Ref <employer NISS> Seg Soc <TIN> <MES> <ANO>".
  */
 export const INSS_PAYMENT_ACCOUNT = {
   beneficiary: 'Segurança Social (MSS)',

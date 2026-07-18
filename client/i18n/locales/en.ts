@@ -7169,14 +7169,14 @@ const messages = {
     "partner": {
       "dili": "Based in Dili",
       "languages": "English, Tetun and Portuguese",
-      "since": "Established in 2013",
+      "since": "Established Timorese firm",
       "accountingAudit": "Accounting and audit",
       "eyebrow": "Xefe preferred accountant",
-      "title": "Meet Primos Bo'ot",
+      "title": "Meet our partner firm",
       "description": "A Timor-Leste accounting and audit firm for businesses that want professional bookkeeping, payroll, tax or financial review.",
       "preferred": "Preferred Xefe accounting partner",
-      "profile": "Primos Bo'ot is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
-      "website": "Visit primosboot.com",
+      "profile": "Our selected partner is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
+      "website": "Full details at the partnership announcement",
       "servicesTitle": "Services you can discuss",
       "services": {
         "bookkeeping": "Monthly and annual bookkeeping",
@@ -7187,7 +7187,7 @@ const messages = {
         "advisory": "Management accounting and financial advice"
       },
       "beforeAccessTitle": "Selecting is only the first step.",
-      "beforeAccessDescription": "Primos Bo'ot confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access."
+      "beforeAccessDescription": "The partner firm confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access."
     },
     "process": {
       "eyebrow": "A consent-first connection",
@@ -7196,11 +7196,11 @@ const messages = {
       "steps": {
         "choose": {
           "title": "Request a consultation",
-          "description": "Select Primos Bo'ot. Xefe sends only your contact and business name so the firm can respond."
+          "description": "Select the partner firm. Xefe sends only your contact and business name so the firm can respond."
         },
         "agree": {
           "title": "Agree the service",
-          "description": "Confirm scope, timing and fees directly with Primos Bo'ot outside the software."
+          "description": "Confirm scope, timing and fees directly with the firm outside the software."
         },
         "review": {
           "title": "Grant access for review",
@@ -7233,17 +7233,17 @@ const messages = {
       "description": "Optional. You can change this later.",
       "self": "Manage it myself",
       "selfDescription": "Keep Xefe simple and invite an accountant later.",
-      "primos": "Ask Primos Bo'ot to contact me",
+      "primos": "Ask the partner firm to contact me",
       "primosDescription": "After the company is created, Xefe emails only your business name and contact details.",
-      "primosPrelaunch": "Choose Primos Bo'ot for later",
+      "primosPrelaunch": "Choose the partner firm for later",
       "primosPrelaunchDescription": "This only saves your preference. No request or contact details are sent while the partnership is being prepared.",
       "privacy": "This choice does not grant access to your records.",
-      "choose": "Choose Primos Bo'ot",
+      "choose": "Choose the partner firm",
       "requested": "Request sent",
       "accepted": "Request accepted",
       "connected": "Accountant connected",
       "manage": "Manage connection",
-      "openPortfolio": "Open Primos Bo'ot client review",
+      "openPortfolio": "Open partner client review",
       "ownerOnly": "Only the business owner or administrator can request an accountant.",
       "failed": "Could not send the request. Please try again."
     },
@@ -7253,11 +7253,11 @@ const messages = {
       "none": "No accounting partner selected.",
       "view": "View partner profile",
       "request": "Request a consultation",
-      "requestNote": "Primos Bo'ot will receive your business name and contact details by email. No records are shared.",
+      "requestNote": "The partner firm will receive your business name and contact details by email. No records are shared.",
       "cancel": "Cancel request",
       "status": {
         "selected": "Selected — request not sent",
-        "requested": "Waiting for Primos Bo'ot",
+        "requested": "Waiting for the partner firm",
         "accepted": "Accepted — owner can grant access",
         "connected": "Connected with accountant access",
         "declined": "The firm could not accept",
@@ -7265,35 +7265,35 @@ const messages = {
         "revoked": "Access revoked"
       },
       "grant": "Grant accountant access",
-      "grantNote": "This gives Primos Bo'ot restricted payroll, money, accounting and reporting access. The firm will be emailed.",
+      "grantNote": "This gives the partner firm restricted payroll, money, accounting and reporting access. The firm will be emailed.",
       "ownerGrantOnly": "The request was accepted. Only the business owner can grant record access.",
       "revoke": "Revoke access",
-      "confirmGrantTitle": "Grant Primos Bo'ot access?",
-      "confirmGrantDescription": "Primos Bo'ot will be emailed and added with a restricted accountant role. They can review payroll and financial records, but cannot manage users, employees, billing or integrations.",
+      "confirmGrantTitle": "Grant the partner firm access?",
+      "confirmGrantDescription": "The partner firm will be emailed and added with a restricted accountant role. They can review payroll and financial records, but cannot manage users, employees, billing or integrations.",
       "confirmRevokeTitle": "Revoke accountant access?",
-      "confirmRevokeDescription": "Primos Bo'ot will immediately lose access to this business. Your records and prior work remain in Xefe.",
+      "confirmRevokeDescription": "The partner firm will immediately lose access to this business. Your records and prior work remain in Xefe.",
       "saved": "Accountant connection updated.",
       "error": "Could not update the accountant connection.",
       "prelaunch": "Coming soon",
-      "prelaunchNote": "The Primos Bo'ot connection is being prepared. No request, email or contact details will be sent until it is enabled.",
+      "prelaunchNote": "The partner connection is being prepared. No request, email or contact details will be sent until it is enabled.",
       "prelaunchAction": "Connection coming soon"
     },
     "landing": {
       "nav": "Accountant help",
       "eyebrow": "Optional accountant support",
       "title": "Do it yourself—or ask an accountant to review",
-      "description": "Xefe stays simple for daily work. When you want professional help, choose Primos Bo'ot and control exactly when access begins.",
+      "description": "Xefe stays simple for daily work. When you want professional help, choose the partner firm and control exactly when access begins.",
       "cta": "Meet the accountant partner"
     },
     "cta": {
       "title": "Want an accountant beside you?",
-      "description": "Choose Primos Bo'ot now or keep managing Xefe yourself. Nothing is shared until you approve access."
+      "description": "Choose the partner firm now or keep managing Xefe yourself. Nothing is shared until you approve access."
     }
   },
   "accountantPortfolio": {
-    "title": "Primos Bo'ot client review",
+    "title": "Partner client review",
     "subtitle": "Connection requests and approved Xefe client workspaces.",
-    "impersonationNote": "You are viewing the same partner workspace the Primos Bo'ot team will use.",
+    "impersonationNote": "You are viewing the same partner workspace the partner firm's team will use.",
     "cards": {
       "requests": "New requests",
       "awaitingAccess": "Awaiting client access",

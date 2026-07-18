@@ -11,24 +11,32 @@ const read = (relativePath: string) =>
   readFileSync(join(repoRoot, relativePath), "utf8");
 
 describe("accountant partner funnel", () => {
-  it("uses the real Primos Bo'ot identity and bundled partner assets", () => {
+  it("withholds the unsigned partner's identity while keeping internal ids stable", () => {
+    // The partnership is not signed yet: the firm's real name, logo, and
+    // contact details must not ship anywhere public, but the internal ids
+    // must stay stable so stored selections survive the announcement.
     expect(PRIMOS_BOOT_PARTNER).toMatchObject({
       id: "primos-boot",
       tenantId: "primos-boot",
-      name: "Primos Bo'ot",
       connectionsOpen: false,
-      website: "https://primosboot.com",
-      email: "info@primosboot.com",
-      phone: "+670 7831 8131",
-      established: 2013,
+      website: "",
+      email: "",
+      phone: "",
+      logoDarkText: "",
+      logoLightText: "",
+      mark: "",
     });
+    expect(PRIMOS_BOOT_PARTNER.name).not.toMatch(/primos/i);
 
-    for (const asset of [
-      PRIMOS_BOOT_PARTNER.logoDarkText,
-      PRIMOS_BOOT_PARTNER.logoLightText,
-      PRIMOS_BOOT_PARTNER.mark,
+    // No partner logo assets bundled, and no real identity in public surfaces.
+    expect(existsSync(join(repoRoot, "public/images/partners"))).toBe(false);
+    for (const surface of [
+      "client/lib/seo-config.ts",
+      "public/llms.txt",
+      "client/pages/AccountantPartners.tsx",
+      "client/pages/Landing.tsx",
     ]) {
-      expect(existsSync(join(repoRoot, "public", asset))).toBe(true);
+      expect(read(surface)).not.toMatch(/primos bo'ot|primosboot/i);
     }
   });
 
@@ -41,7 +49,7 @@ describe("accountant partner funnel", () => {
     expect(routes).toContain('<Route path="/accountants" element={<AccountantPartners />} />');
     expect(layout).toContain('"/accountants"');
     expect(landing).toContain('<Link to="/accountants">');
-    expect(landing).toContain("PRIMOS_BOOT_PARTNER.logoDarkText");
+    expect(landing).toContain("PRIMOS_BOOT_PARTNER.name");
     expect(seo).toContain("url: '/accountants'");
     expect(read("public/sitemap.xml")).toContain("https://xefe.tl/accountants");
     expect(read("public/llms.txt")).toContain("https://xefe.tl/accountants");
@@ -49,7 +57,8 @@ describe("accountant partner funnel", () => {
 
   it("explains consent and access boundaries in all product languages", () => {
     for (const locale of [en, tet, pt]) {
-      expect(locale.accountantPartners.partner.title).toContain("Primos Bo'ot");
+      expect(JSON.stringify(locale)).not.toMatch(/primos bo'ot|primosboot/i);
+      expect(locale.accountantPartners.partner.title).toBeTruthy();
       expect(locale.accountantPartners.selection.privacy).toBeTruthy();
       expect(locale.accountantPartners.access.consentNote).toBeTruthy();
       expect(locale.accountantPartners.access.can.payroll).toBeTruthy();
@@ -133,7 +142,7 @@ describe("accountant partner funnel", () => {
     expect(functions).toContain('action: "accountant.team_access_removed"');
   });
 
-  it("keeps the Primos connection and its status visible at the bottom of the dashboard", () => {
+  it("keeps the partner connection and its status visible at the bottom of the dashboard", () => {
     const dashboard = read("client/pages/Dashboard.tsx");
     const connectionCard = read("client/components/settings/AccountantPartnerCard.tsx");
 
@@ -141,7 +150,7 @@ describe("accountant partner funnel", () => {
     expect(dashboard.indexOf("<AccountantPartnerCard />")).toBeGreaterThan(
       dashboard.indexOf('t("dashboard.thingsToDo")'),
     );
-    expect(connectionCard).toContain("PRIMOS_BOOT_PARTNER.logoDarkText");
+    expect(connectionCard).toContain("PRIMOS_BOOT_PARTNER.name");
     expect(connectionCard).toContain('status === "connected"');
     expect(connectionCard).toContain("accountantPartners.connection.status.${status}");
     expect(connectionCard).toContain("accountantPartners.connection.prelaunchAction");

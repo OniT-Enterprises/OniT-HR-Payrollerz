@@ -7169,14 +7169,14 @@ const messages = {
     "partner": {
       "dili": "Baze iha Dili",
       "languages": "Inglés, Tetun no Portugés",
-      "since": "Harii iha 2013",
+      "since": "Firma establesida iha Timor",
       "accountingAudit": "Kontabilidade no auditoria",
       "eyebrow": "Kontabilista preferidu Xefe",
-      "title": "Koñese Primos Bo'ot",
+      "title": "Koñese ami-nia firma parseira",
       "description": "Firma kontabilidade no auditoria Timor-Leste nian ba negósiu ne'ebé hakarak apoiu profisionál ba kontabilidade, folha, impostu ka revizaun finanseira.",
       "preferred": "Parseiru kontabilidade preferidu Xefe",
-      "profile": "Primos Bo'ot mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
-      "website": "Vizita primosboot.com",
+      "profile": "Ami-nia parseiru mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
+      "website": "Detallu kompletu iha anúnsiu parseria",
       "servicesTitle": "Servisu ne'ebé bele diskute",
       "services": {
         "bookkeeping": "Kontabilidade fulan no tinan",
@@ -7187,7 +7187,7 @@ const messages = {
         "advisory": "Kontabilidade jestaun no konsellu finanseiru"
       },
       "beforeAccessTitle": "Hili mak pasu dahuluk de'it.",
-      "beforeAccessDescription": "Primos Bo'ot konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois."
+      "beforeAccessDescription": "Firma parseira konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois."
     },
     "process": {
       "eyebrow": "Ligasaun ho konsentimentu uluk",
@@ -7196,11 +7196,11 @@ const messages = {
       "steps": {
         "choose": {
           "title": "Husu konsultasaun",
-          "description": "Hili Primos Bo'ot. Xefe haruka de'it kontaktu no naran negósiu atu firma bele responde."
+          "description": "Hili firma parseira. Xefe haruka de'it kontaktu no naran negósiu atu firma bele responde."
         },
         "agree": {
           "title": "Konkorda servisu",
-          "description": "Konfirma servisu, tempu no folin diretamente ho Primos Bo'ot iha liur husi software."
+          "description": "Konfirma servisu, tempu no folin diretamente ho firma iha liur husi software."
         },
         "review": {
           "title": "Fó asesu ba revizaun",
@@ -7233,17 +7233,17 @@ const messages = {
       "description": "Opsionál. Ita bele troka depois.",
       "self": "Hau jere rasik",
       "selfDescription": "Mantein Xefe simples no konvida kontabilista depois.",
-      "primos": "Husu Primos Bo'ot kontaktu hau",
+      "primos": "Husu firma parseira kontaktu ha'u",
       "primosDescription": "Depois de kria kompania, Xefe haruka email ho naran negósiu no kontaktu de'it.",
-      "primosPrelaunch": "Hili Primos Bo'ot ba depois",
+      "primosPrelaunch": "Hili firma parseira ba depois",
       "primosPrelaunchDescription": "Ne'e rai de'it ita-nia preferénsia. La haruka pedidu ka dadus kontaktu bainhira parseiru seidauk prontu.",
       "privacy": "Opsaun ne'e la fó asesu ba ita-nia rekordu.",
-      "choose": "Hili Primos Bo'ot",
+      "choose": "Hili firma parseira",
       "requested": "Pedidu haruka ona",
       "accepted": "Pedidu simu ona",
       "connected": "Kontabilista liga ona",
       "manage": "Jere ligasaun",
-      "openPortfolio": "Loke revizaun kliente Primos Bo'ot",
+      "openPortfolio": "Loke revizaun kliente parseira nian",
       "ownerOnly": "Na'in ka administradór negósiu de'it bele husu kontabilista.",
       "failed": "La konsege haruka pedidu. Favor koko fali."
     },
@@ -7253,11 +7253,11 @@ const messages = {
       "none": "Seidauk hili parseiru kontabilidade.",
       "view": "Haree perfil parseiru",
       "request": "Husu konsultasaun",
-      "requestNote": "Primos Bo'ot sei simu naran negósiu no kontaktu liuhusi email. La fahe rekordu ida.",
+      "requestNote": "Firma parseira sei simu naran negósiu no kontaktu liuhusi email. La fahe rekordu ida.",
       "cancel": "Kansela pedidu",
       "status": {
         "selected": "Hili ona — pedidu seidauk haruka",
-        "requested": "Hein Primos Bo'ot",
+        "requested": "Hein firma parseira",
         "accepted": "Simu ona — na'in bele fó asesu",
         "connected": "Liga ho asesu kontabilista",
         "declined": "Firma la bele simu",
@@ -7265,35 +7265,35 @@ const messages = {
         "revoked": "Asesu hasai ona"
       },
       "grant": "Fó asesu kontabilista",
-      "grantNote": "Ne'e fó Primos Bo'ot asesu limitadu ba folha, osan, kontabilidade no relatóriu. Firma sei simu email.",
+      "grantNote": "Ne'e fó firma parseira asesu limitadu ba folha, osan, kontabilidade no relatóriu. Firma sei simu email.",
       "ownerGrantOnly": "Pedidu simu ona. Na'in negósiu de'it bele fó asesu ba rekordu.",
       "revoke": "Hasai asesu",
-      "confirmGrantTitle": "Fó asesu ba Primos Bo'ot?",
-      "confirmGrantDescription": "Primos Bo'ot sei simu email no hetan papél kontabilista ho limite. Sira bele reviza folha no finansas, maibé la bele jere utilizadór, funsionáriu, faturasaun ka integrasaun.",
+      "confirmGrantTitle": "Fó asesu ba firma parseira?",
+      "confirmGrantDescription": "Firma parseira sei simu email no hetan papél kontabilista ho limite. Sira bele reviza folha no finansas, maibé la bele jere utilizadór, funsionáriu, faturasaun ka integrasaun.",
       "confirmRevokeTitle": "Hasai asesu kontabilista?",
-      "confirmRevokeDescription": "Primos Bo'ot sei lakon asesu ba negósiu ne'e kedas. Ita-nia rekordu no servisu uluk sei hela iha Xefe.",
+      "confirmRevokeDescription": "Firma parseira sei lakon asesu ba negósiu ne'e kedas. Ita-nia rekordu no servisu uluk sei hela iha Xefe.",
       "saved": "Ligasaun kontabilista atualiza ona.",
       "error": "La konsege atualiza ligasaun kontabilista.",
       "prelaunch": "Sei disponivel la kleur",
-      "prelaunchNote": "Ligasaun ho Primos Bo'ot seidauk prontu. La haruka pedidu, email ka dadus kontaktu to'o ligasaun ne'e ativa.",
+      "prelaunchNote": "Ligasaun ho firma parseira seidauk prontu. La haruka pedidu, email ka dadus kontaktu to'o ligasaun ne'e ativa.",
       "prelaunchAction": "Ligasaun sei disponivel la kleur"
     },
     "landing": {
       "nav": "Ajuda kontabilista",
       "eyebrow": "Apoiu kontabilista opsionál",
       "title": "Halo rasik — ka husu kontabilista atu reviza",
-      "description": "Xefe nafatin simples ba servisu loroloron. Bainhira presiza ajuda profisionál, hili Primos Bo'ot no kontrola bainhira asesu hahú.",
+      "description": "Xefe nafatin simples ba servisu loroloron. Bainhira presiza ajuda profisionál, hili firma parseira no kontrola bainhira asesu hahú.",
       "cta": "Koñese parseiru kontabilidade"
     },
     "cta": {
       "title": "Hakarak kontabilista iha ita-nia sorin?",
-      "description": "Hili Primos Bo'ot agora ka kontinua jere Xefe rasik. La fahe buat ida to'o ita aprova asesu."
+      "description": "Hili firma parseira agora ka kontinua jere Xefe rasik. La fahe buat ida to'o ita aprova asesu."
     }
   },
   "accountantPortfolio": {
-    "title": "Revizaun kliente Primos Bo'ot",
+    "title": "Revizaun kliente parseira nian",
     "subtitle": "Pedidu ligasaun no área Xefe kliente ne'ebé aprova ona.",
-    "impersonationNote": "Ita haree área parseiru hanesan ekipa Primos Bo'ot sei uza.",
+    "impersonationNote": "Ita haree área parseiru hanesan ekipa firma parseira sei uza.",
     "cards": {
       "requests": "Pedidu foun",
       "awaitingAccess": "Hein asesu kliente",

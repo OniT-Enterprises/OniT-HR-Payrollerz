@@ -23,8 +23,8 @@ export const seoConfig = {
   },
   accountantPartners: {
     title: 'Accountant Partners for Timor-Leste Businesses',
-    description: "Choose a Xefe accounting partner, request a consultation, and grant secure accountant access only when you are ready. Featuring Primos Bo'ot in Dili.",
-    keywords: "accountant Timor-Leste, accounting firm Dili, Primos Bo'ot, bookkeeping Timor-Leste, payroll accountant, Xefe accountant access",
+    description: "Choose a Xefe accounting partner, request a consultation, and grant secure accountant access only when you are ready. Partner announcement coming soon.",
+    keywords: "accountant Timor-Leste, accounting firm Dili, bookkeeping Timor-Leste, payroll accountant, Xefe accountant access",
     url: '/accountants',
   },
   accountantPortfolio: {

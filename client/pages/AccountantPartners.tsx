@@ -6,13 +6,11 @@ import {
   Building2,
   CheckCircle2,
   ChevronRight,
-  ExternalLink,
   ClipboardCheck,
   Languages,
   Loader2,
   Lock,
   MapPin,
-  Phone,
   ReceiptText,
   ShieldCheck,
   UserCheck,
@@ -56,7 +54,7 @@ export default function AccountantPartners() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { session, refreshSession } = useTenant();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const partner = PRIMOS_BOOT_PARTNER;
   const existingConnection =
     session?.config.accountantPartner?.partnerId === partner.id
@@ -66,7 +64,6 @@ export default function AccountantPartners() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const websiteLocale = locale === "tet" ? "tet" : locale === "pt" ? "pt" : "en";
   const canRequest = session?.role === "owner" || session?.role === "hr-admin";
   const isPartnerWorkspace = isAccountantPartnerTenant(session?.tid);
   const activeStatus = status === "requested" || status === "accepted" || status === "connected";
@@ -194,14 +191,11 @@ export default function AccountantPartners() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-zinc-900/85 p-6 shadow-2xl shadow-black/50 sm:p-8">
-              <div className="rounded-xl bg-white p-5">
-                <img
-                  src={partner.logoDarkText}
-                  alt={`${partner.name} Accounting & Audit`}
-                  width="1342"
-                  height="448"
-                  className="mx-auto h-auto w-full max-w-sm"
-                />
+              {/* Partner identity withheld until the agreement is signed —
+                  generic mark only (see client/lib/accountantPartners.ts). */}
+              <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-9">
+                <Building2 className="h-9 w-9 text-sky-300" />
+                <span className="text-lg font-bold text-white">{partner.name}</span>
               </div>
               <div className="mt-6 grid gap-3 text-sm text-zinc-300 sm:grid-cols-2">
                 <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-lime-400" />{t("accountantPartners.partner.dili")}</div>
@@ -228,20 +222,15 @@ export default function AccountantPartners() {
                     <span className="inline-flex rounded-full bg-lime-400 px-3 py-1 text-xs font-bold text-zinc-950">
                       {t("accountantPartners.partner.preferred")}
                     </span>
-                    <div className="mt-6 rounded-xl bg-white p-4">
-                      <img src={partner.logoDarkText} alt={partner.name} className="h-auto w-full" />
+                    <div className="mt-6 flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-8">
+                      <Building2 className="h-8 w-8 text-sky-300" />
+                      <span className="text-base font-bold text-white">{partner.name}</span>
                     </div>
                     <p className="mt-6 text-sm leading-6 text-zinc-400">{t("accountantPartners.partner.profile")}</p>
                   </div>
-                  <a
-                    href={`${partner.website}/${websiteLocale}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-lime-300 hover:text-lime-200"
-                  >
+                  <p className="mt-6 text-sm font-medium text-zinc-500">
                     {t("accountantPartners.partner.website")}
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
+                  </p>
                 </div>
 
                 <div className="p-6 sm:p-8">
@@ -361,9 +350,6 @@ export default function AccountantPartners() {
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Button size="lg" onClick={() => void handleChoose()} disabled={busy || (activeStatus && !isPartnerWorkspace)} className="h-12 bg-amber-400 px-8 font-bold text-zinc-950 hover:bg-amber-300">
                 {actionLabel}<ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" asChild className="h-12 border-white/10 bg-white/5 px-8 text-white hover:bg-white/10 hover:text-white">
-                <a href={`tel:${partner.phone.replace(/\s/g, "")}`}><Phone className="h-4 w-4" />{partner.phone}</a>
               </Button>
             </div>
           </div>

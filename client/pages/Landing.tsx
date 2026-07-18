@@ -411,15 +411,12 @@ export default function Landing() {
         <section className="lp-defer border-t border-white/[0.06] py-16 lg:py-20">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="grid items-center gap-8 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 sm:p-8 lg:grid-cols-[0.72fr_1.28fr] lg:p-10">
-              <div className="rounded-xl bg-white p-5">
-                <img
-                  src={PRIMOS_BOOT_PARTNER.logoDarkText}
-                  alt="Primos Bo'ot Accounting & Audit"
-                  width="1342"
-                  height="448"
-                  loading="lazy"
-                  className="h-auto w-full"
-                />
+              {/* Partner identity withheld until the agreement is signed. */}
+              <div className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-10">
+                <Landmark className="h-9 w-9 text-amber-300" />
+                <span className="text-lg font-bold text-white">
+                  {PRIMOS_BOOT_PARTNER.name}
+                </span>
               </div>
               <div>
                 <SectionEyebrow>
