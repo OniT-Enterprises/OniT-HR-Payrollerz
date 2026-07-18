@@ -138,3 +138,24 @@ and net. New behaviors corroborated by real computations:
   error)?
 - Two rows are unrepresentable (source cells hold uncached formulas); two
   combined multi-month payment sheets were excluded from monthly parity.
+
+## Corpus mining notes (2026-07-18, second pass)
+
+- **Rent withholding corroborated**: an advisory thread states a monthly office
+  rent of US$722.22 gross with 10% (US$72.22) withheld — matching Art. 55 and
+  Xefe's rent rate (already pinned by the bill-withholding tests).
+- **INSS declarations (15 forms in corpus)**: the firm's submissions use the
+  pre-portal "Declaração de Remunerações" spreadsheet; Xefe mirrors the
+  portal-era DR_global_VF template. Field semantics align one-for-one
+  (NISS, contract/worked/absence/parental days, declared remuneration,
+  13th month); Xefe's template adds the TIN/residency/tax columns the portal
+  requires. Declared bases run to ~US$11.8k/month with no cap — corroborating
+  the uncapped contribution base Xefe applies.
+- **Practitioner claims flagged, not adopted** (statements, not authority):
+  a client thread treats rent-WHT remittance as due the 25th of the following
+  month (statute: 15th; Xefe keeps the 15th); one client's schedules apply a
+  4.8% employer INSS rate (statute: 6%; see corpus 2). Both queued for the
+  firm's accountants alongside the WHT rate-table sign-off.
+- Remaining unmined: supplier-WHT calculation attachments (bodies reference
+  them; bytes not yet fetched), declaração row-level totals, and a
+  through-the-UI replay of a mined month via the E2E harness.
