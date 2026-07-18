@@ -39,6 +39,7 @@ import { colors } from '../../lib/colors';
 import { useT } from '../../lib/i18n';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useEmployeeStore } from '../../stores/employeeStore';
 import { useCrewStore } from '../../stores/crewStore';
 import { getCurrentLocation } from '../../lib/locationUtils';
 import { compressPhoto, savePhotoLocally } from '../../lib/photoUtils';
@@ -54,8 +55,10 @@ export default function CrewClockInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tenantId = useTenantStore((s) => s.tenantId)!;
+  const supervisorDepartmentId = useTenantStore((s) => s.departmentId);
   const user = useAuthStore((s) => s.user)!;
   const profile = useAuthStore((s) => s.profile)!;
+  const supervisorEmployee = useEmployeeStore((s) => s.employee);
 
   const workers = useCrewStore((s) => s.workers);
   const workersLoading = useCrewStore((s) => s.workersLoading);
@@ -86,7 +89,7 @@ export default function CrewClockInScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
-    fetchWorkers(tenantId);
+    fetchWorkers(tenantId, supervisorEmployee?.department, supervisorDepartmentId ?? undefined);
     reset();
     // Get GPS on mount — use callback form to avoid sync setState warning
     const getLocation = async () => {
@@ -96,7 +99,7 @@ export default function CrewClockInScreen() {
       setGettingLocation(false);
     };
     getLocation();
-  }, [tenantId, fetchWorkers, reset, setLocation]);
+  }, [tenantId, supervisorEmployee?.department, supervisorDepartmentId, fetchWorkers, reset, setLocation]);
 
   const filteredWorkers = workers.filter((w) => {
     if (!searchQuery) return true;

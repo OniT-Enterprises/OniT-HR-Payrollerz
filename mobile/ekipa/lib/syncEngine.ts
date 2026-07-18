@@ -158,6 +158,7 @@ async function syncClockInBatch(
       employeeId: record.employeeId,
       employeeName: record.employeeName,
       department: record.department || '',
+      departmentId: record.departmentId || '',
       date: record.date,
       clockIn: record.clockIn || '',
       clockOut: '',

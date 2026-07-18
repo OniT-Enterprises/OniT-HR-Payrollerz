@@ -110,6 +110,7 @@ const messages = {
     "review": "Reviza",
     "askAI": "Husu AI",
     "retry": "Koko fali",
+    "refresh": "Atualiza",
     "connectionIssueTitle": "Problema ligasaun",
     "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
     "accountRecoveryTitle": "La konsege loke ita-nia konta",
@@ -593,7 +594,11 @@ const messages = {
       "laborLaw": "Lei Laboral",
       "apps": "Aplikasaun",
       "pricing": "Presu",
-      "getStarted": "Hahu"
+      "getStarted": "Hahu",
+      "forAccountants": "Ba kontabilista sira",
+      "menu": "Menu",
+      "overview": "Vizaun jerál",
+      "home": "Inísiu"
     },
     "simple": {
       "nav": {
@@ -679,6 +684,7 @@ const messages = {
         "minimum": "Mínimu {{total}} kada fulan inklui funsionáriu {{employees}}",
         "annualSaving": "Anuál: {{total}} — poupa {{savings}}",
         "cta": "Hahú grátis",
+        "seeFull": "Haree presu kompletu",
         "includedTitle": "Inklui iha konta hotu",
         "benefits": {
           "payroll": "Kalkulasaun WIT, INSS no subsídiu automátiku",
@@ -907,6 +913,7 @@ const messages = {
       "location": "Timor-Leste",
       "links": {
         "howItWorks": "Oinsá Xefe servisu",
+        "accountants": "Parseiru kontabilidade",
         "privacy": "Privasidade",
         "terms": "Termus",
         "support": "Suporte",
@@ -2756,7 +2763,7 @@ const messages = {
         "title": "Importa dadus prezensa",
         "description": "Importa registu husi dispozitivu biometriku ka CSV",
         "selectFile": "Hili ficheiru",
-        "format": "Formatu CSV: employee_id, date, clock_in, clock_out",
+        "format": "Koluna CSV ka XLSX: employee_id, date, clock_in, clock_out",
         "importing": "Importa hela..."
       },
       "mark": {
@@ -2847,6 +2854,7 @@ const messages = {
     "shiftScheduling": {
       "title": "Planeamentu Turnu",
       "subtitle": "Gere turnu empregadu, horario no planeamentu forsa traballu",
+      "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. RH tenke define ita-nia departamentu molok ita bele jere turnu ekipa.",
       "controls": {
         "title": "Kontrolu Eskala",
         "weekStarting": "Semana hahuu",
@@ -3011,6 +3019,9 @@ const messages = {
       "toast": {
         "validationTitle": "Erru validasaun",
         "validationDesc": "Favor preenche kampu obrigatoriu.",
+        "overlapDesc": "Empregadu ne'e iha ona turnu iha oras ne'e.",
+        "restDesc": "Empregadu presiza deskansa oras 12 entre turnu sira.",
+        "leaveConflictDesc": "Empregadu ne'e iha lisensa aprova ona ba data ne'e.",
         "successTitle": "Susesu",
         "errorTitle": "Erru",
         "createSuccessDesc": "Turnu kria ho susesu.",
@@ -6752,27 +6763,30 @@ const messages = {
       "title": "Tempu & Lisensa",
       "seoDescription": "Kobertura, prezensa, aprovasaun lisensa no planeamentu turnu iha fatin ida.",
       "subtitle": "Staf {{available}} husi {{total}} disponível ohin (kobertura {{rate}}%).",
+      "subtitleRecorded": "Ohín rejista ona prezensa ba staf {{recorded}} husi {{total}}.",
       "subtitleEmpty": "Aprova lisensa, kontrola prezensa no planeia turnu.",
       "attendanceAction": "Prezensa",
       "shiftsAction": "Oráriu turnu",
-      "allGood": "Kobertura di'ak — agora laiha buat ne'ebé presiza atensaun.",
+      "allGood": "Agora laiha buat ne'ebé presiza atensaun.",
       "attention": {
         "leaveRequest": "pedidu lisensa ida hein aprovasaun",
         "leaveRequests": "pedidu lisensa sira hein aprovasaun",
         "lateArrival": "to'o tarde ohin",
         "lateArrivals": "to'o tarde ohin",
         "absentToday": "ausente ohin",
+        "attendanceMissing": "staf ida seidauk iha rejistu prezensa",
+        "attendanceMissingPlural": "staf sira seidauk iha rejistu prezensa",
         "draftShift": "turnu rascunhu ida hein atu publika",
         "draftShifts": "turnu rascunhu sira hein atu publika"
       },
       "cards": {
         "attendance": "Prezensa",
         "availableToday": "{{rate}}% disponível ohin",
+        "recordedToday": "prezensa rejistadu ohin",
         "leave": "Lisensa",
         "onLeaveToday": "{{count}} iha lisensa ohin",
         "onLeaveTodayLabel": "iha lisensa ohin",
-        "timeTracking": "Kontrola Tempu",
-        "timeTrackingMeta": "Rejistu tama no oras servisu",
+        "attendanceMeta": "Rejistu tama no oras servisu",
         "hoursRecordedToday": "oras rejistadu ohin",
         "shifts": "Turnu",
         "shiftsMeta": "Planeia lista turnu semanal",
@@ -7048,6 +7062,177 @@ const messages = {
       "communication": "Komunikasaun",
       "maintenance": "Manutensaun",
       "other": "Seluk"
+    }
+  },
+  "accountantPartners": {
+    "nav": {
+      "partner": "Parseiru preferidu",
+      "process": "Oinsá liga",
+      "access": "Asesu no kontrolu"
+    },
+    "hero": {
+      "eyebrow": "Ajuda profisionál bainhira ita hakarak",
+      "title": "Jere servisu loroloron rasik.",
+      "titleAccent": "Husu kontabilista atu reviza.",
+      "description": "Hili parseiru kontabilidade iha Xefe, konkorda servisu diretamente, no fó asesu seguru de'it bainhira ita prontu.",
+      "primary": "Koñese parseiru preferidu",
+      "secondary": "Haree oinsá Xefe servisu",
+      "trust": {
+        "consent": "Hili firma la fó asesu",
+        "revoke": "Bele hasai asesu",
+        "agreement": "Konkorda servisu no folin ketak"
+      }
+    },
+    "partner": {
+      "dili": "Baze iha Dili",
+      "languages": "Inglés, Tetun no Portugés",
+      "since": "Harii iha 2013",
+      "accountingAudit": "Kontabilidade no auditoria",
+      "eyebrow": "Kontabilista preferidu Xefe",
+      "title": "Koñese Primos Bo'ot",
+      "description": "Firma kontabilidade no auditoria Timor-Leste nian ba negósiu ne'ebé hakarak apoiu profisionál ba kontabilidade, folha, impostu ka revizaun finanseira.",
+      "preferred": "Parseiru kontabilidade preferidu Xefe",
+      "profile": "Primos Bo'ot mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
+      "website": "Vizita primosboot.com",
+      "servicesTitle": "Servisu ne'ebé bele diskute",
+      "services": {
+        "bookkeeping": "Kontabilidade fulan no tinan",
+        "payroll": "Kálkulu no prosesamentu folha",
+        "tax": "Preparasaun impostu no relatóriu konformidade",
+        "statements": "Preparasaun relatóriu finanseiru",
+        "audit": "Auditoria estatutária, interna no projetu",
+        "advisory": "Kontabilidade jestaun no konsellu finanseiru"
+      },
+      "beforeAccessTitle": "Hili mak pasu dahuluk de'it.",
+      "beforeAccessDescription": "Primos Bo'ot konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois."
+    },
+    "process": {
+      "eyebrow": "Ligasaun ho konsentimentu uluk",
+      "title": "Hili, konkorda, depois liga",
+      "description": "Firma kontabilidade no negósiu hotu-hotu aprova relasaun molok rekordu bele haree.",
+      "steps": {
+        "choose": {
+          "title": "Husu konsultasaun",
+          "description": "Hili Primos Bo'ot. Xefe haruka de'it kontaktu no naran negósiu atu firma bele responde."
+        },
+        "agree": {
+          "title": "Konkorda servisu",
+          "description": "Konfirma servisu, tempu no folin diretamente ho Primos Bo'ot iha liur husi software."
+        },
+        "review": {
+          "title": "Fó asesu ba revizaun",
+          "description": "Na'in negósiu fó papél kontabilista ho limite no bele hasai asesu bainhira de'it."
+        }
+      }
+    },
+    "access": {
+      "eyebrow": "Ita-nia negósiu nafatin kontrola",
+      "title": "Asesu útil, limite klaru",
+      "description": "Kontabilista ne'ebé liga simu ferramenta finanseira ba revizaun, maibé la bele administra plataforma.",
+      "consentNote": "Hili ka simu konsultasaun la fó asesu automaticamente. Na'in negósiu tenke hanehan Fó asesu iha Xefe.",
+      "canTitle": "Kontabilista bele",
+      "cannotTitle": "Kontabilista la bele",
+      "can": {
+        "payroll": "Reviza kálkulu folha no valór legal",
+        "money": "Servisu ho konta, fatura no lançamentu kontabilidade",
+        "reports": "Prepara no reviza relatóriu finanseiru no konformidade",
+        "review": "Haree rekordu ne'ebé presiza atu rekonsilia no aprova"
+      },
+      "cannot": {
+        "users": "Jere na'in, utilizadór ka papél",
+        "employees": "Kria ka hamoos rekordu funsionáriu",
+        "billing": "Troka subscrisaun ka faturasaun Xefe",
+        "integrations": "Loke kredensiál integrasaun"
+      }
+    },
+    "selection": {
+      "title": "Ita hakarak apoiu kontabilista?",
+      "description": "Opsionál. Ita bele troka depois.",
+      "self": "Hau jere rasik",
+      "selfDescription": "Mantein Xefe simples no konvida kontabilista depois.",
+      "primos": "Husu Primos Bo'ot kontaktu hau",
+      "primosDescription": "Depois de kria kompania, Xefe haruka email ho naran negósiu no kontaktu de'it.",
+      "primosPrelaunch": "Hili Primos Bo'ot ba depois",
+      "primosPrelaunchDescription": "Ne'e rai de'it ita-nia preferénsia. La haruka pedidu ka dadus kontaktu bainhira parseiru seidauk prontu.",
+      "privacy": "Opsaun ne'e la fó asesu ba ita-nia rekordu.",
+      "choose": "Hili Primos Bo'ot",
+      "requested": "Pedidu haruka ona",
+      "accepted": "Pedidu simu ona",
+      "connected": "Kontabilista liga ona",
+      "manage": "Jere ligasaun",
+      "openPortfolio": "Loke revizaun kliente Primos Bo'ot",
+      "ownerOnly": "Na'in ka administradór negósiu de'it bele husu kontabilista.",
+      "failed": "La konsege haruka pedidu. Favor koko fali."
+    },
+    "connection": {
+      "title": "Ligasaun kontabilista",
+      "description": "Husu ajuda profisionál ka jere asesu ne'ebé fó ona.",
+      "none": "Seidauk hili parseiru kontabilidade.",
+      "view": "Haree perfil parseiru",
+      "request": "Husu konsultasaun",
+      "requestNote": "Primos Bo'ot sei simu naran negósiu no kontaktu liuhusi email. La fahe rekordu ida.",
+      "cancel": "Kansela pedidu",
+      "status": {
+        "selected": "Hili ona — pedidu seidauk haruka",
+        "requested": "Hein Primos Bo'ot",
+        "accepted": "Simu ona — na'in bele fó asesu",
+        "connected": "Liga ho asesu kontabilista",
+        "declined": "Firma la bele simu",
+        "cancelled": "Pedidu kansela ona",
+        "revoked": "Asesu hasai ona"
+      },
+      "grant": "Fó asesu kontabilista",
+      "grantNote": "Ne'e fó Primos Bo'ot asesu limitadu ba folha, osan, kontabilidade no relatóriu. Firma sei simu email.",
+      "ownerGrantOnly": "Pedidu simu ona. Na'in negósiu de'it bele fó asesu ba rekordu.",
+      "revoke": "Hasai asesu",
+      "confirmGrantTitle": "Fó asesu ba Primos Bo'ot?",
+      "confirmGrantDescription": "Primos Bo'ot sei simu email no hetan papél kontabilista ho limite. Sira bele reviza folha no finansas, maibé la bele jere utilizadór, funsionáriu, faturasaun ka integrasaun.",
+      "confirmRevokeTitle": "Hasai asesu kontabilista?",
+      "confirmRevokeDescription": "Primos Bo'ot sei lakon asesu ba negósiu ne'e kedas. Ita-nia rekordu no servisu uluk sei hela iha Xefe.",
+      "saved": "Ligasaun kontabilista atualiza ona.",
+      "error": "La konsege atualiza ligasaun kontabilista.",
+      "prelaunch": "Sei disponivel la kleur",
+      "prelaunchNote": "Ligasaun ho Primos Bo'ot seidauk prontu. La haruka pedidu, email ka dadus kontaktu to'o ligasaun ne'e ativa.",
+      "prelaunchAction": "Ligasaun sei disponivel la kleur"
+    },
+    "landing": {
+      "nav": "Ajuda kontabilista",
+      "eyebrow": "Apoiu kontabilista opsionál",
+      "title": "Halo rasik — ka husu kontabilista atu reviza",
+      "description": "Xefe nafatin simples ba servisu loroloron. Bainhira presiza ajuda profisionál, hili Primos Bo'ot no kontrola bainhira asesu hahú.",
+      "cta": "Koñese parseiru kontabilidade"
+    },
+    "cta": {
+      "title": "Hakarak kontabilista iha ita-nia sorin?",
+      "description": "Hili Primos Bo'ot agora ka kontinua jere Xefe rasik. La fahe buat ida to'o ita aprova asesu."
+    }
+  },
+  "accountantPortfolio": {
+    "title": "Revizaun kliente Primos Bo'ot",
+    "subtitle": "Pedidu ligasaun no área Xefe kliente ne'ebé aprova ona.",
+    "impersonationNote": "Ita haree área parseiru hanesan ekipa Primos Bo'ot sei uza.",
+    "cards": {
+      "requests": "Pedidu foun",
+      "awaitingAccess": "Hein asesu kliente",
+      "connected": "Kliente liga ona"
+    },
+    "needsAttention": "Presiza atensaun",
+    "noRequests": "La iha pedidu ligasaun foun.",
+    "requesterUnknown": "Kontaktu negósiu",
+    "actions": {
+      "accept": "Simu",
+      "decline": "La simu"
+    },
+    "responseNotice": "Kontaktu negósiu sei simu email ho ita-nia desizaun.",
+    "awaitingTitle": "Simu ona — hein na'in negósiu",
+    "awaitingDescription": "Firma simu ona. Kliente tenke fó asesu agora iha Xefe.",
+    "clientsTitle": "Kliente liga ona",
+    "connectedDescription": "Loke área kontabilista limitadu ba kliente ne'e.",
+    "noClients": "Seidauk iha kliente ne'ebé fó asesu kontabilista.",
+    "errors": {
+      "load": "La konsege karrega lista kliente.",
+      "respond": "La konsege atualiza pedidu.",
+      "open": "La konsege loke área kliente."
     }
   },
   "locale": {

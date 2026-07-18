@@ -58,6 +58,7 @@ describe('Ekipa mobile permissions', () => {
         uid: MANAGER_UID,
         role: 'manager',
         employeeId: 'manager-emp',
+        departmentId: 'dept-a',
         modules: ['timeleave'],
       });
 
@@ -69,16 +70,19 @@ describe('Ekipa mobile permissions', () => {
       });
       await setDoc(doc(db, `tenants/${TENANT_ID}/shifts/self-published`), {
         employeeId: 'emp-a',
+        departmentId: 'dept-a',
         status: 'published',
         date: '2026-07-11',
       });
       await setDoc(doc(db, `tenants/${TENANT_ID}/shifts/self-draft`), {
         employeeId: 'emp-a',
+        departmentId: 'dept-a',
         status: 'draft',
         date: '2026-07-12',
       });
       await setDoc(doc(db, `tenants/${TENANT_ID}/shifts/other-published`), {
         employeeId: 'emp-b',
+        departmentId: 'dept-b',
         status: 'published',
         date: '2026-07-11',
       });
@@ -121,12 +125,12 @@ describe('Ekipa mobile permissions', () => {
     )));
   });
 
-  it('keeps full roster visibility for managers', async () => {
+  it('limits manager roster visibility to their department', async () => {
     await assertSucceeds(getDoc(doc(
       managerDb(),
       `tenants/${TENANT_ID}/shifts/self-draft`,
     )));
-    await assertSucceeds(getDoc(doc(
+    await assertFails(getDoc(doc(
       managerDb(),
       `tenants/${TENANT_ID}/shifts/other-published`,
     )));

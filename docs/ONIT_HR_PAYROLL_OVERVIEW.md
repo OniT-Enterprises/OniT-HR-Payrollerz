@@ -23,7 +23,7 @@ accountant/legal sign-off is still required for the interpretations listed in th
 - **Built for Timor-Leste**: Native support for TL tax rates, INSS, local banks, and mobile money
 - **Trilingual**: Full support for English, Portuguese, and Tetum
 - **Offline Capable**: Works with intermittent internet connectivity
-- **All-in-One**: HR, Payroll, Time Tracking, Invoicing, and Accounting in one system
+- **All-in-One**: HR, Payroll, Attendance & Leave, Invoicing, and Accounting in one system
 - **Compliance Ready**: Automated ATTL and INSS monthly reports
 - **Multi-Tenant**: Can serve multiple organizations from a single deployment
 
@@ -105,25 +105,20 @@ every stage. Jobs, applicants, and interviews stay together on one screen.
 - Final payroll calculation
 - Clearance workflow
 
-### 3. Time & Attendance
+### 3. Time & Leave
 
-Comprehensive time tracking for accurate payroll and workforce management.
+Focused attendance, leave, and weekly scheduling that feed payroll without a
+second timesheet-entry screen.
 
-#### Time Tracking
-- Clock in/out via web interface
-- GPS location capture (optional)
-- Break time tracking
-- Overtime calculation (automatic based on TL labor law)
-- Timesheet approval workflow
-- Weekly/monthly timesheet views
-
-#### Attendance Management
-- Daily attendance dashboard
+#### Attendance
+- Daily attendance list with clock-in/out entry
 - Late arrival tracking
 - Early departure logging
-- Absence recording with reason codes
-- Attendance patterns and analytics
-- Integration with payroll for deductions
+- Explicit absence and “not recorded yet” states
+- CSV/XLSX device import with duplicate protection
+- Reasoned adjustments and audit fields
+- Automatic break, regular-hour, and overtime calculation
+- Payroll-ready weekly projections
 
 #### Leave Management
 - Leave request submission and approval
@@ -135,16 +130,15 @@ Comprehensive time tracking for accurate payroll and workforce management.
   - Public holidays (TL calendar built-in)
   - Unpaid leave
 - Leave balance tracking
-- Team calendar view
-- Accrual rules configuration
+- Working-day calculation using the TL holiday calendar and tenant overrides
+- Configurable entitlement, paid percentage, and certificate requirements
+- Department-scoped manager approvals
 
 #### Shift Scheduling
-- Visual shift planner
-- Drag-and-drop scheduling
-- Shift templates and rotation patterns
-- Availability management
-- Shift swap requests
-- Coverage alerts
+- Simple weekly schedule grouped by day
+- Create, edit, publish, copy-week, and CSV export actions
+- Overnight-shift support
+- Overlap, 12-hour-rest, department, and approved-leave validation
 
 ### 4. Performance Management
 

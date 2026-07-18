@@ -7,7 +7,6 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:rules": "jest tests/rules",
-    "test:functions": "jest tests/functions",
     "emulator:start": "firebase emulators:start --only firestore,auth",
     "emulator:test": "firebase emulators:exec --only firestore,auth 'npm run test:rules'"
   },

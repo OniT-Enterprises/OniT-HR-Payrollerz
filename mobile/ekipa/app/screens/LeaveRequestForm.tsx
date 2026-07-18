@@ -3,7 +3,7 @@
  * Xefe · Ekipa design language: one olive accent, quiet dark surfaces.
  * Type picker, date range, reason, submit.
  */
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -19,12 +19,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Calendar, Check } from 'lucide-react-native';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { useLeaveStore } from '../../stores/leaveStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { addDays, isValidISODate, toISODateLocal } from '../../lib/dateInput';
+import { getHolidays } from '../../lib/holidays';
 import { DatePickerModal } from '../../components/DatePickerModal';
 import type { LeaveType } from '../../types/leave';
 
@@ -38,15 +41,20 @@ const LEAVE_TYPES: { id: LeaveType; labelKey: string }[] = [
   { id: 'unpaid', labelKey: 'leave.unpaid' },
 ];
 
-function calculateWorkingDays(start: string, end: string): number {
-  const s = new Date(start);
-  const e = new Date(end);
+function calculateWorkingDays(
+  start: string,
+  end: string,
+  holidayDates: ReadonlySet<string>,
+): number {
+  const s = new Date(`${start}T00:00:00.000Z`);
+  const e = new Date(`${end}T00:00:00.000Z`);
   let count = 0;
   const current = new Date(s);
   while (current <= e) {
-    const day = current.getDay();
-    if (day !== 0 && day !== 6) count++;
-    current.setDate(current.getDate() + 1);
+    const day = current.getUTCDay();
+    const date = current.toISOString().slice(0, 10);
+    if (day !== 0 && day !== 6 && !holidayDates.has(date)) count++;
+    current.setUTCDate(current.getUTCDate() + 1);
   }
   return count;
 }
@@ -64,11 +72,57 @@ export default function LeaveRequestForm() {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [datePickerField, setDatePickerField] = useState<'start' | 'end' | null>(null);
+  const [holidayState, setHolidayState] = useState<{
+    tenantId: string | null;
+    overrides: Record<string, boolean>;
+  }>({ tenantId: null, overrides: {} });
+  const holidaysLoading = Boolean(tenantId && holidayState.tenantId !== tenantId);
   const startDateValid = isValidISODate(startDate);
   const endDateValid = isValidISODate(endDate);
   const hasBothDates = !!startDate && !!endDate;
+
+  useEffect(() => {
+    let active = true;
+    if (!tenantId) {
+      return () => { active = false; };
+    }
+    getDocs(collection(db, `tenants/${tenantId}/holidays`))
+      .then((snapshot) => {
+        if (!active) return;
+        const next: Record<string, boolean> = {};
+        for (const holiday of snapshot.docs) {
+          const data = holiday.data();
+          const date = typeof data.date === 'string' ? data.date : holiday.id;
+          if (/^\d{4}-\d{2}-\d{2}$/.test(date)) next[date] = data.isHoliday === true;
+        }
+        setHolidayState({ tenantId, overrides: next });
+      })
+      .catch(() => {
+        if (active) setHolidayState({ tenantId, overrides: {} });
+      });
+    return () => { active = false; };
+  }, [tenantId]);
+
+  const holidayDates = useMemo(() => {
+    const years = new Set<number>();
+    if (startDateValid) years.add(Number(startDate.slice(0, 4)));
+    if (endDateValid) years.add(Number(endDate.slice(0, 4)));
+    if (years.size === 0) years.add(new Date().getFullYear());
+    const dates = new Set([...years].flatMap((year) =>
+      getHolidays(year).map((holiday) => holiday.date),
+    ));
+    const overrides = holidayState.tenantId === tenantId ? holidayState.overrides : {};
+    for (const [date, isHoliday] of Object.entries(overrides)) {
+      if (isHoliday) dates.add(date);
+      else dates.delete(date);
+    }
+    return dates;
+  }, [endDate, endDateValid, holidayState, startDate, startDateValid, tenantId]);
+
   const duration =
-    hasBothDates && startDateValid && endDateValid ? calculateWorkingDays(startDate, endDate) : 0;
+    hasBothDates && startDateValid && endDateValid
+      ? calculateWorkingDays(startDate, endDate, holidayDates)
+      : 0;
   const hasRangeError = hasBothDates && startDateValid && endDateValid && duration <= 0;
   const canSubmit =
     !!tenantId &&
@@ -78,6 +132,7 @@ export default function LeaveRequestForm() {
     startDateValid &&
     endDateValid &&
     duration > 0 &&
+    !holidaysLoading &&
     !submitting;
 
   const applyQuickRange = (days: number) => {
@@ -243,7 +298,11 @@ export default function LeaveRequestForm() {
           <Text style={styles.errorHint}>{t('leave.alert.invalidDateRange')}</Text>
         )}
 
-        {hasBothDates && !hasRangeError && (
+        {hasBothDates && holidaysLoading && (
+          <ActivityIndicator size="small" color={colors.primary} />
+        )}
+
+        {hasBothDates && !holidaysLoading && !hasRangeError && (
           <Text style={styles.durationPreview}>
             {duration} {t('leave.days')}
           </Text>

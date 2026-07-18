@@ -15,12 +15,14 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { PayslipExample } from "@/components/marketing/PayslipExample";
-import { PackagePicker } from "@/components/pricing/PackagePicker";
+import { PublicFooter } from "@/components/marketing/PublicFooter";
+import { PublicNav } from "@/components/marketing/PublicNav";
+import { DEFAULT_PACKAGES_CONFIG } from "@/lib/packagePricing";
 import { SEO, seoConfig } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
+import { PRIMOS_BOOT_PARTNER } from "@/lib/accountantPartners";
 
 /** Gold crescent — echoes the mark above the "x" in the Xefe logo. */
 function Crescent({ className }: { className?: string }) {
@@ -145,63 +147,7 @@ export default function Landing() {
         {t("common.skipToContent")}
       </a>
 
-      <nav
-        aria-label={t("common.mainNavigation")}
-        className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#0a0a0b]/95 md:bg-[#0a0a0b]/85 md:backdrop-blur-lg"
-      >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" aria-label="Xefe" className="shrink-0">
-            <img
-              src="/images/illustrations/xefe-logo-light.webp"
-              alt="Xefe"
-              width="109"
-              height="54"
-              className="h-8 w-auto sm:h-9"
-            />
-          </Link>
-
-          <div className="hidden items-center gap-7 md:flex">
-            <a
-              href="#how-it-works"
-              className="text-sm text-zinc-400 transition-colors hover:text-white"
-            >
-              {t("landing.simple.nav.howItWorks")}
-            </a>
-            <a
-              href="#features"
-              className="text-sm text-zinc-400 transition-colors hover:text-white"
-            >
-              {t("landing.nav.features")}
-            </a>
-            <a
-              href="#pricing"
-              className="text-sm text-zinc-400 transition-colors hover:text-white"
-            >
-              {t("landing.nav.pricing")}
-            </a>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <LocaleSwitcher className="h-11 w-11 gap-0 border-white/10 bg-white/5 px-0 text-zinc-200 hover:bg-white/10 hover:text-white [&>span]:hidden [&>svg:last-child]:hidden sm:h-9 sm:w-auto sm:gap-2 sm:px-3 sm:[&>span]:inline sm:[&>svg:last-child]:block" />
-            <Button
-              variant="ghost"
-              asChild
-              className="hidden text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
-            >
-              <Link to="/auth/login">{t("auth.signIn")}</Link>
-            </Button>
-            <Button
-              asChild
-              className="h-10 bg-amber-400 px-3 font-bold text-zinc-950 shadow-lg shadow-amber-500/15 hover:bg-amber-300 sm:px-4"
-            >
-              <Link to="/auth/signup">
-                {t("landing.nav.getStarted")}
-                <ArrowRight className="hidden h-4 w-4 sm:block" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
 
       <main id="main-content">
         <section className="relative overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-28 lg:pt-40">
@@ -462,7 +408,84 @@ export default function Landing() {
           </div>
         </section>
 
-        <PackagePicker />
+        <section className="lp-defer border-t border-white/[0.06] py-16 lg:py-20">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-8 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-6 sm:p-8 lg:grid-cols-[0.72fr_1.28fr] lg:p-10">
+              <div className="rounded-xl bg-white p-5">
+                <img
+                  src={PRIMOS_BOOT_PARTNER.logoDarkText}
+                  alt="Primos Bo'ot Accounting & Audit"
+                  width="1342"
+                  height="448"
+                  loading="lazy"
+                  className="h-auto w-full"
+                />
+              </div>
+              <div>
+                <SectionEyebrow>
+                  {t("accountantPartners.landing.eyebrow")}
+                </SectionEyebrow>
+                <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                  {t("accountantPartners.landing.title")}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400 sm:text-base">
+                  {t("accountantPartners.landing.description")}
+                </p>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-6 border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                >
+                  <Link to="/accountants">
+                    {t("accountantPartners.landing.cta")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="pricing"
+          className="lp-defer scroll-mt-16 border-t border-white/[0.06] py-20 lg:py-24"
+        >
+          <div className="mx-auto max-w-3xl px-5 text-center sm:px-6 lg:px-8">
+            <SectionEyebrow>{t("landing.simple.pricing.eyebrow")}</SectionEyebrow>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              {t("landing.simple.pricing.title")}
+            </h2>
+            <p className="mt-6 text-5xl font-extrabold text-white">
+              ${DEFAULT_PACKAGES_CONFIG.pricePerEmployee}
+              <span className="mt-2 block text-base font-medium text-zinc-400 sm:ml-2 sm:mt-0 sm:inline">
+                {t("landing.simple.pricing.perEmployeeMonth")}
+              </span>
+            </p>
+            <p className="mx-auto mt-4 max-w-xl text-zinc-400">
+              {t("landing.simple.pricing.description")}
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <Button
+                size="lg"
+                asChild
+                className="h-12 bg-amber-400 px-7 text-base font-bold text-zinc-950 shadow-xl shadow-amber-500/20 hover:bg-amber-300"
+              >
+                <Link to="/pricing">
+                  {t("landing.simple.pricing.seeFull")}
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="h-12 border-white/10 bg-white/5 px-7 text-base text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link to="/auth/signup">{t("landing.simple.pricing.cta")}</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
         <section className="lp-defer relative overflow-hidden border-t border-white/[0.06] py-20 lg:py-24">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_48%)]" />
@@ -525,52 +548,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-white/[0.06] bg-black/40 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 sm:px-6 md:flex-row lg:px-8">
-          <div className="flex items-center gap-3">
-            <img
-              src="/images/illustrations/xefe-logo-light.webp"
-              alt="Xefe"
-              width="85"
-              height="42"
-              className="h-7 w-auto"
-              loading="lazy"
-            />
-            <span className="text-sm text-zinc-500">
-              {t("landing.footer.location")}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-400">
-            <Link
-              to="/how-it-works"
-              className="transition-colors hover:text-white"
-            >
-              {t("landing.footer.links.howItWorks")}
-            </Link>
-            <Link to="/privacy" className="transition-colors hover:text-white">
-              {t("landing.footer.links.privacy")}
-            </Link>
-            <Link to="/terms" className="transition-colors hover:text-white">
-              {t("landing.footer.links.terms")}
-            </Link>
-            <a
-              href="https://wa.me/6707701234"
-              className="transition-colors hover:text-white"
-            >
-              {t("landing.footer.links.support")}
-            </a>
-            <a
-              href="mailto:suporte@onit.tl"
-              className="transition-colors hover:text-white"
-            >
-              {t("landing.footer.links.contact")}
-            </a>
-          </div>
-          <div className="text-sm text-zinc-500">
-            {t("landing.footer.copyright")}
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

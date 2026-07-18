@@ -25,6 +25,14 @@ let server;
 let baseUrl;
 
 const get = (path, headers = {}) => fetch(`${baseUrl}${path}`, { headers });
+const request = (path, method, body) => fetch(`${baseUrl}${path}`, {
+  method,
+  headers: {
+    "x-api-key": "test-api-key",
+    "content-type": "application/json",
+  },
+  body: body === undefined ? undefined : JSON.stringify(body),
+});
 
 describe("xefe-api", () => {
   before(async () => {
@@ -40,6 +48,44 @@ describe("xefe-api", () => {
       status: "active",
       personalInfo: { firstName: "Secret", lastName: "Person" },
       jobDetails: { departmentId: "ops", position: "CEO" },
+    });
+    await db.doc("leave_requests/leave-a").set({
+      tenantId: "tenant-a",
+      employeeId: "emp-1",
+      employeeName: "Maria Ximenes",
+      departmentId: "ops",
+      status: "pending",
+      requestDate: "2026-07-18",
+      startDate: "2026-07-20",
+      endDate: "2026-07-20",
+      duration: 1,
+    });
+    await db.doc("leave_requests/leave-b").set({
+      tenantId: "tenant-b",
+      employeeId: "emp-9",
+      employeeName: "Secret Person",
+      departmentId: "ops",
+      status: "pending",
+      requestDate: "2026-07-18",
+      startDate: "2026-07-20",
+      endDate: "2026-07-20",
+      duration: 1,
+    });
+    await db.doc("attendance/attendance-a").set({
+      tenantId: "tenant-a",
+      employeeId: "emp-1",
+      employeeName: "Maria Ximenes",
+      departmentId: "ops",
+      date: "2026-07-18",
+      status: "present",
+    });
+    await db.doc("attendance/attendance-b").set({
+      tenantId: "tenant-b",
+      employeeId: "emp-9",
+      employeeName: "Secret Person",
+      departmentId: "ops",
+      date: "2026-07-18",
+      status: "present",
     });
 
     await new Promise((resolve) => {
@@ -90,5 +136,66 @@ describe("xefe-api", () => {
     const names = JSON.stringify(body.data ?? body.employees ?? body);
     assert.match(names, /Ximenes/);
     assert.doesNotMatch(names, /Secret Person/);
+  });
+
+  it("reads canonical leave and attendance records without crossing tenants", async () => {
+    const leaveResponse = await get("/api/tenants/tenant-a/leave/requests", {
+      "x-api-key": "test-api-key",
+    });
+    assert.equal(leaveResponse.status, 200);
+    const leaveBody = await leaveResponse.json();
+    assert.match(JSON.stringify(leaveBody), /Maria Ximenes/);
+    assert.doesNotMatch(JSON.stringify(leaveBody), /Secret Person/);
+
+    const attendanceResponse = await get(
+      "/api/tenants/tenant-a/attendance/daily?date=2026-07-18",
+      { "x-api-key": "test-api-key" },
+    );
+    assert.equal(attendanceResponse.status, 200);
+    const attendanceBody = await attendanceResponse.json();
+    assert.match(JSON.stringify(attendanceBody), /Maria Ximenes/);
+    assert.doesNotMatch(JSON.stringify(attendanceBody), /Secret Person/);
+  });
+
+  it("creates canonical leave with working-day duration and department scope", async () => {
+    const response = await request("/api/tenants/tenant-a/leave/requests", "POST", {
+      employeeId: "emp-1",
+      leaveType: "annual",
+      startDate: "2026-07-17",
+      endDate: "2026-07-19",
+      reason: "Family appointment",
+      requestedBy: "api-test",
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.duration, 1);
+
+    const created = await admin.firestore().doc(`leave_requests/${body.id}`).get();
+    assert.equal(created.data()?.tenantId, "tenant-a");
+    assert.equal(created.data()?.departmentId, "ops");
+    assert.equal(created.data()?.status, "pending");
+  });
+
+  it("excludes officially announced 2026 holidays from leave duration", async () => {
+    const response = await request("/api/tenants/tenant-a/leave/requests", "POST", {
+      employeeId: "emp-1",
+      leaveType: "annual",
+      startDate: "2026-03-20",
+      endDate: "2026-03-23",
+      reason: "Family observance",
+      requestedBy: "api-test",
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.duration, 1);
+  });
+
+  it("never approves a leave request belonging to another tenant", async () => {
+    const response = await request(
+      "/api/tenants/tenant-a/leave/requests/leave-b/approve",
+      "PUT",
+      { approvedBy: "api-test" },
+    );
+    assert.equal(response.status, 404);
   });
 });

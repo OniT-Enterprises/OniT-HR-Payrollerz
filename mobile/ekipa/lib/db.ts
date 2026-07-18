@@ -38,6 +38,7 @@ interface PendingClockInRow {
   employee_id: string;
   employee_name: string;
   department: string | null;
+  department_id: string | null;
   date: string;
   clock_in: string | null;
   clock_out: string | null;
@@ -76,6 +77,7 @@ function initTables(db: SQLite.SQLiteDatabase): void {
       employee_id TEXT NOT NULL,
       employee_name TEXT NOT NULL,
       department TEXT,
+      department_id TEXT,
       date TEXT NOT NULL,
       clock_in TEXT,
       clock_out TEXT,
@@ -127,6 +129,13 @@ function initTables(db: SQLite.SQLiteDatabase): void {
     CREATE INDEX IF NOT EXISTS idx_batches_sync ON sync_batches(sync_status);
     CREATE INDEX IF NOT EXISTS idx_batches_date ON sync_batches(date DESC);
   `);
+
+  // Existing offline databases predate department-scoped manager access.
+  try {
+    db.execSync('ALTER TABLE pending_clockins ADD COLUMN department_id TEXT;');
+  } catch {
+    // Column already exists.
+  }
 }
 
 // ── Batch operations ──────────────────────────────────────
@@ -155,15 +164,16 @@ export function insertClockIn(record: PendingClockIn): void {
   const db = getDb();
   db.runSync(
     `INSERT INTO pending_clockins (
-      id, batch_id, tenant_id, employee_id, employee_name, department,
+      id, batch_id, tenant_id, employee_id, employee_name, department, department_id,
       date, clock_in, clock_out, record_type,
       supervisor_id, supervisor_name, photo_local_path, photo_url,
       latitude, longitude, location_accuracy, site_id, site_name,
       sync_status, sync_error, sync_attempts, created_at, synced_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       record.id, record.batchId, record.tenantId, record.employeeId,
       record.employeeName, record.department ?? null,
+      record.departmentId ?? null,
       record.date, record.clockIn ?? null, record.clockOut ?? null, record.recordType,
       record.supervisorId, record.supervisorName,
       record.photoLocalPath ?? null, record.photoUrl ?? null,
@@ -334,6 +344,7 @@ function mapClockInRow(row: PendingClockInRow): PendingClockIn {
     employeeId: row.employee_id,
     employeeName: row.employee_name,
     department: row.department ?? undefined,
+    departmentId: row.department_id ?? undefined,
     date: row.date,
     clockIn: row.clock_in ?? undefined,
     clockOut: row.clock_out ?? undefined,

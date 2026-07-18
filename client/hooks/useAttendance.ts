@@ -13,7 +13,8 @@ import {
 
 export const attendanceKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'attendance'] as const,
-  byDate: (tenantId: string, date: string) => [...attendanceKeys.all(tenantId), 'date', date] as const,
+  byDate: (tenantId: string, date: string, employeeId?: string, departmentId?: string) =>
+    [...attendanceKeys.all(tenantId), 'date', date, employeeId ?? 'all', departmentId ?? 'all-departments'] as const,
   summaryByRange: (tenantId: string, startDate: string, endDate: string) =>
     [...attendanceKeys.all(tenantId), 'summary', startDate, endDate] as const,
 };
@@ -21,14 +22,19 @@ export const attendanceKeys = {
 /**
  * Fetch attendance records for a specific date
  */
-export function useAttendanceByDate(date: string) {
+export function useAttendanceByDate(
+  date: string,
+  employeeId?: string,
+  enabled: boolean = true,
+  departmentId?: string,
+) {
   const tenantId = useTenantId();
   return useQuery({
-    queryKey: attendanceKeys.byDate(tenantId, date),
-    queryFn: () => attendanceService.getAttendanceByDate(tenantId, date),
+    queryKey: attendanceKeys.byDate(tenantId, date, employeeId, departmentId),
+    queryFn: () => attendanceService.getAttendanceByDate(tenantId, date, employeeId, departmentId),
     staleTime: 2 * 60 * 1000, // 2 minutes — attendance changes frequently
     gcTime: 10 * 60 * 1000,
-    enabled: !!tenantId && !!date,
+    enabled: !!tenantId && !!date && enabled,
   });
 }
 
@@ -57,6 +63,7 @@ export function useMarkAttendance() {
       employeeId: string;
       employeeName: string;
       department: string;
+      departmentId?: string;
       date: string;
       clockIn?: string;
       clockOut?: string;

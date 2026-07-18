@@ -14,7 +14,7 @@
 
 import type { ComponentType } from "react";
 import type { SectionId } from "./sectionTheme";
-import type { ModulePermission } from "@/types/tenant";
+import type { ModulePermission, TenantRole } from "@/types/tenant";
 import {
   LayoutDashboard,
   // People
@@ -29,7 +29,6 @@ import {
   Megaphone,
   MessageSquare,
   // Time & Leave
-  Clock,
   CalendarDays,
   CalendarCheck,
   // Payroll
@@ -79,6 +78,8 @@ interface NavItem {
   requiredAllModules?: ModulePermission[];
   manageOnly?: boolean;
   managerOnly?: boolean;
+  peopleManagerOnly?: boolean;
+  hrAdminOnly?: boolean;
   /** Hidden unless the user has accountant-grade tax controls (useAdvancedTax). */
   advancedTaxOnly?: boolean;
 }
@@ -96,6 +97,8 @@ export interface ModuleSection {
   requiredAllModules?: ModulePermission[];
   manageOnly?: boolean;
   managerOnly?: boolean;
+  peopleManagerOnly?: boolean;
+  hrAdminOnly?: boolean;
   /** Hidden unless the user has accountant-grade tax controls (useAdvancedTax). */
   advancedTaxOnly?: boolean;
 }
@@ -182,7 +185,7 @@ export const peopleNavConfig: ModuleNavConfig = {
 };
 
 /* ─── Time & Leave ───
- * Already flat — 4 direct links, no sub-sections needed
+ * Three task-first destinations; Leave Settings stays contextual under Leave.
  */
 
 export const timeLeaveNavConfig: ModuleNavConfig = {
@@ -194,14 +197,13 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
   },
   sections: [
     {
-      id: "shifts",
-      label: "Shifts",
-      labelKey: "shifts",
-      icon: Calendar,
-      path: "/time-leave/shifts",
-      matchPaths: ["/time-leave/shifts"],
+      id: "attendance",
+      label: "Attendance",
+      labelKey: "attendance",
+      icon: CalendarCheck,
+      path: "/time-leave/attendance",
+      matchPaths: ["/time-leave/attendance"],
       subPages: [],
-      manageOnly: true,
     },
     {
       id: "leave",
@@ -218,28 +220,19 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
           icon: Settings,
           path: "/time-leave/settings",
           matchPaths: ["/time-leave/settings"],
-          manageOnly: true,
+          hrAdminOnly: true,
         },
       ],
     },
     {
-      id: "time-tracking",
-      label: "Time Tracking",
-      labelKey: "timeTracking",
-      icon: Clock,
-      path: "/time-leave/time-tracking",
-      matchPaths: ["/time-leave/time-tracking"],
+      id: "shifts",
+      label: "Shifts",
+      labelKey: "shifts",
+      icon: Calendar,
+      path: "/time-leave/shifts",
+      matchPaths: ["/time-leave/shifts"],
       subPages: [],
-      manageOnly: true,
-    },
-    {
-      id: "attendance",
-      label: "Attendance",
-      labelKey: "attendance",
-      icon: CalendarCheck,
-      path: "/time-leave/attendance",
-      matchPaths: ["/time-leave/attendance"],
-      subPages: [],
+      peopleManagerOnly: true,
     },
   ],
 };
@@ -571,12 +564,15 @@ function canViewNavEntry(
     requiredAllModules?: ModulePermission[];
     manageOnly?: boolean;
     managerOnly?: boolean;
+    peopleManagerOnly?: boolean;
+    hrAdminOnly?: boolean;
     advancedTaxOnly?: boolean;
   },
   hasModule: (module: ModulePermission) => boolean,
   canManageTenant: boolean,
   canManageTeam: boolean,
   showAdvancedTax: boolean,
+  tenantRole?: TenantRole,
 ) {
   if (entry.advancedTaxOnly && !showAdvancedTax) {
     return false;
@@ -585,6 +581,18 @@ function canViewNavEntry(
     return false;
   }
   if (entry.managerOnly && !canManageTeam) {
+    return false;
+  }
+  if (entry.peopleManagerOnly && !tenantRole) {
+    return false;
+  }
+  if (entry.peopleManagerOnly && tenantRole && !["owner", "hr-admin", "manager"].includes(tenantRole)) {
+    return false;
+  }
+  if (entry.hrAdminOnly && !tenantRole) {
+    return false;
+  }
+  if (entry.hrAdminOnly && tenantRole && !["owner", "hr-admin"].includes(tenantRole)) {
     return false;
   }
   if (entry.requiredModule && !hasModule(entry.requiredModule)) {
@@ -607,19 +615,20 @@ export function filterModuleNavConfigByPermissions(
   canManageTenant: boolean = true,
   canManageTeam: boolean = canManageTenant,
   showAdvancedTax: boolean = false,
+  tenantRole?: TenantRole,
 ): ModuleNavConfig {
   return {
     ...config,
     overview:
-      config.overview && canViewNavEntry(config.overview, hasModule, canManageTenant, canManageTeam, showAdvancedTax)
+      config.overview && canViewNavEntry(config.overview, hasModule, canManageTenant, canManageTeam, showAdvancedTax, tenantRole)
         ? config.overview
         : undefined,
     sections: config.sections
-      .filter((section) => canViewNavEntry(section, hasModule, canManageTenant, canManageTeam, showAdvancedTax))
+      .filter((section) => canViewNavEntry(section, hasModule, canManageTenant, canManageTeam, showAdvancedTax, tenantRole))
       .map((section) => ({
         ...section,
         subPages: section.subPages.filter((page) =>
-          canViewNavEntry(page, hasModule, canManageTenant, canManageTeam, showAdvancedTax)
+          canViewNavEntry(page, hasModule, canManageTenant, canManageTeam, showAdvancedTax, tenantRole)
         ),
       })),
   };

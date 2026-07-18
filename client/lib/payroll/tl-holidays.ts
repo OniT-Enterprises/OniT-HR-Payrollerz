@@ -5,6 +5,19 @@ export interface TLHoliday {
   variable?: boolean;
 }
 
+/**
+ * Variable Islamic holidays are announced by the Government for each year and
+ * cannot be derived reliably from the Gregorian calendar. Keep announced dates
+ * here; tenant overrides remain available for later government changes and
+ * additional days off.
+ */
+const ANNOUNCED_VARIABLE_HOLIDAYS: Record<number, TLHoliday[]> = {
+  2026: [
+    { date: "2026-03-20", name: "Idul Fitri", nameTetun: "Idul Fitri", variable: true },
+    { date: "2026-05-27", name: "Idul Adha", nameTetun: "Idul Adha", variable: true },
+  ],
+};
+
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 function normalizeISODate(date: Date | string): string {
@@ -55,8 +68,9 @@ function getEasterSundayUTC(year: number): Date {
  * Timor-Leste public holidays.
  *
  * Notes:
- * - Includes fixed national holidays plus Easter-based Catholic holidays used in TL (Good Friday, Corpus Christi).
- * - Variable holidays (e.g., Eid) should be handled via admin overrides.
+ * - Includes fixed national holidays, Easter-based Catholic holidays, and
+ *   government-announced variable dates bundled for known years.
+ * - Tenant overrides handle later proclamations, corrections, and days off.
  */
 export function getTLPublicHolidays(year: number): TLHoliday[] {
   const fixed: TLHoliday[] = [
@@ -67,6 +81,7 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
     { date: `${year}-08-30`, name: "Popular Consultation Day", nameTetun: "Loron Konsulta Popular" },
     { date: `${year}-11-01`, name: "All Saints Day", nameTetun: "Loron Santu Hotu" },
     { date: `${year}-11-02`, name: "All Souls Day", nameTetun: "Loron Finadu" },
+    { date: `${year}-11-03`, name: "National Women's Day", nameTetun: "Loron Feto Nasionál" },
     { date: `${year}-11-12`, name: "National Youth Day", nameTetun: "Loron Juventude Nasional" },
     { date: `${year}-11-28`, name: "Independence Proclamation Day", nameTetun: "Loron Proklamasaun Independensia" },
     { date: `${year}-12-07`, name: "Memorial Day", nameTetun: "Loron Memoria" },
@@ -82,6 +97,7 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
   const movable: TLHoliday[] = [
     { date: formatUTCISODate(goodFriday), name: "Good Friday", nameTetun: "Sesta-feira Santa", variable: true },
     { date: formatUTCISODate(corpusChristi), name: "Corpus Christi", nameTetun: "Corpus Christi", variable: true },
+    ...(ANNOUNCED_VARIABLE_HOLIDAYS[year] ?? []),
   ];
 
   return [...fixed, ...movable].sort((a, b) => a.date.localeCompare(b.date));

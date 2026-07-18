@@ -59,8 +59,6 @@ describe('Form writes accepted by rules (tenant owner)', () => {
     ['candidates',       { name: 'C' }],
     ['interviews',       { candidateName: 'C', status: 'scheduled' }],
     ['contracts',        { employeeId: 'emp-1' }],
-    ['leaveRequests',    { employeeId: 'emp-1', status: 'pending' }],
-    ['timesheets',       { employeeId: 'emp-1' }],
     ['goals',            { createdById: UID, title: 'G' }],
     ['reviews',          { employeeId: 'emp-1', status: 'draft' }],
     ['trainings',        { employeeId: 'emp-1' }],
@@ -77,7 +75,6 @@ describe('Form writes accepted by rules (tenant owner)', () => {
     ['expenses',         { employeeId: 'emp-1', status: 'submitted', amount: 10 }],
     ['accounts',         { accountCode: '1000', accountName: 'Cash' }],
     ['announcements',    { title: 'Hi', body: 'x' }],
-    ['shifts',           { employeeId: 'emp-1', date: '2026-06-11' }],
     ['holidays',         { name: 'Holiday', date: '2026-06-11' }],
     ['recurring_invoices', { customerName: 'Cust' }],
   ];
@@ -90,6 +87,14 @@ describe('Form writes accepted by rules (tenant owner)', () => {
     });
   }
 
+  it('requires shift creation to use the validated callable', async () => {
+    await assertFails(addDoc(collection(db(), `tenants/${TID}/shifts`), {
+      employeeId: 'emp-1',
+      date: '2026-06-11',
+      createdAt: new Date(),
+    }));
+  });
+
   // journalEntries: create must be draft or posted
   it('create journalEntries (draft)', async () => {
     await assertSucceeds(
@@ -99,18 +104,46 @@ describe('Form writes accepted by rules (tenant owner)', () => {
     );
   });
 
-  // Legacy top-level collections require tenantId on the doc
-  const legacy: Array<[string, Record<string, unknown>]> = [
+  // Top-level tenant records require tenantId on the document.
+  const topLevel: Array<[string, Record<string, unknown>]> = [
     ['attendance',  { tenantId: TID, employeeId: 'emp-1', date: '2026-06-11', source: 'manual' }],
     ['onboarding',  { tenantId: TID, employeeId: 'emp-1' }],
     ['offboarding', { tenantId: TID, employeeId: 'emp-1' }],
     ['payrollRuns', { tenantId: TID, createdBy: UID, status: 'draft' }],
   ];
-  for (const [coll, payload] of legacy) {
-    it(`create legacy ${coll}`, async () => {
+  for (const [coll, payload] of topLevel) {
+    it(`create top-level ${coll}`, async () => {
       await assertSucceeds(addDoc(collection(db(), coll), { ...payload, createdAt: new Date() }));
     });
   }
+
+  it('requires canonical leave creation to use the validated callable', async () => {
+    await assertFails(addDoc(collection(db(), 'leave_requests'), {
+      tenantId: TID,
+      employeeId: 'emp-1',
+      departmentId: 'ops',
+      status: 'pending',
+      startDate: '2026-06-11',
+      endDate: '2026-06-11',
+      duration: 1,
+      createdAt: new Date(),
+    }));
+  });
+
+  it('blocks direct writes to retired and computed Time & Leave collections', async () => {
+    await assertFails(addDoc(collection(db(), `tenants/${TID}/leaveRequests`), {
+      employeeId: 'emp-1',
+      status: 'pending',
+    }));
+    await assertFails(addDoc(collection(db(), `tenants/${TID}/timesheets`), {
+      employeeId: 'emp-1',
+    }));
+    await assertFails(addDoc(collection(db(), 'leave_balances'), {
+      tenantId: TID,
+      employeeId: 'emp-1',
+      year: 2026,
+    }));
+  });
 
   // Settings doc (CompanyDetails / payroll config save)
   it('write settings/config', async () => {

@@ -144,8 +144,8 @@ const sitemapData: SitemapSection[] = [
     ],
   },
   {
-    title: 'Scheduling & Attendance',
-    description: 'Track working hours, attendance, and leave requests',
+    title: 'Time & Leave',
+    description: 'Record attendance, manage leave, and plan weekly shifts',
     icon: Clock,
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-100 dark:bg-cyan-900',
@@ -156,14 +156,9 @@ const sitemapData: SitemapSection[] = [
         description: 'Overview of attendance, leave, and scheduling at a glance',
       },
       {
-        name: 'Time Tracking',
-        path: '/time-leave/time-tracking',
-        description: 'Clock in/out, track hours worked, and manage timesheets',
-      },
-      {
         name: 'Attendance',
         path: '/time-leave/attendance',
-        description: 'Daily attendance records with late arrivals and early departures',
+        description: 'Clock times, hours, adjustments, imports, and daily attendance',
       },
       {
         name: 'Leave Requests',
@@ -551,12 +546,12 @@ export default function Sitemap() {
       return hasModule('performance');
     }
 
-    if (path === '/time-leave/settings' || path === '/time-leave/time-tracking') {
+    if (path === '/time-leave/settings') {
       return hasModule('timeleave') && canManageTenant;
     }
 
     if (path === '/time-leave/shifts') {
-      return hasModule('timeleave') && canManageTenant;
+      return hasModule('timeleave') && canManageTeam;
     }
 
     if (path.startsWith('/time-leave')) {

@@ -43,6 +43,9 @@ const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
 const AuthOnboarding = lazyWithRetry(() => import("@/pages/auth/Onboarding"));
 const ForgotPassword = lazyWithRetry(() => import("@/pages/auth/ForgotPassword"));
 const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
+const Pricing = lazyWithRetry(() => import("@/pages/Pricing"));
+const AccountantPartners = lazyWithRetry(() => import("@/pages/AccountantPartners"));
+const AccountantPortfolioDashboard = lazyWithRetry(() => import("@/pages/AccountantPortfolioDashboard"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
 // Section Dashboards (kept for /*/overview routes but not default landing)
@@ -70,7 +73,6 @@ const PublicInvoice = lazyWithRetry(() => import("@/pages/money/PublicInvoice"))
 const LegalPage = lazyWithRetry(() => import("@/pages/legal/LegalPage"));
 
 // People - Time & Leave
-const TimeTracking = lazyWithRetry(() => import("@/pages/time-leave/TimeTracking"));
 const Attendance = lazyWithRetry(() => import("@/pages/time-leave/Attendance"));
 const LeaveRequests = lazyWithRetry(() => import("@/pages/time-leave/LeaveRequests"));
 const ShiftScheduling = lazyWithRetry(() => import("@/pages/time-leave/ShiftScheduling"));
@@ -156,7 +158,7 @@ const DocumentAlerts = lazyWithRetry(() => import("@/pages/admin/DocumentAlerts"
 const ForeignWorkers = lazyWithRetry(() => import("@/pages/admin/ForeignWorkers"));
 
 // Export components for use in HomeRoute
-export { Dashboard, Landing };
+export { AccountantPortfolioDashboard, Dashboard, Landing };
 
 /**
  * Auth & Core Routes
@@ -183,8 +185,18 @@ export const authRoutes = (
     />
     <Route path="/landing" element={<Landing />} />
     <Route path="/how-it-works" element={<ProductDetails />} />
+    <Route path="/pricing" element={<Pricing />} />
+    <Route path="/accountants" element={<AccountantPartners />} />
     <Route path="/features" element={<Navigate to="/how-it-works" replace />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
+    <Route
+      path="/accountant/clients"
+      element={
+        <FeatureRoute fallbackPath="/">
+          <AccountantPortfolioDashboard />
+        </FeatureRoute>
+      }
+    />
     <Route
       path="/settings"
       element={
@@ -374,7 +386,7 @@ export const peopleRoutes = (
 );
 
 /**
- * Time & Leave Module Routes (Time Tracking, Attendance, Leave, Shifts)
+ * Time & Leave Module Routes (Attendance, Leave, Shifts)
  */
 export const schedulingRoutes = (
   <>
@@ -388,11 +400,7 @@ export const schedulingRoutes = (
     />
     <Route
       path="/time-leave/time-tracking"
-      element={
-        <FeatureRoute requiredModule="timeleave" requireManage>
-          <TimeTracking />
-        </FeatureRoute>
-      }
+      element={<Navigate to="/time-leave/attendance" replace />}
     />
     <Route
       path="/time-leave/attendance"
@@ -413,7 +421,7 @@ export const schedulingRoutes = (
     <Route
       path="/time-leave/shifts"
       element={
-        <FeatureRoute requiredModule="timeleave" requireManage>
+        <FeatureRoute requiredModule="timeleave" requirePeopleManager>
           <ShiftScheduling />
         </FeatureRoute>
       }
@@ -421,7 +429,7 @@ export const schedulingRoutes = (
     <Route
       path="/time-leave/settings"
       element={
-        <FeatureRoute requiredModule="timeleave" requireManage>
+        <FeatureRoute requiredModule="timeleave" requireHrAdmin>
           <TimeLeaveSettings />
         </FeatureRoute>
       }
@@ -965,18 +973,18 @@ export const legacyRedirects = (
 
     {/* Old /scheduling/* routes → now /time-leave/* */}
     <Route path="/scheduling" element={<Navigate to="/time-leave" replace />} />
-    <Route path="/scheduling/time-tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/scheduling/time-tracking" element={<Navigate to="/time-leave/attendance" replace />} />
     <Route path="/scheduling/attendance" element={<Navigate to="/time-leave/attendance" replace />} />
     <Route path="/scheduling/leave" element={<Navigate to="/time-leave/leave" replace />} />
     <Route path="/scheduling/schedules" element={<Navigate to="/time-leave/shifts" replace />} />
 
     {/* Old /time-leave/* variant routes → canonical /time-leave/* */}
-    <Route path="/time-leave/tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/time-leave/tracking" element={<Navigate to="/time-leave/attendance" replace />} />
     <Route path="/time-leave/requests" element={<Navigate to="/time-leave/leave" replace />} />
     <Route path="/time-leave/scheduling" element={<Navigate to="/time-leave/shifts" replace />} />
 
     {/* Old People time & leave routes → now /time-leave/* */}
-    <Route path="/people/time-tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/people/time-tracking" element={<Navigate to="/time-leave/attendance" replace />} />
     <Route path="/people/attendance" element={<Navigate to="/time-leave/attendance" replace />} />
     <Route path="/people/leave" element={<Navigate to="/time-leave/leave" replace />} />
     <Route path="/people/schedules" element={<Navigate to="/time-leave/shifts" replace />} />

@@ -52,6 +52,7 @@ import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
+import { AccountantPartnerCard } from "@/components/settings/AccountantPartnerCard";
 
 function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
   const { setOpen, setPendingQuery } = useChatStore();
@@ -507,6 +508,10 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Keep optional professional support visible without adding another
+            dashboard metric or interrupting the things-to-do hierarchy. */}
+        <AccountantPartnerCard />
       </div>
 
       <KeyboardShortcutsDialog

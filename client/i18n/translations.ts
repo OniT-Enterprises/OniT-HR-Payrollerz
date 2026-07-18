@@ -114,6 +114,7 @@ export const translations = {
       "review": "Review",
       "askAI": "Ask AI",
       "retry": "Retry",
+      "refresh": "Refresh",
       "connectionIssueTitle": "Connection problem",
       "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
       "accountRecoveryTitle": "Couldn't open your account",
@@ -597,7 +598,11 @@ export const translations = {
         "laborLaw": "Labor Law",
         "apps": "Apps",
         "pricing": "Pricing",
-        "getStarted": "Get Started"
+        "getStarted": "Get Started",
+        "forAccountants": "For accountants",
+        "menu": "Menu",
+        "overview": "Overview",
+        "home": "Home"
       },
       "simple": {
         "nav": {
@@ -683,6 +688,7 @@ export const translations = {
           "minimum": "{{total}} monthly minimum includes {{employees}} employees",
           "annualSaving": "Annual: {{total}} — save {{savings}}",
           "cta": "Start free",
+          "seeFull": "See full pricing",
           "includedTitle": "Included with every account",
           "benefits": {
             "payroll": "Automatic WIT, INSS and subsídio calculations",
@@ -911,6 +917,7 @@ export const translations = {
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "How Xefe works",
+          "accountants": "Accountant partners",
           "privacy": "Privacy",
           "terms": "Terms",
           "support": "Support",
@@ -2624,6 +2631,7 @@ export const translations = {
       "leaveRequests": {
         "title": "Leave Requests",
         "subtitle": "Manage employee leave requests and approvals",
+        "scopeMissing": "Your manager account is not linked to a department yet. You can still see your own requests, but HR must set your department before team approvals appear.",
         "actions": {
           "newRequest": "New Request",
           "cancel": "Cancel",
@@ -2759,7 +2767,7 @@ export const translations = {
           "title": "Import Attendance Data",
           "description": "Import attendance records from fingerprint device or CSV file",
           "selectFile": "Select File",
-          "format": "CSV format: employee_id, date, clock_in, clock_out",
+          "format": "CSV or XLSX columns: employee_id, date, clock_in, clock_out",
           "importing": "Importing..."
         },
         "mark": {
@@ -2850,6 +2858,7 @@ export const translations = {
       "shiftScheduling": {
         "title": "Shift Scheduling",
         "subtitle": "Manage employee shifts, schedules, and workforce planning",
+        "scopeMissing": "Your manager account is not linked to a department yet. HR must set your department before you can manage team shifts.",
         "controls": {
           "title": "Schedule Controls",
           "weekStarting": "Week Starting",
@@ -3014,6 +3023,9 @@ export const translations = {
         "toast": {
           "validationTitle": "Validation Error",
           "validationDesc": "Please fill in all required fields.",
+          "overlapDesc": "This employee already has a shift at that time.",
+          "restDesc": "Employees need at least 12 hours between shifts.",
+          "leaveConflictDesc": "This employee has approved leave on that date.",
           "successTitle": "Success",
           "errorTitle": "Error",
           "createSuccessDesc": "Shift created successfully.",
@@ -6755,27 +6767,30 @@ export const translations = {
         "title": "Time & Leave",
         "seoDescription": "Coverage, attendance, leave approvals, and shift planning in one place.",
         "subtitle": "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
+        "subtitleRecorded": "Attendance is recorded for {{recorded}} of {{total}} staff today.",
         "subtitleEmpty": "Approve leave, track attendance, and plan shifts.",
         "attendanceAction": "Attendance",
         "shiftsAction": "Shift schedules",
-        "allGood": "Coverage looks steady — nothing needs attention right now.",
+        "allGood": "Nothing needs attention right now.",
         "attention": {
           "leaveRequest": "leave request waiting for approval",
           "leaveRequests": "leave requests waiting for approval",
           "lateArrival": "late arrival today",
           "lateArrivals": "late arrivals today",
           "absentToday": "absent today",
+          "attendanceMissing": "staff member has no attendance record yet",
+          "attendanceMissingPlural": "staff members have no attendance record yet",
           "draftShift": "draft shift waiting to be published",
           "draftShifts": "draft shifts waiting to be published"
         },
         "cards": {
           "attendance": "Attendance",
           "availableToday": "{{rate}}% available today",
+          "recordedToday": "attendance recorded today",
           "leave": "Leave",
           "onLeaveToday": "{{count}} on leave today",
           "onLeaveTodayLabel": "on leave today",
-          "timeTracking": "Time Tracking",
-          "timeTrackingMeta": "Clock-ins & hours",
+          "attendanceMeta": "Clock-ins & hours",
           "hoursRecordedToday": "hours recorded today",
           "shifts": "Shifts",
           "shiftsMeta": "Plan weekly rosters",
@@ -7052,6 +7067,177 @@ export const translations = {
         "maintenance": "Maintenance",
         "other": "Other"
       }
+    },
+    "accountantPartners": {
+      "nav": {
+        "partner": "Preferred partner",
+        "process": "How connection works",
+        "access": "Access and control"
+      },
+      "hero": {
+        "eyebrow": "Professional help, when you want it",
+        "title": "Run the day-to-day yourself.",
+        "titleAccent": "Bring in an accountant for review.",
+        "description": "Choose an accounting partner in Xefe, agree the service directly, and grant secure access only when you are ready.",
+        "primary": "Meet the preferred partner",
+        "secondary": "See how Xefe works",
+        "trust": {
+          "consent": "No access from selecting a firm",
+          "revoke": "Access can be revoked",
+          "agreement": "Scope and fees agreed separately"
+        }
+      },
+      "partner": {
+        "dili": "Based in Dili",
+        "languages": "English, Tetun and Portuguese",
+        "since": "Established in 2013",
+        "accountingAudit": "Accounting and audit",
+        "eyebrow": "Xefe preferred accountant",
+        "title": "Meet Primos Bo'ot",
+        "description": "A Timor-Leste accounting and audit firm for businesses that want professional bookkeeping, payroll, tax or financial review.",
+        "preferred": "Preferred Xefe accounting partner",
+        "profile": "Primos Bo'ot is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
+        "website": "Visit primosboot.com",
+        "servicesTitle": "Services you can discuss",
+        "services": {
+          "bookkeeping": "Monthly and annual bookkeeping",
+          "payroll": "Payroll calculations and processing",
+          "tax": "Tax preparation and compliance reporting",
+          "statements": "Financial statement preparation",
+          "audit": "Statutory, internal and project audits",
+          "advisory": "Management accounting and financial advice"
+        },
+        "beforeAccessTitle": "Selecting is only the first step.",
+        "beforeAccessDescription": "Primos Bo'ot confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access."
+      },
+      "process": {
+        "eyebrow": "A consent-first connection",
+        "title": "Choose, agree, then connect",
+        "description": "The accounting firm and the business both approve the relationship before records become available.",
+        "steps": {
+          "choose": {
+            "title": "Request a consultation",
+            "description": "Select Primos Bo'ot. Xefe sends only your contact and business name so the firm can respond."
+          },
+          "agree": {
+            "title": "Agree the service",
+            "description": "Confirm scope, timing and fees directly with Primos Bo'ot outside the software."
+          },
+          "review": {
+            "title": "Grant access for review",
+            "description": "The business owner grants a restricted accountant role, then can revoke it at any time."
+          }
+        }
+      },
+      "access": {
+        "eyebrow": "Your business stays in control",
+        "title": "Useful access, clear boundaries",
+        "description": "A connected accountant gets the financial tools needed for review, without platform administration.",
+        "consentNote": "A selection or accepted consultation never grants access by itself. The business owner must press Grant access in Xefe.",
+        "canTitle": "Accountant can",
+        "cannotTitle": "Accountant cannot",
+        "can": {
+          "payroll": "Review payroll calculations and statutory amounts",
+          "money": "Work with bills, invoices and accounting entries",
+          "reports": "Prepare and review financial and compliance reports",
+          "review": "See the records needed to reconcile and sign off"
+        },
+        "cannot": {
+          "users": "Manage owners, users or roles",
+          "employees": "Create or delete employee records",
+          "billing": "Change the Xefe subscription or billing",
+          "integrations": "Open integration credentials"
+        }
+      },
+      "selection": {
+        "title": "Would you like accountant support?",
+        "description": "Optional. You can change this later.",
+        "self": "Manage it myself",
+        "selfDescription": "Keep Xefe simple and invite an accountant later.",
+        "primos": "Ask Primos Bo'ot to contact me",
+        "primosDescription": "After the company is created, Xefe emails only your business name and contact details.",
+        "primosPrelaunch": "Choose Primos Bo'ot for later",
+        "primosPrelaunchDescription": "This only saves your preference. No request or contact details are sent while the partnership is being prepared.",
+        "privacy": "This choice does not grant access to your records.",
+        "choose": "Choose Primos Bo'ot",
+        "requested": "Request sent",
+        "accepted": "Request accepted",
+        "connected": "Accountant connected",
+        "manage": "Manage connection",
+        "openPortfolio": "Open Primos Bo'ot client review",
+        "ownerOnly": "Only the business owner or administrator can request an accountant.",
+        "failed": "Could not send the request. Please try again."
+      },
+      "connection": {
+        "title": "Accountant connection",
+        "description": "Request professional help or manage the access already granted.",
+        "none": "No accounting partner selected.",
+        "view": "View partner profile",
+        "request": "Request a consultation",
+        "requestNote": "Primos Bo'ot will receive your business name and contact details by email. No records are shared.",
+        "cancel": "Cancel request",
+        "status": {
+          "selected": "Selected — request not sent",
+          "requested": "Waiting for Primos Bo'ot",
+          "accepted": "Accepted — owner can grant access",
+          "connected": "Connected with accountant access",
+          "declined": "The firm could not accept",
+          "cancelled": "Request cancelled",
+          "revoked": "Access revoked"
+        },
+        "grant": "Grant accountant access",
+        "grantNote": "This gives Primos Bo'ot restricted payroll, money, accounting and reporting access. The firm will be emailed.",
+        "ownerGrantOnly": "The request was accepted. Only the business owner can grant record access.",
+        "revoke": "Revoke access",
+        "confirmGrantTitle": "Grant Primos Bo'ot access?",
+        "confirmGrantDescription": "Primos Bo'ot will be emailed and added with a restricted accountant role. They can review payroll and financial records, but cannot manage users, employees, billing or integrations.",
+        "confirmRevokeTitle": "Revoke accountant access?",
+        "confirmRevokeDescription": "Primos Bo'ot will immediately lose access to this business. Your records and prior work remain in Xefe.",
+        "saved": "Accountant connection updated.",
+        "error": "Could not update the accountant connection.",
+        "prelaunch": "Coming soon",
+        "prelaunchNote": "The Primos Bo'ot connection is being prepared. No request, email or contact details will be sent until it is enabled.",
+        "prelaunchAction": "Connection coming soon"
+      },
+      "landing": {
+        "nav": "Accountant help",
+        "eyebrow": "Optional accountant support",
+        "title": "Do it yourself—or ask an accountant to review",
+        "description": "Xefe stays simple for daily work. When you want professional help, choose Primos Bo'ot and control exactly when access begins.",
+        "cta": "Meet the accountant partner"
+      },
+      "cta": {
+        "title": "Want an accountant beside you?",
+        "description": "Choose Primos Bo'ot now or keep managing Xefe yourself. Nothing is shared until you approve access."
+      }
+    },
+    "accountantPortfolio": {
+      "title": "Primos Bo'ot client review",
+      "subtitle": "Connection requests and approved Xefe client workspaces.",
+      "impersonationNote": "You are viewing the same partner workspace the Primos Bo'ot team will use.",
+      "cards": {
+        "requests": "New requests",
+        "awaitingAccess": "Awaiting client access",
+        "connected": "Connected clients"
+      },
+      "needsAttention": "Needs attention",
+      "noRequests": "No new connection requests.",
+      "requesterUnknown": "Business contact",
+      "actions": {
+        "accept": "Accept",
+        "decline": "Decline"
+      },
+      "responseNotice": "The business contact will be emailed with your decision.",
+      "awaitingTitle": "Accepted — awaiting the business owner",
+      "awaitingDescription": "The firm accepted. The client must now grant access in Xefe.",
+      "clientsTitle": "Connected clients",
+      "connectedDescription": "Open this client's restricted accountant workspace.",
+      "noClients": "No clients have granted accountant access yet.",
+      "errors": {
+        "load": "Could not load the client portfolio.",
+        "respond": "Could not update the request.",
+        "open": "Could not open the client workspace."
+      }
     }
   },
   "tet": {
@@ -7166,6 +7352,7 @@ export const translations = {
       "review": "Reviza",
       "askAI": "Husu AI",
       "retry": "Koko fali",
+      "refresh": "Atualiza",
       "connectionIssueTitle": "Problema ligasaun",
       "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
       "accountRecoveryTitle": "La konsege loke ita-nia konta",
@@ -7649,7 +7836,11 @@ export const translations = {
         "laborLaw": "Lei Laboral",
         "apps": "Aplikasaun",
         "pricing": "Presu",
-        "getStarted": "Hahu"
+        "getStarted": "Hahu",
+        "forAccountants": "Ba kontabilista sira",
+        "menu": "Menu",
+        "overview": "Vizaun jerál",
+        "home": "Inísiu"
       },
       "simple": {
         "nav": {
@@ -7735,6 +7926,7 @@ export const translations = {
           "minimum": "Mínimu {{total}} kada fulan inklui funsionáriu {{employees}}",
           "annualSaving": "Anuál: {{total}} — poupa {{savings}}",
           "cta": "Hahú grátis",
+          "seeFull": "Haree presu kompletu",
           "includedTitle": "Inklui iha konta hotu",
           "benefits": {
             "payroll": "Kalkulasaun WIT, INSS no subsídiu automátiku",
@@ -7963,6 +8155,7 @@ export const translations = {
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "Oinsá Xefe servisu",
+          "accountants": "Parseiru kontabilidade",
           "privacy": "Privasidade",
           "terms": "Termus",
           "support": "Suporte",
@@ -9676,6 +9869,7 @@ export const translations = {
       "leaveRequests": {
         "title": "Pedidos Lisensa",
         "subtitle": "Jere pedidos lisensa no aprovasaun",
+        "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. Ita bele haree ita-nia pedidu rasik, maibé RH tenke define departamentu molok aprovasaun ekipa mosu.",
         "actions": {
           "newRequest": "Pedido Foun",
           "cancel": "Kansela",
@@ -9811,7 +10005,7 @@ export const translations = {
           "title": "Importa dadus prezensa",
           "description": "Importa registu husi dispozitivu biometriku ka CSV",
           "selectFile": "Hili ficheiru",
-          "format": "Formatu CSV: employee_id, date, clock_in, clock_out",
+          "format": "Koluna CSV ka XLSX: employee_id, date, clock_in, clock_out",
           "importing": "Importa hela..."
         },
         "mark": {
@@ -9902,6 +10096,7 @@ export const translations = {
       "shiftScheduling": {
         "title": "Planeamentu Turnu",
         "subtitle": "Gere turnu empregadu, horario no planeamentu forsa traballu",
+        "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. RH tenke define ita-nia departamentu molok ita bele jere turnu ekipa.",
         "controls": {
           "title": "Kontrolu Eskala",
           "weekStarting": "Semana hahuu",
@@ -10066,6 +10261,9 @@ export const translations = {
         "toast": {
           "validationTitle": "Erru validasaun",
           "validationDesc": "Favor preenche kampu obrigatoriu.",
+          "overlapDesc": "Empregadu ne'e iha ona turnu iha oras ne'e.",
+          "restDesc": "Empregadu presiza deskansa oras 12 entre turnu sira.",
+          "leaveConflictDesc": "Empregadu ne'e iha lisensa aprova ona ba data ne'e.",
           "successTitle": "Susesu",
           "errorTitle": "Erru",
           "createSuccessDesc": "Turnu kria ho susesu.",
@@ -13807,27 +14005,30 @@ export const translations = {
         "title": "Tempu & Lisensa",
         "seoDescription": "Kobertura, prezensa, aprovasaun lisensa no planeamentu turnu iha fatin ida.",
         "subtitle": "Staf {{available}} husi {{total}} disponível ohin (kobertura {{rate}}%).",
+        "subtitleRecorded": "Ohín rejista ona prezensa ba staf {{recorded}} husi {{total}}.",
         "subtitleEmpty": "Aprova lisensa, kontrola prezensa no planeia turnu.",
         "attendanceAction": "Prezensa",
         "shiftsAction": "Oráriu turnu",
-        "allGood": "Kobertura di'ak — agora laiha buat ne'ebé presiza atensaun.",
+        "allGood": "Agora laiha buat ne'ebé presiza atensaun.",
         "attention": {
           "leaveRequest": "pedidu lisensa ida hein aprovasaun",
           "leaveRequests": "pedidu lisensa sira hein aprovasaun",
           "lateArrival": "to'o tarde ohin",
           "lateArrivals": "to'o tarde ohin",
           "absentToday": "ausente ohin",
+          "attendanceMissing": "staf ida seidauk iha rejistu prezensa",
+          "attendanceMissingPlural": "staf sira seidauk iha rejistu prezensa",
           "draftShift": "turnu rascunhu ida hein atu publika",
           "draftShifts": "turnu rascunhu sira hein atu publika"
         },
         "cards": {
           "attendance": "Prezensa",
           "availableToday": "{{rate}}% disponível ohin",
+          "recordedToday": "prezensa rejistadu ohin",
           "leave": "Lisensa",
           "onLeaveToday": "{{count}} iha lisensa ohin",
           "onLeaveTodayLabel": "iha lisensa ohin",
-          "timeTracking": "Kontrola Tempu",
-          "timeTrackingMeta": "Rejistu tama no oras servisu",
+          "attendanceMeta": "Rejistu tama no oras servisu",
           "hoursRecordedToday": "oras rejistadu ohin",
           "shifts": "Turnu",
           "shiftsMeta": "Planeia lista turnu semanal",
@@ -14104,6 +14305,177 @@ export const translations = {
         "maintenance": "Manutensaun",
         "other": "Seluk"
       }
+    },
+    "accountantPartners": {
+      "nav": {
+        "partner": "Parseiru preferidu",
+        "process": "Oinsá liga",
+        "access": "Asesu no kontrolu"
+      },
+      "hero": {
+        "eyebrow": "Ajuda profisionál bainhira ita hakarak",
+        "title": "Jere servisu loroloron rasik.",
+        "titleAccent": "Husu kontabilista atu reviza.",
+        "description": "Hili parseiru kontabilidade iha Xefe, konkorda servisu diretamente, no fó asesu seguru de'it bainhira ita prontu.",
+        "primary": "Koñese parseiru preferidu",
+        "secondary": "Haree oinsá Xefe servisu",
+        "trust": {
+          "consent": "Hili firma la fó asesu",
+          "revoke": "Bele hasai asesu",
+          "agreement": "Konkorda servisu no folin ketak"
+        }
+      },
+      "partner": {
+        "dili": "Baze iha Dili",
+        "languages": "Inglés, Tetun no Portugés",
+        "since": "Harii iha 2013",
+        "accountingAudit": "Kontabilidade no auditoria",
+        "eyebrow": "Kontabilista preferidu Xefe",
+        "title": "Koñese Primos Bo'ot",
+        "description": "Firma kontabilidade no auditoria Timor-Leste nian ba negósiu ne'ebé hakarak apoiu profisionál ba kontabilidade, folha, impostu ka revizaun finanseira.",
+        "preferred": "Parseiru kontabilidade preferidu Xefe",
+        "profile": "Primos Bo'ot mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
+        "website": "Vizita primosboot.com",
+        "servicesTitle": "Servisu ne'ebé bele diskute",
+        "services": {
+          "bookkeeping": "Kontabilidade fulan no tinan",
+          "payroll": "Kálkulu no prosesamentu folha",
+          "tax": "Preparasaun impostu no relatóriu konformidade",
+          "statements": "Preparasaun relatóriu finanseiru",
+          "audit": "Auditoria estatutária, interna no projetu",
+          "advisory": "Kontabilidade jestaun no konsellu finanseiru"
+        },
+        "beforeAccessTitle": "Hili mak pasu dahuluk de'it.",
+        "beforeAccessDescription": "Primos Bo'ot konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois."
+      },
+      "process": {
+        "eyebrow": "Ligasaun ho konsentimentu uluk",
+        "title": "Hili, konkorda, depois liga",
+        "description": "Firma kontabilidade no negósiu hotu-hotu aprova relasaun molok rekordu bele haree.",
+        "steps": {
+          "choose": {
+            "title": "Husu konsultasaun",
+            "description": "Hili Primos Bo'ot. Xefe haruka de'it kontaktu no naran negósiu atu firma bele responde."
+          },
+          "agree": {
+            "title": "Konkorda servisu",
+            "description": "Konfirma servisu, tempu no folin diretamente ho Primos Bo'ot iha liur husi software."
+          },
+          "review": {
+            "title": "Fó asesu ba revizaun",
+            "description": "Na'in negósiu fó papél kontabilista ho limite no bele hasai asesu bainhira de'it."
+          }
+        }
+      },
+      "access": {
+        "eyebrow": "Ita-nia negósiu nafatin kontrola",
+        "title": "Asesu útil, limite klaru",
+        "description": "Kontabilista ne'ebé liga simu ferramenta finanseira ba revizaun, maibé la bele administra plataforma.",
+        "consentNote": "Hili ka simu konsultasaun la fó asesu automaticamente. Na'in negósiu tenke hanehan Fó asesu iha Xefe.",
+        "canTitle": "Kontabilista bele",
+        "cannotTitle": "Kontabilista la bele",
+        "can": {
+          "payroll": "Reviza kálkulu folha no valór legal",
+          "money": "Servisu ho konta, fatura no lançamentu kontabilidade",
+          "reports": "Prepara no reviza relatóriu finanseiru no konformidade",
+          "review": "Haree rekordu ne'ebé presiza atu rekonsilia no aprova"
+        },
+        "cannot": {
+          "users": "Jere na'in, utilizadór ka papél",
+          "employees": "Kria ka hamoos rekordu funsionáriu",
+          "billing": "Troka subscrisaun ka faturasaun Xefe",
+          "integrations": "Loke kredensiál integrasaun"
+        }
+      },
+      "selection": {
+        "title": "Ita hakarak apoiu kontabilista?",
+        "description": "Opsionál. Ita bele troka depois.",
+        "self": "Hau jere rasik",
+        "selfDescription": "Mantein Xefe simples no konvida kontabilista depois.",
+        "primos": "Husu Primos Bo'ot kontaktu hau",
+        "primosDescription": "Depois de kria kompania, Xefe haruka email ho naran negósiu no kontaktu de'it.",
+        "primosPrelaunch": "Hili Primos Bo'ot ba depois",
+        "primosPrelaunchDescription": "Ne'e rai de'it ita-nia preferénsia. La haruka pedidu ka dadus kontaktu bainhira parseiru seidauk prontu.",
+        "privacy": "Opsaun ne'e la fó asesu ba ita-nia rekordu.",
+        "choose": "Hili Primos Bo'ot",
+        "requested": "Pedidu haruka ona",
+        "accepted": "Pedidu simu ona",
+        "connected": "Kontabilista liga ona",
+        "manage": "Jere ligasaun",
+        "openPortfolio": "Loke revizaun kliente Primos Bo'ot",
+        "ownerOnly": "Na'in ka administradór negósiu de'it bele husu kontabilista.",
+        "failed": "La konsege haruka pedidu. Favor koko fali."
+      },
+      "connection": {
+        "title": "Ligasaun kontabilista",
+        "description": "Husu ajuda profisionál ka jere asesu ne'ebé fó ona.",
+        "none": "Seidauk hili parseiru kontabilidade.",
+        "view": "Haree perfil parseiru",
+        "request": "Husu konsultasaun",
+        "requestNote": "Primos Bo'ot sei simu naran negósiu no kontaktu liuhusi email. La fahe rekordu ida.",
+        "cancel": "Kansela pedidu",
+        "status": {
+          "selected": "Hili ona — pedidu seidauk haruka",
+          "requested": "Hein Primos Bo'ot",
+          "accepted": "Simu ona — na'in bele fó asesu",
+          "connected": "Liga ho asesu kontabilista",
+          "declined": "Firma la bele simu",
+          "cancelled": "Pedidu kansela ona",
+          "revoked": "Asesu hasai ona"
+        },
+        "grant": "Fó asesu kontabilista",
+        "grantNote": "Ne'e fó Primos Bo'ot asesu limitadu ba folha, osan, kontabilidade no relatóriu. Firma sei simu email.",
+        "ownerGrantOnly": "Pedidu simu ona. Na'in negósiu de'it bele fó asesu ba rekordu.",
+        "revoke": "Hasai asesu",
+        "confirmGrantTitle": "Fó asesu ba Primos Bo'ot?",
+        "confirmGrantDescription": "Primos Bo'ot sei simu email no hetan papél kontabilista ho limite. Sira bele reviza folha no finansas, maibé la bele jere utilizadór, funsionáriu, faturasaun ka integrasaun.",
+        "confirmRevokeTitle": "Hasai asesu kontabilista?",
+        "confirmRevokeDescription": "Primos Bo'ot sei lakon asesu ba negósiu ne'e kedas. Ita-nia rekordu no servisu uluk sei hela iha Xefe.",
+        "saved": "Ligasaun kontabilista atualiza ona.",
+        "error": "La konsege atualiza ligasaun kontabilista.",
+        "prelaunch": "Sei disponivel la kleur",
+        "prelaunchNote": "Ligasaun ho Primos Bo'ot seidauk prontu. La haruka pedidu, email ka dadus kontaktu to'o ligasaun ne'e ativa.",
+        "prelaunchAction": "Ligasaun sei disponivel la kleur"
+      },
+      "landing": {
+        "nav": "Ajuda kontabilista",
+        "eyebrow": "Apoiu kontabilista opsionál",
+        "title": "Halo rasik — ka husu kontabilista atu reviza",
+        "description": "Xefe nafatin simples ba servisu loroloron. Bainhira presiza ajuda profisionál, hili Primos Bo'ot no kontrola bainhira asesu hahú.",
+        "cta": "Koñese parseiru kontabilidade"
+      },
+      "cta": {
+        "title": "Hakarak kontabilista iha ita-nia sorin?",
+        "description": "Hili Primos Bo'ot agora ka kontinua jere Xefe rasik. La fahe buat ida to'o ita aprova asesu."
+      }
+    },
+    "accountantPortfolio": {
+      "title": "Revizaun kliente Primos Bo'ot",
+      "subtitle": "Pedidu ligasaun no área Xefe kliente ne'ebé aprova ona.",
+      "impersonationNote": "Ita haree área parseiru hanesan ekipa Primos Bo'ot sei uza.",
+      "cards": {
+        "requests": "Pedidu foun",
+        "awaitingAccess": "Hein asesu kliente",
+        "connected": "Kliente liga ona"
+      },
+      "needsAttention": "Presiza atensaun",
+      "noRequests": "La iha pedidu ligasaun foun.",
+      "requesterUnknown": "Kontaktu negósiu",
+      "actions": {
+        "accept": "Simu",
+        "decline": "La simu"
+      },
+      "responseNotice": "Kontaktu negósiu sei simu email ho ita-nia desizaun.",
+      "awaitingTitle": "Simu ona — hein na'in negósiu",
+      "awaitingDescription": "Firma simu ona. Kliente tenke fó asesu agora iha Xefe.",
+      "clientsTitle": "Kliente liga ona",
+      "connectedDescription": "Loke área kontabilista limitadu ba kliente ne'e.",
+      "noClients": "Seidauk iha kliente ne'ebé fó asesu kontabilista.",
+      "errors": {
+        "load": "La konsege karrega lista kliente.",
+        "respond": "La konsege atualiza pedidu.",
+        "open": "La konsege loke área kliente."
+      }
     }
   },
   "pt": {
@@ -14218,6 +14590,7 @@ export const translations = {
       "review": "Rever",
       "askAI": "Perguntar IA",
       "retry": "Tentar novamente",
+      "refresh": "Atualizar",
       "connectionIssueTitle": "Problema de conexão",
       "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
       "accountRecoveryTitle": "Não foi possível abrir a sua conta",
@@ -14701,7 +15074,11 @@ export const translations = {
         "laborLaw": "Lei do Trabalho",
         "apps": "Apps",
         "pricing": "Preços",
-        "getStarted": "Começar"
+        "getStarted": "Começar",
+        "forAccountants": "Para contabilistas",
+        "menu": "Menu",
+        "overview": "Visão geral",
+        "home": "Início"
       },
       "simple": {
         "nav": {
@@ -14787,6 +15164,7 @@ export const translations = {
           "minimum": "O mínimo mensal de {{total}} inclui {{employees}} funcionários",
           "annualSaving": "Anual: {{total}} — poupe {{savings}}",
           "cta": "Começar grátis",
+          "seeFull": "Ver preços completos",
           "includedTitle": "Incluído em todas as contas",
           "benefits": {
             "payroll": "Cálculos automáticos de IRT, INSS e subsídio",
@@ -15015,6 +15393,7 @@ export const translations = {
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "Como o Xefe funciona",
+          "accountants": "Parceiros contabilísticos",
           "privacy": "Privacidade",
           "terms": "Termos",
           "support": "Suporte",
@@ -16728,6 +17107,7 @@ export const translations = {
       "leaveRequests": {
         "title": "Pedidos de Licença",
         "subtitle": "Gerir pedidos e aprovações de licença dos funcionários",
+        "scopeMissing": "A sua conta de gestor ainda não está ligada a um departamento. Pode ver os seus próprios pedidos, mas os RH têm de definir o seu departamento antes de aparecerem as aprovações da equipa.",
         "actions": {
           "newRequest": "Novo Pedido",
           "cancel": "Cancelar",
@@ -16863,7 +17243,7 @@ export const translations = {
           "title": "Importar Dados de Assiduidade",
           "description": "Importar registos de assiduidade de dispositivo biométrico ou ficheiro CSV",
           "selectFile": "Selecionar Ficheiro",
-          "format": "Formato CSV: id_funcionario, data, entrada, saida",
+          "format": "Colunas CSV ou XLSX: id_funcionario, data, entrada, saida",
           "importing": "A importar..."
         },
         "mark": {
@@ -16954,6 +17334,7 @@ export const translations = {
       "shiftScheduling": {
         "title": "Escalonamento de Turnos",
         "subtitle": "Gerir turnos, escalas e planeamento da força de trabalho",
+        "scopeMissing": "A sua conta de gestor ainda não está ligada a um departamento. Os RH têm de definir o seu departamento antes de poder gerir os turnos da equipa.",
         "controls": {
           "title": "Controlos da Escala",
           "weekStarting": "Semana a Partir de",
@@ -17118,6 +17499,9 @@ export const translations = {
         "toast": {
           "validationTitle": "Erro de Validação",
           "validationDesc": "Por favor preencha todos os campos obrigatórios.",
+          "overlapDesc": "Este funcionário já tem um turno nesse horário.",
+          "restDesc": "Os funcionários precisam de pelo menos 12 horas entre turnos.",
+          "leaveConflictDesc": "Este funcionário tem uma licença aprovada nessa data.",
           "successTitle": "Sucesso",
           "errorTitle": "Erro",
           "createSuccessDesc": "Turno criado com sucesso.",
@@ -20859,27 +21243,30 @@ export const translations = {
         "title": "Tempo & Licença",
         "seoDescription": "Cobertura, presença, aprovações de licença e planeamento de turnos num só lugar.",
         "subtitle": "{{available}} de {{total}} funcionários disponíveis hoje ({{rate}}% de cobertura).",
+        "subtitleRecorded": "A presença foi registada para {{recorded}} de {{total}} funcionários hoje.",
         "subtitleEmpty": "Aprove licenças, acompanhe a presença e planeie turnos.",
         "attendanceAction": "Presença",
         "shiftsAction": "Horários de turnos",
-        "allGood": "A cobertura está estável — nada precisa da sua atenção agora.",
+        "allGood": "Nada precisa da sua atenção agora.",
         "attention": {
           "leaveRequest": "pedido de licença à espera de aprovação",
           "leaveRequests": "pedidos de licença à espera de aprovação",
           "lateArrival": "chegada tardia hoje",
           "lateArrivals": "chegadas tardias hoje",
           "absentToday": "ausentes hoje",
+          "attendanceMissing": "funcionário ainda sem registo de presença",
+          "attendanceMissingPlural": "funcionários ainda sem registo de presença",
           "draftShift": "turno em rascunho por publicar",
           "draftShifts": "turnos em rascunho por publicar"
         },
         "cards": {
           "attendance": "Presença",
           "availableToday": "{{rate}}% disponíveis hoje",
+          "recordedToday": "presença registada hoje",
           "leave": "Licença",
           "onLeaveToday": "{{count}} de licença hoje",
           "onLeaveTodayLabel": "de licença hoje",
-          "timeTracking": "Controlo de Horas",
-          "timeTrackingMeta": "Entradas e horas",
+          "attendanceMeta": "Entradas e horas",
           "hoursRecordedToday": "horas registadas hoje",
           "shifts": "Turnos",
           "shiftsMeta": "Planear escalas semanais",
@@ -21155,6 +21542,177 @@ export const translations = {
         "communication": "Comunicações",
         "maintenance": "Manutenção",
         "other": "Outros"
+      }
+    },
+    "accountantPartners": {
+      "nav": {
+        "partner": "Parceiro preferencial",
+        "process": "Como funciona a ligação",
+        "access": "Acesso e controlo"
+      },
+      "hero": {
+        "eyebrow": "Apoio profissional, quando quiser",
+        "title": "Faça a gestão diária por si.",
+        "titleAccent": "Peça a um contabilista para rever.",
+        "description": "Escolha um parceiro contabilístico no Xefe, combine o serviço diretamente e conceda acesso seguro apenas quando estiver preparado.",
+        "primary": "Conhecer o parceiro preferencial",
+        "secondary": "Ver como o Xefe funciona",
+        "trust": {
+          "consent": "Escolher uma firma não concede acesso",
+          "revoke": "O acesso pode ser revogado",
+          "agreement": "Âmbito e honorários acordados à parte"
+        }
+      },
+      "partner": {
+        "dili": "Sediada em Díli",
+        "languages": "Inglês, Tétum e Português",
+        "since": "Fundada em 2013",
+        "accountingAudit": "Contabilidade e auditoria",
+        "eyebrow": "Contabilista preferencial Xefe",
+        "title": "Conheça a Primos Bo'ot",
+        "description": "Uma firma timorense de contabilidade e auditoria para empresas que procuram escrituração, processamento salarial, fiscalidade ou revisão financeira profissional.",
+        "preferred": "Parceiro contabilístico preferencial Xefe",
+        "profile": "A Primos Bo'ot é uma firma de contabilidade, auditoria e serviços empresariais sediada em Díli, que serve empresas, ONG e outras organizações em Timor-Leste.",
+        "website": "Visitar primosboot.com",
+        "servicesTitle": "Serviços que pode discutir",
+        "services": {
+          "bookkeeping": "Contabilidade mensal e anual",
+          "payroll": "Cálculos e processamento salarial",
+          "tax": "Preparação fiscal e relatórios de conformidade",
+          "statements": "Preparação de demonstrações financeiras",
+          "audit": "Auditorias estatutárias, internas e de projetos",
+          "advisory": "Contabilidade de gestão e aconselhamento financeiro"
+        },
+        "beforeAccessTitle": "A escolha é apenas o primeiro passo.",
+        "beforeAccessDescription": "A Primos Bo'ot confirma consigo a disponibilidade, o âmbito e os honorários. Nenhum registo do Xefe é partilhado até o proprietário conceder acesso mais tarde."
+      },
+      "process": {
+        "eyebrow": "Uma ligação baseada em consentimento",
+        "title": "Escolha, combine e depois ligue",
+        "description": "A firma contabilística e a empresa aprovam a relação antes de qualquer registo ficar disponível.",
+        "steps": {
+          "choose": {
+            "title": "Pedir uma consulta",
+            "description": "Escolha a Primos Bo'ot. O Xefe envia apenas o seu contacto e o nome da empresa para que a firma possa responder."
+          },
+          "agree": {
+            "title": "Combinar o serviço",
+            "description": "Confirme o âmbito, os prazos e os honorários diretamente com a Primos Bo'ot, fora do software."
+          },
+          "review": {
+            "title": "Conceder acesso para revisão",
+            "description": "O proprietário concede um papel de contabilista restrito e pode revogá-lo a qualquer momento."
+          }
+        }
+      },
+      "access": {
+        "eyebrow": "A sua empresa mantém o controlo",
+        "title": "Acesso útil, limites claros",
+        "description": "Um contabilista ligado recebe as ferramentas financeiras necessárias para a revisão, sem administração da plataforma.",
+        "consentNote": "Uma escolha ou consulta aceite nunca concede acesso por si só. O proprietário deve premir Conceder acesso no Xefe.",
+        "canTitle": "O contabilista pode",
+        "cannotTitle": "O contabilista não pode",
+        "can": {
+          "payroll": "Rever cálculos salariais e valores legais",
+          "money": "Trabalhar com contas, faturas e lançamentos contabilísticos",
+          "reports": "Preparar e rever relatórios financeiros e de conformidade",
+          "review": "Ver os registos necessários para reconciliar e validar"
+        },
+        "cannot": {
+          "users": "Gerir proprietários, utilizadores ou papéis",
+          "employees": "Criar ou eliminar registos de trabalhadores",
+          "billing": "Alterar a subscrição ou faturação do Xefe",
+          "integrations": "Abrir credenciais de integrações"
+        }
+      },
+      "selection": {
+        "title": "Gostaria de apoio contabilístico?",
+        "description": "Opcional. Pode alterar isto mais tarde.",
+        "self": "Gerir por mim",
+        "selfDescription": "Mantenha o Xefe simples e convide um contabilista mais tarde.",
+        "primos": "Pedir contacto da Primos Bo'ot",
+        "primosDescription": "Depois de criar a empresa, o Xefe envia por email apenas o nome e os dados de contacto.",
+        "primosPrelaunch": "Escolher a Primos Bo'ot para mais tarde",
+        "primosPrelaunchDescription": "Isto guarda apenas a sua preferência. Nenhum pedido ou dado de contacto é enviado enquanto a parceria está a ser preparada.",
+        "privacy": "Esta escolha não concede acesso aos seus registos.",
+        "choose": "Escolher a Primos Bo'ot",
+        "requested": "Pedido enviado",
+        "accepted": "Pedido aceite",
+        "connected": "Contabilista ligado",
+        "manage": "Gerir ligação",
+        "openPortfolio": "Abrir revisão de clientes Primos Bo'ot",
+        "ownerOnly": "Apenas o proprietário ou administrador da empresa pode pedir um contabilista.",
+        "failed": "Não foi possível enviar o pedido. Tente novamente."
+      },
+      "connection": {
+        "title": "Ligação ao contabilista",
+        "description": "Peça apoio profissional ou gira o acesso já concedido.",
+        "none": "Nenhum parceiro contabilístico selecionado.",
+        "view": "Ver perfil do parceiro",
+        "request": "Pedir uma consulta",
+        "requestNote": "A Primos Bo'ot receberá por email o nome da empresa e os dados de contacto. Nenhum registo é partilhado.",
+        "cancel": "Cancelar pedido",
+        "status": {
+          "selected": "Selecionado — pedido não enviado",
+          "requested": "A aguardar a Primos Bo'ot",
+          "accepted": "Aceite — o proprietário pode conceder acesso",
+          "connected": "Ligado com acesso de contabilista",
+          "declined": "A firma não pôde aceitar",
+          "cancelled": "Pedido cancelado",
+          "revoked": "Acesso revogado"
+        },
+        "grant": "Conceder acesso ao contabilista",
+        "grantNote": "Isto concede à Primos Bo'ot acesso restrito à folha, dinheiro, contabilidade e relatórios. A firma será avisada por email.",
+        "ownerGrantOnly": "O pedido foi aceite. Apenas o proprietário pode conceder acesso aos registos.",
+        "revoke": "Revogar acesso",
+        "confirmGrantTitle": "Conceder acesso à Primos Bo'ot?",
+        "confirmGrantDescription": "A Primos Bo'ot será avisada por email e adicionada com um papel de contabilista restrito. Pode rever a folha e os registos financeiros, mas não pode gerir utilizadores, trabalhadores, faturação ou integrações.",
+        "confirmRevokeTitle": "Revogar o acesso do contabilista?",
+        "confirmRevokeDescription": "A Primos Bo'ot perderá imediatamente o acesso a esta empresa. Os seus registos e o trabalho anterior permanecem no Xefe.",
+        "saved": "Ligação ao contabilista atualizada.",
+        "error": "Não foi possível atualizar a ligação ao contabilista.",
+        "prelaunch": "Em breve",
+        "prelaunchNote": "A ligação à Primos Bo'ot está em preparação. Nenhum pedido, email ou dado de contacto será enviado até ser ativada.",
+        "prelaunchAction": "Ligação disponível em breve"
+      },
+      "landing": {
+        "nav": "Apoio contabilístico",
+        "eyebrow": "Apoio contabilístico opcional",
+        "title": "Faça por si — ou peça revisão a um contabilista",
+        "description": "O Xefe mantém-se simples no trabalho diário. Quando quiser apoio profissional, escolha a Primos Bo'ot e controle exatamente quando começa o acesso.",
+        "cta": "Conhecer o parceiro contabilístico"
+      },
+      "cta": {
+        "title": "Quer um contabilista ao seu lado?",
+        "description": "Escolha a Primos Bo'ot agora ou continue a gerir o Xefe por si. Nada é partilhado até aprovar o acesso."
+      }
+    },
+    "accountantPortfolio": {
+      "title": "Revisão de clientes Primos Bo'ot",
+      "subtitle": "Pedidos de ligação e espaços Xefe de clientes aprovados.",
+      "impersonationNote": "Está a ver o mesmo espaço de parceiro que a equipa da Primos Bo'ot utilizará.",
+      "cards": {
+        "requests": "Novos pedidos",
+        "awaitingAccess": "A aguardar acesso do cliente",
+        "connected": "Clientes ligados"
+      },
+      "needsAttention": "Precisa de atenção",
+      "noRequests": "Não há novos pedidos de ligação.",
+      "requesterUnknown": "Contacto da empresa",
+      "actions": {
+        "accept": "Aceitar",
+        "decline": "Recusar"
+      },
+      "responseNotice": "O contacto da empresa será avisado por email da sua decisão.",
+      "awaitingTitle": "Aceite — a aguardar o proprietário",
+      "awaitingDescription": "A firma aceitou. O cliente deve agora conceder acesso no Xefe.",
+      "clientsTitle": "Clientes ligados",
+      "connectedDescription": "Abrir o espaço restrito de contabilista deste cliente.",
+      "noClients": "Nenhum cliente concedeu ainda acesso de contabilista.",
+      "errors": {
+        "load": "Não foi possível carregar a carteira de clientes.",
+        "respond": "Não foi possível atualizar o pedido.",
+        "open": "Não foi possível abrir o espaço do cliente."
       }
     }
   }

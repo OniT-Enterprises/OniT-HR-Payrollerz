@@ -10,11 +10,12 @@
 - **Email / notifications**: Read `docs/EMAIL_NOTIFICATIONS.md` before sending anything. **Never write `mail` docs directly from client code** — always `notificationService.queueEmail()` (per-recipient privacy, purpose tags, EN+Tetun footer). Emails are non-fatal: they never break the action that triggered them. Actions that email someone say so in the UI first.
 - **Invoicing / hosted invoice pages**: Read `docs/INVOICING.md` before touching invoice delivery, `/i/:token`, `invoice_links`, invoice PDFs/emails, or storage rules. Key invariants: public `get` must allow `resource == null`; no public `list`; the as-sent PDF is frozen at send; Storage cross-service IAM grant must exist or all uploads 403.
 - **Accountant vs simple flow**: Read `docs/AUDIENCE_SPLIT.md` before touching supplier withholding, tax filing screens, VAT, the `accountant` role, or `advancedTaxMode`. One primitive — `useAdvancedTax()` — gates all accountant-grade controls; the simple flow applies safe defaults that yield no withholding. `isTenantFinanceAdmin` in rules must stay in sync with the role.
+- **Time & Leave**: Read `docs/TIME_LEAVE.md` before touching attendance, leave, shifts, timesheets, holiday handling, or their role boundaries. Attendance is the single hours-entry workflow; balances and timesheets are Cloud Functions-owned projections.
 - **Bot integration**: See `OPENCLAW_XEFE_INTEGRATION.md` for the Xefe AI assistant (WhatsApp + web dashboard).
 - **Branding**: User-facing name is **Xefe** (Tetun for "boss"; Ekipa = employee app, XefeBot = assistant, Kaixa = sales product). Infra was renamed meza-* → xefe-* on 2026-07-13 (`server/xefe-api`, `openclaw-xefe`, PM2/Docker `xefe-*`); the canonical public domain is **xefe.tl** (was meza.naroman.tl, which now 301s to it). The `onit-hr-payroll` Firebase project ID is unchanged.
 
 ## Project Overview
-OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, time tracking, performance, payroll, reporting) targeting Timor-Leste market.
+OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, attendance and leave, performance, payroll, reporting) targeting Timor-Leste market.
 
 ## Tech Stack
 - **Frontend**: React 18, TypeScript, Vite 6
@@ -97,9 +98,11 @@ deploying — rules auto-deploy on push, so never skip `emul:rules` after editin
 `firestore.rules`.
 
 ## Firestore Data Layout (two generations)
-- **Tenant-scoped** (newer): `tenants/{tid}/settings|members|employees|...`
-- **Legacy top-level** collections keyed by a `tenantId` FIELD: `departments`,
-  `leave_requests`, `leave_balances`, `timesheets`, `reviews`, `candidates`, `jobs`, …
+- **Tenant-scoped**: `tenants/{tid}/settings|members|employees|shifts|timesheets|...`
+- **Top-level tenant-keyed** collections carry a required `tenantId` FIELD.
+  Some are still canonical (`attendance`, `leave_requests`, `leave_balances`,
+  `jobs`, `candidates`); others are migration-era. For Time & Leave, see the
+  exact authority table in `docs/TIME_LEAVE.md`.
   Rules for these must never reference `request.resource` in delete clauses
   (deletes have no request.resource — see tests/rules/legacy-collection-deletes.test.ts).
   Admin scripts that delete a tenant must also sweep these by `tenantId`.

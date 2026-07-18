@@ -15,6 +15,7 @@ export * from "./chat";
 export * from "./contracts";
 export * from "./audit";
 export * from "./billing";
+export * from "./accountantPartners";
 export * from "./email";
 export * from "./authEmails";
 export * from "./invoiceLinks";

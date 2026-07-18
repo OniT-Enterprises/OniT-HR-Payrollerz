@@ -63,9 +63,8 @@ Accounting Fields:
 | View staff | `/people/employees` | All Employees |
 | Run payroll | `/payroll/run` | Run Payroll |
 | Check tax reports | `/payroll/reports` | Tax Reports |
-| Submit leave | `/scheduling/leave` | Leave Requests |
-| Track time | `/scheduling/time-tracking` | Time Tracking |
-| See attendance | `/scheduling/attendance` | Attendance |
+| Submit leave | `/time-leave/leave` | Leave Requests |
+| Record or review hours | `/time-leave/attendance` | Attendance |
 | View paystubs | `/payroll/history` | Payroll History |
 | Manage benefits | `/payroll/setup/benefits` | Benefits Enrollment |
 | Performance review | `/people/reviews` | Performance Reviews |
@@ -75,7 +74,7 @@ Accounting Fields:
 **Example Triggers:**
 - "I need to add a new employee" → Redirects to `/people/add`
 - "How do I run payroll?" → Explains + offers to go to `/payroll/run`
-- "Where can I see my team's attendance?" → Redirects to `/scheduling/attendance`
+- "Where can I see my team's attendance?" → Redirects to `/time-leave/attendance`
 
 ### 4. Interactive Calculators
 
@@ -274,9 +273,9 @@ const NAVIGATION_INTENTS = {
   'run payroll': '/payroll/run',
   'payroll history': '/payroll/history',
   'tax report': '/payroll/reports',
-  'leave request': '/scheduling/leave',
-  'time tracking': '/scheduling/time-tracking',
-  'attendance': '/scheduling/attendance',
+  'leave request': '/time-leave/leave',
+  'time tracking': '/time-leave/attendance',
+  'attendance': '/time-leave/attendance',
   'performance review': '/people/reviews',
   'training': '/people/training',
   'departments': '/settings/departments',
@@ -409,7 +408,7 @@ Would you like me to take you to Run Payroll to process this?
 ```
 User: Where do I see attendance records?
 
-Bot: You can view attendance records at **People → Attendance**.
+Bot: You can view attendance records at **Time & Leave → Attendance**.
 
 This page shows:
 - Daily attendance logs
@@ -419,7 +418,7 @@ This page shows:
 
 [Go to Attendance →]
 
-Would you also like to see the Time Tracking page for detailed hours?
+Adjustments, imports, and payroll-ready hours are on this same page.
 ```
 
 ### Labor Law Question
@@ -543,9 +542,8 @@ SEVERANCE: 30 days salary per year of service
 - Run payroll: /payroll/run
 - Payroll history: /payroll/history
 - Tax reports: /payroll/reports
-- Leave requests: /scheduling/leave
-- Attendance: /scheduling/attendance
-- Time tracking: /scheduling/time-tracking
+- Leave requests: /time-leave/leave
+- Attendance and recorded hours: /time-leave/attendance
 - Performance reviews: /people/reviews
 - Reports: /reports
 

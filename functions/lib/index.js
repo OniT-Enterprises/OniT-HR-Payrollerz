@@ -29,6 +29,7 @@ __exportStar(require("./chat"), exports);
 __exportStar(require("./contracts"), exports);
 __exportStar(require("./audit"), exports);
 __exportStar(require("./billing"), exports);
+__exportStar(require("./accountantPartners"), exports);
 __exportStar(require("./email"), exports);
 __exportStar(require("./authEmails"), exports);
 __exportStar(require("./invoiceLinks"), exports);

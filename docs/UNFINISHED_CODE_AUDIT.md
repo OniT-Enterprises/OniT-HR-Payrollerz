@@ -1,7 +1,8 @@
 # Meza Web App — Unfinished Code Audit
 
 **Date**: 2026-02-21
-**Status**: Active remediation
+**Status**: Historical audit; resolved items below describe the old implementation.
+For the current attendance/leave/shift contract, see `TIME_LEAVE.md`.
 
 ---
 
@@ -14,12 +15,12 @@
 - **Fix**: Wire to real employees/departments via existing hooks + new `shiftService.ts` for shifts collection.
 - **Status**: ✅ FIXED
 
-### 1b. TimeTracking.tsx — Entirely mock data
-- **File**: `client/pages/time-leave/TimeTracking.tsx`
+### 1b. TimeTracking.tsx — Entirely mock data (retired)
+- **File**: retired; old URLs now redirect to `Attendance.tsx`
 - **Lines**: 153–393 (~240 lines of hardcoded arrays)
 - **Issue**: No Firebase integration. Mock security guards, clients, sites, time entries. Banner says "coming soon."
-- **Fix**: Wire to existing `attendanceService.ts` + `useAttendance.ts` hooks (already built).
-- **Status**: ✅ FIXED
+- **Fix**: Consolidated clock times, imports, adjustments, and hours into Attendance; removed the duplicate page.
+- **Status**: ✅ RETIRED
 
 ### 1c. CandidateSelection.tsx — Fake AI extraction
 - **File**: `client/pages/hiring/CandidateSelection.tsx`
@@ -67,17 +68,17 @@
 
 ## 3. DEAD / UNUSED CODE
 
-### 3a. TimeTracking.tsx — Dead render function (113 lines)
+### 3a. TimeTracking.tsx — Dead render function (113 lines; page retired)
 - **File**: `client/pages/time-leave/TimeTracking.tsx:632–745`
 - **Issue**: `_renderDailyView_unused()` — entire unused JSX function.
 - **Fix**: Deleted.
-- **Status**: ✅ FIXED
+- **Status**: ✅ RETIRED
 
-### 3b. TimeTracking.tsx — Unused state/computed values
+### 3b. TimeTracking.tsx — Unused state/computed values (page retired)
 - **Lines**: 126, 516, 547, 592
 - **Issue**: `_entryType`, `_totalHours` (x2), `_csvData` — declared but never used.
 - **Fix**: Removed.
-- **Status**: ✅ FIXED
+- **Status**: ✅ RETIRED
 
 ### 3c. ShiftScheduling.tsx — Unused state/computed values
 - **Lines**: 169–174, 725–726
@@ -101,11 +102,11 @@
 - **Fix**: Wire to `shiftService.deleteShift()`.
 - **Status**: ✅ FIXED
 
-### 4b. TimeTracking.tsx — Random active guards count
+### 4b. TimeTracking.tsx — Random active guards count (page retired)
 - **Line**: 1690
 - **Issue**: `Math.floor(Math.random() * 8) + 1` for active guard count.
-- **Fix**: Compute from real attendance data.
-- **Status**: ✅ FIXED
+- **Fix**: Removed with the duplicate page; Attendance uses canonical records.
+- **Status**: ✅ RETIRED
 
 ---
 

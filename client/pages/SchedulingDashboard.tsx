@@ -12,7 +12,7 @@ import { useAttendanceByDate } from "@/hooks/useAttendance";
 import { useShiftsByRange } from "@/hooks/useShifts";
 import { addDaysISO, getTodayTL, getWeekStartTL } from "@/lib/dateUtils";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useTenant } from "@/contexts/TenantContext";
+import { useCurrentEmployeeId, useTenant } from "@/contexts/TenantContext";
 import {
   Calendar,
   CalendarCheck,
@@ -20,7 +20,6 @@ import {
   CalendarX2,
   CheckCircle2,
   ChevronRight,
-  Clock,
 } from "lucide-react";
 
 function SchedulingDashboardSkeleton() {
@@ -30,8 +29,8 @@ function SchedulingDashboardSkeleton() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         <Skeleton className="h-24 w-full rounded-2xl" />
         <Skeleton className="h-14 w-full rounded-xl" />
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-2xl" />
           ))}
         </div>
@@ -42,27 +41,53 @@ function SchedulingDashboardSkeleton() {
 
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
-  const { t, locale } = useI18n();
-  const { hasModule, canManage, session } = useTenant();
-  const canManageTenant = canManage();
+  const { t } = useI18n();
+  const { session } = useTenant();
+  const currentEmployeeId = useCurrentEmployeeId() ?? undefined;
+  const role = session?.role;
+  const canManageTimeLeave = role === "owner" || role === "hr-admin" || role === "manager";
+  const managerDepartmentId = role === "manager" ? session?.member.departmentId : undefined;
+  const canReadAllAttendance = role === "owner" || role === "hr-admin" || role === "accountant";
   const canReadEmployeeDirectory =
-    hasModule("staff") ||
-    hasModule("hiring") ||
-    canManageTenant ||
-    session?.role === "manager";
+    role === "owner" || role === "hr-admin" || role === "accountant";
   const today = getTodayTL();
   const weekStart = getWeekStartTL(today);
   const weekEnd = addDaysISO(weekStart, 6);
+  const leaveScope = role === "manager"
+    ? session?.member.departmentId
+      ? { departmentId: session.member.departmentId }
+      : currentEmployeeId
+        ? { employeeId: currentEmployeeId }
+        : undefined
+    : !canReadAllAttendance && currentEmployeeId
+      ? { employeeId: currentEmployeeId }
+      : undefined;
+  const canReadLeave = canReadAllAttendance || Boolean(leaveScope);
+  const attendanceEmployeeId = canReadAllAttendance || managerDepartmentId
+    ? undefined
+    : currentEmployeeId;
+  const canReadAttendance = canReadAllAttendance || Boolean(managerDepartmentId || attendanceEmployeeId);
+  const canReadShifts = canManageTimeLeave && (role !== "manager" || Boolean(managerDepartmentId));
 
   const employeeSummaryQuery = useActiveEmployeeSummary(canReadEmployeeDirectory);
-  const leaveStatsQuery = useLeaveStats();
-  const attendanceQuery = useAttendanceByDate(today);
-  const shiftsQuery = useShiftsByRange(weekStart, weekEnd, canManageTenant);
+  const leaveStatsQuery = useLeaveStats(canReadLeave, leaveScope);
+  const attendanceQuery = useAttendanceByDate(
+    today,
+    attendanceEmployeeId,
+    canReadAttendance,
+    managerDepartmentId,
+  );
+  const shiftsQuery = useShiftsByRange(
+    weekStart,
+    weekEnd,
+    canReadShifts,
+    managerDepartmentId,
+  );
   const dashboardQueries = [
     ...(canReadEmployeeDirectory ? [employeeSummaryQuery] : []),
-    leaveStatsQuery,
-    attendanceQuery,
-    ...(canManageTenant ? [shiftsQuery] : []),
+    ...(canReadLeave ? [leaveStatsQuery] : []),
+    ...(canReadAttendance ? [attendanceQuery] : []),
+    ...(canReadShifts ? [shiftsQuery] : []),
   ];
 
   if (dashboardQueries.some((query) => query.isLoading)) {
@@ -97,23 +122,17 @@ export default function SchedulingDashboard() {
   const records = todayAttendance ?? [];
   const lateToday = records.filter((r) => r.status === "late").length;
   const absentToday = records.filter((r) => r.status === "absent").length;
-  const availableToday = Math.max(activeEmployees - onLeaveToday - absentToday, 0);
-  const coverageRate = activeEmployees > 0 ? Math.round((availableToday / activeEmployees) * 100) : 100;
-  const totalHoursToday = records.reduce(
-    (total, record) => total + (Number.isFinite(record.totalHours) ? record.totalHours : 0),
-    0,
-  );
-  const hoursLocale = locale === "pt" ? "pt-PT" : locale === "tet" ? "pt-TL" : "en-GB";
-  const formattedHours = new Intl.NumberFormat(hoursLocale, {
-    maximumFractionDigits: 1,
-  }).format(totalHoursToday);
+  const recordedToday = new Set(records.map((record) => record.employeeId)).size;
+  const notRecordedToday = canReadEmployeeDirectory
+    ? Math.max(activeEmployees - recordedToday, 0)
+    : 0;
   const weekShifts = shifts.filter((shift) => shift.status !== "cancelled");
   const draftShifts = weekShifts.filter((shift) => shift.status === "draft").length;
 
   // Triage: only what needs a decision today (count > 0)
   const attention = [
     {
-      show: pendingLeave > 0,
+      show: canManageTimeLeave && pendingLeave > 0,
       count: pendingLeave,
       label: t(
         pendingLeave === 1
@@ -133,7 +152,19 @@ export default function SchedulingDashboard() {
           : "moduleDashboards.scheduling.attention.lateArrivals",
       ),
       path: "/time-leave/attendance",
-      icon: Clock,
+      icon: CalendarCheck,
+      tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
+    },
+    {
+      show: canManageTimeLeave && notRecordedToday > 0,
+      count: notRecordedToday,
+      label: t(
+        notRecordedToday === 1
+          ? "moduleDashboards.scheduling.attention.attendanceMissing"
+          : "moduleDashboards.scheduling.attention.attendanceMissingPlural",
+      ),
+      path: "/time-leave/attendance",
+      icon: CalendarCheck,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
@@ -162,10 +193,10 @@ export default function SchedulingDashboard() {
     {
       title: t("moduleDashboards.scheduling.cards.attendance"),
       art: "/images/illustrations/xefe-card-tl-attendance.webp",
-      value: canReadEmployeeDirectory ? `${availableToday} / ${activeEmployees}` : String(records.length),
+      value: canReadEmployeeDirectory ? `${recordedToday} / ${activeEmployees}` : String(recordedToday),
       meta: canReadEmployeeDirectory
-        ? t("moduleDashboards.scheduling.cards.availableToday", { rate: coverageRate })
-        : t("moduleDashboards.scheduling.cards.timeTrackingMeta"),
+        ? t("moduleDashboards.scheduling.cards.recordedToday")
+        : t("moduleDashboards.scheduling.cards.attendanceMeta"),
       path: "/time-leave/attendance",
       icon: CalendarCheck,
     },
@@ -178,15 +209,7 @@ export default function SchedulingDashboard() {
       path: "/time-leave/leave",
       icon: CalendarDays,
     },
-    ...(canManageTenant ? [{
-      title: t("moduleDashboards.scheduling.cards.timeTracking"),
-      art: "/images/illustrations/xefe-card-tl-timetracking.webp",
-      value: `${formattedHours}h`,
-      meta: t("moduleDashboards.scheduling.cards.hoursRecordedToday"),
-      path: "/time-leave/time-tracking",
-      icon: Clock,
-    }] : []),
-    ...(canManageTenant ? [{
+    ...(canReadShifts ? [{
       title: t("moduleDashboards.scheduling.cards.shifts"),
       art: "/images/illustrations/xefe-card-tl-shifts.webp",
       value: String(weekShifts.length),
@@ -212,10 +235,9 @@ export default function SchedulingDashboard() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {canReadEmployeeDirectory && activeEmployees > 0
-              ? t("moduleDashboards.scheduling.subtitle", {
-                  available: availableToday,
+              ? t("moduleDashboards.scheduling.subtitleRecorded", {
+                  recorded: recordedToday,
                   total: activeEmployees,
-                  rate: coverageRate,
                 })
               : t("moduleDashboards.scheduling.subtitleEmpty")}
           </p>
@@ -256,7 +278,7 @@ export default function SchedulingDashboard() {
         </section>
 
         {/* Module hub */}
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {hubCards.map((card) => (
             <button
               key={card.path}

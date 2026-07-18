@@ -3,6 +3,7 @@
  */
 
 import { FirestoreTimestamp } from './firebase';
+import type { AccountantPartnerConnection } from '@/lib/accountantPartners';
 
 // Tenant status for SaaS management
 export type TenantStatus = 'active' | 'suspended' | 'pending' | 'cancelled';
@@ -82,6 +83,8 @@ export interface TenantConfig {
    * security boundary — owner-editable per firestore.rules.
    */
   advancedTaxMode?: boolean;
+  /** Consent-first connection to an external accounting partner. */
+  accountantPartner?: AccountantPartnerConnection;
   settings?: {
     timezone?: string;
     currency?: string;
@@ -132,6 +135,9 @@ export interface TenantMember {
   departmentId?: string;
   joinedAt?: FirestoreTimestamp;
   lastActiveAt?: FirestoreTimestamp;
+  /** Present when this membership was granted through an accounting firm. */
+  partnerId?: string;
+  partnerTenantId?: string;
   permissions?: {
     [key: string]: boolean;
   };

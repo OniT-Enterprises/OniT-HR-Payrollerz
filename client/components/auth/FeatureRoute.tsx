@@ -22,6 +22,8 @@ interface FeatureRouteProps {
   requiredAllModules?: ModulePermission[];
   requireManage?: boolean;
   requireManager?: boolean;
+  requirePeopleManager?: boolean;
+  requireHrAdmin?: boolean;
   requireNgoReporting?: boolean;
   /**
    * Accountant-only screen: without showAdvancedTax the user gets a friendly
@@ -38,6 +40,8 @@ export function FeatureRoute({
   requiredAllModules,
   requireManage = false,
   requireManager = false,
+  requirePeopleManager = false,
+  requireHrAdmin = false,
   requireNgoReporting = false,
   requireAdvancedTax = false,
   fallbackPath,
@@ -99,6 +103,17 @@ export function FeatureRoute({
   }
 
   if (requireManager && !canManage() && session.role !== "manager") {
+    return <Navigate to={deniedPath} replace />;
+  }
+
+  if (
+    requirePeopleManager &&
+    !["owner", "hr-admin", "manager"].includes(session.role)
+  ) {
+    return <Navigate to={deniedPath} replace />;
+  }
+
+  if (requireHrAdmin && !["owner", "hr-admin"].includes(session.role)) {
     return <Navigate to={deniedPath} replace />;
   }
 

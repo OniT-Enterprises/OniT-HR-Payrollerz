@@ -110,6 +110,7 @@ const messages = {
     "review": "Review",
     "askAI": "Ask AI",
     "retry": "Retry",
+    "refresh": "Refresh",
     "connectionIssueTitle": "Connection problem",
     "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
     "accountRecoveryTitle": "Couldn't open your account",
@@ -593,7 +594,11 @@ const messages = {
       "laborLaw": "Labor Law",
       "apps": "Apps",
       "pricing": "Pricing",
-      "getStarted": "Get Started"
+      "getStarted": "Get Started",
+      "forAccountants": "For accountants",
+      "menu": "Menu",
+      "overview": "Overview",
+      "home": "Home"
     },
     "simple": {
       "nav": {
@@ -679,6 +684,7 @@ const messages = {
         "minimum": "{{total}} monthly minimum includes {{employees}} employees",
         "annualSaving": "Annual: {{total}} — save {{savings}}",
         "cta": "Start free",
+        "seeFull": "See full pricing",
         "includedTitle": "Included with every account",
         "benefits": {
           "payroll": "Automatic WIT, INSS and subsídio calculations",
@@ -907,6 +913,7 @@ const messages = {
       "location": "Timor-Leste",
       "links": {
         "howItWorks": "How Xefe works",
+        "accountants": "Accountant partners",
         "privacy": "Privacy",
         "terms": "Terms",
         "support": "Support",
@@ -2756,7 +2763,7 @@ const messages = {
         "title": "Import Attendance Data",
         "description": "Import attendance records from fingerprint device or CSV file",
         "selectFile": "Select File",
-        "format": "CSV format: employee_id, date, clock_in, clock_out",
+        "format": "CSV or XLSX columns: employee_id, date, clock_in, clock_out",
         "importing": "Importing..."
       },
       "mark": {
@@ -2847,6 +2854,7 @@ const messages = {
     "shiftScheduling": {
       "title": "Shift Scheduling",
       "subtitle": "Manage employee shifts, schedules, and workforce planning",
+      "scopeMissing": "Your manager account is not linked to a department yet. HR must set your department before you can manage team shifts.",
       "controls": {
         "title": "Schedule Controls",
         "weekStarting": "Week Starting",
@@ -3011,6 +3019,9 @@ const messages = {
       "toast": {
         "validationTitle": "Validation Error",
         "validationDesc": "Please fill in all required fields.",
+        "overlapDesc": "This employee already has a shift at that time.",
+        "restDesc": "Employees need at least 12 hours between shifts.",
+        "leaveConflictDesc": "This employee has approved leave on that date.",
         "successTitle": "Success",
         "errorTitle": "Error",
         "createSuccessDesc": "Shift created successfully.",
@@ -6752,27 +6763,30 @@ const messages = {
       "title": "Time & Leave",
       "seoDescription": "Coverage, attendance, leave approvals, and shift planning in one place.",
       "subtitle": "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
+      "subtitleRecorded": "Attendance is recorded for {{recorded}} of {{total}} staff today.",
       "subtitleEmpty": "Approve leave, track attendance, and plan shifts.",
       "attendanceAction": "Attendance",
       "shiftsAction": "Shift schedules",
-      "allGood": "Coverage looks steady — nothing needs attention right now.",
+      "allGood": "Nothing needs attention right now.",
       "attention": {
         "leaveRequest": "leave request waiting for approval",
         "leaveRequests": "leave requests waiting for approval",
         "lateArrival": "late arrival today",
         "lateArrivals": "late arrivals today",
         "absentToday": "absent today",
+        "attendanceMissing": "staff member has no attendance record yet",
+        "attendanceMissingPlural": "staff members have no attendance record yet",
         "draftShift": "draft shift waiting to be published",
         "draftShifts": "draft shifts waiting to be published"
       },
       "cards": {
         "attendance": "Attendance",
         "availableToday": "{{rate}}% available today",
+        "recordedToday": "attendance recorded today",
         "leave": "Leave",
         "onLeaveToday": "{{count}} on leave today",
         "onLeaveTodayLabel": "on leave today",
-        "timeTracking": "Time Tracking",
-        "timeTrackingMeta": "Clock-ins & hours",
+        "attendanceMeta": "Clock-ins & hours",
         "hoursRecordedToday": "hours recorded today",
         "shifts": "Shifts",
         "shiftsMeta": "Plan weekly rosters",
@@ -7048,6 +7062,177 @@ const messages = {
       "communication": "Communication",
       "maintenance": "Maintenance",
       "other": "Other"
+    }
+  },
+  "accountantPartners": {
+    "nav": {
+      "partner": "Preferred partner",
+      "process": "How connection works",
+      "access": "Access and control"
+    },
+    "hero": {
+      "eyebrow": "Professional help, when you want it",
+      "title": "Run the day-to-day yourself.",
+      "titleAccent": "Bring in an accountant for review.",
+      "description": "Choose an accounting partner in Xefe, agree the service directly, and grant secure access only when you are ready.",
+      "primary": "Meet the preferred partner",
+      "secondary": "See how Xefe works",
+      "trust": {
+        "consent": "No access from selecting a firm",
+        "revoke": "Access can be revoked",
+        "agreement": "Scope and fees agreed separately"
+      }
+    },
+    "partner": {
+      "dili": "Based in Dili",
+      "languages": "English, Tetun and Portuguese",
+      "since": "Established in 2013",
+      "accountingAudit": "Accounting and audit",
+      "eyebrow": "Xefe preferred accountant",
+      "title": "Meet Primos Bo'ot",
+      "description": "A Timor-Leste accounting and audit firm for businesses that want professional bookkeeping, payroll, tax or financial review.",
+      "preferred": "Preferred Xefe accounting partner",
+      "profile": "Primos Bo'ot is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
+      "website": "Visit primosboot.com",
+      "servicesTitle": "Services you can discuss",
+      "services": {
+        "bookkeeping": "Monthly and annual bookkeeping",
+        "payroll": "Payroll calculations and processing",
+        "tax": "Tax preparation and compliance reporting",
+        "statements": "Financial statement preparation",
+        "audit": "Statutory, internal and project audits",
+        "advisory": "Management accounting and financial advice"
+      },
+      "beforeAccessTitle": "Selecting is only the first step.",
+      "beforeAccessDescription": "Primos Bo'ot confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access."
+    },
+    "process": {
+      "eyebrow": "A consent-first connection",
+      "title": "Choose, agree, then connect",
+      "description": "The accounting firm and the business both approve the relationship before records become available.",
+      "steps": {
+        "choose": {
+          "title": "Request a consultation",
+          "description": "Select Primos Bo'ot. Xefe sends only your contact and business name so the firm can respond."
+        },
+        "agree": {
+          "title": "Agree the service",
+          "description": "Confirm scope, timing and fees directly with Primos Bo'ot outside the software."
+        },
+        "review": {
+          "title": "Grant access for review",
+          "description": "The business owner grants a restricted accountant role, then can revoke it at any time."
+        }
+      }
+    },
+    "access": {
+      "eyebrow": "Your business stays in control",
+      "title": "Useful access, clear boundaries",
+      "description": "A connected accountant gets the financial tools needed for review, without platform administration.",
+      "consentNote": "A selection or accepted consultation never grants access by itself. The business owner must press Grant access in Xefe.",
+      "canTitle": "Accountant can",
+      "cannotTitle": "Accountant cannot",
+      "can": {
+        "payroll": "Review payroll calculations and statutory amounts",
+        "money": "Work with bills, invoices and accounting entries",
+        "reports": "Prepare and review financial and compliance reports",
+        "review": "See the records needed to reconcile and sign off"
+      },
+      "cannot": {
+        "users": "Manage owners, users or roles",
+        "employees": "Create or delete employee records",
+        "billing": "Change the Xefe subscription or billing",
+        "integrations": "Open integration credentials"
+      }
+    },
+    "selection": {
+      "title": "Would you like accountant support?",
+      "description": "Optional. You can change this later.",
+      "self": "Manage it myself",
+      "selfDescription": "Keep Xefe simple and invite an accountant later.",
+      "primos": "Ask Primos Bo'ot to contact me",
+      "primosDescription": "After the company is created, Xefe emails only your business name and contact details.",
+      "primosPrelaunch": "Choose Primos Bo'ot for later",
+      "primosPrelaunchDescription": "This only saves your preference. No request or contact details are sent while the partnership is being prepared.",
+      "privacy": "This choice does not grant access to your records.",
+      "choose": "Choose Primos Bo'ot",
+      "requested": "Request sent",
+      "accepted": "Request accepted",
+      "connected": "Accountant connected",
+      "manage": "Manage connection",
+      "openPortfolio": "Open Primos Bo'ot client review",
+      "ownerOnly": "Only the business owner or administrator can request an accountant.",
+      "failed": "Could not send the request. Please try again."
+    },
+    "connection": {
+      "title": "Accountant connection",
+      "description": "Request professional help or manage the access already granted.",
+      "none": "No accounting partner selected.",
+      "view": "View partner profile",
+      "request": "Request a consultation",
+      "requestNote": "Primos Bo'ot will receive your business name and contact details by email. No records are shared.",
+      "cancel": "Cancel request",
+      "status": {
+        "selected": "Selected — request not sent",
+        "requested": "Waiting for Primos Bo'ot",
+        "accepted": "Accepted — owner can grant access",
+        "connected": "Connected with accountant access",
+        "declined": "The firm could not accept",
+        "cancelled": "Request cancelled",
+        "revoked": "Access revoked"
+      },
+      "grant": "Grant accountant access",
+      "grantNote": "This gives Primos Bo'ot restricted payroll, money, accounting and reporting access. The firm will be emailed.",
+      "ownerGrantOnly": "The request was accepted. Only the business owner can grant record access.",
+      "revoke": "Revoke access",
+      "confirmGrantTitle": "Grant Primos Bo'ot access?",
+      "confirmGrantDescription": "Primos Bo'ot will be emailed and added with a restricted accountant role. They can review payroll and financial records, but cannot manage users, employees, billing or integrations.",
+      "confirmRevokeTitle": "Revoke accountant access?",
+      "confirmRevokeDescription": "Primos Bo'ot will immediately lose access to this business. Your records and prior work remain in Xefe.",
+      "saved": "Accountant connection updated.",
+      "error": "Could not update the accountant connection.",
+      "prelaunch": "Coming soon",
+      "prelaunchNote": "The Primos Bo'ot connection is being prepared. No request, email or contact details will be sent until it is enabled.",
+      "prelaunchAction": "Connection coming soon"
+    },
+    "landing": {
+      "nav": "Accountant help",
+      "eyebrow": "Optional accountant support",
+      "title": "Do it yourself—or ask an accountant to review",
+      "description": "Xefe stays simple for daily work. When you want professional help, choose Primos Bo'ot and control exactly when access begins.",
+      "cta": "Meet the accountant partner"
+    },
+    "cta": {
+      "title": "Want an accountant beside you?",
+      "description": "Choose Primos Bo'ot now or keep managing Xefe yourself. Nothing is shared until you approve access."
+    }
+  },
+  "accountantPortfolio": {
+    "title": "Primos Bo'ot client review",
+    "subtitle": "Connection requests and approved Xefe client workspaces.",
+    "impersonationNote": "You are viewing the same partner workspace the Primos Bo'ot team will use.",
+    "cards": {
+      "requests": "New requests",
+      "awaitingAccess": "Awaiting client access",
+      "connected": "Connected clients"
+    },
+    "needsAttention": "Needs attention",
+    "noRequests": "No new connection requests.",
+    "requesterUnknown": "Business contact",
+    "actions": {
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "responseNotice": "The business contact will be emailed with your decision.",
+    "awaitingTitle": "Accepted — awaiting the business owner",
+    "awaitingDescription": "The firm accepted. The client must now grant access in Xefe.",
+    "clientsTitle": "Connected clients",
+    "connectedDescription": "Open this client's restricted accountant workspace.",
+    "noClients": "No clients have granted accountant access yet.",
+    "errors": {
+      "load": "Could not load the client portfolio.",
+      "respond": "Could not update the request.",
+      "open": "Could not open the client workspace."
     }
   },
   "locale": {

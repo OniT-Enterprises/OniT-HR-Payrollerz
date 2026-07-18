@@ -39,11 +39,11 @@ import {
   orderBy,
   limit,
   doc,
-  writeBatch,
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -60,6 +60,7 @@ interface PendingLeave {
   employeeName: string;
   employeeId: string;
   department: string;
+  departmentId: string;
   leaveType: string;
   leaveTypeLabel: string;
   startDate: string;
@@ -82,19 +83,13 @@ interface PendingExpense {
   receiptUrl?: string;
 }
 
-interface LeaveBalanceBucket {
-  entitled: number;
-  used: number;
-  pending: number;
-  remaining: number;
-}
-
 export default function ManagerApprovals() {
   const t = useT();
   const language = useI18nStore((s) => s.language);
   const insets = useSafeAreaInsets();
   const tenantId = useTenantStore((s) => s.tenantId);
   const role = useTenantStore((s) => s.role);
+  const managerDepartmentId = useTenantStore((s) => s.departmentId);
   const employee = useEmployeeStore((s) => s.employee);
   const user = useAuthStore((s) => s.user);
 
@@ -114,13 +109,23 @@ export default function ManagerApprovals() {
 
   const fetchPendingLeaves = useCallback(async () => {
     if (!tenantId) return;
+    if (role === 'manager' && !managerDepartmentId) {
+      setPendingLeaves([]);
+      return;
+    }
     try {
-      const q = query(
-        collection(db, 'leave_requests'),
+      const baseConstraints = [
         where('tenantId', '==', tenantId),
         where('status', '==', 'pending'),
+        ...(role === 'manager' && managerDepartmentId
+          ? [where('departmentId', '==', managerDepartmentId)]
+          : []),
         orderBy('requestDate', 'desc'),
-        limit(100)
+        limit(100),
+      ];
+      const q = query(
+        collection(db, 'leave_requests'),
+        ...baseConstraints,
       );
       const snap = await getDocs(q);
       const items: PendingLeave[] = snap.docs.map((d) => {
@@ -130,6 +135,7 @@ export default function ManagerApprovals() {
           employeeName: data.employeeName || '',
           employeeId: data.employeeId || '',
           department: data.department || '',
+          departmentId: data.departmentId || '',
           leaveType: data.leaveType || '',
           leaveTypeLabel: data.leaveTypeLabel || data.leaveType || '',
           startDate: data.startDate || '',
@@ -144,7 +150,7 @@ export default function ManagerApprovals() {
     } catch {
       setPendingLeaves([]);
     }
-  }, [tenantId]);
+  }, [managerDepartmentId, role, tenantId]);
 
   const fetchPendingExpenses = useCallback(async () => {
     if (!tenantId) return;
@@ -194,59 +200,23 @@ export default function ManagerApprovals() {
     if (!selectedItem || !employee || !tenantId || processing) return;
     setProcessing(true);
     try {
-      const batch = writeBatch(db);
-      const requestRef = doc(db, 'leave_requests', selectedItem.id);
-      const updateData: Record<string, unknown> = {
-        status: action,
-        approverId: user?.uid || employee.id,
+      const decideLeave = httpsCallable<
+        {
+          tenantId: string;
+          requestId: string;
+          approved: boolean;
+          approverName: string;
+          note?: string;
+        },
+        { success: true }
+      >(functions, 'approveLeaveRequest');
+      await decideLeave({
+        tenantId,
+        requestId: selectedItem.id,
+        approved: action === 'approved',
         approverName: `${employee.firstName} ${employee.lastName}`,
-        updatedAt: serverTimestamp(),
-      };
-      if (action === 'approved') {
-        updateData.approvedDate = new Date().toISOString().split('T')[0];
-      }
-      if (action === 'rejected' && comment.trim()) {
-        updateData.rejectionReason = comment.trim();
-      }
-      if (comment.trim()) {
-        updateData.approverComment = comment.trim();
-      }
-
-      batch.update(requestRef, updateData);
-
-      const balanceYear = Number.parseInt(selectedItem.startDate.slice(0, 4), 10) || new Date().getFullYear();
-      const balanceQuery = query(
-        collection(db, 'leave_balances'),
-        where('tenantId', '==', tenantId),
-        where('employeeId', '==', selectedItem.employeeId),
-        where('year', '==', balanceYear),
-        limit(1)
-      );
-      const balanceSnap = await getDocs(balanceQuery);
-
-      if (!balanceSnap.empty) {
-        const balanceDoc = balanceSnap.docs[0];
-        const balanceData = balanceDoc.data();
-        const currentBalance = balanceData[selectedItem.leaveType] as LeaveBalanceBucket | undefined;
-
-        if (currentBalance) {
-          const balanceRef = doc(db, 'leave_balances', balanceDoc.id);
-          const nextPending = Math.max(0, (currentBalance.pending || 0) - selectedItem.duration);
-          const nextUsed = action === 'approved'
-            ? (currentBalance.used || 0) + selectedItem.duration
-            : (currentBalance.used || 0);
-          const nextRemaining = (currentBalance.entitled || 0) - nextUsed - nextPending;
-
-          batch.update(balanceRef, {
-            [`${selectedItem.leaveType}.used`]: nextUsed,
-            [`${selectedItem.leaveType}.pending`]: nextPending,
-            [`${selectedItem.leaveType}.remaining`]: nextRemaining,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
+        ...(comment.trim() ? { note: comment.trim() } : {}),
+      });
 
       // Remove from local state
       setPendingLeaves((prev) => prev.filter((item) => item.id !== selectedItem.id));

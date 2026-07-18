@@ -39,7 +39,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "interviews": "Interviews",
   "onboarding": "Onboarding",
   "offboarding": "Offboarding",
-  "time-tracking": "Time Tracking",
+  "time-tracking": "Attendance",
   "attendance": "Attendance",
   "leave": "Leave",
   "schedules": "Schedules",

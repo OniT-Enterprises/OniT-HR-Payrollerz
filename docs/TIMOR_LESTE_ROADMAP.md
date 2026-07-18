@@ -145,13 +145,14 @@ DR 5200 INSS Employer (6%)          $600.00
 - [ ] Bank account details (BNU, Mandiri, ANZ format)
 
 ### 3.3 Time & Leave Module
-- [ ] Fingerprint CSV import (ZKTeco, Anviz formats)
-- [ ] Shift scheduling with drag-drop
+- [x] Fingerprint CSV/XLSX import
+- [x] Simple weekly shift scheduling (drag/drop intentionally omitted for mobile simplicity)
 - [ ] Shift swap requests
 - [ ] TL sick leave rules (6+6 days)
-- [ ] Maternity leave tracking
-- [ ] Holiday calendar (TL public holidays)
-- [ ] Late arrival logging & salary docking
+- [x] Maternity leave request and balance tracking
+- [x] Holiday calendar (TL public holidays + tenant overrides)
+- [x] Late arrival logging
+- [ ] Salary docking policy/workflow
 
 ### 3.4 Performance Module
 - [ ] Warning letter generation

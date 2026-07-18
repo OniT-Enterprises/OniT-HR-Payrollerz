@@ -31,6 +31,7 @@ import {
   CompanyStructureTab,
   PaymentStructureTab,
   AdvancedTaxModeCard,
+  AccountantPartnerCard,
 } from "@/components/settings";
 
 export default function Settings() {
@@ -210,6 +211,7 @@ export default function Settings() {
         </Tabs>
 
         <AdvancedTaxModeCard />
+        <AccountantPartnerCard />
       </div>
     </div>
   );

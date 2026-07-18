@@ -74,7 +74,7 @@ interface CrewState {
   recentBatches: SyncBatch[];
 
   // Actions
-  fetchWorkers: (tenantId: string) => Promise<void>;
+  fetchWorkers: (tenantId: string, department?: string, departmentId?: string) => Promise<void>;
   toggleWorker: (id: string) => void;
   selectAll: (workerIds?: string[]) => void;
   deselectAll: () => void;
@@ -108,12 +108,17 @@ export const useCrewStore = create<CrewState>((set, get) => ({
   error: null,
   recentBatches: [],
 
-  fetchWorkers: async (tenantId: string) => {
+  fetchWorkers: async (tenantId: string, department?: string, departmentId?: string) => {
     set({ workersLoading: true });
+    if (!department || !departmentId) {
+      set({ workers: [], workersLoading: false, error: 'Manager department is not configured' });
+      return;
+    }
     try {
       const q = query(
         collection(db, `tenants/${tenantId}/employees`),
-        where('status', '==', 'active')
+        where('status', '==', 'active'),
+        where('jobDetails.department', '==', department),
       );
       const snap = await getDocs(q);
       const workers: CrewMember[] = sortByEmployeeName(
@@ -124,6 +129,7 @@ export const useCrewStore = create<CrewState>((set, get) => ({
             firstName: employee.firstName,
             lastName: employee.lastName,
             department: employee.department || '',
+            departmentId,
             position: employee.position || '',
             qrCode: employee.qrCode || d.id,
           };
@@ -222,6 +228,7 @@ export const useCrewStore = create<CrewState>((set, get) => ({
           employeeId: worker.employeeId,
           employeeName: `${worker.firstName} ${worker.lastName}`.trim(),
           department: worker.department,
+          departmentId: worker.departmentId,
           date: state.currentDate,
           clockIn: state.clockInMode === 'clock_in' ? time : undefined,
           clockOut: state.clockInMode === 'clock_out' ? time : undefined,

@@ -24,10 +24,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  useCurrentEmployeeId,
+  useTenant,
+  useTenantId,
+} from "@/contexts/TenantContext";
 import {
   Plus,
   Download,
@@ -37,15 +52,19 @@ import {
   ChevronRight,
   FileUp,
   Loader2,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
 
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
-import { useDepartments } from "@/hooks/useDepartments";
+import { useAllDepartments } from "@/hooks/useDepartments";
 import {
   useAttendanceByDate,
   useMarkAttendance,
+  useAdjustAttendance,
+  useDeleteAttendance,
   attendanceKeys,
 } from "@/hooks/useAttendance";
 import { type Employee } from "@/services/employeeService";
@@ -53,42 +72,139 @@ import {
   attendanceService,
   computeEntryHours,
   MAX_REASONABLE_ENTRY_HOURS,
+  type AttendanceRecord,
   type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
-import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { addDaysISO, getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+
+type AttendanceImportRow = Record<string, string>;
+
+function normalizeImportHeader(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function excelCellText(value: unknown): string {
+  if (value instanceof Date) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, "0");
+    const day = String(value.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+  if (value && typeof value === "object" && "text" in value) {
+    return String((value as { text?: unknown }).text ?? "").trim();
+  }
+  return String(value ?? "").trim();
+}
+
+async function parseAttendanceImport(file: File): Promise<AttendanceImportRow[]> {
+  if (file.name.toLowerCase().endsWith(".xlsx")) {
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await file.arrayBuffer());
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) return [];
+    const headers = (worksheet.getRow(1).values as unknown[])
+      .slice(1)
+      .map((value) => normalizeImportHeader(excelCellText(value)));
+    const rows: AttendanceImportRow[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      const values = (row.values as unknown[]).slice(1);
+      const item: AttendanceImportRow = {};
+      headers.forEach((header, index) => {
+        if (header) item[header] = excelCellText(values[index]);
+      });
+      if (Object.values(item).some(Boolean)) rows.push(item);
+    });
+    return rows;
+  }
+
+  const { default: Papa } = await import("papaparse");
+  const result = Papa.parse<Record<string, string>>(await file.text(), {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: normalizeImportHeader,
+    transform: (value) => value.trim(),
+  });
+  if (result.errors.some((error) => error.type === "Quotes")) {
+    throw new Error(result.errors[0]?.message || "Invalid CSV file");
+  }
+  return result.data;
+}
 
 export default function Attendance() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const { user } = useAuth();
+  const { session } = useTenant();
   const tenantId = useTenantId();
+  const currentEmployeeId = useCurrentEmployeeId() ?? undefined;
   const queryClient = useQueryClient();
+  const role = session?.role;
+  const isAttendanceAdmin = role === "owner" || role === "hr-admin";
+  const isAttendanceManager = role === "manager";
+  const managerDepartmentId = isAttendanceManager ? session?.member.departmentId : undefined;
+  const canManageAttendance = isAttendanceAdmin || Boolean(isAttendanceManager && managerDepartmentId);
+  const canReadAllAttendance = isAttendanceAdmin || role === "accountant";
+  const scopedEmployeeId = canReadAllAttendance || managerDepartmentId ? undefined : currentEmployeeId;
+  const canReadAttendance = canReadAllAttendance || Boolean(managerDepartmentId || scopedEmployeeId);
 
   // Today's date as default
   const today = getTodayTL();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [_viewMode, _setViewMode] = useState<"calendar" | "table">("table");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [editRecord, setEditRecord] = useState<AttendanceRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(null);
+  const [editForm, setEditForm] = useState({
+    clockIn: "",
+    clockOut: "",
+    status: "present" as AttendanceStatus,
+    reason: "",
+  });
 
   // Is today selected?
   const isToday = selectedDate === today;
 
   // Data fetching via React Query
-  const employeesQuery = useEmployeeDirectory({ status: 'active' });
-  const deptQuery = useDepartments(tenantId);
-  const attendanceQuery = useAttendanceByDate(selectedDate);
+  const deptQuery = useAllDepartments(tenantId, 100, canManageAttendance || isAttendanceManager);
+  const departments = useMemo(() => deptQuery.data ?? [], [deptQuery.data]);
+  const managerDepartmentName = departments.find((department) =>
+    department.id === managerDepartmentId)?.name;
+  const employeesQuery = useEmployeeDirectory(
+    {
+      status: 'active',
+      ...(isAttendanceManager && managerDepartmentName
+        ? { department: managerDepartmentName }
+        : {}),
+    },
+    canManageAttendance && (!isAttendanceManager || Boolean(managerDepartmentName)),
+  );
+  const attendanceQuery = useAttendanceByDate(
+    selectedDate,
+    scopedEmployeeId,
+    canReadAttendance,
+    managerDepartmentId,
+  );
   const markAttendanceMutation = useMarkAttendance();
+  const adjustAttendanceMutation = useAdjustAttendance();
+  const deleteAttendanceMutation = useDeleteAttendance();
 
-  const loading = employeesQuery.isLoading || deptQuery.isLoading || attendanceQuery.isLoading;
-  const employees = useMemo(
+  const loading = (canManageAttendance && (employeesQuery.isLoading || deptQuery.isLoading)) || attendanceQuery.isLoading;
+  const allEmployees = useMemo(
     () => employeesQuery.data ?? [],
     [employeesQuery.data]
   );
-  const departments = deptQuery.data ?? [];
+  const employees = useMemo(
+    () => isAttendanceManager
+      ? allEmployees.filter((employee) => employee.jobDetails.department === managerDepartmentName)
+      : allEmployees,
+    [allEmployees, isAttendanceManager, managerDepartmentName],
+  );
   const attendanceRecords = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
 
   // Form data
@@ -106,46 +222,44 @@ export default function Attendance() {
 
   // Format date for display
   const formatDateLabel = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
+    const date = parseDateISO(dateStr);
     const dayName = formatDateTL(date, { weekday: 'long' });
     const monthDay = formatDateTL(date, { month: 'short', day: 'numeric' });
     return `${dayName}, ${monthDay}`;
   };
 
   const goToPreviousDay = () => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysISO(selectedDate, -1));
   };
 
   const goToNextDay = () => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysISO(selectedDate, 1));
   };
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const totalEmployees = employees.length;
+    const totalEmployees = canManageAttendance ? employees.length : 0;
+    const recordedEmployees = new Set(attendanceRecords.map((record) => record.employeeId)).size;
     const present = attendanceRecords.filter(
       r => r.status === 'present' || r.status === 'late'
     ).length;
     const late = attendanceRecords.filter(r => r.status === 'late').length;
-    const absent = totalEmployees - present;
+    const absent = attendanceRecords.filter(r => r.status === 'absent').length;
     const onLeave = attendanceRecords.filter(r => r.status === 'leave').length;
-    const attendanceRate = totalEmployees > 0 ? (present / totalEmployees) * 100 : 0;
+    const notRecorded = totalEmployees > 0 ? Math.max(totalEmployees - recordedEmployees, 0) : 0;
     const totalOvertimeHours = attendanceRecords.reduce((sum, r) => sum + r.overtimeHours, 0);
 
     return {
       totalEmployees,
+      recordedEmployees,
       present,
       late,
       absent,
       onLeave,
-      attendanceRate,
+      notRecorded,
       totalOvertimeHours,
     };
-  }, [employees, attendanceRecords]);
+  }, [attendanceRecords, canManageAttendance, employees.length]);
 
   // Filter records
   const filteredRecords = useMemo(() => {
@@ -159,6 +273,12 @@ export default function Attendance() {
       return true;
     });
   }, [attendanceRecords, selectedDepartment, selectedStatus]);
+  const departmentNames = useMemo(() => {
+    return [...new Set([
+      ...departments.map((department) => department.name),
+      ...attendanceRecords.map((record) => record.department).filter(Boolean),
+    ])].sort((left, right) => left.localeCompare(right));
+  }, [attendanceRecords, departments]);
 
   const statusConfig: Record<AttendanceStatus, { color: string; dot: string; label: string }> = {
     present: {
@@ -284,6 +404,8 @@ export default function Attendance() {
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department: employee.jobDetails.department,
+        departmentId: departments.find((department) =>
+          department.name === employee.jobDetails.department)?.id,
         date: formData.date,
         clockIn: formData.clockIn,
         clockOut: formData.clockOut || undefined,
@@ -310,7 +432,7 @@ export default function Attendance() {
     );
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const headers = [
       t("timeLeave.attendance.csv.employeeName"),
       t("timeLeave.attendance.csv.department"),
@@ -335,7 +457,8 @@ export default function Attendance() {
       getStatusLabel(record.status),
     ]);
 
-    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const { default: Papa } = await import("papaparse");
+    const csv = Papa.unparse([headers, ...rows]);
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -350,7 +473,7 @@ export default function Attendance() {
     });
   };
 
-  const handleImportCSV = async () => {
+  const handleImportFile = async () => {
     if (!importFile) {
       toast({
         title: t("timeLeave.attendance.toast.errorTitle"),
@@ -363,17 +486,13 @@ export default function Attendance() {
     try {
       setImporting(true);
 
-      // Parse CSV file
-      const text = await importFile.text();
-      const lines = text.split("\n").filter(line => line.trim());
-      const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
-      const getHeaderIndex = (...aliases: string[]) =>
-        headers.findIndex((header) => aliases.includes(header));
+      const rows = await parseAttendanceImport(importFile);
 
       const records: {
         employeeId: string;
         employeeName: string;
         department: string;
+        departmentId?: string;
         date: string;
         clockIn?: string;
         clockOut?: string;
@@ -390,35 +509,44 @@ export default function Attendance() {
         employeesByName.set(fullName, emp);
       }
 
-      const employeeIdIdx = getHeaderIndex("employee_id", "employeeid");
-      const nameIdx = getHeaderIndex("name", "employee_name");
-      const dateIdx = getHeaderIndex("date");
-      const clockInIdx = getHeaderIndex("clock_in", "clockin", "check_in");
-      const clockOutIdx = getHeaderIndex("clock_out", "clockout", "check_out");
+      const readValue = (row: AttendanceImportRow, ...aliases: string[]) => {
+        for (const alias of aliases) {
+          const value = row[normalizeImportHeader(alias)];
+          if (value) return value.trim();
+        }
+        return "";
+      };
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",").map(v => v.trim());
-
-        if (dateIdx === -1 || clockInIdx === -1) continue;
+      for (const row of rows) {
+        const importedDate = readValue(row, "date", "work_date");
+        const importedClockIn = readValue(row, "clock_in", "clockin", "check_in");
+        const importedClockOut = readValue(row, "clock_out", "clockout", "check_out");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(importedDate) || !/^\d{1,2}:\d{2}/.test(importedClockIn)) {
+          continue;
+        }
 
         // Find employee
         let employee: Employee | undefined;
-        if (employeeIdIdx !== -1) {
-          const key = values[employeeIdIdx];
+        const importedEmployeeId = readValue(row, "employee_id", "employeeid", "staff_id");
+        if (importedEmployeeId) {
+          const key = importedEmployeeId;
           employee = employeesById.get(key) || employeesByJobId.get(key);
         }
-        if (!employee && nameIdx !== -1) {
-          employee = employeesByName.get(values[nameIdx].toLowerCase());
+        const importedName = readValue(row, "name", "employee_name", "staff_name");
+        if (!employee && importedName) {
+          employee = employeesByName.get(importedName.toLowerCase());
         }
 
         if (employee) {
+          const department = employee.jobDetails.department;
           records.push({
             employeeId: employee.id!,
             employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-            department: employee.jobDetails.department,
-            date: values[dateIdx],
-            clockIn: values[clockInIdx] || "",
-            clockOut: clockOutIdx !== -1 ? (values[clockOutIdx] || "") : "",
+            department,
+            departmentId: departments.find((item) => item.name === department)?.id,
+            date: importedDate,
+            clockIn: importedClockIn.slice(0, 5),
+            clockOut: importedClockOut ? importedClockOut.slice(0, 5) : "",
           });
         }
       }
@@ -435,7 +563,7 @@ export default function Attendance() {
       const result = await attendanceService.importFromDevice(tenantId, records, {
         fileName: importFile.name,
         deviceType: "other",
-        importedBy: "current_user", // Would get from auth context
+        importedBy: user?.uid || "unknown",
       });
 
       toast({
@@ -464,6 +592,81 @@ export default function Attendance() {
     }
   };
 
+  const openEditDialog = (record: AttendanceRecord) => {
+    setEditRecord(record);
+    setEditForm({
+      clockIn: record.clockIn || "",
+      clockOut: record.clockOut || "",
+      status: record.status,
+      reason: "",
+    });
+  };
+
+  const saveAdjustment = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editRecord?.id || !editForm.reason.trim()) {
+      toast({
+        title: t("timeLeave.attendance.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.edit.reasonRequired"),
+        variant: "destructive",
+      });
+      return;
+    }
+    const preview = computeEntryHours(editForm.clockIn, editForm.clockOut);
+    if (editForm.clockOut && preview.totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+      toast({
+        title: t("timeLeave.attendance.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.dialog.tooLong", {
+          hours: preview.totalHours.toFixed(1),
+        }),
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await adjustAttendanceMutation.mutateAsync({
+        recordId: editRecord.id,
+        adjustments: {
+          clockIn: editForm.clockIn || undefined,
+          clockOut: editForm.clockOut || undefined,
+          status: editForm.status,
+          reason: editForm.reason.trim(),
+          adjustedBy: user?.uid || "unknown",
+        },
+      });
+      setEditRecord(null);
+      toast({
+        title: t("timeLeave.attendance.toast.successTitle"),
+        description: t("timeLeave.timeTracking.edit.adjustSuccess"),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.saveFailed"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteRecord = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await deleteAttendanceMutation.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+      setEditRecord(null);
+      toast({
+        title: t("timeLeave.attendance.toast.successTitle"),
+        description: t("timeLeave.timeTracking.edit.deleteSuccess"),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.saveFailed"),
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -489,7 +692,7 @@ export default function Attendance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.attendance} />
 
-      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
           subtitle={isToday ? (
@@ -502,18 +705,20 @@ export default function Attendance() {
           )}
           cardIcon="tl-attendance" icon={Clock}
           iconColor="text-cyan-500"
-          actions={
+          actions={canManageAttendance ? (
             <>
-              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                {t("timeLeave.attendance.actions.import")}
-              </Button>
-              <Button onClick={() => openMarkDialog()} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+              {isAttendanceAdmin && (
+                <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {t("timeLeave.attendance.actions.import")}
+                </Button>
+              )}
+              <Button onClick={() => openMarkDialog()}>
                 <Plus className="h-4 w-4 mr-2" />
                 {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
               </Button>
             </>
-          }
+          ) : undefined}
         />
 
         {/* Import Dialog */}
@@ -544,7 +749,7 @@ export default function Attendance() {
               <Button variant="outline" onClick={() => setShowImportDialog(false)}>
                 {t("timeLeave.attendance.actions.cancel")}
               </Button>
-              <Button onClick={handleImportCSV} disabled={importing || !importFile}>
+              <Button onClick={handleImportFile} disabled={importing || !importFile}>
                 {importing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -616,7 +821,7 @@ export default function Attendance() {
                   <TimePicker
                     value={formData.clockIn}
                     onChange={(v) => handleInputChange("clockIn", v)}
-                    placeholder="Clock in"
+                    placeholder={t("timeLeave.attendance.mark.clockIn")}
                     required
                   />
                 </div>
@@ -625,7 +830,7 @@ export default function Attendance() {
                   <TimePicker
                     value={formData.clockOut}
                     onChange={(v) => handleInputChange("clockOut", v)}
-                    placeholder="Clock out"
+                    placeholder={t("timeLeave.attendance.mark.clockOut")}
                   />
                 </div>
               </div>
@@ -705,8 +910,16 @@ export default function Attendance() {
                   {stats.absent} {t("timeLeave.attendance.status.absent")}
                 </span>
               )}
+              {stats.notRecorded > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                  {stats.notRecorded} {t("timeLeave.attendance.stats.notRecorded")}
+                </span>
+              )}
               <span className="font-medium text-foreground">
-                {stats.attendanceRate.toFixed(0)}%
+                {canManageAttendance && stats.totalEmployees > 0
+                  ? `${stats.recordedEmployees} / ${stats.totalEmployees}`
+                  : stats.recordedEmployees}
               </span>
             </div>
           )}
@@ -720,8 +933,8 @@ export default function Attendance() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("timeLeave.attendance.filters.allDepartments")}</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
+                {departmentNames.map((department) => (
+                  <SelectItem key={department} value={department}>{department}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -754,21 +967,26 @@ export default function Attendance() {
             <h3 className="font-semibold text-lg text-foreground mb-1">
               {isToday ? t("timeLeave.attendance.empty.titleToday") : t("timeLeave.attendance.empty.title")}
             </h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-              {t("timeLeave.attendance.empty.instructions")}
-            </p>
+            {canManageAttendance && (
+              <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+                {t("timeLeave.attendance.empty.instructions")}
+              </p>
+            )}
             <div className="flex justify-center gap-3">
-              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                {t("timeLeave.attendance.empty.importButton")}
-              </Button>
-              <Button
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                onClick={() => openMarkDialog()}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
-              </Button>
+              {canManageAttendance && (
+                <>
+                  {isAttendanceAdmin && (
+                    <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {t("timeLeave.attendance.empty.importButton")}
+                    </Button>
+                  )}
+                  <Button onClick={() => openMarkDialog()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -814,7 +1032,21 @@ export default function Attendance() {
                       <span className="text-muted-foreground">—</span>
                     )}
                   </span>
-                  <div className="flex justify-end">{getStatusBadge(record.status)}</div>
+                  <div className="flex items-center justify-end gap-1">
+                    {getStatusBadge(record.status)}
+                    {canManageAttendance && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => openEditDialog(record)}
+                        aria-label={t("timeLeave.timeTracking.edit.title")}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Mobile layout */}
@@ -824,16 +1056,34 @@ export default function Attendance() {
                       <p className="font-medium text-sm text-foreground">{record.employeeName}</p>
                       <p className="text-xs text-muted-foreground">{record.department}</p>
                     </div>
-                    {getStatusBadge(record.status)}
+                    <div className="flex items-center gap-1">
+                      {getStatusBadge(record.status)}
+                      {canManageAttendance && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={() => openEditDialog(record)}
+                          aria-label={t("timeLeave.timeTracking.edit.title")}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="font-mono">{record.clockIn || "—"} → {record.clockOut || "—"}</span>
                     <span className="font-mono font-medium text-foreground">{record.regularHours.toFixed(1)}h</span>
                     {record.overtimeHours > 0 && (
-                      <span className="font-mono text-orange-600 dark:text-orange-400">+{record.overtimeHours.toFixed(1)}h OT</span>
+                      <span className="font-mono text-orange-600 dark:text-orange-400">
+                        +{record.overtimeHours.toFixed(1)}h {t("timeLeave.attendance.table.overtime")}
+                      </span>
                     )}
                     {record.lateMinutes > 0 && (
-                      <span className="font-mono text-red-600 dark:text-red-400">{record.lateMinutes}m late</span>
+                      <span className="font-mono text-red-600 dark:text-red-400">
+                        {record.lateMinutes}m {t("timeLeave.attendance.table.late")}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -842,6 +1092,110 @@ export default function Attendance() {
           </div>
         )}
       </div>
+
+      <Dialog open={Boolean(editRecord)} onOpenChange={(open) => !open && setEditRecord(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("timeLeave.timeTracking.edit.title")}</DialogTitle>
+            <DialogDescription>
+              {editRecord ? t("timeLeave.timeTracking.edit.description", {
+                name: editRecord.employeeName,
+                date: formatDateTL(editRecord.date),
+              }) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={saveAdjustment} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
+                <TimePicker
+                  value={editForm.clockIn}
+                  onChange={(clockIn) => setEditForm((current) => ({ ...current, clockIn }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
+                <TimePicker
+                  value={editForm.clockOut}
+                  onChange={(clockOut) => setEditForm((current) => ({ ...current, clockOut }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("timeLeave.attendance.filters.status")}</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(status: AttendanceStatus) =>
+                  setEditForm((current) => ({ ...current, status }))}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(["present", "late", "absent", "half_day", "leave", "holiday"] as AttendanceStatus[]).map((status) => (
+                    <SelectItem key={status} value={status}>{getStatusLabel(status)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="attendance-adjustment-reason">
+                {t("timeLeave.timeTracking.edit.reason")}
+              </Label>
+              <Input
+                id="attendance-adjustment-reason"
+                value={editForm.reason}
+                onChange={(event) => setEditForm((current) => ({
+                  ...current,
+                  reason: event.target.value,
+                }))}
+                placeholder={t("timeLeave.timeTracking.edit.reasonPlaceholder")}
+              />
+            </div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => editRecord && setDeleteTarget(editRecord)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t("timeLeave.timeTracking.edit.deleteConfirm")}
+              </Button>
+              <div className="flex gap-2 sm:justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditRecord(null)}>
+                  {t("timeLeave.attendance.actions.cancel")}
+                </Button>
+                <Button type="submit" disabled={adjustAttendanceMutation.isPending}>
+                  {adjustAttendanceMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t("timeLeave.timeTracking.edit.save")}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("timeLeave.timeTracking.edit.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? t("timeLeave.timeTracking.edit.deleteDesc", {
+                name: deleteTarget.employeeName,
+                date: formatDateTL(deleteTarget.date),
+              }) : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("timeLeave.attendance.actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void deleteRecord()}
+              disabled={deleteAttendanceMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("timeLeave.timeTracking.edit.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

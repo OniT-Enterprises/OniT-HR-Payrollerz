@@ -139,8 +139,8 @@ function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   const canManageTenant = canManage();
   const canManageTeam = canManageTenant || session?.role === "manager";
   const visibleConfig = React.useMemo(
-    () => filterModuleNavConfigByPermissions(config, hasModule, canManageTenant, canManageTeam, showAdvancedTax),
-    [config, hasModule, canManageTenant, canManageTeam, showAdvancedTax],
+    () => filterModuleNavConfigByPermissions(config, hasModule, canManageTenant, canManageTeam, showAdvancedTax, session?.role),
+    [config, hasModule, canManageTenant, canManageTeam, showAdvancedTax, session?.role],
   );
 
   const tabs = React.useMemo(

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +19,18 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { AccountantChoice } from "@/components/accountants/AccountantChoice";
+import {
+  forgetAccountantPartner,
+  getAccountantPartner,
+  readRememberedAccountantPartner,
+  rememberAccountantPartner,
+  type AccountantPartnerId,
+} from "@/lib/accountantPartners";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
   const { refreshUserProfile, signInWithGoogle } = useAuth();
   const { switchTenant } = useTenant();
@@ -41,6 +50,17 @@ export default function Signup() {
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [accountantPartnerId, setAccountantPartnerId] =
+    useState<AccountantPartnerId | null>(() => {
+      const fromUrl = getAccountantPartner(searchParams.get("accountant"));
+      return fromUrl?.id ?? readRememberedAccountantPartner()?.id ?? null;
+    });
+
+  const handleAccountantChoice = (partnerId: AccountantPartnerId | null) => {
+    setAccountantPartnerId(partnerId);
+    if (partnerId) rememberAccountantPartner(partnerId);
+    else forgetAccountantPartner();
+  };
 
   const generateSlug = (name: string) => {
     return name
@@ -114,6 +134,7 @@ export default function Signup() {
         displayName: displayName.trim(),
         companyName,
         companySlug,
+        accountantPartnerId,
       });
 
       await refreshUserProfile();
@@ -158,6 +179,8 @@ export default function Signup() {
     setError(null);
     setGoogleLoading(true);
     try {
+      if (accountantPartnerId) rememberAccountantPartner(accountantPartnerId);
+      else forgetAccountantPartner();
       await signInWithGoogle();
       // New Google users have no tenant yet → HomeRoute sends them to
       // onboarding to create their company. Returning users go to the app.
@@ -181,7 +204,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="flex min-h-screen items-start justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 py-6 sm:items-center">
       <SEO {...seoConfig.signup} />
       <div className="w-full max-w-md">
         <div className="mb-4 flex justify-end">
@@ -382,6 +405,12 @@ export default function Signup() {
                     {t("auth.signup.companyUrlHint")}
                   </p>
                 </div>
+
+                <AccountantChoice
+                  value={accountantPartnerId}
+                  onChange={handleAccountantChoice}
+                  disabled={loading}
+                />
 
                 <div className="flex gap-3">
                   <Button

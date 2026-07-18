@@ -4,23 +4,32 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
-import { shiftService, type ShiftRecord, type ShiftSlot } from '@/services/shiftService';
+import {
+  shiftService,
+  type ShiftSlot,
+  type ShiftWrite,
+} from '@/services/shiftService';
 
 const shiftKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'shifts'] as const,
-  byRange: (tenantId: string, start: string, end: string) =>
-    [...shiftKeys.all(tenantId), 'range', start, end] as const,
+  byRange: (tenantId: string, start: string, end: string, departmentId?: string) =>
+    [...shiftKeys.all(tenantId), 'range', start, end, departmentId ?? 'all'] as const,
   slots: (tenantId: string) => ['tenants', tenantId, 'shiftSlots'] as const,
 };
 
 /**
  * Fetch shifts for a date range (typically a week)
  */
-export function useShiftsByRange(startDate: string, endDate: string, enabled = true) {
+export function useShiftsByRange(
+  startDate: string,
+  endDate: string,
+  enabled = true,
+  departmentId?: string,
+) {
   const tenantId = useTenantId();
   return useQuery({
-    queryKey: shiftKeys.byRange(tenantId, startDate, endDate),
-    queryFn: () => shiftService.getShiftsByDateRange(tenantId, startDate, endDate),
+    queryKey: shiftKeys.byRange(tenantId, startDate, endDate, departmentId),
+    queryFn: () => shiftService.getShiftsByDateRange(tenantId, startDate, endDate, departmentId),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     enabled: !!tenantId && !!startDate && !!endDate && enabled,
@@ -61,8 +70,8 @@ export function useCopyWeekShifts() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ startDate, endDate, createdBy }: { startDate: string; endDate: string; createdBy: string }) =>
-      shiftService.copyWeekToNext(tenantId, startDate, endDate, createdBy),
+    mutationFn: ({ startDate, endDate, createdBy, departmentId }: { startDate: string; endDate: string; createdBy: string; departmentId?: string }) =>
+      shiftService.copyWeekToNext(tenantId, startDate, endDate, createdBy, departmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: shiftKeys.all(tenantId) });
     },
@@ -76,7 +85,7 @@ export function useCreateShift() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Omit<ShiftRecord, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>) =>
+    mutationFn: (data: ShiftWrite) =>
       shiftService.createShift(tenantId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: shiftKeys.all(tenantId) });
@@ -91,7 +100,7 @@ export function useUpdateShift() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ shiftId, data }: { shiftId: string; data: Partial<ShiftRecord> }) =>
+    mutationFn: ({ shiftId, data }: { shiftId: string; data: ShiftWrite }) =>
       shiftService.updateShift(tenantId, shiftId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: shiftKeys.all(tenantId) });
@@ -120,8 +129,8 @@ export function usePublishDraftShifts() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ startDate, endDate }: { startDate: string; endDate: string }) =>
-      shiftService.publishDraftShifts(tenantId, startDate, endDate),
+    mutationFn: ({ startDate, endDate, departmentId }: { startDate: string; endDate: string; departmentId?: string }) =>
+      shiftService.publishDraftShifts(tenantId, startDate, endDate, departmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: shiftKeys.all(tenantId) });
     },

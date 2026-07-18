@@ -59,6 +59,7 @@ export interface AttendanceRecord {
   employeeId: string;
   employeeName: string;
   department: string;
+  departmentId?: string;
   date: string; // YYYY-MM-DD
 
   // Clock times
@@ -186,14 +187,24 @@ class AttendanceService {
     tenantId: string,
     employeeId: string,
     date: string,
+    departmentId?: string,
   ): Promise<{ start: string; end: string }> {
     try {
-      const q = query(
-        collection(db, `tenants/${tenantId}/shifts`),
-        where('employeeId', '==', employeeId),
-        where('date', '==', date),
-        limit(1),
-      );
+      const shiftsRef = collection(db, `tenants/${tenantId}/shifts`);
+      const q = departmentId
+        ? query(
+            shiftsRef,
+            where('departmentId', '==', departmentId),
+            where('employeeId', '==', employeeId),
+            where('date', '==', date),
+            limit(1),
+          )
+        : query(
+            shiftsRef,
+            where('employeeId', '==', employeeId),
+            where('date', '==', date),
+            limit(1),
+          );
       const snap = await getDocs(q);
       if (!snap.empty) {
         const shift = snap.docs[0].data();
@@ -214,16 +225,38 @@ class AttendanceService {
     tenantId: string,
     startDate: string,
     endDate: string,
-    department?: string
+    department?: string,
+    employeeId?: string,
+    departmentId?: string,
   ): Promise<AttendanceRecord[]> {
-    let q = query(
-      this.collectionRef,
-      where('tenantId', '==', tenantId),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-      orderBy('date', 'desc'),
-      orderBy('employeeName', 'asc')
-    );
+    const q = employeeId
+      ? query(
+          this.collectionRef,
+          where('tenantId', '==', tenantId),
+          where('employeeId', '==', employeeId),
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'desc'),
+          orderBy('employeeName', 'asc'),
+        )
+      : departmentId
+        ? query(
+            this.collectionRef,
+            where('tenantId', '==', tenantId),
+            where('departmentId', '==', departmentId),
+            where('date', '>=', startDate),
+            where('date', '<=', endDate),
+            orderBy('date', 'desc'),
+            orderBy('employeeName', 'asc'),
+          )
+        : query(
+          this.collectionRef,
+          where('tenantId', '==', tenantId),
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'desc'),
+          orderBy('employeeName', 'asc'),
+        );
 
     const querySnapshot = await getDocs(q);
     let records = querySnapshot.docs.map((doc) => ({
@@ -244,8 +277,20 @@ class AttendanceService {
   /**
    * Get attendance for a specific date
    */
-  async getAttendanceByDate(tenantId: string, date: string): Promise<AttendanceRecord[]> {
-    return this.getAttendanceByDateRange(tenantId, date, date);
+  async getAttendanceByDate(
+    tenantId: string,
+    date: string,
+    employeeId?: string,
+    departmentId?: string,
+  ): Promise<AttendanceRecord[]> {
+    return this.getAttendanceByDateRange(
+      tenantId,
+      date,
+      date,
+      undefined,
+      employeeId,
+      departmentId,
+    );
   }
 
   /**
@@ -329,6 +374,7 @@ class AttendanceService {
     employeeId: string;
     employeeName: string;
     department: string;
+    departmentId?: string;
     date: string;
     clockIn?: string;
     clockOut?: string;
@@ -338,7 +384,12 @@ class AttendanceService {
     notes?: string;
   }): Promise<string> {
     // Check if record already exists for this employee/date
-    const existing = await this.getExistingRecord(tenantId, data.employeeId, data.date);
+    const existing = await this.getExistingRecord(
+      tenantId,
+      data.employeeId,
+      data.date,
+      data.departmentId,
+    );
 
     // Calculate hours
     const explicitBreak = data.breakStart && data.breakEnd
@@ -356,7 +407,12 @@ class AttendanceService {
       );
     }
 
-    const expected = await this.getExpectedTimes(tenantId, data.employeeId, data.date);
+    const expected = await this.getExpectedTimes(
+      tenantId,
+      data.employeeId,
+      data.date,
+      data.departmentId,
+    );
     const lateMinutes = calculateLateMinutes(data.clockIn || '', expected.start);
     const earlyDepartureMinutes = calculateEarlyDeparture(data.clockOut || '', expected.end);
 
@@ -368,6 +424,7 @@ class AttendanceService {
       employeeId: data.employeeId,
       employeeName: data.employeeName,
       department: data.department,
+      departmentId: data.departmentId,
       date: data.date,
       clockIn: data.clockIn,
       clockOut: data.clockOut,
@@ -406,14 +463,28 @@ class AttendanceService {
   /**
    * Get existing record for employee/date
    */
-  private async getExistingRecord(tenantId: string, employeeId: string, date: string): Promise<AttendanceRecord | null> {
-    const q = query(
-      this.collectionRef,
-      where('tenantId', '==', tenantId),
-      where('employeeId', '==', employeeId),
-      where('date', '==', date),
-      limit(1)
-    );
+  private async getExistingRecord(
+    tenantId: string,
+    employeeId: string,
+    date: string,
+    departmentId?: string,
+  ): Promise<AttendanceRecord | null> {
+    const q = departmentId
+      ? query(
+          this.collectionRef,
+          where('tenantId', '==', tenantId),
+          where('departmentId', '==', departmentId),
+          where('employeeId', '==', employeeId),
+          where('date', '==', date),
+          limit(1),
+        )
+      : query(
+          this.collectionRef,
+          where('tenantId', '==', tenantId),
+          where('employeeId', '==', employeeId),
+          where('date', '==', date),
+          limit(1),
+        );
 
     const querySnapshot = await getDocs(q);
 
@@ -471,7 +542,12 @@ class AttendanceService {
       );
     }
 
-    const expected = await this.getExpectedTimes(tenantId, current.employeeId, current.date);
+    const expected = await this.getExpectedTimes(
+      tenantId,
+      current.employeeId,
+      current.date,
+      current.departmentId,
+    );
     const { regular, overtime } = calculateHoursBreakdown(totalHours);
     const lateMinutes = calculateLateMinutes(newClockIn || '', expected.start);
     const earlyDepartureMinutes = calculateEarlyDeparture(newClockOut || '', expected.end);
@@ -524,6 +600,7 @@ class AttendanceService {
       employeeId: string;
       employeeName: string;
       department: string;
+      departmentId?: string;
       date: string;
       clockIn?: string;
       clockOut?: string;
@@ -534,7 +611,9 @@ class AttendanceService {
       importedBy: string;
     }
   ): Promise<{ batchId: string; stats: { success: number; errors: number; duplicates: number } }> {
-    const batch = writeBatch(db);
+    if (records.length === 0) {
+      throw new Error('No attendance records to import');
+    }
 
     let successCount = 0;
     let errorCount = 0;
@@ -579,7 +658,18 @@ class AttendanceService {
     const importRef = doc(this.importsRef);
     const batchId = importRef.id;
 
+    let batch = writeBatch(db);
+    let writesInBatch = 0;
+    let rowNumber = 1;
+    const commitBatchIfFull = async () => {
+      if (writesInBatch < 450) return;
+      await batch.commit();
+      batch = writeBatch(db);
+      writesInBatch = 0;
+    };
+
     for (const record of records) {
+      rowNumber += 1;
       try {
         // Check for duplicate using prefetched data
         if (existingKeys.has(`${record.employeeId}:${record.date}`)) {
@@ -589,6 +679,9 @@ class AttendanceService {
 
         // Calculate hours
         const { breakMinutes, totalHours } = computeEntryHours(record.clockIn || '', record.clockOut || '');
+        if (totalHours > MAX_REASONABLE_ENTRY_HOURS) {
+          throw new Error(`Entry computes to ${totalHours.toFixed(1)}h`);
+        }
         const { regular, overtime } = calculateHoursBreakdown(totalHours);
         const expected = expectedByKey.get(`${record.employeeId}:${record.date}`)
           ?? { start: DEFAULT_EXPECTED_START, end: DEFAULT_EXPECTED_END };
@@ -612,11 +705,14 @@ class AttendanceService {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        writesInBatch += 1;
+        existingKeys.add(`${record.employeeId}:${record.date}`);
+        await commitBatchIfFull();
 
         successCount++;
       } catch (error) {
         errorCount++;
-        errors.push(`Row ${records.indexOf(record) + 1}: ${error}`);
+        errors.push(`Row ${rowNumber}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -633,8 +729,9 @@ class AttendanceService {
       importDate: serverTimestamp(),
       createdAt: serverTimestamp(),
     });
+    writesInBatch += 1;
 
-    await batch.commit();
+    if (writesInBatch > 0) await batch.commit();
 
     return {
       batchId,
@@ -657,11 +754,11 @@ class AttendanceService {
     const employeeRecords = records.filter(r => r.employeeId === employeeId);
 
     // Calculate working days (excluding weekends)
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(`${startDate}T00:00:00.000Z`);
+    const end = new Date(`${endDate}T00:00:00.000Z`);
     let workingDays = 0;
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) workingDays++;
+    for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) workingDays++;
     }
 
     const summary: AttendanceSummary = {
@@ -696,7 +793,7 @@ class AttendanceService {
     const records = await this.getAttendanceByDate(tenantId, date);
 
     const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
-    const _absent = records.filter(r => r.status === 'absent').length;
+    const absent = records.filter(r => r.status === 'absent').length;
     const late = records.filter(r => r.status === 'late').length;
     const onLeave = records.filter(r => r.status === 'leave').length;
 
@@ -704,7 +801,7 @@ class AttendanceService {
       date,
       totalEmployees,
       present,
-      absent: totalEmployees - present - onLeave,
+      absent,
       late,
       onLeave,
       attendanceRate: totalEmployees > 0 ? (present / totalEmployees) * 100 : 0,

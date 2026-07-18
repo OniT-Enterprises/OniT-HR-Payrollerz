@@ -12,6 +12,7 @@ export interface SupervisorAttendanceRecord {
   employeeId: string;
   employeeName: string;
   department?: string;
+  departmentId?: string;
   date: string; // YYYY-MM-DD
 
   clockIn?: string; // HH:MM
@@ -46,6 +47,7 @@ export interface PendingClockIn {
   employeeId: string;
   employeeName: string;
   department?: string;
+  departmentId?: string;
   date: string;
   clockIn?: string;
   clockOut?: string;
@@ -97,6 +99,7 @@ export interface CrewMember {
   firstName: string;
   lastName: string;
   department?: string;
+  departmentId?: string;
   position?: string;
   qrCode?: string;
 }

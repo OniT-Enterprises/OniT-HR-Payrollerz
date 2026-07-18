@@ -3,8 +3,8 @@
  * REST API for OpenClaw bot integration with OniT HR system
  *
  * Most Firestore collections are tenant subcollections under tenants/{tid}/.
- * Hiring remains in the app's legacy top-level jobs/candidates/interviews
- * collections, with tenantId enforced on every document.
+ * Hiring and the canonical leave/attendance records are top-level collections
+ * with tenantId enforced on every document.
  */
 
 const path = require('path');
@@ -293,34 +293,138 @@ function getTodayTL() {
 
 /** Get current YYYYMM */
 function getCurrentYYYYMM() {
-  const now = new Date();
-  const tlTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const year = tlTime.getFullYear();
-  const month = String(tlTime.getMonth() + 1).padStart(2, '0');
-  return `${year}${month}`;
+  return getTodayTL().slice(0, 7).replace('-', '');
 }
 
 /** Get current year */
 function getCurrentYear() {
-  const now = new Date();
-  const tlTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return tlTime.getFullYear();
+  return Number(getTodayTL().slice(0, 4));
 }
 
 /** Get start/end of current month as ISO strings */
 function getCurrentMonthRange() {
-  const now = new Date();
-  const tlTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const year = tlTime.getFullYear();
-  const month = tlTime.getMonth();
-  const start = new Date(year, month, 1).toISOString().split('T')[0];
-  const end = new Date(year, month + 1, 0).toISOString().split('T')[0];
+  const today = getTodayTL();
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+  const start = `${today.slice(0, 7)}-01`;
+  const end = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
   return { start, end };
 }
 
 /** Tenant collection reference helper */
 function tenantCol(tenantId, collection) {
   return db.collection('tenants').doc(tenantId).collection(collection);
+}
+
+/** Query a top-level collection without crossing tenant boundaries. */
+function tenantTopCol(tenantId, collection) {
+  return db.collection(collection).where('tenantId', '==', tenantId);
+}
+
+/** Count weekdays in an inclusive ISO date range. */
+function calculateWorkingDays(startDate, endDate, holidayDates = []) {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  const holidays = new Set(holidayDates);
+  let count = 0;
+
+  for (const current = new Date(start); current <= end; current.setUTCDate(current.getUTCDate() + 1)) {
+    const day = current.getUTCDay();
+    const date = current.toISOString().slice(0, 10);
+    if (day !== 0 && day !== 6 && !holidays.has(date)) count++;
+  }
+
+  return count;
+}
+
+function parseValidISODate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
+    ? null
+    : parsed;
+}
+
+function getEasterSundayUTC(year) {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+/** Keep in sync with client/lib/payroll/tl-holidays.ts. */
+function getTLHolidayDates(year) {
+  const fixed = [
+    '01-01', '03-03', '05-01', '05-20', '08-30', '11-01', '11-02',
+    '11-03', '11-12', '11-28', '12-07', '12-08', '12-25', '12-31',
+  ].map((monthDay) => `${year}-${monthDay}`);
+  const announcedVariable = {
+    2026: ['2026-03-20', '2026-05-27'],
+  }[year] || [];
+  const easter = getEasterSundayUTC(year);
+  const addDays = (days) => new Date(easter.getTime() + days * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10);
+  return [...fixed, addDays(-2), addDays(60), ...announcedVariable];
+}
+
+function timeToMinutes(value) {
+  if (!value) return null;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return Number.NaN;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function calculateAttendanceValues(clockIn, clockOut, expectedStart = '08:00', expectedEnd = '17:00') {
+  const inMinutes = timeToMinutes(clockIn);
+  const outMinutes = timeToMinutes(clockOut);
+  if (Number.isNaN(inMinutes) || Number.isNaN(outMinutes)) {
+    throw new Error('Clock times must use 24-hour HH:MM');
+  }
+
+  let rawMinutes = 0;
+  if (inMinutes != null && outMinutes != null) {
+    let adjustedOut = outMinutes;
+    if (adjustedOut < inMinutes) adjustedOut += 24 * 60;
+    rawMinutes = adjustedOut - inMinutes;
+  }
+  const breakMinutes = rawMinutes >= 6 * 60 ? 60 : 0;
+  const totalHours = Math.max(0, (rawMinutes - breakMinutes) / 60);
+  if (totalHours > 16) throw new Error('Attendance entry exceeds 16 hours');
+
+  const expectedStartMinutes = timeToMinutes(expectedStart) ?? 8 * 60;
+  const expectedEndMinutes = timeToMinutes(expectedEnd) ?? 17 * 60;
+  const lateMinutes = inMinutes == null ? 0 : Math.max(0, inMinutes - expectedStartMinutes);
+  const earlyDepartureMinutes = outMinutes == null ? 0 : Math.max(0, expectedEndMinutes - outMinutes);
+  const regularHours = Math.min(totalHours, 8);
+  const overtimeHours = Math.max(0, totalHours - 8);
+  const inferredStatus = inMinutes == null && outMinutes == null
+    ? 'absent'
+    : inMinutes != null && outMinutes == null
+      ? lateMinutes > 15 ? 'late' : 'present'
+      : totalHours < 4
+        ? 'half_day'
+        : lateMinutes > 15 ? 'late' : 'present';
+
+  return {
+    breakMinutes,
+    totalHours,
+    regularHours,
+    overtimeHours,
+    lateMinutes,
+    earlyDepartureMinutes,
+    inferredStatus,
+  };
 }
 
 /** Hiring collections are top-level and carry tenantId on each document. */
@@ -617,7 +721,7 @@ router.get('/leave/requests', async (req, res) => {
     const { status, employeeId, limit: limitStr } = req.query;
     const maxResults = Math.min(parseInt(limitStr) || 100, 500);
 
-    let query = tenantCol(req.tenantId, 'leaveRequests').orderBy('requestDate', 'desc');
+    let query = tenantTopCol(req.tenantId, 'leave_requests');
 
     if (status) {
       query = query.where('status', '==', status);
@@ -626,7 +730,7 @@ router.get('/leave/requests', async (req, res) => {
       query = query.where('employeeId', '==', employeeId);
     }
 
-    query = query.limit(maxResults);
+    query = query.orderBy('requestDate', 'desc').limit(maxResults);
     const snapshot = await query.get();
     const requests = mapDocs(snapshot);
 
@@ -642,7 +746,7 @@ router.get('/leave/requests', async (req, res) => {
  */
 router.get('/leave/pending', async (req, res) => {
   try {
-    const snapshot = await tenantCol(req.tenantId, 'leaveRequests')
+    const snapshot = await tenantTopCol(req.tenantId, 'leave_requests')
       .where('status', '==', 'pending')
       .orderBy('requestDate', 'desc')
       .get();
@@ -661,13 +765,10 @@ router.get('/leave/pending', async (req, res) => {
 router.get('/leave/balances', async (req, res) => {
   try {
     const year = req.query.year || String(getCurrentYear());
-    // Leave balances have IDs like {empId}_{year}
-    const snapshot = await tenantCol(req.tenantId, 'leaveBalances').get();
-    const allBalances = mapDocs(snapshot);
-    // Filter to requested year
-    const balances = allBalances.filter((b) => {
-      return b.year === parseInt(year) || b.year === year || b.id.endsWith(`_${year}`);
-    });
+    const snapshot = await tenantTopCol(req.tenantId, 'leave_balances')
+      .where('year', '==', parseInt(year, 10))
+      .get();
+    const balances = mapDocs(snapshot);
 
     res.json({ success: true, count: balances.length, year, balances });
   } catch (error) {
@@ -683,7 +784,7 @@ router.get('/leave/on-leave-today', async (req, res) => {
   try {
     const today = getTodayTL();
     // Find approved leave requests where today falls between startDate and endDate
-    const snapshot = await tenantCol(req.tenantId, 'leaveRequests')
+    const snapshot = await tenantTopCol(req.tenantId, 'leave_requests')
       .where('status', '==', 'approved')
       .get();
 
@@ -723,15 +824,11 @@ router.get('/leave/on-leave-today', async (req, res) => {
 router.get('/attendance/daily', async (req, res) => {
   try {
     const date = req.query.date || getTodayTL();
-    // Timesheets use IDs like {empId}_{weekIso}, so filter by date range
-    const snapshot = await tenantCol(req.tenantId, 'timesheets')
-      .orderBy('date', 'desc')
-      .limit(200)
+    const snapshot = await tenantTopCol(req.tenantId, 'attendance')
+      .where('date', '==', date)
+      .limit(500)
       .get();
-
-    const records = mapDocs(snapshot).filter((t) => {
-      return t.date === date || (t.weekStartDate && t.weekStartDate <= date && t.weekEndDate >= date);
-    });
+    const records = mapDocs(snapshot);
 
     res.json({ success: true, count: records.length, date, records });
   } catch (error) {
@@ -1796,8 +1893,8 @@ router.get('/stats', async (req, res) => {
       openJobsSnap,
     ] = await Promise.all([
       tenantCol(req.tenantId, 'employees').get(),
-      tenantCol(req.tenantId, 'leaveRequests').where('status', '==', 'pending').get(),
-      tenantCol(req.tenantId, 'leaveRequests').where('status', '==', 'approved').get(),
+      tenantTopCol(req.tenantId, 'leave_requests').where('status', '==', 'pending').get(),
+      tenantTopCol(req.tenantId, 'leave_requests').where('status', '==', 'approved').get(),
       tenantCol(req.tenantId, 'invoices').where('status', 'in', ['sent', 'viewed', 'partial']).get(),
       tenantCol(req.tenantId, 'bills').where('status', 'in', ['pending', 'partial', 'approved']).get(),
       tenantCol(req.tenantId, 'expenses').get(),
@@ -3002,23 +3099,28 @@ router.put('/leave/requests/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, message: 'approvedBy is required' });
     }
 
-    const ref = tenantCol(tid, 'leave_requests').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) {
-      return res.status(404).json({ success: false, message: 'Leave request not found' });
-    }
-
-    const request = snap.data();
-    if (request.status !== 'pending') {
-      return res.status(400).json({ success: false, message: `Cannot approve: status is '${request.status}'` });
-    }
-
-    await ref.update({
-      status: 'approved',
-      approverId: approvedBy,
-      approverName: approverName || approvedBy,
-      approvedDate: getTodayTL(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    const ref = db.collection('leave_requests').doc(id);
+    let leaveRequest;
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists || snap.data()?.tenantId !== tid) {
+        const error = new Error('Leave request not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      leaveRequest = snap.data();
+      if (leaveRequest.status !== 'pending') {
+        const error = new Error(`Cannot approve: status is '${leaveRequest.status}'`);
+        error.statusCode = 400;
+        throw error;
+      }
+      transaction.update(ref, {
+        status: 'approved',
+        approverId: approvedBy,
+        approverName: approverName || approvedBy,
+        approvedDate: getTodayTL(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     });
 
     await writeAuditLog(tid, {
@@ -3026,7 +3128,7 @@ router.put('/leave/requests/:id/approve', async (req, res) => {
       userEmail: approvedBy,
       action: 'leave.approve',
       module: 'leave',
-      description: `Approved leave request for ${request.employeeName || id} (${request.leaveType}, ${request.startDate} to ${request.endDate})`,
+      description: `Approved leave request for ${leaveRequest.employeeName || id} (${leaveRequest.leaveType}, ${leaveRequest.startDate} to ${leaveRequest.endDate})`,
       entityId: id,
       entityType: 'leave_request',
       severity: 'info',
@@ -3035,7 +3137,7 @@ router.put('/leave/requests/:id/approve', async (req, res) => {
     res.json({ success: true, message: 'Leave request approved' });
   } catch (error) {
     console.error('[leave/approve]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -3053,23 +3155,28 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
       return res.status(400).json({ success: false, message: 'rejectedBy and reason are required' });
     }
 
-    const ref = tenantCol(tid, 'leave_requests').doc(id);
-    const snap = await ref.get();
-    if (!snap.exists) {
-      return res.status(404).json({ success: false, message: 'Leave request not found' });
-    }
-
-    const request = snap.data();
-    if (request.status !== 'pending') {
-      return res.status(400).json({ success: false, message: `Cannot reject: status is '${request.status}'` });
-    }
-
-    await ref.update({
-      status: 'rejected',
-      approverId: rejectedBy,
-      approverName: rejectedBy,
-      rejectionReason: reason,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    const ref = db.collection('leave_requests').doc(id);
+    let leaveRequest;
+    await db.runTransaction(async (transaction) => {
+      const snap = await transaction.get(ref);
+      if (!snap.exists || snap.data()?.tenantId !== tid) {
+        const error = new Error('Leave request not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      leaveRequest = snap.data();
+      if (leaveRequest.status !== 'pending') {
+        const error = new Error(`Cannot reject: status is '${leaveRequest.status}'`);
+        error.statusCode = 400;
+        throw error;
+      }
+      transaction.update(ref, {
+        status: 'rejected',
+        approverId: rejectedBy,
+        approverName: rejectedBy,
+        rejectionReason: reason,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     });
 
     await writeAuditLog(tid, {
@@ -3077,7 +3184,7 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
       userEmail: rejectedBy,
       action: 'leave.reject',
       module: 'leave',
-      description: `Rejected leave request for ${request.employeeName || id}: ${reason}`,
+      description: `Rejected leave request for ${leaveRequest.employeeName || id}: ${reason}`,
       entityId: id,
       entityType: 'leave_request',
       metadata: { reason },
@@ -3087,7 +3194,7 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
     res.json({ success: true, message: 'Leave request rejected' });
   } catch (error) {
     console.error('[leave/reject]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 });
 
@@ -3297,38 +3404,106 @@ router.post('/leave/requests', async (req, res) => {
     const tid = req.tenantId;
     const { employeeId, startDate, endDate, leaveType, reason, requestedBy = 'bot' } = req.body || {};
 
-    if (!employeeId || !startDate || !endDate || !leaveType) {
+    if (!employeeId || !startDate || !endDate || !leaveType || !reason?.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'employeeId, startDate, endDate, leaveType are required',
+        message: 'employeeId, startDate, endDate, leaveType, and reason are required',
       });
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      return res.status(400).json({ success: false, message: 'Dates must be YYYY-MM-DD' });
+    const parsedStart = parseValidISODate(startDate);
+    const parsedEnd = parseValidISODate(endDate);
+    const calendarDays = parsedStart && parsedEnd
+      ? Math.floor((parsedEnd.getTime() - parsedStart.getTime()) / (24 * 60 * 60 * 1000)) + 1
+      : 0;
+    if (!parsedStart || !parsedEnd || calendarDays <= 0 || calendarDays > 366) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dates must be valid YYYY-MM-DD values spanning 1 to 366 days',
+      });
     }
-    if (endDate < startDate) {
-      return res.status(400).json({ success: false, message: 'endDate must be on or after startDate' });
+    if (!/^[a-zA-Z0-9_-]+$/.test(leaveType) || reason.trim().length > 1000) {
+      return res.status(400).json({ success: false, message: 'Invalid leave type or reason' });
     }
 
-    const empSnap = await tenantCol(tid, 'employees').doc(employeeId).get();
+    const [empSnap, configSnap] = await Promise.all([
+      tenantCol(tid, 'employees').doc(employeeId).get(),
+      tenantCol(tid, 'settings').doc('config').get(),
+    ]);
     if (!empSnap.exists) {
       return res.status(404).json({ success: false, message: `Employee ${employeeId} not found` });
     }
     const emp = empSnap.data();
+    if (typeof emp.status === 'string' && emp.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Leave can only be requested for active employees' });
+    }
     const employeeName = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim() || employeeId;
 
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const duration = Math.round((new Date(endDate) - new Date(startDate)) / msPerDay) + 1;
+    const policies = configSnap.data()?.timeOffPolicies;
+    const configuredPolicies = policies ? [
+      policies.annualLeave,
+      policies.sickLeave,
+      policies.maternityLeave,
+      policies.paternityLeave,
+      policies.unpaidLeave,
+      ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
+    ].filter(Boolean) : [];
+    const configuredPolicy = configuredPolicies.find((policy) => policy.id === leaveType);
+    const builtInLeaveTypes = new Set([
+      'annual', 'sick', 'maternity', 'paternity', 'unpaid',
+      'bereavement', 'marriage', 'study', 'custom',
+    ]);
+    if (!builtInLeaveTypes.has(leaveType) && !configuredPolicy) {
+      return res.status(400).json({ success: false, message: 'Unknown leave type' });
+    }
+    if (configuredPolicy?.isActive === false) {
+      return res.status(400).json({ success: false, message: 'This leave type is not active' });
+    }
+
+    const existingLeave = await tenantTopCol(tid, 'leave_requests')
+      .where('employeeId', '==', employeeId)
+      .get();
+    if (existingLeave.docs.some((document) => {
+      const leave = document.data();
+      return ['pending', 'approved'].includes(leave.status) &&
+        leave.startDate <= endDate && leave.endDate >= startDate;
+    })) {
+      return res.status(409).json({ success: false, message: 'Employee already has overlapping leave' });
+    }
+
+    const startYear = Number(startDate.slice(0, 4));
+    const endYear = Number(endDate.slice(0, 4));
+    const years = Array.from(
+      { length: endYear - startYear + 1 },
+      (_, offset) => startYear + offset,
+    );
+    const holidaySnapshots = await Promise.all(years.map((year) =>
+      tenantCol(tid, 'holidays')
+        .where('date', '>=', `${year}-01-01`)
+        .where('date', '<=', `${year}-12-31`)
+        .get()));
+    const holidayDates = new Set(years.flatMap(getTLHolidayDates));
+    for (const holiday of holidaySnapshots.flatMap((snapshot) =>
+      snapshot.docs.map((document) => document.data()))) {
+      if (holiday.isHoliday === true) holidayDates.add(holiday.date);
+      else holidayDates.delete(holiday.date);
+    }
+    const duration = calculateWorkingDays(startDate, endDate, [...holidayDates]);
+    if (duration <= 0) {
+      return res.status(400).json({ success: false, message: 'Leave must include at least one working day' });
+    }
 
     const request = {
       tenantId: tid,
       employeeId,
       employeeName,
-      department: emp.jobDetails?.department || '',
+      department: emp.jobDetails?.departmentName || emp.jobDetails?.department || '',
+      departmentId: emp.jobDetails?.departmentId || '',
       startDate,
       endDate,
       leaveType,
-      reason: reason || '',
+      leaveTypeLabel: configuredPolicy?.name || leaveType,
+      reason: reason.trim(),
+      hasCertificate: false,
       duration,
       status: 'pending',
       requestDate: getTodayTL(),
@@ -3362,7 +3537,7 @@ router.post('/attendance', async (req, res) => {
   try {
     const tid = req.tenantId;
     const {
-      employeeId, date, status = 'present',
+      employeeId, date, status,
       clockIn = '', clockOut = '', notes = '', recordedBy = 'bot',
     } = req.body || {};
 
@@ -3380,6 +3555,24 @@ router.post('/attendance', async (req, res) => {
     const emp = empSnap.data();
     const employeeName = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim() || employeeId;
 
+    const shiftSnapshot = await tenantCol(tid, 'shifts')
+      .where('employeeId', '==', employeeId)
+      .where('date', '==', date)
+      .limit(1)
+      .get();
+    const scheduledShift = shiftSnapshot.empty ? null : shiftSnapshot.docs[0].data();
+    const attendance = calculateAttendanceValues(
+      clockIn,
+      clockOut,
+      scheduledShift?.status !== 'cancelled' ? scheduledShift?.startTime : undefined,
+      scheduledShift?.status !== 'cancelled' ? scheduledShift?.endTime : undefined,
+    );
+    const allowedStatuses = ['present', 'late', 'absent', 'half_day', 'leave', 'holiday'];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid attendance status' });
+    }
+    const resolvedStatus = status || attendance.inferredStatus;
+
     const existingSnap = await db.collection('attendance')
       .where('tenantId', '==', tid)
       .where('employeeId', '==', employeeId)
@@ -3390,11 +3583,20 @@ router.post('/attendance', async (req, res) => {
     const record = {
       tenantId: tid,
       employeeId, employeeName,
-      department: emp.jobDetails?.department || '',
+      department: emp.jobDetails?.departmentName || emp.jobDetails?.department || '',
+      departmentId: emp.jobDetails?.departmentId || '',
       date,
       clockIn, clockOut,
-      status,
-      source: 'bot',
+      breakMinutes: attendance.breakMinutes,
+      totalHours: attendance.totalHours,
+      regularHours: attendance.regularHours,
+      overtimeHours: attendance.overtimeHours,
+      lateMinutes: attendance.lateMinutes,
+      earlyDepartureMinutes: attendance.earlyDepartureMinutes,
+      status: resolvedStatus,
+      source: 'manual',
+      channel: 'bot',
+      isAdjusted: false,
       notes,
       recordedBy,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -3418,7 +3620,7 @@ router.post('/attendance', async (req, res) => {
     await writeAuditLog(tid, {
       userId: recordedBy, userEmail: recordedBy,
       action, module: 'attendance',
-      description: `${action === 'attendance.create' ? 'Recorded' : 'Updated'} attendance for ${employeeName} on ${date} (${status})`,
+      description: `${action === 'attendance.create' ? 'Recorded' : 'Updated'} attendance for ${employeeName} on ${date} (${resolvedStatus})`,
       entityId: id, entityType: 'attendance',
     });
 
@@ -4404,11 +4606,10 @@ const PAGE_CONTEXT_MAP = {
   '/people/jobs': { name: 'Jobs & Applicants', description: 'One hiring workspace for jobs, applicants, interview scheduling, and hiring decisions.' },
   '/people/onboarding': { name: 'Onboarding Checklist', description: 'First-day readiness checklist linked to an employee record.' },
   '/people/offboarding': { name: 'Employee Offboarding', description: 'Employee departures, final-pay tasks, and equipment returns.' },
-  '/scheduling': { name: 'Scheduling Dashboard', description: 'Overview of attendance, leave, and scheduling.' },
-  '/scheduling/time-tracking': { name: 'Time Tracking', description: 'Employee time entries and timesheets.' },
-  '/scheduling/attendance': { name: 'Attendance', description: 'Daily attendance records and patterns.' },
-  '/scheduling/leave': { name: 'Leave Requests', description: 'Leave requests, balances, and approval workflow.' },
-  '/scheduling/schedules': { name: 'Shift Scheduling', description: 'Work schedules and shift assignments.' },
+  '/time-leave': { name: 'Time & Leave', description: 'Today’s attendance, leave attention, and shift schedule.' },
+  '/time-leave/attendance': { name: 'Attendance', description: 'Daily attendance, clock times, and payroll-ready hours.' },
+  '/time-leave/leave': { name: 'Leave Requests', description: 'Leave requests, balances, and approval workflow.' },
+  '/time-leave/shifts': { name: 'Shift Scheduling', description: 'Weekly work schedules and shift assignments.' },
   '/people/goals': { name: 'Goals', description: 'Employee goals and OKR tracking.' },
   '/people/reviews': { name: 'Performance Reviews', description: 'Performance review cycles and evaluations.' },
   '/people/training': { name: 'Training & Certifications', description: 'Training programs and certification tracking.' },

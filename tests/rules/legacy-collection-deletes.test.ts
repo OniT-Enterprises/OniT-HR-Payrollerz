@@ -14,11 +14,11 @@ const OWNER = "acme-owner";
 const OUTSIDER = "rival-owner";
 
 /**
- * The legacy top-level collections (departments, leave_balances, timesheets,
- * reviews) used a combined `allow update, delete` rule that referenced
+ * Some legacy top-level collections used a combined `allow update, delete` rule that referenced
  * request.resource.data — which does not exist on deletes — so every
  * non-superadmin delete was rejected. These tests pin the fixed behaviour:
- * tenant admins can delete their own tenant's docs, outsiders cannot.
+ * tenant admins can delete ordinary tenant-owned docs, while computed Time &
+ * Leave projections remain Cloud Functions-owned.
  */
 describe("Legacy top-level collection deletes", () => {
   let testEnv: RulesTestEnvironment;
@@ -88,14 +88,12 @@ describe("Legacy top-level collection deletes", () => {
     await testEnv.clearFirestore();
   });
 
-  const CASES: Array<[collection: string, id: string]> = [
+  const DELETABLE_CASES: Array<[collection: string, id: string]> = [
     ["departments", "dep1"],
-    ["leave_balances", "bal1"],
-    ["timesheets", "ts1"],
     ["reviews", "rev1"],
   ];
 
-  for (const [collection, id] of CASES) {
+  for (const [collection, id] of DELETABLE_CASES) {
     it(`lets the tenant owner delete their own ${collection} doc`, async () => {
       const db = testEnv.authenticatedContext(OWNER).firestore();
       await assertSucceeds(deleteDoc(doc(db, `${collection}/${id}`)));
@@ -103,6 +101,13 @@ describe("Legacy top-level collection deletes", () => {
 
     it(`blocks an outsider from deleting another tenant's ${collection} doc`, async () => {
       const db = testEnv.authenticatedContext(OUTSIDER).firestore();
+      await assertFails(deleteDoc(doc(db, `${collection}/${id}`)));
+    });
+  }
+
+  for (const [collection, id] of [["leave_balances", "bal1"], ["timesheets", "ts1"]]) {
+    it(`blocks direct owner deletion of computed ${collection}`, async () => {
+      const db = testEnv.authenticatedContext(OWNER).firestore();
       await assertFails(deleteDoc(doc(db, `${collection}/${id}`)));
     });
   }

@@ -118,7 +118,27 @@ service cloud.firestore {
     }
 
     function canAccessTimeLeaveRecords(tenantId) {
-      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'timeleave');
+      return isTenantFinanceAdmin(tenantId) ||
+        (isTenantMember(tenantId) && getTenantRole(tenantId) == 'manager');
+    }
+
+    function canManageTimeLeaveRecords(tenantId) {
+      return isTenantAdmin(tenantId) ||
+        (isTenantMember(tenantId) && getTenantRole(tenantId) == 'manager');
+    }
+
+    function isManagerForDepartment(tenantId, departmentId) {
+      return departmentId != null &&
+        isTenantMember(tenantId) &&
+        getTenantRole(tenantId) == 'manager' &&
+        getTenantMember(tenantId).data.get('departmentId', null) == departmentId;
+    }
+
+    function employeeInDepartment(tenantId, employeeId, departmentId) {
+      return employeeId != null && departmentId != null &&
+        exists(/databases/$(database)/documents/tenants/$(tenantId)/employees/$(employeeId)) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId)/employees/$(employeeId))
+          .data.jobDetails.departmentId == departmentId;
     }
 
     function canAccessPayrollRecords(tenantId) {
@@ -465,50 +485,21 @@ service cloud.firestore {
       // LEAVE REQUESTS SUBCOLLECTION
       // ============================================
       match /leaveRequests/{requestId} {
-        allow read: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) ||
-          (resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, resource.data.employeeId));
-
-        allow create: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) ||
-          (request.resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, request.resource.data.employeeId));
-
-        allow update: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) || (
-            resource.data.employeeId != null &&
-            isSelfEmployee(tenantId, resource.data.employeeId) &&
-            resource.data.status == 'pending' &&
-            request.resource.data.status == 'cancelled' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
-          );
-
-        allow delete: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
+        // Retired schema. Canonical requests live in top-level /leave_requests.
+        allow read, write: if isSuperAdmin();
       }
 
       // ============================================
       // TIMESHEETS SUBCOLLECTION
       // ============================================
       match /timesheets/{timesheetId} {
-        allow read: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) ||
-          (resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, resource.data.employeeId));
-
-        allow create: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) ||
-          (request.resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, request.resource.data.employeeId));
-
-        allow update: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) || (
-            resource.data.employeeId != null &&
-            isSelfEmployee(tenantId, resource.data.employeeId) &&
-            request.resource.data.employeeId == resource.data.employeeId
-          );
-
-        allow delete: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
+        // Computed by Cloud Functions. Clients can read only their own row or
+        // finance/HR rows; direct client writes are never authoritative.
+        allow read: if isSuperAdmin() || isTenantFinanceAdmin(tenantId) || (
+          resource.data.employeeId != null &&
+          isSelfEmployee(tenantId, resource.data.employeeId)
+        );
+        allow write: if isSuperAdmin();
       }
 
       // ============================================
@@ -768,14 +759,28 @@ service cloud.firestore {
       // SHIFTS SUBCOLLECTION (Ekipa reads published shifts)
       // ============================================
       match /shifts/{shiftId} {
-        // Managers can plan the full roster. Employees only see their own
-        // published shifts; drafts and coworkers' schedules stay private.
-        allow read: if isSuperAdmin() || isTenantManagerOrAdmin(tenantId) || (
+        // Managers can plan their department roster. Employees only see their
+        // own published shifts; drafts and coworkers' schedules stay private.
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          isManagerForDepartment(tenantId, resource.data.get('departmentId', null)) || (
           resource.data.employeeId != null &&
           resource.data.status == 'published' &&
           isSelfEmployee(tenantId, resource.data.employeeId)
         );
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Shift content is created/edited by createOrUpdateShift so overlap,
+        // rest-period, leave, and employee-scope validation cannot be bypassed.
+        allow create: if isSuperAdmin();
+        // Authorized planners may publish/cancel an already validated shift.
+        allow update: if isSuperAdmin() || (
+          (isTenantAdmin(tenantId) ||
+           isManagerForDepartment(tenantId, resource.data.get('departmentId', null))) &&
+          request.resource.data.departmentId == resource.data.departmentId &&
+          request.resource.data.employeeId == resource.data.employeeId &&
+          request.resource.data.status in ['draft', 'published', 'confirmed', 'cancelled'] &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          isManagerForDepartment(tenantId, resource.data.get('departmentId', null));
       }
 
       // ============================================
@@ -991,12 +996,8 @@ service cloud.firestore {
       }
 
       match /leaveBalances/{balanceId} {
-        allow read: if isSuperAdmin() ||
-          canAccessTimeLeaveRecords(tenantId) ||
-          (resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, resource.data.employeeId));
-        allow create, update: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
-        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Retired schema. Canonical balances live in top-level /leave_balances.
+        allow read, write: if isSuperAdmin();
       }
 
       // ============================================
@@ -1145,94 +1146,58 @@ service cloud.firestore {
     match /leave_requests/{docId} {
       allow read: if isSuperAdmin() || (
         resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          isTenantFinanceAdmin(resource.data.tenantId) ||
+          isManagerForDepartment(
+            resource.data.tenantId,
+            resource.data.get('departmentId', null)
+          ) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         )
       );
-      allow create: if isSuperAdmin() || (
-        request.resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(request.resource.data.tenantId) ||
-          (request.resource.data.employeeId != null &&
-           isSelfEmployee(request.resource.data.tenantId, request.resource.data.employeeId))
-        )
-      );
+      // Creation goes through createLeaveRequest so employee/department,
+      // duration, holidays, policy, and overlap checks are server-owned.
+      allow create: if isSuperAdmin();
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
-          (
-            resource.data.employeeId != null &&
-            isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
-            resource.data.status == 'pending' &&
-            request.resource.data.status == 'cancelled' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
-          )
-        )
+        request.resource.data.tenantId == resource.data.tenantId &&
+        resource.data.employeeId != null &&
+        isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
+        resource.data.status == 'pending' &&
+        request.resource.data.status == 'cancelled' &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
       );
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        canAccessTimeLeaveRecords(resource.data.tenantId)
+        isTenantAdmin(resource.data.tenantId)
       );
     }
 
     match /leave_balances/{docId} {
       allow read: if isSuperAdmin() || (
         resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          isTenantFinanceAdmin(resource.data.tenantId) ||
+          isManagerForDepartment(
+            resource.data.tenantId,
+            resource.data.get('departmentId', null)
+          ) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         )
       );
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null &&
-         canAccessTimeLeaveRecords(request.resource.data.tenantId));
-      allow update: if isSuperAdmin() || (
-        resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
-        canAccessTimeLeaveRecords(resource.data.tenantId)
-      );
-      // Deletes have no request.resource — a combined update/delete rule
-      // referencing it rejects every non-superadmin delete.
-      allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessTimeLeaveRecords(resource.data.tenantId));
+      // Balances are projections maintained by onLeaveRequestWrite.
+      allow create, update, delete: if isSuperAdmin();
     }
 
     match /timesheets/{docId} {
       allow read: if isSuperAdmin() || (
         resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          isTenantFinanceAdmin(resource.data.tenantId) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         )
       );
-      allow create: if isSuperAdmin() || (
-        request.resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(request.resource.data.tenantId) ||
-          (request.resource.data.employeeId != null &&
-           isSelfEmployee(request.resource.data.tenantId, request.resource.data.employeeId))
-        )
-      );
-      allow update: if isSuperAdmin() || (
-        resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
-          (
-            resource.data.employeeId != null &&
-            isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
-            request.resource.data.employeeId == resource.data.employeeId
-          )
-        )
-      );
-      // Deletes have no request.resource — a combined update/delete rule
-      // referencing it rejects every non-superadmin delete.
-      allow delete: if isSuperAdmin() || (
-        resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
-          (resource.data.employeeId != null &&
-           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
-        )
-      );
+      allow create, update, delete: if isSuperAdmin();
     }
 
     match /okrs/{docId} {
@@ -1555,7 +1520,11 @@ service cloud.firestore {
     match /attendance/{docId} {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && (
-          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          isTenantFinanceAdmin(resource.data.tenantId) ||
+          isManagerForDepartment(
+            resource.data.tenantId,
+            resource.data.get('departmentId', null)
+          ) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         ));
@@ -1564,39 +1533,76 @@ service cloud.firestore {
         (request.resource.data.tenantId != null && (
           (
             request.resource.data.source == 'supervisor' &&
-            isTenantManagerOrAdmin(request.resource.data.tenantId) &&
+            (
+              isTenantAdmin(request.resource.data.tenantId) ||
+              (
+                isManagerForDepartment(
+                  request.resource.data.tenantId,
+                  request.resource.data.get('departmentId', null)
+                ) &&
+                employeeInDepartment(
+                  request.resource.data.tenantId,
+                  request.resource.data.get('employeeId', null),
+                  request.resource.data.get('departmentId', null)
+                )
+              )
+            ) &&
             request.resource.data.supervisorId == request.auth.uid
           ) ||
           (
             request.resource.data.source != 'supervisor' &&
-            canAccessTimeLeaveRecords(request.resource.data.tenantId)
+            (
+              isTenantAdmin(request.resource.data.tenantId) ||
+              (
+                isManagerForDepartment(
+                  request.resource.data.tenantId,
+                  request.resource.data.get('departmentId', null)
+                ) &&
+                employeeInDepartment(
+                  request.resource.data.tenantId,
+                  request.resource.data.get('employeeId', null),
+                  request.resource.data.get('departmentId', null)
+                )
+              )
+            )
           )
         ));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        (canAccessTimeLeaveRecords(resource.data.tenantId) ||
-         (resource.data.source == 'supervisor' &&
-          resource.data.supervisorId == request.auth.uid &&
-          request.resource.data.supervisorId == resource.data.supervisorId &&
-          request.resource.data.batchId == resource.data.batchId &&
-          request.resource.data.employeeId == resource.data.employeeId))
+        (isTenantAdmin(resource.data.tenantId) ||
+         (
+           isManagerForDepartment(
+             resource.data.tenantId,
+             resource.data.get('departmentId', null)
+           ) &&
+           request.resource.data.get('departmentId', null) ==
+             resource.data.get('departmentId', null) &&
+           request.resource.data.get('employeeId', null) ==
+             resource.data.get('employeeId', null)
+         ))
       );
 
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        canAccessTimeLeaveRecords(resource.data.tenantId)
+        (
+          isTenantAdmin(resource.data.tenantId) ||
+          isManagerForDepartment(
+            resource.data.tenantId,
+            resource.data.get('departmentId', null)
+          )
+        )
       );
     }
 
     // Attendance import batches
     match /attendanceImports/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessTimeLeaveRecords(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && canAccessTimeLeaveRecords(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&

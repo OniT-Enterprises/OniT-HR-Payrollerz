@@ -26,7 +26,7 @@ function formatMoney(amount: number, locale: "en" | "tet" | "pt"): string {
   }).format(amount);
 }
 
-export function PackagePicker() {
+export function PackagePicker({ showHeader = true }: { showHeader?: boolean }) {
   const { t, locale } = useI18n();
   const [pricing, setPricing] = useState(DEFAULT_PACKAGES_CONFIG);
 
@@ -73,17 +73,19 @@ export function PackagePicker() {
       className="lp-defer scroll-mt-16 border-t border-white/[0.06] py-20 lg:py-24"
     >
       <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
-            {t("landing.simple.pricing.eyebrow")}
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white lg:text-[2.6rem]">
-            {t("landing.simple.pricing.title")}
-          </h2>
-          <p className="mt-4 text-zinc-400">
-            {t("landing.simple.pricing.description")}
-          </p>
-        </div>
+        {showHeader && (
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
+              {t("landing.simple.pricing.eyebrow")}
+            </p>
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-white lg:text-[2.6rem]">
+              {t("landing.simple.pricing.title")}
+            </h2>
+            <p className="mt-4 text-zinc-400">
+              {t("landing.simple.pricing.description")}
+            </p>
+          </div>
+        )}
 
         <div className="mt-12 overflow-hidden rounded-2xl border border-amber-400/25 bg-amber-400/[0.035]">
           <div className="p-6 text-center sm:p-8 lg:p-10">

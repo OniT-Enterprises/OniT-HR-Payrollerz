@@ -48,7 +48,7 @@ Purpose: Orient users when entering a section.
 |-----|-----|------------|-------|
 | Dashboard | `/` | No | Command center, always needed |
 | People Hub | `/people` | Yes | **Compliance-first**, then navigation. Power users → `/people/employees` |
-| Time & Leave | `/time-leave` | Yes | Scheduling, attendance, leave, shifts |
+| Time & Leave | `/time-leave` | Yes | Attendance, leave, and weekly shifts |
 | Payroll Hub | `/payroll` | Yes | Power users → direct to `/payroll/run` |
 | Money Hub | `/money` | Yes | **Day-to-day AR/AP** for small businesses. Power users → `/money/invoices` |
 | Accounting Hub | `/accounting` | Yes | Ledger/compliance. Payroll-scoped. Power users → `/accounting/core/journal` |
@@ -131,8 +131,7 @@ OniT HR/Payroll
 │       └── Disciplinary (/people/disciplinary)
 │
 ├── Time & Leave (/time-leave)             [HUB - Skippable]
-│   ├── Time Tracking (/time-leave/time-tracking) [WORK PAGE]
-│   ├── Attendance (/time-leave/attendance)       [WORK PAGE]
+│   ├── Attendance (/time-leave/attendance)       [WORK PAGE — clock times + hours]
 │   ├── Leave (/time-leave/leave)                 [WORK PAGE]
 │   └── Shifts (/time-leave/shifts)               [WORK PAGE]
 │
@@ -335,7 +334,7 @@ What does a payroll officer click *every month*? Optimize this path mercilessly.
 ```
 1. People Hub → Check "Attention Required" (blocked employees)
 2. Leave Requests → Approve pending requests
-3. Time Tracking → Finalize timesheets
+3. Attendance → Check missing records and payroll-ready hours
 4. Run Payroll → Select → Review → Taxes → Confirm & Process
 5. Journal Entries → Verify payroll posted correctly
 6. Payroll Reports → Generate tax reports (WIT, INSS)

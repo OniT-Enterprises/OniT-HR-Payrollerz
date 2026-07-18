@@ -42,7 +42,7 @@ export default function TimeLeaveSettings() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <Skeleton className="h-8 w-48 mb-6" />
           <Skeleton className="h-96 w-full rounded-2xl" />
         </div>
@@ -52,9 +52,13 @@ export default function TimeLeaveSettings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Time & Leave Settings | Xefe" description="Configure leave policies per Timor-Leste labor law" />
+      <SEO
+        title={t("settings.tabs.timeOff")}
+        description={t("settings.timeOff.description")}
+        noIndex
+      />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("settings.tabs.timeOff") || "Time Off Policies"}
           subtitle={t("settings.timeOff.description") || "Leave entitlements per Timor-Leste labor law"}

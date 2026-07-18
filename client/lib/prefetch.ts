@@ -22,7 +22,6 @@ const ROUTE_IMPORTS: Record<string, () => Promise<unknown>> = {
   // Time & Leave
   "/time-leave/attendance": () => import("@/pages/time-leave/Attendance"),
   "/time-leave/leave": () => import("@/pages/time-leave/LeaveRequests"),
-  "/time-leave/tracking": () => import("@/pages/time-leave/TimeTracking"),
   "/time-leave/shifts": () => import("@/pages/time-leave/ShiftScheduling"),
   "/time-leave/settings": () => import("@/pages/time-leave/TimeLeaveSettings"),
 

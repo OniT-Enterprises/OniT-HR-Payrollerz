@@ -9,15 +9,14 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
-  updateDoc,
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
-  writeBatch,
+  runTransaction,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getFunctionsLazy } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
 import { notificationService } from '@/services/notificationService';
 
@@ -80,11 +79,17 @@ export interface LeaveRequest {
   updatedAt?: Date;
 }
 
+export type NewLeaveRequest = Omit<
+  LeaveRequest,
+  'id' | 'tenantId' | 'status' | 'requestDate' | 'createdAt' | 'updatedAt'
+>;
+
 export interface LeaveBalance {
   id?: string;
   tenantId: string;
   employeeId: string;
   employeeName: string;
+  departmentId?: string;
   year: number;
 
   // Balances by type
@@ -122,6 +127,17 @@ interface LeaveStats {
 
 const LEAVE_REQUESTS_COLLECTION = 'leave_requests';
 const LEAVE_BALANCES_COLLECTION = 'leave_balances';
+
+async function callTimeLeaveFunction<TRequest, TResponse>(
+  name: string,
+  payload: TRequest,
+): Promise<TResponse> {
+  const [{ httpsCallable }, functions] = await Promise.all([
+    import('firebase/functions'),
+    getFunctionsLazy(),
+  ]);
+  return (await httpsCallable<TRequest, TResponse>(functions, name)(payload)).data;
+}
 
 // TL-specific leave type definitions
 export const TL_LEAVE_TYPES = [
@@ -175,7 +191,7 @@ export const TL_LEAVE_TYPES = [
   {
     id: 'unpaid',
     name: 'Unpaid Leave (Licença sem Vencimento)',
-    daysPerYear: 0, // No limit, but unpaid
+    daysPerYear: 30,
     isPaid: false,
     requiresCertificate: false,
   },
@@ -186,21 +202,38 @@ export const TL_LEAVE_TYPES = [
 // ============================================
 
 /**
- * Calculate working days between two dates (excludes weekends)
+ * Calculate working days between two inclusive ISO dates. Weekends and any
+ * tenant holiday dates supplied by the caller are excluded. UTC parsing keeps
+ * the answer stable in Timor-Leste and for managers working abroad.
  */
-export function calculateWorkingDays(startDate: string, endDate: string): number {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+export function calculateWorkingDays(
+  startDate: string,
+  endDate: string,
+  holidayDates: readonly string[] = [],
+): number {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    end < start
+  ) {
+    return 0;
+  }
 
   let workingDays = 0;
   const current = new Date(start);
+  const holidays = new Set(holidayDates);
 
   while (current <= end) {
-    const dayOfWeek = current.getDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+    const dayOfWeek = current.getUTCDay();
+    const date = current.toISOString().slice(0, 10);
+    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.has(date)) {
       workingDays++;
     }
-    current.setDate(current.getDate() + 1);
+    current.setUTCDate(current.getUTCDate() + 1);
   }
 
   return workingDays;
@@ -220,21 +253,14 @@ class LeaveService {
    */
   async createLeaveRequest(
     tenantId: string,
-    request: Omit<LeaveRequest, 'id' | 'tenantId' | 'status' | 'requestDate' | 'createdAt' | 'updatedAt'>
+    request: NewLeaveRequest,
   ): Promise<string> {
     try {
-      // Calculate duration if not provided
-      const duration = request.duration || calculateWorkingDays(request.startDate, request.endDate);
-      const docRef = await addDoc(collection(db, LEAVE_REQUESTS_COLLECTION), {
-        ...request,
-        tenantId,
-        duration,
-        status: 'pending' as LeaveStatus,
-        requestDate: getTodayTL(),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-      return docRef.id;
+      const result = await callTimeLeaveFunction<
+        NewLeaveRequest & { tenantId: string },
+        { success: true; requestId: string; duration: number }
+      >('createLeaveRequest', { ...request, tenantId });
+      return result.requestId;
     } catch (error) {
       console.error('Error creating leave request:', error);
       throw error;
@@ -284,7 +310,8 @@ class LeaveService {
       let q = query(
         collection(db, LEAVE_REQUESTS_COLLECTION),
         where('tenantId', '==', tenantId),
-        orderBy('requestDate', 'desc')
+        orderBy('requestDate', 'desc'),
+        limit(200),
       );
 
       if (filters?.status) {
@@ -389,48 +416,16 @@ class LeaveService {
   async approveLeaveRequest(
     tenantId: string,
     requestId: string,
-    approverId: string,
+    _approverId: string,
     approverName: string
   ): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(tenantId, requestId);
-      if (!request) throw new Error('Leave request not found');
-      if (request.status !== 'pending') throw new Error('Request is not pending');
-
-      // Pre-read balance for batch
-      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
-
-      const batch = writeBatch(db);
-
-      // Write 1: Update request status
-      const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      batch.update(requestRef, {
-        status: 'approved',
-        approverId,
+      await callTimeLeaveFunction('approveLeaveRequest', {
+        tenantId,
+        requestId,
+        approved: true,
         approverName,
-        approvedDate: getTodayTL(),
-        updatedAt: serverTimestamp(),
       });
-
-      // Write 2: Move from pending to used in balance
-      if (balance?.id) {
-        const typeKey = request.leaveType as keyof LeaveBalance;
-        if (typeof balance[typeKey] === 'object') {
-          const currentBalance = balance[typeKey] as LeaveBalanceItem;
-          const newUsed = currentBalance.used + request.duration;
-          const newPending = Math.max(0, currentBalance.pending - request.duration);
-          const newRemaining = currentBalance.entitled - newUsed - newPending;
-          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
-          batch.update(balanceRef, {
-            [`${request.leaveType}.used`]: newUsed,
-            [`${request.leaveType}.pending`]: newPending,
-            [`${request.leaveType}.remaining`]: newRemaining,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
     } catch (error) {
       console.error('Error approving leave request:', error);
       throw error;
@@ -443,47 +438,18 @@ class LeaveService {
   async rejectLeaveRequest(
     tenantId: string,
     requestId: string,
-    approverId: string,
+    _approverId: string,
     approverName: string,
     rejectionReason: string
   ): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(tenantId, requestId);
-      if (!request) throw new Error('Leave request not found');
-      if (request.status !== 'pending') throw new Error('Request is not pending');
-
-      // Pre-read balance for batch
-      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
-
-      const batch = writeBatch(db);
-
-      // Write 1: Update request status
-      const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      batch.update(requestRef, {
-        status: 'rejected',
-        approverId,
+      await callTimeLeaveFunction('approveLeaveRequest', {
+        tenantId,
+        requestId,
+        approved: false,
         approverName,
-        rejectionReason,
-        updatedAt: serverTimestamp(),
+        note: rejectionReason,
       });
-
-      // Write 2: Remove from pending balance
-      if (balance?.id) {
-        const typeKey = request.leaveType as keyof LeaveBalance;
-        if (typeof balance[typeKey] === 'object') {
-          const currentBalance = balance[typeKey] as LeaveBalanceItem;
-          const newPending = Math.max(0, currentBalance.pending - request.duration);
-          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
-          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
-          batch.update(balanceRef, {
-            [`${request.leaveType}.pending`]: newPending,
-            [`${request.leaveType}.remaining`]: newRemaining,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
     } catch (error) {
       console.error('Error rejecting leave request:', error);
       throw error;
@@ -495,14 +461,19 @@ class LeaveService {
    */
   async cancelLeaveRequest(tenantId: string, requestId: string): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(tenantId, requestId);
-      if (!request) throw new Error('Leave request not found');
-      if (request.status !== 'pending') throw new Error('Only pending requests can be cancelled');
-
       const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      await updateDoc(requestRef, {
-        status: 'cancelled',
-        updatedAt: serverTimestamp(),
+      await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(requestRef);
+        if (!snapshot.exists() || snapshot.data().tenantId !== tenantId) {
+          throw new Error('Leave request not found');
+        }
+        if (snapshot.data().status !== 'pending') {
+          throw new Error('Only pending requests can be cancelled');
+        }
+        transaction.update(requestRef, {
+          status: 'cancelled',
+          updatedAt: serverTimestamp(),
+        });
       });
     } catch (error) {
       console.error('Error cancelling leave request:', error);
@@ -534,16 +505,29 @@ class LeaveService {
   /**
    * Get or initialize leave balance for an employee
    */
-  async getLeaveBalance(tenantId: string, employeeId: string, year?: number): Promise<LeaveBalance | null> {
-    const targetYear = year || new Date().getFullYear();
+  async getLeaveBalance(
+    tenantId: string,
+    employeeId: string,
+    year?: number,
+    departmentId?: string,
+  ): Promise<LeaveBalance | null> {
+    const targetYear = year || Number(getTodayTL().slice(0, 4));
 
     try {
-      const q = query(
-        collection(db, LEAVE_BALANCES_COLLECTION),
-        where('tenantId', '==', tenantId),
-        where('employeeId', '==', employeeId),
-        where('year', '==', targetYear)
-      );
+      const q = departmentId
+        ? query(
+            collection(db, LEAVE_BALANCES_COLLECTION),
+            where('tenantId', '==', tenantId),
+            where('employeeId', '==', employeeId),
+            where('departmentId', '==', departmentId),
+            where('year', '==', targetYear),
+          )
+        : query(
+            collection(db, LEAVE_BALANCES_COLLECTION),
+            where('tenantId', '==', tenantId),
+            where('employeeId', '==', employeeId),
+            where('year', '==', targetYear),
+          );
 
       const querySnapshot = await getDocs(q);
 
@@ -565,125 +549,10 @@ class LeaveService {
   }
 
   /**
-   * Initialize leave balance for a new employee or new year
-   */
-  async initializeLeaveBalance(
-    tenantId: string,
-    employeeId: string,
-    employeeName: string,
-    year?: number,
-    carryOver?: number
-  ): Promise<LeaveBalance> {
-    const targetYear = year || new Date().getFullYear();
-
-    // Default TL entitlements
-    const defaultBalance: Omit<LeaveBalance, 'id'> = {
-      tenantId,
-      employeeId,
-      employeeName,
-      year: targetYear,
-      annual: { entitled: 12, used: 0, pending: 0, remaining: 12 },
-      sick: { entitled: 12, used: 0, pending: 0, remaining: 12 },
-      maternity: { entitled: 84, used: 0, pending: 0, remaining: 84 },
-      paternity: { entitled: 5, used: 0, pending: 0, remaining: 5 },
-      unpaid: { entitled: 0, used: 0, pending: 0, remaining: 0 }, // Unlimited
-      carryOver: carryOver || 0,
-    };
-
-    // Add carry over to remaining (not entitled — entitled stays at statutory 12)
-    if (carryOver && carryOver > 0) {
-      const cappedCarryOver = Math.min(carryOver, 6); // Max 6 days carry over per TL law
-      defaultBalance.annual.remaining += cappedCarryOver;
-      defaultBalance.carryOver = cappedCarryOver;
-    }
-
-    try {
-      const docRef = await addDoc(collection(db, LEAVE_BALANCES_COLLECTION), {
-        ...defaultBalance,
-        updatedAt: serverTimestamp(),
-      });
-
-      return {
-        ...defaultBalance,
-        id: docRef.id,
-      };
-    } catch (error) {
-      console.error('Error initializing leave balance:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update pending balance when request is created/cancelled
-   */
-  private async updatePendingBalance(
-    tenantId: string,
-    employeeId: string,
-    leaveType: LeaveType,
-    days: number
-  ): Promise<void> {
-    const balance = await this.getLeaveBalance(tenantId, employeeId);
-    if (!balance) return;
-
-    const typeKey = leaveType as keyof LeaveBalance;
-    if (typeof balance[typeKey] !== 'object') return;
-
-    const currentBalance = balance[typeKey] as LeaveBalanceItem;
-    const newPending = Math.max(0, currentBalance.pending + days);
-    const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
-
-    try {
-      const docRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id!);
-      await updateDoc(docRef, {
-        [`${leaveType}.pending`]: newPending,
-        [`${leaveType}.remaining`]: newRemaining,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error updating pending balance:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update balance when request is approved
-   */
-  private async updateBalanceOnApproval(
-    tenantId: string,
-    employeeId: string,
-    leaveType: LeaveType,
-    days: number
-  ): Promise<void> {
-    const balance = await this.getLeaveBalance(tenantId, employeeId);
-    if (!balance) return;
-
-    const typeKey = leaveType as keyof LeaveBalance;
-    if (typeof balance[typeKey] !== 'object') return;
-
-    const currentBalance = balance[typeKey] as LeaveBalanceItem;
-    const newUsed = currentBalance.used + days;
-    const newPending = Math.max(0, currentBalance.pending - days);
-    const newRemaining = currentBalance.entitled - newUsed - newPending;
-
-    try {
-      const docRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id!);
-      await updateDoc(docRef, {
-        [`${leaveType}.used`]: newUsed,
-        [`${leaveType}.pending`]: newPending,
-        [`${leaveType}.remaining`]: newRemaining,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error updating balance on approval:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Get all employee balances (for admin view)
    */
   async getAllBalances(tenantId: string, year?: number): Promise<LeaveBalance[]> {
-    const targetYear = year || new Date().getFullYear();
+    const targetYear = year || Number(getTodayTL().slice(0, 4));
 
     try {
       const q = query(
@@ -718,11 +587,21 @@ class LeaveService {
   /**
    * Get leave statistics
    */
-  async getLeaveStats(tenantId: string): Promise<LeaveStats> {
+  async getLeaveStats(
+    tenantId: string,
+    filters?: { employeeId?: string; departmentId?: string },
+  ): Promise<LeaveStats> {
     try {
       const today = getTodayTL();
       const leaveRequestsRef = collection(db, LEAVE_REQUESTS_COLLECTION);
-      const snapshot = await getDocs(query(leaveRequestsRef, where('tenantId', '==', tenantId)));
+      let statsQuery = query(leaveRequestsRef, where('tenantId', '==', tenantId));
+      if (filters?.employeeId) {
+        statsQuery = query(statsQuery, where('employeeId', '==', filters.employeeId));
+      }
+      if (filters?.departmentId) {
+        statsQuery = query(statsQuery, where('departmentId', '==', filters.departmentId));
+      }
+      const snapshot = await getDocs(statsQuery);
 
       let totalRequests = 0;
       let pendingRequests = 0;

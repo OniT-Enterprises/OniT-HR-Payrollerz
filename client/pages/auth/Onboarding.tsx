@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { updateProfile } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,14 @@ import {
 } from "@/services/provisionOrg";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { AccountantChoice } from "@/components/accountants/AccountantChoice";
+import {
+  forgetAccountantPartner,
+  getAccountantPartner,
+  readRememberedAccountantPartner,
+  rememberAccountantPartner,
+  type AccountantPartnerId,
+} from "@/lib/accountantPartners";
 
 /**
  * Onboarding step for an authenticated user who has no organization yet —
@@ -30,6 +38,7 @@ import LocaleSwitcher from "@/components/LocaleSwitcher";
  */
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { t } = useI18n();
   const {
     user,
@@ -56,6 +65,11 @@ export default function Onboarding() {
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [accountantPartnerId, setAccountantPartnerId] =
+    useState<AccountantPartnerId | null>(() => {
+      const fromUrl = getAccountantPartner(searchParams.get("accountant"));
+      return fromUrl?.id ?? readRememberedAccountantPartner()?.id ?? null;
+    });
   const alreadyHasTenant =
     (userProfile?.tenantIds?.length ?? 0) > 0 ||
     Object.keys(userProfile?.tenantAccess ?? {}).length > 0 ||
@@ -102,6 +116,12 @@ export default function Onboarding() {
     if (!slugManuallyEdited) {
       setCompanySlug(generateSlug(name));
     }
+  };
+
+  const handleAccountantChoice = (partnerId: AccountantPartnerId | null) => {
+    setAccountantPartnerId(partnerId);
+    if (partnerId) rememberAccountantPartner(partnerId);
+    else forgetAccountantPartner();
   };
 
   const handleUseAnotherAccount = async () => {
@@ -152,6 +172,7 @@ export default function Onboarding() {
         displayName: normalizedDisplayName,
         companyName,
         companySlug,
+        accountantPartnerId,
       });
       await refreshUserProfile();
       // Load the new tenant session before navigating — HomeRoute decides
@@ -217,7 +238,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+    <div className="flex min-h-screen items-start justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 py-6 sm:items-center">
       <div className="w-full max-w-md">
         <div className="mb-4 flex justify-end">
           <LocaleSwitcher variant="buttons" className="justify-end" />
@@ -317,6 +338,12 @@ export default function Onboarding() {
                   {t("auth.signup.companyUrlHint")}
                 </p>
               </div>
+
+              <AccountantChoice
+                value={accountantPartnerId}
+                onChange={handleAccountantChoice}
+                disabled={loading || signingOut}
+              />
 
               <Button type="submit" className="h-11 w-full gap-2" disabled={loading || signingOut}>
                 {loading ? (

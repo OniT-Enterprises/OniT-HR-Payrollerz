@@ -317,40 +317,6 @@ async function createDefaultTenantData(db: FirebaseFirestore.Firestore, tenantId
     });
   });
 
-  // Create default leave policies
-  const defaultLeavePolicies = [
-    {
-      name: "Annual Leave",
-      type: "vacation",
-      daysPerYear: 25,
-      carryOverDays: 5,
-      description: "Standard annual vacation leave",
-    },
-    {
-      name: "Sick Leave",
-      type: "sick",
-      daysPerYear: 10,
-      carryOverDays: 0,
-      description: "Medical and health-related leave",
-    },
-    {
-      name: "Personal Leave",
-      type: "personal",
-      daysPerYear: 3,
-      carryOverDays: 0,
-      description: "Personal time off for various needs",
-    },
-  ];
-
-  defaultLeavePolicies.forEach((policy) => {
-    const policyRef = db.collection(`tenants/${tenantId}/leavePolicies`).doc();
-    batch.set(policyRef, {
-      ...policy,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-  });
-
   await batch.commit();
   logger.info(`Created default data for tenant: ${tenantId}`);
 }
@@ -475,7 +441,7 @@ export const addTenantMember = onCall(
       throw new HttpsError("invalid-argument", "Valid userEmail is required");
     }
 
-    const allowedRoles: TenantRole[] = ["owner", "hr-admin", "manager", "viewer"];
+    const allowedRoles: TenantRole[] = ["owner", "hr-admin", "accountant", "manager", "viewer"];
     if (!role || !allowedRoles.includes(role)) {
       throw new HttpsError("invalid-argument", "Invalid role");
     }
@@ -656,7 +622,7 @@ export const updateTenantMember = onCall(
       throw new HttpsError("invalid-argument", "memberUid is required");
     }
 
-    const allowedRoles: TenantRole[] = ["owner", "hr-admin", "manager", "viewer"];
+    const allowedRoles: TenantRole[] = ["owner", "hr-admin", "accountant", "manager", "viewer"];
     if (role !== undefined && !allowedRoles.includes(role)) {
       throw new HttpsError("invalid-argument", "Invalid role");
     }

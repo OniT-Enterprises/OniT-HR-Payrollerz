@@ -8,9 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
   setDoc,
-  updateDoc,
   deleteDoc,
   query,
   where,
@@ -19,6 +17,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getFunctionsLazy } from '@/lib/firebase';
 import { addDaysISO } from '@/lib/dateUtils';
 
 // Pure calculations/slot config live in a Firebase-free module so they can be
@@ -40,6 +39,7 @@ export interface ShiftRecord {
   employeeId: string;
   employeeName: string;
   department: string;
+  departmentId?: string;
   position: string;
   date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
@@ -53,6 +53,25 @@ export interface ShiftRecord {
   createdBy: string;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export type ShiftWrite = Omit<ShiftRecord, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>;
+
+async function saveValidatedShift(
+  tenantId: string,
+  shiftData: ShiftWrite,
+  shiftId?: string,
+): Promise<string> {
+  const [{ httpsCallable }, functions] = await Promise.all([
+    import('firebase/functions'),
+    getFunctionsLazy(),
+  ]);
+  const callable = httpsCallable<
+    { tenantId: string; shiftData: ShiftWrite; shiftId?: string },
+    { success: true; shiftId: string; hours: number }
+  >(functions, 'createOrUpdateShift');
+  const result = await callable({ tenantId, shiftData, ...(shiftId ? { shiftId } : {}) });
+  return result.data.shiftId;
 }
 
 // ============================================
@@ -75,13 +94,22 @@ class ShiftService {
     tenantId: string,
     startDate: string,
     endDate: string,
+    departmentId?: string,
   ): Promise<ShiftRecord[]> {
-    const q = query(
-      this.shiftsRef(tenantId),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-      orderBy('date', 'asc'),
-    );
+    const q = departmentId
+      ? query(
+          this.shiftsRef(tenantId),
+          where('departmentId', '==', departmentId),
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'asc'),
+        )
+      : query(
+          this.shiftsRef(tenantId),
+          where('date', '>=', startDate),
+          where('date', '<=', endDate),
+          orderBy('date', 'asc'),
+        );
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({
@@ -97,15 +125,9 @@ class ShiftService {
    */
   async createShift(
     tenantId: string,
-    data: Omit<ShiftRecord, 'id' | 'tenantId' | 'createdAt' | 'updatedAt'>,
+    data: ShiftWrite,
   ): Promise<string> {
-    const docRef = await addDoc(this.shiftsRef(tenantId), {
-      ...data,
-      tenantId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    return docRef.id;
+    return saveValidatedShift(tenantId, data);
   }
 
   /**
@@ -114,13 +136,9 @@ class ShiftService {
   async updateShift(
     tenantId: string,
     shiftId: string,
-    data: Partial<Omit<ShiftRecord, 'id' | 'tenantId' | 'createdAt'>>,
+    data: ShiftWrite,
   ): Promise<void> {
-    const docRef = doc(this.shiftsRef(tenantId), shiftId);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: serverTimestamp(),
-    });
+    await saveValidatedShift(tenantId, data, shiftId);
   }
 
   /**
@@ -138,18 +156,26 @@ class ShiftService {
     tenantId: string,
     startDate: string,
     endDate: string,
+    departmentId?: string,
   ): Promise<number> {
-    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate);
+    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate, departmentId);
     const drafts = shifts.filter((s) => s.status === 'draft');
 
     if (drafts.length === 0) return 0;
 
-    const batch = writeBatch(db);
+    let batch = writeBatch(db);
+    let writes = 0;
     for (const shift of drafts) {
       const docRef = doc(this.shiftsRef(tenantId), shift.id!);
       batch.update(docRef, { status: 'published', updatedAt: serverTimestamp() });
+      writes += 1;
+      if (writes === 450) {
+        await batch.commit();
+        batch = writeBatch(db);
+        writes = 0;
+      }
     }
-    await batch.commit();
+    if (writes > 0) await batch.commit();
     return drafts.length;
   }
 
@@ -162,19 +188,18 @@ class ShiftService {
     startDate: string,
     endDate: string,
     createdBy: string,
+    departmentId?: string,
   ): Promise<number> {
-    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate);
+    const shifts = await this.getShiftsByDateRange(tenantId, startDate, endDate, departmentId);
     const toCopy = shifts.filter((s) => s.status !== 'cancelled');
     if (toCopy.length === 0) return 0;
 
-    const batch = writeBatch(db);
     for (const shift of toCopy) {
-      const ref = doc(this.shiftsRef(tenantId));
-      batch.set(ref, {
-        tenantId,
+      await saveValidatedShift(tenantId, {
         employeeId: shift.employeeId,
         employeeName: shift.employeeName,
         department: shift.department,
+        ...(shift.departmentId ? { departmentId: shift.departmentId } : {}),
         position: shift.position,
         date: addDaysISO(shift.date, 7),
         startTime: shift.startTime,
@@ -185,11 +210,8 @@ class ShiftService {
         ...(shift.slotId ? { slotId: shift.slotId } : {}),
         notes: shift.notes,
         createdBy,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       });
     }
-    await batch.commit();
     return toCopy.length;
   }
 

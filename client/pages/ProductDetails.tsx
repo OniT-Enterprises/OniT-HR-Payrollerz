@@ -20,7 +20,9 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
-import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { PublicFooter } from "@/components/marketing/PublicFooter";
+import { PublicNav } from "@/components/marketing/PublicNav";
+import { PublicSectionNav } from "@/components/marketing/PublicSectionNav";
 import { SEO, seoConfig } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -41,8 +43,8 @@ function Crescent({ className }: { className?: string }) {
 
 function SectionEyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-amber-300">
-      <Crescent className="h-3.5 w-3.5 text-amber-400" />
+    <p className="inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.25em] text-lime-300">
+      <Crescent className="h-3.5 w-3.5 text-lime-400" />
       {children}
     </p>
   );
@@ -291,73 +293,33 @@ export default function ProductDetails() {
         {t("common.skipToContent")}
       </a>
 
-      <nav
-        aria-label={t("common.mainNavigation")}
-        className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#0a0a0b]/95 md:bg-[#0a0a0b]/85 md:backdrop-blur-lg"
-      >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" aria-label="Xefe" className="shrink-0">
-            <img
-              src="/images/illustrations/xefe-logo-light.webp"
-              alt="Xefe"
-              width="109"
-              height="54"
-              className="h-8 w-auto sm:h-9"
-            />
-          </Link>
-
-          <div className="hidden items-center gap-6 lg:flex">
-            <a href="#workflow" className="text-sm text-zinc-400 transition-colors hover:text-white">
-              {t("howItWorks.nav.workflow")}
-            </a>
-            <a href="#example" className="text-sm text-zinc-400 transition-colors hover:text-white">
-              {t("howItWorks.nav.example")}
-            </a>
-            <a href="#controls" className="text-sm text-zinc-400 transition-colors hover:text-white">
-              {t("howItWorks.nav.controls")}
-            </a>
-            <a href="#evidence" className="text-sm text-zinc-400 transition-colors hover:text-white">
-              {t("howItWorks.nav.evidence")}
-            </a>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <LocaleSwitcher className="h-11 w-11 gap-0 border-white/10 bg-white/5 px-0 text-zinc-200 hover:bg-white/10 hover:text-white [&>span]:hidden [&>svg:last-child]:hidden sm:h-9 sm:w-auto sm:gap-2 sm:px-3 sm:[&>span]:inline sm:[&>svg:last-child]:block" />
-            <Button
-              variant="ghost"
-              asChild
-              className="hidden text-zinc-300 hover:bg-white/5 hover:text-white sm:inline-flex"
-            >
-              <Link to="/auth/login">{t("auth.signIn")}</Link>
-            </Button>
-            <Button
-              asChild
-              className="h-10 bg-amber-400 px-3 font-bold text-zinc-950 hover:bg-amber-300 sm:px-4"
-            >
-              <Link to="/auth/signup">
-                {t("landing.nav.getStarted")}
-                <ArrowRight className="hidden h-4 w-4 sm:block" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <PublicNav />
+      <PublicSectionNav
+        pageLabelKey="landing.simple.nav.howItWorks"
+        accent="lime"
+        sections={[
+          { id: "workflow", labelKey: "howItWorks.nav.workflow" },
+          { id: "example", labelKey: "howItWorks.nav.example" },
+          { id: "controls", labelKey: "howItWorks.nav.controls" },
+          { id: "evidence", labelKey: "howItWorks.nav.evidence" },
+        ]}
+      />
 
       <main id="main-content">
-        <section className="relative overflow-hidden pb-20 pt-28 sm:pb-24 sm:pt-32 lg:pb-28 lg:pt-40">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(251,191,36,0.09),transparent_36%),radial-gradient(circle_at_15%_78%,rgba(106,156,41,0.08),transparent_32%)]" />
-          <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-amber-400/[0.045] md:block" />
+        <section className="relative overflow-hidden pb-20 pt-40 sm:pb-24 sm:pt-44 lg:pb-28 lg:pt-52">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(106,156,41,0.12),transparent_36%),radial-gradient(circle_at_15%_78%,rgba(251,191,36,0.06),transparent_32%)]" />
+          <Crescent className="pointer-events-none absolute -right-24 -top-28 hidden h-[520px] w-[520px] text-lime-400/[0.05] md:block" />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:px-8">
             <div>
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3.5 py-2 text-sm text-amber-200">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-lime-400/20 bg-lime-400/10 px-3.5 py-2 text-sm text-lime-200">
                 <UsersRound className="h-4 w-4" />
                 {t("howItWorks.hero.eyebrow")}
               </div>
 
               <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.8rem]">
                 {t("howItWorks.hero.title")}
-                <span className="mt-1 block bg-gradient-to-r from-amber-200 via-amber-400 to-lime-300 bg-clip-text text-transparent">
+                <span className="mt-1 block bg-gradient-to-r from-lime-200 via-lime-400 to-amber-300 bg-clip-text text-transparent">
                   {t("howItWorks.hero.titleAccent")}
                 </span>
               </h1>
@@ -491,7 +453,7 @@ export default function ProductDetails() {
           </div>
         </section>
 
-        <section id="workflow" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+        <section id="workflow" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <SectionEyebrow>{t("howItWorks.workflow.eyebrow")}</SectionEyebrow>
@@ -528,7 +490,7 @@ export default function ProductDetails() {
           </div>
         </section>
 
-        <section id="example" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+        <section id="example" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <SectionEyebrow>{t("howItWorks.example.eyebrow")}</SectionEyebrow>
@@ -636,7 +598,7 @@ export default function ProductDetails() {
           </div>
         </section>
 
-        <section id="controls" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+        <section id="controls" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <SectionEyebrow>{t("howItWorks.controls.eyebrow")}</SectionEyebrow>
@@ -692,7 +654,7 @@ export default function ProductDetails() {
           </div>
         </section>
 
-        <section id="evidence" className="scroll-mt-20 border-t border-white/[0.06] py-20 lg:py-24">
+        <section id="evidence" className="scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <SectionEyebrow>{t("howItWorks.evidence.eyebrow")}</SectionEyebrow>
@@ -767,36 +729,7 @@ export default function ProductDetails() {
         </section>
       </main>
 
-      <footer className="border-t border-white/[0.06] bg-black/40 py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-5 sm:px-6 md:flex-row lg:px-8">
-          <div className="flex items-center gap-3">
-            <img
-              src="/images/illustrations/xefe-logo-light.webp"
-              alt="Xefe"
-              width="85"
-              height="42"
-              className="h-7 w-auto"
-              loading="lazy"
-            />
-            <span className="text-sm text-zinc-500">{t("landing.footer.location")}</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-400">
-            <Link to="/" className="transition-colors hover:text-white">
-              {t("howItWorks.footer.home")}
-            </Link>
-            <Link to="/privacy" className="transition-colors hover:text-white">
-              {t("landing.footer.links.privacy")}
-            </Link>
-            <Link to="/terms" className="transition-colors hover:text-white">
-              {t("landing.footer.links.terms")}
-            </Link>
-            <a href="https://wa.me/6707701234" className="transition-colors hover:text-white">
-              {t("landing.footer.links.support")}
-            </a>
-          </div>
-          <div className="text-sm text-zinc-500">{t("landing.footer.copyright")}</div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -7,7 +7,6 @@ import { create } from 'zustand';
 import {
   collection,
   doc,
-  addDoc,
   updateDoc,
   getDocs,
   query,
@@ -17,7 +16,8 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '../lib/firebase';
 import type { LeaveRequest, LeaveBalance, LeaveType } from '../types/leave';
 
 interface LeaveState {
@@ -48,6 +48,10 @@ interface CreateLeaveParams {
   reason: string;
 }
 
+function currentTLYear(): number {
+  return new Date(Date.now() + 9 * 60 * 60 * 1_000).getUTCFullYear();
+}
+
 export const useLeaveStore = create<LeaveState>((set, get) => ({
   balance: null,
   requests: [],
@@ -57,7 +61,7 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
 
   fetchBalance: async (tenantId: string, employeeId: string) => {
     try {
-      const year = new Date().getFullYear();
+      const year = currentTLYear();
       const q = query(
         collection(db, 'leave_balances'),
         where('tenantId', '==', tenantId),
@@ -75,10 +79,10 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
             employeeName: data.employeeName || '',
             year: data.year,
             annual: data.annual || { entitled: 12, used: 0, pending: 0, remaining: 12 },
-            sick: data.sick || { entitled: 30, used: 0, pending: 0, remaining: 30 },
+            sick: data.sick || { entitled: 12, used: 0, pending: 0, remaining: 12 },
             maternity: data.maternity,
             paternity: data.paternity,
-            unpaid: data.unpaid || { entitled: 0, used: 0, pending: 0, remaining: 0 },
+            unpaid: data.unpaid || { entitled: 30, used: 0, pending: 0, remaining: 30 },
             carryOver: data.carryOver || 0,
             updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : data.updatedAt,
           },
@@ -92,7 +96,7 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
   fetchRequests: async (tenantId: string, employeeId: string) => {
     set({ loading: true, error: null });
     try {
-      const yearStart = `${new Date().getFullYear()}-01-01`;
+      const yearStart = `${currentTLYear()}-01-01`;
       const q = query(
         collection(db, 'leave_requests'),
         where('tenantId', '==', tenantId),
@@ -136,15 +140,11 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
   createRequest: async (params: CreateLeaveParams) => {
     set({ submitting: true, error: null });
     try {
-      const today = new Date().toISOString().split('T')[0];
-      await addDoc(collection(db, 'leave_requests'), {
-        ...params,
-        status: 'pending',
-        requestDate: today,
-        hasCertificate: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      const createLeave = httpsCallable<
+        CreateLeaveParams,
+        { success: true; requestId: string; duration: number }
+      >(functions, 'createLeaveRequest');
+      await createLeave(params);
 
       // Refresh requests
       await get().fetchRequests(params.tenantId, params.employeeId);

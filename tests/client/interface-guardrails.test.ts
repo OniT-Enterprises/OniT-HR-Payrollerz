@@ -49,9 +49,10 @@ describe("interface guardrails", () => {
     const topBar = read("client/components/layout/TopBar.tsx");
     const globalStyles = read("client/global.css");
 
-    expect(dashboard).toContain('t("moduleDashboards.scheduling.cards.hoursRecordedToday")');
+    expect(dashboard).toContain('t("moduleDashboards.scheduling.cards.recordedToday")');
     expect(dashboard).toContain('t("moduleDashboards.scheduling.cards.shiftsThisWeek")');
     expect(dashboard).toContain('"moduleDashboards.scheduling.attention.draftShifts"');
+    expect(dashboard).not.toContain('title: t("moduleDashboards.scheduling.cards.timeTracking")');
     expect(dashboard).toContain("h-14 w-full");
     expect(dashboard).not.toContain("h-40 w-full");
 

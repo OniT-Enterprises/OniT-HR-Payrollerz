@@ -463,7 +463,7 @@ What Meza already has vs. what needs building to support Ekipa features:
 |---|---|---|---|
 | Leave request approval | `pages/time-leave/LeaveRequests.tsx` | Leave request form | Full workflow: pending → approved/rejected |
 | Payslips / payroll | `pages/payroll/` | Payslip viewer | Read-only in Ekipa, full CRUD in Meza |
-| Shift scheduling | `pages/time-leave/ShiftScheduling.tsx` | Shift viewing | **DEMO MODE** — 2,233 lines built but uses mock data. Needs Firestore integration before Ekipa can read shifts |
+| Shift scheduling | `pages/time-leave/ShiftScheduling.tsx` | Shift viewing | Live `tenants/{tid}/shifts` data; managers are department-scoped and Ekipa sees only an employee's published shifts |
 | Salary advances | `pages/payroll/DeductionsAdvances.tsx` | EWA / advance requests | Admin-side only. Records advances given. No employee-facing request flow |
 | Expenses (company) | `pages/money/Expenses.tsx` | Expense submission | Company expense tracking only — not employee reimbursement claims. Needs separate workflow |
 | Training certs | `pages/performance/TrainingCertifications.tsx` | Training modules | Tracks cert status. No learning content delivery |
@@ -481,7 +481,6 @@ What Meza already has vs. what needs building to support Ekipa features:
 | **Recognition dashboard** | Peer recognition | **Tier 3** | Optional feed/report in Meza showing recognition activity. Leaderboard. Not blocking — Ekipa can show recognition without Meza dashboard. |
 | **Grievance inbox** | Anonymous grievance reporting | **Tier 3** | HR admin view of anonymous submissions. Status management. No user identification. Sensitive — needs access control. |
 | **Notification preferences** | Per-tenant notification config | **Tier 2** | Settings page: which events trigger push/SMS. Per-employee opt-in/out. Part of tenant settings. |
-| **Shift scheduling Firestore integration** | Shift viewing in Ekipa | **Tier 2** | The ShiftScheduling page is fully built (2,233 lines) but runs on mock data. Wire it to Firestore: `tenants/{tid}/shifts`, `tenants/{tid}/schedules`. Then Ekipa reads published schedules. |
 
 #### Meza Build Order (to unblock Ekipa tiers)
 
@@ -491,10 +490,9 @@ What Meza already has vs. what needs building to support Ekipa features:
 
 **Phase 2 — Unblocks Ekipa Tier 2:**
 3. Announcements CRUD page + Firestore collection
-4. Shift scheduling → Firestore integration (de-mock the existing page)
-5. Document template engine (employment letter, salary cert PDF generation)
-6. QR code generation on employee profiles + public verification endpoint
-7. Notification settings in tenant config
+4. Document template engine (employment letter, salary cert PDF generation)
+5. QR code generation on employee profiles + public verification endpoint
+6. Notification settings in tenant config
 
 **Phase 3 — Unblocks Ekipa Tier 3:**
 8. Employee reimbursement workflow (separate from company expenses)

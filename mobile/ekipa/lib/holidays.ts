@@ -2,8 +2,8 @@
  * Timor-Leste public holidays for Ekipa mobile app.
  * Mirrors client/lib/payroll/tl-holidays.ts — simplified for mobile display.
  *
- * Includes all 13+ TL public holidays: fixed national days + Easter-based movable feasts.
- * Easter computed algorithmically (Meeus/Jones/Butcher) so any year works.
+ * Includes fixed national days, Easter-based movable feasts, and variable
+ * Islamic holidays once their dates are officially announced.
  */
 
 export interface Holiday {
@@ -62,17 +62,24 @@ const FIXED_HOLIDAYS: Array<{
   { month: 3, day: 3, name: 'Veterans Day (Heroes Day)', nameTetun: 'Loron Veteranu / Kombatentes' },
   { month: 5, day: 1, name: 'Labour Day', nameTetun: 'Loron Traballadór' },
   { month: 5, day: 20, name: 'Independence Restoration Day', nameTetun: 'Loron Restaurasaun Independensia' },
-  { month: 8, day: 20, name: 'FALINTIL Day', nameTetun: 'Loron FALINTIL' },
   { month: 8, day: 30, name: 'Popular Consultation Day', nameTetun: 'Loron Konsulta Populár' },
-  { month: 9, day: 20, name: 'Liberation Day', nameTetun: 'Loron Libertasaun' },
   { month: 11, day: 1, name: "All Saints' Day", nameTetun: 'Loron Santu Hotu' },
   { month: 11, day: 2, name: "All Souls' Day", nameTetun: 'Loron Finadu' },
+  { month: 11, day: 3, name: "National Women's Day", nameTetun: 'Loron Feto Nasionál' },
   { month: 11, day: 12, name: 'National Youth Day (Santa Cruz)', nameTetun: 'Loron Juventude Nasionál / Santa Cruz' },
   { month: 11, day: 28, name: 'Independence Proclamation Day', nameTetun: 'Loron Proklamasaun Independensia' },
-  { month: 12, day: 7, name: 'National Heroes Day', nameTetun: 'Loron Heroi Nasionál' },
+  { month: 12, day: 7, name: 'Memorial Day', nameTetun: 'Loron Memória' },
   { month: 12, day: 8, name: 'Immaculate Conception', nameTetun: 'Loron Imakulada Konseisaun' },
   { month: 12, day: 25, name: 'Christmas Day', nameTetun: 'Loron Natál' },
+  { month: 12, day: 31, name: 'National Heroes Day', nameTetun: 'Loron Heroi Nasionál' },
 ];
+
+const ANNOUNCED_VARIABLE_HOLIDAYS: Record<number, Holiday[]> = {
+  2026: [
+    { date: '2026-03-20', name: 'Idul Fitri', nameTetun: 'Idul Fitri' },
+    { date: '2026-05-27', name: 'Idul Adha', nameTetun: 'Idul Adha' },
+  ],
+};
 
 /**
  * Returns all Timor-Leste public holidays for the given year, sorted chronologically.
@@ -92,6 +99,7 @@ export function getHolidays(year: number): Holiday[] {
   const movable: Holiday[] = [
     { date: formatUTCISODate(goodFriday), name: 'Good Friday', nameTetun: 'Sesta-Feira Santa' },
     { date: formatUTCISODate(corpusChristi), name: 'Corpus Christi', nameTetun: 'Loron Corpus Christi' },
+    ...(ANNOUNCED_VARIABLE_HOLIDAYS[year] ?? []),
   ];
 
   return [...fixed, ...movable].sort((a, b) => a.date.localeCompare(b.date));

@@ -56,20 +56,20 @@ export const paths = {
   snapshot: (tid: string, snapId: string) => `tenants/${tid}/employmentSnapshots/${snapId}`,
   
   // Time and leave management
-  rosters: (tid: string, ym: string) => `tenants/${tid}/rosters/${ym}/shifts`,
-  roster: (tid: string, ym: string, shiftId: string) => `tenants/${tid}/rosters/${ym}/shifts/${shiftId}`,
+  shifts: (tid: string) => `tenants/${tid}/shifts`,
+  shift: (tid: string, shiftId: string) => `tenants/${tid}/shifts/${shiftId}`,
   
   timesheets: (tid: string) => `tenants/${tid}/timesheets`,
   timesheet: (tid: string, empId_weekIso: string) => `tenants/${tid}/timesheets/${empId_weekIso}`,
   
-  leavePolicies: (tid: string) => `tenants/${tid}/leavePolicies`,
-  leavePolicy: (tid: string, policyId: string) => `tenants/${tid}/leavePolicies/${policyId}`,
-  
-  leaveRequests: (tid: string) => `tenants/${tid}/leaveRequests`,
-  leaveRequest: (tid: string, reqId: string) => `tenants/${tid}/leaveRequests/${reqId}`,
-  
-  leaveBalances: (tid: string) => `tenants/${tid}/leaveBalances`,
-  leaveBalance: (tid: string, empId_year: string) => `tenants/${tid}/leaveBalances/${empId_year}`,
+  // These canonical collections are top-level and always require a tenantId
+  // query/filter. The tenant argument is retained for a consistent call shape.
+  leaveRequests: (_tid: string) => `leave_requests`,
+  leaveRequest: (_tid: string, reqId: string) => `leave_requests/${reqId}`,
+  leaveBalances: (_tid: string) => `leave_balances`,
+  leaveBalance: (_tid: string, empId_year: string) => `leave_balances/${empId_year}`,
+  attendance: (_tid: string) => `attendance`,
+  attendanceRecord: (_tid: string, recordId: string) => `attendance/${recordId}`,
   
   // Performance management
   goals: (tid: string) => `tenants/${tid}/goals`,

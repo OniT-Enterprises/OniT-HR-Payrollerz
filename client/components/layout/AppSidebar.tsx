@@ -769,6 +769,7 @@ export default function AppSidebar() {
         canManageTenant,
         canManageTeam,
         showAdvancedTax,
+        session?.role,
       );
 
       if (!canManageTenant) {

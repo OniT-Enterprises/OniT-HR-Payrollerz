@@ -12,6 +12,7 @@ interface TenantState {
   tenantName: string | null;
   role: string | null;
   employeeId: string | null;
+  departmentId: string | null;
   loading: boolean;
   error: string | null;
 
@@ -28,11 +29,20 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   tenantName: null,
   role: null,
   employeeId: null,
+  departmentId: null,
   loading: true,
   error: null,
 
   setTenant: async (tenantId: string, tenantName: string, role: string) => {
-    set({ tenantId, tenantName, role, loading: false, error: null });
+    set({
+      tenantId,
+      tenantName,
+      role,
+      employeeId: null,
+      departmentId: null,
+      loading: false,
+      error: null,
+    });
     await AsyncStorage.setItem(
       TENANT_STORAGE_KEY,
       JSON.stringify({ tenantId, tenantName, role })
@@ -48,14 +58,18 @@ export const useTenantStore = create<TenantState>((set, get) => ({
       if (memberDoc.exists()) {
         const data = memberDoc.data();
         if (data.employeeId) {
-          set({ employeeId: data.employeeId, error: null });
+          set({
+            employeeId: data.employeeId,
+            departmentId: typeof data.departmentId === 'string' ? data.departmentId : null,
+            error: null,
+          });
           return;
         }
       }
       // No member doc or no employeeId
-      set({ employeeId: null, error: 'noEmployee' });
+      set({ employeeId: null, departmentId: null, error: 'noEmployee' });
     } catch {
-      set({ employeeId: null, error: 'fetchError' });
+      set({ employeeId: null, departmentId: null, error: 'fetchError' });
     }
   },
 
@@ -74,7 +88,7 @@ export const useTenantStore = create<TenantState>((set, get) => ({
   },
 
   clearTenant: async () => {
-    set({ tenantId: null, tenantName: null, role: null, employeeId: null, error: null });
+    set({ tenantId: null, tenantName: null, role: null, employeeId: null, departmentId: null, error: null });
     await AsyncStorage.removeItem(TENANT_STORAGE_KEY);
   },
 }));

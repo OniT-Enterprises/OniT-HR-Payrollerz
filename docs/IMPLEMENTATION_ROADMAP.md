@@ -108,7 +108,7 @@ Dashboard
 ├── People (Mega-menu)
 │   ├── Staff: Employees, Add, Departments, Org Chart
 │   ├── Hiring: Jobs, Candidates, Interviews, Onboarding, Offboarding
-│   ├── Time & Leave: Time Tracking, Attendance, Leave, Schedules
+│   ├── Time & Leave: Attendance, Leave, Shifts
 │   └── Performance: Goals, Reviews, Training, Disciplinary
 ├── Payroll (Dropdown)
 │   └── Run, History, Bank Transfers, INSS & Tax, Benefits, Deductions
@@ -124,8 +124,9 @@ Dashboard
 | Employee CRUD | ✅ Basic | Missing TL fields |
 | Department management | ✅ Basic | Org chart needs work |
 | Hiring workflow | ✅ Core flow | One jobs/applicants/interviews workspace; AI screening intentionally deferred |
-| Time tracking UI | ⚠️ Shell | No actual tracking |
-| Leave requests UI | ⚠️ Shell | No workflow |
+| Attendance UI | ✅ Working | Manual entry, CSV/XLSX import, adjustments, scoped access |
+| Leave requests UI | ✅ Working | Submission, approval, cancellation, balance projection |
+| Shift scheduling | ✅ Core flow | Simple weekly planning, validation, publish/copy/export |
 | Payroll run UI | ⚠️ Shell | **No calculations** |
 | Accounting module | ✅ Good | Chart of accounts, GL, TB |
 | Firebase integration | ✅ Working | Auth + Firestore |
@@ -173,25 +174,27 @@ Dashboard
 - [ ] Probation period tracking
 - [ ] SEFOPE registration PDF generator
 
-### Phase 2: Time & Attendance
+### Phase 2: Time & Attendance — Core complete
 
 **Goal**: Accurate time tracking that feeds into payroll
 
 #### 2.1 Attendance Import
-- [ ] Fingerprint reader CSV import (standardized format)
-- [ ] Manual time entry interface
+- [x] Fingerprint reader CSV/XLSX import (standardized format)
+- [x] Manual time entry interface
 - [ ] Paper attendance sheet scanning (future: AI OCR)
 
-#### 2.2 Time Tracking
-- [ ] Clock in/out records
-- [ ] Late arrival logging with minutes
-- [ ] Early departure logging
-- [ ] Overtime tracking (auto-calculate after 44 hrs/week)
-- [ ] Night shift detection and flagging
+#### 2.2 Attendance and payroll-ready hours
+- [x] Clock in/out records on the Attendance page
+- [x] Late arrival logging with minutes
+- [x] Early departure logging
+- [x] Daily regular/overtime calculation and weekly timesheet projection
+- [x] Overnight shift calculation
 
-#### 2.3 Shift Management (Critical for Security Company)
+#### 2.3 Shift Management
 - [ ] Shift template creation
-- [ ] Drag-drop shift scheduler
+- [x] Simple weekly shift scheduler (drag/drop intentionally omitted for phone simplicity)
+- [x] Overlap, 12-hour rest, approved-leave, and department validation
+- [x] Publish, copy-week, and export
 - [ ] Employee availability tracking
 - [ ] Different pay rates per client/site
 - [ ] Shift swap requests with approval workflow
@@ -203,23 +206,22 @@ Dashboard
 - [ ] 3-strike tracking for disciplinary
 - [ ] Salary dock calculation
 
-### Phase 3: Leave Management
+### Phase 3: Leave Management — Core complete
 
 **Goal**: Paperless leave workflow
 
 #### 3.1 Leave Types Configuration
-- [ ] Annual leave (12 days)
-- [ ] Sick leave (30 days with cert requirement)
-- [ ] Maternity leave (12 weeks)
-- [ ] Paternity leave (5 days)
-- [ ] Unpaid leave
-- [ ] Custom leave types
+- [x] Configurable annual, sick, maternity, paternity, and unpaid policies
+- [x] Custom leave types
+- [x] Paid percentage and certificate-requirement fields
+- [ ] Confirm statutory defaults with Timor-Leste legal/accounting counsel
 
 #### 3.2 Leave Request Workflow
-- [ ] Employee request submission (web + email + WhatsApp)
-- [ ] Manager approval interface
-- [ ] HR calendar view (all employee leave)
-- [ ] Leave balance tracking
+- [x] Employee request submission (web + Ekipa; bot API available)
+- [x] Department-scoped manager approval interface
+- [x] Owner/HR tenant-wide workflow and accountant read-only view
+- [x] Idempotent leave balance tracking
+- [x] TL public holidays and tenant overrides in duration calculation
 - [ ] Carryover rules engine
 - [ ] Backup worker assignment
 

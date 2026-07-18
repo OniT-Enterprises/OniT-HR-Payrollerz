@@ -1,33 +1,22 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { TimePicker } from "@/components/ui/time-picker";
-import { Button } from "@/components/ui/button";
+import React, { useMemo, useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AlertTriangle,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
+  Loader2,
+  MapPin,
+  Pencil,
+  Plus,
+  Send,
+  Trash2,
+} from "lucide-react";
+
+import PageHeader from "@/components/layout/PageHeader";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,232 +26,233 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { TimePicker } from "@/components/ui/time-picker";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { useAllDepartments } from "@/hooks/useDepartments";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
+import { useLeaveRequests } from "@/hooks/useLeaveRequests";
+import { useSettings } from "@/hooks/useSettings";
+import {
+  useCopyWeekShifts,
+  useCreateShift,
+  useDeleteShift,
+  usePublishDraftShifts,
+  useShiftsByRange,
+  useUpdateShift,
+} from "@/hooks/useShifts";
 import { useToast } from "@/hooks/use-toast";
-import PageHeader from "@/components/layout/PageHeader";
-import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
-  Calendar,
-  Plus,
-  Download,
-  Trash2,
-  Copy,
-  AlertTriangle,
-  CheckCircle2,
-  Users,
-  Save,
-  Send,
-  ChevronLeft,
-  ChevronRight,
-  GripVertical,
-  LayoutGrid,
-  MapPin,
-} from "lucide-react";
-import LocationGridView from "@/components/shifts/LocationGridView";
-import { SEO, seoConfig } from "@/components/SEO";
-import {
+  addDaysISO,
   formatDateTL,
   getTodayTL,
   getWeekStartTL,
-  addDaysISO,
   parseDateISO,
 } from "@/lib/dateUtils";
-import { exportToCSV } from "@/lib/csvExport";
-import { useTenantId } from "@/contexts/TenantContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEmployeeDirectory } from "@/hooks/useEmployees";
-import { useDepartments } from "@/hooks/useDepartments";
-import { useSettings } from "@/hooks/useSettings";
-import {
-  useShiftsByRange,
-  useCreateShift,
-  useUpdateShift,
-  useDeleteShift,
-  usePublishDraftShifts,
-  useShiftSlots,
-  useSaveShiftSlots,
-  useCopyWeekShifts,
-} from "@/hooks/useShifts";
+import { cn } from "@/lib/utils";
 import {
   calcShiftHours,
-  DEFAULT_SHIFT_SLOTS,
   type ShiftRecord,
-  type ShiftSlot,
+  type ShiftStatus,
 } from "@/services/shiftService";
 
-// Timor-Leste Labour Law standard maximum working hours per week
-const TL_MAX_WEEKLY_HOURS = 44;
+const MAX_WEEKLY_HOURS = 44;
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-// UI-mapped employee type
-interface MappedEmployee {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  department: string;
-  position: string;
-  maxHoursPerWeek: number;
-  hourlyRate: number;
-  isActive: boolean;
+interface ShiftForm {
+  employeeId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  notes: string;
+  status: ShiftStatus;
 }
 
-// UI-mapped department type
-interface MappedDepartment {
-  id: string;
-  name: string;
-  manager: string;
-  color: string;
+function shiftBounds(date: string, startTime: string, endTime: string): [number, number] {
+  const dayStart = parseDateISO(date).getTime() / 60_000;
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  const start = dayStart + startHour * 60 + startMinute;
+  let end = dayStart + endHour * 60 + endMinute;
+  if (end <= start) end += 24 * 60;
+  return [start, end];
+}
+
+function overlaps(left: ShiftForm, right: ShiftRecord): boolean {
+  const [leftStart, leftEnd] = shiftBounds(left.date, left.startTime, left.endTime);
+  const [rightStart, rightEnd] = shiftBounds(right.date, right.startTime, right.endTime);
+  return leftStart < rightEnd && rightStart < leftEnd;
+}
+
+function hasShortRest(left: ShiftForm, right: ShiftRecord): boolean {
+  const [leftStart, leftEnd] = shiftBounds(left.date, left.startTime, left.endTime);
+  const [rightStart, rightEnd] = shiftBounds(right.date, right.startTime, right.endTime);
+  if (leftStart < rightStart) return rightStart - leftEnd < 12 * 60;
+  return leftStart - rightEnd < 12 * 60;
+}
+
+function emptyForm(date: string, location = ""): ShiftForm {
+  return {
+    employeeId: "",
+    date,
+    startTime: "08:00",
+    endTime: "17:00",
+    location,
+    notes: "",
+    status: "draft",
+  };
 }
 
 export default function ShiftScheduling() {
-  const { toast } = useToast();
   const { t } = useI18n();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("schedule");
-  const [selectedWeek, setSelectedWeek] = useState(() => getWeekStartTL());
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
-  const [scheduleViewMode, setScheduleViewMode] = useState<"employee" | "location">("location");
-  const [draggedShift, setDraggedShift] = useState<ShiftRecord | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ employeeId: string; date: string } | null>(null);
-  const [showAllEmployees, setShowAllEmployees] = useState(true);
-
-  const [formData, setFormData] = useState({
-    employee: "",
-    position: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    department: "",
-    location: "",
-    notes: "",
-  });
-
-  // Real data hooks
-  const tenantId = useTenantId();
+  const { toast } = useToast();
   const { user } = useAuth();
-  const { data: realEmployees = [], isLoading: empLoading } = useEmployeeDirectory({ status: 'active' });
-  const { data: realDepartments = [], isLoading: deptLoading } = useDepartments(tenantId);
-  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const { session } = useTenant();
+  const role = session?.role;
+  const isManager = role === "manager";
+  const managerDepartmentId = isManager ? session?.member.departmentId : undefined;
+  const canLoadSchedule = !isManager || Boolean(managerDepartmentId);
 
-  const weekEndDate = useMemo(() => addDaysISO(selectedWeek, 6), [selectedWeek]);
+  const [weekStart, setWeekStart] = useState(() => getWeekStartTL(getTodayTL()));
+  const weekEnd = addDaysISO(weekStart, 6);
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState<ShiftRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ShiftRecord | null>(null);
+  const [form, setForm] = useState<ShiftForm>(() => emptyForm(getTodayTL()));
 
-  const { data: shifts = [], isLoading: shiftsLoading } = useShiftsByRange(selectedWeek, weekEndDate);
-  const createShiftMutation = useCreateShift();
-  const updateShiftMutation = useUpdateShift();
-  const deleteShiftMutation = useDeleteShift();
+  const departmentsQuery = useAllDepartments(session?.tid ?? "", 100, true);
+  const departments = useMemo(
+    () => departmentsQuery.data ?? [],
+    [departmentsQuery.data],
+  );
+  const managerDepartmentName = departments.find(
+    (department) => department.id === managerDepartmentId,
+  )?.name;
+  const employeesQuery = useEmployeeDirectory(
+    {
+      status: "active",
+      ...(isManager && managerDepartmentName ? { department: managerDepartmentName } : {}),
+    },
+    canLoadSchedule && (!isManager || Boolean(managerDepartmentName)),
+  );
+  const settingsQuery = useSettings();
+  const shiftsQuery = useShiftsByRange(
+    weekStart,
+    weekEnd,
+    canLoadSchedule,
+    managerDepartmentId,
+  );
+  const leaveQuery = useLeaveRequests(
+    managerDepartmentId ? { departmentId: managerDepartmentId } : undefined,
+    canLoadSchedule,
+  );
+
+  const employees = employeesQuery.data ?? [];
+  const workLocations = useMemo(
+    () => (settingsQuery.data?.companyStructure.workLocations ?? [])
+      .filter((location) => location.isActive),
+    [settingsQuery.data?.companyStructure.workLocations],
+  );
+  const shifts = useMemo(() => shiftsQuery.data ?? [], [shiftsQuery.data]);
+  const approvedLeave = (leaveQuery.data ?? []).filter((request) => request.status === "approved");
+  const createMutation = useCreateShift();
+  const updateMutation = useUpdateShift();
+  const deleteMutation = useDeleteShift();
   const publishMutation = usePublishDraftShifts();
-  const copyWeekMutation = useCopyWeekShifts();
+  const copyMutation = useCopyWeekShifts();
+  const saving = createMutation.isPending || updateMutation.isPending;
 
-  // Tenant shift slot config (Morning/Afternoon/Night), persisted with a debounce
-  const { data: savedSlots } = useShiftSlots();
-  const saveSlotsMutation = useSaveShiftSlots();
-  const [slotDraft, setSlotDraft] = useState<ShiftSlot[] | null>(null);
-  const shiftSlots = slotDraft ?? savedSlots ?? DEFAULT_SHIFT_SLOTS;
-  const slotSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleSlotsChange = useCallback((slots: ShiftSlot[]) => {
-    setSlotDraft(slots);
-    if (slotSaveTimer.current) clearTimeout(slotSaveTimer.current);
-    slotSaveTimer.current = setTimeout(() => {
-      slotSaveTimer.current = null;
-      saveSlotsMutation.mutate(slots);
-    }, 800);
-  }, [saveSlotsMutation]);
-  // Flush a pending slot save if the user leaves the page quickly
-  const slotDraftRef = useRef<ShiftSlot[] | null>(null);
-  slotDraftRef.current = slotDraft;
-  useEffect(() => () => {
-    if (slotSaveTimer.current && slotDraftRef.current) {
-      clearTimeout(slotSaveTimer.current);
-      saveSlotsMutation.mutate(slotDraftRef.current);
+  const locations = useMemo(() => [...new Set([
+    ...workLocations.map((location) => location.name),
+    ...shifts.map((shift) => shift.location).filter(Boolean),
+  ])].sort((left, right) => left.localeCompare(right)), [shifts, workLocations]);
+
+  const visibleShifts = useMemo(() => shifts.filter((shift) => {
+    if (departmentFilter !== "all" && shift.department !== departmentFilter) return false;
+    if (locationFilter !== "all" && shift.location !== locationFilter) return false;
+    return true;
+  }), [departmentFilter, locationFilter, shifts]);
+
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, index) => addDaysISO(weekStart, index)),
+    [weekStart],
+  );
+  const draftCount = visibleShifts.filter((shift) => shift.status === "draft").length;
+  const totalHours = visibleShifts
+    .filter((shift) => shift.status !== "cancelled")
+    .reduce((total, shift) => total + (Number.isFinite(shift.hours) ? shift.hours : 0), 0);
+  const selectedEmployee = employees.find((employee) => employee.id === form.employeeId);
+  const formHours = calcShiftHours(form.startTime, form.endTime);
+  const selectedEmployeeWeekHours = shifts
+    .filter((shift) => shift.employeeId === form.employeeId && shift.id !== editingShift?.id && shift.status !== "cancelled")
+    .reduce((total, shift) => total + shift.hours, 0) + formHours;
+
+  const statusClass = (status: ShiftStatus) => {
+    if (status === "published" || status === "confirmed") {
+      return "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Tenant work locations (Settings → Company Structure)
-  const workLocations = useMemo(() => {
-    const all = settings?.companyStructure?.workLocations ?? [];
-    return all
-      .filter((l) => l.isActive)
-      .sort((a, b) => Number(b.isHeadquarters) - Number(a.isHeadquarters));
-  }, [settings]);
-  const locations = useMemo(() => workLocations.map((l) => l.name), [workLocations]);
-
-  const loading = empLoading || deptLoading || shiftsLoading || settingsLoading;
-
-  // Map real employees for UI
-  const employees: MappedEmployee[] = useMemo(() => realEmployees
-    .map((e) => ({
-      id: e.id!,
-      name: `${e.personalInfo.firstName} ${e.personalInfo.lastName}`,
-      email: e.personalInfo.email,
-      phone: e.personalInfo.phone,
-      department: e.jobDetails.department,
-      position: e.jobDetails.position,
-      maxHoursPerWeek: TL_MAX_WEEKLY_HOURS,
-      hourlyRate: e.compensation.monthlySalary > 0 ? Math.round(e.compensation.monthlySalary / 176) : 0,
-      isActive: true,
-    })), [realEmployees]);
-
-  // Map real departments for UI
-  const departments: MappedDepartment[] = useMemo(() => realDepartments.map((d, i) => ({
-    id: d.id!,
-    name: d.name,
-    manager: d.manager || '',
-    color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'][i % 6],
-  })), [realDepartments]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    if (status === "draft") {
+      return "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+    }
+    return "border-border bg-muted text-muted-foreground";
   };
 
-  const handleEmployeeSelect = (employeeId: string) => {
-    const employee = employees.find((emp) => emp.id === employeeId);
-    setFormData((prev) => ({
-      ...prev,
-      employee: employeeId,
-      department: employee?.department || prev.department,
-      position: employee?.position || prev.position,
-    }));
+  const openCreate = (date = weekStart) => {
+    setEditingShift(null);
+    setForm(emptyForm(date, locations[0] ?? ""));
+    setFormOpen(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      employee: "",
-      position: "",
-      date: "",
-      startTime: "",
-      endTime: "",
-      department: "",
-      location: "",
-      notes: "",
+  const openEdit = (shift: ShiftRecord) => {
+    setEditingShift(shift);
+    setForm({
+      employeeId: shift.employeeId,
+      date: shift.date,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      location: shift.location,
+      notes: shift.notes,
+      status: shift.status,
     });
+    setFormOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (
-      !formData.employee ||
-      !formData.date ||
-      !formData.startTime ||
-      !formData.endTime ||
-      !formData.department ||
-      (locations.length > 0 && !formData.location)
-    ) {
+  const submitShift = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedEmployee || !form.date || !form.startTime || !form.endTime || !form.location.trim()) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.toast.validationDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (formHours <= 0 || formHours >= 24) {
       toast({
         title: t("timeLeave.shiftScheduling.toast.validationTitle"),
         description: t("timeLeave.shiftScheduling.toast.validationDesc"),
@@ -271,86 +261,104 @@ export default function ShiftScheduling() {
       return;
     }
 
-    const employee = employees.find((emp) => emp.id === formData.employee);
-    const hours = calcShiftHours(formData.startTime, formData.endTime);
+    const employeeShifts = shifts.filter((shift) =>
+      shift.employeeId === form.employeeId &&
+      shift.id !== editingShift?.id &&
+      shift.status !== "cancelled",
+    );
+    if (employeeShifts.some((shift) => overlaps(form, shift))) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.toast.overlapDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (employeeShifts.some((shift) => hasShortRest(form, shift))) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.toast.restDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+    if (approvedLeave.some((leave) =>
+      leave.employeeId === form.employeeId &&
+      leave.startDate <= form.date &&
+      leave.endDate >= form.date)) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.toast.leaveConflictDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const department = selectedEmployee.jobDetails.department || "";
+    const departmentId = departments.find((item) => item.name === department)?.id;
+    if (isManager && departmentId !== managerDepartmentId) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.scopeMissing"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payload = {
+      employeeId: selectedEmployee.id!,
+      employeeName: `${selectedEmployee.personalInfo.firstName} ${selectedEmployee.personalInfo.lastName}`.trim(),
+      department,
+      ...(departmentId ? { departmentId } : {}),
+      position: selectedEmployee.jobDetails.position || "",
+      date: form.date,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      hours: formHours,
+      status: form.status,
+      location: form.location.trim(),
+      notes: form.notes.trim(),
+      createdBy: editingShift?.createdBy || user?.uid || "",
+    };
 
     try {
-      await createShiftMutation.mutateAsync({
-        employeeId: formData.employee,
-        employeeName: employee?.name || '',
-        department: formData.department,
-        position: formData.position,
-        date: formData.date,
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        hours,
-        status: 'draft',
-        location: formData.location,
-        notes: formData.notes,
-        createdBy: user?.email || 'unknown',
-      });
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.successTitle"),
-        description: t("timeLeave.shiftScheduling.toast.createSuccessDesc"),
-      });
-
-      resetForm();
-      setShowCreateDialog(false);
+      if (editingShift?.id) {
+        await updateMutation.mutateAsync({ shiftId: editingShift.id, data: payload });
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.successTitle"),
+          description: t("timeLeave.shiftScheduling.toast.updateSuccessDesc"),
+        });
+      } else {
+        await createMutation.mutateAsync(payload);
+        toast({
+          title: t("timeLeave.shiftScheduling.toast.successTitle"),
+          description: t("timeLeave.shiftScheduling.toast.createSuccessDesc"),
+        });
+      }
+      setFormOpen(false);
+      setEditingShift(null);
     } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
-        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
+        description: editingShift
+          ? t("timeLeave.shiftScheduling.toast.updateErrorDesc")
+          : t("timeLeave.shiftScheduling.toast.createErrorDesc"),
         variant: "destructive",
       });
     }
   };
 
-  const handleEditShift = (shift: ShiftRecord) => {
-    setSelectedShift(shift);
-    setFormData({
-      employee: shift.employeeId,
-      position: shift.position,
-      date: shift.date,
-      startTime: shift.startTime,
-      endTime: shift.endTime,
-      department: shift.department,
-      location: shift.location,
-      notes: shift.notes,
-    });
-    setShowEditDialog(true);
-  };
-
-  const handleUpdateShift = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedShift?.id) return;
-
-    const employee = employees.find((emp) => emp.id === formData.employee);
-    const hours = calcShiftHours(formData.startTime, formData.endTime);
-
+  const publishDrafts = async () => {
     try {
-      await updateShiftMutation.mutateAsync({
-        shiftId: selectedShift.id,
-        data: {
-          employeeId: formData.employee,
-          employeeName: employee?.name || '',
-          department: formData.department,
-          position: formData.position,
-          date: formData.date,
-          startTime: formData.startTime,
-          endTime: formData.endTime,
-          hours,
-          location: formData.location,
-          notes: formData.notes,
-        },
+      const count = await publishMutation.mutateAsync({
+        startDate: weekStart,
+        endDate: weekEnd,
+        departmentId: managerDepartmentId,
       });
       toast({
-        title: t("timeLeave.shiftScheduling.toast.successTitle"),
-        description: t("timeLeave.shiftScheduling.toast.updateSuccessDesc"),
+        title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
+        description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", { count }),
       });
-
-      resetForm();
-      setShowEditDialog(false);
-      setSelectedShift(null);
     } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
@@ -360,9 +368,66 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleDeleteShift = async (shiftId: string) => {
+  const copyWeek = async () => {
     try {
-      await deleteShiftMutation.mutateAsync(shiftId);
+      const count = await copyMutation.mutateAsync({
+        startDate: weekStart,
+        endDate: weekEnd,
+        createdBy: user?.uid || "",
+        departmentId: managerDepartmentId,
+      });
+      toast({
+        title: count > 0
+          ? t("timeLeave.shiftScheduling.toast.copiedTitle")
+          : t("timeLeave.shiftScheduling.toast.copyEmptyTitle"),
+        description: count > 0
+          ? t("timeLeave.shiftScheduling.toast.copiedDesc", { count })
+          : t("timeLeave.shiftScheduling.toast.copyEmptyDesc"),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.updateErrorDesc"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const exportWeek = async () => {
+    if (visibleShifts.length === 0) {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.exportEmptyTitle"),
+        description: t("timeLeave.shiftScheduling.toast.exportEmptyDesc"),
+      });
+      return;
+    }
+    const { exportToCSV } = await import("@/lib/csvExport");
+    exportToCSV(
+      visibleShifts as unknown as Record<string, unknown>[],
+      `shifts_${weekStart}`,
+      [
+        { key: "date", label: t("timeLeave.shiftScheduling.create.date") },
+        { key: "employeeName", label: t("timeLeave.shiftScheduling.create.employee") },
+        { key: "department", label: t("timeLeave.shiftScheduling.controls.department") },
+        { key: "startTime", label: t("timeLeave.shiftScheduling.create.startTime") },
+        { key: "endTime", label: t("timeLeave.shiftScheduling.create.endTime") },
+        { key: "hours", label: t("timeLeave.shiftScheduling.summary.totalHours") },
+        { key: "location", label: t("timeLeave.shiftScheduling.controls.location") },
+        { key: "status", label: t("timeLeave.shiftScheduling.grid.status") },
+      ],
+    );
+    toast({
+      title: t("timeLeave.shiftScheduling.toast.exportedTitle"),
+      description: t("timeLeave.shiftScheduling.toast.exportedDesc", { count: visibleShifts.length }),
+    });
+  };
+
+  const removeShift = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await deleteMutation.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+      setFormOpen(false);
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.deleteSuccessDesc"),
@@ -376,808 +441,15 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handlePublishSchedule = async () => {
-    try {
-      const count = await publishMutation.mutateAsync({ startDate: selectedWeek, endDate: weekEndDate });
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
-        description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", {
-          count,
-        }),
-      });
-    } catch {
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
-        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleExportCSV = () => {
-    const weekShifts = getWeekShifts();
-    if (weekShifts.length === 0) {
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.exportEmptyTitle"),
-        description: t("timeLeave.shiftScheduling.toast.exportEmptyDesc"),
-      });
-      return;
-    }
-    exportToCSV(
-      weekShifts as unknown as Record<string, unknown>[],
-      `shifts_week_${selectedWeek}`,
-      [
-        { key: "date", label: t("timeLeave.shiftScheduling.create.date").replace(" *", "") },
-        { key: "employeeName", label: t("timeLeave.shiftScheduling.create.employee").replace(" *", "") },
-        { key: "department", label: t("timeLeave.shiftScheduling.create.department").replace(" *", "") },
-        { key: "position", label: t("timeLeave.shiftScheduling.create.position").replace(" *", "") },
-        { key: "startTime", label: t("timeLeave.shiftScheduling.create.startTime").replace(" *", "") },
-        { key: "endTime", label: t("timeLeave.shiftScheduling.create.endTime").replace(" *", "") },
-        { key: "hours", label: t("timeLeave.shiftScheduling.analytics.totalHours").replace(":", "") },
-        { key: "location", label: t("timeLeave.shiftScheduling.create.location").replace(" *", "") },
-        { key: "status", label: t("timeLeave.shiftScheduling.grid.status") },
-        { key: "notes", label: t("timeLeave.shiftScheduling.create.notes") },
-      ],
-    );
-    toast({
-      title: t("timeLeave.shiftScheduling.toast.exportedTitle"),
-      description: t("timeLeave.shiftScheduling.toast.exportedDesc", {
-        count: weekShifts.length,
-      }),
-    });
-  };
-
-  const handleCopyWeek = async () => {
-    try {
-      const count = await copyWeekMutation.mutateAsync({
-        startDate: selectedWeek,
-        endDate: weekEndDate,
-        createdBy: user?.email || "unknown",
-      });
-      if (count === 0) {
-        toast({
-          title: t("timeLeave.shiftScheduling.toast.copyEmptyTitle"),
-          description: t("timeLeave.shiftScheduling.toast.copyEmptyDesc"),
-        });
-        return;
-      }
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.copiedTitle"),
-        description: t("timeLeave.shiftScheduling.toast.copiedDesc", { count }),
-      });
-      // Jump to next week so the copied drafts are visible
-      setSelectedWeek(addDaysISO(selectedWeek, 7));
-    } catch {
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
-        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getWeekShifts = () => {
-    return shifts.filter((shift) => {
-      const matchesDepartment =
-        !selectedDepartment ||
-        selectedDepartment === "all" ||
-        shift.department === selectedDepartment;
-      const matchesLocation =
-        !selectedLocation ||
-        selectedLocation === "all" ||
-        shift.location === selectedLocation;
-      return matchesDepartment && matchesLocation;
-    });
-  };
-
-  const getDepartmentColor = (departmentName: string) => {
-    const dept = departments.find((d) => d.name === departmentName);
-    return dept?.color || "#6B7280";
-  };
-
-  const getScheduleStats = () => {
-    const weekShifts = getWeekShifts();
-    const totalHours = weekShifts.reduce((sum, shift) => sum + shift.hours, 0);
-    const staffCount = new Set(weekShifts.map((shift) => shift.employeeId))
-      .size;
-    const publishedCount = weekShifts.filter(
-      (shift) => shift.status === "published",
-    ).length;
-    const draftCount = weekShifts.filter(
-      (shift) => shift.status === "draft",
-    ).length;
-    const confirmedCount = weekShifts.filter(
-      (shift) => shift.status === "confirmed",
-    ).length;
-
-    return {
-      totalShifts: weekShifts.length,
-      totalHours,
-      staffCount,
-      publishedCount,
-      draftCount,
-      confirmedCount,
-    };
-  };
-
-  const getEmployeeWeeklyHours = (employeeId: string) => {
-    const weekShifts = getWeekShifts();
-    return weekShifts
-      .filter((shift) => shift.employeeId === employeeId)
-      .reduce((sum, shift) => sum + shift.hours, 0);
-  };
-
-  // Date helper for the grid — pure ISO-string math, identical in every viewer timezone
-  const getDateForOffset = (dayOffset: number): string =>
-    addDaysISO(selectedWeek, dayOffset);
-
-  const getDayHeaderInfo = (dayOffset: number) => {
-    const dateStr = getDateForOffset(dayOffset);
-    const targetDate = parseDateISO(dateStr);
-    return {
-      dateStr,
-      dayName: DAY_NAMES[targetDate.getUTCDay()],
-      dayNum: targetDate.getUTCDate(),
-      monthName: MONTH_NAMES[targetDate.getUTCMonth()],
-      isToday: dateStr === getTodayTL(),
-    };
-  };
-
-  // Week navigation
-  const goToPreviousWeek = () => setSelectedWeek(addDaysISO(selectedWeek, -7));
-  const goToNextWeek = () => setSelectedWeek(addDaysISO(selectedWeek, 7));
-  const goToCurrentWeek = () => setSelectedWeek(getWeekStartTL());
-
-  // Drag and drop handlers
-  const handleShiftDrop = useCallback(async (targetEmployeeId: string, targetDate: string) => {
-    if (!draggedShift?.id) return;
-    // Don't do anything if dropped on same cell
-    if (draggedShift.employeeId === targetEmployeeId && draggedShift.date === targetDate) {
-      setDraggedShift(null);
-      setDropTarget(null);
-      return;
-    }
-
-    const employee = employees.find(e => e.id === targetEmployeeId);
-
-    try {
-      await updateShiftMutation.mutateAsync({
-        shiftId: draggedShift.id,
-        data: {
-          employeeId: targetEmployeeId,
-          employeeName: employee?.name || '',
-          department: employee?.department || draggedShift.department,
-          date: targetDate,
-        },
-      });
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.successTitle"),
-        description: t("timeLeave.shiftScheduling.toast.movedDesc", {
-          name: employee?.name || "—",
-          date: formatDateTL(parseDateISO(targetDate), { weekday: "short", month: "short", day: "numeric" }),
-        }),
-      });
-    } catch {
-      toast({
-        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
-        description: t("timeLeave.shiftScheduling.toast.updateErrorDesc"),
-        variant: "destructive",
-      });
-    }
-
-    setDraggedShift(null);
-    setDropTarget(null);
-  }, [draggedShift, employees, updateShiftMutation, toast, t]);
-
-  // Quick create shift by clicking an empty cell
-  const quickCreateShift = (employeeId: string, department: string, position: string, date: string) => {
-    const employee = employees.find(e => e.id === employeeId);
-    setFormData({
-      employee: employeeId,
-      position: position || employee?.position || '',
-      date,
-      startTime: '09:00',
-      endTime: '17:00',
-      department: department || employee?.department || '',
-      location: '',
-      notes: '',
-    });
-    setShowCreateDialog(true);
-  };
-
-  const stats = getScheduleStats();
-
-  const renderScheduleView = () => {
-    const weekShifts = getWeekShifts();
-    const scheduledEmployeeIds = new Set(weekShifts.map(s => s.employeeId).filter(Boolean));
-
-    const relevantEmployees = employees.filter(emp => {
-      const matchesDept = !selectedDepartment || selectedDepartment === 'all' || emp.department === selectedDepartment;
-      return matchesDept && (showAllEmployees || scheduledEmployeeIds.has(emp.id));
-    });
-
-    return (
-      <div className="space-y-3">
-        {/* Compact action bar */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            {stats.draftCount > 0 && (
-              <Button
-                size="sm"
-                onClick={handlePublishSchedule}
-                className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm"
-              >
-                <Send className="h-3.5 w-3.5" />
-                {t("timeLeave.shiftScheduling.actions.publishSchedule", { count: stats.draftCount })}
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="gap-1.5">
-              <Download className="h-3.5 w-3.5" />
-              {t("timeLeave.shiftScheduling.actions.export")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyWeek}
-              disabled={copyWeekMutation.isPending}
-              className="gap-1.5"
-            >
-              <Copy className="h-3.5 w-3.5" />
-              {t("timeLeave.shiftScheduling.actions.copyWeek")}
-            </Button>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:inline tabular-nums">
-              {t("timeLeave.shiftScheduling.calendar.daySummary", {
-                count: weekShifts.length,
-                hours: stats.totalHours,
-              })}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAllEmployees(!showAllEmployees)}
-              className={cn("gap-1.5 text-xs h-8", showAllEmployees && "bg-muted")}
-            >
-              <Users className="h-3.5 w-3.5" />
-              {showAllEmployees
-                ? t("timeLeave.shiftScheduling.grid.scheduledOnly")
-                : t("timeLeave.shiftScheduling.grid.allStaff")}
-            </Button>
-          </div>
-        </div>
-
-        {/* Schedule Grid */}
-        <div className="border border-border/50 rounded-xl overflow-x-auto bg-card shadow-sm">
-          <table className="w-full border-collapse min-w-[900px]">
-            <thead>
-              <tr className="bg-muted/50">
-                <th className="sticky left-0 z-20 bg-muted/50 backdrop-blur-sm text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border/30 w-[200px] min-w-[200px]">
-                  {t("timeLeave.shiftScheduling.grid.staff")}
-                </th>
-                {[0, 1, 2, 3, 4, 5, 6].map(day => {
-                  const info = getDayHeaderInfo(day);
-                  return (
-                    <th
-                      key={day}
-                      className={cn(
-                        "px-1.5 py-2.5 text-center border-b border-r border-border/30 last:border-r-0 min-w-[100px]",
-                        info.isToday && "bg-cyan-50/80 dark:bg-cyan-950/30"
-                      )}
-                    >
-                      <div className={cn(
-                        "text-[11px] font-semibold uppercase tracking-wide",
-                        info.isToday ? "text-cyan-600 dark:text-cyan-400" : "text-muted-foreground"
-                      )}>
-                        {info.dayName}
-                      </div>
-                      <div className={cn(
-                        "text-base font-bold leading-tight",
-                        info.isToday ? "text-cyan-600 dark:text-cyan-400" : "text-foreground"
-                      )}>
-                        {info.dayNum}
-                      </div>
-                      {(day === 0 || info.dayNum === 1) && (
-                        <div className="text-[10px] text-muted-foreground/60 font-medium">{info.monthName}</div>
-                      )}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-
-            <tbody>
-              {relevantEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-16 text-center">
-                    <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      {t("timeLeave.shiftScheduling.grid.empty")}
-                    </p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">
-                      {t("timeLeave.shiftScheduling.grid.emptyHint")}
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                relevantEmployees.map((emp) => {
-                  const empHours = getEmployeeWeeklyHours(emp.id);
-                  const overMax = empHours > emp.maxHoursPerWeek;
-
-                  return (
-                    <tr
-                      key={emp.id}
-                      className="group/row hover:bg-muted/10 transition-colors border-b border-border/20 last:border-b-0"
-                    >
-                      {/* Employee cell - sticky left */}
-                      <td className="sticky left-0 z-10 bg-card group-hover/row:bg-muted/10 transition-colors px-3 py-2.5 border-r border-border/30 w-[200px] min-w-[200px]">
-                        <div className="flex items-start gap-2">
-                          <div
-                            className="w-1 h-9 rounded-full flex-shrink-0 mt-0.5"
-                            style={{ backgroundColor: getDepartmentColor(emp.department) }}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-foreground truncate leading-tight">{emp.name}</div>
-                            <div className="text-[11px] text-muted-foreground truncate">{emp.position}</div>
-                            {empHours > 0 && (
-                              <div className={cn(
-                                "text-[10px] font-medium mt-0.5",
-                                overMax ? "text-red-500" : "text-muted-foreground/60"
-                              )}>
-                                {empHours}h / {emp.maxHoursPerWeek}h
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Day cells */}
-                      {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
-                        const dateStr = getDateForOffset(dayOffset);
-                        const cellShifts = weekShifts.filter(
-                          s => s.employeeId === emp.id && s.date === dateStr
-                        );
-                        const isTarget = dropTarget?.employeeId === emp.id && dropTarget?.date === dateStr;
-                        const isTodayCol = getDayHeaderInfo(dayOffset).isToday;
-
-                        return (
-                          <td
-                            key={dayOffset}
-                            className={cn(
-                              "px-1 py-1 border-r border-border/30 last:border-r-0 align-top transition-all relative group/cell",
-                              isTodayCol && "bg-cyan-50/30 dark:bg-cyan-950/10",
-                              isTarget && "!bg-cyan-100/70 dark:!bg-cyan-900/40 ring-2 ring-inset ring-cyan-400/70",
-                              !cellShifts.length && "cursor-pointer"
-                            )}
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              e.dataTransfer.dropEffect = 'move';
-                              if (dropTarget?.employeeId !== emp.id || dropTarget?.date !== dateStr) {
-                                setDropTarget({ employeeId: emp.id, date: dateStr });
-                              }
-                            }}
-                            onDragLeave={(e) => {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
-                                setDropTarget(null);
-                              }
-                            }}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              handleShiftDrop(emp.id, dateStr);
-                            }}
-                            onClick={() => {
-                              if (!cellShifts.length) quickCreateShift(emp.id, emp.department, emp.position, dateStr);
-                            }}
-                          >
-                            <div className="space-y-1 min-h-[56px]">
-                              {cellShifts.map(shift => (
-                                <div
-                                  key={shift.id}
-                                  draggable
-                                  onDragStart={(e) => {
-                                    setDraggedShift(shift);
-                                    e.dataTransfer.effectAllowed = 'move';
-                                    e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, e.currentTarget.offsetHeight / 2);
-                                  }}
-                                  onDragEnd={() => { setDraggedShift(null); setDropTarget(null); }}
-                                  onClick={(e) => { e.stopPropagation(); handleEditShift(shift); }}
-                                  className={cn(
-                                    "group/shift rounded-lg px-2 py-1.5 text-xs cursor-grab active:cursor-grabbing transition-all",
-                                    "border hover:shadow-md hover:-translate-y-px",
-                                    draggedShift?.id === shift.id && "opacity-25 scale-95"
-                                  )}
-                                  style={{
-                                    backgroundColor: `${getDepartmentColor(shift.department)}10`,
-                                    borderColor: `${getDepartmentColor(shift.department)}30`,
-                                  }}
-                                >
-                                  <div className="flex items-center gap-1.5">
-                                    <GripVertical className="h-3 w-3 text-muted-foreground/30 group-hover/shift:text-muted-foreground/60 flex-shrink-0 -ml-0.5 transition-colors" />
-                                    <div className={cn(
-                                      "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                                      shift.status === 'published' && "bg-blue-500",
-                                      shift.status === 'confirmed' && "bg-emerald-500",
-                                      shift.status === 'draft' && "bg-gray-400 dark:bg-gray-500",
-                                      shift.status === 'cancelled' && "bg-red-500",
-                                    )} />
-                                    <span className="font-semibold text-foreground truncate">
-                                      {shift.startTime}&ndash;{shift.endTime}
-                                    </span>
-                                  </div>
-                                  {shift.location && (
-                                    <div className="text-muted-foreground truncate mt-0.5 pl-[22px] text-[10px]">
-                                      {shift.location}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Plus icon on empty cell hover */}
-                            {cellShifts.length === 0 && !isTarget && (
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none">
-                                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shadow-sm">
-                                  <Plus className="h-3 w-3 text-muted-foreground" />
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-gray-400" />
-            {t("timeLeave.shiftScheduling.status.draft")}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-            {t("timeLeave.shiftScheduling.status.published")}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            {t("timeLeave.shiftScheduling.status.confirmed")}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-red-500" />
-            {t("timeLeave.shiftScheduling.status.cancelled")}
-          </div>
-          <span className="text-muted-foreground/50 ml-auto">
-            {t("timeLeave.shiftScheduling.grid.dragHint")}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  const renderEmployeesView = () => (
-    <div className="space-y-6">
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-            {t("timeLeave.shiftScheduling.employees.title")}
-          </CardTitle>
-          <CardDescription>
-            {t("timeLeave.shiftScheduling.employees.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {employees
-              .filter(
-                (emp) =>
-                  !selectedDepartment ||
-                  selectedDepartment === "all" ||
-                  emp.department === selectedDepartment,
-              )
-              .map((employee) => {
-                const weeklyHours = getEmployeeWeeklyHours(employee.id);
-                const utilizationRate = Math.round(
-                  (weeklyHours / employee.maxHoursPerWeek) * 100,
-                );
-
-                return (
-                  <div
-                    key={employee.id}
-                    className="flex items-center gap-4 p-3 rounded-xl border border-border/50 hover:bg-accent/30 transition-colors"
-                  >
-                    {/* Avatar */}
-                    <div className="h-10 w-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-300">
-                        {employee.name.split(" ").map((n: string) => n[0]).join("")}
-                      </span>
-                    </div>
-
-                    {/* Name + position */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium truncate">{employee.name}</h4>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] shrink-0"
-                          style={{
-                            backgroundColor: `${getDepartmentColor(employee.department)}15`,
-                            borderColor: getDepartmentColor(employee.department),
-                          }}
-                        >
-                          {employee.department}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {employee.position}
-                      </p>
-                    </div>
-
-                    {/* Hours + utilization */}
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <p className="text-lg font-bold tabular-nums">
-                          {weeklyHours}<span className="text-xs font-normal text-muted-foreground">h</span>
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          / {employee.maxHoursPerWeek}h
-                        </p>
-                      </div>
-                      <div className="w-16">
-                        <div className="bg-muted rounded-full h-1.5">
-                          <div
-                            className={`h-1.5 rounded-full transition-all ${
-                              utilizationRate > 90
-                                ? "bg-red-500"
-                                : utilizationRate > 70
-                                  ? "bg-amber-500"
-                                  : "bg-emerald-500"
-                            }`}
-                            style={{ width: `${Math.min(utilizationRate, 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-center text-muted-foreground mt-0.5">
-                          {utilizationRate}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderAnalyticsView = () => {
-    const weekShifts = getWeekShifts();
-    const totalCost = weekShifts.reduce((sum, shift) => {
-      const employee = employees.find((e) => e.id === shift.employeeId);
-      return sum + shift.hours * (employee?.hourlyRate || 0);
-    }, 0);
-    const overworkedEmployees = employees
-      .map((employee) => ({
-        employee,
-        weeklyHours: getEmployeeWeeklyHours(employee.id),
-      }))
-      .filter(({ employee, weeklyHours }) => weeklyHours > employee.maxHoursPerWeek);
-
-    return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {t("timeLeave.shiftScheduling.analytics.departmentCoverage")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {departments.map((dept) => {
-                const coverage = weekShifts.filter(
-                  (s) => s.department === dept.name,
-                ).length;
-                return (
-                  <div
-                    key={dept.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: dept.color }}
-                      />
-                      <span className="font-medium">
-                        {dept.name}
-                      </span>
-                    </div>
-                    <Badge variant="outline">
-                      {t("timeLeave.shiftScheduling.analytics.shiftCount", {
-                        count: coverage,
-                      })}
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {t("timeLeave.shiftScheduling.analytics.laborCosts")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.weeklyTotal")}
-                </span>
-                <span className="font-bold text-lg">
-                  ${totalCost.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.avgPerHour")}
-                </span>
-                <span className="font-medium">
-                  ${stats.totalHours > 0 ? Math.round(totalCost / stats.totalHours) : 0}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.totalHours")}
-                </span>
-                <span className="font-medium">
-                  {t("timeLeave.shiftScheduling.analytics.totalHoursValue", {
-                    hours: stats.totalHours,
-                  })}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {t("timeLeave.shiftScheduling.analytics.scheduleHealth")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.publishedRate")}
-                </span>
-                <span className="font-medium text-green-600">
-                  {stats.totalShifts > 0 ? Math.round((stats.publishedCount / stats.totalShifts) * 100) : 0}
-                  %
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  {t("timeLeave.shiftScheduling.analytics.confirmedRate")}
-                </span>
-                <span className="font-medium text-blue-600">
-                  {stats.totalShifts > 0 ? Math.round((stats.confirmedCount / stats.totalShifts) * 100) : 0}
-                  %
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle>
-            {t("timeLeave.shiftScheduling.recommendations.title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {overworkedEmployees.length === 0 ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                  {t("timeLeave.shiftScheduling.recommendations.noIssues")}
-                </p>
-              </div>
-            ) : (
-              overworkedEmployees.map(({ employee, weeklyHours }) => (
-                <div
-                  key={employee.id}
-                  className="flex items-start gap-3 p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800"
-                >
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-red-800 dark:text-red-200">
-                      {t(
-                        "timeLeave.shiftScheduling.recommendations.overworkedTitle",
-                        { name: employee.name },
-                      )}
-                    </p>
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {t(
-                        "timeLeave.shiftScheduling.recommendations.overworkedDesc",
-                        {
-                          hours: weeklyHours,
-                          max: employee.maxHoursPerWeek,
-                          excess: weeklyHours - employee.maxHoursPerWeek,
-                        },
-                      )}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-    );
-  };
-
+  const loading = departmentsQuery.isLoading || settingsQuery.isLoading ||
+    (canLoadSchedule && (shiftsQuery.isLoading || leaveQuery.isLoading || employeesQuery.isLoading));
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            {/* Header skeleton */}
-            <div className="mb-6">
-              <Skeleton className="h-9 w-48 mb-2" />
-              <Skeleton className="h-4 w-80" />
-            </div>
-            {/* Toolbar skeleton */}
-            <div className="flex items-center gap-3 mb-5">
-              <Skeleton className="h-8 w-48 rounded-lg" />
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-8 w-[160px]" />
-              <Skeleton className="h-8 w-[160px]" />
-              <div className="ml-auto"><Skeleton className="h-8 w-28" /></div>
-            </div>
-            {/* Schedule grid skeleton */}
-            <div className="border rounded-xl overflow-hidden">
-              {/* Header */}
-              <div className="grid grid-cols-[200px_repeat(7,1fr)] bg-muted/50 border-b">
-                <div className="px-4 py-3 border-r"><Skeleton className="h-4 w-12" /></div>
-                {[0,1,2,3,4,5,6].map(d => (
-                  <div key={d} className="px-2 py-3 flex flex-col items-center gap-1 border-r last:border-r-0">
-                    <Skeleton className="h-3 w-8" />
-                    <Skeleton className="h-5 w-5" />
-                  </div>
-                ))}
-              </div>
-              {/* Rows */}
-              {[1,2,3,4,5].map(r => (
-                <div key={r} className="grid grid-cols-[200px_repeat(7,1fr)] border-b last:border-b-0">
-                  <div className="px-3 py-3 border-r flex items-center gap-2">
-                    <Skeleton className="w-1 h-9 rounded-full" />
-                    <div>
-                      <Skeleton className="h-4 w-24 mb-1" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  </div>
-                  {[0,1,2,3,4,5,6].map(d => (
-                    <div key={d} className="px-1 py-1.5 border-r last:border-r-0 min-h-[64px]">
-                      {d % 3 !== 0 && <Skeleton className="h-10 w-full rounded-lg" />}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="mx-auto max-w-screen-2xl space-y-4 px-4 py-5 sm:px-6 sm:py-6">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
       </div>
     );
   }
@@ -1185,453 +457,306 @@ export default function ShiftScheduling() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.schedules} />
+      <main className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+        <PageHeader
+          title={t("timeLeave.shiftScheduling.title")}
+          subtitle={t("timeLeave.shiftScheduling.subtitle")}
+          cardIcon="tl-shifts"
+          icon={Calendar}
+          iconColor="text-cyan-600"
+          actions={canLoadSchedule ? (
+            <Button onClick={() => openCreate()}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t("timeLeave.shiftScheduling.actions.createShift")}
+            </Button>
+          ) : undefined}
+        />
 
-      <div className="p-6">
-        <div className="mx-auto max-w-screen-2xl">
-          <PageHeader
-            title={t("timeLeave.shiftScheduling.title")}
-            subtitle={t("timeLeave.shiftScheduling.subtitle")}
-            cardIcon="tl-shifts" icon={Calendar}
-            iconColor="text-cyan-500"
-            actions={
-              <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowCreateDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("timeLeave.shiftScheduling.controls.createShift")}
-              </Button>
-            }
-          />
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 mb-5">
-              <TabsTrigger value="schedule">
-                {t("timeLeave.shiftScheduling.tabs.schedule")}
-              </TabsTrigger>
-              <TabsTrigger value="employees">
-                {t("timeLeave.shiftScheduling.tabs.employees")}
-              </TabsTrigger>
-              <TabsTrigger value="analytics">
-                {t("timeLeave.shiftScheduling.tabs.analytics")}
-              </TabsTrigger>
-            </TabsList>
+        {!canLoadSchedule ? (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+            {t("timeLeave.shiftScheduling.scopeMissing")}
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, -7))} aria-label={t("common.previous")}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setWeekStart(getWeekStartTL(getTodayTL()))}>
+                  {t("timeLeave.attendance.actions.today")}
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => setWeekStart(addDaysISO(weekStart, 7))} aria-label={t("common.next")}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <span className="ml-1 text-sm font-semibold">
+                  {formatDateTL(parseDateISO(weekStart), { day: "numeric", month: "short" })}
+                  {" — "}
+                  {formatDateTL(parseDateISO(weekEnd), { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {visibleShifts.length} {t("timeLeave.shiftScheduling.summary.totalShifts")} · {totalHours.toFixed(1)}h
+              </p>
+            </div>
 
-            {/* Toolbar — only shows for schedule tab */}
-            {activeTab === "schedule" && (
-              <div className="mb-5 space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Week navigation */}
-                  <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Input
-                      type="date"
-                      value={selectedWeek}
-                      onChange={(e) => {
-                        if (e.target.value) setSelectedWeek(getWeekStartTL(e.target.value));
-                      }}
-                      className="h-8 w-[140px] text-sm border-0 bg-transparent text-center font-medium"
-                    />
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
-                    {t("timeLeave.attendance.actions.today")}
-                  </Button>
-
-                  {/* View mode toggle: by location vs by employee */}
-                  <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "location" && "bg-card shadow-sm text-foreground")}
-                      onClick={() => setScheduleViewMode("location")}
-                    >
-                      <MapPin className="h-3.5 w-3.5" />
-                      {t("timeLeave.shiftScheduling.controls.location")}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "employee" && "bg-card shadow-sm text-foreground")}
-                      onClick={() => setScheduleViewMode("employee")}
-                    >
-                      <LayoutGrid className="h-3.5 w-3.5" />
-                      {t("timeLeave.shiftScheduling.tabs.employees")}
-                    </Button>
-                  </div>
-
-                  <div className="ml-auto">
-                    <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                      {/* Create Shift button moved to PageHeader */}
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>{t("timeLeave.shiftScheduling.create.title")}</DialogTitle>
-                          <DialogDescription>{t("timeLeave.shiftScheduling.create.description")}</DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                          <div>
-                            <Label htmlFor="employee">{t("timeLeave.shiftScheduling.create.employee")}</Label>
-                            <Select value={formData.employee} onValueChange={handleEmployeeSelect}>
-                              <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.employeePlaceholder")} /></SelectTrigger>
-                              <SelectContent>
-                                {employees.map((employee) => (
-                                  <SelectItem key={employee.id} value={employee.id}>
-                                    {employee.name} - {employee.position}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="department">{t("timeLeave.shiftScheduling.create.department")}</Label>
-                            <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
-                              <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.departmentPlaceholder")} /></SelectTrigger>
-                              <SelectContent>
-                                {departments.map((dept) => (
-                                  <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
-                            <Input id="shift-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <Label htmlFor="shift-start">{t("timeLeave.shiftScheduling.create.startTime")}</Label>
-                              <TimePicker id="shift-start" value={formData.startTime} onChange={(v) => handleInputChange("startTime", v)} required />
-                            </div>
-                            <div>
-                              <Label htmlFor="shift-end">{t("timeLeave.shiftScheduling.create.endTime")}</Label>
-                              <TimePicker id="shift-end" value={formData.endTime} onChange={(v) => handleInputChange("endTime", v)} required />
-                            </div>
-                          </div>
-                          {formData.startTime && formData.endTime && (
-                            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                              {t("timeLeave.shiftScheduling.create.totalHours", { hours: calcShiftHours(formData.startTime, formData.endTime) })}
-                            </div>
-                          )}
-                          {locations.length > 0 ? (
-                            <div>
-                              <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
-                              <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
-                                <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
-                                <SelectContent>
-                                  {locations.map((location) => (
-                                    <SelectItem key={location} value={location}>{location}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              {t("timeLeave.shiftScheduling.noLocations.dialogHint")}
-                            </p>
-                          )}
-                          <MoreDetailsSection>
-                            <div className="space-y-4">
-                              <div>
-                                <Label htmlFor="position">{t("timeLeave.shiftScheduling.create.position")}</Label>
-                                <Input id="position" value={formData.position} onChange={(e) => handleInputChange("position", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.positionPlaceholder")} />
-                              </div>
-                              <div>
-                                <Label htmlFor="notes">{t("timeLeave.shiftScheduling.create.notes")}</Label>
-                                <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange("notes", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.notesPlaceholder")} rows={2} />
-                              </div>
-                            </div>
-                          </MoreDetailsSection>
-                          <div className="flex gap-2">
-                            <Button type="button" variant="outline" onClick={() => { resetForm(); setShowCreateDialog(false); }} className="flex-1">
-                              {t("timeLeave.shiftScheduling.actions.cancel")}
-                            </Button>
-                            <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
-                              {createShiftMutation.isPending ? (t("common.saving") || "Saving...") : t("timeLeave.shiftScheduling.actions.createShift")}
-                            </Button>
-                          </div>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+            {draftCount > 0 && (
+              <div className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 text-sm">
+                  <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                  <span>{t("timeLeave.shiftScheduling.actions.publishSchedule", { count: draftCount })}</span>
                 </div>
-
-                <MoreDetailsSection>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                      <SelectTrigger className="h-8 w-[160px] text-xs">
-                        <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allDepartments")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
-                        {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                      <SelectTrigger className="h-8 w-[160px] text-xs">
-                        <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allLocations")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
-                        {locations.map((location) => (
-                          <SelectItem key={location} value={location}>{location}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </MoreDetailsSection>
+                <Button variant="outline" onClick={() => void publishDrafts()} disabled={publishMutation.isPending}>
+                  {publishMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {t("timeLeave.shiftScheduling.actions.publishSchedule", { count: draftCount })}
+                </Button>
               </div>
             )}
 
-            <TabsContent value="schedule" className="mt-0">
-              {scheduleViewMode === "employee" ? (
-                renderScheduleView()
-              ) : workLocations.length === 0 ? (
-                <div className="py-16 text-center border rounded-xl bg-card">
-                  <MapPin className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-foreground">
-                    {t("timeLeave.shiftScheduling.noLocations.title")}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-                    {t("timeLeave.shiftScheduling.noLocations.desc")}
-                  </p>
-                  <Button
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => navigate("/settings?tab=structure")}
-                  >
-                    {t("timeLeave.shiftScheduling.noLocations.cta")}
-                  </Button>
-                </div>
-              ) : (
-                <LocationGridView
-                  employees={employees}
-                  shifts={shifts}
-                  selectedWeek={selectedWeek}
-                  locations={workLocations}
-                  slots={shiftSlots}
-                  onSlotsChange={handleSlotsChange}
-                  onCreateShift={(data) => createShiftMutation.mutateAsync(data)}
-                  onDeleteShift={(id) => deleteShiftMutation.mutateAsync(id)}
-                  onSelectWeek={setSelectedWeek}
-                  goToPreviousWeek={goToPreviousWeek}
-                  goToNextWeek={goToNextWeek}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="employees" className="mt-6">
-              {renderEmployeesView()}
-            </TabsContent>
-
-            <TabsContent value="analytics" className="mt-6">
-              {renderAnalyticsView()}
-            </TabsContent>
-          </Tabs>
-
-          {/* Edit Shift Dialog */}
-          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {t("timeLeave.shiftScheduling.edit.title")}
-                </DialogTitle>
-                <DialogDescription>
-                  {t("timeLeave.shiftScheduling.edit.description")}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleUpdateShift} className="space-y-4">
-                <div>
-                  <Label htmlFor="edit-employee">
-                    {t("timeLeave.shiftScheduling.edit.employee")}
-                  </Label>
-                  <Select
-                    value={formData.employee}
-                    onValueChange={handleEmployeeSelect}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.edit.employeePlaceholder",
-                        )}
-                      />
-                    </SelectTrigger>
+            <MoreDetailsSection className="mb-4" title={t("timeLeave.shiftScheduling.controls.title")}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto_auto]">
+                {!isManager && (
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allDepartments")} /></SelectTrigger>
                     <SelectContent>
-                      {employees.map((employee) => (
-                        <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} - {employee.position}
-                        </SelectItem>
+                      <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
+                      {departments.map((department) => (
+                        <SelectItem key={department.id} value={department.name}>{department.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-date">
-                    {t("timeLeave.shiftScheduling.edit.date")}
-                  </Label>
-                  <Input
-                    id="edit-date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleInputChange("date", e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="edit-start">
-                      {t("timeLeave.shiftScheduling.edit.startTime")}
-                    </Label>
-                    <TimePicker
-                      id="edit-start"
-                      value={formData.startTime}
-                      onChange={(v) => handleInputChange("startTime", v)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-end">
-                      {t("timeLeave.shiftScheduling.edit.endTime")}
-                    </Label>
-                    <TimePicker
-                      id="edit-end"
-                      value={formData.endTime}
-                      onChange={(v) => handleInputChange("endTime", v)}
-                      required
-                    />
-                  </div>
-                </div>
-                {locations.length > 0 && (
-                  <div>
-                    <Label htmlFor="edit-location">
-                      {t("timeLeave.shiftScheduling.edit.location")}
-                    </Label>
-                    <Select
-                      value={formData.location}
-                      onValueChange={(value) =>
-                        handleInputChange("location", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t(
-                            "timeLeave.shiftScheduling.edit.locationPlaceholder",
-                          )}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Keep a stale location selectable so editing doesn't silently drop it */}
-                        {formData.location && !locations.includes(formData.location) && (
-                          <SelectItem value={formData.location}>{formData.location}</SelectItem>
-                        )}
-                        {locations.map((location) => (
-                          <SelectItem key={location} value={location}>
-                            {location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 )}
-                <MoreDetailsSection>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="edit-position">
-                        {t("timeLeave.shiftScheduling.edit.position")}
-                      </Label>
-                      <Input
-                        id="edit-position"
-                        value={formData.position}
-                        onChange={(e) =>
-                          handleInputChange("position", e.target.value)
-                        }
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.edit.positionPlaceholder",
-                        )}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="edit-notes">
-                        {t("timeLeave.shiftScheduling.edit.notes")}
-                      </Label>
-                      <Textarea
-                        id="edit-notes"
-                        value={formData.notes}
-                        onChange={(e) => handleInputChange("notes", e.target.value)}
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.edit.notesPlaceholder",
-                        )}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                </MoreDetailsSection>
-                <div className="flex gap-2">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        className="flex-1"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t("timeLeave.shiftScheduling.actions.delete")}
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allLocations")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
+                    {locations.map((location) => <SelectItem key={location} value={location}>{location}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={() => void copyWeek()} disabled={copyMutation.isPending}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  {t("timeLeave.shiftScheduling.actions.copyWeek")}
+                </Button>
+                <Button variant="outline" onClick={() => void exportWeek()}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("timeLeave.shiftScheduling.actions.export")}
+                </Button>
+              </div>
+            </MoreDetailsSection>
+
+            <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
+              {weekDays.map((date, dayIndex) => {
+                const dayShifts = visibleShifts
+                  .filter((shift) => shift.date === date)
+                  .sort((left, right) => left.startTime.localeCompare(right.startTime));
+                return (
+                  <div key={date} className={cn("p-4", dayIndex > 0 && "border-t border-border/70")}>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <h2 className="font-semibold">
+                          {formatDateTL(parseDateISO(date), { weekday: "long" })}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateTL(parseDateISO(date), { day: "numeric", month: "short" })}
+                          {dayShifts.length > 0
+                            ? ` · ${t("timeLeave.shiftScheduling.calendar.daySummary", {
+                                count: dayShifts.length,
+                                hours: dayShifts.reduce((total, shift) => total + shift.hours, 0).toFixed(1),
+                              })}`
+                            : ""}
+                        </p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => openCreate(date)}>
+                        <Plus className="mr-1.5 h-4 w-4" />
+                        {t("timeLeave.shiftScheduling.actions.createShift")}
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {t("timeLeave.shiftScheduling.delete.title")}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("timeLeave.shiftScheduling.delete.description")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>
-                          {t("timeLeave.shiftScheduling.actions.cancel")}
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            if (selectedShift?.id) {
-                              handleDeleteShift(selectedShift.id);
-                            }
-                            setShowEditDialog(false);
-                            setSelectedShift(null);
-                            resetForm();
-                          }}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          {t("timeLeave.shiftScheduling.delete.confirm")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      resetForm();
-                      setShowEditDialog(false);
-                      setSelectedShift(null);
-                    }}
-                    className="flex-1"
-                  >
-                    {t("timeLeave.shiftScheduling.actions.cancel")}
-                  </Button>
-                  <Button type="submit" className="flex-1" disabled={updateShiftMutation.isPending}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {updateShiftMutation.isPending
-                      ? (t("common.saving") || "Saving...")
-                      : t("timeLeave.shiftScheduling.actions.update")}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+                    </div>
+
+                    {dayShifts.length === 0 ? (
+                      <p className="rounded-lg bg-muted/40 px-3 py-3 text-sm text-muted-foreground">
+                        {t("timeLeave.shiftScheduling.grid.empty")}
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {dayShifts.map((shift) => (
+                          <button
+                            key={shift.id}
+                            type="button"
+                            onClick={() => openEdit(shift)}
+                            className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-border/60 px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-semibold">{shift.employeeName}</span>
+                              <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                                <span>{shift.startTime} — {shift.endTime}</span>
+                                <span>{shift.hours.toFixed(1)}h</span>
+                                {shift.location && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{shift.location}</span>}
+                              </span>
+                            </span>
+                            <Badge variant="outline" className={statusClass(shift.status)}>
+                              {t(`timeLeave.shiftScheduling.status.${shift.status}`)}
+                            </Badge>
+                            <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </section>
+          </>
+        )}
+      </main>
+
+      <Dialog open={formOpen} onOpenChange={(open) => {
+        setFormOpen(open);
+        if (!open) setEditingShift(null);
+      }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingShift
+                ? t("timeLeave.shiftScheduling.edit.title")
+                : t("timeLeave.shiftScheduling.create.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {editingShift
+                ? t("timeLeave.shiftScheduling.edit.description")
+                : t("timeLeave.shiftScheduling.create.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitShift} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("timeLeave.shiftScheduling.create.employee")}</Label>
+              <Select value={form.employeeId} onValueChange={(employeeId) =>
+                setForm((current) => ({ ...current, employeeId }))}>
+                <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.employeePlaceholder")} /></SelectTrigger>
+                <SelectContent>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id!}>
+                      {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedEmployee && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedEmployee.jobDetails.department} · {selectedEmployee.jobDetails.position}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
+              <Input id="shift-date" type="date" value={form.date} onChange={(event) =>
+                setForm((current) => ({ ...current, date: event.target.value }))} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{t("timeLeave.shiftScheduling.create.startTime")}</Label>
+                <TimePicker value={form.startTime} onChange={(startTime) =>
+                  setForm((current) => ({ ...current, startTime }))} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("timeLeave.shiftScheduling.create.endTime")}</Label>
+                <TimePicker value={form.endTime} onChange={(endTime) =>
+                  setForm((current) => ({ ...current, endTime }))} />
+              </div>
+            </div>
+            <p className={cn(
+              "rounded-lg px-3 py-2 text-sm",
+              selectedEmployeeWeekHours > MAX_WEEKLY_HOURS
+                ? "bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                : "bg-muted/40 text-muted-foreground",
+            )}>
+              {t("timeLeave.shiftScheduling.create.totalHours", { hours: formHours.toFixed(1) })}
+              {selectedEmployeeWeekHours > MAX_WEEKLY_HOURS && selectedEmployee
+                ? ` · ${t("timeLeave.shiftScheduling.recommendations.overworkedTitle", { name: selectedEmployee.personalInfo.firstName })}`
+                : ""}
+            </p>
+
+            <div className="space-y-2">
+              <Label>{t("timeLeave.shiftScheduling.create.location")}</Label>
+              {locations.length > 0 ? (
+                <Select value={form.location} onValueChange={(location) =>
+                  setForm((current) => ({ ...current, location }))}>
+                  <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
+                  <SelectContent>
+                    {locations.map((location) => <SelectItem key={location} value={location}>{location}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={form.location} onChange={(event) =>
+                  setForm((current) => ({ ...current, location: event.target.value }))}
+                  placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} />
+              )}
+            </div>
+
+            {editingShift && (
+              <div className="space-y-2">
+                <Label>{t("timeLeave.shiftScheduling.grid.status")}</Label>
+                <Select value={form.status} onValueChange={(status: ShiftStatus) =>
+                  setForm((current) => ({ ...current, status }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(["draft", "published", "confirmed", "cancelled"] as ShiftStatus[]).map((status) => (
+                      <SelectItem key={status} value={status}>{t(`timeLeave.shiftScheduling.status.${status}`)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="shift-notes">{t("timeLeave.shiftScheduling.create.notes")}</Label>
+              <Textarea id="shift-notes" value={form.notes} onChange={(event) =>
+                setForm((current) => ({ ...current, notes: event.target.value }))}
+                placeholder={t("timeLeave.shiftScheduling.create.notesPlaceholder")} rows={3} />
+            </div>
+
+            <DialogFooter className="sm:justify-between">
+              {editingShift ? (
+                <Button type="button" variant="destructive" onClick={() => setDeleteTarget(editingShift)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t("timeLeave.shiftScheduling.actions.delete")}
+                </Button>
+              ) : <span />}
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                  {t("timeLeave.shiftScheduling.actions.cancel")}
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingShift
+                    ? t("timeLeave.shiftScheduling.actions.update")
+                    : t("timeLeave.shiftScheduling.actions.createShift")}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("timeLeave.shiftScheduling.delete.title")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("timeLeave.shiftScheduling.delete.description")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("timeLeave.shiftScheduling.actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void removeShift()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("timeLeave.shiftScheduling.delete.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -4,6 +4,11 @@ import type { User } from "firebase/auth";
 import { db, getFunctionsLazy } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
+import {
+  forgetAccountantPartner,
+  PRIMOS_BOOT_PARTNER,
+  type AccountantPartnerId,
+} from "@/lib/accountantPartners";
 
 /** Thrown when the chosen company slug already belongs to another tenant. */
 export class SlugTakenError extends Error {
@@ -61,6 +66,8 @@ export interface ProvisionOrgParams {
   companyName: string;
   /** Slug becomes the tenant id. Generated if omitted. */
   companySlug?: string;
+  /** Optional consultation request. Selection alone never grants data access. */
+  accountantPartnerId?: AccountantPartnerId | null;
 }
 
 /**
@@ -90,6 +97,7 @@ async function provisionOrgWrites({
   displayName,
   companyName,
   companySlug,
+  accountantPartnerId,
 }: ProvisionOrgParams): Promise<string> {
   const name = companyName.trim();
   const slug = (companySlug || "").trim();
@@ -125,6 +133,17 @@ async function provisionOrgWrites({
         currency: "USD",
         dateFormat: "YYYY-MM-DD",
       },
+      ...(accountantPartnerId === PRIMOS_BOOT_PARTNER.id
+        ? {
+            accountantPartner: {
+              partnerId: PRIMOS_BOOT_PARTNER.id,
+              partnerName: PRIMOS_BOOT_PARTNER.name,
+              status: "selected",
+              selectedBy: user.uid,
+              selectedAt: serverTimestamp(),
+            },
+          }
+        : {}),
     });
   } catch (err) {
     if (err instanceof FirebaseError && err.code === "permission-denied") {
@@ -204,6 +223,29 @@ async function provisionOrgWrites({
     await sendWelcome({ tenantName: name });
   } catch (err) {
     console.warn("Welcome email send failed during onboarding:", err);
+  }
+
+  // The consultation request is deliberately separate from organization
+  // creation. While the partnership is pre-launch, save only the customer's
+  // preference; do not call the backend or share any contact details.
+  if (accountantPartnerId === PRIMOS_BOOT_PARTNER.id) {
+    try {
+      if (PRIMOS_BOOT_PARTNER.connectionsOpen) {
+        const { accountantPartnerService } = await import(
+          "./accountantPartnerService"
+        );
+        await accountantPartnerService.requestConnection(
+          tenantId,
+          accountantPartnerId,
+        );
+      }
+    } catch (err) {
+      // Keep the tenant in "selected" state so the owner can retry from
+      // Settings. A partner notification must never break signup.
+      console.warn("Accountant consultation request failed during onboarding:", err);
+    } finally {
+      forgetAccountantPartner();
+    }
   }
 
   return tenantId;

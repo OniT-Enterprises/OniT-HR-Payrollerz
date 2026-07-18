@@ -81,6 +81,24 @@ export const seoConfig = {
     keywords: 'how Xefe works, Timor-Leste payroll workflow, payroll accounting Timor-Leste, INSS reporting, WIT reporting, accounting software for accountants',
     url: '/how-it-works',
   },
+  pricing: {
+    title: 'Pricing — One Flat Price Per Employee',
+    description: 'Xefe pricing for Timor-Leste businesses: one flat price per employee per month with every feature included. Set up free — subscribe only when you finalize a real payroll run.',
+    keywords: 'Xefe pricing, payroll software price Timor-Leste, HR software cost, per employee pricing, presu Xefe',
+    url: '/pricing',
+  },
+  accountantPartners: {
+    title: 'Accountant Partners for Timor-Leste Businesses',
+    description: "Choose a Xefe accounting partner, request a consultation, and grant secure accountant access only when you are ready. Featuring Primos Bo'ot in Dili.",
+    keywords: "accountant Timor-Leste, accounting firm Dili, Primos Bo'ot, bookkeeping Timor-Leste, payroll accountant, Xefe accountant access",
+    url: '/accountants',
+  },
+  accountantPortfolio: {
+    title: 'Accountant Client Review',
+    description: 'Review Xefe client connection requests and open approved client workspaces.',
+    url: '/accountant/clients',
+    noIndex: true,
+  },
   login: {
     title: 'Login',
     description: 'Sign in to your Xefe account to manage your workforce.',
@@ -172,15 +190,9 @@ export const seoConfig = {
   // Scheduling & Attendance
   schedulingDashboard: {
     title: 'Time & Leave Dashboard',
-    description: 'Manage time tracking, attendance, leave requests, and shift schedules.',
-    keywords: 'scheduling, attendance, time tracking, leave management, shift scheduling',
+    description: 'Manage attendance, leave requests, and shift schedules in one calm workspace.',
+    keywords: 'scheduling, attendance, leave management, shift scheduling',
     url: '/time-leave',
-  },
-  timeTracking: {
-    title: 'Time Tracking',
-    description: 'Track employee work hours with clock in/out and timesheet management.',
-    keywords: 'time tracking, timesheets, work hours, clock in, clock out',
-    url: '/time-leave/time-tracking',
   },
   attendance: {
     title: 'Attendance',

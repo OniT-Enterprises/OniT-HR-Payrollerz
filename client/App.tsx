@@ -23,6 +23,7 @@ import AppLayout from "@/components/layout/AppLayout";
 
 // Route definitions
 import {
+  AccountantPortfolioDashboard,
   Dashboard,
   Landing,
   authRoutes,
@@ -36,6 +37,7 @@ import {
   adminRoutes,
   notFoundRoute,
 } from "./routes";
+import { isAccountantPartnerTenant } from "@/lib/accountantPartners";
 
 function SessionRecovery({
   onRetry,
@@ -201,7 +203,9 @@ function HomeRoute() {
   // (a superadmin has no tenants of their own, so hasTenants is false and they
   // would otherwise be bounced to /admin, making impersonation look broken).
   if (isImpersonating && session) {
-    return <Dashboard />;
+    return isAccountantPartnerTenant(session.tid)
+      ? <AccountantPortfolioDashboard />
+      : <Dashboard />;
   }
 
   // Superadmins may intentionally have no profile or tenant of their own.
@@ -229,6 +233,10 @@ function HomeRoute() {
         onUseAnotherAccount={signOut}
       />
     );
+  }
+
+  if (isAccountantPartnerTenant(session.tid)) {
+    return <AccountantPortfolioDashboard />;
   }
 
   // User with tenants - show regular dashboard

@@ -33,6 +33,7 @@ import { colors } from '../../lib/colors';
 import { useT } from '../../lib/i18n';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useEmployeeStore } from '../../stores/employeeStore';
 import { useCrewStore } from '../../stores/crewStore';
 import { compressPhoto, savePhotoLocally } from '../../lib/photoUtils';
 import { WorkerCheckRow } from '../../components/WorkerCheckRow';
@@ -46,8 +47,10 @@ export default function CrewClockOutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const tenantId = useTenantStore((s) => s.tenantId)!;
+  const supervisorDepartmentId = useTenantStore((s) => s.departmentId);
   const user = useAuthStore((s) => s.user)!;
   const profile = useAuthStore((s) => s.profile)!;
+  const supervisorEmployee = useEmployeeStore((s) => s.employee);
 
   const workers = useCrewStore((s) => s.workers);
   const selectedWorkerIds = useCrewStore((s) => s.selectedWorkerIds);
@@ -71,13 +74,13 @@ export default function CrewClockOutScreen() {
 
   useEffect(() => {
     const init = async () => {
-      await fetchWorkers(tenantId);
+      await fetchWorkers(tenantId, supervisorEmployee?.department, supervisorDepartmentId ?? undefined);
       reset();
       const records = getWorkersNeedingClockOut(tenantId);
       setClockedInRecords(records);
     };
     init();
-  }, [tenantId, fetchWorkers, reset, getWorkersNeedingClockOut]);
+  }, [tenantId, supervisorEmployee?.department, supervisorDepartmentId, fetchWorkers, reset, getWorkersNeedingClockOut]);
 
   // Filter workers to only those who clocked in today
   const clockedInIds = new Set(clockedInRecords.map((r) => r.employeeId));
