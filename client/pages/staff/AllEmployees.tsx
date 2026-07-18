@@ -139,14 +139,39 @@ function DesktopEmployeeTable({
     enabled: useVirtual,
   });
 
+  // Header and every row share ONE grid template, so columns stay aligned
+  // in both branches — including virtualized rows, which are absolutely
+  // positioned and therefore can't participate in <table> column sizing
+  // (that was the "columns broke" bug on large directories).
+  const gridTemplate = showSalary
+    ? 'minmax(240px,2fr) minmax(130px,1.1fr) minmax(160px,1.4fr) 110px 140px 72px'
+    : 'minmax(240px,2fr) minmax(130px,1.1fr) minmax(160px,1.4fr) 110px 72px';
+
+  const headerCell = 'px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider';
+  const headerRow = (
+    <div
+      role="row"
+      className="sticky top-0 z-10 grid items-center border-b bg-background"
+      style={{ gridTemplateColumns: gridTemplate, minWidth: 860 }}
+    >
+      <div role="columnheader" className={headerCell}>{t("employees.table.employee")}</div>
+      <div role="columnheader" className={headerCell}>{t("employees.table.department")}</div>
+      <div role="columnheader" className={headerCell}>{t("employees.table.position")}</div>
+      <div role="columnheader" className={headerCell}>{t("employees.table.status")}</div>
+      {showSalary && <div role="columnheader" className={`${headerCell} text-right`}>{t("employees.table.salary")}</div>}
+      <div role="columnheader" className={`${headerCell} text-right`}>{t("employees.table.actions")}</div>
+    </div>
+  );
+
   const renderRow = (employee: Employee, style?: React.CSSProperties) => (
-    <tr
+    <div
+      role="row"
       key={employee.id}
-      className="hover:bg-muted/50 transition-colors cursor-pointer group"
-      style={style}
+      className="grid items-center border-b border-border/50 hover:bg-muted/50 transition-colors cursor-pointer group"
+      style={{ ...style, gridTemplateColumns: gridTemplate, minWidth: 860 }}
       onClick={() => onViewEmployee(employee)}
     >
-      <td className="px-4 py-3">
+      <div role="cell" className="min-w-0 px-4 py-2">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
             <AvatarImage src="" alt={employee.personalInfo.firstName} />
@@ -175,14 +200,14 @@ function DesktopEmployeeTable({
             )}
           </div>
         </div>
-      </td>
-      <td className="px-4 py-3">
+      </div>
+      <div role="cell" className="min-w-0 truncate px-4 py-2">
         <span className="text-sm">{employee.jobDetails.department}</span>
-      </td>
-      <td className="px-4 py-3">
+      </div>
+      <div role="cell" className="min-w-0 truncate px-4 py-2">
         <span className="text-sm">{employee.jobDetails.position}</span>
-      </td>
-      <td className="px-4 py-3">
+      </div>
+      <div role="cell" className="px-4 py-2">
         <Badge
           className={
             employee.status === "active"
@@ -194,9 +219,9 @@ function DesktopEmployeeTable({
         >
           {getStatusLabel(employee.status)}
         </Badge>
-      </td>
+      </div>
       {showSalary && (
-        <td className="px-4 py-3 text-right">
+        <div role="cell" className="px-4 py-2 text-right whitespace-nowrap">
           <span className="font-medium tabular-nums">
             {formatSalary(
               employee.compensation.monthlySalary ||
@@ -204,9 +229,9 @@ function DesktopEmployeeTable({
             )}
           </span>
           <span className="text-xs text-muted-foreground">{t("employees.perMonth")}</span>
-        </td>
+        </div>
       )}
-      <td className="px-4 py-3">
+      <div role="cell" className="px-4 py-2">
         <div className="flex items-center justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -243,70 +268,42 @@ function DesktopEmployeeTable({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 
   if (!useVirtual) {
     // Small dataset: render directly (no virtualization overhead)
     return (
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
-          <thead className="sticky top-0 bg-background border-b z-10">
-            <tr>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.employee")}</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
-              {showSalary && <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/50">
-            {employees.map((employee) => renderRow(employee))}
-          </tbody>
-        </table>
+      <div role="table" className="hidden md:block overflow-x-auto">
+        {headerRow}
+        <div role="rowgroup">{employees.map((employee) => renderRow(employee))}</div>
       </div>
     );
   }
 
-  // Large dataset: virtualized rendering
+  // Large dataset: virtualized rendering — the shared grid template keeps
+  // absolutely positioned rows aligned with the header columns.
   return (
-    <div className="hidden md:block overflow-x-auto">
-      <table className="w-full">
-        <thead className="sticky top-0 bg-background border-b z-10">
-          <tr>
-            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.employee")}</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
-            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
-            {showSalary && <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
-            <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
-          </tr>
-        </thead>
-      </table>
+    <div role="table" className="hidden md:block overflow-x-auto">
+      {headerRow}
       <div
         ref={parentRef}
         className="overflow-auto"
         style={{ maxHeight: '70vh' }}
       >
-        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-          <table className="w-full">
-            <tbody>
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const employee = employees[virtualRow.index];
-                return renderRow(employee, {
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                  display: 'table-row',
-                });
-              })}
-            </tbody>
-          </table>
+        <div role="rowgroup" style={{ height: virtualizer.getTotalSize(), position: 'relative', minWidth: 860 }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const employee = employees[virtualRow.index];
+            return renderRow(employee, {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: `${virtualRow.size}px`,
+              transform: `translateY(${virtualRow.start}px)`,
+            });
+          })}
         </div>
       </div>
     </div>
