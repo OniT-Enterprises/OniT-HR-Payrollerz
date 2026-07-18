@@ -592,6 +592,77 @@ export const translations = {
       "goToLogin": "Go to Login",
       "browsePages": "Browse Available Pages"
     },
+    "billing": {
+      "title": "Billing & Plan",
+      "subtitle": "Every feature is free to use. A subscription unlocks finalizing payroll runs.",
+      "active": {
+        "title": "Subscription active",
+        "description": "You can finalize payroll runs and use every feature."
+      },
+      "free": {
+        "title": "Subscribe to run payroll",
+        "description": "You're on the free plan — everything works except finalizing a payroll run."
+      },
+      "interval": {
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "annualSave": "Annual · save {{savings}}"
+      },
+      "price": "Price",
+      "perEmployeeMo": "/employee/mo",
+      "minimum": "Minimum",
+      "includesEmployees": "includes {{count}} employees",
+      "billedAnnually": "Billed annually",
+      "billedMonthly": "Billed monthly",
+      "annualTotal": "Annual total",
+      "monthlyTotal": "Monthly total",
+      "seats": "{{active}} active · {{billed}} billed",
+      "seatNote": {
+        "monthly": "Your bill adjusts automatically as your team changes — each invoice bills your team size at the time, with no part-month charges.",
+        "monthlyChanged": "Your team changed since your last invoice — the next invoice bills {{count}} employees ({{total}}/month). There are no part-month charges.",
+        "annual": "Your bill adjusts automatically as your team changes — added employees are charged a small prorated amount right away; reductions apply at renewal.",
+        "annualIncrease": "Added employees are billed automatically — you'll receive a small prorated invoice for the difference, and your renewal bills {{count}} employees ({{total}}/year).",
+        "manual": "Your price is fixed until your paid-until date. When you renew, the new amount uses your team size at that time."
+      },
+      "paidUntil": "Paid until",
+      "renews": "Renews",
+      "manageBilling": "Manage billing",
+      "manualContact": "Paid by bank transfer or cash. To renew or make changes, email",
+      "subscribeMonthly": "Subscribe monthly",
+      "subscribeAnnually": "Subscribe annually",
+      "stripeSecure": "Card payments are processed securely by Stripe.",
+      "offline": {
+        "title": "No card? Pay by bank transfer or cash.",
+        "description": "Request an invoice and we'll send payment details. Your subscription is activated as soon as the payment is confirmed.",
+        "request": "Request an invoice",
+        "sent": "Request sent ✓"
+      },
+      "onlyAdmins": "Only owners and HR admins can change the subscription.",
+      "toasts": {
+        "adminsOnly": "Only owners and admins can manage billing",
+        "checkoutFailed": "Could not start checkout. Please try again.",
+        "portalFailed": "Could not open the billing portal.",
+        "requestSent": "Request sent — we'll email your invoice with payment details.",
+        "requestFailed": "Could not send the request. Please try again.",
+        "subscribed": "Subscription active — you can now run payroll. Thank you!",
+        "canceled": "Checkout canceled — no charge was made."
+      },
+      "included": {
+        "title": "Included with every account",
+        "description": "Free and paid — no feature is locked away."
+      },
+      "features": {
+        "people": "People & org directory",
+        "hiring": "Hiring & onboarding",
+        "timeLeave": "Time & leave",
+        "performance": "Performance reviews",
+        "payroll": "Payroll — INSS, WIT, subsídio",
+        "money": "Money — invoices, bills, expenses",
+        "accounting": "Accounting & general ledger",
+        "reports": "Reports & compliance",
+        "ekipa": "Ekipa staff mobile app"
+      }
+    },
     "landing": {
       "nav": {
         "features": "Features",
@@ -7830,6 +7901,77 @@ export const translations = {
       "goToLogin": "Ba Login",
       "browsePages": "Hare Pajina Disponivel"
     },
+    "billing": {
+      "title": "Faturasaun & Planu",
+      "subtitle": "Fitur hotu-hotu grátis atu uza. Subskrisaun loke finalizasaun folha pagamentu.",
+      "active": {
+        "title": "Subskrisaun ativu",
+        "description": "Ita bele finaliza folha pagamentu no uza fitur hotu-hotu."
+      },
+      "free": {
+        "title": "Subscreve atu prosesa saláriu",
+        "description": "Ita iha planu grátis — buat hotu funsiona, maibé la bele finaliza folha pagamentu."
+      },
+      "interval": {
+        "monthly": "Mensál",
+        "annual": "Anuál",
+        "annualSave": "Anuál · poupa {{savings}}"
+      },
+      "price": "Presu",
+      "perEmployeeMo": "/funsionáriu/fulan",
+      "minimum": "Mínimu",
+      "includesEmployees": "inklui funsionáriu {{count}}",
+      "billedAnnually": "Selu kada tinan",
+      "billedMonthly": "Selu kada fulan",
+      "annualTotal": "Totál anuál",
+      "monthlyTotal": "Totál mensál",
+      "seats": "{{active}} ativu · {{billed}} iha fatura",
+      "seatNote": {
+        "monthly": "Ita-nia fatura ajusta automátiku bainhira ekipa muda — fatura ida-idak selu tuir númeru funsionáriu iha momentu ne'ebá, la iha kobransa parsiál fulan nian.",
+        "monthlyChanged": "Ita-nia ekipa muda ona depois fatura ikus — fatura tuir mai sei selu funsionáriu {{count}} ({{total}}/fulan). La iha kobransa parsiál fulan nian.",
+        "annual": "Ita-nia fatura ajusta automátiku bainhira ekipa muda — funsionáriu foun selu kedas ho montante proporsionál ki'ik; redusaun aplika iha renovasaun.",
+        "annualIncrease": "Funsionáriu foun selu automátiku — Ita sei simu fatura proporsionál ki'ik ba diferensa, no renovasaun sei selu funsionáriu {{count}} ({{total}}/tinan).",
+        "manual": "Ita-nia presu fixu to'o data validade. Bainhira renova, montante foun uza númeru funsionáriu iha momentu ne'ebá."
+      },
+      "paidUntil": "Selu to'o",
+      "renews": "Renova",
+      "manageBilling": "Jere faturasaun",
+      "manualContact": "Selu liu husi transferénsia bankária ka osan-kontante. Atu renova ka muda, haruka email ba",
+      "subscribeMonthly": "Subscreve mensál",
+      "subscribeAnnually": "Subscreve anuál",
+      "stripeSecure": "Pagamentu ho kartaun prosesa ho seguransa liu husi Stripe.",
+      "offline": {
+        "title": "La iha kartaun? Selu liu husi transferénsia bankária ka osan-kontante.",
+        "description": "Husu fatura ida no ami sei haruka detallu pagamentu. Ita-nia subskrisaun ativa kedas bainhira pagamentu konfirma.",
+        "request": "Husu fatura ida",
+        "sent": "Pedidu haruka ona ✓"
+      },
+      "onlyAdmins": "Só na'in no administradór RH mak bele muda subskrisaun.",
+      "toasts": {
+        "adminsOnly": "Só na'in no administradór mak bele jere faturasaun",
+        "checkoutFailed": "La konsege hahú pagamentu. Favór koko fila fali.",
+        "portalFailed": "La konsege loke portál faturasaun.",
+        "requestSent": "Pedidu haruka ona — ami sei haruka Ita-nia fatura ho detallu pagamentu.",
+        "requestFailed": "La konsege haruka pedidu. Favór koko fila fali.",
+        "subscribed": "Subskrisaun ativu — agora Ita bele prosesa saláriu. Obrigadu!",
+        "canceled": "Pagamentu kansela — Ita la selu buat ida."
+      },
+      "included": {
+        "title": "Inklui iha konta hotu",
+        "description": "Grátis ka selu — fitur hotu-hotu nakloke."
+      },
+      "features": {
+        "people": "Diretóriu ema no organizasaun",
+        "hiring": "Rekrutamentu no integrasaun",
+        "timeLeave": "Tempu no lisensa",
+        "performance": "Avaliasaun dezempeñu",
+        "payroll": "Saláriu — INSS, WIT, subsídiu",
+        "money": "Osan — fatura, konta, despeza",
+        "accounting": "Kontabilidade no razaun jerál",
+        "reports": "Relatóriu no konformidade",
+        "ekipa": "Aplikasaun móvel Ekipa ba funsionáriu"
+      }
+    },
     "landing": {
       "nav": {
         "features": "Fitur",
@@ -15067,6 +15209,77 @@ export const translations = {
       "backHome": "Voltar ao Início",
       "goToLogin": "Ir para o Login",
       "browsePages": "Ver Páginas Disponíveis"
+    },
+    "billing": {
+      "title": "Faturação e Plano",
+      "subtitle": "Todas as funcionalidades são gratuitas. A subscrição desbloqueia a finalização da folha de pagamento.",
+      "active": {
+        "title": "Subscrição ativa",
+        "description": "Pode finalizar folhas de pagamento e usar todas as funcionalidades."
+      },
+      "free": {
+        "title": "Subscreva para processar salários",
+        "description": "Está no plano gratuito — tudo funciona exceto finalizar uma folha de pagamento."
+      },
+      "interval": {
+        "monthly": "Mensal",
+        "annual": "Anual",
+        "annualSave": "Anual · poupe {{savings}}"
+      },
+      "price": "Preço",
+      "perEmployeeMo": "/funcionário/mês",
+      "minimum": "Mínimo",
+      "includesEmployees": "inclui {{count}} funcionários",
+      "billedAnnually": "Faturado anualmente",
+      "billedMonthly": "Faturado mensalmente",
+      "annualTotal": "Total anual",
+      "monthlyTotal": "Total mensal",
+      "seats": "{{active}} ativos · {{billed}} faturados",
+      "seatNote": {
+        "monthly": "A sua fatura ajusta-se automaticamente quando a equipa muda — cada fatura cobra o tamanho da equipa nesse momento, sem cobranças parciais do mês.",
+        "monthlyChanged": "A sua equipa mudou desde a última fatura — a próxima cobra {{count}} funcionários ({{total}}/mês). Sem cobranças parciais do mês.",
+        "annual": "A sua fatura ajusta-se automaticamente quando a equipa muda — funcionários adicionados são cobrados logo com um pequeno valor proporcional; reduções aplicam-se na renovação.",
+        "annualIncrease": "Funcionários adicionados são faturados automaticamente — receberá uma pequena fatura proporcional pela diferença, e a renovação cobra {{count}} funcionários ({{total}}/ano).",
+        "manual": "O seu preço fica fixo até à data de validade. Ao renovar, o novo valor usa o tamanho da equipa nesse momento."
+      },
+      "paidUntil": "Pago até",
+      "renews": "Renova",
+      "manageBilling": "Gerir faturação",
+      "manualContact": "Pago por transferência bancária ou dinheiro. Para renovar ou alterar, envie email para",
+      "subscribeMonthly": "Subscrever mensal",
+      "subscribeAnnually": "Subscrever anual",
+      "stripeSecure": "Os pagamentos com cartão são processados com segurança pela Stripe.",
+      "offline": {
+        "title": "Sem cartão? Pague por transferência bancária ou dinheiro.",
+        "description": "Peça uma fatura e enviaremos os dados de pagamento. A subscrição é ativada assim que o pagamento for confirmado.",
+        "request": "Pedir uma fatura",
+        "sent": "Pedido enviado ✓"
+      },
+      "onlyAdmins": "Só proprietários e administradores de RH podem alterar a subscrição.",
+      "toasts": {
+        "adminsOnly": "Só proprietários e administradores podem gerir a faturação",
+        "checkoutFailed": "Não foi possível iniciar o pagamento. Tente novamente.",
+        "portalFailed": "Não foi possível abrir o portal de faturação.",
+        "requestSent": "Pedido enviado — enviaremos a sua fatura com os dados de pagamento.",
+        "requestFailed": "Não foi possível enviar o pedido. Tente novamente.",
+        "subscribed": "Subscrição ativa — já pode processar salários. Obrigado!",
+        "canceled": "Pagamento cancelado — não foi feita nenhuma cobrança."
+      },
+      "included": {
+        "title": "Incluído em todas as contas",
+        "description": "Grátis e pago — nenhuma funcionalidade fica bloqueada."
+      },
+      "features": {
+        "people": "Diretório de pessoal e organização",
+        "hiring": "Recrutamento e integração",
+        "timeLeave": "Tempo e licenças",
+        "performance": "Avaliações de desempenho",
+        "payroll": "Salários — INSS, IRT, subsídio",
+        "money": "Dinheiro — faturas, contas, despesas",
+        "accounting": "Contabilidade e razão geral",
+        "reports": "Relatórios e conformidade",
+        "ekipa": "Aplicação móvel Ekipa para funcionários"
+      }
     },
     "landing": {
       "nav": {

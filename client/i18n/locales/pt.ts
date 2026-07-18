@@ -588,6 +588,77 @@ const messages = {
     "goToLogin": "Ir para o Login",
     "browsePages": "Ver Páginas Disponíveis"
   },
+  "billing": {
+    "title": "Faturação e Plano",
+    "subtitle": "Todas as funcionalidades são gratuitas. A subscrição desbloqueia a finalização da folha de pagamento.",
+    "active": {
+      "title": "Subscrição ativa",
+      "description": "Pode finalizar folhas de pagamento e usar todas as funcionalidades."
+    },
+    "free": {
+      "title": "Subscreva para processar salários",
+      "description": "Está no plano gratuito — tudo funciona exceto finalizar uma folha de pagamento."
+    },
+    "interval": {
+      "monthly": "Mensal",
+      "annual": "Anual",
+      "annualSave": "Anual · poupe {{savings}}"
+    },
+    "price": "Preço",
+    "perEmployeeMo": "/funcionário/mês",
+    "minimum": "Mínimo",
+    "includesEmployees": "inclui {{count}} funcionários",
+    "billedAnnually": "Faturado anualmente",
+    "billedMonthly": "Faturado mensalmente",
+    "annualTotal": "Total anual",
+    "monthlyTotal": "Total mensal",
+    "seats": "{{active}} ativos · {{billed}} faturados",
+    "seatNote": {
+      "monthly": "A sua fatura ajusta-se automaticamente quando a equipa muda — cada fatura cobra o tamanho da equipa nesse momento, sem cobranças parciais do mês.",
+      "monthlyChanged": "A sua equipa mudou desde a última fatura — a próxima cobra {{count}} funcionários ({{total}}/mês). Sem cobranças parciais do mês.",
+      "annual": "A sua fatura ajusta-se automaticamente quando a equipa muda — funcionários adicionados são cobrados logo com um pequeno valor proporcional; reduções aplicam-se na renovação.",
+      "annualIncrease": "Funcionários adicionados são faturados automaticamente — receberá uma pequena fatura proporcional pela diferença, e a renovação cobra {{count}} funcionários ({{total}}/ano).",
+      "manual": "O seu preço fica fixo até à data de validade. Ao renovar, o novo valor usa o tamanho da equipa nesse momento."
+    },
+    "paidUntil": "Pago até",
+    "renews": "Renova",
+    "manageBilling": "Gerir faturação",
+    "manualContact": "Pago por transferência bancária ou dinheiro. Para renovar ou alterar, envie email para",
+    "subscribeMonthly": "Subscrever mensal",
+    "subscribeAnnually": "Subscrever anual",
+    "stripeSecure": "Os pagamentos com cartão são processados com segurança pela Stripe.",
+    "offline": {
+      "title": "Sem cartão? Pague por transferência bancária ou dinheiro.",
+      "description": "Peça uma fatura e enviaremos os dados de pagamento. A subscrição é ativada assim que o pagamento for confirmado.",
+      "request": "Pedir uma fatura",
+      "sent": "Pedido enviado ✓"
+    },
+    "onlyAdmins": "Só proprietários e administradores de RH podem alterar a subscrição.",
+    "toasts": {
+      "adminsOnly": "Só proprietários e administradores podem gerir a faturação",
+      "checkoutFailed": "Não foi possível iniciar o pagamento. Tente novamente.",
+      "portalFailed": "Não foi possível abrir o portal de faturação.",
+      "requestSent": "Pedido enviado — enviaremos a sua fatura com os dados de pagamento.",
+      "requestFailed": "Não foi possível enviar o pedido. Tente novamente.",
+      "subscribed": "Subscrição ativa — já pode processar salários. Obrigado!",
+      "canceled": "Pagamento cancelado — não foi feita nenhuma cobrança."
+    },
+    "included": {
+      "title": "Incluído em todas as contas",
+      "description": "Grátis e pago — nenhuma funcionalidade fica bloqueada."
+    },
+    "features": {
+      "people": "Diretório de pessoal e organização",
+      "hiring": "Recrutamento e integração",
+      "timeLeave": "Tempo e licenças",
+      "performance": "Avaliações de desempenho",
+      "payroll": "Salários — INSS, IRT, subsídio",
+      "money": "Dinheiro — faturas, contas, despesas",
+      "accounting": "Contabilidade e razão geral",
+      "reports": "Relatórios e conformidade",
+      "ekipa": "Aplicação móvel Ekipa para funcionários"
+    }
+  },
   "landing": {
     "nav": {
       "features": "Funcionalidades",

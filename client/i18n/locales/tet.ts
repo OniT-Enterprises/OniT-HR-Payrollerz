@@ -588,6 +588,77 @@ const messages = {
     "goToLogin": "Ba Login",
     "browsePages": "Hare Pajina Disponivel"
   },
+  "billing": {
+    "title": "Faturasaun & Planu",
+    "subtitle": "Fitur hotu-hotu grátis atu uza. Subskrisaun loke finalizasaun folha pagamentu.",
+    "active": {
+      "title": "Subskrisaun ativu",
+      "description": "Ita bele finaliza folha pagamentu no uza fitur hotu-hotu."
+    },
+    "free": {
+      "title": "Subscreve atu prosesa saláriu",
+      "description": "Ita iha planu grátis — buat hotu funsiona, maibé la bele finaliza folha pagamentu."
+    },
+    "interval": {
+      "monthly": "Mensál",
+      "annual": "Anuál",
+      "annualSave": "Anuál · poupa {{savings}}"
+    },
+    "price": "Presu",
+    "perEmployeeMo": "/funsionáriu/fulan",
+    "minimum": "Mínimu",
+    "includesEmployees": "inklui funsionáriu {{count}}",
+    "billedAnnually": "Selu kada tinan",
+    "billedMonthly": "Selu kada fulan",
+    "annualTotal": "Totál anuál",
+    "monthlyTotal": "Totál mensál",
+    "seats": "{{active}} ativu · {{billed}} iha fatura",
+    "seatNote": {
+      "monthly": "Ita-nia fatura ajusta automátiku bainhira ekipa muda — fatura ida-idak selu tuir númeru funsionáriu iha momentu ne'ebá, la iha kobransa parsiál fulan nian.",
+      "monthlyChanged": "Ita-nia ekipa muda ona depois fatura ikus — fatura tuir mai sei selu funsionáriu {{count}} ({{total}}/fulan). La iha kobransa parsiál fulan nian.",
+      "annual": "Ita-nia fatura ajusta automátiku bainhira ekipa muda — funsionáriu foun selu kedas ho montante proporsionál ki'ik; redusaun aplika iha renovasaun.",
+      "annualIncrease": "Funsionáriu foun selu automátiku — Ita sei simu fatura proporsionál ki'ik ba diferensa, no renovasaun sei selu funsionáriu {{count}} ({{total}}/tinan).",
+      "manual": "Ita-nia presu fixu to'o data validade. Bainhira renova, montante foun uza númeru funsionáriu iha momentu ne'ebá."
+    },
+    "paidUntil": "Selu to'o",
+    "renews": "Renova",
+    "manageBilling": "Jere faturasaun",
+    "manualContact": "Selu liu husi transferénsia bankária ka osan-kontante. Atu renova ka muda, haruka email ba",
+    "subscribeMonthly": "Subscreve mensál",
+    "subscribeAnnually": "Subscreve anuál",
+    "stripeSecure": "Pagamentu ho kartaun prosesa ho seguransa liu husi Stripe.",
+    "offline": {
+      "title": "La iha kartaun? Selu liu husi transferénsia bankária ka osan-kontante.",
+      "description": "Husu fatura ida no ami sei haruka detallu pagamentu. Ita-nia subskrisaun ativa kedas bainhira pagamentu konfirma.",
+      "request": "Husu fatura ida",
+      "sent": "Pedidu haruka ona ✓"
+    },
+    "onlyAdmins": "Só na'in no administradór RH mak bele muda subskrisaun.",
+    "toasts": {
+      "adminsOnly": "Só na'in no administradór mak bele jere faturasaun",
+      "checkoutFailed": "La konsege hahú pagamentu. Favór koko fila fali.",
+      "portalFailed": "La konsege loke portál faturasaun.",
+      "requestSent": "Pedidu haruka ona — ami sei haruka Ita-nia fatura ho detallu pagamentu.",
+      "requestFailed": "La konsege haruka pedidu. Favór koko fila fali.",
+      "subscribed": "Subskrisaun ativu — agora Ita bele prosesa saláriu. Obrigadu!",
+      "canceled": "Pagamentu kansela — Ita la selu buat ida."
+    },
+    "included": {
+      "title": "Inklui iha konta hotu",
+      "description": "Grátis ka selu — fitur hotu-hotu nakloke."
+    },
+    "features": {
+      "people": "Diretóriu ema no organizasaun",
+      "hiring": "Rekrutamentu no integrasaun",
+      "timeLeave": "Tempu no lisensa",
+      "performance": "Avaliasaun dezempeñu",
+      "payroll": "Saláriu — INSS, WIT, subsídiu",
+      "money": "Osan — fatura, konta, despeza",
+      "accounting": "Kontabilidade no razaun jerál",
+      "reports": "Relatóriu no konformidade",
+      "ekipa": "Aplikasaun móvel Ekipa ba funsionáriu"
+    }
+  },
   "landing": {
     "nav": {
       "features": "Fitur",

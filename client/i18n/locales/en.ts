@@ -588,6 +588,77 @@ const messages = {
     "goToLogin": "Go to Login",
     "browsePages": "Browse Available Pages"
   },
+  "billing": {
+    "title": "Billing & Plan",
+    "subtitle": "Every feature is free to use. A subscription unlocks finalizing payroll runs.",
+    "active": {
+      "title": "Subscription active",
+      "description": "You can finalize payroll runs and use every feature."
+    },
+    "free": {
+      "title": "Subscribe to run payroll",
+      "description": "You're on the free plan — everything works except finalizing a payroll run."
+    },
+    "interval": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "annualSave": "Annual · save {{savings}}"
+    },
+    "price": "Price",
+    "perEmployeeMo": "/employee/mo",
+    "minimum": "Minimum",
+    "includesEmployees": "includes {{count}} employees",
+    "billedAnnually": "Billed annually",
+    "billedMonthly": "Billed monthly",
+    "annualTotal": "Annual total",
+    "monthlyTotal": "Monthly total",
+    "seats": "{{active}} active · {{billed}} billed",
+    "seatNote": {
+      "monthly": "Your bill adjusts automatically as your team changes — each invoice bills your team size at the time, with no part-month charges.",
+      "monthlyChanged": "Your team changed since your last invoice — the next invoice bills {{count}} employees ({{total}}/month). There are no part-month charges.",
+      "annual": "Your bill adjusts automatically as your team changes — added employees are charged a small prorated amount right away; reductions apply at renewal.",
+      "annualIncrease": "Added employees are billed automatically — you'll receive a small prorated invoice for the difference, and your renewal bills {{count}} employees ({{total}}/year).",
+      "manual": "Your price is fixed until your paid-until date. When you renew, the new amount uses your team size at that time."
+    },
+    "paidUntil": "Paid until",
+    "renews": "Renews",
+    "manageBilling": "Manage billing",
+    "manualContact": "Paid by bank transfer or cash. To renew or make changes, email",
+    "subscribeMonthly": "Subscribe monthly",
+    "subscribeAnnually": "Subscribe annually",
+    "stripeSecure": "Card payments are processed securely by Stripe.",
+    "offline": {
+      "title": "No card? Pay by bank transfer or cash.",
+      "description": "Request an invoice and we'll send payment details. Your subscription is activated as soon as the payment is confirmed.",
+      "request": "Request an invoice",
+      "sent": "Request sent ✓"
+    },
+    "onlyAdmins": "Only owners and HR admins can change the subscription.",
+    "toasts": {
+      "adminsOnly": "Only owners and admins can manage billing",
+      "checkoutFailed": "Could not start checkout. Please try again.",
+      "portalFailed": "Could not open the billing portal.",
+      "requestSent": "Request sent — we'll email your invoice with payment details.",
+      "requestFailed": "Could not send the request. Please try again.",
+      "subscribed": "Subscription active — you can now run payroll. Thank you!",
+      "canceled": "Checkout canceled — no charge was made."
+    },
+    "included": {
+      "title": "Included with every account",
+      "description": "Free and paid — no feature is locked away."
+    },
+    "features": {
+      "people": "People & org directory",
+      "hiring": "Hiring & onboarding",
+      "timeLeave": "Time & leave",
+      "performance": "Performance reviews",
+      "payroll": "Payroll — INSS, WIT, subsídio",
+      "money": "Money — invoices, bills, expenses",
+      "accounting": "Accounting & general ledger",
+      "reports": "Reports & compliance",
+      "ekipa": "Ekipa staff mobile app"
+    }
+  },
   "landing": {
     "nav": {
       "features": "Features",
