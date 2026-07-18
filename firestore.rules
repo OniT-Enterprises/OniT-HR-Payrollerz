@@ -1369,12 +1369,12 @@ service cloud.firestore {
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId) &&
+        isTenantFinanceAdmin(resource.data.tenantId) &&
         // Prevent createdBy tampering - field is immutable after creation
         request.resource.data.createdBy == resource.data.createdBy &&
         // Two-person rule: approver must differ from creator
@@ -1391,7 +1391,7 @@ service cloud.firestore {
 
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
     }
 
@@ -1404,17 +1404,17 @@ service cloud.firestore {
         ));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     match /benefitEnrollments/{docId} {
@@ -1426,17 +1426,17 @@ service cloud.firestore {
         ));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     match /recurringDeductions/{docId} {
@@ -1448,17 +1448,17 @@ service cloud.firestore {
         ));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     match /taxReports/{docId} {
@@ -1466,17 +1466,17 @@ service cloud.firestore {
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     match /bankTransfers/{docId} {
@@ -1484,17 +1484,17 @@ service cloud.firestore {
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     // Tax filings (TL WIT + INSS tracking)
@@ -1503,17 +1503,17 @@ service cloud.firestore {
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        isTenantFinanceAdmin(resource.data.tenantId)
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
       allow delete: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
     // Attendance tracking

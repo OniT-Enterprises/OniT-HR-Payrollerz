@@ -132,6 +132,60 @@ describe('Accountant role rules', () => {
       );
     });
 
+    // The REAL payroll flow writes to the top-level payrollRuns/payrollRecords
+    // collections (not the tenants/*/payruns subcollection). Before the
+    // finance-admin swap the accountant could build a run in the UI but every
+    // save/approve 403'd here — this pins that it now works end to end.
+    it('accountant can create a top-level payroll run', async () => {
+      await assertSucceeds(
+        setDoc(doc(asAccountant(), 'payrollRuns/run-top-1'), {
+          tenantId: 'tenant-a',
+          status: 'draft',
+          createdBy: ACCOUNTANT,
+        }),
+      );
+    });
+
+    it('accountant can approve a payroll run created by someone else (two-person rule)', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'payrollRuns/run-approve-1'), {
+          tenantId: 'tenant-a',
+          status: 'processing',
+          createdBy: OWNER,
+        });
+        // Active subscription — approval is paywalled
+        await setDoc(doc(context.firestore(), 'tenants/tenant-a'), {
+          id: 'tenant-a',
+          name: 'Tenant A',
+          createdBy: OWNER,
+          stripeSubscriptionId: 'sub_live',
+        });
+      });
+      await assertSucceeds(
+        updateDoc(doc(asAccountant(), 'payrollRuns/run-approve-1'), {
+          status: 'approved',
+          approvedBy: ACCOUNTANT,
+        }),
+      );
+    });
+
+    it('accountant can write payroll records and tax filings', async () => {
+      await assertSucceeds(
+        setDoc(doc(asAccountant(), 'payrollRecords/rec-1'), {
+          tenantId: 'tenant-a',
+          employeeId: 'emp-1',
+          netPay: 288,
+        }),
+      );
+      await assertSucceeds(
+        setDoc(doc(asAccountant(), 'taxFilings/fil-1'), {
+          tenantId: 'tenant-a',
+          type: 'inss_monthly',
+          period: '2026-07',
+        }),
+      );
+    });
+
     it('accountant can update settings/config (tax + payroll config)', async () => {
       await assertSucceeds(
         updateDoc(doc(asAccountant(), 'tenants/tenant-a/settings/config'), {
