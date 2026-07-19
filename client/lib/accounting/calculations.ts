@@ -207,7 +207,7 @@ export function payrollJournalAccountCodes(
 ): string[] {
   const codes = ['5110', '5150', '2210', '2220', '2230', '2240'];
   if ((summary.totalAdvanceRepayments || 0) > 0) codes.push('1220');
-  if ((summary.totalOtherDeductions || 0) > 0) codes.push('2200');
+  if ((summary.totalOtherDeductions || 0) > 0) codes.push('2260');
   return codes;
 }
 
@@ -346,10 +346,13 @@ export function buildPayrollJournalLines(
   }
 
   if ((summary.totalOtherDeductions || 0) > 0) {
-    const other = resolve('2200');
+    // Leaf account 2260 'Other Payroll Deductions Payable', not the 2200
+    // 'Payroll Liabilities' parent header — postings belong on leaf accounts
+    // so a remittance reconciliation against 2260 sees the real balance.
+    const other = resolve('2260');
     lines.push({
       lineNumber: lineNumber++,
-      accountId: other.id, accountCode: '2200', accountName: other.name,
+      accountId: other.id, accountCode: '2260', accountName: other.name,
       debit: 0, credit: summary.totalOtherDeductions || 0,
       description: 'Other payroll deductions payable',
     });
@@ -680,6 +683,29 @@ export function getAccountNet(
   accountCode: string,
 ): number {
   return byCode.get(accountCode) ?? byId.get(accountId) ?? 0;
+}
+
+/**
+ * Collapse accounts sharing a code to a single entry. GL totals are aggregated
+ * BY CODE (see getAccountNet), so a report that iterates a raw account list
+ * would attribute a code's full total to every doc carrying that code, double-
+ * counting the trial balance / income statement / balance sheet. New duplicate
+ * codes are now prevented at creation, but existing data may already contain
+ * them — reports dedupe defensively. Accounts without a code fall through
+ * unchanged (keyed by id).
+ */
+export function dedupeAccountsByCode<T extends { id?: string; code?: string }>(
+  accounts: T[],
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const account of accounts) {
+    const key = account.code ? `code:${account.code}` : `id:${account.id ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(account);
+  }
+  return out;
 }
 
 /** Whole calendar days past due, independent of browser timezone/DST. */

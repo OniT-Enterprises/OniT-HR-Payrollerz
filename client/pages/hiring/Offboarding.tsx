@@ -823,7 +823,7 @@ export default function Offboarding() {
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                   {t("hiring.offboarding.finalPay.subsidioNote")
-                                    || "Gross entitlement for this year — deduct any 13th month already paid through payroll this year."}
+                                    || "Reference only — the leaver's next payroll run pays severance + this prorated 13th month automatically (net of anything already paid). Don't settle these manually too."}
                                 </p>
                               </>
                             )}

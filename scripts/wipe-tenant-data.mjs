@@ -44,12 +44,23 @@ const ROOT_COLLECTIONS = [
   'departments', 'employees', 'positions', 'jobs', 'candidates', 'interviews',
   'offers', 'contracts', 'timesheets', 'leavePolicies', 'leaveRequests',
   'leaveBalances', 'leave_requests', 'leave_balances', 'goals', 'reviews',
-  'trainings', 'discipline', 'customers', 'invoices', 'recurring_invoices',
+  'trainings', 'disciplinary', 'customers', 'invoices', 'recurring_invoices',
   'payments_received', 'vendors', 'bills', 'bill_payments', 'expenses',
   'holidays', 'payrollRuns', 'payrollRecords', 'benefitEnrollments',
   'recurringDeductions', 'taxReports', 'taxFilings', 'bankTransfers',
-  'attendance', 'attendanceImports', 'invoice_links',
+  'attendance', 'attendanceImports', 'analytics', 'invoice_links', 'okrs',
+  'jobPrivateDetails', 'jobApplications', 'onboarding', 'offboarding', 'mail',
+  'audit_logs',
 ];
+
+// Top-level collections keyed by tenantId that ALSO contain their own
+// subcollections — each matching doc must be deleted recursively so nested
+// docs go too (legacy `payruns` holds a `payslips` subcollection).
+const ROOT_COLLECTIONS_RECURSIVE = ['payruns'];
+
+// Top-level collections keyed by tenantId as the DOC ID (not a field), so a
+// where('tenantId','==') sweep can't find them — delete by doc id.
+const ROOT_DOC_ID_COLLECTIONS = ['tenant_settings'];
 
 function getCredentials() {
   const paths = [
@@ -73,6 +84,20 @@ async function deleteQuery(ref, batchSize = 300) {
     const batch = db.batch();
     snap.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
+    deleted += snap.size;
+    if (snap.size < batchSize) break;
+  }
+  return deleted;
+}
+
+// Like deleteQuery, but recursiveDelete each matching doc so its own
+// subcollections go too (recursiveDelete can't take a where-filtered query).
+async function deleteQueryRecursive(ref, batchSize = 200) {
+  let deleted = 0;
+  while (true) {
+    const snap = await ref.limit(batchSize).get();
+    if (snap.empty) break;
+    for (const d of snap.docs) await db.recursiveDelete(d.ref);
     deleted += snap.size;
     if (snap.size < batchSize) break;
   }
@@ -105,9 +130,11 @@ async function main() {
     const count = (await c.count().get()).data().count;
     if (count === 0) continue;
     if (CONFIRM) {
-      const n = await deleteQuery(c);
-      console.log(`   🗑  ${c.id}: deleted ${n}`);
-      grand += n;
+      // recursiveDelete so any nested subcollections go too (e.g. payruns holds
+      // a `payslips` subcollection; a shallow batch delete would orphan them).
+      await db.recursiveDelete(c);
+      console.log(`   🗑  ${c.id}: deleted ${count} (recursive)`);
+      grand += count;
     } else {
       console.log(`   •  ${c.id}: ${count} docs`);
       grand += count;
@@ -127,6 +154,31 @@ async function main() {
     } else {
       console.log(`   •  ${name}: ${count} docs`);
       grand += count;
+    }
+  }
+  for (const name of ROOT_COLLECTIONS_RECURSIVE) {
+    const q = db.collection(name).where('tenantId', '==', TID);
+    const count = (await q.count().get()).data().count;
+    if (count === 0) continue;
+    if (CONFIRM) {
+      const n = await deleteQueryRecursive(q);
+      console.log(`   🗑  ${name} (+subcollections): deleted ${n}`);
+      grand += n;
+    } else {
+      console.log(`   •  ${name} (+subcollections): ${count} docs`);
+      grand += count;
+    }
+  }
+  for (const name of ROOT_DOC_ID_COLLECTIONS) {
+    const ref = db.doc(`${name}/${TID}`);
+    if (!(await ref.get()).exists) continue;
+    if (CONFIRM) {
+      await ref.delete();
+      console.log(`   🗑  ${name}/${TID}: deleted 1`);
+      grand += 1;
+    } else {
+      console.log(`   •  ${name}/${TID}: 1 doc`);
+      grand += 1;
     }
   }
 

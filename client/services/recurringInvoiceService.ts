@@ -15,6 +15,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  runTransaction,
   Timestamp,
   DocumentSnapshot,
 } from 'firebase/firestore';
@@ -297,34 +298,85 @@ class RecurringInvoiceService {
   // ----------------------------------------
 
   /**
-   * Generate an invoice from a recurring template
+   * Generate an invoice from a recurring template.
+   *
+   * Idempotent per triggering event: the run captures the period it intends to
+   * bill (the current `nextRunDate`) and, inside a transaction, advances that
+   * field with a compare-and-set. A concurrent or double-fired call for the
+   * SAME period finds the date already moved and bails, so a given period is
+   * billed (and, with autoSend, emailed) exactly once — no double-billing when
+   * the scheduler fires twice or "Generate Now" is double-clicked.
    */
   async generateInvoice(tenantId: string, recurringId: string): Promise<string> {
-    const recurring = await this.getById(tenantId, recurringId);
-    if (!recurring) {
+    const recurringRef = doc(db, paths.recurringInvoice(tenantId, recurringId));
+
+    // Snapshot the period we plan to bill so the transaction can detect that a
+    // concurrent run already claimed it.
+    const initial = await this.getById(tenantId, recurringId);
+    if (!initial) {
       throw new Error('Recurring invoice not found');
     }
+    const expectedNextRunDate = initial.nextRunDate;
 
-    if (recurring.status !== 'active') {
-      throw new Error('Cannot generate invoice from paused/completed recurring');
+    type ClaimResult =
+      | { kind: 'generate'; recurring: RecurringInvoice; issueDate: string }
+      | { kind: 'skip'; message: string };
+
+    const result = await runTransaction<ClaimResult>(db, async (transaction) => {
+      const snap = await transaction.get(recurringRef);
+      if (!snap.exists()) {
+        throw new Error('Recurring invoice not found');
+      }
+      const recurring = mapRecurringInvoice(snap);
+
+      if (recurring.status !== 'active') {
+        return { kind: 'skip', message: 'Cannot generate invoice from paused/completed recurring' };
+      }
+
+      // Compare-and-set guard: the period we set out to bill was already
+      // advanced by another run — don't bill it again.
+      if (recurring.nextRunDate !== expectedNextRunDate) {
+        return { kind: 'skip', message: 'This recurring period was already generated' };
+      }
+
+      // End conditions. These commit the completion within the transaction and
+      // then surface as an error to the caller (below), matching prior behaviour
+      // without a separate, non-atomic markCompleted write.
+      if (recurring.endDate && recurring.nextRunDate > recurring.endDate) {
+        transaction.update(recurringRef, { status: 'completed', updatedAt: serverTimestamp() });
+        return { kind: 'skip', message: 'Recurring invoice has reached its end date' };
+      }
+      if (recurring.endAfterOccurrences && recurring.generatedCount >= recurring.endAfterOccurrences) {
+        transaction.update(recurringRef, { status: 'completed', updatedAt: serverTimestamp() });
+        return { kind: 'skip', message: 'Recurring invoice has reached maximum occurrences' };
+      }
+
+      const issueDate = recurring.nextRunDate;
+      const nextRunDate = calculateNextRunDate(recurring.nextRunDate, recurring.frequency);
+      const newCount = recurring.generatedCount + 1;
+      const shouldComplete =
+        (recurring.endAfterOccurrences && newCount >= recurring.endAfterOccurrences) ||
+        (recurring.endDate && nextRunDate > recurring.endDate);
+
+      transaction.update(recurringRef, {
+        nextRunDate,
+        generatedCount: newCount,
+        lastGeneratedAt: serverTimestamp(),
+        status: shouldComplete ? 'completed' : 'active',
+        updatedAt: serverTimestamp(),
+      });
+
+      return { kind: 'generate', recurring, issueDate };
+    });
+
+    if (result.kind === 'skip') {
+      throw new Error(result.message);
     }
 
-    // Check if we've reached the end conditions
-    if (recurring.endDate && recurring.nextRunDate > recurring.endDate) {
-      await this.markCompleted(tenantId, recurringId);
-      throw new Error('Recurring invoice has reached its end date');
-    }
-
-    if (recurring.endAfterOccurrences && recurring.generatedCount >= recurring.endAfterOccurrences) {
-      await this.markCompleted(tenantId, recurringId);
-      throw new Error('Recurring invoice has reached maximum occurrences');
-    }
-
-    // Calculate due date
-    const issueDate = recurring.nextRunDate;
+    // We exclusively own this period now — safe to create exactly one invoice.
+    const { recurring, issueDate } = result;
     const dueDate = formatDateISO(addDays(parseDateISO(issueDate), recurring.dueDays));
 
-    // Create the invoice
     const invoiceId = await invoiceService.createInvoice(tenantId, {
       customerId: recurring.customerId,
       issueDate,
@@ -335,23 +387,13 @@ class RecurringInvoiceService {
       terms: recurring.terms,
     });
 
-    // Update recurring invoice
-    const nextRunDate = calculateNextRunDate(recurring.nextRunDate, recurring.frequency);
-    const newCount = recurring.generatedCount + 1;
-
-    // Check if this was the last one
-    const shouldComplete =
-      (recurring.endAfterOccurrences && newCount >= recurring.endAfterOccurrences) ||
-      (recurring.endDate && nextRunDate > recurring.endDate);
-
-    const docRef = doc(db, paths.recurringInvoice(tenantId, recurringId));
-    await updateDoc(docRef, {
-      nextRunDate,
-      generatedCount: newCount,
-      lastGeneratedAt: serverTimestamp(),
+    // Best-effort back-reference; the period is already claimed, so a failure
+    // here can't cause a double-bill.
+    await updateDoc(recurringRef, {
       lastInvoiceId: invoiceId,
-      status: shouldComplete ? 'completed' : 'active',
       updatedAt: serverTimestamp(),
+    }).catch((error) => {
+      console.error('Failed to record lastInvoiceId on recurring invoice:', error);
     });
 
     // Auto-send if enabled
@@ -364,17 +406,6 @@ class RecurringInvoiceService {
     }
 
     return invoiceId;
-  }
-
-  /**
-   * Mark a recurring invoice as completed
-   */
-  private async markCompleted(tenantId: string, id: string): Promise<void> {
-    const docRef = doc(db, paths.recurringInvoice(tenantId, id));
-    await updateDoc(docRef, {
-      status: 'completed',
-      updatedAt: serverTimestamp(),
-    });
   }
 
   /**

@@ -571,7 +571,7 @@ router.get('/employees', async (req, res) => {
     res.json({ success: true, count: employees.length, employees });
   } catch (error) {
     console.error('[employees]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -593,7 +593,7 @@ router.get('/employees/counts', async (req, res) => {
     res.json({ success: true, counts });
   } catch (error) {
     console.error('[employees/counts]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -628,7 +628,7 @@ router.get('/employees/by-department', async (req, res) => {
     res.json({ success: true, count: result.length, departments: result });
   } catch (error) {
     console.error('[employees/by-department]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -644,7 +644,7 @@ router.get('/employees/:employeeId', async (req, res) => {
     res.json({ success: true, employee: mapDoc(doc) });
   } catch (error) {
     console.error('[employees/:id]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -662,7 +662,7 @@ router.get('/departments', async (req, res) => {
     res.json({ success: true, count: departments.length, departments });
   } catch (error) {
     console.error('[departments]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -691,7 +691,7 @@ router.get('/payroll/runs', async (req, res) => {
     res.json({ success: true, count: runs.length, runs });
   } catch (error) {
     console.error('[payroll/runs]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -707,7 +707,7 @@ router.get('/payroll/runs/:yyyymm', async (req, res) => {
     res.json({ success: true, run: mapDoc(doc) });
   } catch (error) {
     console.error('[payroll/runs/:yyyymm]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -729,7 +729,7 @@ router.get('/payroll/runs/:yyyymm/payslips', async (req, res) => {
     res.json({ success: true, count: payslips.length, payslips });
   } catch (error) {
     console.error('[payroll/payslips]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -762,7 +762,7 @@ router.get('/leave/requests', async (req, res) => {
     res.json({ success: true, count: requests.length, requests });
   } catch (error) {
     console.error('[leave/requests]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -779,7 +779,7 @@ router.get('/leave/pending', async (req, res) => {
     res.json({ success: true, count: requests.length, requests });
   } catch (error) {
     console.error('[leave/pending]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -798,7 +798,7 @@ router.get('/leave/balances', async (req, res) => {
     res.json({ success: true, count: balances.length, year, balances });
   } catch (error) {
     console.error('[leave/balances]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -834,7 +834,7 @@ router.get('/leave/on-leave-today', async (req, res) => {
     res.json({ success: true, count: onLeave.length, date: today, employees: onLeave });
   } catch (error) {
     console.error('[leave/on-leave-today]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -858,7 +858,7 @@ router.get('/attendance/daily', async (req, res) => {
     res.json({ success: true, count: records.length, date, records });
   } catch (error) {
     console.error('[attendance/daily]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -888,7 +888,7 @@ router.get('/interviews', async (req, res) => {
     res.json({ success: true, count: interviews.length, interviews });
   } catch (error) {
     console.error('[interviews]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -907,7 +907,7 @@ router.get('/interviews/today', async (req, res) => {
     res.json({ success: true, count: interviews.length, date: today, interviews });
   } catch (error) {
     console.error('[interviews/today]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -937,7 +937,7 @@ router.get('/interviews/upcoming', async (req, res) => {
     res.json({ success: true, count: interviews.length, from: today, to: nextWeek, interviews });
   } catch (error) {
     console.error('[interviews/upcoming]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -963,7 +963,7 @@ router.get('/jobs', async (req, res) => {
     res.json({ success: true, count: jobs.length, jobs });
   } catch (error) {
     console.error('[jobs]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -979,7 +979,7 @@ router.get('/jobs/open', async (req, res) => {
     res.json({ success: true, count: jobs.length, jobs });
   } catch (error) {
     console.error('[jobs/open]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1005,7 +1005,7 @@ router.get('/jobs/:id/private', async (req, res) => {
     res.json({ success: true, details: { id: snap.id, ...data } });
   } catch (error) {
     console.error('[jobs/:id/private]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1033,7 +1033,7 @@ router.get('/job-applications', async (req, res) => {
     res.json({ success: true, count: applications.length, applications });
   } catch (error) {
     console.error('[job-applications]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1052,7 +1052,7 @@ router.get('/job-applications/pending', async (req, res) => {
     res.json({ success: true, count: applications.length, applications });
   } catch (error) {
     console.error('[job-applications/pending]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1080,7 +1080,7 @@ router.get('/onboarding', async (req, res) => {
     res.json({ success: true, count: cases.length, cases });
   } catch (error) {
     console.error('[onboarding]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1099,7 +1099,7 @@ router.get('/onboarding/:id', async (req, res) => {
     res.json({ success: true, case: { id: snap.id, ...data } });
   } catch (error) {
     console.error('[onboarding/:id]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1132,7 +1132,7 @@ router.get('/invoices', async (req, res) => {
     res.json({ success: true, count: invoices.length, invoices });
   } catch (error) {
     console.error('[invoices]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1161,7 +1161,7 @@ router.get('/invoices/overdue', async (req, res) => {
     });
   } catch (error) {
     console.error('[invoices/overdue]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1194,7 +1194,7 @@ router.get('/bills', async (req, res) => {
     res.json({ success: true, count: bills.length, bills });
   } catch (error) {
     console.error('[bills]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1223,7 +1223,7 @@ router.get('/bills/overdue', async (req, res) => {
     });
   } catch (error) {
     console.error('[bills/overdue]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1263,7 +1263,7 @@ router.get('/expenses', async (req, res) => {
     res.json({ success: true, count: expenses.length, total, expenses });
   } catch (error) {
     console.error('[expenses]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1303,7 +1303,7 @@ router.get('/expenses/this-month', async (req, res) => {
     });
   } catch (error) {
     console.error('[expenses/this-month]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1334,7 +1334,7 @@ router.get('/journal-entries', async (req, res) => {
     res.json(entries);
   } catch (error) {
     console.error('[journal-entries]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1362,7 +1362,7 @@ router.get('/journal-entries/by-source', async (req, res) => {
     res.json({ success: true, entry: live ? mapDoc(live) : null });
   } catch (error) {
     console.error('[journal-entries/by-source]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1548,7 +1548,7 @@ router.post('/journal-entries', async (req, res) => {
     res.status(201).json({ success: true, id: result.id, entryNumber: result.entryNumber, status: result.status });
   } catch (error) {
     console.error('[journal-entries] POST error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1563,7 +1563,7 @@ router.get('/accounts', async (req, res) => {
     res.json(accounts);
   } catch (error) {
     console.error('[accounts]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1638,7 +1638,7 @@ router.get('/trial-balance', async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error('[trial-balance]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1658,7 +1658,7 @@ router.get('/journals', async (req, res) => {
     res.json(entries);
   } catch (error) {
     console.error('[journals]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1767,7 +1767,7 @@ router.get('/reports/pnl', async (req, res) => {
     });
   } catch (error) {
     console.error('[reports/pnl]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -1888,7 +1888,7 @@ router.get('/reports/balance-sheet', async (req, res) => {
     });
   } catch (error) {
     console.error('[reports/balance-sheet]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2043,7 +2043,7 @@ router.get('/stats', async (req, res) => {
     res.json({ success: true, stats, timestamp: new Date().toISOString() });
   } catch (error) {
     console.error('[stats]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2246,7 +2246,7 @@ router.post('/payroll/calculate', async (req, res) => {
     });
   } catch (error) {
     console.error('[payroll/calculate]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2342,7 +2342,7 @@ router.post('/payroll/runs', async (req, res) => {
     res.status(201).json({ success: true, runId: runRef.id, recordIds, status: targetStatus });
   } catch (error) {
     console.error('[payroll/runs]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2398,7 +2398,7 @@ router.put('/payroll/runs/:runId/approve', async (req, res) => {
     res.json({ success: true, message: 'Payroll run approved' });
   } catch (error) {
     console.error('[payroll/approve]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2450,7 +2450,7 @@ router.put('/payroll/runs/:runId/reject', async (req, res) => {
     res.json({ success: true, message: 'Payroll run rejected' });
   } catch (error) {
     console.error('[payroll/reject]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2495,7 +2495,7 @@ router.put('/payroll/runs/:runId/mark-paid', async (req, res) => {
     res.json({ success: true, message: 'Payroll run marked as paid' });
   } catch (error) {
     console.error('[payroll/mark-paid]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2560,7 +2560,7 @@ router.post('/payroll/runs/:runId/repair', async (req, res) => {
     res.json({ success: true, result: 'repaired', message: `Repaired: ${actualCount}/${expectedCount} records, status → draft` });
   } catch (error) {
     console.error('[payroll/repair]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2816,7 +2816,7 @@ router.post('/fiscal-years', async (req, res) => {
     res.status(201).json({ success: true, fiscalYearId: yearRef.id, periodIds, year });
   } catch (error) {
     console.error('[fiscal-years]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2861,7 +2861,7 @@ router.put('/fiscal-periods/:id/close', async (req, res) => {
     res.json({ success: true, message: `Period ${period.year}-${String(period.period).padStart(2, '0')} closed` });
   } catch (error) {
     console.error('[fiscal-periods/close]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2910,7 +2910,7 @@ router.put('/fiscal-periods/:id/reopen', async (req, res) => {
     res.json({ success: true, message: `Period ${period.year}-${String(period.period).padStart(2, '0')} reopened` });
   } catch (error) {
     console.error('[fiscal-periods/reopen]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -2959,7 +2959,7 @@ router.put('/fiscal-periods/:id/lock', async (req, res) => {
     res.json({ success: true, message: `Period ${period.year}-${String(period.period).padStart(2, '0')} locked` });
   } catch (error) {
     console.error('[fiscal-periods/lock]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3104,7 +3104,7 @@ router.post('/fiscal-years/:yearId/opening-balances', async (req, res) => {
     res.status(201).json({ success: true, journalEntryId: result.entryId, entryNumber: result.entryNumber });
   } catch (error) {
     console.error('[fiscal-years/opening-balances]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3303,7 +3303,7 @@ router.post('/employees', async (req, res) => {
     });
   } catch (error) {
     console.error('[employees/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3416,7 +3416,7 @@ router.post('/employees/sync', async (req, res) => {
     res.status(201).json({ success: true, id: docRef.id, action: 'created', employeeId });
   } catch (error) {
     console.error('[employees/sync]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3549,7 +3549,7 @@ router.post('/leave/requests', async (req, res) => {
     res.json({ success: true, message: 'Leave request created', id: docRef.id, duration });
   } catch (error) {
     console.error('[leave/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3652,7 +3652,7 @@ router.post('/attendance', async (req, res) => {
     res.json({ success: true, message: 'Attendance recorded', id, action });
   } catch (error) {
     console.error('[attendance/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3709,7 +3709,7 @@ router.post('/invoices', async (req, res) => {
     res.json({ success: true, message: 'Invoice created (draft)', id: docRef.id });
   } catch (error) {
     console.error('[invoices/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3766,7 +3766,7 @@ router.post('/bills', async (req, res) => {
     res.json({ success: true, message: 'Bill created', id: docRef.id });
   } catch (error) {
     console.error('[bills/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3842,7 +3842,7 @@ router.patch('/employees/:id', async (req, res) => {
     res.json({ success: true, message: `Employee updated: ${changes.join(', ')}`, id });
   } catch (error) {
     console.error('[employees/update]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3914,7 +3914,7 @@ router.post('/jobs', async (req, res) => {
     res.json({ success: true, message: 'Job posted (open)', id: docRef.id });
   } catch (error) {
     console.error('[jobs/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -3953,7 +3953,7 @@ router.patch('/jobs/:id/close', async (req, res) => {
     res.json({ success: true, message: 'Job closed' });
   } catch (error) {
     console.error('[jobs/close]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4004,7 +4004,7 @@ router.patch('/candidates/:id', async (req, res) => {
     res.json({ success: true, message: `Candidate updated: ${changes.join(', ')}` });
   } catch (error) {
     console.error('[candidates/update]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4074,7 +4074,7 @@ router.post('/interviews', async (req, res) => {
     res.json({ success: true, message: 'Interview scheduled', id: docRef.id });
   } catch (error) {
     console.error('[interviews/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4117,7 +4117,7 @@ router.patch('/interviews/:id/status', async (req, res) => {
     res.json({ success: true, message: `Interview ${status}` });
   } catch (error) {
     console.error('[interviews/update]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4171,7 +4171,7 @@ router.post('/expenses', async (req, res) => {
     res.json({ success: true, message: 'Expense created (no journal posted — review in UI)', id: docRef.id });
   } catch (error) {
     console.error('[expenses/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4216,7 +4216,7 @@ router.post('/departments', async (req, res) => {
     res.json({ success: true, message: 'Department created', id: docRef.id });
   } catch (error) {
     console.error('[departments/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4253,7 +4253,7 @@ router.post('/announcements', async (req, res) => {
     res.json({ success: true, message: 'Announcement posted', id: docRef.id });
   } catch (error) {
     console.error('[announcements/create]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4376,7 +4376,7 @@ router.get('/verify/payroll/:runId', async (req, res) => {
     });
   } catch (error) {
     console.error('[verify/payroll]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4477,7 +4477,7 @@ router.get('/verify/trial-balance', async (req, res) => {
     });
   } catch (error) {
     console.error('[verify/trial-balance]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -4570,7 +4570,7 @@ router.get('/verify/compliance', async (req, res) => {
     });
   } catch (error) {
     console.error('[verify/compliance]', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 

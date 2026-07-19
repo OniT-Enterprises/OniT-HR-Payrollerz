@@ -413,4 +413,53 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
       );
     });
   });
+
+  describe('approval state machine (only pre-approval -> approved)', () => {
+    const seedRunWithStatus = async (status: string) => {
+      await testEnv.clearFirestore();
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const adminDb = context.firestore();
+        await setDoc(doc(adminDb, 'tenants/tenant-a'), {
+          name: 'Tenant A',
+          stripeSubscriptionId: 'sub_active',
+        });
+        await setDoc(doc(adminDb, 'tenants/tenant-a/members/owner-a'), {
+          uid: 'owner-a', role: 'owner', modules: ['payroll'],
+        });
+        await setDoc(doc(adminDb, 'tenants/tenant-a/members/admin-b'), {
+          uid: 'admin-b', role: 'hr-admin', modules: ['payroll'],
+        });
+        await setDoc(doc(adminDb, 'payrollRuns/run-1'), {
+          tenantId: 'tenant-a',
+          status,
+          createdBy: 'owner-a',
+          totalNetPay: 1000,
+        });
+      });
+    };
+
+    it('allows processing -> approved', async () => {
+      await seedRunWithStatus('processing');
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, 'payrollRuns/run-1'), { status: 'approved', approvedBy: 'admin-b' }),
+      );
+    });
+
+    it('blocks paid -> approved', async () => {
+      await seedRunWithStatus('paid');
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), { status: 'approved', approvedBy: 'admin-b' }),
+      );
+    });
+
+    it('blocks rejected -> approved', async () => {
+      await seedRunWithStatus('rejected');
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), { status: 'approved', approvedBy: 'admin-b' }),
+      );
+    });
+  });
 });

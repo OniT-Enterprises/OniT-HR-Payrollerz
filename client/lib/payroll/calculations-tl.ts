@@ -593,21 +593,23 @@ export function calculateSubsidioAnual(
   },
 ): number {
   const year = asOfDate.getFullYear();
-  const hireDateObj = new Date(hireDate);
-  if (hireDateObj.getFullYear() > year) return 0;
+  // Parse plain ISO dates calendar-safe. `new Date("YYYY-MM-DD")` is UTC
+  // midnight but getFullYear()/getMonth() read local, so west of UTC a
+  // first-of-month date slips to the previous month/year — the Art. 56 path
+  // already avoids this with parsePlainISODate; the subsidio path must too.
+  const hire = parsePlainISODate(hireDate, 'Hire date');
+  if (hire.year > year) return 0;
 
   // Tenant may opt out of new-hire proration (full month for everyone).
   const proRataNewHires = options?.proRataForNewEmployees ?? true;
   const startMonth =
-    proRataNewHires && hireDateObj.getFullYear() === year
-      ? hireDateObj.getMonth()
-      : 0;
+    proRataNewHires && hire.year === year ? hire.month - 1 : 0;
 
   let endMonth = 11; // presume service through December
   if (options?.terminationDate) {
-    const term = new Date(options.terminationDate);
-    if (term.getFullYear() < year) return 0;
-    if (term.getFullYear() === year) endMonth = term.getMonth();
+    const term = parsePlainISODate(options.terminationDate, 'Termination date');
+    if (term.year < year) return 0;
+    if (term.year === year) endMonth = term.month - 1;
   }
 
   const effectiveMonths = Math.max(0, endMonth - startMonth + 1);

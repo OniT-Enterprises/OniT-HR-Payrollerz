@@ -312,10 +312,11 @@ export function getBalanceContribution(
   };
 }
 
-async function loadEntitlements(tenantId: string): Promise<Record<string, number>> {
+function entitlementsFromConfig(
+  configData: Record<string, unknown> | undefined,
+): Record<string, number> {
   const entitlements = { ...DEFAULT_ENTITLEMENTS };
-  const config = await db.doc(`tenants/${tenantId}/settings/config`).get();
-  const policies = config.data()?.timeOffPolicies as Record<string, unknown> | undefined;
+  const policies = configData?.timeOffPolicies as Record<string, unknown> | undefined;
   if (!policies) return entitlements;
 
   const policyKeys = [
@@ -342,6 +343,11 @@ async function loadEntitlements(tenantId: string): Promise<Record<string, number
     }
   }
   return entitlements;
+}
+
+async function loadEntitlements(tenantId: string): Promise<Record<string, number>> {
+  const config = await db.doc(`tenants/${tenantId}/settings/config`).get();
+  return entitlementsFromConfig(config.data());
 }
 
 async function resolveBalanceRef(
@@ -390,6 +396,104 @@ function requestDurationInRange(
   const segmentWeekdays = countWeekdays(segmentStart, segmentEnd);
   if (totalWeekdays <= 0) return 0;
   return Math.round((duration * segmentWeekdays / totalWeekdays) * 100) / 100;
+}
+
+interface EntitlementBreach {
+  leaveType: string;
+  year: number;
+  available: number;
+  committed: number;
+  overage: number;
+}
+
+/**
+ * Total days of `leaveType` already committed (pending + approved) for an
+ * employee in `year`, optionally excluding one request id (the candidate itself
+ * when re-checking on approve). Mirrors recomputeLeaveBalance's pending+used
+ * accounting so the guardrail and the stored balance agree on what "consumed"
+ * means.
+ */
+function committedDaysInYear(
+  requests: { id: string; data: LeaveRequestData }[],
+  leaveType: string,
+  year: number,
+  excludeId?: string,
+): number {
+  let total = 0;
+  for (const { id, data } of requests) {
+    if (id === excludeId) continue;
+    if (data.leaveType !== leaveType) continue;
+    if (data.status !== "pending" && data.status !== "approved") continue;
+    total += requestDurationInYear(data, year);
+  }
+  return total;
+}
+
+/**
+ * Per-year entitlement breaches for a candidate request: the days by which it
+ * would push the employee's pending+approved total for its leave type past what
+ * they are entitled to (entitlement + carry-over, carry-over applying to annual
+ * leave only, matching recomputeLeaveBalance). Returns [] when within
+ * entitlement. The overage is surfaced rather than silently clamped to zero, so
+ * unknown/0-entitlement types (e.g. "study") are caught instead of paid out.
+ */
+function findEntitlementBreaches(
+  candidate: LeaveRequestData,
+  existing: { id: string; data: LeaveRequestData }[],
+  entitlements: Record<string, number>,
+  carryOverByYear: Map<number, number>,
+  excludeId?: string,
+): EntitlementBreach[] {
+  const leaveType = candidate.leaveType;
+  if (!leaveType) return [];
+  const breaches: EntitlementBreach[] = [];
+  for (const year of requestYears(candidate)) {
+    const candidateDays = requestDurationInYear(candidate, year);
+    if (candidateDays <= 0) continue;
+    const entitled = Number(entitlements[leaveType] ?? 0);
+    const carryOver = leaveType === "annual" ? Number(carryOverByYear.get(year) ?? 0) : 0;
+    const available = entitled + carryOver;
+    const committed = committedDaysInYear(existing, leaveType, year, excludeId) + candidateDays;
+    const overage = Math.round((committed - available) * 100) / 100;
+    if (overage > 0.001) {
+      breaches.push({
+        leaveType,
+        year,
+        available: Math.round(available * 100) / 100,
+        committed: Math.round(committed * 100) / 100,
+        overage,
+      });
+    }
+  }
+  return breaches;
+}
+
+function entitlementBreachMessage(breaches: EntitlementBreach[]): string {
+  return breaches
+    .map((breach) =>
+      `${breach.leaveType} ${breach.year}: ${breach.committed} day(s) requested but only ` +
+      `${breach.available} entitled (over by ${breach.overage})`)
+    .join("; ");
+}
+
+/**
+ * Carry-over days per year for an employee, read from their stored leave
+ * balance docs. Only annual leave uses carry-over, but the map is keyed by year
+ * so callers can look up whichever years a request spans.
+ */
+async function loadCarryOverByYear(
+  tenantId: string,
+  employeeId: string,
+  years: number[],
+): Promise<Map<number, number>> {
+  const map = new Map<number, number>();
+  await Promise.all(years.map(async (year) => {
+    const ref = await resolveBalanceRef(tenantId, employeeId, year);
+    const snapshot = await ref.get();
+    const carryOver = Number(snapshot.data()?.carryOver ?? 0);
+    map.set(year, Number.isFinite(carryOver) ? carryOver : 0);
+  }));
+  return map;
 }
 
 function leavePayFraction(
@@ -807,6 +911,7 @@ export const createLeaveRequest = onCall(async (request) => {
     reason?: string;
     attachmentUrl?: string;
     certificateType?: string;
+    overrideBalance?: boolean;
   };
   const tenantId = data.tenantId;
   const employeeId = data.employeeId;
@@ -882,21 +987,6 @@ export const createLeaveRequest = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Leave must include at least one working day");
   }
 
-  const existing = await db.collection("leave_requests")
-    .where("tenantId", "==", tenantId)
-    .where("employeeId", "==", employeeId)
-    .get();
-  const overlaps = existing.docs.some((document) => {
-    const leave = document.data() as LeaveRequestData;
-    return (leave.status === "pending" || leave.status === "approved") &&
-      Boolean(leave.startDate && leave.endDate) &&
-      leave.startDate! <= data.endDate! && leave.endDate! >= data.startDate!;
-  });
-  if (overlaps) {
-    throw new HttpsError("already-exists", "This employee already has overlapping leave");
-  }
-
-  const ref = db.collection("leave_requests").doc();
   const attachmentUrl = typeof data.attachmentUrl === "string" && data.attachmentUrl.length <= 2_048
     ? data.attachmentUrl
     : "";
@@ -904,34 +994,89 @@ export const createLeaveRequest = onCall(async (request) => {
   const requestedLabel = typeof data.leaveTypeLabel === "string"
     ? data.leaveTypeLabel.trim().slice(0, 120)
     : "";
-  await ref.set({
+
+  const candidate: LeaveRequestData = {
     tenantId,
     employeeId,
-    employeeName: [personalInfo?.firstName, personalInfo?.lastName]
-      .filter((value): value is string => typeof value === "string" && Boolean(value))
-      .join(" "),
-    department,
-    departmentId,
     leaveType,
-    leaveTypeLabel: configuredName || requestedLabel || leaveType,
     startDate: data.startDate,
     endDate: data.endDate,
     duration,
-    halfDay: data.halfDay === true,
-    ...(data.halfDay === true && data.halfDayType
-      ? { halfDayType: data.halfDayType }
-      : {}),
-    reason,
-    ...(attachmentUrl ? { attachmentUrl } : {}),
-    hasCertificate: Boolean(attachmentUrl),
-    ...(typeof data.certificateType === "string" && data.certificateType
-      ? { certificateType: data.certificateType.slice(0, 120) }
-      : {}),
     status: "pending",
-    requestDate: getTodayTL(),
-    createdBy: auth.uid,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
+  };
+  // Owners / HR admins may knowingly grant leave beyond entitlement; everyone
+  // else (including self-service employees) is held to the balance.
+  const overrideBalance = data.overrideBalance === true
+    && (role === "owner" || role === "hr-admin");
+  const entitlements = entitlementsFromConfig(configSnapshot.data());
+  const carryOverByYear = await loadCarryOverByYear(
+    tenantId,
+    employeeId,
+    requestYears(candidate),
+  );
+
+  const ref = db.collection("leave_requests").doc();
+  // Overlap check + entitlement check + create run in one transaction so two
+  // concurrent requests cannot both pass an empty overlap query and each create
+  // a booking (transaction.get holds a pessimistic lock on the matched rows).
+  await db.runTransaction(async (transaction) => {
+    const existingSnapshot = await transaction.get(
+      db.collection("leave_requests")
+        .where("tenantId", "==", tenantId)
+        .where("employeeId", "==", employeeId),
+    );
+    const existing = existingSnapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data() as LeaveRequestData,
+    }));
+
+    const overlaps = existing.some(({ data: leave }) =>
+      (leave.status === "pending" || leave.status === "approved") &&
+      Boolean(leave.startDate && leave.endDate) &&
+      leave.startDate! <= data.endDate! && leave.endDate! >= data.startDate!);
+    if (overlaps) {
+      throw new HttpsError("already-exists", "This employee already has overlapping leave");
+    }
+
+    if (!overrideBalance) {
+      const breaches = findEntitlementBreaches(candidate, existing, entitlements, carryOverByYear);
+      if (breaches.length > 0) {
+        throw new HttpsError(
+          "failed-precondition",
+          `Leave exceeds entitlement — ${entitlementBreachMessage(breaches)}`,
+        );
+      }
+    }
+
+    transaction.set(ref, {
+      tenantId,
+      employeeId,
+      employeeName: [personalInfo?.firstName, personalInfo?.lastName]
+        .filter((value): value is string => typeof value === "string" && Boolean(value))
+        .join(" "),
+      department,
+      departmentId,
+      leaveType,
+      leaveTypeLabel: configuredName || requestedLabel || leaveType,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      duration,
+      halfDay: data.halfDay === true,
+      ...(data.halfDay === true && data.halfDayType
+        ? { halfDayType: data.halfDayType }
+        : {}),
+      reason,
+      ...(attachmentUrl ? { attachmentUrl } : {}),
+      hasCertificate: Boolean(attachmentUrl),
+      ...(typeof data.certificateType === "string" && data.certificateType
+        ? { certificateType: data.certificateType.slice(0, 120) }
+        : {}),
+      status: "pending",
+      requestDate: getTodayTL(),
+      createdBy: auth.uid,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
 
   return { success: true, requestId: ref.id, duration };
@@ -1009,6 +1154,7 @@ export const approveLeaveRequest = onCall(async (request) => {
     approved?: boolean;
     note?: string;
     approverName?: string;
+    overrideBalance?: boolean;
   };
   if (!data.tenantId || !data.requestId || typeof data.approved !== "boolean") {
     throw new HttpsError("invalid-argument", "Missing tenantId, requestId, or decision");
@@ -1028,6 +1174,19 @@ export const approveLeaveRequest = onCall(async (request) => {
     throw new HttpsError("failed-precondition", "Leave no longer includes a working day");
   }
 
+  // Only owners / HR admins may knowingly approve leave beyond entitlement.
+  const overrideBalance = data.approved === true
+    && data.overrideBalance === true
+    && (member.role === "owner" || member.role === "hr-admin");
+  let entitlements: Record<string, number> = {};
+  let carryOverByYear = new Map<number, number>();
+  if (data.approved && !overrideBalance && initialLeave.employeeId) {
+    [entitlements, carryOverByYear] = await Promise.all([
+      loadEntitlements(data.tenantId),
+      loadCarryOverByYear(data.tenantId, initialLeave.employeeId, requestYears(initialLeave)),
+    ]);
+  }
+
   await db.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(ref);
     if (!snapshot.exists) throw new HttpsError("not-found", "Leave request not found");
@@ -1039,6 +1198,51 @@ export const approveLeaveRequest = onCall(async (request) => {
     if (member.role === "manager") {
       if (!member.departmentId || leave.departmentId !== member.departmentId) {
         throw new HttpsError("permission-denied", "Managers can only decide requests for their team");
+      }
+    }
+
+    // Re-check overlap and entitlement inside the transaction so approve holds
+    // the "no overlapping pending/approved leave, within entitlement" invariant
+    // even for requests created before enforcement or racing another approval.
+    if (data.approved && leave.employeeId) {
+      const othersSnapshot = await transaction.get(
+        db.collection("leave_requests")
+          .where("tenantId", "==", data.tenantId)
+          .where("employeeId", "==", leave.employeeId),
+      );
+      const others = othersSnapshot.docs.map((document) => ({
+        id: document.id,
+        data: document.data() as LeaveRequestData,
+      }));
+
+      const overlaps = others.some(({ id, data: other }) =>
+        id !== data.requestId &&
+        (other.status === "pending" || other.status === "approved") &&
+        Boolean(other.startDate && other.endDate) &&
+        Boolean(leave.startDate && leave.endDate) &&
+        other.startDate! <= leave.endDate! && other.endDate! >= leave.startDate!);
+      if (overlaps) {
+        throw new HttpsError(
+          "failed-precondition",
+          "This employee has overlapping leave for these dates",
+        );
+      }
+
+      if (!overrideBalance) {
+        const candidate: LeaveRequestData = { ...leave, duration };
+        const breaches = findEntitlementBreaches(
+          candidate,
+          others,
+          entitlements,
+          carryOverByYear,
+          data.requestId,
+        );
+        if (breaches.length > 0) {
+          throw new HttpsError(
+            "failed-precondition",
+            `Leave exceeds entitlement — ${entitlementBreachMessage(breaches)}`,
+          );
+        }
       }
     }
 

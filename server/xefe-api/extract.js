@@ -8,10 +8,15 @@
  * timorleste.tl/lib/claude-client.ts. The SDK spawns the `claude` CLI, which
  * must be installed on the host (present at /usr/bin/claude on Hetzner).
  *
- * The model gets exactly ONE tool: Read, pointed at the uploaded temp file.
- * It never writes anything — the human confirms the extracted fields in the
- * form before any document is created.
+ * The model gets exactly ONE tool: Read, HARD-SANDBOXED to the uploaded file's
+ * own temp directory (see runOnce). The document itself is attacker-controlled
+ * (a supplier's bill/receipt), so a booby-trapped file must never be able to
+ * turn Read into "read /opt/xefe-api/serviceAccountKey.json". It never writes
+ * anything — the human confirms the extracted fields in the form before any
+ * document is created.
  */
+
+const path = require('path');
 
 const EXTRACT_MODEL = process.env.XEFE_EXTRACT_MODEL || 'claude-sonnet-5';
 const TIMEOUT_MS = Math.max(20_000, Number(process.env.XEFE_EXTRACT_TIMEOUT_MS) || 90_000);
@@ -121,6 +126,23 @@ async function runOnce(filePath, kind, token) {
   const timeout = setTimeout(() => abortController.abort(), TIMEOUT_MS);
   const todayIso = new Date().toISOString().slice(0, 10);
 
+  // ── Hard-sandbox the Read tool to the uploaded document's own temp dir ──
+  // The document content is attacker-controlled, so it could try to prompt-inject
+  // "Read /opt/xefe-api/serviceAccountKey.json". Two independent guards close that:
+  //   1. Relocate the agent workspace to the temp dir (cwd + additionalDirectories)
+  //      so the process CWD (/opt/xefe-api on prod, where the secrets live) is no
+  //      longer in scope; combined with permissionMode 'dontAsk', any read outside
+  //      the workspace is auto-denied rather than prompted.
+  //   2. canUseTool: deny every tool except a Read whose resolved path stays inside
+  //      that temp dir — an explicit, code-level backstop independent of the SDK's
+  //      directory heuristics.
+  const allowedDir = path.resolve(path.dirname(filePath));
+  const isInsideAllowedDir = (candidate) => {
+    if (typeof candidate !== 'string' || candidate.length === 0) return false;
+    const resolved = path.resolve(candidate);
+    return resolved === allowedDir || resolved.startsWith(allowedDir + path.sep);
+  };
+
   const options = {
     model: EXTRACT_MODEL,
     maxTurns: 6,
@@ -129,6 +151,18 @@ async function runOnce(filePath, kind, token) {
     disallowedTools: BUILTIN_DENY,
     permissionMode: 'dontAsk',
     settingSources: [],
+    cwd: allowedDir,
+    additionalDirectories: [allowedDir],
+    canUseTool: async (toolName, input) => {
+      if (toolName !== 'Read') {
+        return { behavior: 'deny', message: 'Only reading the uploaded document is permitted.' };
+      }
+      const requested = input && (input.file_path || input.path || input.filePath || input.notebook_path);
+      if (!isInsideAllowedDir(requested)) {
+        return { behavior: 'deny', message: 'Reading files outside the uploaded document is not permitted.' };
+      }
+      return { behavior: 'allow', updatedInput: input };
+    },
     abortController,
     env: envWithToken(token),
     ...(process.env.CLAUDE_CODE_EXECUTABLE

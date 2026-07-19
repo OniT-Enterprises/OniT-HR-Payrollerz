@@ -55,6 +55,15 @@ service firebase.storage {
         isPlatformSuperAdmin();
     }
 
+    // Finance-power roles: 'accountant' writes money/accounting records like an
+    // admin (mirrors firestore.rules isTenantFinanceAdmin) so the finance set
+    // that can send invoices can also freeze the as-sent invoice PDF.
+    function isTenantFinanceAdmin(tenantId) {
+      return (isRealTenantMember(tenantId) &&
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin', 'accountant']) ||
+        isPlatformSuperAdmin();
+    }
+
     function isTenantManagerOrAdmin(tenantId) {
       return (isRealTenantMember(tenantId) &&
         tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin', 'manager']) ||
@@ -162,9 +171,11 @@ service firebase.storage {
 
     // As-sent customer invoice PDFs, frozen at send time. Customers reach
     // them through the tokenized download URL stored on invoice_links docs.
+    // Writable by the finance set (owner/hr-admin/accountant) — accountants can
+    // send invoices, so they must be able to freeze the as-sent PDF too.
     match /tenants/{tenantId}/invoices/{invoiceId}/{document} {
       allow read: if isTenantMember(tenantId);
-      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() &&
+      allow write: if isTenantFinanceAdmin(tenantId) && isUnderSizeLimit() &&
         request.resource.contentType == 'application/pdf';
     }
 

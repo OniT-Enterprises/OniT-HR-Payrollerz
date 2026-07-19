@@ -318,6 +318,9 @@ function ExpandedDetailsRow({
               {calculation.subsidioAnual > 0 && (
                 <EarningCard label={t('runPayroll.thirteenthMonth')} value={calculation.subsidioAnual} />
               )}
+              {calculation.serviceCompensation > 0 && (
+                <EarningCard label={t('runPayroll.serviceCompensation')} value={calculation.serviceCompensation} />
+              )}
             </div>
           </div>
           {/* Deductions + Employer */}

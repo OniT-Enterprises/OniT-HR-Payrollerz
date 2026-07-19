@@ -205,7 +205,7 @@ const CHART_OF_ACCOUNTS = [
   { code: "1110", name: "Petty Cash", nameTL: "Osan Ki'ik", type: "asset", subType: "cash", level: 3, isSystem: false },
   { code: "1200", name: "Bank Accounts", nameTL: "Konta Banku", type: "asset", subType: "bank", level: 2, isSystem: true },
   { code: "1210", name: "BNU Operating Account", type: "asset", subType: "bank", level: 3, isSystem: false },
-  { code: "1220", name: "BNU Payroll Account", type: "asset", subType: "bank", level: 3, isSystem: false },
+  { code: "1130", name: "BNU Payroll Account", type: "asset", subType: "bank", level: 3, isSystem: false },
   { code: "1230", name: "ANZ Savings Account", type: "asset", subType: "bank", level: 3, isSystem: false },
   { code: "1300", name: "Accounts Receivable", nameTL: "Simu Atu Mai", type: "asset", subType: "accounts_receivable", level: 2, isSystem: true },
   { code: "1400", name: "Prepaid Expenses", nameTL: "Kustu Selu Uluk", type: "asset", subType: "prepaid_expense", level: 2, isSystem: false },
@@ -1040,7 +1040,7 @@ export default function SeedDatabase() {
         source: "opening",
         lines: [
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 500000, credit: 0 },
-          { accountCode: "1220", accountName: "BNU Payroll Account", debit: 100000, credit: 0 },
+          { accountCode: "1130", accountName: "BNU Payroll Account", debit: 100000, credit: 0 },
           { accountCode: "1510", accountName: "Office Equipment", debit: 85000, credit: 0 },
           { accountCode: "1520", accountName: "Vehicles", debit: 150000, credit: 0 },
           { accountCode: "3100", accountName: "Share Capital", debit: 0, credit: 500000 },
@@ -1125,7 +1125,7 @@ export default function SeedDatabase() {
         source: "payment",
         lines: [
           { accountCode: "2200", accountName: "Salaries Payable", debit: 264540, credit: 0 },
-          { accountCode: "1220", accountName: "BNU Payroll Account", debit: 0, credit: 264540 },
+          { accountCode: "1130", accountName: "BNU Payroll Account", debit: 0, credit: 264540 },
         ],
       },
     ];

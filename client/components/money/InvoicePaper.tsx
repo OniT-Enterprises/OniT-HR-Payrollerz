@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * InvoicePaper — WYSIWYG HTML invoice renderer
  *
@@ -35,6 +36,41 @@ export interface InvoicePaperItem {
   quantity: number;
   unitPrice: number;
   discount?: number;
+  vatRate?: number;
+}
+
+/**
+ * Label for the tax line in an invoice's totals block.
+ *
+ * The per-line `vatRate` field means the invoice-level `taxRate` can misstate
+ * the rate that was actually applied. On a single-rate invoice we show
+ * "Tax (10%)"; when the taxed lines carry different rates we show
+ * "Tax (mixed)" rather than a rate that contradicts the amount (and a bare
+ * "Tax" when no positive rate can be determined). Amounts are never touched —
+ * this governs only the stated rate.
+ *
+ * Shared by InvoicePDF and the invoice/receipt emails so all three renderings
+ * of the same invoice agree.
+ */
+export function invoiceTaxRateLabel(
+  items: Array<{ vatRate?: number | null; quantity: number; unitPrice: number; discount?: number | null }>,
+  defaultRate: number,
+): string {
+  const rates = new Set<number>();
+  for (const item of items) {
+    // A zero-net line (or a 0%/exempt line) contributes no tax, so it can't
+    // make the invoice "mixed".
+    if (lineNetAmount(item) <= 0) continue;
+    const rate = Number.isFinite(item.vatRate as number)
+      ? (item.vatRate as number)
+      : defaultRate;
+    if (rate > 0) rates.add(rate);
+  }
+  if (rates.size === 1) {
+    const [only] = Array.from(rates);
+    return `Tax (${only}%)`;
+  }
+  return rates.size > 1 ? 'Tax (mixed)' : 'Tax';
 }
 
 /** Minimal shape needed to render — a full Invoice satisfies this */
@@ -207,7 +243,7 @@ function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceT
       )}
       {invoice.taxAmount > 0 && (
         <div className="flex justify-between py-0.5">
-          <span style={{ color: PAPER_MUTED }}>Tax ({invoice.taxRate}%)</span>
+          <span style={{ color: PAPER_MUTED }}>{invoiceTaxRateLabel(invoice.items, invoice.taxRate)}</span>
           <span className="tabular-nums">{formatInvoiceMoney(invoice.taxAmount)}</span>
         </div>
       )}

@@ -527,7 +527,7 @@ class OffboardingService {
         subsidioAnual,
         subsidioAnualLegalBasis: 'Labour Law 4/2012 Art. 44',
         subsidioAnualNote:
-          'Gross entitlement for the termination year. Deduct any subsídio anual already paid to this employee through a payroll run this year before settling.',
+          'Reference figures only. Once this employee is terminated, the next payroll run automatically pays their Art. 56 severance and the prorated Art. 44 subsídio (each net of anything already paid this year) — do NOT also settle these amounts manually.',
         calculatedBy: calculatedBy.trim(),
         calculatedAt: new Date(),
       };

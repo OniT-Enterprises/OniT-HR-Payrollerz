@@ -346,12 +346,31 @@ class PayrollRunService {
       throw new Error('Payroll cannot be approved by the same person who created it');
     }
 
+    // Atomic status transition: the pre-checks above read a snapshot, but two
+    // approvers (or two tabs) could both pass them and both write 'approved',
+    // double-posting the payroll journal downstream. The transaction re-reads
+    // the doc and asserts it is still pre-approval, so exactly one approval
+    // wins — Firestore retries the loser, which then sees 'approved' and
+    // throws. Mirrored by a status precondition in firestore.rules.
     const docRef = doc(db, 'payrollRuns', id);
-    await updateDoc(docRef, {
-      status: 'approved',
-      approvedBy,
-      approvedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) {
+        throw new Error('Payroll run not found');
+      }
+      const current = snap.data().status;
+      if (current === 'approved' || current === 'paid') {
+        throw new Error('Payroll run has already been approved');
+      }
+      if (current !== 'draft' && current !== 'processing') {
+        throw new Error(`Payroll run must be draft/processing before approval (current: ${current})`);
+      }
+      transaction.update(docRef, {
+        status: 'approved',
+        approvedBy,
+        approvedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
 
     // Log to audit trail if context provided
@@ -421,6 +440,14 @@ class PayrollRunService {
   }
 
   async markPayrollRunAsPaid(id: string): Promise<boolean> {
+    // NOTE (accounting follow-up): this only flips status. It does NOT post a
+    // settlement journal (Dr Salaries Payable 2210 / Cr bank), so book cash is
+    // not reduced for the net wage disbursement and 2210 accrues across runs.
+    // The correct fix is a dedicated payroll-disbursement posting that mirrors
+    // createFromSupplierWithholdingRemittance — it must capture WHICH bank
+    // account paid and a payment reference (a tenant may have several banks),
+    // so it can't be auto-derived here without risking a wrong-account credit.
+    // WIT/INSS payables (2220/2230/2240) intentionally persist until remitted.
     const payroll = await this.getPayrollRunById(id);
     if (!payroll) {
       throw new Error('Payroll run not found');
@@ -470,13 +497,16 @@ class PayrollRunService {
     return true;
   }
 
-  async getRecentPayrollRuns(count: number = 5): Promise<PayrollRun[]> {
-    return this.getAllPayrollRuns({ limit: count });
+  async getRecentPayrollRuns(tenantId: string, count: number = 5): Promise<PayrollRun[]> {
+    // tenantId is required — payrollRuns list rules are tenant-scoped, so a
+    // query without it is denied once any run exists.
+    return this.getAllPayrollRuns({ tenantId, limit: count });
   }
 
-  async getPayrollRunsByDateRange(startDate: string, endDate: string): Promise<PayrollRun[]> {
+  async getPayrollRunsByDateRange(tenantId: string, startDate: string, endDate: string): Promise<PayrollRun[]> {
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('periodStart', '>=', startDate),
       where('periodEnd', '<=', endDate),
       orderBy('periodStart', 'desc')
@@ -600,9 +630,11 @@ class PayrollRecordService {
     return true;
   }
 
-  async getEmployeePayrollHistory(employeeId: string, limitCount: number = 12): Promise<PayrollRecord[]> {
+  async getEmployeePayrollHistory(tenantId: string, employeeId: string, limitCount: number = 12): Promise<PayrollRecord[]> {
+    // tenantId is required — payrollRecords list rules are tenant-scoped.
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
       orderBy('createdAt', 'desc'),
       limit(limitCount)
@@ -621,13 +653,13 @@ class PayrollRecordService {
     });
   }
 
-  async getEmployeeYTDTotals(employeeId: string, year: number): Promise<{
+  async getEmployeeYTDTotals(tenantId: string, employeeId: string, year: number): Promise<{
     ytdGrossPay: number;
     ytdNetPay: number;
     ytdIncomeTax: number;
     ytdINSSEmployee: number;
   }> {
-    const records = await this.getEmployeePayrollHistory(employeeId, 500);
+    const records = await this.getEmployeePayrollHistory(tenantId, employeeId, 500);
     const runIds = Array.from(new Set(records.map((r) => r.payrollRunId).filter(Boolean)));
     const runYears = new Map<string, number>();
 
@@ -735,6 +767,58 @@ class PayrollRecordService {
           ytdSubsidioAnual: addMoney(
             current.ytdSubsidioAnual,
             record.earnings?.find((earning) => earning.type === 'subsidio_anual')?.amount || 0,
+          ),
+        };
+      }
+    }
+
+    return totals;
+  }
+
+  /**
+   * Final-pay amounts already COMMITTED for each employee this year, used to
+   * make a leaver's Art. 56 severance and Art. 44 subsidio pay exactly once.
+   * Unlike getTenantYTDTotals (paid-only, for reporting), this includes every
+   * run that has real persisted records and will be paid — 'processing',
+   * 'approved', 'paid' — but NOT 'draft'/'writing_records' (may be discarded
+   * or partial) nor 'cancelled'/'rejected'. The run currently being built is
+   * an unsaved draft, so it is never counted. Covered by the existing
+   * (tenantId, status, payDate) composite index.
+   */
+  async getCommittedFinalPayByEmployee(
+    tenantId: string,
+    year: number,
+  ): Promise<Record<string, { serviceCompensation: number; subsidioAnual: number }>> {
+    const runsSnapshot = await getDocs(query(
+      collection(db, 'payrollRuns'),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['processing', 'approved', 'paid']),
+      where('payDate', '>=', `${year}-01-01`),
+      where('payDate', '<=', `${year}-12-31`),
+    ));
+    const runIds = runsSnapshot.docs.map((runDoc) => runDoc.id);
+    const totals: Record<string, { serviceCompensation: number; subsidioAnual: number }> = {};
+
+    for (const runIdChunk of chunkArray(runIds, 10)) {
+      if (runIdChunk.length === 0) continue;
+      // tenantId filter is load-bearing — see getTenantYTDTotals.
+      const recordsSnapshot = await getDocs(query(
+        this.collectionRef,
+        where('tenantId', '==', tenantId),
+        where('payrollRunId', 'in', runIdChunk),
+      ));
+      for (const recordDoc of recordsSnapshot.docs) {
+        const record = normalizeLegacyRecord({ ...recordDoc.data() }) as PayrollRecord;
+        if (!record.employeeId) continue;
+        const current = totals[record.employeeId] || { serviceCompensation: 0, subsidioAnual: 0 };
+        totals[record.employeeId] = {
+          serviceCompensation: addMoney(
+            current.serviceCompensation,
+            record.earnings?.find((e) => e.type === 'service_compensation')?.amount || 0,
+          ),
+          subsidioAnual: addMoney(
+            current.subsidioAnual,
+            record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0,
           ),
         };
       }

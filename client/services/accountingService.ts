@@ -53,6 +53,7 @@ import {
   buildInvoiceJournalLines,
   buildPayrollJournalLines,
   calculateBillPaymentPostingAmounts,
+  dedupeAccountsByCode,
   deriveBalanceSheet,
   deriveIncomeStatement,
   getAccountNet,
@@ -106,6 +107,15 @@ class AccountService {
     account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>,
     audit?: { userId: string; userEmail: string; userName?: string }
   ): Promise<string> {
+    // Account codes must be unique: reports aggregate the general ledger BY
+    // CODE, so two accounts sharing a code each receive the code's full total,
+    // double-counting the trial balance / income statement / balance sheet.
+    if (account.code) {
+      const existing = await this.getAccountByCode(tenantId, account.code);
+      if (existing) {
+        throw new Error(`Account code ${account.code} already exists (${existing.name}).`);
+      }
+    }
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...account,
       createdAt: serverTimestamp(),
@@ -262,7 +272,13 @@ class AccountService {
     const defaultAccounts = getDefaultAccounts();
 
     for (const account of defaultAccounts) {
-      const docRef = doc(this.collectionRef(tenantId));
+      // Deterministic doc ID = account code. The check-then-batch above is not
+      // atomic, so two concurrent initializations (e.g. the payroll auto-init
+      // racing the Chart-of-Accounts page) could each write the whole chart.
+      // Keying the doc by code makes a concurrent second write overwrite the
+      // same docs instead of creating a duplicate chart. Codes are unique
+      // within a tenant and safe as Firestore document IDs.
+      const docRef = doc(this.collectionRef(tenantId), account.code);
       batch.set(docRef, {
         ...account,
         createdAt: serverTimestamp(),
@@ -1088,7 +1104,14 @@ class JournalEntryService {
       }
     }
 
-    const { year, period: month } = getFiscalDateParts(summary.periodEnd);
+    // Fiscal tag, entry-number year and GL entryDate must all refer to the
+    // SAME period. The journal is dated summary.payDate (below) and every
+    // report/period-close check selects GL by that entryDate, so the fiscal
+    // year/period are derived from payDate too — not periodEnd. (A December
+    // run paid Jan 3 lands in, and is tagged for, the January that its GL
+    // rows actually hit.) This matches every other journal source, which uses
+    // the document date for both.
+    const { year, period: month } = getFiscalDateParts(summary.payDate);
     const entryNumber = await this.getNextEntryNumber(tenantId, year);
 
     // Resolve exactly the chart accounts this run needs, then hand the pure
@@ -2083,10 +2106,13 @@ class TrialBalanceService {
   async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number, periodStart?: string): Promise<TrialBalance> {
     const effectivePeriodStart = periodStart || `${fiscalYear}-01-01`;
 
-    const [accounts, balanceMaps] = await Promise.all([
+    const [allAccounts, balanceMaps] = await Promise.all([
       accountService.getAllAccounts(tenantId),
       this.loadGLWithSnapshot(tenantId, effectivePeriodStart, asOfDate),
     ]);
+    // GL totals are aggregated by code; collapse any duplicate-code accounts so
+    // a code's total is attributed to exactly one row (no double-count).
+    const accounts = dedupeAccountsByCode(allAccounts);
 
     const {
       openingById,
@@ -2163,7 +2189,7 @@ class TrialBalanceService {
   ): Promise<IncomeStatement> {
     const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
 
-    const accounts = await accountService.getAllAccounts(tenantId);
+    const accounts = dedupeAccountsByCode(await accountService.getAllAccounts(tenantId));
 
     // Try snapshot+delta; fallback to full scan
     const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, periodStart);
@@ -2222,7 +2248,7 @@ class TrialBalanceService {
   ): Promise<BalanceSheet> {
     const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
 
-    const accounts = await accountService.getAllAccounts(tenantId);
+    const accounts = dedupeAccountsByCode(await accountService.getAllAccounts(tenantId));
     const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, asOfDate);
 
     const balanceById = new Map<string, number>();

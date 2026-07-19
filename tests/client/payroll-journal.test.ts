@@ -91,7 +91,7 @@ describe("payroll journal — balance and account correctness", () => {
     const { lines, totalDebit, totalCredit } = buildPayrollJournalLines(summary, resolve);
 
     expect(creditFor(lines, "1220")).toBe(100); // employee advances
-    expect(creditFor(lines, "2200")).toBe(40); // other deductions
+    expect(creditFor(lines, "2260")).toBe(40); // other deductions (leaf, not 2200 header)
     expect(creditFor(lines, "2210")).toBe(1630); // net after every deduction
     expect(totalDebit).toBe(totalCredit);
     expect(totalDebit).toBe(2120); // gross 2000 + employer INSS 120
@@ -145,6 +145,6 @@ describe("payroll journal — balance and account correctness", () => {
     for (const code of asked) expect(declared.has(code)).toBe(true);
     // The two control accounts appear only because deductions are present.
     expect(declared.has("1220")).toBe(true);
-    expect(declared.has("2200")).toBe(true);
+    expect(declared.has("2260")).toBe(true);
   });
 });

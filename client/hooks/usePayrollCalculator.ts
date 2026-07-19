@@ -39,6 +39,7 @@ import type { PayrollConfig } from "@/types/settings";
 import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import type { Employee } from "@/services/employeeService";
 import { payrollService, type EmployeePayrollYTD } from "@/services/payrollService";
 import type { AttendanceEmployeeSummary } from "@/services/attendanceService";
@@ -65,6 +66,10 @@ interface UsePayrollCalculatorOptions {
 }
 
 const EMPTY_YTD_BY_EMPLOYEE: Record<string, EmployeePayrollYTD> = {};
+const EMPTY_COMMITTED_FINAL_PAY: Record<
+  string,
+  { serviceCompensation: number; subsidioAnual: number }
+> = {};
 
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
 // INSS enrollment, and outside minimum-wage rules.
@@ -73,25 +78,15 @@ function isShareholder(employee: Employee): boolean {
 }
 
 /**
- * Employment end for HOURS proration: the offboarding-stamped termination
- * date, or a fixed-term contract end. Honored only when it falls INSIDE the
- * pay period — a stale past date must never zero out an active employee's
- * pay, and a future one is out of scope for this run.
- */
-function getInPeriodEmploymentEnd(
-  employee: Employee,
-  periodStart: string,
-  periodEnd: string,
-): string | null {
-  const end = employee.terminationDate || employee.jobDetails.contractEndDate || null;
-  return end && end >= periodStart && end <= periodEnd ? end : null;
-}
-
-/**
- * Termination for FINAL-PAY items (Art. 56 severance + Art. 44 subsidio):
- * only the deliberate offboarding-stamped terminationDate — a contract end
- * date alone may just precede a renewal, and severance must not auto-pay on
- * a guess.
+ * A leaver's in-period termination, driving BOTH hours proration and the
+ * final-pay items (Art. 56 severance + Art. 44 subsidio). Only the deliberate
+ * offboarding-stamped `terminationDate` counts — a bare `contractEndDate` is
+ * NOT used, because it may just precede a renewal whose paperwork lags, and
+ * neither docking wages nor auto-paying severance may rest on that guess.
+ * Honored only when the date falls INSIDE the pay period: a stale past date
+ * must never zero out an active employee's pay, and a future one is out of
+ * scope for this run. A genuine fixed-term end is handled by offboarding,
+ * which stamps `terminationDate`.
  */
 function getInPeriodTermination(
   employee: Employee,
@@ -100,6 +95,55 @@ function getInPeriodTermination(
 ): string | null {
   const end = employee.terminationDate || null;
   return end && end >= periodStart && end <= periodEnd ? end : null;
+}
+
+/**
+ * Resolves the once-only final-pay inputs for the engine. Shared by the two
+ * TLPayrollInput builders (display calc + validation/records) so they can
+ * never diverge on how a leaver is paid.
+ *
+ *  - Art. 56 severance fires (via terminationDate) ONLY if no service
+ *    compensation has already been committed for this employee this year —
+ *    so a second run over the same period does not re-pay it.
+ *  - Art. 44 subsidio for a leaver is the termination-year entitlement net of
+ *    whatever 13th month is already committed (annual run or a prior final
+ *    run), clamped at 0.
+ *  - A non-leaver follows the ordinary includeSubsidioAnual toggle.
+ */
+export function resolveLeaverFinalPay(args: {
+  inPeriodTermination: string | null;
+  monthlySalary: number;
+  hireDate: string;
+  asOfDate: Date;
+  includeSubsidioAnual: boolean;
+  subsidioConfig?: { proRataForNewEmployees?: boolean };
+  committed: { serviceCompensation: number; subsidioAnual: number };
+}): { terminationDate: string | undefined; subsidioAnual: number } {
+  const {
+    inPeriodTermination, monthlySalary, hireDate, asOfDate,
+    includeSubsidioAnual, subsidioConfig, committed,
+  } = args;
+
+  if (!inPeriodTermination) {
+    return {
+      terminationDate: undefined,
+      subsidioAnual: includeSubsidioAnual
+        ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, subsidioConfig)
+        : 0,
+    };
+  }
+
+  const entitlement = calculateSubsidioAnual(
+    monthlySalary,
+    hireDate,
+    new Date(`${inPeriodTermination}T00:00:00`),
+    { ...subsidioConfig, terminationDate: inPeriodTermination },
+  );
+  return {
+    // Skip severance if it was already paid/committed in an earlier run.
+    terminationDate: committed.serviceCompensation > 0 ? undefined : inPeriodTermination,
+    subsidioAnual: maxMoney(0, subtractMoney(entitlement, committed.subsidioAnual)),
+  };
 }
 
 export function usePayrollCalculator({
@@ -201,18 +245,31 @@ export function usePayrollCalculator({
   const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
   const attendanceSyncRequestRef = useRef(0);
 
-  // Roster: active employees plus leavers whose employment ended inside this
+  // Roster: active employees plus leavers whose termination falls inside this
   // pay period — their final run pays the worked fraction, Art. 56 service
   // compensation, and the netted Art. 44 subsidio.
-  const rosterEmployees = useMemo(() => {
-    if (!terminatedEmployees || terminatedEmployees.length === 0) {
-      return activeEmployees;
-    }
-    const leavers = terminatedEmployees.filter((employee) =>
-      Boolean(getInPeriodEmploymentEnd(employee, periodStart, periodEnd)),
+  const inPeriodLeavers = useMemo(() => {
+    if (!terminatedEmployees || terminatedEmployees.length === 0) return [];
+    return terminatedEmployees.filter((employee) =>
+      Boolean(getInPeriodTermination(employee, periodStart, periodEnd)),
     );
-    return leavers.length > 0 ? [...activeEmployees, ...leavers] : activeEmployees;
-  }, [activeEmployees, terminatedEmployees, periodStart, periodEnd]);
+  }, [terminatedEmployees, periodStart, periodEnd]);
+  const rosterEmployees = useMemo(
+    () => (inPeriodLeavers.length > 0 ? [...activeEmployees, ...inPeriodLeavers] : activeEmployees),
+    [activeEmployees, inPeriodLeavers],
+  );
+
+  // Final pay (Art. 56 severance + Art. 44 subsidio) already committed this
+  // year, so a leaver's final pay is disbursed exactly once even across two
+  // runs over the same period (e.g. a regular run plus a separate 13th-month
+  // run). Only fetched when the roster actually contains a leaver.
+  const committedFinalPayQuery = useQuery({
+    queryKey: ["tenants", tenantId, "committedFinalPay", payrollYear],
+    queryFn: () => payrollService.records.getCommittedFinalPayByEmployee(tenantId, payrollYear),
+    enabled: Boolean(tenantId) && Number.isInteger(payrollYear) && inPeriodLeavers.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const committedFinalPay = committedFinalPayQuery.data ?? EMPTY_COMMITTED_FINAL_PAY;
 
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
@@ -221,36 +278,17 @@ export function usePayrollCalculator({
     const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
     const monthsWorkedThisYear = asOfDate.getMonth() + 1;
     const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-    // A leaver's final run: severance fires in the engine via terminationDate,
-    // and the Art. 44 subsidio is owed regardless of the run-level toggle —
-    // net of any 13th month already paid this year (YTD), so an annual run
-    // followed by a same-year termination cannot double-pay.
-    const inPeriodTermination = getInPeriodTermination(
-      data.employee,
-      periodStart,
-      periodEnd,
-    );
-    const ytdSubsidioPaid =
-      ytdByEmployee[data.employee.id || ""]?.ytdSubsidioAnual || 0;
-    const subsidioAnual = inPeriodTermination
-      ? maxMoney(
-          0,
-          subtractMoney(
-            calculateSubsidioAnual(
-              monthlySalary,
-              hireDate,
-              new Date(`${inPeriodTermination}T00:00:00`),
-              {
-                ...calculationConfig?.subsidioAnual,
-                terminationDate: inPeriodTermination,
-              },
-            ),
-            ytdSubsidioPaid,
-          ),
-        )
-      : includeSubsidioAnual
-        ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, calculationConfig?.subsidioAnual)
-        : 0;
+    // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
+    // once — resolveLeaverFinalPay nets both against what's already committed.
+    const { terminationDate: engineTerminationDate, subsidioAnual } = resolveLeaverFinalPay({
+      inPeriodTermination: getInPeriodTermination(data.employee, periodStart, periodEnd),
+      monthlySalary,
+      hireDate,
+      asOfDate,
+      includeSubsidioAnual,
+      subsidioConfig: calculationConfig?.subsidioAnual,
+      committed: committedFinalPay[data.employee.id || ""] ?? { serviceCompensation: 0, subsidioAnual: 0 },
+    });
     // Per-employee frequency overrides the run-level selector
     const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
     const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
@@ -285,9 +323,9 @@ export function usePayrollCalculator({
       transportAllowance: data.allowances,
       otherEarnings: 0,
       subsidioAnual,
-      // Fires the engine's Art. 56 service-compensation earning in the
-      // leaver's final run only (never for past terminations).
-      terminationDate: inPeriodTermination || undefined,
+      // Fires the engine's Art. 56 service-compensation earning for a leaver's
+      // final run only, and only if not already committed in an earlier run.
+      terminationDate: engineTerminationDate,
       nonCashBenefits: 0,
       nonCashBenefitINSSCategory: null,
       taxInfo: {
@@ -312,7 +350,7 @@ export function usePayrollCalculator({
       console.error("Calculation error for employee:", data.employee.id, error);
       return null;
     }
-  }, [payFrequency, payDate, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
+  }, [payFrequency, payDate, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, committedFinalPay, calculationConfig]);
 
   const latestCalculatorRef = useRef(calculateForEmployee);
   const [appliedCalculator, setAppliedCalculator] = useState(
@@ -341,7 +379,7 @@ export function usePayrollCalculator({
         periodStart,
         periodEnd,
         defaultHours,
-        getInPeriodEmploymentEnd(employee, periodStart, periodEnd),
+        getInPeriodTermination(employee, periodStart, periodEnd),
       );
       // Salaried pay is a fixed monthly amount with any shortfall docked via the
       // absence deduction (not by scaling regularHours — calculateRegularPay
@@ -581,6 +619,25 @@ export function usePayrollCalculator({
 
     const summaryByEmployee = new Map(summaryRows.map((row) => [row.employeeId, row]));
 
+    // TL public holidays inside the pay period. Employees don't work these but
+    // are still paid for them, so they must NOT be booked as absence — and the
+    // leave-credit working-day count must exclude them to match the server's
+    // canonical leave duration (holiday-aware). Union the start/end years in
+    // case a period straddles a year boundary.
+    const holidayYears = Array.from(
+      new Set([periodStart.slice(0, 4), periodEnd.slice(0, 4)].map(Number)),
+    );
+    const periodHolidayDates = holidayYears
+      .flatMap((y) => getTLPublicHolidays(y).map((h) => h.date))
+      .filter((d) => d >= periodStart && d <= periodEnd);
+    // Hours the schedule loses to holidays: count only Mon–Sat (a holiday on
+    // the weekly rest day was never expected working time). Erring toward
+    // not-docking is deliberate — a wrongly-docked paid holiday is worse.
+    const holidayHoursInPeriod = periodHolidayDates.filter((d) => {
+      const weekday = new Date(`${d}T00:00:00`).getDay();
+      return weekday >= 1 && weekday <= 6;
+    }).length * TL_WORKING_HOURS.standardDailyHours;
+
     // Approved leave overlapping the pay period. Without this, paid leave days
     // (zero recorded hours) would be docked as unpaid absence. Paid leave types
     // reduce absence hours; sick leave feeds sickDays so the TL 100%/50% sick
@@ -600,7 +657,9 @@ export function usePayrollCalculator({
           const typeInfo = TL_LEAVE_TYPES.find((lt) => lt.id === leaveType);
           return typeInfo ? typeInfo.isPaid : true;
         },
-        calculateWorkingDays,
+        // Holiday-aware working-day count so leave duration (and sick banding)
+        // matches the server's canonical, holiday-excluding calculation.
+        (start, end) => calculateWorkingDays(start, end, periodHolidayDates),
       );
     } catch (error) {
       if (attendanceSyncRequestRef.current !== requestId) return;
@@ -631,7 +690,12 @@ export function usePayrollCalculator({
       // Hours worked at night carry the +25% premium on top of base pay; they
       // are a subset of regular/overtime, so they are set, not added.
       const nightShiftHours = Number((summary.nightHours ?? 0).toFixed(2));
-      const expectedRegularHours = data.originalValues.regularHours;
+      // Public holidays are paid non-working time — subtract them from the
+      // expected baseline so a non-worked holiday is never docked as absence.
+      const expectedRegularHours = Math.max(
+        0,
+        data.originalValues.regularHours - holidayHoursInPeriod,
+      );
       const credit = leaveByEmployee.get(employeeId);
       const paidLeaveHours = credit?.paidLeaveHours ?? 0;
       const sickDays = credit?.sickDays ?? 0;
@@ -769,33 +833,16 @@ export function usePayrollCalculator({
       const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
       const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-      // Mirrors calculateForEmployee's leaver handling — keep in sync.
-      const inPeriodTermination = getInPeriodTermination(
-        data.employee,
-        periodStart,
-        periodEnd,
-      );
-      const ytdSubsidioPaid =
-        ytdByEmployee[data.employee.id || ""]?.ytdSubsidioAnual || 0;
-      const subsidioAnual = inPeriodTermination
-        ? maxMoney(
-            0,
-            subtractMoney(
-              calculateSubsidioAnual(
-                monthlySalary,
-                hireDate,
-                new Date(`${inPeriodTermination}T00:00:00`),
-                {
-                  ...calculationConfig?.subsidioAnual,
-                  terminationDate: inPeriodTermination,
-                },
-              ),
-              ytdSubsidioPaid,
-            ),
-          )
-        : includeSubsidioAnual
-          ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, calculationConfig?.subsidioAnual)
-          : 0;
+      // Same once-only leaver resolution as calculateForEmployee (shared helper).
+      const { terminationDate: engineTerminationDate, subsidioAnual } = resolveLeaverFinalPay({
+        inPeriodTermination: getInPeriodTermination(data.employee, periodStart, periodEnd),
+        monthlySalary,
+        hireDate,
+        asOfDate,
+        includeSubsidioAnual,
+        subsidioConfig: calculationConfig?.subsidioAnual,
+        committed: committedFinalPay[data.employee.id || ""] ?? { serviceCompensation: 0, subsidioAnual: 0 },
+      });
       const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
       const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
       const isResident =
@@ -829,7 +876,7 @@ export function usePayrollCalculator({
         transportAllowance: data.allowances,
         otherEarnings: 0,
         subsidioAnual,
-        terminationDate: inPeriodTermination || undefined,
+        terminationDate: engineTerminationDate,
         nonCashBenefits: 0,
         nonCashBenefitINSSCategory: null,
         taxInfo: {
@@ -855,7 +902,7 @@ export function usePayrollCalculator({
       }
     }
     return allErrors;
-  }, [payDate, payFrequency, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
+  }, [payDate, payFrequency, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, committedFinalPay, calculationConfig]);
 
   // ─── Build payroll run / records ────────────────────────────────
 

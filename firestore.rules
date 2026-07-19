@@ -1419,7 +1419,18 @@ service cloud.firestore {
         // subscription (already-approved runs stay editable if it lapses)
         (request.resource.data.status != 'approved' ||
          resource.data.status == 'approved' ||
-         tenantHasActiveSubscription(resource.data.tenantId))
+         tenantHasActiveSubscription(resource.data.tenantId)) &&
+        // State machine: never resurrect a finalized/void run to 'approved'.
+        // Moving INTO 'approved' is allowed from any pre-approval state
+        // (draft/processing/pending_approval/...); an already-approved run
+        // stays editable; but paid/cancelled/rejected runs cannot become
+        // approved. The exact-once concurrency guard is the transaction in
+        // payrollService.approvePayrollRun.
+        (request.resource.data.status != 'approved' ||
+         resource.data.status == 'approved' ||
+         (resource.data.status != 'paid' &&
+          resource.data.status != 'cancelled' &&
+          resource.data.status != 'rejected'))
       );
 
       allow delete: if isSuperAdmin() || (

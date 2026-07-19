@@ -18,6 +18,7 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db, getFunctionsLazy } from "@/lib/firebase";
 import {
@@ -82,6 +83,48 @@ type TenantSettingsDoc = {
 
 const VALID_STATUSES: TenantStatus[] = ["active", "suspended", "pending", "cancelled"];
 const VALID_PLANS: TenantPlan[] = ["free", "starter", "professional", "enterprise"];
+
+/**
+ * Tenant data lives in two generations (see CLAUDE.md "Firestore Data Layout"):
+ *   (a) subcollections under tenants/{tid}/... and
+ *   (b) top-level collections carrying a `tenantId` FIELD.
+ * Firestore doc deletes do NOT cascade, so deleteTenant() must sweep BOTH.
+ * These lists MIRROR the Admin-SDK sweeps in scripts/delete-tenant.mjs and
+ * scripts/wipe-tenant-data.mjs — keep all three in sync.
+ */
+
+// (a) Known subcollections under tenants/{tid}. The client SDK cannot enumerate
+//     subcollections, so they are listed explicitly (source: client/lib/paths.ts).
+//     `members` is intentionally omitted here — it is deleted LAST (membership
+//     drives firestore.rules access; see deleteTenant).
+const TENANT_SUBCOLLECTIONS = [
+  "settings", "departments", "employees", "positions", "jobs", "candidates",
+  "interviews", "offers", "contracts", "employmentSnapshots", "shifts",
+  "timesheets", "goals", "reviews", "trainings", "discipline", "auditLogs",
+  "archives", "document_alerts", "qbExportLogs", "promotionSignals", "payruns",
+  "accounts", "journalEntries", "generalLedger", "fiscalYears", "fiscalPeriods",
+  "balanceSnapshots", "customers", "invoices", "recurring_invoices",
+  "payments_received", "vendors", "bills", "bill_payments",
+  "supplierWithholdingPeriods", "supplierWithholdingRemittances",
+  "taxClearanceRequests", "cashAdvances", "cashAdvanceClearings", "expenses",
+  "bankTransactions", "analytics", "holidays", "vatReturns", "face_embeddings",
+];
+
+// (b) Top-level collections keyed by a `tenantId` FIELD. Mirrors ROOT_COLLECTIONS
+//     in the delete/wipe scripts. (Legacy `payruns` and `tenant_settings` are
+//     handled separately in deleteTenant — see there.)
+const TENANT_KEYED_ROOT_COLLECTIONS = [
+  "departments", "employees", "positions", "jobs", "candidates", "interviews",
+  "offers", "contracts", "timesheets", "leavePolicies", "leaveRequests",
+  "leaveBalances", "leave_requests", "leave_balances", "goals", "reviews",
+  "trainings", "disciplinary", "customers", "invoices", "recurring_invoices",
+  "payments_received", "vendors", "bills", "bill_payments", "expenses",
+  "holidays", "payrollRuns", "payrollRecords", "benefitEnrollments",
+  "recurringDeductions", "taxReports", "taxFilings", "bankTransfers",
+  "attendance", "attendanceImports", "analytics", "invoice_links", "okrs",
+  "jobPrivateDetails", "jobApplications", "onboarding", "offboarding", "mail",
+  "audit_logs",
+];
 
 function generateTenantSlug(name: string): string {
   return name
@@ -779,6 +822,80 @@ class AdminService {
     }
   }
 
+  /**
+   * Delete all docs in a top-level collection matching this tenantId, chunked
+   * into batches (Firestore caps a write batch at 500; we chunk at 450 for
+   * headroom) and re-queried until empty. Non-fatal by design: some legacy
+   * collections (e.g. `mail`, `audit_logs`) are immutable to clients by
+   * firestore.rules, so a failure here is logged and skipped — residue must be
+   * swept by a superadmin running scripts/delete-tenant.mjs (Admin SDK).
+   */
+  private async sweepRootCollection(name: string, tenantId: string): Promise<void> {
+    if (!db) return;
+    try {
+      // Guard bound is pure paranoia against an unexpected non-terminating loop.
+      for (let guard = 0; guard < 100000; guard++) {
+        const snap = await getDocs(
+          query(collection(db, name), where("tenantId", "==", tenantId), limit(450)),
+        );
+        if (snap.empty) break;
+        const batch = writeBatch(db);
+        snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
+      }
+    } catch (error) {
+      console.warn(`deleteTenant: sweep of top-level '${name}' incomplete:`, error);
+    }
+  }
+
+  /**
+   * Delete all docs in a tenant subcollection, chunked. The client SDK has no
+   * recursiveDelete, so this does NOT recurse into nested subcollections
+   * (e.g. payruns/{yyyymm}/payslips, promotionSignals/{q}/*) — that residue
+   * needs scripts/delete-tenant.mjs. When `critical` is true (the `members`
+   * subcollection, whose docs grant firestore.rules access), failures propagate
+   * so we never report success while access is still live.
+   */
+  private async sweepTenantSubcollection(
+    tenantId: string,
+    sub: string,
+    critical = false,
+  ): Promise<void> {
+    if (!db) return;
+    try {
+      for (let guard = 0; guard < 100000; guard++) {
+        const snap = await getDocs(
+          query(collection(db, `${paths.tenant(tenantId)}/${sub}`), limit(450)),
+        );
+        if (snap.empty) break;
+        const batch = writeBatch(db);
+        snap.docs.forEach((docSnap) => batch.delete(docSnap.ref));
+        await batch.commit();
+        if (snap.size < 450) break;
+      }
+    } catch (error) {
+      if (critical) throw error;
+      console.warn(`deleteTenant: sweep of subcollection '${sub}' incomplete:`, error);
+    }
+  }
+
+  /**
+   * Fully delete a tenant and ALL its data. Firestore doc deletes do NOT
+   * cascade, so a bare deleteDoc(tenants/{tid}) would leave every subcollection
+   * AND every top-level tenant-keyed collection behind — and because
+   * firestore.rules derives membership from tenants/{tid}/members/{uid}, former
+   * owner/admins would keep full access. So we sweep everything, delete the
+   * `members` subcollection LAST (an interrupted delete must not strip access
+   * before the data is gone), and only then delete the root doc.
+   *
+   * Best-effort: the client SDK has no recursiveDelete, and some legacy
+   * collections (`mail`, `audit_logs`) are immutable to clients by rules, so
+   * nested subcollections (payslips, promotionSignals children) and those
+   * immutable collections survive. A superadmin must run
+   * scripts/delete-tenant.mjs (Admin SDK) to guarantee complete removal of any
+   * residue. Superadmin-only (enforced by firestore.rules isSuperAdmin()).
+   */
   async deleteTenant(tenantId: string, actorUid: string, actorEmail: string): Promise<void> {
     if (!db) throw new Error("Database not available");
 
@@ -791,6 +908,30 @@ class AdminService {
       }
 
       const tenantName = tenantSnap.data()?.name;
+
+      // 1) Top-level collections keyed by a `tenantId` FIELD.
+      for (const name of TENANT_KEYED_ROOT_COLLECTIONS) {
+        await this.sweepRootCollection(name, tenantId);
+      }
+      // Legacy top-level `payruns` holds a `payslips` subcollection the client
+      // SDK cannot reach; its payrun docs go here, payslips residue needs the script.
+      await this.sweepRootCollection("payruns", tenantId);
+      // `tenant_settings` is keyed by tenantId as the DOC ID (not a field), so a
+      // where('tenantId','==') sweep can't find it — delete it by doc id.
+      try {
+        await deleteDoc(doc(db, "tenant_settings", tenantId));
+      } catch (error) {
+        console.warn("deleteTenant: could not delete tenant_settings doc:", error);
+      }
+
+      // 2) Tenant subcollections (everything except members).
+      for (const sub of TENANT_SUBCOLLECTIONS) {
+        await this.sweepTenantSubcollection(tenantId, sub);
+      }
+
+      // 3) members LAST (revokes rules access), then the tenant root doc. These
+      //    are security-critical — a failure must surface, not be swallowed.
+      await this.sweepTenantSubcollection(tenantId, "members", true);
       await deleteDoc(tenantRef);
 
       await this.logAdminAction({

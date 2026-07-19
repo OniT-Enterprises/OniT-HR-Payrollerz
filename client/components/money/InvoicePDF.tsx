@@ -29,6 +29,7 @@ import {
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
 import { subtractMoney } from '@/lib/currency';
+import { invoiceTaxRateLabel } from '@/components/money/InvoicePaper';
 
 const TEXT = '#1f2937';
 const MUTED = '#6b7280';
@@ -367,7 +368,7 @@ function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTempla
       )}
       {invoice.taxAmount > 0 && (
         <View style={base.totalRow}>
-          <Text style={base.totalLabel}>Tax ({invoice.taxRate}%)</Text>
+          <Text style={base.totalLabel}>{invoiceTaxRateLabel(invoice.items, invoice.taxRate)}</Text>
           <Text style={base.totalValue}>{formatInvoiceMoney(invoice.taxAmount)}</Text>
         </View>
       )}

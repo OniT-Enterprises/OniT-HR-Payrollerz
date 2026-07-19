@@ -402,7 +402,6 @@ class AttendanceService {
       tenantId,
       data.employeeId,
       data.date,
-      data.departmentId,
     );
 
     // Calculate hours
@@ -477,30 +476,27 @@ class AttendanceService {
   }
 
   /**
-   * Get existing record for employee/date
+   * Get the existing attendance record for an employee on a date, if any.
+   *
+   * Deliberately dept-agnostic: an employee has at most one attendance record
+   * per calendar day, so the probe keys only on tenant + employee + date.
+   * Filtering by departmentId here used to MISS a legacy/field-less record (or
+   * one written under a different departmentId) for the same employee/day, so
+   * markAttendance would addDoc a SECOND record that
+   * getAttendanceSummaryByDateRange then double-counted into payroll.
    */
   private async getExistingRecord(
     tenantId: string,
     employeeId: string,
     date: string,
-    departmentId?: string,
   ): Promise<AttendanceRecord | null> {
-    const q = departmentId
-      ? query(
-          this.collectionRef,
-          where('tenantId', '==', tenantId),
-          where('departmentId', '==', departmentId),
-          where('employeeId', '==', employeeId),
-          where('date', '==', date),
-          limit(1),
-        )
-      : query(
-          this.collectionRef,
-          where('tenantId', '==', tenantId),
-          where('employeeId', '==', employeeId),
-          where('date', '==', date),
-          limit(1),
-        );
+    const q = query(
+      this.collectionRef,
+      where('tenantId', '==', tenantId),
+      where('employeeId', '==', employeeId),
+      where('date', '==', date),
+      limit(1),
+    );
 
     const querySnapshot = await getDocs(q);
 

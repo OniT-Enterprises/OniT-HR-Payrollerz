@@ -7,6 +7,7 @@ import {
 import { calculateProRataHours } from '@/lib/payroll/run-payroll-helpers';
 import { TL_WORKING_HOURS } from '@/lib/payroll/constants-tl';
 import { maxMoney, subtractMoney } from '@/lib/currency';
+import { resolveLeaverFinalPay } from '@/hooks/usePayrollCalculator';
 
 /**
  * REAL-LIFE SCENARIO: mid-period termination / final-pay run (KEY = termination-payroll)
@@ -166,5 +167,62 @@ describe('real-life: mid-period termination final pay (termination-payroll)', ()
     const deductionsTotal = result.deductions.reduce((sum, d) => sum + d.amount, 0);
     expect(result.netPay).toBeCloseTo(earningsTotal - deductionsTotal, 1);
     expect(result.netPay).toBeGreaterThan(0);
+  });
+});
+
+describe('resolveLeaverFinalPay: exact-once idempotency', () => {
+  const common = {
+    monthlySalary: 600,
+    hireDate: ABILIO_HIRE,
+    asOfDate: new Date('2026-09-30T00:00:00'),
+    includeSubsidioAnual: false,
+    subsidioConfig: { proRataForNewEmployees: true },
+  };
+
+  it('first final run: fires severance and pays the full prorated subsidio', () => {
+    const r = resolveLeaverFinalPay({
+      ...common,
+      inPeriodTermination: ABILIO_TERMINATION,
+      committed: { serviceCompensation: 0, subsidioAnual: 0 },
+    });
+    expect(r.terminationDate).toBe(ABILIO_TERMINATION); // severance WILL fire
+    expect(r.subsidioAnual).toBeCloseTo(450, 2); // Jan..Sep = 9/12
+  });
+
+  it('second run over the same period: severance suppressed, subsidio netted to 0', () => {
+    const r = resolveLeaverFinalPay({
+      ...common,
+      inPeriodTermination: ABILIO_TERMINATION,
+      // The first run already recorded these amounts.
+      committed: { serviceCompensation: 600, subsidioAnual: 450 },
+    });
+    expect(r.terminationDate).toBeUndefined(); // NO second severance
+    expect(r.subsidioAnual).toBe(0); // NO second subsidio
+  });
+
+  it('partial prior subsidio (annual run before termination) is topped up, not doubled', () => {
+    const r = resolveLeaverFinalPay({
+      ...common,
+      inPeriodTermination: ABILIO_TERMINATION,
+      committed: { serviceCompensation: 0, subsidioAnual: 200 },
+    });
+    expect(r.terminationDate).toBe(ABILIO_TERMINATION);
+    expect(r.subsidioAnual).toBeCloseTo(250, 2); // 450 entitlement − 200 already paid
+  });
+
+  it('non-leaver: no severance; subsidio follows the run toggle only', () => {
+    const off = resolveLeaverFinalPay({
+      ...common, inPeriodTermination: null,
+      committed: { serviceCompensation: 0, subsidioAnual: 0 },
+    });
+    expect(off.terminationDate).toBeUndefined();
+    expect(off.subsidioAnual).toBe(0);
+
+    const on = resolveLeaverFinalPay({
+      ...common, includeSubsidioAnual: true, inPeriodTermination: null,
+      committed: { serviceCompensation: 0, subsidioAnual: 0 },
+    });
+    expect(on.terminationDate).toBeUndefined();
+    expect(on.subsidioAnual).toBeCloseTo(600, 2); // full-year employee, full month
   });
 });

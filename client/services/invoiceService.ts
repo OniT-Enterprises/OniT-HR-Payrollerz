@@ -64,6 +64,7 @@ import {
   lineNetAmount,
 } from '@/lib/invoiceTemplates';
 import { publicInvoiceUrl } from '@/lib/publicInvoice';
+import { invoiceTaxRateLabel } from '@/components/money/InvoicePaper';
 
 // ============================================
 // FILTER INTERFACES
@@ -727,8 +728,44 @@ class InvoiceService {
   }
 
   /**
-   * Kill the current link and issue a fresh one (old URL stops working
-   * immediately). For when a link was forwarded further than intended.
+   * Re-upload the frozen as-sent PDF over its own deterministic Storage path.
+   * A fresh upload makes Firebase Storage mint a new download token, which
+   * invalidates any previously shared `pdfUrl` — without re-rendering, so the
+   * as-sent bytes stay byte-for-byte frozen. Returns the rotated URL, or
+   * undefined if there was nothing to rotate / the rotation failed (in which
+   * case the caller keeps the existing URL rather than dropping the PDF).
+   */
+  private async rotateFrozenPdfToken(
+    tenantId: string,
+    invoice: Invoice,
+  ): Promise<string | undefined> {
+    if (!invoice.sentPdfUrl) return undefined;
+    try {
+      const response = await fetch(invoice.sentPdfUrl);
+      if (!response.ok) throw new Error(`Frozen PDF fetch returned ${response.status}`);
+      const blob = await response.blob();
+      const { fileUploadService } = await import('@/services/fileUploadService');
+      return await fileUploadService.uploadInvoicePdf(
+        blob,
+        tenantId,
+        invoice.id,
+        invoice.invoiceNumber,
+      );
+    } catch (error) {
+      console.error('Failed to rotate frozen invoice PDF download token:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Revoke the current share link and issue a fresh one, for when a link was
+   * forwarded further than intended. Two things carried the old link:
+   *  - the hosted /i/:token page — its invoice_links doc is deleted, so it dies
+   *    immediately; and
+   *  - the frozen PDF's tokenized Storage URL — rotated best-effort by
+   *    re-uploading the same bytes (a new download token invalidates the old
+   *    URL). If that rotation fails (e.g. the PDF can't be fetched) the old
+   *    direct PDF URL may still resolve until the next successful re-freeze.
    */
   async regenerateShareLink(tenantId: string, invoiceId: string): Promise<{ token: string; url: string }> {
     const invoice = await this.getInvoiceById(tenantId, invoiceId);
@@ -738,13 +775,20 @@ class InvoiceService {
       await deleteDoc(this.publicLinkRef(invoice.shareToken)).catch(() => undefined);
     }
 
+    const rotatedPdfUrl = await this.rotateFrozenPdfToken(tenantId, invoice);
+
     const token = this.generateShareToken();
     await updateDoc(doc(db, paths.invoice(tenantId, invoiceId)), {
       shareToken: token,
+      ...(rotatedPdfUrl ? { sentPdfUrl: rotatedPdfUrl } : {}),
       updatedAt: serverTimestamp(),
     });
 
-    return this.ensureShareLink(tenantId, { ...invoice, shareToken: token });
+    return this.ensureShareLink(tenantId, {
+      ...invoice,
+      shareToken: token,
+      sentPdfUrl: rotatedPdfUrl ?? invoice.sentPdfUrl,
+    });
   }
 
   /**
@@ -1191,7 +1235,7 @@ class InvoiceService {
               </tr>` : ''}
               ${invoice.taxAmount > 0 ? `
               <tr>
-                <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Tax (${invoice.taxRate}%)</td>
+                <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">${invoiceTaxRateLabel(invoice.items, invoice.taxRate)}</td>
                 <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.taxAmount)}</td>
               </tr>` : ''}
               <tr>
@@ -1228,7 +1272,7 @@ class InvoiceService {
       ),
       '',
       `Subtotal: ${formatInvoiceMoney(invoice.subtotal)}`,
-      ...(invoice.taxAmount > 0 ? [`Tax (${invoice.taxRate}%): ${formatInvoiceMoney(invoice.taxAmount)}`] : []),
+      ...(invoice.taxAmount > 0 ? [`${invoiceTaxRateLabel(invoice.items, invoice.taxRate)}: ${formatInvoiceMoney(invoice.taxAmount)}`] : []),
       `Total: ${formatInvoiceMoney(invoice.total)}`,
       ...(termsLabel ? ['', `Payment terms: ${termsLabel}`] : []),
       ...(methodsLabel ? [`We accept: ${methodsLabel}`] : []),
@@ -1434,14 +1478,13 @@ class InvoiceService {
       throw new Error('Cannot send reminder for this invoice status');
     }
 
-    const docRef = doc(db, paths.invoice(tenantId, id));
-    await updateDoc(docRef, {
-      lastReminderAt: serverTimestamp(),
-      reminderCount: (invoice.reminderCount || 0) + 1,
-      updatedAt: serverTimestamp(),
-    });
+    const esc = (value: string | undefined | null) =>
+      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    // Queue reminder email via the shared notification service
+    // Queue the courtesy email first (non-fatal, per the email policy) and bump
+    // the reminder counter only once it is safely queued — a failed queue must
+    // never inflate the count, and it must never throw the send-reminder action.
+    let emailQueued = false;
     if (invoice.customerEmail) {
       const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
       let publicUrl: string | undefined;
@@ -1451,39 +1494,56 @@ class InvoiceService {
         console.error('Failed to ensure public invoice link for reminder:', error);
       }
 
-      await notificationService.queueEmail({
-        tenantId,
-        to: invoice.customerEmail,
-        replyTo: settings.companyEmail || undefined,
-        fromName: settings.companyName || undefined,
-        subject: `Payment Reminder: Invoice ${invoice.invoiceNumber}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1e40af;">Payment Reminder</h2>
-            <p>Dear ${invoice.customerName},</p>
-            <p>This is a friendly reminder that invoice <strong>${invoice.invoiceNumber}</strong> is outstanding.</p>
-            <ul style="list-style: none; padding: 0;">
-              <li>Invoice Number: ${invoice.invoiceNumber}</li>
-              <li>Due Date: ${invoice.dueDate}</li>
-              <li>Amount Due: $${invoice.balanceDue.toFixed(2)}</li>
-            </ul>
-            ${publicUrl ? `
-            <p style="margin: 20px 0;">
-              <a href="${publicUrl}" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View invoice online</a>
-            </p>` : ''}
-            <p>Please arrange payment at your earliest convenience.</p>
-            <p style="color: #666; font-size: 12px; margin-top: 20px;">
-              This is an automated reminder. If you have already made payment, please disregard this message.
-            </p>
-          </div>
-        `,
-        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${invoice.balanceDue.toFixed(2)}\nDue Date: ${invoice.dueDate}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ''}\nPlease arrange payment at your earliest convenience.`,
-        purpose: 'invoice-reminder',
-        relatedId: id,
+      try {
+        await notificationService.queueEmail({
+          tenantId,
+          to: invoice.customerEmail,
+          replyTo: settings.companyEmail || undefined,
+          fromName: settings.companyName || undefined,
+          subject: `Payment Reminder: Invoice ${esc(invoice.invoiceNumber)}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #1e40af;">Payment Reminder</h2>
+              <p>Dear ${esc(invoice.customerName)},</p>
+              <p>This is a friendly reminder that invoice <strong>${esc(invoice.invoiceNumber)}</strong> is outstanding.</p>
+              <ul style="list-style: none; padding: 0;">
+                <li>Invoice Number: ${esc(invoice.invoiceNumber)}</li>
+                <li>Due Date: ${esc(formatInvoiceDate(invoice.dueDate))}</li>
+                <li>Amount Due: ${formatInvoiceMoney(invoice.balanceDue)}</li>
+              </ul>
+              ${publicUrl ? `
+              <p style="margin: 20px 0;">
+                <a href="${esc(publicUrl)}" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View invoice online</a>
+              </p>` : ''}
+              <p>Please arrange payment at your earliest convenience.</p>
+              <p style="color: #666; font-size: 12px; margin-top: 20px;">
+                This is an automated reminder. If you have already made payment, please disregard this message.
+              </p>
+            </div>
+          `,
+          text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: ${formatInvoiceMoney(invoice.balanceDue)}\nDue Date: ${formatInvoiceDate(invoice.dueDate)}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ''}\nPlease arrange payment at your earliest convenience.`,
+          purpose: 'invoice-reminder',
+          relatedId: id,
+        });
+        emailQueued = true;
+      } catch (error) {
+        console.error('Failed to queue invoice reminder email:', error);
+      }
+    }
+
+    // Record the reminder. When there is no email to send, the reminder is
+    // still recorded (it may be delivered by phone — see SendReminderDialog);
+    // when an email was attempted, count it only if the queue succeeded.
+    const recorded = !invoice.customerEmail || emailQueued;
+    if (recorded) {
+      await updateDoc(doc(db, paths.invoice(tenantId, id)), {
+        lastReminderAt: serverTimestamp(),
+        reminderCount: (invoice.reminderCount || 0) + 1,
+        updatedAt: serverTimestamp(),
       });
     }
 
-    return true;
+    return recorded;
   }
 
   /**
@@ -1581,6 +1641,13 @@ class InvoiceService {
       }
       if (invoice.status === 'paid') {
         throw new Error('Cannot record payment for a fully paid invoice');
+      }
+      // Only invoices that have been issued can receive a payment. Crediting a
+      // draft would post cash against AR that was never debited (AR is created
+      // at send time), so reject any non-payable state — mirrors the payable
+      // set the Invoices page uses to expose "Record payment".
+      if (!OUTSTANDING_INVOICE_STATUSES.includes(invoice.status)) {
+        throw new Error('Cannot record payment for a draft invoice. Send the invoice first.');
       }
       if (payment.date < invoice.issueDate) {
         throw new Error('Payment date cannot be before the invoice issue date');
