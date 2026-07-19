@@ -75,6 +75,30 @@ jobs:
         env:
           FIREBASE_ADMINSDK_JSON: ${{ secrets.FIREBASE_ADMINSDK_JSON }}
 
+      # Cloud Functions ship BEFORE the client (Hetzner) so a newly added
+      # callable exists before the new frontend can call it.
+      #
+      # Requires a DEDICATED deployer service account in the FIREBASE_DEPLOYER_JSON
+      # secret. The firebase-adminsdk SA used for rules cannot do this (see
+      # scripts/deploy-rules.mjs) and functions deploy has no Admin SDK API —
+      # only the CLI + Cloud Build + Artifact Registry + (for the Gen2 event
+      # triggers like onShiftChange) Cloud Run + Eventarc. Roles on the SA:
+      #   roles/cloudfunctions.admin
+      #   roles/run.admin
+      #   roles/eventarc.admin
+      #   roles/artifactregistry.admin
+      #   roles/cloudbuild.builds.editor
+      #   roles/iam.serviceAccountUser        (to act as the runtime SA)
+      #   roles/serviceusage.serviceUsageAdmin
+      # firebase-tools is a devDependency, so npx uses the local pinned version.
+      - name: Deploy Cloud Functions
+        run: |
+          printf '%s' "$FIREBASE_DEPLOYER_JSON" > "$RUNNER_TEMP/deployer-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/deployer-sa.json"
+          npx firebase-tools deploy --only functions --project onit-hr-payroll --non-interactive --force
+        env:
+          FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
+
       - name: Deploy to Hetzner (xefe.tl)
         uses: easingthemes/ssh-deploy@main
         with:
