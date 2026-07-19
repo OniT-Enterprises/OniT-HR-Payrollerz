@@ -50,7 +50,14 @@ const ROOT_COLLECTIONS = [
   'recurringDeductions', 'taxReports', 'taxFilings', 'bankTransfers',
   'attendance', 'attendanceImports', 'analytics', 'invoice_links', 'okrs',
   'jobPrivateDetails', 'jobApplications', 'onboarding', 'offboarding', 'mail',
-  'audit_logs',
+  'audit_logs', 'accountantPartnerRequests',
+];
+
+// Sweeps on a non-tenantId field: accountant-partner requests also reference
+// the ACCOUNTANT's practice via partnerTenantId, so deleting the accountant's
+// tenant must clear the requests pointing at it too.
+const ROOT_ALT_FIELD_SWEEPS = [
+  { collection: 'accountantPartnerRequests', field: 'partnerTenantId' },
 ];
 
 // Top-level collections keyed by tenantId that ALSO contain their own
@@ -153,6 +160,19 @@ async function main() {
       grand += n;
     } else {
       console.log(`   •  ${name}: ${count} docs`);
+      grand += count;
+    }
+  }
+  for (const { collection: name, field } of ROOT_ALT_FIELD_SWEEPS) {
+    const q = db.collection(name).where(field, '==', TID);
+    const count = (await q.count().get()).data().count;
+    if (count === 0) continue;
+    if (CONFIRM) {
+      const n = await deleteQuery(q);
+      console.log(`   🗑  ${name} by ${field}: deleted ${n}`);
+      grand += n;
+    } else {
+      console.log(`   •  ${name} by ${field}: ${count} docs`);
       grand += count;
     }
   }

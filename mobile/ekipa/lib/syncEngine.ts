@@ -151,6 +151,43 @@ async function syncClockInBatch(
 
   for (const record of records) {
     const lateMinutes = calculateLateMinutes(record.clockIn || '');
+
+    // The day may already have a record — HR marked it on the web, or this
+    // batch is a retry after a partial failure. Payroll sums attendance per
+    // employee+date, so a blind create would double-count hours. Update the
+    // supervisor's own record in place; if HR already entered the day, leave
+    // their record alone (the web attendance screen owns corrections).
+    const existingSnap = await getDocs(
+      query(
+        attendanceRef,
+        where('tenantId', '==', record.tenantId),
+        where('employeeId', '==', record.employeeId),
+        where('date', '==', record.date)
+      )
+    );
+    const supervisorDoc = existingSnap.docs.find(
+      (existing) => existing.data().source === 'supervisor'
+    );
+    if (supervisorDoc) {
+      firestoreBatch.update(supervisorDoc.ref, {
+        clockIn: record.clockIn || '',
+        lateMinutes,
+        status: 'present',
+        supervisorId: record.supervisorId,
+        supervisorName: record.supervisorName,
+        photoUrl: photoUrl || '',
+        latitude: record.latitude ?? null,
+        longitude: record.longitude ?? null,
+        locationAccuracy: record.locationAccuracy ?? null,
+        siteId: record.siteId || '',
+        siteName: record.siteName || '',
+        batchId: batch.id,
+        updatedAt: serverTimestamp(),
+      });
+      continue;
+    }
+    if (!existingSnap.empty) continue;
+
     const docRef = doc(attendanceRef);
 
     firestoreBatch.set(docRef, {

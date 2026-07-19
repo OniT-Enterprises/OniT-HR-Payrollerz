@@ -18,76 +18,99 @@ import {
   runTransaction,
   Timestamp,
   DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { paths } from '@/lib/paths';
-import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
+import {
+  addDays,
+  formatDateISO,
+  getTodayTL,
+  parseDateISO,
+} from "@/lib/dateUtils";
 import type {
   RecurringInvoice,
   RecurringInvoiceFormData,
   RecurringStatus,
   RecurringFrequency,
   InvoiceItem,
-} from '@/types/money';
+} from "@/types/money";
 export type { RecurringInvoiceFormData };
-import { customerService } from './customerService';
-import { invoiceService } from './invoiceService';
+import { customerService } from "./customerService";
+import { invoiceService } from "./invoiceService";
 
 /**
  * Maps Firestore document to RecurringInvoice
  */
 function mapRecurringInvoice(docSnap: DocumentSnapshot): RecurringInvoice {
   const data = docSnap.data();
-  if (!data) throw new Error('Document data is undefined');
+  if (!data) throw new Error("Document data is undefined");
 
   return {
     id: docSnap.id,
     ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate()
-      : data.updatedAt || new Date(),
-    lastGeneratedAt: data.lastGeneratedAt instanceof Timestamp
-      ? data.lastGeneratedAt.toDate()
-      : data.lastGeneratedAt || undefined,
+    createdAt:
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : data.createdAt || new Date(),
+    updatedAt:
+      data.updatedAt instanceof Timestamp
+        ? data.updatedAt.toDate()
+        : data.updatedAt || new Date(),
+    lastGeneratedAt:
+      data.lastGeneratedAt instanceof Timestamp
+        ? data.lastGeneratedAt.toDate()
+        : data.lastGeneratedAt || undefined,
   } as RecurringInvoice;
 }
 
 /**
  * Calculate next run date based on frequency
  */
-function calculateNextRunDate(currentDate: string, frequency: RecurringFrequency): string {
+function calculateNextRunDate(
+  currentDate: string,
+  frequency: RecurringFrequency,
+): string {
+  // Runtime data is cast unchecked: an unknown frequency would fall through
+  // every branch and return the input date unchanged, which defeats the
+  // compare-and-set claim below and re-bills the same period forever.
+  if (!["weekly", "monthly", "quarterly", "yearly"].includes(frequency)) {
+    throw new Error(`Unknown recurring frequency: ${String(frequency)}`);
+  }
   const source = parseDateISO(currentDate);
   const sourceYear = source.getUTCFullYear();
   const sourceMonth = source.getUTCMonth();
   const sourceDay = source.getUTCDate();
-  const sourceMonthLastDay = new Date(Date.UTC(sourceYear, sourceMonth + 1, 0)).getUTCDate();
+  const sourceMonthLastDay = new Date(
+    Date.UTC(sourceYear, sourceMonth + 1, 0),
+  ).getUTCDate();
   const keepEndOfMonth = sourceDay === sourceMonthLastDay;
 
-  if (frequency === 'weekly') {
+  if (frequency === "weekly") {
     return formatDateISO(addDays(source, 7));
   }
 
   const target = new Date(source.getTime());
 
   switch (frequency) {
-    case 'monthly':
+    case "monthly":
       target.setUTCMonth(target.getUTCMonth() + 1);
       break;
-    case 'quarterly':
+    case "quarterly":
       target.setUTCMonth(target.getUTCMonth() + 3);
       break;
-    case 'yearly':
+    case "yearly":
       target.setUTCFullYear(target.getUTCFullYear() + 1);
       break;
   }
 
   const targetYear = target.getUTCFullYear();
   const targetMonth = target.getUTCMonth();
-  const targetMonthLastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
-  const day = keepEndOfMonth ? targetMonthLastDay : Math.min(sourceDay, targetMonthLastDay);
+  const targetMonthLastDay = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
+  const day = keepEndOfMonth
+    ? targetMonthLastDay
+    : Math.min(sourceDay, targetMonthLastDay);
 
   const normalized = new Date(Date.UTC(targetYear, targetMonth, day, 12, 0, 0));
   return formatDateISO(normalized);
@@ -106,10 +129,7 @@ class RecurringInvoiceService {
    * Get all recurring invoices
    */
   async getAll(tenantId: string): Promise<RecurringInvoice[]> {
-    const q = query(
-      this.collectionRef(tenantId),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(this.collectionRef(tenantId), orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(mapRecurringInvoice);
   }
@@ -117,11 +137,14 @@ class RecurringInvoiceService {
   /**
    * Get recurring invoices by status
    */
-  async getByStatus(tenantId: string, status: RecurringStatus): Promise<RecurringInvoice[]> {
+  async getByStatus(
+    tenantId: string,
+    status: RecurringStatus,
+  ): Promise<RecurringInvoice[]> {
     const q = query(
       this.collectionRef(tenantId),
-      where('status', '==', status),
-      orderBy('nextRunDate', 'asc')
+      where("status", "==", status),
+      orderBy("nextRunDate", "asc"),
     );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(mapRecurringInvoice);
@@ -134,8 +157,8 @@ class RecurringInvoiceService {
     const today = getTodayTL();
     const q = query(
       this.collectionRef(tenantId),
-      where('status', '==', 'active'),
-      where('nextRunDate', '<=', today)
+      where("status", "==", "active"),
+      where("nextRunDate", "<=", today),
     );
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(mapRecurringInvoice);
@@ -144,7 +167,10 @@ class RecurringInvoiceService {
   /**
    * Get a single recurring invoice by ID
    */
-  async getById(tenantId: string, id: string): Promise<RecurringInvoice | null> {
+  async getById(
+    tenantId: string,
+    id: string,
+  ): Promise<RecurringInvoice | null> {
     const docRef = doc(db, paths.recurringInvoice(tenantId, id));
     const docSnap = await getDoc(docRef);
 
@@ -158,11 +184,17 @@ class RecurringInvoiceService {
   /**
    * Create a new recurring invoice
    */
-  async create(tenantId: string, data: RecurringInvoiceFormData): Promise<string> {
+  async create(
+    tenantId: string,
+    data: RecurringInvoiceFormData,
+  ): Promise<string> {
     // Get customer info
-    const customer = await customerService.getCustomerById(tenantId, data.customerId);
+    const customer = await customerService.getCustomerById(
+      tenantId,
+      data.customerId,
+    );
     if (!customer) {
-      throw new Error('Customer not found');
+      throw new Error("Customer not found");
     }
 
     // Add IDs to items
@@ -171,7 +203,7 @@ class RecurringInvoiceService {
       id: `item-${Date.now()}-${index}`,
     }));
 
-    const recurring: Omit<RecurringInvoice, 'id'> = {
+    const recurring: Omit<RecurringInvoice, "id"> = {
       customerId: data.customerId,
       customerName: customer.name,
       customerEmail: customer.email,
@@ -186,7 +218,7 @@ class RecurringInvoiceService {
       terms: data.terms,
       dueDays: data.dueDays,
       autoSend: data.autoSend,
-      status: 'active',
+      status: "active",
       generatedCount: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -204,10 +236,14 @@ class RecurringInvoiceService {
   /**
    * Update a recurring invoice
    */
-  async update(tenantId: string, id: string, data: Partial<RecurringInvoiceFormData>): Promise<boolean> {
+  async update(
+    tenantId: string,
+    id: string,
+    data: Partial<RecurringInvoiceFormData>,
+  ): Promise<boolean> {
     const existing = await this.getById(tenantId, id);
     if (!existing) {
-      throw new Error('Recurring invoice not found');
+      throw new Error("Recurring invoice not found");
     }
 
     const updates: Partial<RecurringInvoice> = {};
@@ -216,7 +252,8 @@ class RecurringInvoiceService {
     if (data.frequency !== undefined) updates.frequency = data.frequency;
     if (data.startDate !== undefined) updates.startDate = data.startDate;
     if (data.endDate !== undefined) updates.endDate = data.endDate;
-    if (data.endAfterOccurrences !== undefined) updates.endAfterOccurrences = data.endAfterOccurrences;
+    if (data.endAfterOccurrences !== undefined)
+      updates.endAfterOccurrences = data.endAfterOccurrences;
     if (data.taxRate !== undefined) updates.taxRate = data.taxRate;
     if (data.notes !== undefined) updates.notes = data.notes;
     if (data.terms !== undefined) updates.terms = data.terms;
@@ -233,7 +270,10 @@ class RecurringInvoiceService {
 
     // Update customer if changed
     if (data.customerId && data.customerId !== existing.customerId) {
-      const customer = await customerService.getCustomerById(tenantId, data.customerId);
+      const customer = await customerService.getCustomerById(
+        tenantId,
+        data.customerId,
+      );
       if (customer) {
         updates.customerId = data.customerId;
         updates.customerName = customer.name;
@@ -256,7 +296,7 @@ class RecurringInvoiceService {
   async pause(tenantId: string, id: string): Promise<boolean> {
     const docRef = doc(db, paths.recurringInvoice(tenantId, id));
     await updateDoc(docRef, {
-      status: 'paused',
+      status: "paused",
       updatedAt: serverTimestamp(),
     });
     return true;
@@ -268,16 +308,17 @@ class RecurringInvoiceService {
   async resume(tenantId: string, id: string): Promise<boolean> {
     const recurring = await this.getById(tenantId, id);
     if (!recurring) {
-      throw new Error('Recurring invoice not found');
+      throw new Error("Recurring invoice not found");
     }
 
     // If next run date is in the past, set it to today
     const today = getTodayTL();
-    const nextRunDate = recurring.nextRunDate < today ? today : recurring.nextRunDate;
+    const nextRunDate =
+      recurring.nextRunDate < today ? today : recurring.nextRunDate;
 
     const docRef = doc(db, paths.recurringInvoice(tenantId, id));
     await updateDoc(docRef, {
-      status: 'active',
+      status: "active",
       nextRunDate,
       updatedAt: serverTimestamp(),
     });
@@ -307,85 +348,167 @@ class RecurringInvoiceService {
    * billed (and, with autoSend, emailed) exactly once — no double-billing when
    * the scheduler fires twice or "Generate Now" is double-clicked.
    */
-  async generateInvoice(tenantId: string, recurringId: string): Promise<string> {
+  async generateInvoice(
+    tenantId: string,
+    recurringId: string,
+  ): Promise<string> {
     const recurringRef = doc(db, paths.recurringInvoice(tenantId, recurringId));
 
     // Snapshot the period we plan to bill so the transaction can detect that a
     // concurrent run already claimed it.
     const initial = await this.getById(tenantId, recurringId);
     if (!initial) {
-      throw new Error('Recurring invoice not found');
+      throw new Error("Recurring invoice not found");
     }
     const expectedNextRunDate = initial.nextRunDate;
 
     type ClaimResult =
-      | { kind: 'generate'; recurring: RecurringInvoice; issueDate: string }
-      | { kind: 'skip'; message: string };
+      | {
+          kind: "generate";
+          recurring: RecurringInvoice;
+          issueDate: string;
+          claimedNextRunDate: string;
+          claimedCount: number;
+        }
+      | { kind: "skip"; message: string };
 
-    const result = await runTransaction<ClaimResult>(db, async (transaction) => {
-      const snap = await transaction.get(recurringRef);
-      if (!snap.exists()) {
-        throw new Error('Recurring invoice not found');
-      }
-      const recurring = mapRecurringInvoice(snap);
+    const result = await runTransaction<ClaimResult>(
+      db,
+      async (transaction) => {
+        const snap = await transaction.get(recurringRef);
+        if (!snap.exists()) {
+          throw new Error("Recurring invoice not found");
+        }
+        const recurring = mapRecurringInvoice(snap);
 
-      if (recurring.status !== 'active') {
-        return { kind: 'skip', message: 'Cannot generate invoice from paused/completed recurring' };
-      }
+        if (recurring.status !== "active") {
+          return {
+            kind: "skip",
+            message: "Cannot generate invoice from paused/completed recurring",
+          };
+        }
 
-      // Compare-and-set guard: the period we set out to bill was already
-      // advanced by another run — don't bill it again.
-      if (recurring.nextRunDate !== expectedNextRunDate) {
-        return { kind: 'skip', message: 'This recurring period was already generated' };
-      }
+        // Compare-and-set guard: the period we set out to bill was already
+        // advanced by another run — don't bill it again.
+        if (recurring.nextRunDate !== expectedNextRunDate) {
+          return {
+            kind: "skip",
+            message: "This recurring period was already generated",
+          };
+        }
 
-      // End conditions. These commit the completion within the transaction and
-      // then surface as an error to the caller (below), matching prior behaviour
-      // without a separate, non-atomic markCompleted write.
-      if (recurring.endDate && recurring.nextRunDate > recurring.endDate) {
-        transaction.update(recurringRef, { status: 'completed', updatedAt: serverTimestamp() });
-        return { kind: 'skip', message: 'Recurring invoice has reached its end date' };
-      }
-      if (recurring.endAfterOccurrences && recurring.generatedCount >= recurring.endAfterOccurrences) {
-        transaction.update(recurringRef, { status: 'completed', updatedAt: serverTimestamp() });
-        return { kind: 'skip', message: 'Recurring invoice has reached maximum occurrences' };
-      }
+        // End conditions. These commit the completion within the transaction and
+        // then surface as an error to the caller (below), matching prior behaviour
+        // without a separate, non-atomic markCompleted write.
+        if (recurring.endDate && recurring.nextRunDate > recurring.endDate) {
+          transaction.update(recurringRef, {
+            status: "completed",
+            updatedAt: serverTimestamp(),
+          });
+          return {
+            kind: "skip",
+            message: "Recurring invoice has reached its end date",
+          };
+        }
+        if (
+          recurring.endAfterOccurrences &&
+          recurring.generatedCount >= recurring.endAfterOccurrences
+        ) {
+          transaction.update(recurringRef, {
+            status: "completed",
+            updatedAt: serverTimestamp(),
+          });
+          return {
+            kind: "skip",
+            message: "Recurring invoice has reached maximum occurrences",
+          };
+        }
 
-      const issueDate = recurring.nextRunDate;
-      const nextRunDate = calculateNextRunDate(recurring.nextRunDate, recurring.frequency);
-      const newCount = recurring.generatedCount + 1;
-      const shouldComplete =
-        (recurring.endAfterOccurrences && newCount >= recurring.endAfterOccurrences) ||
-        (recurring.endDate && nextRunDate > recurring.endDate);
+        const issueDate = recurring.nextRunDate;
+        const nextRunDate = calculateNextRunDate(
+          recurring.nextRunDate,
+          recurring.frequency,
+        );
+        const newCount = recurring.generatedCount + 1;
+        const shouldComplete =
+          (recurring.endAfterOccurrences &&
+            newCount >= recurring.endAfterOccurrences) ||
+          (recurring.endDate && nextRunDate > recurring.endDate);
 
-      transaction.update(recurringRef, {
-        nextRunDate,
-        generatedCount: newCount,
-        lastGeneratedAt: serverTimestamp(),
-        status: shouldComplete ? 'completed' : 'active',
-        updatedAt: serverTimestamp(),
-      });
+        transaction.update(recurringRef, {
+          nextRunDate,
+          generatedCount: newCount,
+          lastGeneratedAt: serverTimestamp(),
+          status: shouldComplete ? "completed" : "active",
+          updatedAt: serverTimestamp(),
+        });
 
-      return { kind: 'generate', recurring, issueDate };
-    });
+        return {
+          kind: "generate",
+          recurring,
+          issueDate,
+          claimedNextRunDate: nextRunDate,
+          claimedCount: newCount,
+        };
+      },
+    );
 
-    if (result.kind === 'skip') {
+    if (result.kind === "skip") {
       throw new Error(result.message);
     }
 
     // We exclusively own this period now — safe to create exactly one invoice.
-    const { recurring, issueDate } = result;
-    const dueDate = formatDateISO(addDays(parseDateISO(issueDate), recurring.dueDays));
+    const { recurring, issueDate, claimedNextRunDate, claimedCount } = result;
+    const dueDate = formatDateISO(
+      addDays(parseDateISO(issueDate), recurring.dueDays),
+    );
 
-    const invoiceId = await invoiceService.createInvoice(tenantId, {
-      customerId: recurring.customerId,
-      issueDate,
-      dueDate,
-      items: recurring.items.map(({ id: _id, ...item }) => item),
-      taxRate: recurring.taxRate,
-      notes: recurring.notes,
-      terms: recurring.terms,
-    });
+    let invoiceId: string;
+    try {
+      invoiceId = await invoiceService.createInvoice(tenantId, {
+        customerId: recurring.customerId,
+        issueDate,
+        dueDate,
+        items: recurring.items.map(({ id: _id, ...item }) => item),
+        taxRate: recurring.taxRate,
+        notes: recurring.notes,
+        terms: recurring.terms,
+      });
+    } catch (error) {
+      // The claim committed but no invoice exists. Without this rollback the
+      // failed period would be silently skipped forever (a retry would bill
+      // the NEXT period) and an occurrence slot burned. Compare-and-set:
+      // release the claim only if nothing else advanced the doc meanwhile, so
+      // the caller's retry re-bills this same period.
+      try {
+        await runTransaction(db, async (transaction) => {
+          const snap = await transaction.get(recurringRef);
+          if (!snap.exists()) return;
+          const current = snap.data() as {
+            nextRunDate?: string;
+            generatedCount?: number;
+          };
+          if (
+            current.nextRunDate !== claimedNextRunDate ||
+            current.generatedCount !== claimedCount
+          ) {
+            return;
+          }
+          transaction.update(recurringRef, {
+            nextRunDate: issueDate,
+            generatedCount: recurring.generatedCount,
+            status: "active",
+            updatedAt: serverTimestamp(),
+          });
+        });
+      } catch (rollbackError) {
+        console.error(
+          "Failed to release claimed recurring period after invoice-creation failure:",
+          rollbackError,
+        );
+      }
+      throw error;
+    }
 
     // Best-effort back-reference; the period is already claimed, so a failure
     // here can't cause a double-bill.
@@ -393,7 +516,10 @@ class RecurringInvoiceService {
       lastInvoiceId: invoiceId,
       updatedAt: serverTimestamp(),
     }).catch((error) => {
-      console.error('Failed to record lastInvoiceId on recurring invoice:', error);
+      console.error(
+        "Failed to record lastInvoiceId on recurring invoice:",
+        error,
+      );
     });
 
     // Auto-send if enabled
@@ -401,7 +527,7 @@ class RecurringInvoiceService {
       try {
         await invoiceService.markAsSent(tenantId, invoiceId);
       } catch (error) {
-        console.error('Failed to auto-send invoice:', error);
+        console.error("Failed to auto-send invoice:", error);
       }
     }
 
@@ -412,20 +538,25 @@ class RecurringInvoiceService {
    * Process all due recurring invoices
    * This should be called by a scheduled job
    */
-  async processAllDue(tenantId: string): Promise<{ generated: number; errors: string[] }> {
+  async processAllDue(
+    tenantId: string,
+  ): Promise<{ generated: number; errors: string[] }> {
     const due = await this.getDueForGeneration(tenantId);
 
     const results = await Promise.allSettled(
-      due.map(recurring => this.generateInvoice(tenantId, recurring.id))
+      due.map((recurring) => this.generateInvoice(tenantId, recurring.id)),
     );
 
     const errors: string[] = [];
     let generated = 0;
     results.forEach((result, i) => {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         generated++;
       } else {
-        const message = result.reason instanceof Error ? result.reason.message : 'Unknown error';
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : "Unknown error";
         errors.push(`${due[i].id}: ${message}`);
       }
     });

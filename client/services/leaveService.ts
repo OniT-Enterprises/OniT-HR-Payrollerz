@@ -78,7 +78,14 @@ export interface LeaveRequest {
 export type NewLeaveRequest = Omit<
   LeaveRequest,
   "id" | "tenantId" | "status" | "requestDate" | "createdAt" | "updatedAt"
->;
+> & {
+  /**
+   * Owner/HR-admin only (server-enforced): knowingly grant leave beyond the
+   * employee's remaining entitlement instead of being blocked by the balance
+   * check. Never persisted on the request document.
+   */
+  overrideBalance?: boolean;
+};
 
 export interface LeaveBalance {
   id?: string;
@@ -425,6 +432,7 @@ class LeaveService {
     requestId: string,
     _approverId: string,
     approverName: string,
+    overrideBalance = false,
   ): Promise<void> {
     try {
       await callTimeLeaveFunction("approveLeaveRequest", {
@@ -432,6 +440,8 @@ class LeaveService {
         requestId,
         approved: true,
         approverName,
+        // Owner/HR-admin only (server-enforced): approve beyond entitlement.
+        ...(overrideBalance ? { overrideBalance: true } : {}),
       });
     } catch (error) {
       console.error("Error approving leave request:", error);

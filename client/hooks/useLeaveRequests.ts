@@ -2,22 +2,24 @@
  * React Query hooks for leave requests and balances
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   useCurrentEmployeeId,
   useTenant,
   useTenantId,
-} from '@/contexts/TenantContext';
-import { leaveService, type NewLeaveRequest } from '@/services/leaveService';
+} from "@/contexts/TenantContext";
+import { leaveService, type NewLeaveRequest } from "@/services/leaveService";
 
 export const leaveKeys = {
-  all: (tenantId: string) => ['tenants', tenantId, 'leave'] as const,
-  requests: (tenantId: string) => [...leaveKeys.all(tenantId), 'requests'] as const,
+  all: (tenantId: string) => ["tenants", tenantId, "leave"] as const,
+  requests: (tenantId: string) =>
+    [...leaveKeys.all(tenantId), "requests"] as const,
   requestList: (tenantId: string, filters?: Record<string, unknown>) =>
     [...leaveKeys.requests(tenantId), filters ?? {}] as const,
   employeeRequests: (tenantId: string, employeeId: string) =>
-    [...leaveKeys.requests(tenantId), 'employee', employeeId] as const,
-  balances: (tenantId: string) => [...leaveKeys.all(tenantId), 'balances'] as const,
+    [...leaveKeys.requests(tenantId), "employee", employeeId] as const,
+  balances: (tenantId: string) =>
+    [...leaveKeys.all(tenantId), "balances"] as const,
   balance: (tenantId: string, employeeId: string) =>
     [...leaveKeys.balances(tenantId), employeeId] as const,
 };
@@ -31,7 +33,10 @@ export function useLeaveRequests(
 ) {
   const tenantId = useTenantId();
   return useQuery({
-    queryKey: leaveKeys.requestList(tenantId, filters as Record<string, unknown>),
+    queryKey: leaveKeys.requestList(
+      tenantId,
+      filters as Record<string, unknown>,
+    ),
     queryFn: () => leaveService.getLeaveRequests(tenantId, filters),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -76,8 +81,17 @@ export function useLeaveBalance(
 ) {
   const tenantId = useTenantId();
   return useQuery({
-    queryKey: [...leaveKeys.balance(tenantId, employeeId!), departmentId ?? 'self'] as const,
-    queryFn: () => leaveService.getLeaveBalance(tenantId, employeeId!, undefined, departmentId),
+    queryKey: [
+      ...leaveKeys.balance(tenantId, employeeId!),
+      departmentId ?? "self",
+    ] as const,
+    queryFn: () =>
+      leaveService.getLeaveBalance(
+        tenantId,
+        employeeId!,
+        undefined,
+        departmentId,
+      ),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId && !!employeeId,
@@ -107,8 +121,24 @@ export function useApproveLeaveRequest() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, approverId, approverName }: { requestId: string; approverId: string; approverName: string }) =>
-      leaveService.approveLeaveRequest(tenantId, requestId, approverId, approverName),
+    mutationFn: ({
+      requestId,
+      approverId,
+      approverName,
+      overrideBalance,
+    }: {
+      requestId: string;
+      approverId: string;
+      approverName: string;
+      overrideBalance?: boolean;
+    }) =>
+      leaveService.approveLeaveRequest(
+        tenantId,
+        requestId,
+        approverId,
+        approverName,
+        overrideBalance === true,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
       queryClient.invalidateQueries({ queryKey: leaveKeys.balances(tenantId) });
@@ -131,10 +161,10 @@ export function useLeaveStats(
   const currentEmployeeId = useCurrentEmployeeId() ?? undefined;
   const role = session?.role;
   const effectiveFilters = (() => {
-    if (role === 'owner' || role === 'hr-admin' || role === 'accountant') {
+    if (role === "owner" || role === "hr-admin" || role === "accountant") {
       return filters;
     }
-    if (role === 'manager') {
+    if (role === "manager") {
       return session?.member.departmentId
         ? { departmentId: session.member.departmentId }
         : currentEmployeeId
@@ -144,13 +174,17 @@ export function useLeaveStats(
     return currentEmployeeId ? { employeeId: currentEmployeeId } : undefined;
   })();
   const hasReadableScope =
-    role === 'owner' ||
-    role === 'hr-admin' ||
-    role === 'accountant' ||
+    role === "owner" ||
+    role === "hr-admin" ||
+    role === "accountant" ||
     Boolean(effectiveFilters?.employeeId || effectiveFilters?.departmentId);
 
   return useQuery({
-    queryKey: [...leaveKeys.all(tenantId), 'stats', effectiveFilters ?? {}] as const,
+    queryKey: [
+      ...leaveKeys.all(tenantId),
+      "stats",
+      effectiveFilters ?? {},
+    ] as const,
     queryFn: () => leaveService.getLeaveStats(tenantId, effectiveFilters),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -162,8 +196,24 @@ export function useRejectLeaveRequest() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ requestId, approverId, approverName, reason }: { requestId: string; approverId: string; approverName: string; reason: string }) =>
-      leaveService.rejectLeaveRequest(tenantId, requestId, approverId, approverName, reason),
+    mutationFn: ({
+      requestId,
+      approverId,
+      approverName,
+      reason,
+    }: {
+      requestId: string;
+      approverId: string;
+      approverName: string;
+      reason: string;
+    }) =>
+      leaveService.rejectLeaveRequest(
+        tenantId,
+        requestId,
+        approverId,
+        approverName,
+        reason,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
     },
@@ -174,7 +224,8 @@ export function useCancelLeaveRequest() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (requestId: string) => leaveService.cancelLeaveRequest(tenantId, requestId),
+    mutationFn: (requestId: string) =>
+      leaveService.cancelLeaveRequest(tenantId, requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
       queryClient.invalidateQueries({ queryKey: leaveKeys.balances(tenantId) });

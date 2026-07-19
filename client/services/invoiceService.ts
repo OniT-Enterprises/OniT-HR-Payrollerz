@@ -24,17 +24,17 @@ import {
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { paths } from '@/lib/paths';
-import { notificationService } from '@/services/notificationService';
-import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, maxMoney, subtractMoney, sumMoney } from '@/lib/currency';
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
+import { notificationService } from "@/services/notificationService";
+import { formatDateISO, getTodayTL, parseDateISO } from "@/lib/dateUtils";
+import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
 import {
   calculateInvoiceAmounts,
   calculateInvoicePaymentState,
   getFiscalDateParts,
-} from '@/lib/accounting/calculations';
+} from "@/lib/accounting/calculations";
 import type {
   Invoice,
   InvoiceFormData,
@@ -46,11 +46,15 @@ import type {
   PaymentReceived,
   PaymentFormData,
   MoneyStats,
-} from '@/types/money';
-import type { JournalEntry } from '@/types/accounting';
-import { customerService } from './customerService';
-import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
-import { firestoreInvoiceSchema } from '@/lib/validations';
+} from "@/types/money";
+import type { JournalEntry } from "@/types/accounting";
+import { customerService } from "./customerService";
+import {
+  journalEntryService,
+  accountService,
+  fiscalPeriodService,
+} from "./accountingService";
+import { firestoreInvoiceSchema } from "@/lib/validations";
 import {
   DEFAULT_TEMPLATE_ID,
   getSettingsPaymentAccounts,
@@ -62,9 +66,9 @@ import {
   formatInvoiceMoney,
   formatInvoiceDate,
   lineNetAmount,
-} from '@/lib/invoiceTemplates';
-import { publicInvoiceUrl } from '@/lib/publicInvoice';
-import { invoiceTaxRateLabel } from '@/components/money/InvoicePaper';
+} from "@/lib/invoiceTemplates";
+import { publicInvoiceUrl } from "@/lib/publicInvoice";
+import { invoiceTaxRateLabel } from "@/components/money/InvoicePaper";
 
 // ============================================
 // FILTER INTERFACES
@@ -94,7 +98,12 @@ export interface PaginatedResult<T> {
 }
 
 const PAYMENT_EPSILON = 0.00001;
-const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = ['sent', 'viewed', 'partial', 'overdue'];
+const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = [
+  "sent",
+  "viewed",
+  "partial",
+  "overdue",
+];
 
 // ============================================
 // MAPPER FUNCTION
@@ -102,13 +111,16 @@ const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = ['sent', 'viewed', 'partia
 
 function mapInvoice(docSnap: DocumentSnapshot): Invoice {
   const data = docSnap.data();
-  if (!data) throw new Error('Document data is undefined');
+  if (!data) throw new Error("Document data is undefined");
 
   // Validate with Zod schema
   const validated = firestoreInvoiceSchema.safeParse(data);
 
   if (!validated.success) {
-    console.warn(`Invoice validation warning (${docSnap.id}):`, validated.error.flatten().fieldErrors);
+    console.warn(
+      `Invoice validation warning (${docSnap.id}):`,
+      validated.error.flatten().fieldErrors,
+    );
   }
 
   const parsed = validated.success ? validated.data : data;
@@ -117,31 +129,36 @@ function mapInvoice(docSnap: DocumentSnapshot): Invoice {
     id: docSnap.id,
     ...parsed,
     // Handle additional date fields not in base schema
-    sentAt: data.sentAt instanceof Timestamp
-      ? data.sentAt.toDate()
-      : data.sentAt || undefined,
-    paidAt: data.paidAt instanceof Timestamp
-      ? data.paidAt.toDate()
-      : data.paidAt || undefined,
-    viewedAt: data.viewedAt instanceof Timestamp
-      ? data.viewedAt.toDate()
-      : data.viewedAt || undefined,
-    cancelledAt: data.cancelledAt instanceof Timestamp
-      ? data.cancelledAt.toDate()
-      : data.cancelledAt || undefined,
+    sentAt:
+      data.sentAt instanceof Timestamp
+        ? data.sentAt.toDate()
+        : data.sentAt || undefined,
+    paidAt:
+      data.paidAt instanceof Timestamp
+        ? data.paidAt.toDate()
+        : data.paidAt || undefined,
+    viewedAt:
+      data.viewedAt instanceof Timestamp
+        ? data.viewedAt.toDate()
+        : data.viewedAt || undefined,
+    cancelledAt:
+      data.cancelledAt instanceof Timestamp
+        ? data.cancelledAt.toDate()
+        : data.cancelledAt || undefined,
   } as Invoice;
 }
 
 function mapPayment(docSnap: DocumentSnapshot): PaymentReceived {
   const data = docSnap.data();
-  if (!data) throw new Error('Document data is undefined');
+  if (!data) throw new Error("Document data is undefined");
 
   return {
     id: docSnap.id,
     ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
+    createdAt:
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : data.createdAt || new Date(),
   } as PaymentReceived;
 }
 
@@ -159,7 +176,7 @@ function addDaysISO(dateISO: string, days: number): string {
 function joinAddressParts(parts: Array<string | undefined | null>): string {
   const seen = new Set<string>();
   return parts
-    .flatMap((part) => (part || '').split(','))
+    .flatMap((part) => (part || "").split(","))
     .map((segment) => segment.trim())
     .filter((segment) => {
       if (!segment) return false;
@@ -168,7 +185,7 @@ function joinAddressParts(parts: Array<string | undefined | null>): string {
       seen.add(key);
       return true;
     })
-    .join(', ');
+    .join(", ");
 }
 
 // ============================================
@@ -197,7 +214,7 @@ class InvoiceService {
    */
   async getInvoices(
     tenantId: string,
-    filters: InvoiceFilters = {}
+    filters: InvoiceFilters = {},
   ): Promise<PaginatedResult<Invoice>> {
     const {
       status,
@@ -215,32 +232,32 @@ class InvoiceService {
     // Server-side filters
     if (status) {
       if (Array.isArray(status)) {
-        constraints.push(where('status', 'in', status));
+        constraints.push(where("status", "in", status));
       } else {
-        constraints.push(where('status', '==', status));
+        constraints.push(where("status", "==", status));
       }
     }
 
     if (customerId) {
-      constraints.push(where('customerId', '==', customerId));
+      constraints.push(where("customerId", "==", customerId));
     }
 
     if (dueBefore) {
-      constraints.push(where('dueDate', '<', dueBefore));
+      constraints.push(where("dueDate", "<", dueBefore));
     }
 
     if (dateFrom) {
-      constraints.push(where('issueDate', '>=', dateFrom));
+      constraints.push(where("issueDate", ">=", dateFrom));
     }
 
     if (dateTo) {
-      constraints.push(where('issueDate', '<=', dateTo));
+      constraints.push(where("issueDate", "<=", dateTo));
     }
 
     // A due-date range must lead the ordering for Firestore cursor queries.
     // The matching composite indexes are declared in firestore.indexes.json.
     constraints.push(
-      dueBefore ? orderBy('dueDate', 'asc') : orderBy('issueDate', 'desc'),
+      dueBefore ? orderBy("dueDate", "asc") : orderBy("issueDate", "desc"),
     );
 
     if (startAfterDoc) {
@@ -259,26 +276,26 @@ class InvoiceService {
       invoices = invoices.slice(0, pageSize);
     }
 
-    const lastDoc = invoices.length > 0
-      ? querySnapshot.docs[invoices.length - 1]
-      : null;
+    const lastDoc =
+      invoices.length > 0 ? querySnapshot.docs[invoices.length - 1] : null;
 
     // Client-side filters
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      invoices = invoices.filter(inv =>
-        inv.invoiceNumber.toLowerCase().includes(term) ||
-        inv.customerName.toLowerCase().includes(term) ||
-        inv.customerEmail?.toLowerCase().includes(term)
+      invoices = invoices.filter(
+        (inv) =>
+          inv.invoiceNumber.toLowerCase().includes(term) ||
+          inv.customerName.toLowerCase().includes(term) ||
+          inv.customerEmail?.toLowerCase().includes(term),
       );
     }
 
     if (dateFrom) {
-      invoices = invoices.filter(inv => inv.issueDate >= dateFrom);
+      invoices = invoices.filter((inv) => inv.issueDate >= dateFrom);
     }
 
     if (dateTo) {
-      invoices = invoices.filter(inv => inv.issueDate <= dateTo);
+      invoices = invoices.filter((inv) => inv.issueDate <= dateTo);
     }
 
     return {
@@ -301,10 +318,15 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getAllInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getAllInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
-      const result = await this.getInvoices(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      const result = await this.getInvoices(tenantId, {
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
       all.push(...result.data);
       lastDoc = result.lastDoc ?? undefined;
       hasMore = result.hasMore;
@@ -316,7 +338,10 @@ class InvoiceService {
     tenantId: string,
     startDate: string,
     endDate: string,
-    extraFilters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc' | 'dateFrom' | 'dateTo'> = {}
+    extraFilters: Omit<
+      InvoiceFilters,
+      "pageSize" | "startAfterDoc" | "dateFrom" | "dateTo"
+    > = {},
   ): Promise<Invoice[]> {
     const MAX_PAGES = 100;
     const all: Invoice[] = [];
@@ -326,7 +351,9 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getInvoicesByDateRange: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getInvoicesByDateRange: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
       const result = await this.getInvoices(tenantId, {
@@ -344,7 +371,10 @@ class InvoiceService {
     return all;
   }
 
-  async getOutstandingInvoices(tenantId: string, asOfDate?: string): Promise<Invoice[]> {
+  async getOutstandingInvoices(
+    tenantId: string,
+    asOfDate?: string,
+  ): Promise<Invoice[]> {
     const MAX_PAGES = 100;
     const all: Invoice[] = [];
     let lastDoc: DocumentSnapshot | undefined;
@@ -353,11 +383,13 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getOutstandingInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getOutstandingInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
       const result = await this.getInvoices(tenantId, {
-        status: ['sent', 'viewed', 'partial', 'overdue'],
+        status: ["sent", "viewed", "partial", "overdue"],
         ...(asOfDate ? { dateTo: asOfDate } : {}),
         pageSize: 500,
         startAfterDoc: lastDoc,
@@ -370,22 +402,27 @@ class InvoiceService {
     return all;
   }
 
-  async getOutstandingReceivablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
+  async getOutstandingReceivablesTotalAsOf(
+    tenantId: string,
+    asOfDate: string,
+  ): Promise<number> {
     const [invoiceSnapshot, paymentSnapshot] = await Promise.all([
-      getDocs(query(
-      this.collectionRef(tenantId),
-      where('issueDate', '<=', asOfDate),
-      )),
-      getDocs(query(this.paymentsRef(tenantId), where('date', '<=', asOfDate))),
+      getDocs(
+        query(this.collectionRef(tenantId), where("issueDate", "<=", asOfDate)),
+      ),
+      getDocs(query(this.paymentsRef(tenantId), where("date", "<=", asOfDate))),
     ]);
 
     const paidByInvoice = new Map<string, number>();
     for (const paymentDoc of paymentSnapshot.docs) {
       const data = paymentDoc.data();
-      if (typeof data.invoiceId !== 'string') continue;
+      if (typeof data.invoiceId !== "string") continue;
       paidByInvoice.set(
         data.invoiceId,
-        addMoney(paidByInvoice.get(data.invoiceId) || 0, Number(data.amount) || 0),
+        addMoney(
+          paidByInvoice.get(data.invoiceId) || 0,
+          Number(data.amount) || 0,
+        ),
       );
     }
 
@@ -393,13 +430,21 @@ class InvoiceService {
     let total = 0;
     for (const invoiceDoc of invoiceSnapshot.docs) {
       const data = invoiceDoc.data();
-      if (data.status === 'draft') continue;
+      if (data.status === "draft") continue;
 
-      const sentAt = data.sentAt instanceof Timestamp ? data.sentAt.toMillis() : null;
+      const sentAt =
+        data.sentAt instanceof Timestamp ? data.sentAt.toMillis() : null;
       if (sentAt !== null && sentAt > cutoff) continue;
 
-      const cancelledAt = data.cancelledAt instanceof Timestamp ? data.cancelledAt.toMillis() : null;
-      if (data.status === 'cancelled' && (cancelledAt === null || cancelledAt <= cutoff)) continue;
+      const cancelledAt =
+        data.cancelledAt instanceof Timestamp
+          ? data.cancelledAt.toMillis()
+          : null;
+      if (
+        data.status === "cancelled" &&
+        (cancelledAt === null || cancelledAt <= cutoff)
+      )
+        continue;
 
       const historicalBalance = maxMoney(
         0,
@@ -416,29 +461,35 @@ class InvoiceService {
   async getPaidInvoiceTotalByDateRange(
     tenantId: string,
     startDate: string,
-    endDate: string
+    endDate: string,
   ): Promise<number> {
     // Cash flow follows each payment's transaction date. Looking at only the
     // invoice's final paidAt timestamp drops partial payments and moves all cash
     // to the date of the last payment.
-    const snapshot = await getDocs(query(
-      this.paymentsRef(tenantId),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-    ));
+    const snapshot = await getDocs(
+      query(
+        this.paymentsRef(tenantId),
+        where("date", ">=", startDate),
+        where("date", "<=", endDate),
+      ),
+    );
     return snapshot.docs.reduce(
-      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      (total, paymentDoc) =>
+        addMoney(total, Number(paymentDoc.data().amount) || 0),
       0,
     );
   }
 
-  async getPaidInvoiceTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const snapshot = await getDocs(query(
-      this.paymentsRef(tenantId),
-      where('date', '<=', asOfDate),
-    ));
+  async getPaidInvoiceTotalAsOf(
+    tenantId: string,
+    asOfDate: string,
+  ): Promise<number> {
+    const snapshot = await getDocs(
+      query(this.paymentsRef(tenantId), where("date", "<=", asOfDate)),
+    );
     return snapshot.docs.reduce(
-      (total, paymentDoc) => addMoney(total, Number(paymentDoc.data().amount) || 0),
+      (total, paymentDoc) =>
+        addMoney(total, Number(paymentDoc.data().amount) || 0),
       0,
     );
   }
@@ -446,15 +497,20 @@ class InvoiceService {
   async getVATSummary(
     tenantId: string,
     startDate: string,
-    endDate: string
+    endDate: string,
   ): Promise<{ outputVAT: number; salesCount: number }> {
-    const invoices = await this.getInvoicesByDateRange(tenantId, startDate, endDate);
+    const invoices = await this.getInvoicesByDateRange(
+      tenantId,
+      startDate,
+      endDate,
+    );
 
     let outputVAT = 0;
     let salesCount = 0;
 
     for (const invoice of invoices) {
-      if (invoice.status === 'draft' || invoice.status === 'cancelled') continue;
+      if (invoice.status === "draft" || invoice.status === "cancelled")
+        continue;
       const taxAmount = Number(invoice.taxAmount) || 0;
       if (taxAmount > 0) {
         outputVAT = addMoney(outputVAT, taxAmount);
@@ -471,18 +527,32 @@ class InvoiceService {
     startDate: string,
     endDate: string,
   ): Promise<number> {
-    const invoices = await this.getInvoicesByDateRange(tenantId, startDate, endDate);
+    const invoices = await this.getInvoicesByDateRange(
+      tenantId,
+      startDate,
+      endDate,
+    );
     return sumMoney(
       invoices
-        .filter((invoice) => invoice.status !== 'draft' && invoice.status !== 'cancelled')
-        .map((invoice) => invoice.subtotal ?? subtractMoney(invoice.total, invoice.taxAmount || 0)),
+        .filter(
+          (invoice) =>
+            invoice.status !== "draft" && invoice.status !== "cancelled",
+        )
+        .map(
+          (invoice) =>
+            invoice.subtotal ??
+            subtractMoney(invoice.total, invoice.taxAmount || 0),
+        ),
     );
   }
 
   /**
    * Get invoices by status (server-side filtered, paginated)
    */
-  async getInvoicesByStatus(tenantId: string, status: InvoiceStatus): Promise<Invoice[]> {
+  async getInvoicesByStatus(
+    tenantId: string,
+    status: InvoiceStatus,
+  ): Promise<Invoice[]> {
     const MAX_PAGES = 100;
     const all: Invoice[] = [];
     let lastDoc: DocumentSnapshot | undefined;
@@ -491,10 +561,16 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getInvoicesByStatus: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getInvoicesByStatus: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
-      const result = await this.getInvoices(tenantId, { status, pageSize: 500, startAfterDoc: lastDoc });
+      const result = await this.getInvoices(tenantId, {
+        status,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
       all.push(...result.data);
       lastDoc = result.lastDoc ?? undefined;
       hasMore = result.hasMore;
@@ -505,7 +581,10 @@ class InvoiceService {
   /**
    * Get invoices for a customer (server-side filtered, paginated)
    */
-  async getInvoicesByCustomer(tenantId: string, customerId: string): Promise<Invoice[]> {
+  async getInvoicesByCustomer(
+    tenantId: string,
+    customerId: string,
+  ): Promise<Invoice[]> {
     const MAX_PAGES = 100;
     const all: Invoice[] = [];
     let lastDoc: DocumentSnapshot | undefined;
@@ -514,10 +593,16 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getInvoicesByCustomer: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getInvoicesByCustomer: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
-      const result = await this.getInvoices(tenantId, { customerId, pageSize: 500, startAfterDoc: lastDoc });
+      const result = await this.getInvoices(tenantId, {
+        customerId,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
       all.push(...result.data);
       lastDoc = result.lastDoc ?? undefined;
       hasMore = result.hasMore;
@@ -538,13 +623,15 @@ class InvoiceService {
 
     while (hasMore) {
       if (++pages > MAX_PAGES) {
-        console.warn(`getOverdueInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        console.warn(
+          `getOverdueInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`,
+        );
         break;
       }
       const result = await this.getInvoices(tenantId, {
         // Already-overdue records must not be returned here: this helper feeds
         // the status updater, which should only report and rewrite new changes.
-        status: ['sent', 'viewed', 'partial'],
+        status: ["sent", "viewed", "partial"],
         dueBefore: today,
         pageSize: 500,
         startAfterDoc: lastDoc,
@@ -573,11 +660,14 @@ class InvoiceService {
   /**
    * Get invoice by share token (for public viewing)
    */
-  async getInvoiceByShareToken(tenantId: string, token: string): Promise<Invoice | null> {
+  async getInvoiceByShareToken(
+    tenantId: string,
+    token: string,
+  ): Promise<Invoice | null> {
     const q = query(
       this.collectionRef(tenantId),
-      where('shareToken', '==', token),
-      limit(1)
+      where("shareToken", "==", token),
+      limit(1),
     );
     const querySnapshot = await getDocs(q);
 
@@ -604,7 +694,7 @@ class InvoiceService {
   private buildPublicLinkPayload(
     tenantId: string,
     invoice: Invoice,
-    settings: Partial<InvoiceSettings>
+    settings: Partial<InvoiceSettings>,
   ) {
     const publicInvoice = {
       id: invoice.id,
@@ -658,7 +748,7 @@ class InvoiceService {
         invoiceId: invoice.id,
         invoice: publicInvoice,
         settings: publicSettings,
-      })
+      }),
     ) as Record<string, unknown>;
   }
 
@@ -669,7 +759,7 @@ class InvoiceService {
   async ensureShareLink(
     tenantId: string,
     invoice: Invoice,
-    settingsArg?: Partial<InvoiceSettings>
+    settingsArg?: Partial<InvoiceSettings>,
   ): Promise<{ token: string; url: string }> {
     let token = invoice.shareToken;
     if (!token) {
@@ -681,8 +771,15 @@ class InvoiceService {
     }
 
     const settings =
-      settingsArg ?? (await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)));
-    const payload = this.buildPublicLinkPayload(tenantId, { ...invoice, shareToken: token }, settings);
+      settingsArg ??
+      (await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      ));
+    const payload = this.buildPublicLinkPayload(
+      tenantId,
+      { ...invoice, shareToken: token },
+      settings,
+    );
 
     const ref = this.publicLinkRef(token);
     const snap = await getDoc(ref);
@@ -706,7 +803,10 @@ class InvoiceService {
    * Refresh the public snapshot after a state change (payment, cancel,
    * template switch). No-op when the invoice was never shared.
    */
-  private async syncPublicLink(tenantId: string, invoiceId: string): Promise<void> {
+  private async syncPublicLink(
+    tenantId: string,
+    invoiceId: string,
+  ): Promise<void> {
     try {
       const invoice = await this.getInvoiceById(tenantId, invoiceId);
       if (!invoice?.shareToken) return;
@@ -715,7 +815,9 @@ class InvoiceService {
       const snap = await getDoc(ref);
       if (!snap.exists()) return;
 
-      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      const settings = await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      );
       await updateDoc(ref, {
         ...this.buildPublicLinkPayload(tenantId, invoice, settings),
         updatedAt: serverTimestamp(),
@@ -723,7 +825,7 @@ class InvoiceService {
     } catch (error) {
       // The public page just shows a slightly stale snapshot — never fail
       // the payment/cancel that triggered the sync.
-      console.error('Failed to sync public invoice link:', error);
+      console.error("Failed to sync public invoice link:", error);
     }
   }
 
@@ -742,9 +844,12 @@ class InvoiceService {
     if (!invoice.sentPdfUrl) return undefined;
     try {
       const response = await fetch(invoice.sentPdfUrl);
-      if (!response.ok) throw new Error(`Frozen PDF fetch returned ${response.status}`);
+      if (!response.ok)
+        throw new Error(`Frozen PDF fetch returned ${response.status}`);
       const blob = await response.blob();
-      const { fileUploadService } = await import('@/services/fileUploadService');
+      const { fileUploadService } = await import(
+        "@/services/fileUploadService"
+      );
       return await fileUploadService.uploadInvoicePdf(
         blob,
         tenantId,
@@ -752,7 +857,10 @@ class InvoiceService {
         invoice.invoiceNumber,
       );
     } catch (error) {
-      console.error('Failed to rotate frozen invoice PDF download token:', error);
+      console.error(
+        "Failed to rotate frozen invoice PDF download token:",
+        error,
+      );
       return undefined;
     }
   }
@@ -767,12 +875,17 @@ class InvoiceService {
    *    URL). If that rotation fails (e.g. the PDF can't be fetched) the old
    *    direct PDF URL may still resolve until the next successful re-freeze.
    */
-  async regenerateShareLink(tenantId: string, invoiceId: string): Promise<{ token: string; url: string }> {
+  async regenerateShareLink(
+    tenantId: string,
+    invoiceId: string,
+  ): Promise<{ token: string; url: string }> {
     const invoice = await this.getInvoiceById(tenantId, invoiceId);
-    if (!invoice) throw new Error('Invoice not found');
+    if (!invoice) throw new Error("Invoice not found");
 
     if (invoice.shareToken) {
-      await deleteDoc(this.publicLinkRef(invoice.shareToken)).catch(() => undefined);
+      await deleteDoc(this.publicLinkRef(invoice.shareToken)).catch(
+        () => undefined,
+      );
     }
 
     const rotatedPdfUrl = await this.rotateFrozenPdfToken(tenantId, invoice);
@@ -800,26 +913,34 @@ class InvoiceService {
     tenantId: string,
     invoice: Invoice,
     settings: Partial<InvoiceSettings>,
-    token?: string
+    token?: string,
   ): Promise<string | undefined> {
     try {
-      const [{ generateInvoiceBlob }, { fileUploadService }] = await Promise.all([
-        import('@/components/money/InvoicePDF'),
-        import('@/services/fileUploadService'),
-      ]);
+      const [{ generateInvoiceBlob }, { fileUploadService }] =
+        await Promise.all([
+          import("@/components/money/InvoicePDF"),
+          import("@/services/fileUploadService"),
+        ]);
       const blob = await generateInvoiceBlob(invoice, settings);
-      const pdfUrl = await fileUploadService.uploadInvoicePdf(blob, tenantId, invoice.id, invoice.invoiceNumber);
+      const pdfUrl = await fileUploadService.uploadInvoicePdf(
+        blob,
+        tenantId,
+        invoice.id,
+        invoice.invoiceNumber,
+      );
 
       await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
         sentPdfUrl: pdfUrl,
         updatedAt: serverTimestamp(),
       });
       if (token) {
-        await updateDoc(this.publicLinkRef(token), { pdfUrl }).catch(() => undefined);
+        await updateDoc(this.publicLinkRef(token), { pdfUrl }).catch(
+          () => undefined,
+        );
       }
       return pdfUrl;
     } catch (error) {
-      console.error('Failed to freeze sent invoice PDF:', error);
+      console.error("Failed to freeze sent invoice PDF:", error);
       return undefined;
     }
   }
@@ -830,9 +951,9 @@ class InvoiceService {
    */
   private resolvePaymentAccountSnapshot(
     paymentAccountId: string | undefined,
-    settings: Partial<InvoiceSettings>
+    settings: Partial<InvoiceSettings>,
   ): PaymentAccount | null {
-    if (paymentAccountId === 'none') return null;
+    if (paymentAccountId === "none") return null;
 
     const accounts = getSettingsPaymentAccounts(settings);
     if (accounts.length === 0) return null;
@@ -848,14 +969,17 @@ class InvoiceService {
   /**
    * Create a new invoice
    */
-  async createInvoice(tenantId: string, data: InvoiceFormData): Promise<string> {
+  async createInvoice(
+    tenantId: string,
+    data: InvoiceFormData,
+  ): Promise<string> {
     // Get customer info + settings (for presentation/payment defaults)
     const [customer, settings] = await Promise.all([
       customerService.getCustomerById(tenantId, data.customerId),
-      this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)),
+      this.getSettings(tenantId).catch(() => ({}) as Partial<InvoiceSettings>),
     ]);
     if (!customer) {
-      throw new Error('Customer not found');
+      throw new Error("Customer not found");
     }
 
     // Get next invoice number
@@ -874,7 +998,7 @@ class InvoiceService {
     // Generate share token
     const shareToken = this.generateShareToken();
 
-    const invoice: Omit<Invoice, 'id'> = {
+    const invoice: Omit<Invoice, "id"> = {
       invoiceNumber,
       customerId: data.customerId,
       customerName: customer.name,
@@ -891,17 +1015,22 @@ class InvoiceService {
       taxRate: data.taxRate,
       taxAmount,
       total,
-      status: 'draft',
+      status: "draft",
       amountPaid: 0,
       balanceDue: total,
       notes: data.notes,
       terms: data.terms,
-      templateId: data.templateId || settings.defaultTemplate || DEFAULT_TEMPLATE_ID,
+      templateId:
+        data.templateId || settings.defaultTemplate || DEFAULT_TEMPLATE_ID,
       ...(settings.accentColor ? { accentColor: settings.accentColor } : {}),
       paymentTermsDays: data.paymentTermsDays ?? null,
-      paymentMethods: data.paymentMethods ?? settings.defaultPaymentMethods ?? [],
-      paymentAccount: this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings),
-      currency: 'USD',
+      paymentMethods:
+        data.paymentMethods ?? settings.defaultPaymentMethods ?? [],
+      paymentAccount: this.resolvePaymentAccountSnapshot(
+        data.paymentAccountId,
+        settings,
+      ),
+      currency: "USD",
       shareToken,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -922,15 +1051,15 @@ class InvoiceService {
   async updateInvoice(
     tenantId: string,
     id: string,
-    data: Partial<InvoiceFormData>
+    data: Partial<InvoiceFormData>,
   ): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
-    if (invoice.status !== 'draft') {
-      throw new Error('Cannot edit invoice that has been sent');
+    if (invoice.status !== "draft") {
+      throw new Error("Cannot edit invoice that has been sent");
     }
 
     // Build updates object
@@ -944,11 +1073,18 @@ class InvoiceService {
     if (data.projectName !== undefined) updates.projectName = data.projectName;
     if (data.poNumber !== undefined) updates.poNumber = data.poNumber;
     if (data.templateId) updates.templateId = data.templateId;
-    if (data.paymentTermsDays !== undefined) updates.paymentTermsDays = data.paymentTermsDays;
-    if (data.paymentMethods !== undefined) updates.paymentMethods = data.paymentMethods;
+    if (data.paymentTermsDays !== undefined)
+      updates.paymentTermsDays = data.paymentTermsDays;
+    if (data.paymentMethods !== undefined)
+      updates.paymentMethods = data.paymentMethods;
     if (data.paymentAccountId !== undefined) {
-      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
-      updates.paymentAccount = this.resolvePaymentAccountSnapshot(data.paymentAccountId, settings);
+      const settings = await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      );
+      updates.paymentAccount = this.resolvePaymentAccountSnapshot(
+        data.paymentAccountId,
+        settings,
+      );
     }
 
     // Recalculate when either lines or the default rate changes. This keeps
@@ -971,13 +1107,18 @@ class InvoiceService {
       updates.balanceDue = subtractMoney(calculated.total, invoice.amountPaid);
 
       if (updates.balanceDue < -PAYMENT_EPSILON) {
-        throw new Error('Cannot reduce invoice total below amount already paid');
+        throw new Error(
+          "Cannot reduce invoice total below amount already paid",
+        );
       }
     }
 
     // If customer changed, update customer info
     if (data.customerId && data.customerId !== invoice.customerId) {
-      const customer = await customerService.getCustomerById(tenantId, data.customerId);
+      const customer = await customerService.getCustomerById(
+        tenantId,
+        data.customerId,
+      );
       if (customer) {
         updates.customerId = data.customerId;
         updates.customerName = customer.name;
@@ -1001,28 +1142,34 @@ class InvoiceService {
    * Also creates a journal entry (Debit AR, Credit Revenue)
    * Uses transaction to ensure invoice status + journal entry are atomic
    */
-  async markAsSent(tenantId: string, id: string, userId?: string): Promise<boolean> {
+  async markAsSent(
+    tenantId: string,
+    id: string,
+    userId?: string,
+  ): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
-    if (invoice.status === 'cancelled') {
-      throw new Error('Cannot send a cancelled invoice');
+    if (invoice.status === "cancelled") {
+      throw new Error("Cannot send a cancelled invoice");
     }
 
     // Check if chart of accounts is set up (read BEFORE transaction)
     const accounts = await accountService.getAllAccounts(tenantId);
     const shouldCreateJournal = accounts.length > 0;
     let existingJournalId = invoice.journalEntryId;
-    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+    let resolvedAccounts:
+      | Record<string, { id: string; name: string }>
+      | undefined;
 
     if (shouldCreateJournal) {
       if (!existingJournalId) {
         const existing = await journalEntryService.getJournalEntryBySource(
           tenantId,
-          'invoice',
-          id
+          "invoice",
+          id,
         );
         existingJournalId = existing?.id;
       }
@@ -1030,22 +1177,30 @@ class InvoiceService {
       if (!existingJournalId) {
         // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
         const [arAccount, revenueAccount, taxAccount] = await Promise.all([
-          accountService.getAccountByCode(tenantId, '1210'),
-          accountService.getAccountByCode(tenantId, '4100'),
+          accountService.getAccountByCode(tenantId, "1210"),
+          accountService.getAccountByCode(tenantId, "4100"),
           invoice.taxAmount > 0
-            ? accountService.getAccountByCode(tenantId, '2310')
+            ? accountService.getAccountByCode(tenantId, "2310")
             : Promise.resolve(null),
         ]);
-        if (!arAccount?.id) throw new Error('Missing account for code 1210. Initialize chart of accounts first.');
-        if (!revenueAccount?.id) throw new Error('Missing account for code 4100. Initialize chart of accounts first.');
+        if (!arAccount?.id)
+          throw new Error(
+            "Missing account for code 1210. Initialize chart of accounts first.",
+          );
+        if (!revenueAccount?.id)
+          throw new Error(
+            "Missing account for code 4100. Initialize chart of accounts first.",
+          );
         if (invoice.taxAmount > 0 && !taxAccount?.id) {
-          throw new Error('Missing account for code 2310. Initialize chart of accounts first.');
+          throw new Error(
+            "Missing account for code 2310. Initialize chart of accounts first.",
+          );
         }
         resolvedAccounts = {
-          '1210': { id: arAccount.id, name: arAccount.name },
-          '4100': { id: revenueAccount.id, name: revenueAccount.name },
+          "1210": { id: arAccount.id, name: arAccount.name },
+          "4100": { id: revenueAccount.id, name: revenueAccount.name },
           ...(taxAccount?.id
-            ? { '2310': { id: taxAccount.id, name: taxAccount.name } }
+            ? { "2310": { id: taxAccount.id, name: taxAccount.name } }
             : {}),
         };
       }
@@ -1057,10 +1212,13 @@ class InvoiceService {
     const invoiceRef = doc(db, paths.invoice(tenantId, id));
     const sentNow = await runTransaction(db, async (transaction) => {
       const currentDoc = await transaction.get(invoiceRef);
-      if (!currentDoc.exists()) throw new Error('Invoice not found');
-      const currentInvoice = { id: currentDoc.id, ...currentDoc.data() } as Invoice;
-      if (currentInvoice.status === 'cancelled') {
-        throw new Error('Cannot send a cancelled invoice');
+      if (!currentDoc.exists()) throw new Error("Invoice not found");
+      const currentInvoice = {
+        id: currentDoc.id,
+        ...currentDoc.data(),
+      } as Invoice;
+      if (currentInvoice.status === "cancelled") {
+        throw new Error("Cannot send a cancelled invoice");
       }
 
       let journalEntryId = currentInvoice.journalEntryId || existingJournalId;
@@ -1068,16 +1226,16 @@ class InvoiceService {
         journalEntryId = await journalEntryService.createFromInvoice(
           tenantId,
           currentInvoice,
-          userId || 'system',
+          userId || "system",
           transaction,
           resolvedAccounts,
         );
       }
 
-      const isFirstSend = currentInvoice.status === 'draft';
+      const isFirstSend = currentInvoice.status === "draft";
       const updates: Record<string, unknown> = {};
       if (isFirstSend) {
-        updates.status = 'sent';
+        updates.status = "sent";
         updates.sentAt = serverTimestamp();
       }
       if (journalEntryId && currentInvoice.journalEntryId !== journalEntryId) {
@@ -1095,26 +1253,40 @@ class InvoiceService {
     // First send (draft -> sent): publish the hosted page, freeze the as-sent
     // PDF, and email the customer. None of these may fail the send itself.
     if (sentNow) {
-      const sentInvoice: Invoice = { ...invoice, status: 'sent' };
-      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      const sentInvoice: Invoice = { ...invoice, status: "sent" };
+      const settings = await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      );
 
       let publicUrl: string | undefined;
       let token: string | undefined;
       try {
-        const link = await this.ensureShareLink(tenantId, sentInvoice, settings);
+        const link = await this.ensureShareLink(
+          tenantId,
+          sentInvoice,
+          settings,
+        );
         publicUrl = link.url;
         token = link.token;
       } catch (error) {
-        console.error('Failed to create public invoice link:', error);
+        console.error("Failed to create public invoice link:", error);
       }
 
-      const pdfUrl = await this.freezeSentPdf(tenantId, sentInvoice, settings, token);
+      const pdfUrl = await this.freezeSentPdf(
+        tenantId,
+        sentInvoice,
+        settings,
+        token,
+      );
 
       if (invoice.customerEmail) {
         try {
-          await this.queueInvoiceEmail(tenantId, sentInvoice, settings, { publicUrl, pdfUrl });
+          await this.queueInvoiceEmail(tenantId, sentInvoice, settings, {
+            publicUrl,
+            pdfUrl,
+          });
         } catch (error) {
-          console.error('Failed to queue invoice email:', error);
+          console.error("Failed to queue invoice email:", error);
         }
       }
     }
@@ -1131,47 +1303,60 @@ class InvoiceService {
     tenantId: string,
     invoice: Invoice,
     settingsArg?: Partial<InvoiceSettings>,
-    opts: { publicUrl?: string; pdfUrl?: string } = {}
+    opts: { publicUrl?: string; pdfUrl?: string } = {},
   ): Promise<void> {
     if (!invoice.customerEmail) return;
 
     const settings =
-      settingsArg ?? (await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>)));
-    const companyName = settings.companyName || 'Your supplier';
+      settingsArg ??
+      (await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      ));
+    const companyName = settings.companyName || "Your supplier";
     const accent = resolveAccentColor(invoice, settings);
     const account = resolveInvoicePaymentAccount(invoice, settings);
     const termsLabel = paymentTermsLabel(invoice.paymentTermsDays);
-    const methodsLabel = paymentMethodsSummary(resolveInvoicePaymentMethods(invoice, settings));
+    const methodsLabel = paymentMethodsSummary(
+      resolveInvoicePaymentMethods(invoice, settings),
+    );
 
     const esc = (value: string | undefined | null) =>
-      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      (value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
     const itemRows = invoice.items
       .map(
         (item) => `
           <tr>
-            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}${item.discount ? ` <span style="color:#6b7280;">(−${item.discount}%)</span>` : ''}</td>
+            <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${esc(item.description)}${item.discount ? ` <span style="color:#6b7280;">(−${item.discount}%)</span>` : ""}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">${formatInvoiceMoney(item.unitPrice)}</td>
             <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">${formatInvoiceMoney(lineNetAmount(item))}</td>
-          </tr>`
+          </tr>`,
       )
-      .join('');
+      .join("");
 
     const paymentRows: string[] = [];
-    if (termsLabel) paymentRows.push(`<strong>Payment terms:</strong> ${esc(termsLabel)}`);
-    if (methodsLabel) paymentRows.push(`<strong>We accept:</strong> ${esc(methodsLabel)}`);
+    if (termsLabel)
+      paymentRows.push(`<strong>Payment terms:</strong> ${esc(termsLabel)}`);
+    if (methodsLabel)
+      paymentRows.push(`<strong>We accept:</strong> ${esc(methodsLabel)}`);
     if (account) {
       const accountBits = [
         account.bankName && `Bank: ${esc(account.bankName)}`,
         account.accountName && `Account name: ${esc(account.accountName)}`,
-        account.accountNumber && `Account number: ${esc(account.accountNumber)}`,
+        account.accountNumber &&
+          `Account number: ${esc(account.accountNumber)}`,
         account.swiftCode && `SWIFT: ${esc(account.swiftCode)}`,
         account.iban && `IBAN: ${esc(account.iban)}`,
         account.bin && `BIN: ${esc(account.bin)}`,
         `Reference: ${esc(invoice.invoiceNumber)}`,
       ].filter(Boolean);
-      paymentRows.push(`<strong>Bank transfer details:</strong><br/>${accountBits.join('<br/>')}`);
+      paymentRows.push(
+        `<strong>Bank transfer details:</strong><br/>${accountBits.join("<br/>")}`,
+      );
     }
 
     const html = `
@@ -1194,24 +1379,36 @@ class InvoiceService {
                 <td style="color:#6b7280;padding:2px 0;">Due date</td>
                 <td style="text-align:right;font-weight:600;">${esc(formatInvoiceDate(invoice.dueDate))}</td>
               </tr>
-              ${invoice.projectName ? `
+              ${
+                invoice.projectName
+                  ? `
               <tr>
                 <td style="color:#6b7280;padding:2px 0;">Project</td>
                 <td style="text-align:right;font-weight:600;">${esc(invoice.projectName)}</td>
-              </tr>` : ''}
-              ${invoice.poNumber ? `
+              </tr>`
+                  : ""
+              }
+              ${
+                invoice.poNumber
+                  ? `
               <tr>
                 <td style="color:#6b7280;padding:2px 0;">Ref / PO</td>
                 <td style="text-align:right;font-weight:600;">${esc(invoice.poNumber)}</td>
-              </tr>` : ''}
+              </tr>`
+                  : ""
+              }
             </table>
           </div>
 
-          ${opts.publicUrl ? `
+          ${
+            opts.publicUrl
+              ? `
           <div style="text-align:center;margin:0 0 24px;">
             <a href="${esc(opts.publicUrl)}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 32px;border-radius:8px;">View invoice online</a>
             <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;">You can view and download this invoice anytime at the link above.</p>
-          </div>` : ''}
+          </div>`
+              : ""
+          }
 
           <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">
             <thead>
@@ -1228,16 +1425,24 @@ class InvoiceService {
                 <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">Subtotal</td>
                 <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.subtotal)}</td>
               </tr>
-              ${(invoice.discountTotal || 0) > 0 ? `
+              ${
+                (invoice.discountTotal || 0) > 0
+                  ? `
               <tr>
                 <td colspan="3" style="padding:2px 12px;text-align:right;color:#6b7280;font-size:11px;">Includes discount of</td>
                 <td style="padding:2px 12px;text-align:right;color:#6b7280;font-size:11px;">-${formatInvoiceMoney(invoice.discountTotal || 0)}</td>
-              </tr>` : ''}
-              ${invoice.taxAmount > 0 ? `
+              </tr>`
+                  : ""
+              }
+              ${
+                invoice.taxAmount > 0
+                  ? `
               <tr>
                 <td colspan="3" style="padding:8px 12px;text-align:right;color:#6b7280;">${invoiceTaxRateLabel(invoice.items, invoice.taxRate)}</td>
                 <td style="padding:8px 12px;text-align:right;">${formatInvoiceMoney(invoice.taxAmount)}</td>
-              </tr>` : ''}
+              </tr>`
+                  : ""
+              }
               <tr>
                 <td colspan="3" style="padding:8px 12px;text-align:right;font-weight:700;">Total</td>
                 <td style="padding:8px 12px;text-align:right;font-weight:700;color:${accent};">${formatInvoiceMoney(invoice.total)}</td>
@@ -1245,44 +1450,57 @@ class InvoiceService {
             </tfoot>
           </table>
 
-          ${paymentRows.length > 0 ? `
+          ${
+            paymentRows.length > 0
+              ? `
           <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px 20px;font-size:13px;line-height:1.7;margin-bottom:16px;">
             <p style="margin:0 0 6px;font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:1px;color:${accent};">How to pay</p>
-            ${paymentRows.map((row) => `<p style="margin:0 0 8px;">${row}</p>`).join('')}
-          </div>` : ''}
+            ${paymentRows.map((row) => `<p style="margin:0 0 8px;">${row}</p>`).join("")}
+          </div>`
+              : ""
+          }
 
-          ${invoice.notes ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(invoice.notes)}</p>` : ''}
-          ${settings.footerMessage ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(settings.footerMessage)}</p>` : ''}
+          ${invoice.notes ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(invoice.notes)}</p>` : ""}
+          ${settings.footerMessage ? `<p style="font-size:13px;color:#6b7280;margin:0 0 16px;">${esc(settings.footerMessage)}</p>` : ""}
 
           <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
-            Questions about this invoice? ${settings.companyEmail ? `Contact us at ${esc(settings.companyEmail)}.` : 'Reply to this email.'}
+            Questions about this invoice? ${settings.companyEmail ? `Contact us at ${esc(settings.companyEmail)}.` : "Reply to this email."}
           </p>
         </div>
       </div>`;
 
     const textLines = [
       `Invoice ${invoice.invoiceNumber} from ${companyName}`,
-      '',
+      "",
       `Amount due: ${formatInvoiceMoney(invoice.balanceDue ?? invoice.total)}`,
       `Due date: ${formatInvoiceDate(invoice.dueDate)}`,
-      ...(opts.publicUrl ? ['', `View invoice online: ${opts.publicUrl}`] : []),
-      '',
+      ...(opts.publicUrl ? ["", `View invoice online: ${opts.publicUrl}`] : []),
+      "",
       ...invoice.items.map(
-        (item) => `${item.description}${item.discount ? ` (-${item.discount}%)` : ''} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(lineNetAmount(item))}`
+        (item) =>
+          `${item.description}${item.discount ? ` (-${item.discount}%)` : ""} — ${item.quantity} x ${formatInvoiceMoney(item.unitPrice)} = ${formatInvoiceMoney(lineNetAmount(item))}`,
       ),
-      '',
+      "",
       `Subtotal: ${formatInvoiceMoney(invoice.subtotal)}`,
-      ...(invoice.taxAmount > 0 ? [`${invoiceTaxRateLabel(invoice.items, invoice.taxRate)}: ${formatInvoiceMoney(invoice.taxAmount)}`] : []),
+      ...(invoice.taxAmount > 0
+        ? [
+            `${invoiceTaxRateLabel(invoice.items, invoice.taxRate)}: ${formatInvoiceMoney(invoice.taxAmount)}`,
+          ]
+        : []),
       `Total: ${formatInvoiceMoney(invoice.total)}`,
-      ...(termsLabel ? ['', `Payment terms: ${termsLabel}`] : []),
+      ...(termsLabel ? ["", `Payment terms: ${termsLabel}`] : []),
       ...(methodsLabel ? [`We accept: ${methodsLabel}`] : []),
       ...(account
         ? [
-            '',
-            'Bank transfer details:',
+            "",
+            "Bank transfer details:",
             ...(account.bankName ? [`  Bank: ${account.bankName}`] : []),
-            ...(account.accountName ? [`  Account name: ${account.accountName}`] : []),
-            ...(account.accountNumber ? [`  Account number: ${account.accountNumber}`] : []),
+            ...(account.accountName
+              ? [`  Account name: ${account.accountName}`]
+              : []),
+            ...(account.accountNumber
+              ? [`  Account number: ${account.accountNumber}`]
+              : []),
             `  Reference: ${invoice.invoiceNumber}`,
           ]
         : []),
@@ -1295,19 +1513,19 @@ class InvoiceService {
       fromName: settings.companyName || undefined,
       subject: `Invoice ${invoice.invoiceNumber} from ${companyName} — ${formatInvoiceMoney(invoice.total)} due ${formatInvoiceDate(invoice.dueDate)}`,
       html,
-      text: textLines.join('\n'),
+      text: textLines.join("\n"),
       ...(opts.pdfUrl
         ? {
             attachments: [
               {
                 filename: `${invoice.invoiceNumber}.pdf`,
                 url: opts.pdfUrl,
-                contentType: 'application/pdf',
+                contentType: "application/pdf",
               },
             ],
           }
         : {}),
-      purpose: 'invoice',
+      purpose: "invoice",
       relatedId: invoice.id,
     });
   }
@@ -1319,7 +1537,7 @@ class InvoiceService {
   async updateInvoiceTemplate(
     tenantId: string,
     id: string,
-    templateId: InvoiceTemplateId
+    templateId: InvoiceTemplateId,
   ): Promise<boolean> {
     const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
@@ -1334,44 +1552,66 @@ class InvoiceService {
    * Cancel an invoice
    * Also voids the associated journal entry and creates reversing GL entries
    */
-  async cancelInvoice(tenantId: string, id: string, reason?: string, userId?: string): Promise<boolean> {
+  async cancelInvoice(
+    tenantId: string,
+    id: string,
+    reason?: string,
+    userId?: string,
+  ): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
-    if (invoice.status === 'cancelled') {
-      throw new Error('Invoice is already cancelled');
+    if (invoice.status === "cancelled") {
+      throw new Error("Invoice is already cancelled");
     }
-    if (invoice.status === 'paid') {
-      throw new Error('Cannot void a fully paid invoice');
+    if (invoice.status === "paid") {
+      throw new Error("Cannot void a fully paid invoice");
     }
     if ((invoice.amountPaid || 0) > PAYMENT_EPSILON) {
-      throw new Error('Cannot cancel an invoice with recorded payments');
+      throw new Error("Cannot cancel an invoice with recorded payments");
     }
 
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
     const journalEntry = invoice.journalEntryId
-      ? await journalEntryService.getJournalEntry(tenantId, invoice.journalEntryId)
-      : await journalEntryService.getJournalEntryBySource(tenantId, 'invoice', id);
+      ? await journalEntryService.getJournalEntry(
+          tenantId,
+          invoice.journalEntryId,
+        )
+      : await journalEntryService.getJournalEntryBySource(
+          tenantId,
+          "invoice",
+          id,
+        );
 
     // Post-close correction flow:
     // - If the original journal entry is in a closed/locked period, do NOT void it.
     // - Instead, create a reversing adjustment entry in the current open period.
-    const journalPeriod = journalEntry?.status === 'posted'
-      ? await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, journalEntry.fiscalYear, journalEntry.fiscalPeriod)
-      : null;
+    const journalPeriod =
+      journalEntry?.status === "posted"
+        ? await fiscalPeriodService.getPeriodByYearAndPeriod(
+            tenantId,
+            journalEntry.fiscalYear,
+            journalEntry.fiscalPeriod,
+          )
+        : null;
 
-    const needsAdjustment = !!journalPeriod && journalPeriod.status !== 'open';
+    const needsAdjustment = !!journalPeriod && journalPeriod.status !== "open";
     const adjustmentDate = needsAdjustment ? getTodayTL() : null;
 
     if (needsAdjustment && adjustmentDate) {
-      const { year: adjYear, period: adjMonth } = getFiscalDateParts(adjustmentDate);
-      const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
-      if (adjPeriod && adjPeriod.status !== 'open') {
+      const { year: adjYear, period: adjMonth } =
+        getFiscalDateParts(adjustmentDate);
+      const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(
+        tenantId,
+        adjYear,
+        adjMonth,
+      );
+      if (adjPeriod && adjPeriod.status !== "open") {
         throw new Error(
-          `Cannot cancel invoice: adjustment period ${adjYear}-${String(adjMonth).padStart(2, '0')} is ${adjPeriod.status}. ` +
-          'Reopen the period (or choose an open adjustment date) to post the reversal entry.'
+          `Cannot cancel invoice: adjustment period ${adjYear}-${String(adjMonth).padStart(2, "0")} is ${adjPeriod.status}. ` +
+            "Reopen the period (or choose an open adjustment date) to post the reversal entry.",
         );
       }
     }
@@ -1380,16 +1620,19 @@ class InvoiceService {
 
     await runTransaction(db, async (transaction) => {
       const currentInvoiceDoc = await transaction.get(invoiceDocRef);
-      if (!currentInvoiceDoc.exists()) throw new Error('Invoice not found');
+      if (!currentInvoiceDoc.exists()) throw new Error("Invoice not found");
       const currentInvoice = {
         id: currentInvoiceDoc.id,
         ...currentInvoiceDoc.data(),
       } as Invoice;
-      if (currentInvoice.status === 'cancelled') {
-        throw new Error('Invoice is already cancelled');
+      if (currentInvoice.status === "cancelled") {
+        throw new Error("Invoice is already cancelled");
       }
-      if (currentInvoice.status === 'paid' || (currentInvoice.amountPaid || 0) > PAYMENT_EPSILON) {
-        throw new Error('Cannot cancel an invoice with recorded payments');
+      if (
+        currentInvoice.status === "paid" ||
+        (currentInvoice.amountPaid || 0) > PAYMENT_EPSILON
+      ) {
+        throw new Error("Cannot cancel an invoice with recorded payments");
       }
 
       let activeJournal: JournalEntry | null = journalEntry;
@@ -1398,7 +1641,10 @@ class InvoiceService {
           doc(db, paths.journalEntry(tenantId, currentInvoice.journalEntryId)),
         );
         activeJournal = currentJournalDoc.exists()
-          ? { id: currentJournalDoc.id, ...currentJournalDoc.data() } as JournalEntry
+          ? ({
+              id: currentJournalDoc.id,
+              ...currentJournalDoc.data(),
+            } as JournalEntry)
           : null;
       }
 
@@ -1406,24 +1652,27 @@ class InvoiceService {
       // journal number allocator performs a transaction read.
       let adjustmentEntryId: string | undefined;
       if (activeJournal?.id && needsAdjustment && adjustmentDate) {
-        adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
-          tenantId,
-          activeJournal,
-          {
-            date: adjustmentDate,
-            createdBy: userId || 'system',
-            reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`,
-            txn: transaction,
-          }
-        );
+        adjustmentEntryId =
+          await journalEntryService.createReversingJournalEntry(
+            tenantId,
+            activeJournal,
+            {
+              date: adjustmentDate,
+              createdBy: userId || "system",
+              reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ": " + reason : ""}`,
+              txn: transaction,
+            },
+          );
       }
 
       transaction.update(invoiceDocRef, {
-        status: 'cancelled',
+        status: "cancelled",
         cancelledAt: serverTimestamp(),
         cancelReason: reason || null,
         updatedAt: serverTimestamp(),
-        ...(adjustmentEntryId ? { cancellationAdjustmentEntryId: adjustmentEntryId } : {}),
+        ...(adjustmentEntryId
+          ? { cancellationAdjustmentEntryId: adjustmentEntryId }
+          : {}),
       });
 
       if (activeJournal?.id) {
@@ -1433,8 +1682,8 @@ class InvoiceService {
             activeJournal.id,
             activeJournal,
             transaction,
-            userId || 'system',
-            `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`
+            userId || "system",
+            `Invoice ${invoice.invoiceNumber} cancelled${reason ? ": " + reason : ""}`,
           );
         }
       }
@@ -1452,11 +1701,13 @@ class InvoiceService {
   async deleteInvoice(tenantId: string, id: string): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
-    if (invoice.status !== 'draft') {
-      throw new Error('Cannot delete invoice that has been sent. Cancel it instead.');
+    if (invoice.status !== "draft") {
+      throw new Error(
+        "Cannot delete invoice that has been sent. Cancel it instead.",
+      );
     }
 
     const docRef = doc(db, paths.invoice(tenantId, id));
@@ -1471,27 +1722,36 @@ class InvoiceService {
   async sendReminder(tenantId: string, id: string): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
-    if (!['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status)) {
-      throw new Error('Cannot send reminder for this invoice status');
+    if (!["sent", "viewed", "partial", "overdue"].includes(invoice.status)) {
+      throw new Error("Cannot send reminder for this invoice status");
     }
 
     const esc = (value: string | undefined | null) =>
-      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      (value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
     // Queue the courtesy email first (non-fatal, per the email policy) and bump
     // the reminder counter only once it is safely queued — a failed queue must
     // never inflate the count, and it must never throw the send-reminder action.
     let emailQueued = false;
     if (invoice.customerEmail) {
-      const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
+      const settings = await this.getSettings(tenantId).catch(
+        () => ({}) as Partial<InvoiceSettings>,
+      );
       let publicUrl: string | undefined;
       try {
-        publicUrl = (await this.ensureShareLink(tenantId, invoice, settings)).url;
+        publicUrl = (await this.ensureShareLink(tenantId, invoice, settings))
+          .url;
       } catch (error) {
-        console.error('Failed to ensure public invoice link for reminder:', error);
+        console.error(
+          "Failed to ensure public invoice link for reminder:",
+          error,
+        );
       }
 
       try {
@@ -1500,7 +1760,9 @@ class InvoiceService {
           to: invoice.customerEmail,
           replyTo: settings.companyEmail || undefined,
           fromName: settings.companyName || undefined,
-          subject: `Payment Reminder: Invoice ${esc(invoice.invoiceNumber)}`,
+          // Subjects are plain text, not HTML — escaping here would render
+          // literal entities in the mail client.
+          subject: `Payment Reminder: Invoice ${invoice.invoiceNumber}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2 style="color: #1e40af;">Payment Reminder</h2>
@@ -1511,23 +1773,27 @@ class InvoiceService {
                 <li>Due Date: ${esc(formatInvoiceDate(invoice.dueDate))}</li>
                 <li>Amount Due: ${formatInvoiceMoney(invoice.balanceDue)}</li>
               </ul>
-              ${publicUrl ? `
+              ${
+                publicUrl
+                  ? `
               <p style="margin: 20px 0;">
                 <a href="${esc(publicUrl)}" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View invoice online</a>
-              </p>` : ''}
+              </p>`
+                  : ""
+              }
               <p>Please arrange payment at your earliest convenience.</p>
               <p style="color: #666; font-size: 12px; margin-top: 20px;">
                 This is an automated reminder. If you have already made payment, please disregard this message.
               </p>
             </div>
           `,
-          text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: ${formatInvoiceMoney(invoice.balanceDue)}\nDue Date: ${formatInvoiceDate(invoice.dueDate)}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ''}\nPlease arrange payment at your earliest convenience.`,
-          purpose: 'invoice-reminder',
+          text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: ${formatInvoiceMoney(invoice.balanceDue)}\nDue Date: ${formatInvoiceDate(invoice.dueDate)}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ""}\nPlease arrange payment at your earliest convenience.`,
+          purpose: "invoice-reminder",
           relatedId: id,
         });
         emailQueued = true;
       } catch (error) {
-        console.error('Failed to queue invoice reminder email:', error);
+        console.error("Failed to queue invoice reminder email:", error);
       }
     }
 
@@ -1552,7 +1818,7 @@ class InvoiceService {
   async duplicateInvoice(tenantId: string, id: string): Promise<string> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
-      throw new Error('Invoice not found');
+      throw new Error("Invoice not found");
     }
 
     const today = getTodayTL();
@@ -1563,14 +1829,16 @@ class InvoiceService {
       customerId: invoice.customerId,
       issueDate: today,
       dueDate,
-      items: invoice.items.map(({ description, quantity, unitPrice, discount, vatRate }) => ({
-        description,
-        quantity,
-        unitPrice,
-        ...(discount !== undefined && { discount }),
-        ...(vatRate !== undefined && { vatRate }),
-        amount: lineNetAmount({ quantity, unitPrice, discount }),
-      })),
+      items: invoice.items.map(
+        ({ description, quantity, unitPrice, discount, vatRate }) => ({
+          description,
+          quantity,
+          unitPrice,
+          ...(discount !== undefined && { discount }),
+          ...(vatRate !== undefined && { vatRate }),
+          amount: lineNetAmount({ quantity, unitPrice, discount }),
+        }),
+      ),
       projectName: invoice.projectName,
       poNumber: invoice.poNumber,
       taxRate: invoice.taxRate,
@@ -1579,7 +1847,8 @@ class InvoiceService {
       templateId: invoice.templateId,
       paymentTermsDays: invoice.paymentTermsDays ?? null,
       paymentMethods: invoice.paymentMethods,
-      paymentAccountId: invoice.paymentAccount === null ? 'none' : invoice.paymentAccount?.id,
+      paymentAccountId:
+        invoice.paymentAccount === null ? "none" : invoice.paymentAccount?.id,
     };
 
     return this.createInvoice(tenantId, newInvoice);
@@ -1597,26 +1866,28 @@ class InvoiceService {
     tenantId: string,
     invoiceId: string,
     payment: PaymentFormData,
-    userId?: string
+    userId?: string,
   ): Promise<string> {
     const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
 
     // Check if chart of accounts is set up (read BEFORE transaction)
     const accounts = await accountService.getAllAccounts(tenantId);
     const hasAccounts = accounts.length > 0;
-    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+    let resolvedAccounts:
+      | Record<string, { id: string; name: string }>
+      | undefined;
 
     if (hasAccounts) {
       // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
-      const cashCode = payment.method === 'cash' ? '1110' : '1120';
+      const cashCode = payment.method === "cash" ? "1110" : "1120";
       const [cashAccount, arAccount] = await Promise.all([
         accountService.getAccountByCode(tenantId, cashCode),
-        accountService.getAccountByCode(tenantId, '1210'),
+        accountService.getAccountByCode(tenantId, "1210"),
       ]);
       if (cashAccount?.id && arAccount?.id) {
         resolvedAccounts = {
           [cashCode]: { id: cashAccount.id, name: cashAccount.name },
-          '1210': { id: arAccount.id, name: arAccount.name },
+          "1210": { id: arAccount.id, name: arAccount.name },
         };
       }
     }
@@ -1631,26 +1902,28 @@ class InvoiceService {
       // Read invoice within transaction
       const invoiceDoc = await transaction.get(invoiceRef);
       if (!invoiceDoc.exists()) {
-        throw new Error('Invoice not found');
+        throw new Error("Invoice not found");
       }
 
       const invoice = { id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice;
 
-      if (invoice.status === 'cancelled') {
-        throw new Error('Cannot record payment for cancelled invoice');
+      if (invoice.status === "cancelled") {
+        throw new Error("Cannot record payment for cancelled invoice");
       }
-      if (invoice.status === 'paid') {
-        throw new Error('Cannot record payment for a fully paid invoice');
+      if (invoice.status === "paid") {
+        throw new Error("Cannot record payment for a fully paid invoice");
       }
       // Only invoices that have been issued can receive a payment. Crediting a
       // draft would post cash against AR that was never debited (AR is created
       // at send time), so reject any non-payable state — mirrors the payable
       // set the Invoices page uses to expose "Record payment".
       if (!OUTSTANDING_INVOICE_STATUSES.includes(invoice.status)) {
-        throw new Error('Cannot record payment for a draft invoice. Send the invoice first.');
+        throw new Error(
+          "Cannot record payment for a draft invoice. Send the invoice first.",
+        );
       }
       if (payment.date < invoice.issueDate) {
-        throw new Error('Payment date cannot be before the invoice issue date');
+        throw new Error("Payment date cannot be before the invoice issue date");
       }
       const nextPayment = calculateInvoicePaymentState(
         invoice.total || 0,
@@ -1678,11 +1951,11 @@ class InvoiceService {
         amountPaid: nextPayment.amountPaid,
         balanceDue: nextPayment.balanceDue,
         status: nextPayment.status,
-        paidAt: nextPayment.status === 'paid' ? serverTimestamp() : null,
+        paidAt: nextPayment.status === "paid" ? serverTimestamp() : null,
         updatedAt: serverTimestamp(),
       });
 
-      paidInFull = nextPayment.status === 'paid';
+      paidInFull = nextPayment.status === "paid";
       receiptAmount = nextPayment.amount;
       paidInvoice = invoice;
 
@@ -1699,9 +1972,9 @@ class InvoiceService {
             method: payment.method,
             reference: payment.reference,
           },
-          userId || 'system',
+          userId || "system",
           transaction,
-          resolvedAccounts
+          resolvedAccounts,
         );
       }
 
@@ -1713,9 +1986,14 @@ class InvoiceService {
     await this.syncPublicLink(tenantId, invoiceId);
     if (paidInFull && paidInvoice) {
       try {
-        await this.queueReceiptEmail(tenantId, paidInvoice, payment, receiptAmount);
+        await this.queueReceiptEmail(
+          tenantId,
+          paidInvoice,
+          payment,
+          receiptAmount,
+        );
       } catch (error) {
-        console.error('Failed to queue receipt email:', error);
+        console.error("Failed to queue receipt email:", error);
       }
     }
 
@@ -1730,12 +2008,14 @@ class InvoiceService {
     tenantId: string,
     invoice: Invoice,
     payment: PaymentFormData,
-    amount: number
+    amount: number,
   ): Promise<void> {
     if (!invoice.customerEmail) return;
 
-    const settings = await this.getSettings(tenantId).catch(() => ({} as Partial<InvoiceSettings>));
-    const companyName = settings.companyName || 'Your supplier';
+    const settings = await this.getSettings(tenantId).catch(
+      () => ({}) as Partial<InvoiceSettings>,
+    );
+    const companyName = settings.companyName || "Your supplier";
     const accent = resolveAccentColor(invoice, settings);
 
     // The captured invoice predates the payment write — re-fetch so the
@@ -1744,14 +2024,22 @@ class InvoiceService {
     try {
       const fresh =
         (await this.getInvoiceById(tenantId, invoice.id)) ??
-        ({ ...invoice, status: 'paid', amountPaid: invoice.total, balanceDue: 0 } as Invoice);
+        ({
+          ...invoice,
+          status: "paid",
+          amountPaid: invoice.total,
+          balanceDue: 0,
+        } as Invoice);
       publicUrl = (await this.ensureShareLink(tenantId, fresh, settings)).url;
     } catch (error) {
-      console.error('Failed to ensure public invoice link for receipt:', error);
+      console.error("Failed to ensure public invoice link for receipt:", error);
     }
 
     const esc = (value: string | undefined | null) =>
-      (value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      (value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 
     const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#1f2937;">
@@ -1765,23 +2053,27 @@ class InvoiceService {
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin-bottom:20px;font-weight:700;color:#15803d;">
             PAID — ${formatInvoiceMoney(invoice.total)} · Balance due: ${formatInvoiceMoney(0)}
           </div>
-          ${publicUrl ? `
+          ${
+            publicUrl
+              ? `
           <p style="margin:0 0 20px;">
             <a href="${esc(publicUrl)}" style="display:inline-block;background:${accent};color:#ffffff;text-decoration:none;font-weight:700;padding:10px 24px;border-radius:8px;">View receipt online</a>
-          </p>` : ''}
+          </p>`
+              : ""
+          }
           <p style="font-size:12px;color:#9ca3af;margin:20px 0 0;">
-            ${settings.companyEmail ? `Questions? Contact us at ${esc(settings.companyEmail)}.` : 'Questions? Reply to this email.'}
+            ${settings.companyEmail ? `Questions? Contact us at ${esc(settings.companyEmail)}.` : "Questions? Reply to this email."}
           </p>
         </div>
       </div>`;
 
     const text = [
       `Payment received — thank you!`,
-      '',
+      "",
       `We received your payment of ${formatInvoiceMoney(amount)} on ${formatInvoiceDate(payment.date)}.`,
       `Invoice ${invoice.invoiceNumber} from ${companyName} is now fully paid (${formatInvoiceMoney(invoice.total)}).`,
-      ...(publicUrl ? ['', `View receipt online: ${publicUrl}`] : []),
-    ].join('\n');
+      ...(publicUrl ? ["", `View receipt online: ${publicUrl}`] : []),
+    ].join("\n");
 
     await notificationService.queueEmail({
       tenantId,
@@ -1791,7 +2083,7 @@ class InvoiceService {
       subject: `Payment received — Invoice ${invoice.invoiceNumber} is paid`,
       html,
       text,
-      purpose: 'receipt',
+      purpose: "receipt",
       relatedId: invoice.id,
     });
   }
@@ -1800,22 +2092,34 @@ class InvoiceService {
    * Get payments for an invoice
    * (sorted client-side — where + orderBy would need a composite index)
    */
-  async getPaymentsForInvoice(tenantId: string, invoiceId: string): Promise<PaymentReceived[]> {
+  async getPaymentsForInvoice(
+    tenantId: string,
+    invoiceId: string,
+  ): Promise<PaymentReceived[]> {
     const q = query(
       this.paymentsRef(tenantId),
-      where('invoiceId', '==', invoiceId)
+      where("invoiceId", "==", invoiceId),
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map(mapPayment).sort((a, b) => (a.date < b.date ? 1 : -1));
+    return querySnapshot.docs
+      .map(mapPayment)
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
   }
 
   /**
    * Get all payments
    */
-  async getAllPayments(tenantId: string, maxResults: number = 500): Promise<PaymentReceived[]> {
+  async getAllPayments(
+    tenantId: string,
+    maxResults: number = 500,
+  ): Promise<PaymentReceived[]> {
     const querySnapshot = await getDocs(
-      query(this.paymentsRef(tenantId), orderBy('date', 'desc'), limit(maxResults))
+      query(
+        this.paymentsRef(tenantId),
+        orderBy("date", "desc"),
+        limit(maxResults),
+      ),
     );
 
     return querySnapshot.docs.map(mapPayment);
@@ -1829,9 +2133,9 @@ class InvoiceService {
   ): Promise<PaymentReceived[]> {
     const candidateQuery = query(
       this.paymentsRef(tenantId),
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-      orderBy('date', 'desc'),
+      where("date", ">=", startDate),
+      where("date", "<=", endDate),
+      orderBy("date", "desc"),
       limit(maxResults),
     );
 
@@ -1858,14 +2162,14 @@ class InvoiceService {
     const settings: InvoiceSettings = docSnap.exists()
       ? (docSnap.data() as InvoiceSettings)
       : {
-          prefix: 'INV',
+          prefix: "INV",
           nextNumber: 1,
           defaultTaxRate: 0,
-          defaultTerms: 'Payment due within 30 days',
-          defaultNotes: 'Thank you for your business',
+          defaultTerms: "Payment due within 30 days",
+          defaultNotes: "Thank you for your business",
           defaultDueDays: 30,
-          companyName: '',
-          companyAddress: '',
+          companyName: "",
+          companyAddress: "",
         };
 
     const missingCompanyInfo =
@@ -1879,24 +2183,46 @@ class InvoiceService {
       try {
         const [configSnap, tenantSnap] = await Promise.all([
           getDoc(doc(db, paths.settings(tenantId))),
-          getDoc(doc(db, 'tenants', tenantId)),
+          getDoc(doc(db, "tenants", tenantId)),
         ]);
-        const company = (configSnap.exists() ? configSnap.data()?.companyDetails : undefined) ?? {};
-        const tenant = (tenantSnap.exists() ? tenantSnap.data() : undefined) ?? {};
+        const company =
+          (configSnap.exists()
+            ? configSnap.data()?.companyDetails
+            : undefined) ?? {};
+        const tenant =
+          (tenantSnap.exists() ? tenantSnap.data() : undefined) ?? {};
 
         settings.companyName =
-          settings.companyName || company.tradingName || company.legalName || tenant.tradingName || tenant.name || '';
+          settings.companyName ||
+          company.tradingName ||
+          company.legalName ||
+          tenant.tradingName ||
+          tenant.name ||
+          "";
         settings.companyAddress =
           settings.companyAddress ||
-          joinAddressParts([company.registeredAddress, company.city, company.country]) ||
+          joinAddressParts([
+            company.registeredAddress,
+            company.city,
+            company.country,
+          ]) ||
           joinAddressParts([tenant.address]) ||
-          '';
-        settings.companyPhone = settings.companyPhone || company.phone || tenant.phone || undefined;
-        settings.companyEmail = settings.companyEmail || company.email || undefined;
-        settings.companyTin = settings.companyTin || company.tinNumber || tenant.tinNumber || undefined;
+          "";
+        settings.companyPhone =
+          settings.companyPhone || company.phone || tenant.phone || undefined;
+        settings.companyEmail =
+          settings.companyEmail || company.email || undefined;
+        settings.companyTin =
+          settings.companyTin ||
+          company.tinNumber ||
+          tenant.tinNumber ||
+          undefined;
         settings.logoUrl = settings.logoUrl || company.logoUrl || undefined;
       } catch (error) {
-        console.warn('Could not read company profile for invoice settings fallback:', error);
+        console.warn(
+          "Could not read company profile for invoice settings fallback:",
+          error,
+        );
       }
     }
 
@@ -1906,7 +2232,10 @@ class InvoiceService {
   /**
    * Update invoice settings
    */
-  async updateSettings(tenantId: string, settings: Partial<InvoiceSettings>): Promise<boolean> {
+  async updateSettings(
+    tenantId: string,
+    settings: Partial<InvoiceSettings>,
+  ): Promise<boolean> {
     const settingsDocRef = this.settingsRef(tenantId);
     const docSnap = await getDoc(settingsDocRef);
 
@@ -1914,14 +2243,14 @@ class InvoiceService {
       // Create settings document
       await runTransaction(db, async (transaction) => {
         transaction.set(settingsDocRef, {
-          prefix: 'INV',
+          prefix: "INV",
           nextNumber: 1,
           defaultTaxRate: 0,
-          defaultTerms: 'Payment due within 30 days',
-          defaultNotes: 'Thank you for your business',
+          defaultTerms: "Payment due within 30 days",
+          defaultNotes: "Thank you for your business",
           defaultDueDays: 30,
-          companyName: '',
-          companyAddress: '',
+          companyName: "",
+          companyAddress: "",
           ...settings,
         });
       });
@@ -1943,22 +2272,32 @@ class InvoiceService {
   async getStats(tenantId: string): Promise<MoneyStats> {
     const now = new Date();
     const thisMonth = formatDateISO(now).slice(0, 7); // YYYY-MM
-    const lastMonth = formatDateISO(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
+    const lastMonth = formatDateISO(
+      new Date(now.getFullYear(), now.getMonth() - 1, 1),
+    ).slice(0, 7);
     const thisMonthStart = `${thisMonth}-01`;
-    const thisMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const thisMonthEnd = formatDateISO(
+      new Date(now.getFullYear(), now.getMonth() + 1, 0),
+    );
     const lastMonthStart = `${lastMonth}-01`;
-    const lastMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth(), 0));
+    const lastMonthEnd = formatDateISO(
+      new Date(now.getFullYear(), now.getMonth(), 0),
+    );
     const today = getTodayTL();
 
-    const [
-      draftSnapshot,
-      outstandingSnapshot,
-      paymentsSnapshot,
-    ] = await Promise.all([
-      getDocs(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
-      getDocs(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES))),
-      getDocs(query(this.paymentsRef(tenantId), orderBy('date', 'desc'))),
-    ]);
+    const [draftSnapshot, outstandingSnapshot, paymentsSnapshot] =
+      await Promise.all([
+        getDocs(
+          query(this.collectionRef(tenantId), where("status", "==", "draft")),
+        ),
+        getDocs(
+          query(
+            this.collectionRef(tenantId),
+            where("status", "in", OUTSTANDING_INVOICE_STATUSES),
+          ),
+        ),
+        getDocs(query(this.paymentsRef(tenantId), orderBy("date", "desc"))),
+      ]);
 
     let totalOutstanding = 0;
     let overdueAmount = 0;
@@ -1983,7 +2322,7 @@ class InvoiceService {
       const amount = Number(data.amount) || 0;
       totalRevenue = addMoney(totalRevenue, amount);
 
-      const paymentDate = typeof data.date === 'string' ? data.date : '';
+      const paymentDate = typeof data.date === "string" ? data.date : "";
       if (paymentDate >= thisMonthStart && paymentDate <= thisMonthEnd) {
         revenueThisMonth = addMoney(revenueThisMonth, amount);
       } else if (paymentDate >= lastMonthStart && paymentDate <= lastMonthEnd) {
@@ -2009,15 +2348,26 @@ class InvoiceService {
 
   async getTopCustomersByOutstanding(
     tenantId: string,
-    maxResults: number = 5
-  ): Promise<NonNullable<MoneyStats['topCustomers']>> {
+    maxResults: number = 5,
+  ): Promise<NonNullable<MoneyStats["topCustomers"]>> {
     const outstandingInvoices = await this.getOutstandingInvoices(tenantId);
     const now = new Date();
-    const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number; oldestInvoiceDays: number }>();
+    const customerBalances = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        outstanding: number;
+        invoiceCount: number;
+        oldestInvoiceDays: number;
+      }
+    >();
 
     outstandingInvoices.forEach((inv) => {
       const invoiceDate = parseDateISO(inv.issueDate);
-      const daysSinceIssue = Math.floor((now.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysSinceIssue = Math.floor(
+        (now.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
       const existing = customerBalances.get(inv.customerId) || {
         id: inv.customerId,
@@ -2028,7 +2378,10 @@ class InvoiceService {
       };
       existing.outstanding = addMoney(existing.outstanding, inv.balanceDue);
       existing.invoiceCount += 1;
-      existing.oldestInvoiceDays = Math.max(existing.oldestInvoiceDays, daysSinceIssue);
+      existing.oldestInvoiceDays = Math.max(
+        existing.oldestInvoiceDays,
+        daysSinceIssue,
+      );
       customerBalances.set(inv.customerId, existing);
     });
 
@@ -2047,27 +2400,32 @@ class InvoiceService {
     return runTransaction(db, async (transaction) => {
       const settingsDoc = await transaction.get(settingsDocRef);
 
-      let prefix = 'INV';
+      let prefix = "INV";
       let number = 1;
 
       if (!settingsDoc.exists()) {
-        transaction.set(settingsDocRef, {
-          prefix: 'INV',
-          nextNumber: 2,
-          defaultTaxRate: 0,
-          defaultTerms: 'Payment due within 30 days',
-          defaultNotes: 'Thank you for your business',
-          defaultDueDays: 30,
-          companyName: '',
-          companyAddress: '',
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+        transaction.set(
+          settingsDocRef,
+          {
+            prefix: "INV",
+            nextNumber: 2,
+            defaultTaxRate: 0,
+            defaultTerms: "Payment due within 30 days",
+            defaultNotes: "Thank you for your business",
+            defaultDueDays: 30,
+            companyName: "",
+            companyAddress: "",
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true },
+        );
       } else {
         const data = settingsDoc.data() as Partial<InvoiceSettings>;
-        prefix = data.prefix || 'INV';
-        number = (typeof data.nextNumber === 'number' && data.nextNumber > 0)
-          ? Math.floor(data.nextNumber)
-          : 1;
+        prefix = data.prefix || "INV";
+        number =
+          typeof data.nextNumber === "number" && data.nextNumber > 0
+            ? Math.floor(data.nextNumber)
+            : 1;
 
         transaction.update(settingsDocRef, {
           nextNumber: number + 1,
@@ -2075,15 +2433,15 @@ class InvoiceService {
         });
       }
 
-      return `${prefix}-${year}-${String(number).padStart(3, '0')}`;
+      return `${prefix}-${year}-${String(number).padStart(3, "0")}`;
     });
   }
 
   private generateShareToken(): string {
     const bytes = new Uint8Array(24);
     crypto.getRandomValues(bytes);
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    return Array.from(bytes, b => chars[b % chars.length]).join('');
+    const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    return Array.from(bytes, (b) => chars[b % chars.length]).join("");
   }
 
   /**
@@ -2106,7 +2464,7 @@ class InvoiceService {
       const batch = writeBatch(db);
       for (const invoice of overdue.slice(i, i + 499)) {
         batch.update(doc(db, paths.invoice(tenantId, invoice.id)), {
-          status: 'overdue',
+          status: "overdue",
           updatedAt: serverTimestamp(),
         });
       }

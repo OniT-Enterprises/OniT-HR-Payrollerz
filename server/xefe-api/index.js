@@ -2647,7 +2647,7 @@ router.put('/journal-entries/:id/post', async (req, res) => {
   } catch (error) {
     console.error('[journal-entries/post]', error);
     const status = error.message.includes('not found') ? 404 : error.message.includes('Cannot post') ? 400 : 500;
-    res.status(status).json({ success: false, message: error.message });
+    res.status(status).json({ success: false, message: status === 500 ? 'Internal server error' : error.message });
   }
 });
 
@@ -2740,7 +2740,7 @@ router.put('/journal-entries/:id/void', async (req, res) => {
   } catch (error) {
     console.error('[journal-entries/void]', error);
     const status = error.message.includes('not found') ? 404 : error.message.includes('Cannot void') ? 400 : 500;
-    res.status(status).json({ success: false, message: error.message });
+    res.status(status).json({ success: false, message: status === 500 ? 'Internal server error' : error.message });
   }
 });
 
@@ -3162,7 +3162,7 @@ router.put('/leave/requests/:id/approve', async (req, res) => {
     res.json({ success: true, message: 'Leave request approved' });
   } catch (error) {
     console.error('[leave/approve]', error);
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({ success: false, message: error.statusCode ? error.message : 'Internal server error' });
   }
 });
 
@@ -3219,7 +3219,7 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
     res.json({ success: true, message: 'Leave request rejected' });
   } catch (error) {
     console.error('[leave/reject]', error);
-    res.status(error.statusCode || 500).json({ success: false, message: error.message });
+    res.status(error.statusCode || 500).json({ success: false, message: error.statusCode ? error.message : 'Internal server error' });
   }
 });
 
@@ -4961,7 +4961,7 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
     console.error(`[${requestId}] Chat error:`, error.message);
     res.status(502).json({
       success: false,
-      message: error.message || 'Failed to communicate with AI gateway',
+      message: 'XefeBot is having trouble right now — please try again.',
       requestId,
     });
   }
@@ -5409,7 +5409,7 @@ app.post('/api/tenants/:tenantId/ai/compose', chatLimiter, authenticateFirebaseT
     res.json({ success: true, reply, requestId });
   } catch (error) {
     console.error(`[${requestId}] Compose error:`, error.message);
-    res.status(502).json({ success: false, message: error.message || 'Compose failed', requestId });
+    res.status(502).json({ success: false, message: 'AI compose is having trouble right now — please try again.', requestId });
   }
 });
 

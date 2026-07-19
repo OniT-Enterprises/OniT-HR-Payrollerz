@@ -3,7 +3,7 @@
  * Confirmation dialog for sending payment reminders
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,15 +13,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { invoiceService } from '@/services/invoiceService';
-import { useTenant } from '@/contexts/TenantContext';
-import type { Invoice } from '@/types/money';
-import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
-import { getDaysUntilIso } from '@/lib/payroll/payroll-schedule';
-import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
-import { Loader2, Bell, AlertTriangle } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { invoiceService } from "@/services/invoiceService";
+import { useTenant } from "@/contexts/TenantContext";
+import type { Invoice } from "@/types/money";
+import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
+import { getDaysUntilIso } from "@/lib/payroll/payroll-schedule";
+import { getEffectiveInvoiceStatus } from "@/lib/invoiceStatus";
+import { Loader2, Bell, AlertTriangle } from "lucide-react";
 
 interface SendReminderDialogProps {
   invoice: Invoice;
@@ -31,13 +31,23 @@ interface SendReminderDialogProps {
 }
 
 const fmtReminderCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  }).format(amount);
 
 const fmtReminderDate = (date: Date) =>
-  formatDateTL(date, { month: 'short', day: 'numeric', year: 'numeric' });
+  formatDateTL(date, { month: "short", day: "numeric", year: "numeric" });
 
 /** Invoice summary for reminder dialog */
-function ReminderInvoiceSummary({ invoice, isOverdue }: { invoice: Invoice; isOverdue: boolean }) {
+function ReminderInvoiceSummary({
+  invoice,
+  isOverdue,
+}: {
+  invoice: Invoice;
+  isOverdue: boolean;
+}) {
   return (
     <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
       <div className="flex justify-between">
@@ -47,16 +57,22 @@ function ReminderInvoiceSummary({ invoice, isOverdue }: { invoice: Invoice; isOv
       {invoice.amountPaid > 0 && (
         <div className="flex justify-between">
           <span className="text-muted-foreground">Amount Paid</span>
-          <span className="text-green-600">-{fmtReminderCurrency(invoice.amountPaid)}</span>
+          <span className="text-green-600">
+            -{fmtReminderCurrency(invoice.amountPaid)}
+          </span>
         </div>
       )}
       <div className="flex justify-between font-medium pt-1 border-t">
         <span>Balance Due</span>
-        <span className={isOverdue ? 'text-red-600' : ''}>{fmtReminderCurrency(invoice.balanceDue)}</span>
+        <span className={isOverdue ? "text-red-600" : ""}>
+          {fmtReminderCurrency(invoice.balanceDue)}
+        </span>
       </div>
       <div className="flex justify-between text-xs">
         <span className="text-muted-foreground">Due Date</span>
-        <span className={isOverdue ? 'text-red-600' : ''}>{fmtReminderDate(new Date(invoice.dueDate))}</span>
+        <span className={isOverdue ? "text-red-600" : ""}>
+          {fmtReminderDate(new Date(invoice.dueDate))}
+        </span>
       </div>
     </div>
   );
@@ -69,8 +85,12 @@ function OverdueWarning({ daysOverdue }: { daysOverdue: number }) {
     <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-sm">
       <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5" />
       <div className="text-red-700 dark:text-red-400">
-        <strong>{daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue</strong>
-        <p className="text-xs mt-0.5 opacity-80">Consider following up directly with the customer.</p>
+        <strong>
+          {daysOverdue} day{daysOverdue !== 1 ? "s" : ""} overdue
+        </strong>
+        <p className="text-xs mt-0.5 opacity-80">
+          Consider following up directly with the customer.
+        </p>
       </div>
     </div>
   );
@@ -81,8 +101,11 @@ function PreviousReminders({ invoice }: { invoice: Invoice }) {
   if (!invoice.reminderCount || invoice.reminderCount <= 0) return null;
   return (
     <div className="text-sm text-muted-foreground">
-      {invoice.reminderCount} reminder{invoice.reminderCount !== 1 ? 's' : ''} sent previously
-      {invoice.lastReminderAt && <span> · Last: {fmtReminderDate(invoice.lastReminderAt)}</span>}
+      {invoice.reminderCount} reminder{invoice.reminderCount !== 1 ? "s" : ""}{" "}
+      sent previously
+      {invoice.lastReminderAt && (
+        <span> · Last: {fmtReminderDate(invoice.lastReminderAt)}</span>
+      )}
     </div>
   );
 }
@@ -99,7 +122,7 @@ export function SendReminderDialog({
   const submitInFlight = useRef(false);
 
   const todayIso = getTodayTL();
-  const isOverdue = getEffectiveInvoiceStatus(invoice, todayIso) === 'overdue';
+  const isOverdue = getEffectiveInvoiceStatus(invoice, todayIso) === "overdue";
   const daysOverdue = isOverdue
     ? Math.max(0, -getDaysUntilIso(invoice.dueDate, todayIso))
     : 0;
@@ -109,13 +132,35 @@ export function SendReminderDialog({
     submitInFlight.current = true;
     try {
       setLoading(true);
-      await invoiceService.sendReminder(session.tid, invoice.id);
-      toast({ title: 'Reminder sent', description: `Payment reminder recorded for ${invoice.invoiceNumber}` });
+      // false = an email was needed but could not be queued (the reminder was
+      // NOT recorded) — don't claim success.
+      const recorded = await invoiceService.sendReminder(
+        session.tid,
+        invoice.id,
+      );
+      if (!recorded) {
+        toast({
+          title: "Reminder not sent",
+          description:
+            "The reminder email could not be queued. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Reminder sent",
+        description: `Payment reminder recorded for ${invoice.invoiceNumber}`,
+      });
       onReminderSent?.();
       onClose();
     } catch (error) {
-      console.error('Error sending reminder:', error);
-      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to send reminder', variant: 'destructive' });
+      console.error("Error sending reminder:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to send reminder",
+        variant: "destructive",
+      });
     } finally {
       submitInFlight.current = false;
       setLoading(false);
@@ -131,7 +176,8 @@ export function SendReminderDialog({
             Send Payment Reminder
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Send a payment reminder for invoice <strong>{invoice.invoiceNumber}</strong> to{' '}
+            Send a payment reminder for invoice{" "}
+            <strong>{invoice.invoiceNumber}</strong> to{" "}
             <strong>{invoice.customerName}</strong>.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -141,17 +187,23 @@ export function SendReminderDialog({
         <PreviousReminders invoice={invoice} />
 
         <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-          Note: This will record that a reminder was sent. You may need to contact the customer
-          directly via phone or email.
+          Note: This will record that a reminder was sent. You may need to
+          contact the customer directly via phone or email.
         </div>
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={handleSendReminder} disabled={loading}>
             {loading ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</>
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
             ) : (
-              <><Bell className="h-4 w-4 mr-2" />Send Reminder</>
+              <>
+                <Bell className="h-4 w-4 mr-2" />
+                Send Reminder
+              </>
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

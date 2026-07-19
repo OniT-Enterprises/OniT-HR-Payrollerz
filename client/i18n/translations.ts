@@ -2962,6 +2962,11 @@ export const translations = {
           "description": "Approve {{name}}'s {{type}} ({{days}} day(s))?",
           "confirm": "Approve & Notify"
         },
+        "overBalance": {
+          "title": "Beyond leave balance",
+          "description": "As an admin you can grant it anyway — the extra days are still recorded against the employee.",
+          "confirm": "Grant anyway"
+        },
         "notifyNotice": "{{name}} will be notified by email about this decision.",
         "reject": {
           "title": "Reject Leave Request",
@@ -10560,6 +10565,11 @@ export const translations = {
           "description": "Aprova {{type}} husi {{name}} (loron {{days}})?",
           "confirm": "Aprova & Avizu"
         },
+        "overBalance": {
+          "title": "Liu saldu lisensa",
+          "description": "Nu'udar administradór ita bele fó nafatin — loron extra sei rejista ba empregadu.",
+          "confirm": "Fó nafatin"
+        },
         "notifyNotice": "{{name}} sei simu avizu liuhusi email kona-ba desizaun ida ne'e.",
         "reject": {
           "title": "Rejeita Pedido Lisensa",
@@ -18157,6 +18167,11 @@ export const translations = {
           "title": "Aprovar Pedido de Licença?",
           "description": "Aprovar {{type}} de {{name}} ({{days}} dia(s))?",
           "confirm": "Aprovar e Notificar"
+        },
+        "overBalance": {
+          "title": "Além do saldo de licença",
+          "description": "Como administrador, pode concedê-la mesmo assim — os dias extra ficam registados para o trabalhador.",
+          "confirm": "Conceder mesmo assim"
         },
         "notifyNotice": "{{name}} será notificado por email sobre esta decisão.",
         "reject": {

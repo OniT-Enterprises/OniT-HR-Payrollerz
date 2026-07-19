@@ -2958,6 +2958,11 @@ const messages = {
         "description": "Approve {{name}}'s {{type}} ({{days}} day(s))?",
         "confirm": "Approve & Notify"
       },
+      "overBalance": {
+        "title": "Beyond leave balance",
+        "description": "As an admin you can grant it anyway — the extra days are still recorded against the employee.",
+        "confirm": "Grant anyway"
+      },
       "notifyNotice": "{{name}} will be notified by email about this decision.",
       "reject": {
         "title": "Reject Leave Request",

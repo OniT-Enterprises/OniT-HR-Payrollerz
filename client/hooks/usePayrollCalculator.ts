@@ -40,10 +40,18 @@ import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+import { holidayService } from "@/services/holidayService";
 import type { Employee } from "@/services/employeeService";
-import { payrollService, type EmployeePayrollYTD } from "@/services/payrollService";
+import {
+  payrollService,
+  type EmployeePayrollYTD,
+} from "@/services/payrollService";
 import type { AttendanceEmployeeSummary } from "@/services/attendanceService";
-import { leaveService, calculateWorkingDays, TL_LEAVE_TYPES } from "@/services/leaveService";
+import {
+  leaveService,
+  calculateWorkingDays,
+  TL_LEAVE_TYPES,
+} from "@/services/leaveService";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 
 import {
@@ -74,7 +82,9 @@ const EMPTY_COMMITTED_FINAL_PAY: Record<
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
 // INSS enrollment, and outside minimum-wage rules.
 function isShareholder(employee: Employee): boolean {
-  return (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder";
+  return (
+    (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder"
+  );
 }
 
 /**
@@ -120,15 +130,25 @@ export function resolveLeaverFinalPay(args: {
   committed: { serviceCompensation: number; subsidioAnual: number };
 }): { terminationDate: string | undefined; subsidioAnual: number } {
   const {
-    inPeriodTermination, monthlySalary, hireDate, asOfDate,
-    includeSubsidioAnual, subsidioConfig, committed,
+    inPeriodTermination,
+    monthlySalary,
+    hireDate,
+    asOfDate,
+    includeSubsidioAnual,
+    subsidioConfig,
+    committed,
   } = args;
 
   if (!inPeriodTermination) {
     return {
       terminationDate: undefined,
       subsidioAnual: includeSubsidioAnual
-        ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, subsidioConfig)
+        ? calculateSubsidioAnual(
+            monthlySalary,
+            hireDate,
+            asOfDate,
+            subsidioConfig,
+          )
         : 0,
     };
   }
@@ -141,8 +161,12 @@ export function resolveLeaverFinalPay(args: {
   );
   return {
     // Skip severance if it was already paid/committed in an earlier run.
-    terminationDate: committed.serviceCompensation > 0 ? undefined : inPeriodTermination,
-    subsidioAnual: maxMoney(0, subtractMoney(entitlement, committed.subsidioAnual)),
+    terminationDate:
+      committed.serviceCompensation > 0 ? undefined : inPeriodTermination,
+    subsidioAnual: maxMoney(
+      0,
+      subtractMoney(entitlement, committed.subsidioAnual),
+    ),
   };
 }
 
@@ -159,7 +183,9 @@ export function usePayrollCalculator({
   const { t } = useI18n();
   const showAdvancedTax = useAdvancedTax();
 
-  const [employeePayrollData, setEmployeePayrollData] = useState<EmployeePayrollData[]>([]);
+  const [employeePayrollData, setEmployeePayrollData] = useState<
+    EmployeePayrollData[]
+  >([]);
   // Mirror of employeePayrollData so the attendance sync can build the next
   // array and count matches synchronously (React batches the functional
   // updater, so a counter mutated inside it is still 0 when the toast reads it).
@@ -176,7 +202,9 @@ export function usePayrollCalculator({
     [],
   );
   const [payFrequency, setPayFrequency] = useState<TLPayFrequency>("monthly");
-  const [periodStart, setPeriodStart] = useState(initialPayrollDates.periodStart);
+  const [periodStart, setPeriodStart] = useState(
+    initialPayrollDates.periodStart,
+  );
   const [periodEnd, setPeriodEnd] = useState(initialPayrollDates.periodEnd);
   const [payDate, setPayDate] = useState(initialPayrollDates.payDate);
   const configuredScheduleApplied = useRef(false);
@@ -201,36 +229,49 @@ export function usePayrollCalculator({
     setPeriodEnd(dates.periodEnd);
     setPayDate(dates.payDate);
   }, [defaultPayDay, defaultPayFrequency]);
-  const calculationConfig = useMemo(() => payrollConfig ? ({
-    incomeTax: {
-      residentRate: payrollConfig.tax.residentRate / 100,
-      nonResidentRate: payrollConfig.tax.nonResidentRate / 100,
-      residentThreshold: payrollConfig.tax.residentThreshold,
-    },
-    inss: {
-      employeeRate: payrollConfig.socialSecurity.employeeRate / 100,
-      employerRate: payrollConfig.socialSecurity.employerRate / 100,
-    },
-    overtime: {
-      standard: payrollConfig.overtimeRates.standard,
-      sundayHoliday: payrollConfig.overtimeRates.sundayHoliday,
-      rounding: payrollConfig.hourlyRateConvention === 'fixed_190_round_up'
-        ? 'aggregate' as const
-        : 'per_component' as const,
-    },
-    hourlyRate: payrollConfig.hourlyRateConvention === 'fixed_190_round_up'
-      ? { monthlyHoursDivisor: 190, rounding: 'up' as const }
-      : undefined,
-    minimumWage: payrollConfig.minimumWage,
-    subsidioAnual: {
-      proRataForNewEmployees: payrollConfig.subsidioAnual?.proRataForNewEmployees ?? true,
-    },
-  }) : undefined, [payrollConfig]);
+  const calculationConfig = useMemo(
+    () =>
+      payrollConfig
+        ? {
+            incomeTax: {
+              residentRate: payrollConfig.tax.residentRate / 100,
+              nonResidentRate: payrollConfig.tax.nonResidentRate / 100,
+              residentThreshold: payrollConfig.tax.residentThreshold,
+            },
+            inss: {
+              employeeRate: payrollConfig.socialSecurity.employeeRate / 100,
+              employerRate: payrollConfig.socialSecurity.employerRate / 100,
+            },
+            overtime: {
+              standard: payrollConfig.overtimeRates.standard,
+              sundayHoliday: payrollConfig.overtimeRates.sundayHoliday,
+              rounding:
+                payrollConfig.hourlyRateConvention === "fixed_190_round_up"
+                  ? ("aggregate" as const)
+                  : ("per_component" as const),
+            },
+            hourlyRate:
+              payrollConfig.hourlyRateConvention === "fixed_190_round_up"
+                ? { monthlyHoursDivisor: 190, rounding: "up" as const }
+                : undefined,
+            minimumWage: payrollConfig.minimumWage,
+            subsidioAnual: {
+              proRataForNewEmployees:
+                payrollConfig.subsidioAnual?.proRataForNewEmployees ?? true,
+            },
+          }
+        : undefined,
+    [payrollConfig],
+  );
   const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
   const ytdQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
-    queryFn: () => payrollService.records.getTenantYTDTotals(tenantId, payrollYear),
-    enabled: Boolean(tenantId) && Number.isInteger(payrollYear) && activeEmployees.length > 0,
+    queryFn: () =>
+      payrollService.records.getTenantYTDTotals(tenantId, payrollYear),
+    enabled:
+      Boolean(tenantId) &&
+      Number.isInteger(payrollYear) &&
+      activeEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
   const ytdByEmployee = ytdQuery.data ?? EMPTY_YTD_BY_EMPLOYEE;
@@ -241,7 +282,9 @@ export function usePayrollCalculator({
   } = useAttendanceSummary(periodStart, periodEnd);
 
   // Compliance states
-  const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
+  const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(
+    new Set(),
+  );
   const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
   const attendanceSyncRequestRef = useRef(0);
 
@@ -255,7 +298,10 @@ export function usePayrollCalculator({
     );
   }, [terminatedEmployees, periodStart, periodEnd]);
   const rosterEmployees = useMemo(
-    () => (inPeriodLeavers.length > 0 ? [...activeEmployees, ...inPeriodLeavers] : activeEmployees),
+    () =>
+      inPeriodLeavers.length > 0
+        ? [...activeEmployees, ...inPeriodLeavers]
+        : activeEmployees,
     [activeEmployees, inPeriodLeavers],
   );
 
@@ -264,93 +310,143 @@ export function usePayrollCalculator({
   // runs over the same period (e.g. a regular run plus a separate 13th-month
   // run). Only fetched when the roster actually contains a leaver.
   const committedFinalPayQuery = useQuery({
-    queryKey: ["tenants", tenantId, "committedFinalPay", payrollYear],
-    queryFn: () => payrollService.records.getCommittedFinalPayByEmployee(tenantId, payrollYear),
-    enabled: Boolean(tenantId) && Number.isInteger(payrollYear) && inPeriodLeavers.length > 0,
+    // Nested under the 'payrollRecords' prefix ON PURPOSE: usePayroll's
+    // run/record mutations invalidate ['tenants', tid, 'payrollRecords'], so
+    // finalizing a run refreshes this immediately — otherwise the 5-minute
+    // staleTime would let a second run over the same period re-pay a leaver's
+    // severance from a stale "nothing committed" map.
+    queryKey: [
+      "tenants",
+      tenantId,
+      "payrollRecords",
+      "committedFinalPay",
+      payrollYear,
+    ],
+    queryFn: () =>
+      payrollService.records.getCommittedFinalPayByEmployee(
+        tenantId,
+        payrollYear,
+      ),
+    enabled:
+      Boolean(tenantId) &&
+      Number.isInteger(payrollYear) &&
+      inPeriodLeavers.length > 0,
     staleTime: 5 * 60 * 1000,
   });
-  const committedFinalPay = committedFinalPayQuery.data ?? EMPTY_COMMITTED_FINAL_PAY;
+  const committedFinalPay =
+    committedFinalPayQuery.data ?? EMPTY_COMMITTED_FINAL_PAY;
 
   // ─── Core calculation ───────────────────────────────────────────
-  const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
-    const monthlySalary = data.employee.compensation.monthlySalary || 0;
-    const hourlyRate = calculateHourlyRate(monthlySalary, calculationConfig?.hourlyRate);
-    const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
-    const monthsWorkedThisYear = asOfDate.getMonth() + 1;
-    const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-    // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
-    // once — resolveLeaverFinalPay nets both against what's already committed.
-    const { terminationDate: engineTerminationDate, subsidioAnual } = resolveLeaverFinalPay({
-      inPeriodTermination: getInPeriodTermination(data.employee, periodStart, periodEnd),
-      monthlySalary,
-      hireDate,
-      asOfDate,
+  const calculateForEmployee = useCallback(
+    (data: EmployeePayrollData): TLPayrollResult | null => {
+      const monthlySalary = data.employee.compensation.monthlySalary || 0;
+      const hourlyRate = calculateHourlyRate(
+        monthlySalary,
+        calculationConfig?.hourlyRate,
+      );
+      const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+      const monthsWorkedThisYear = asOfDate.getMonth() + 1;
+      const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
+      // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
+      // once — resolveLeaverFinalPay nets both against what's already committed.
+      const { terminationDate: engineTerminationDate, subsidioAnual } =
+        resolveLeaverFinalPay({
+          inPeriodTermination: getInPeriodTermination(
+            data.employee,
+            periodStart,
+            periodEnd,
+          ),
+          monthlySalary,
+          hireDate,
+          asOfDate,
+          includeSubsidioAnual,
+          subsidioConfig: calculationConfig?.subsidioAnual,
+          committed: committedFinalPay[data.employee.id || ""] ?? {
+            serviceCompensation: 0,
+            subsidioAnual: 0,
+          },
+        });
+      // Per-employee frequency overrides the run-level selector
+      const effectiveFrequency =
+        data.employee.compensation.payFrequency ?? payFrequency;
+      const totalPeriodsInMonth = getPayPeriodsInPayMonth(
+        payDate,
+        effectiveFrequency,
+      );
+      const isResident =
+        data.employee.compensation?.isResident ??
+        (data.employee.documents?.residencyStatus
+          ? data.employee.documents.residencyStatus !== "foreign_worker"
+          : true);
+      const ytd = ytdByEmployee[data.employee.id || ""];
+
+      const input: TLPayrollInput = {
+        employeeId: data.employee.id || "",
+        monthlySalary,
+        payFrequency: effectiveFrequency,
+        totalPeriodsInMonth,
+        isHourly: false,
+        hourlyRate,
+        regularHours: data.regularHours,
+        overtimeHours: data.overtimeHours,
+        nightShiftHours: data.nightShiftHours,
+        holidayHours: data.holidayHours,
+        restDayHours: data.restDayHours,
+        absenceHours: data.absenceHours,
+        lateArrivalMinutes: data.lateArrivalMinutes,
+        sickDaysUsed: data.sickDays,
+        ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
+        bonus: data.bonus,
+        bonusINSSCategory: data.bonusINSSCategory,
+        commission: 0,
+        perDiem: data.perDiem,
+        foodAllowance: 0,
+        transportAllowance: data.allowances,
+        otherEarnings: 0,
+        subsidioAnual,
+        // Fires the engine's Art. 56 service-compensation earning for a leaver's
+        // final run only, and only if not already committed in an earlier run.
+        terminationDate: engineTerminationDate,
+        nonCashBenefits: 0,
+        nonCashBenefitINSSCategory: null,
+        taxInfo: {
+          isResident,
+          hasTaxExemption: isShareholder(data.employee),
+          inssExempt: isShareholder(data.employee),
+        },
+        loanRepayment: 0,
+        advanceRepayment: 0,
+        courtOrders: 0,
+        otherDeductions: 0,
+        ytdGrossPay: ytd?.ytdGrossPay || 0,
+        ytdIncomeTax: ytd?.ytdIncomeTax || 0,
+        ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
+        monthsWorkedThisYear,
+        hireDate,
+      };
+
+      try {
+        return calculateTLPayroll(input, calculationConfig);
+      } catch (error) {
+        console.error(
+          "Calculation error for employee:",
+          data.employee.id,
+          error,
+        );
+        return null;
+      }
+    },
+    [
+      payFrequency,
+      payDate,
+      periodStart,
+      periodEnd,
       includeSubsidioAnual,
-      subsidioConfig: calculationConfig?.subsidioAnual,
-      committed: committedFinalPay[data.employee.id || ""] ?? { serviceCompensation: 0, subsidioAnual: 0 },
-    });
-    // Per-employee frequency overrides the run-level selector
-    const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
-    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
-    const isResident =
-      data.employee.compensation?.isResident ??
-      (data.employee.documents?.residencyStatus
-        ? data.employee.documents.residencyStatus !== "foreign_worker"
-        : true);
-    const ytd = ytdByEmployee[data.employee.id || ""];
-
-    const input: TLPayrollInput = {
-      employeeId: data.employee.id || "",
-      monthlySalary,
-      payFrequency: effectiveFrequency,
-      totalPeriodsInMonth,
-      isHourly: false,
-      hourlyRate,
-      regularHours: data.regularHours,
-      overtimeHours: data.overtimeHours,
-      nightShiftHours: data.nightShiftHours,
-      holidayHours: data.holidayHours,
-      restDayHours: data.restDayHours,
-      absenceHours: data.absenceHours,
-      lateArrivalMinutes: data.lateArrivalMinutes,
-      sickDaysUsed: data.sickDays,
-      ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
-      bonus: data.bonus,
-      bonusINSSCategory: data.bonusINSSCategory,
-      commission: 0,
-      perDiem: data.perDiem,
-      foodAllowance: 0,
-      transportAllowance: data.allowances,
-      otherEarnings: 0,
-      subsidioAnual,
-      // Fires the engine's Art. 56 service-compensation earning for a leaver's
-      // final run only, and only if not already committed in an earlier run.
-      terminationDate: engineTerminationDate,
-      nonCashBenefits: 0,
-      nonCashBenefitINSSCategory: null,
-      taxInfo: {
-        isResident,
-        hasTaxExemption: isShareholder(data.employee),
-        inssExempt: isShareholder(data.employee),
-      },
-      loanRepayment: 0,
-      advanceRepayment: 0,
-      courtOrders: 0,
-      otherDeductions: 0,
-      ytdGrossPay: ytd?.ytdGrossPay || 0,
-      ytdIncomeTax: ytd?.ytdIncomeTax || 0,
-      ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
-      monthsWorkedThisYear,
-      hireDate,
-    };
-
-    try {
-      return calculateTLPayroll(input, calculationConfig);
-    } catch (error) {
-      console.error("Calculation error for employee:", data.employee.id, error);
-      return null;
-    }
-  }, [payFrequency, payDate, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, committedFinalPay, calculationConfig]);
+      ytdByEmployee,
+      committedFinalPay,
+      calculationConfig,
+    ],
+  );
 
   const latestCalculatorRef = useRef(calculateForEmployee);
   const [appliedCalculator, setAppliedCalculator] = useState(
@@ -370,7 +466,8 @@ export function usePayrollCalculator({
     }
 
     const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-    const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
+    const defaultHours =
+      monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
 
     const initialData = rosterEmployees.map((employee): EmployeePayrollData => {
       const hireDate = employee.jobDetails.hireDate || "";
@@ -469,83 +566,92 @@ export function usePayrollCalculator({
 
   // ─── Input change with validation ──────────────────────────────
 
-  const handleInputChange = useCallback((
-    employeeId: string,
-    field: string,
-    value: number
-  ) => {
-    if (!Number.isFinite(value)) return;
+  const handleInputChange = useCallback(
+    (employeeId: string, field: string, value: number) => {
+      if (!Number.isFinite(value)) return;
 
-    const hourFields = ["regularHours", "overtimeHours", "nightShiftHours", "holidayHours", "restDayHours"];
-    const moneyFields = ["bonus", "perDiem", "allowances"];
+      const hourFields = [
+        "regularHours",
+        "overtimeHours",
+        "nightShiftHours",
+        "holidayHours",
+        "restDayHours",
+      ];
+      const moneyFields = ["bonus", "perDiem", "allowances"];
 
-    if (hourFields.includes(field)) {
-      if (value < 0 || value > 744) return;
-    }
-    if (moneyFields.includes(field)) {
-      if (value < 0 || value > 100000) return;
-    }
+      if (hourFields.includes(field)) {
+        if (value < 0 || value > 744) return;
+      }
+      if (moneyFields.includes(field)) {
+        if (value < 0 || value > 100000) return;
+      }
 
-    setEmployeePayrollData((prev) =>
-      prev.map((d) => {
-        if (d.employee.id !== employeeId) return d;
+      setEmployeePayrollData((prev) =>
+        prev.map((d) => {
+          if (d.employee.id !== employeeId) return d;
 
-        const updated = { ...d, [field]: value };
-        // Simple flow never shows the INSS category select, so a paid bonus is
-        // auto-classified as individual performance — DL 20/2017 Art. 8's
-        // contributable case, the conservative default (never under-remits
-        // INSS). Accountants (advanced mode) must classify it themselves.
-        if (field === "bonus" && !showAdvancedTax) {
-          updated.bonusINSSCategory = value > 0
-            ? (d.bonusINSSCategory ?? "individual_performance")
-            : null;
-        }
-        const isEdited = checkIsEdited(updated);
-        const withEdit = { ...updated, isEdited };
-        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
-      })
-    );
-  }, [calculateForEmployee, showAdvancedTax]);
+          const updated = { ...d, [field]: value };
+          // Simple flow never shows the INSS category select, so a paid bonus is
+          // auto-classified as individual performance — DL 20/2017 Art. 8's
+          // contributable case, the conservative default (never under-remits
+          // INSS). Accountants (advanced mode) must classify it themselves.
+          if (field === "bonus" && !showAdvancedTax) {
+            updated.bonusINSSCategory =
+              value > 0
+                ? (d.bonusINSSCategory ?? "individual_performance")
+                : null;
+          }
+          const isEdited = checkIsEdited(updated);
+          const withEdit = { ...updated, isEdited };
+          return { ...withEdit, calculation: calculateForEmployee(withEdit) };
+        }),
+      );
+    },
+    [calculateForEmployee, showAdvancedTax],
+  );
 
-  const handleBonusCategoryChange = useCallback((
-    employeeId: string,
-    category: TLBonusINSSCategory,
-  ) => {
-    setEmployeePayrollData((previous) =>
-      previous.map((data) => {
-        if (data.employee.id !== employeeId) return data;
-        const updated = { ...data, bonusINSSCategory: category };
-        const withEdit = { ...updated, isEdited: checkIsEdited(updated) };
-        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
-      }),
-    );
-  }, [calculateForEmployee]);
+  const handleBonusCategoryChange = useCallback(
+    (employeeId: string, category: TLBonusINSSCategory) => {
+      setEmployeePayrollData((previous) =>
+        previous.map((data) => {
+          if (data.employee.id !== employeeId) return data;
+          const updated = { ...data, bonusINSSCategory: category };
+          const withEdit = { ...updated, isEdited: checkIsEdited(updated) };
+          return { ...withEdit, calculation: calculateForEmployee(withEdit) };
+        }),
+      );
+    },
+    [calculateForEmployee],
+  );
 
   // ─── Reset row ──────────────────────────────────────────────────
 
-  const handleResetRow = useCallback((employeeId: string) => {
-    setEmployeePayrollData((prev) =>
-      prev.map((d) => {
-        if (d.employee.id !== employeeId) return d;
-        const reset = {
-          ...d,
-          regularHours: d.originalValues.regularHours,
-          overtimeHours: d.originalValues.overtimeHours,
-          nightShiftHours: d.originalValues.nightShiftHours,
-          holidayHours: d.originalValues.holidayHours,
-          restDayHours: d.originalValues.restDayHours,
-          absenceHours: d.originalValues.absenceHours,
-          lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
-          bonus: d.originalValues.bonus,
-          bonusINSSCategory: d.originalValues.bonusINSSCategory,
-          perDiem: d.originalValues.perDiem,
-          allowances: d.originalValues.allowances,
-          isEdited: false,
-        };
-        return { ...reset, calculation: calculateForEmployee(reset) };
-      })
-    );
-  }, [calculateForEmployee]);
+  const handleResetRow = useCallback(
+    (employeeId: string) => {
+      setEmployeePayrollData((prev) =>
+        prev.map((d) => {
+          if (d.employee.id !== employeeId) return d;
+          const reset = {
+            ...d,
+            regularHours: d.originalValues.regularHours,
+            overtimeHours: d.originalValues.overtimeHours,
+            nightShiftHours: d.originalValues.nightShiftHours,
+            holidayHours: d.originalValues.holidayHours,
+            restDayHours: d.originalValues.restDayHours,
+            absenceHours: d.originalValues.absenceHours,
+            lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
+            bonus: d.originalValues.bonus,
+            bonusINSSCategory: d.originalValues.bonusINSSCategory,
+            perDiem: d.originalValues.perDiem,
+            allowances: d.originalValues.allowances,
+            isEdited: false,
+          };
+          return { ...reset, calculation: calculateForEmployee(reset) };
+        }),
+      );
+    },
+    [calculateForEmployee],
+  );
 
   // ─── Toggle row expansion ───────────────────────────────────────
 
@@ -617,26 +723,63 @@ export function usePayrollCalculator({
       return;
     }
 
-    const summaryByEmployee = new Map(summaryRows.map((row) => [row.employeeId, row]));
+    const summaryByEmployee = new Map(
+      summaryRows.map((row) => [row.employeeId, row]),
+    );
 
-    // TL public holidays inside the pay period. Employees don't work these but
-    // are still paid for them, so they must NOT be booked as absence — and the
-    // leave-credit working-day count must exclude them to match the server's
-    // canonical leave duration (holiday-aware). Union the start/end years in
-    // case a period straddles a year boundary.
+    // Holidays inside the pay period: the national TL list MERGED with the
+    // tenant's overrides (tenants/{tid}/holidays), exactly like the server's
+    // canonical leave-duration calculation — a company holiday the tenant
+    // added must not dock absence, and a national holiday they removed (staff
+    // work it) must. Union the start/end years in case a period straddles a
+    // year boundary.
     const holidayYears = Array.from(
       new Set([periodStart.slice(0, 4), periodEnd.slice(0, 4)].map(Number)),
     );
-    const periodHolidayDates = holidayYears
-      .flatMap((y) => getTLPublicHolidays(y).map((h) => h.date))
-      .filter((d) => d >= periodStart && d <= periodEnd);
-    // Hours the schedule loses to holidays: count only Mon–Sat (a holiday on
-    // the weekly rest day was never expected working time). Erring toward
-    // not-docking is deliberate — a wrongly-docked paid holiday is worse.
-    const holidayHoursInPeriod = periodHolidayDates.filter((d) => {
-      const weekday = new Date(`${d}T00:00:00`).getDay();
-      return weekday >= 1 && weekday <= 6;
-    }).length * TL_WORKING_HOURS.standardDailyHours;
+    const holidaySet = new Set(
+      holidayYears.flatMap((y) => getTLPublicHolidays(y).map((h) => h.date)),
+    );
+    try {
+      const overrides = (
+        await Promise.all(
+          holidayYears.map((y) =>
+            holidayService.listTenantHolidayOverrides(tenantId, y),
+          ),
+        )
+      ).flat();
+      if (attendanceSyncRequestRef.current !== requestId) return;
+      for (const override of overrides) {
+        if (override.isHoliday) holidaySet.add(override.date);
+        else holidaySet.delete(override.date);
+      }
+    } catch (error) {
+      if (attendanceSyncRequestRef.current !== requestId) return;
+      // Sync with the national list alone rather than aborting — losing one
+      // override mis-books a day; losing the whole sync loses everything.
+      console.error(
+        "Failed to load tenant holiday overrides for payroll sync:",
+        error,
+      );
+    }
+    const periodHolidayDates = [...holidaySet]
+      .filter((d) => d >= periodStart && d <= periodEnd)
+      .sort();
+    // Hours the schedule loses to one holiday: Mon–Fri are full standard days;
+    // Saturday carries only the remainder of the 44h week (44 − 5×8 = 4h), so
+    // a Saturday holiday must not credit a full day; Sunday (the weekly rest
+    // day) was never expected working time.
+    const saturdayHours = Math.max(
+      0,
+      TL_WORKING_HOURS.standardWeeklyHours -
+        5 * TL_WORKING_HOURS.standardDailyHours,
+    );
+    const holidayHoursForDate = (date: string): number => {
+      const weekday = new Date(`${date}T00:00:00`).getDay();
+      if (weekday === 0) return 0;
+      return weekday === 6
+        ? saturdayHours
+        : TL_WORKING_HOURS.standardDailyHours;
+    };
 
     // Approved leave overlapping the pay period. Without this, paid leave days
     // (zero recorded hours) would be docked as unpaid absence. Paid leave types
@@ -644,7 +787,11 @@ export function usePayrollCalculator({
     // pay rules apply; unpaid leave stays as absence.
     let leaveByEmployee: ReturnType<typeof computeLeaveCredits>;
     try {
-      const approvedLeave = await leaveService.getEmployeesOnLeave(tenantId, periodStart, periodEnd);
+      const approvedLeave = await leaveService.getEmployeesOnLeave(
+        tenantId,
+        periodStart,
+        periodEnd,
+      );
       if (attendanceSyncRequestRef.current !== requestId) return;
       leaveByEmployee = computeLeaveCredits(
         approvedLeave,
@@ -692,16 +839,32 @@ export function usePayrollCalculator({
       const nightShiftHours = Number((summary.nightHours ?? 0).toFixed(2));
       // Public holidays are paid non-working time — subtract them from the
       // expected baseline so a non-worked holiday is never docked as absence.
+      // Only holidays inside THIS employee's employment window count: days
+      // before a mid-period hire or after a leaver's termination are docked
+      // as absence in full (that's how the salary is prorated), and a holiday
+      // falling there must stay docked with them.
+      const hireDate = data.employee.jobDetails.hireDate || "";
+      const employmentStart =
+        hireDate && hireDate > periodStart ? hireDate : periodStart;
+      const employmentEnd =
+        getInPeriodTermination(data.employee, periodStart, periodEnd) ??
+        periodEnd;
+      const holidayHoursInWindow = periodHolidayDates
+        .filter((d) => d >= employmentStart && d <= employmentEnd)
+        .reduce((sum, d) => sum + holidayHoursForDate(d), 0);
       const expectedRegularHours = Math.max(
         0,
-        data.originalValues.regularHours - holidayHoursInPeriod,
+        data.originalValues.regularHours - holidayHoursInWindow,
       );
       const credit = leaveByEmployee.get(employeeId);
       const paidLeaveHours = credit?.paidLeaveHours ?? 0;
       const sickDays = credit?.sickDays ?? 0;
       if (paidLeaveHours > 0 || sickDays > 0) leaveCreditedCount += 1;
       const absenceHours = Number(
-        Math.max(0, expectedRegularHours - regularHours - paidLeaveHours).toFixed(2)
+        Math.max(
+          0,
+          expectedRegularHours - regularHours - paidLeaveHours,
+        ).toFixed(2),
       );
       const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
 
@@ -734,7 +897,9 @@ export function usePayrollCalculator({
               count: String(syncedCount),
               leaveCount: String(leaveCreditedCount),
             })
-          : t("runPayroll.toastSyncedAttendance", { count: String(syncedCount) }),
+          : t("runPayroll.toastSyncedAttendance", {
+              count: String(syncedCount),
+            }),
     });
     finishSync();
   }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary]);
@@ -758,17 +923,27 @@ export function usePayrollCalculator({
   // ─── Totals ─────────────────────────────────────────────────────
 
   const totals = useMemo(() => {
-    const includedData = employeePayrollData
-      .filter(data => !excludedEmployees.has(data.employee.id || "") && data.calculation);
+    const includedData = employeePayrollData.filter(
+      (data) =>
+        !excludedEmployees.has(data.employee.id || "") && data.calculation,
+    );
 
     return {
-      grossPay: sumMoney(includedData.map(d => d.calculation!.grossPay)),
-      totalDeductions: sumMoney(includedData.map(d => d.calculation!.totalDeductions)),
-      netPay: sumMoney(includedData.map(d => d.calculation!.netPay)),
-      incomeTax: sumMoney(includedData.map(d => d.calculation!.incomeTax)),
-      inssEmployee: sumMoney(includedData.map(d => d.calculation!.inssEmployee)),
-      inssEmployer: sumMoney(includedData.map(d => d.calculation!.inssEmployer)),
-      totalEmployerCost: sumMoney(includedData.map(d => d.calculation!.totalEmployerCost)),
+      grossPay: sumMoney(includedData.map((d) => d.calculation!.grossPay)),
+      totalDeductions: sumMoney(
+        includedData.map((d) => d.calculation!.totalDeductions),
+      ),
+      netPay: sumMoney(includedData.map((d) => d.calculation!.netPay)),
+      incomeTax: sumMoney(includedData.map((d) => d.calculation!.incomeTax)),
+      inssEmployee: sumMoney(
+        includedData.map((d) => d.calculation!.inssEmployee),
+      ),
+      inssEmployer: sumMoney(
+        includedData.map((d) => d.calculation!.inssEmployer),
+      ),
+      totalEmployerCost: sumMoney(
+        includedData.map((d) => d.calculation!.totalEmployerCost),
+      ),
     };
   }, [employeePayrollData, excludedEmployees]);
 
@@ -779,7 +954,11 @@ export function usePayrollCalculator({
   // ─── Warnings ───────────────────────────────────────────────────
 
   const payrollWarnings = useMemo(() => {
-    const warnings: { employeeName: string; message: string; type: "wage" | "hours" }[] = [];
+    const warnings: {
+      employeeName: string;
+      message: string;
+      type: "wage" | "hours";
+    }[] = [];
     const maxMonthlyOT = TL_WORKING_HOURS.maxOvertimePerWeek * 4;
     for (const d of employeePayrollData) {
       if (excludedEmployees.has(d.employee.id || "")) continue;
@@ -787,14 +966,36 @@ export function usePayrollCalculator({
       const salary = d.employee.compensation.monthlySalary || 0;
       const minimumWage = calculationConfig?.minimumWage ?? 115;
       if (salary > 0 && salary < minimumWage && !isShareholder(d.employee)) {
-        warnings.push({ employeeName: name, message: t("runPayroll.warningBelowMinWage", { salary: String(salary), min: String(minimumWage) }), type: "wage" });
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningBelowMinWage", {
+            salary: String(salary),
+            min: String(minimumWage),
+          }),
+          type: "wage",
+        });
       }
       if (d.overtimeHours > maxMonthlyOT) {
-        warnings.push({ employeeName: name, message: t("runPayroll.warningOTExceeds", { hours: String(d.overtimeHours), max: String(maxMonthlyOT), weekly: String(TL_WORKING_HOURS.maxOvertimePerWeek) }), type: "hours" });
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningOTExceeds", {
+            hours: String(d.overtimeHours),
+            max: String(maxMonthlyOT),
+            weekly: String(TL_WORKING_HOURS.maxOvertimePerWeek),
+          }),
+          type: "hours",
+        });
       }
-      const totalDailyHoursEquiv = (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22;
+      const totalDailyHoursEquiv =
+        (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22;
       if (totalDailyHoursEquiv > 12) {
-        warnings.push({ employeeName: name, message: t("runPayroll.warningExcessiveHours", { hours: totalDailyHoursEquiv.toFixed(1) }), type: "hours" });
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningExcessiveHours", {
+            hours: totalDailyHoursEquiv.toFixed(1),
+          }),
+          type: "hours",
+        });
       }
     }
     return warnings;
@@ -810,192 +1011,251 @@ export function usePayrollCalculator({
         d.employee.personalInfo.firstName.toLowerCase().includes(term) ||
         d.employee.personalInfo.lastName.toLowerCase().includes(term) ||
         d.employee.jobDetails.employeeId.toLowerCase().includes(term) ||
-        d.employee.jobDetails.department.toLowerCase().includes(term)
+        d.employee.jobDetails.department.toLowerCase().includes(term),
     );
   }, [employeePayrollData, searchTerm]);
 
   // ─── Included data helper ───────────────────────────────────────
 
-  const getIncludedData = useCallback(() =>
-    employeePayrollData
-      .filter((d) => d.calculation)
-      .filter((d) => !excludedEmployees.has(d.employee.id || "")),
-    [employeePayrollData, excludedEmployees]
+  const getIncludedData = useCallback(
+    () =>
+      employeePayrollData
+        .filter((d) => d.calculation)
+        .filter((d) => !excludedEmployees.has(d.employee.id || "")),
+    [employeePayrollData, excludedEmployees],
   );
 
   // ─── Validation ─────────────────────────────────────────────────
 
-  const validateAllEmployees = useCallback((includedData: EmployeePayrollData[]): string[] => {
-    const allErrors: string[] = [];
-    for (const data of includedData) {
-      const monthlySalary = data.employee.compensation.monthlySalary || 0;
-      const hourlyRate = calculateHourlyRate(monthlySalary, calculationConfig?.hourlyRate);
-      const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
-      const monthsWorkedThisYear = asOfDate.getMonth() + 1;
-      const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-      // Same once-only leaver resolution as calculateForEmployee (shared helper).
-      const { terminationDate: engineTerminationDate, subsidioAnual } = resolveLeaverFinalPay({
-        inPeriodTermination: getInPeriodTermination(data.employee, periodStart, periodEnd),
-        monthlySalary,
-        hireDate,
-        asOfDate,
-        includeSubsidioAnual,
-        subsidioConfig: calculationConfig?.subsidioAnual,
-        committed: committedFinalPay[data.employee.id || ""] ?? { serviceCompensation: 0, subsidioAnual: 0 },
-      });
-      const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
-      const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
-      const isResident =
-        data.employee.compensation?.isResident ??
-        (data.employee.documents?.residencyStatus
-          ? data.employee.documents.residencyStatus !== "foreign_worker"
-          : true);
-      const ytd = ytdByEmployee[data.employee.id || ""];
+  const validateAllEmployees = useCallback(
+    (includedData: EmployeePayrollData[]): string[] => {
+      const allErrors: string[] = [];
+      for (const data of includedData) {
+        const monthlySalary = data.employee.compensation.monthlySalary || 0;
+        const hourlyRate = calculateHourlyRate(
+          monthlySalary,
+          calculationConfig?.hourlyRate,
+        );
+        const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+        const monthsWorkedThisYear = asOfDate.getMonth() + 1;
+        const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
+        // Same once-only leaver resolution as calculateForEmployee (shared helper).
+        const { terminationDate: engineTerminationDate, subsidioAnual } =
+          resolveLeaverFinalPay({
+            inPeriodTermination: getInPeriodTermination(
+              data.employee,
+              periodStart,
+              periodEnd,
+            ),
+            monthlySalary,
+            hireDate,
+            asOfDate,
+            includeSubsidioAnual,
+            subsidioConfig: calculationConfig?.subsidioAnual,
+            committed: committedFinalPay[data.employee.id || ""] ?? {
+              serviceCompensation: 0,
+              subsidioAnual: 0,
+            },
+          });
+        const effectiveFrequency =
+          data.employee.compensation.payFrequency ?? payFrequency;
+        const totalPeriodsInMonth = getPayPeriodsInPayMonth(
+          payDate,
+          effectiveFrequency,
+        );
+        const isResident =
+          data.employee.compensation?.isResident ??
+          (data.employee.documents?.residencyStatus
+            ? data.employee.documents.residencyStatus !== "foreign_worker"
+            : true);
+        const ytd = ytdByEmployee[data.employee.id || ""];
 
-      const input: TLPayrollInput = {
-        employeeId: data.employee.id || "",
-        monthlySalary,
-        payFrequency: effectiveFrequency,
-        totalPeriodsInMonth,
-        isHourly: false,
-        hourlyRate,
-        regularHours: data.regularHours,
-        overtimeHours: data.overtimeHours,
-        nightShiftHours: data.nightShiftHours,
-        holidayHours: data.holidayHours,
-        restDayHours: data.restDayHours,
-        absenceHours: data.absenceHours,
-        lateArrivalMinutes: data.lateArrivalMinutes,
-        sickDaysUsed: data.sickDays,
-        ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
-        bonus: data.bonus,
-        bonusINSSCategory: data.bonusINSSCategory,
-        commission: 0,
-        perDiem: data.perDiem,
-        foodAllowance: 0,
-        transportAllowance: data.allowances,
-        otherEarnings: 0,
-        subsidioAnual,
-        terminationDate: engineTerminationDate,
-        nonCashBenefits: 0,
-        nonCashBenefitINSSCategory: null,
-        taxInfo: {
-          isResident,
-          hasTaxExemption: isShareholder(data.employee),
-          inssExempt: isShareholder(data.employee),
-        },
-        loanRepayment: 0,
-        advanceRepayment: 0,
-        courtOrders: 0,
-        otherDeductions: 0,
-        ytdGrossPay: ytd?.ytdGrossPay || 0,
-        ytdIncomeTax: ytd?.ytdIncomeTax || 0,
-        ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
-        monthsWorkedThisYear,
-        hireDate,
-      };
+        const input: TLPayrollInput = {
+          employeeId: data.employee.id || "",
+          monthlySalary,
+          payFrequency: effectiveFrequency,
+          totalPeriodsInMonth,
+          isHourly: false,
+          hourlyRate,
+          regularHours: data.regularHours,
+          overtimeHours: data.overtimeHours,
+          nightShiftHours: data.nightShiftHours,
+          holidayHours: data.holidayHours,
+          restDayHours: data.restDayHours,
+          absenceHours: data.absenceHours,
+          lateArrivalMinutes: data.lateArrivalMinutes,
+          sickDaysUsed: data.sickDays,
+          ytdSickDaysUsed: ytd?.ytdSickDaysUsed || 0,
+          bonus: data.bonus,
+          bonusINSSCategory: data.bonusINSSCategory,
+          commission: 0,
+          perDiem: data.perDiem,
+          foodAllowance: 0,
+          transportAllowance: data.allowances,
+          otherEarnings: 0,
+          subsidioAnual,
+          terminationDate: engineTerminationDate,
+          nonCashBenefits: 0,
+          nonCashBenefitINSSCategory: null,
+          taxInfo: {
+            isResident,
+            hasTaxExemption: isShareholder(data.employee),
+            inssExempt: isShareholder(data.employee),
+          },
+          loanRepayment: 0,
+          advanceRepayment: 0,
+          courtOrders: 0,
+          otherDeductions: 0,
+          ytdGrossPay: ytd?.ytdGrossPay || 0,
+          ytdIncomeTax: ytd?.ytdIncomeTax || 0,
+          ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
+          monthsWorkedThisYear,
+          hireDate,
+        };
 
-      const errors = validateTLPayrollInput(input, calculationConfig);
-      if (errors.length > 0) {
-        const name = `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`;
-        allErrors.push(...errors.map(e => `${name}: ${e}`));
+        const errors = validateTLPayrollInput(input, calculationConfig);
+        if (errors.length > 0) {
+          const name = `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`;
+          allErrors.push(...errors.map((e) => `${name}: ${e}`));
+        }
       }
-    }
-    return allErrors;
-  }, [payDate, payFrequency, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, committedFinalPay, calculationConfig]);
+      return allErrors;
+    },
+    [
+      payDate,
+      payFrequency,
+      periodStart,
+      periodEnd,
+      includeSubsidioAnual,
+      ytdByEmployee,
+      committedFinalPay,
+      calculationConfig,
+    ],
+  );
 
   // ─── Build payroll run / records ────────────────────────────────
 
-  const buildPayrollRun = useCallback((includedData: EmployeePayrollData[]): Omit<PayrollRun, "id"> => ({
-    tenantId,
-    periodStart,
-    periodEnd,
-    payDate,
-    payFrequency,
-    status: "draft",
-    totalGrossPay: totals.grossPay,
-    totalNetPay: totals.netPay,
-    totalDeductions: totals.totalDeductions,
-    totalEmployerTaxes: totals.inssEmployer,
-    totalEmployerContributions: 0,
-    employeeCount: includedData.length,
-    createdBy: userId,
-    notes: "",
-  }), [tenantId, periodStart, periodEnd, payDate, payFrequency, totals, userId]);
-
-  const buildPayrollRecords = useCallback((includedData: EmployeePayrollData[]): Omit<PayrollRecord, "id" | "payrollRunId">[] =>
-    includedData.map((d) => ({
+  const buildPayrollRun = useCallback(
+    (includedData: EmployeePayrollData[]): Omit<PayrollRun, "id"> => ({
       tenantId,
-      employeeId: d.employee.id || "",
-      employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
-      employeeNumber: d.employee.jobDetails.employeeId,
-      department: d.employee.jobDetails.department,
-      position: d.employee.jobDetails.position,
-      isResident:
-        d.employee.compensation?.isResident ??
-        (d.employee.documents?.residencyStatus
-          ? d.employee.documents.residencyStatus !== "foreign_worker"
-          : true),
-      regularHours: d.regularHours,
-      overtimeHours: d.overtimeHours,
-      doubleTimeHours: 0,
-      holidayHours: d.holidayHours,
-      ptoHoursUsed: 0,
-      sickHoursUsed: d.sickDays * 8,
-      hourlyRate: calculateHourlyRate(
-        d.employee.compensation.monthlySalary || 0,
-        calculationConfig?.hourlyRate,
-      ),
-      overtimeRate: calculationConfig?.overtime?.standard ?? TL_OVERTIME_RATES.standard,
-      earnings: d.calculation!.earnings.map((earning) => ({
-        type: (['regular','overtime','double_time','holiday','night_shift','rest_day','sick_pay','bonus','subsidio_anual','service_compensation','non_cash_benefit','commission','tip','reimbursement','allowance'].includes(earning.type)
-          ? earning.type
-          : ['per_diem','food_allowance','transport_allowance','housing_allowance','travel_allowance'].includes(earning.type)
-            ? 'allowance'
-            : 'other') as PayrollRecord['earnings'][number]['type'],
-        description: earning.description,
-        hours: earning.hours,
-        rate: earning.rate,
-        amount: earning.amount,
-      })),
-      totalGrossPay: d.calculation!.grossPay,
-      wagesPaid: d.calculation!.wagesPaid,
-      taxableIncome: d.calculation!.taxableIncome,
-      witTaxableAmount: d.calculation!.witTaxableAmount,
-      inssBase: d.calculation!.inssBase,
-      // Statutory filing generators (ATTL WIT + INSS) read these off the
-      // saved record and refuse to infer them — without them every filing
-      // for a wizard-created run fails its strict-reader guard.
-      incomeTax: d.calculation!.incomeTax,
-      inssEmployee: d.calculation!.inssEmployee,
-      inssEmployer: d.calculation!.inssEmployer,
-      deductions: d.calculation!.deductions.map((deduction) => ({
-        type: deduction.type as PayrollRecord['deductions'][number]['type'],
-        description: deduction.description,
-        amount: deduction.amount,
-        isPreTax: false,
-        isPercentage: false,
-      })),
-      totalDeductions: d.calculation!.totalDeductions,
-      employerContributions: [],
+      periodStart,
+      periodEnd,
+      payDate,
+      payFrequency,
+      status: "draft",
+      totalGrossPay: totals.grossPay,
+      totalNetPay: totals.netPay,
+      totalDeductions: totals.totalDeductions,
+      totalEmployerTaxes: totals.inssEmployer,
       totalEmployerContributions: 0,
-      employerTaxes: [{
-        type: "inss_employer" as const,
-        description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
-        amount: d.calculation!.inssEmployer,
-      }],
-      totalEmployerTaxes: d.calculation!.inssEmployer,
-      netPay: d.calculation!.netPay,
-      totalEmployerCost: d.calculation!.totalEmployerCost,
-      ytdGrossPay: d.calculation!.newYtdGrossPay,
-      ytdNetPay: addMoney(
-        ytdByEmployee[d.employee.id || ""]?.ytdNetPay || 0,
-        d.calculation!.netPay,
-      ),
-      ytdIncomeTax: d.calculation!.newYtdIncomeTax,
-      ytdINSSEmployee: d.calculation!.newYtdINSSEmployee,
-    })),
-    [tenantId, ytdByEmployee, calculationConfig]
+      employeeCount: includedData.length,
+      createdBy: userId,
+      notes: "",
+    }),
+    [tenantId, periodStart, periodEnd, payDate, payFrequency, totals, userId],
+  );
+
+  const buildPayrollRecords = useCallback(
+    (
+      includedData: EmployeePayrollData[],
+    ): Omit<PayrollRecord, "id" | "payrollRunId">[] =>
+      includedData.map((d) => ({
+        tenantId,
+        employeeId: d.employee.id || "",
+        employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
+        employeeNumber: d.employee.jobDetails.employeeId,
+        department: d.employee.jobDetails.department,
+        position: d.employee.jobDetails.position,
+        isResident:
+          d.employee.compensation?.isResident ??
+          (d.employee.documents?.residencyStatus
+            ? d.employee.documents.residencyStatus !== "foreign_worker"
+            : true),
+        regularHours: d.regularHours,
+        overtimeHours: d.overtimeHours,
+        doubleTimeHours: 0,
+        holidayHours: d.holidayHours,
+        ptoHoursUsed: 0,
+        sickHoursUsed: d.sickDays * 8,
+        hourlyRate: calculateHourlyRate(
+          d.employee.compensation.monthlySalary || 0,
+          calculationConfig?.hourlyRate,
+        ),
+        overtimeRate:
+          calculationConfig?.overtime?.standard ?? TL_OVERTIME_RATES.standard,
+        earnings: d.calculation!.earnings.map((earning) => ({
+          type: ([
+            "regular",
+            "overtime",
+            "double_time",
+            "holiday",
+            "night_shift",
+            "rest_day",
+            "sick_pay",
+            "bonus",
+            "subsidio_anual",
+            "service_compensation",
+            "non_cash_benefit",
+            "commission",
+            "tip",
+            "reimbursement",
+            "allowance",
+          ].includes(earning.type)
+            ? earning.type
+            : [
+                  "per_diem",
+                  "food_allowance",
+                  "transport_allowance",
+                  "housing_allowance",
+                  "travel_allowance",
+                ].includes(earning.type)
+              ? "allowance"
+              : "other") as PayrollRecord["earnings"][number]["type"],
+          description: earning.description,
+          hours: earning.hours,
+          rate: earning.rate,
+          amount: earning.amount,
+        })),
+        totalGrossPay: d.calculation!.grossPay,
+        wagesPaid: d.calculation!.wagesPaid,
+        taxableIncome: d.calculation!.taxableIncome,
+        witTaxableAmount: d.calculation!.witTaxableAmount,
+        inssBase: d.calculation!.inssBase,
+        // Statutory filing generators (ATTL WIT + INSS) read these off the
+        // saved record and refuse to infer them — without them every filing
+        // for a wizard-created run fails its strict-reader guard.
+        incomeTax: d.calculation!.incomeTax,
+        inssEmployee: d.calculation!.inssEmployee,
+        inssEmployer: d.calculation!.inssEmployer,
+        deductions: d.calculation!.deductions.map((deduction) => ({
+          type: deduction.type as PayrollRecord["deductions"][number]["type"],
+          description: deduction.description,
+          amount: deduction.amount,
+          isPreTax: false,
+          isPercentage: false,
+        })),
+        totalDeductions: d.calculation!.totalDeductions,
+        employerContributions: [],
+        totalEmployerContributions: 0,
+        employerTaxes: [
+          {
+            type: "inss_employer" as const,
+            description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
+            amount: d.calculation!.inssEmployer,
+          },
+        ],
+        totalEmployerTaxes: d.calculation!.inssEmployer,
+        netPay: d.calculation!.netPay,
+        totalEmployerCost: d.calculation!.totalEmployerCost,
+        ytdGrossPay: d.calculation!.newYtdGrossPay,
+        ytdNetPay: addMoney(
+          ytdByEmployee[d.employee.id || ""]?.ytdNetPay || 0,
+          d.calculation!.netPay,
+        ),
+        ytdIncomeTax: d.calculation!.newYtdIncomeTax,
+        ytdINSSEmployee: d.calculation!.newYtdINSSEmployee,
+      })),
+    [tenantId, ytdByEmployee, calculationConfig],
   );
 
   return {

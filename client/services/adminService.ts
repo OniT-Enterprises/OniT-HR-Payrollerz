@@ -29,10 +29,7 @@ import {
 import { roundMoney } from "@/lib/currency";
 import { notificationService } from "@/services/notificationService";
 import { paths } from "@/lib/paths";
-import {
-  PackagesConfig,
-  SuperAdminRequest,
-} from "@/types/admin";
+import { PackagesConfig, SuperAdminRequest } from "@/types/admin";
 import {
   ModulePermission,
   PLAN_LIMITS,
@@ -81,8 +78,18 @@ type TenantSettingsDoc = {
   subscription?: Record<string, unknown>;
 };
 
-const VALID_STATUSES: TenantStatus[] = ["active", "suspended", "pending", "cancelled"];
-const VALID_PLANS: TenantPlan[] = ["free", "starter", "professional", "enterprise"];
+const VALID_STATUSES: TenantStatus[] = [
+  "active",
+  "suspended",
+  "pending",
+  "cancelled",
+];
+const VALID_PLANS: TenantPlan[] = [
+  "free",
+  "starter",
+  "professional",
+  "enterprise",
+];
 
 /**
  * Tenant data lives in two generations (see CLAUDE.md "Firestore Data Layout"):
@@ -98,33 +105,115 @@ const VALID_PLANS: TenantPlan[] = ["free", "starter", "professional", "enterpris
 //     `members` is intentionally omitted here — it is deleted LAST (membership
 //     drives firestore.rules access; see deleteTenant).
 const TENANT_SUBCOLLECTIONS = [
-  "settings", "departments", "employees", "positions", "jobs", "candidates",
-  "interviews", "offers", "contracts", "employmentSnapshots", "shifts",
-  "timesheets", "goals", "reviews", "trainings", "discipline", "auditLogs",
-  "archives", "document_alerts", "qbExportLogs", "promotionSignals", "payruns",
-  "accounts", "journalEntries", "generalLedger", "fiscalYears", "fiscalPeriods",
-  "balanceSnapshots", "customers", "invoices", "recurring_invoices",
-  "payments_received", "vendors", "bills", "bill_payments",
-  "supplierWithholdingPeriods", "supplierWithholdingRemittances",
-  "taxClearanceRequests", "cashAdvances", "cashAdvanceClearings", "expenses",
-  "bankTransactions", "analytics", "holidays", "vatReturns", "face_embeddings",
+  "settings",
+  "departments",
+  "employees",
+  "positions",
+  "jobs",
+  "candidates",
+  "interviews",
+  "offers",
+  "contracts",
+  "employmentSnapshots",
+  "shifts",
+  "timesheets",
+  "goals",
+  "reviews",
+  "trainings",
+  "discipline",
+  "auditLogs",
+  "archives",
+  "document_alerts",
+  "qbExportLogs",
+  "promotionSignals",
+  "payruns",
+  "accounts",
+  "journalEntries",
+  "generalLedger",
+  "fiscalYears",
+  "fiscalPeriods",
+  "balanceSnapshots",
+  "customers",
+  "invoices",
+  "recurring_invoices",
+  "payments_received",
+  "vendors",
+  "bills",
+  "bill_payments",
+  "supplierWithholdingPeriods",
+  "supplierWithholdingRemittances",
+  "taxClearanceRequests",
+  "cashAdvances",
+  "cashAdvanceClearings",
+  "expenses",
+  "bankTransactions",
+  "analytics",
+  "holidays",
+  "vatReturns",
+  "face_embeddings",
 ];
 
 // (b) Top-level collections keyed by a `tenantId` FIELD. Mirrors ROOT_COLLECTIONS
 //     in the delete/wipe scripts. (Legacy `payruns` and `tenant_settings` are
 //     handled separately in deleteTenant — see there.)
 const TENANT_KEYED_ROOT_COLLECTIONS = [
-  "departments", "employees", "positions", "jobs", "candidates", "interviews",
-  "offers", "contracts", "timesheets", "leavePolicies", "leaveRequests",
-  "leaveBalances", "leave_requests", "leave_balances", "goals", "reviews",
-  "trainings", "disciplinary", "customers", "invoices", "recurring_invoices",
-  "payments_received", "vendors", "bills", "bill_payments", "expenses",
-  "holidays", "payrollRuns", "payrollRecords", "benefitEnrollments",
-  "recurringDeductions", "taxReports", "taxFilings", "bankTransfers",
-  "attendance", "attendanceImports", "analytics", "invoice_links", "okrs",
-  "jobPrivateDetails", "jobApplications", "onboarding", "offboarding", "mail",
+  "departments",
+  "employees",
+  "positions",
+  "jobs",
+  "candidates",
+  "interviews",
+  "offers",
+  "contracts",
+  "timesheets",
+  "leavePolicies",
+  "leaveRequests",
+  "leaveBalances",
+  "leave_requests",
+  "leave_balances",
+  "goals",
+  "reviews",
+  "trainings",
+  "disciplinary",
+  "customers",
+  "invoices",
+  "recurring_invoices",
+  "payments_received",
+  "vendors",
+  "bills",
+  "bill_payments",
+  "expenses",
+  "holidays",
+  "payrollRuns",
+  "payrollRecords",
+  "benefitEnrollments",
+  "recurringDeductions",
+  "taxReports",
+  "taxFilings",
+  "bankTransfers",
+  "attendance",
+  "attendanceImports",
+  "analytics",
+  "invoice_links",
+  "okrs",
+  "jobPrivateDetails",
+  "jobApplications",
+  "onboarding",
+  "offboarding",
+  "mail",
   "audit_logs",
 ];
+
+/** Escape user-controlled values interpolated into email HTML (emails can
+ * legally contain &, quotes and other specials). */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
 
 function generateTenantSlug(name: string): string {
   return name
@@ -145,10 +234,14 @@ function isValidPlan(value: unknown): value is TenantPlan {
 }
 
 function isValidStatus(value: unknown): value is TenantStatus {
-  return typeof value === "string" && VALID_STATUSES.includes(value as TenantStatus);
+  return (
+    typeof value === "string" && VALID_STATUSES.includes(value as TenantStatus)
+  );
 }
 
-function getTimestampCandidate(value: unknown): TenantConfig["subscriptionPaidUntil"] | undefined {
+function getTimestampCandidate(
+  value: unknown,
+): TenantConfig["subscriptionPaidUntil"] | undefined {
   if (!value) return undefined;
 
   if (
@@ -203,17 +296,23 @@ function toSortTime(value: unknown): number {
   return 0;
 }
 
-function normalizePackagesConfig(raw: Record<string, unknown> | undefined): PackagesConfig {
+function normalizePackagesConfig(
+  raw: Record<string, unknown> | undefined,
+): PackagesConfig {
   const normalized = normalizeBillingPackagesConfig(raw);
   return {
     ...normalized,
     updatedAt: getTimestampCandidate(raw?.updatedAt),
     updatedBy: typeof raw?.updatedBy === "string" ? raw.updatedBy : undefined,
-    updatedByEmail: typeof raw?.updatedByEmail === "string" ? raw.updatedByEmail : undefined,
+    updatedByEmail:
+      typeof raw?.updatedByEmail === "string" ? raw.updatedByEmail : undefined,
   };
 }
 
-function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: PackagesConfig): number {
+function calculateMonthlySubscription(
+  tenant: TenantConfig,
+  packagesConfig: PackagesConfig,
+): number {
   // Flat per-employee billing: employees × the single rate.
   const estimate = calculatePackageEstimate(packagesConfig, {
     employeeCount: tenant.currentEmployeeCount ?? 0,
@@ -222,20 +321,33 @@ function calculateMonthlySubscription(tenant: TenantConfig, packagesConfig: Pack
   return estimate.monthlyTotal;
 }
 
-function normalizeTenantConfig(tenantId: string, data: Record<string, unknown>): TenantConfig {
-  const rawLimits = data.limits as TenantConfig["limits"] | LegacyTenantLimits | undefined;
+function normalizeTenantConfig(
+  tenantId: string,
+  data: Record<string, unknown>,
+): TenantConfig {
+  const rawLimits = data.limits as
+    | TenantConfig["limits"]
+    | LegacyTenantLimits
+    | undefined;
   let limits = rawLimits;
 
   if (
     rawLimits &&
     typeof rawLimits === "object" &&
-    ("employees" in rawLimits || "members" in rawLimits || "storage" in rawLimits)
+    ("employees" in rawLimits ||
+      "members" in rawLimits ||
+      "storage" in rawLimits)
   ) {
     const legacy = rawLimits as LegacyTenantLimits;
     limits = {
-      maxEmployees: (rawLimits as TenantConfig["limits"])?.maxEmployees ?? legacy.employees ?? 0,
-      maxUsers: (rawLimits as TenantConfig["limits"])?.maxUsers ?? legacy.members ?? 0,
-      storageGB: (rawLimits as TenantConfig["limits"])?.storageGB ?? legacy.storage ?? 0,
+      maxEmployees:
+        (rawLimits as TenantConfig["limits"])?.maxEmployees ??
+        legacy.employees ??
+        0,
+      maxUsers:
+        (rawLimits as TenantConfig["limits"])?.maxUsers ?? legacy.members ?? 0,
+      storageGB:
+        (rawLimits as TenantConfig["limits"])?.storageGB ?? legacy.storage ?? 0,
     };
   }
 
@@ -250,14 +362,23 @@ function normalizeTenantConfig(tenantId: string, data: Record<string, unknown>):
     name: typeof data.name === "string" ? data.name : tenantId,
     slug: typeof data.slug === "string" ? data.slug : tenantId,
     legalName: typeof data.legalName === "string" ? data.legalName : undefined,
-    tradingName: typeof data.tradingName === "string" ? data.tradingName : undefined,
+    tradingName:
+      typeof data.tradingName === "string" ? data.tradingName : undefined,
     tinNumber: typeof data.tinNumber === "string" ? data.tinNumber : undefined,
     address: typeof data.address === "string" ? data.address : undefined,
     phone: typeof data.phone === "string" ? data.phone : undefined,
-    ownerEmail: typeof data.ownerEmail === "string" ? data.ownerEmail : undefined,
-    billingEmail: typeof data.billingEmail === "string" ? data.billingEmail : undefined,
-    currentEmployeeCount: Math.max(0, getNumberCandidate(data.currentEmployeeCount) ?? 0),
-    currentAdminCount: Math.max(0, getNumberCandidate(data.currentAdminCount) ?? 1),
+    ownerEmail:
+      typeof data.ownerEmail === "string" ? data.ownerEmail : undefined,
+    billingEmail:
+      typeof data.billingEmail === "string" ? data.billingEmail : undefined,
+    currentEmployeeCount: Math.max(
+      0,
+      getNumberCandidate(data.currentEmployeeCount) ?? 0,
+    ),
+    currentAdminCount: Math.max(
+      0,
+      getNumberCandidate(data.currentAdminCount) ?? 1,
+    ),
     ...(limits ? { limits } : {}),
   } as TenantConfig;
 }
@@ -317,29 +438,49 @@ function enrichTenantConfig(
     packagesConfig &&
     isTenantSubscribed(enriched)
   ) {
-    enriched.monthlySubscriptionAmount = calculateMonthlySubscription(enriched, packagesConfig);
+    enriched.monthlySubscriptionAmount = calculateMonthlySubscription(
+      enriched,
+      packagesConfig,
+    );
   }
 
   return enriched;
 }
 
-function normalizeSuperAdminRequest(docId: string, data: Record<string, unknown>): SuperAdminRequest {
+function normalizeSuperAdminRequest(
+  docId: string,
+  data: Record<string, unknown>,
+): SuperAdminRequest {
   return {
     id: docId,
     type: data.type === "revoke" ? "revoke" : "grant",
     status:
-      data.status === "awaiting_user" || data.status === "approved" || data.status === "rejected"
+      data.status === "awaiting_user" ||
+      data.status === "approved" ||
+      data.status === "rejected"
         ? data.status
         : "awaiting_confirmation",
     targetEmail: typeof data.targetEmail === "string" ? data.targetEmail : "",
     targetUid: typeof data.targetUid === "string" ? data.targetUid : undefined,
-    targetDisplayName: typeof data.targetDisplayName === "string" ? data.targetDisplayName : undefined,
-    requestedByUid: typeof data.requestedByUid === "string" ? data.requestedByUid : "",
-    requestedByEmail: typeof data.requestedByEmail === "string" ? data.requestedByEmail : "",
-    requestedByName: typeof data.requestedByName === "string" ? data.requestedByName : undefined,
+    targetDisplayName:
+      typeof data.targetDisplayName === "string"
+        ? data.targetDisplayName
+        : undefined,
+    requestedByUid:
+      typeof data.requestedByUid === "string" ? data.requestedByUid : "",
+    requestedByEmail:
+      typeof data.requestedByEmail === "string" ? data.requestedByEmail : "",
+    requestedByName:
+      typeof data.requestedByName === "string"
+        ? data.requestedByName
+        : undefined,
     requestedAt: getTimestampCandidate(data.requestedAt),
-    approvedByUid: typeof data.approvedByUid === "string" ? data.approvedByUid : undefined,
-    approvedByEmail: typeof data.approvedByEmail === "string" ? data.approvedByEmail : undefined,
+    approvedByUid:
+      typeof data.approvedByUid === "string" ? data.approvedByUid : undefined,
+    approvedByEmail:
+      typeof data.approvedByEmail === "string"
+        ? data.approvedByEmail
+        : undefined,
     approvedAt: getTimestampCandidate(data.approvedAt),
     note: typeof data.note === "string" ? data.note : undefined,
   };
@@ -380,14 +521,20 @@ class AdminService {
     try {
       const configRef = doc(db, paths.packagesConfig());
       const snapshot = await getDoc(configRef);
-      return normalizePackagesConfig(snapshot.exists() ? snapshot.data() : undefined);
+      return normalizePackagesConfig(
+        snapshot.exists() ? snapshot.data() : undefined,
+      );
     } catch (error) {
       console.error("Error fetching packages config:", error);
       return normalizePackagesConfig(undefined);
     }
   }
 
-  async savePackagesConfig(config: PackagesConfig, actorUid: string, actorEmail: string): Promise<void> {
+  async savePackagesConfig(
+    config: PackagesConfig,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     const sanitized: PackagesConfig = {
@@ -418,7 +565,9 @@ class AdminService {
       const tenants = await Promise.all(
         snapshot.docs.map(async (tenantDoc) => {
           const tenant = normalizeTenantConfig(tenantDoc.id, tenantDoc.data());
-          const settingsSnap = await getDoc(doc(db, paths.settings(tenantDoc.id)));
+          const settingsSnap = await getDoc(
+            doc(db, paths.settings(tenantDoc.id)),
+          );
           return enrichTenantConfig(
             tenant,
             settingsSnap.exists() ? settingsSnap.data() : undefined,
@@ -427,7 +576,10 @@ class AdminService {
         }),
       );
 
-      return tenants.sort((left, right) => toSortTime(right.createdAt) - toSortTime(left.createdAt));
+      return tenants.sort(
+        (left, right) =>
+          toSortTime(right.createdAt) - toSortTime(left.createdAt),
+      );
     } catch (error) {
       console.error("Error fetching tenants:", error);
       throw error;
@@ -459,14 +611,23 @@ class AdminService {
     }
   }
 
-  async createTenant(input: TenantProfileInput, createdBy: string, actorEmail: string): Promise<string> {
+  async createTenant(
+    input: TenantProfileInput,
+    createdBy: string,
+    actorEmail: string,
+  ): Promise<string> {
     if (!db) throw new Error("Database not available");
 
     const name = input.name.trim();
     const ownerEmail = input.ownerEmail.trim().toLowerCase();
-    const billingEmail = (input.billingEmail || input.ownerEmail).trim().toLowerCase();
+    const billingEmail = (input.billingEmail || input.ownerEmail)
+      .trim()
+      .toLowerCase();
     const address = input.address?.trim() || "";
-    const currentEmployeeCount = Math.max(0, Number(input.currentEmployeeCount || 0));
+    const currentEmployeeCount = Math.max(
+      0,
+      Number(input.currentEmployeeCount || 0),
+    );
 
     try {
       const tenantId = generateTenantId(name);
@@ -560,7 +721,10 @@ class AdminService {
         const { accountService } = await import("./accountingService");
         await accountService.initializeChartOfAccounts(createdTenantId);
       } catch (err) {
-        console.warn("Chart of accounts seeding failed during tenant creation:", err);
+        console.warn(
+          "Chart of accounts seeding failed during tenant creation:",
+          err,
+        );
       }
 
       await this.logAdminAction({
@@ -570,7 +734,13 @@ class AdminService {
         targetType: "tenant",
         targetId: createdTenantId,
         targetName: name,
-        details: { plan: input.plan, ownerUid, ownerEmail, billingEmail, currentEmployeeCount },
+        details: {
+          plan: input.plan,
+          ownerUid,
+          ownerEmail,
+          billingEmail,
+          currentEmployeeCount,
+        },
         timestamp: Timestamp.now(),
       });
 
@@ -581,13 +751,18 @@ class AdminService {
     }
   }
 
-  async updateTenantProfile(tenantId: string, input: TenantProfileInput): Promise<void> {
+  async updateTenantProfile(
+    tenantId: string,
+    input: TenantProfileInput,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     const tenantRef = doc(db, paths.tenant(tenantId));
     const settingsRef = doc(db, paths.settings(tenantId));
     const address = input.address?.trim() || "";
-    const billingEmail = (input.billingEmail || input.ownerEmail).trim().toLowerCase();
+    const billingEmail = (input.billingEmail || input.ownerEmail)
+      .trim()
+      .toLowerCase();
 
     await Promise.all([
       updateDoc(tenantRef, {
@@ -599,7 +774,10 @@ class AdminService {
         phone: input.phone?.trim() || "",
         ownerEmail: input.ownerEmail.trim().toLowerCase(),
         billingEmail,
-        currentEmployeeCount: Math.max(0, Number(input.currentEmployeeCount || 0)),
+        currentEmployeeCount: Math.max(
+          0,
+          Number(input.currentEmployeeCount || 0),
+        ),
         plan: input.plan,
         limits: PLAN_LIMITS[input.plan],
         updatedAt: serverTimestamp(),
@@ -624,7 +802,10 @@ class AdminService {
     ]);
   }
 
-  async updateTenant(tenantId: string, updates: Partial<TenantConfig>): Promise<void> {
+  async updateTenant(
+    tenantId: string,
+    updates: Partial<TenantConfig>,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -660,34 +841,47 @@ class AdminService {
     const tenantSnap = await getDoc(tenantRef);
     if (!tenantSnap.exists()) throw new Error("Tenant not found");
     if (tenantSnap.data().stripeSubscriptionId) {
-      throw new Error("End the active Stripe subscription before recording an offline payment");
+      throw new Error(
+        "End the active Stripe subscription before recording an offline payment",
+      );
     }
 
     const [packagesConfigSnapshot, activeEmployeeSnapshot] = await Promise.all([
       getDoc(doc(db, paths.packagesConfig())),
-      getCountFromServer(query(
-        collection(db, paths.employees(tenantId)),
-        where("status", "==", "active"),
-      )),
+      getCountFromServer(
+        query(
+          collection(db, paths.employees(tenantId)),
+          where("status", "==", "active"),
+        ),
+      ),
     ]);
     const packagesConfig = normalizeBillingPackagesConfig(
-      packagesConfigSnapshot.exists() ? packagesConfigSnapshot.data() : undefined,
+      packagesConfigSnapshot.exists()
+        ? packagesConfigSnapshot.data()
+        : undefined,
     );
     const activeEmployees = activeEmployeeSnapshot.data().count;
     const estimate = calculatePackageEstimate(packagesConfig, {
       employeeCount: activeEmployees,
     });
-    const expectedAmount = months === 12 ? estimate.annualTotal : estimate.monthlyTotal;
+    const expectedAmount =
+      months === 12 ? estimate.annualTotal : estimate.monthlyTotal;
     const amountReceived = roundMoney(input.amountReceived);
     if (amountReceived < expectedAmount) {
-      throw new Error(`Amount received must be at least $${expectedAmount.toFixed(2)}`);
+      throw new Error(
+        `Amount received must be at least $${expectedAmount.toFixed(2)}`,
+      );
     }
 
     const current = tenantSnap.data()?.subscriptionPaidUntil as
       | { toDate?: () => Date }
       | undefined;
-    const currentDate = typeof current?.toDate === "function" ? current.toDate() : null;
-    const base = currentDate && currentDate.getTime() > Date.now() ? currentDate : new Date();
+    const currentDate =
+      typeof current?.toDate === "function" ? current.toDate() : null;
+    const base =
+      currentDate && currentDate.getTime() > Date.now()
+        ? currentDate
+        : new Date();
     const paidUntil = new Date(base);
     paidUntil.setMonth(paidUntil.getMonth() + months);
 
@@ -753,7 +947,12 @@ class AdminService {
     });
   }
 
-  async suspendTenant(tenantId: string, reason: string, actorUid: string, actorEmail: string): Promise<void> {
+  async suspendTenant(
+    tenantId: string,
+    reason: string,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -788,7 +987,11 @@ class AdminService {
     }
   }
 
-  async reactivateTenant(tenantId: string, actorUid: string, actorEmail: string): Promise<void> {
+  async reactivateTenant(
+    tenantId: string,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -830,13 +1033,17 @@ class AdminService {
    * firestore.rules, so a failure here is logged and skipped — residue must be
    * swept by a superadmin running scripts/delete-tenant.mjs (Admin SDK).
    */
-  private async sweepRootCollection(name: string, tenantId: string): Promise<void> {
+  private async sweepRootCollection(
+    name: string,
+    tenantId: string,
+    field: string = "tenantId",
+  ): Promise<void> {
     if (!db) return;
     try {
       // Guard bound is pure paranoia against an unexpected non-terminating loop.
       for (let guard = 0; guard < 100000; guard++) {
         const snap = await getDocs(
-          query(collection(db, name), where("tenantId", "==", tenantId), limit(450)),
+          query(collection(db, name), where(field, "==", tenantId), limit(450)),
         );
         if (snap.empty) break;
         const batch = writeBatch(db);
@@ -845,7 +1052,10 @@ class AdminService {
         if (snap.size < 450) break;
       }
     } catch (error) {
-      console.warn(`deleteTenant: sweep of top-level '${name}' incomplete:`, error);
+      console.warn(
+        `deleteTenant: sweep of top-level '${name}' incomplete:`,
+        error,
+      );
     }
   }
 
@@ -876,7 +1086,10 @@ class AdminService {
       }
     } catch (error) {
       if (critical) throw error;
-      console.warn(`deleteTenant: sweep of subcollection '${sub}' incomplete:`, error);
+      console.warn(
+        `deleteTenant: sweep of subcollection '${sub}' incomplete:`,
+        error,
+      );
     }
   }
 
@@ -896,7 +1109,11 @@ class AdminService {
    * scripts/delete-tenant.mjs (Admin SDK) to guarantee complete removal of any
    * residue. Superadmin-only (enforced by firestore.rules isSuperAdmin()).
    */
-  async deleteTenant(tenantId: string, actorUid: string, actorEmail: string): Promise<void> {
+  async deleteTenant(
+    tenantId: string,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -916,12 +1133,25 @@ class AdminService {
       // Legacy top-level `payruns` holds a `payslips` subcollection the client
       // SDK cannot reach; its payrun docs go here, payslips residue needs the script.
       await this.sweepRootCollection("payruns", tenantId);
+      // Accountant-partner connection requests reference a tenant from BOTH
+      // sides: as the requesting client (tenantId) and as the accountant's
+      // practice (partnerTenantId). Sweep both so no PII or dangling
+      // "connected" link survives the tenant.
+      await this.sweepRootCollection("accountantPartnerRequests", tenantId);
+      await this.sweepRootCollection(
+        "accountantPartnerRequests",
+        tenantId,
+        "partnerTenantId",
+      );
       // `tenant_settings` is keyed by tenantId as the DOC ID (not a field), so a
       // where('tenantId','==') sweep can't find it — delete it by doc id.
       try {
         await deleteDoc(doc(db, "tenant_settings", tenantId));
       } catch (error) {
-        console.warn("deleteTenant: could not delete tenant_settings doc:", error);
+        console.warn(
+          "deleteTenant: could not delete tenant_settings doc:",
+          error,
+        );
       }
 
       // 2) Tenant subcollections (everything except members).
@@ -949,7 +1179,9 @@ class AdminService {
     }
   }
 
-  async getTenantStats(tenantId: string): Promise<{ memberCount: number; employeeCount: number }> {
+  async getTenantStats(
+    tenantId: string,
+  ): Promise<{ memberCount: number; employeeCount: number }> {
     if (!db) return { memberCount: 0, employeeCount: 0 };
 
     try {
@@ -958,7 +1190,10 @@ class AdminService {
         // ACTIVE only — this is the number billing charges for (checkout +
         // daily quantity sync both count status == 'active').
         getCountFromServer(
-          query(collection(db, paths.employees(tenantId)), where("status", "==", "active")),
+          query(
+            collection(db, paths.employees(tenantId)),
+            where("status", "==", "active"),
+          ),
         ),
       ]);
 
@@ -982,9 +1217,15 @@ class AdminService {
         uid: memberDoc.id,
       }));
 
-      const roleOrder: Record<string, number> = { owner: 0, "hr-admin": 1, manager: 2, viewer: 3 };
+      const roleOrder: Record<string, number> = {
+        owner: 0,
+        "hr-admin": 1,
+        manager: 2,
+        viewer: 3,
+      };
       return members.sort((left, right) => {
-        const byRole = (roleOrder[left.role] ?? 9) - (roleOrder[right.role] ?? 9);
+        const byRole =
+          (roleOrder[left.role] ?? 9) - (roleOrder[right.role] ?? 9);
         if (byRole !== 0) return byRole;
         return (left.email || "").localeCompare(right.email || "");
       });
@@ -1002,10 +1243,10 @@ class AdminService {
     modules?: ModulePermission[];
   }): Promise<void> {
     const { httpsCallable } = await import("firebase/functions");
-    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
-      await getFunctionsLazy(),
-      "addTenantMember",
-    );
+    const callable = httpsCallable<
+      typeof params,
+      { success: boolean; message: string }
+    >(await getFunctionsLazy(), "addTenantMember");
     await callable(params);
   }
 
@@ -1016,19 +1257,22 @@ class AdminService {
     modules?: ModulePermission[];
   }): Promise<void> {
     const { httpsCallable } = await import("firebase/functions");
-    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
-      await getFunctionsLazy(),
-      "updateTenantMember",
-    );
+    const callable = httpsCallable<
+      typeof params,
+      { success: boolean; message: string }
+    >(await getFunctionsLazy(), "updateTenantMember");
     await callable(params);
   }
 
-  async removeTenantMember(params: { tenantId: string; memberUid: string }): Promise<void> {
+  async removeTenantMember(params: {
+    tenantId: string;
+    memberUid: string;
+  }): Promise<void> {
     const { httpsCallable } = await import("firebase/functions");
-    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
-      await getFunctionsLazy(),
-      "removeTenantMember",
-    );
+    const callable = httpsCallable<
+      typeof params,
+      { success: boolean; message: string }
+    >(await getFunctionsLazy(), "removeTenantMember");
     await callable(params);
   }
 
@@ -1037,10 +1281,10 @@ class AdminService {
     memberUid: string;
   }): Promise<string> {
     const { httpsCallable } = await import("firebase/functions");
-    const callable = httpsCallable<typeof params, { success: boolean; message: string }>(
-      await getFunctionsLazy(),
-      "sendTenantMemberPasswordReset",
-    );
+    const callable = httpsCallable<
+      typeof params,
+      { success: boolean; message: string }
+    >(await getFunctionsLazy(), "sendTenantMemberPasswordReset");
     const result = await callable(params);
     return result.data.message;
   }
@@ -1050,9 +1294,16 @@ class AdminService {
 
     try {
       const snapshot = await getDocs(
-        query(collection(db, paths.users()), orderBy("createdAt", "desc"), limit(maxResults)),
+        query(
+          collection(db, paths.users()),
+          orderBy("createdAt", "desc"),
+          limit(maxResults),
+        ),
       );
-      return snapshot.docs.map((userDoc) => ({ uid: userDoc.id, ...userDoc.data() })) as UserProfile[];
+      return snapshot.docs.map((userDoc) => ({
+        uid: userDoc.id,
+        ...userDoc.data(),
+      })) as UserProfile[];
     } catch (error) {
       console.error("Error fetching users:", error);
       throw error;
@@ -1072,7 +1323,12 @@ class AdminService {
     }
   }
 
-  async setUserSuperadmin(targetUid: string, isSuperAdmin: boolean, actorUid: string, actorEmail: string): Promise<void> {
+  async setUserSuperadmin(
+    targetUid: string,
+    isSuperAdmin: boolean,
+    actorUid: string,
+    actorEmail: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -1089,7 +1345,9 @@ class AdminService {
       });
 
       await this.logAdminAction({
-        action: isSuperAdmin ? "user_superadmin_granted" : "user_superadmin_revoked",
+        action: isSuperAdmin
+          ? "user_superadmin_granted"
+          : "user_superadmin_revoked",
         actorUid,
         actorEmail,
         targetType: "user",
@@ -1129,7 +1387,10 @@ class AdminService {
 
     try {
       const snapshot = await getDocs(
-        query(collection(db, paths.superAdminRequests()), orderBy("requestedAt", "desc")),
+        query(
+          collection(db, paths.superAdminRequests()),
+          orderBy("requestedAt", "desc"),
+        ),
       );
       return snapshot.docs.map((requestDoc) =>
         normalizeSuperAdminRequest(requestDoc.id, requestDoc.data()),
@@ -1186,9 +1447,9 @@ class AdminService {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
           <h2>Admin Console approval needed</h2>
-          <p>${params.requestedByEmail} requested to ${
+          <p>${escapeHtml(params.requestedByEmail)} requested to ${
             params.type === "grant" ? "grant" : "remove"
-          } superadmin access for <strong>${targetEmail}</strong>.</p>
+          } superadmin access for <strong>${escapeHtml(targetEmail)}</strong>.</p>
           <p>Please review the request in the Admin Console.</p>
         </div>
       `,
@@ -1213,7 +1474,10 @@ class AdminService {
       throw new Error("Approval request not found");
     }
 
-    const request = normalizeSuperAdminRequest(requestSnap.id, requestSnap.data());
+    const request = normalizeSuperAdminRequest(
+      requestSnap.id,
+      requestSnap.data(),
+    );
     if (request.requestedByUid === params.approverUid) {
       throw new Error("A different superadmin must confirm this request");
     }
@@ -1238,7 +1502,7 @@ class AdminService {
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
               <h2>Superadmin access is ready</h2>
-              <p>An existing superadmin approved access for <strong>${request.targetEmail}</strong>.</p>
+              <p>An existing superadmin approved access for <strong>${escapeHtml(request.targetEmail)}</strong>.</p>
               <p>Please sign in to Xefe with this email address, then ask an existing superadmin to complete the activation from the Super Admins page.</p>
             </div>
           `,
@@ -1261,7 +1525,8 @@ class AdminService {
         });
       }
     } else {
-      const revokeUser = matchedUser ?? users.find((user) => user.uid === request.targetUid);
+      const revokeUser =
+        matchedUser ?? users.find((user) => user.uid === request.targetUid);
       if (!revokeUser?.uid) {
         throw new Error("Target superadmin could not be found");
       }
@@ -1285,7 +1550,12 @@ class AdminService {
     return normalizeSuperAdminRequest(finalSnap.id, finalSnap.data() || {});
   }
 
-  async startImpersonation(actorUid: string, actorEmail: string, tenantId: string, tenantName: string): Promise<void> {
+  async startImpersonation(
+    actorUid: string,
+    actorEmail: string,
+    tenantId: string,
+    tenantName: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -1313,7 +1583,12 @@ class AdminService {
     }
   }
 
-  async stopImpersonation(actorUid: string, actorEmail: string, tenantId: string, tenantName: string): Promise<void> {
+  async stopImpersonation(
+    actorUid: string,
+    actorEmail: string,
+    tenantId: string,
+    tenantName: string,
+  ): Promise<void> {
     if (!db) throw new Error("Database not available");
 
     try {
@@ -1344,7 +1619,10 @@ class AdminService {
         getFunctionsLazy(),
       ]);
       const recordAdminAuditEvent = httpsCallable<
-        Pick<AdminAuditEntry, "action" | "targetType" | "targetId" | "targetName" | "details">,
+        Pick<
+          AdminAuditEntry,
+          "action" | "targetType" | "targetId" | "targetName" | "details"
+        >,
         { id: string }
       >(functions, "recordAdminAuditEvent");
       await recordAdminAuditEvent({
@@ -1364,7 +1642,11 @@ class AdminService {
 
     try {
       const snapshot = await getDocs(
-        query(collection(db, paths.adminAuditLog()), orderBy("timestamp", "desc"), limit(maxResults)),
+        query(
+          collection(db, paths.adminAuditLog()),
+          orderBy("timestamp", "desc"),
+          limit(maxResults),
+        ),
       );
       return snapshot.docs.map((logDoc) => logDoc.data() as AdminAuditEntry);
     } catch (error) {

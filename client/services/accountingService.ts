@@ -21,11 +21,18 @@ import {
   runTransaction,
   Transaction,
   DocumentSnapshot,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { paths } from '@/lib/paths';
-import { addMoney, roundMoney, subtractMoney, sumMoney, toDecimal, toMoney } from '@/lib/currency';
-import { auditLogService } from '@/services/auditLogService';
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
+import {
+  addMoney,
+  roundMoney,
+  subtractMoney,
+  sumMoney,
+  toDecimal,
+  toMoney,
+} from "@/lib/currency";
+import { auditLogService } from "@/services/auditLogService";
 import type {
   Account,
   AccountType,
@@ -40,13 +47,13 @@ import type {
   GeneralLedgerEntry,
   IncomeStatement,
   BalanceSheet,
-} from '@/types/accounting';
+} from "@/types/accounting";
 import {
   getDefaultAccounts,
   EXPENSE_CATEGORY_TO_ACCOUNT,
   MONEY_JOURNAL_MAPPINGS,
-} from '@/lib/accounting/chart-of-accounts';
-import { getTodayTL } from '@/lib/dateUtils';
+} from "@/lib/accounting/chart-of-accounts";
+import { getTodayTL } from "@/lib/dateUtils";
 import {
   addToMoneyMap,
   buildBillPaymentJournalLines,
@@ -61,10 +68,10 @@ import {
   normalizeJournalAmounts,
   payrollJournalAccountCodes,
   type ReportAccount,
-} from '@/lib/accounting/calculations';
-import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
-import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
-import { summarizePayrollForAccounting } from '@/lib/payroll/accounting-summary';
+} from "@/lib/accounting/calculations";
+import type { TLPayrollRun, TLPayrollRecord } from "@/types/payroll-tl";
+import type { Invoice, Expense, Bill, PaymentMethod } from "@/types/money";
+import { summarizePayrollForAccounting } from "@/lib/payroll/accounting-summary";
 
 // ============================================
 // ACCOUNTS SERVICE
@@ -72,7 +79,10 @@ import { summarizePayrollForAccounting } from '@/lib/payroll/accounting-summary'
 
 class AccountService {
   private readonly cacheTtlMs = 5 * 60 * 1000;
-  private readonly accountCache = new Map<string, { accounts: Account[]; fetchedAt: number }>();
+  private readonly accountCache = new Map<
+    string,
+    { accounts: Account[]; fetchedAt: number }
+  >();
 
   private collectionRef(tenantId: string) {
     return collection(db, paths.accounts(tenantId));
@@ -80,17 +90,22 @@ class AccountService {
 
   private isCacheFresh(tenantId: string): boolean {
     const cached = this.accountCache.get(tenantId);
-    return !!cached && (Date.now() - cached.fetchedAt) < this.cacheTtlMs;
+    return !!cached && Date.now() - cached.fetchedAt < this.cacheTtlMs;
   }
 
-  private async getCachedAccounts(tenantId: string, forceRefresh: boolean = false): Promise<Account[]> {
+  private async getCachedAccounts(
+    tenantId: string,
+    forceRefresh: boolean = false,
+  ): Promise<Account[]> {
     if (!forceRefresh && this.isCacheFresh(tenantId)) {
       return this.accountCache.get(tenantId)!.accounts;
     }
 
-    const q = query(this.collectionRef(tenantId), orderBy('code'));
+    const q = query(this.collectionRef(tenantId), orderBy("code"));
     const snapshot = await getDocs(q);
-    const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+    const accounts = snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as Account,
+    );
     this.accountCache.set(tenantId, {
       accounts,
       fetchedAt: Date.now(),
@@ -104,8 +119,8 @@ class AccountService {
 
   async createAccount(
     tenantId: string,
-    account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>,
-    audit?: { userId: string; userEmail: string; userName?: string }
+    account: Omit<Account, "id" | "createdAt" | "updatedAt">,
+    audit?: { userId: string; userEmail: string; userName?: string },
   ): Promise<string> {
     // Account codes must be unique: reports aggregate the general ledger BY
     // CODE, so two accounts sharing a code each receive the code's full total,
@@ -113,7 +128,9 @@ class AccountService {
     if (account.code) {
       const existing = await this.getAccountByCode(tenantId, account.code);
       if (existing) {
-        throw new Error(`Account code ${account.code} already exists (${existing.name}).`);
+        throw new Error(
+          `Account code ${account.code} already exists (${existing.name}).`,
+        );
       }
     }
     const docRef = await addDoc(this.collectionRef(tenantId), {
@@ -124,16 +141,18 @@ class AccountService {
     this.invalidateCache(tenantId);
 
     if (audit) {
-      await auditLogService.log({
-        ...audit,
-        tenantId,
-        action: 'accounting.account_create',
-        entityId: docRef.id,
-        entityType: 'account',
-        entityName: `${account.code} - ${account.name}`,
-        description: `Created account ${account.code} - ${account.name}`,
-        newValue: account as unknown as Record<string, unknown>,
-      }).catch(err => console.error('Audit log failed:', err));
+      await auditLogService
+        .log({
+          ...audit,
+          tenantId,
+          action: "accounting.account_create",
+          entityId: docRef.id,
+          entityType: "account",
+          entityName: `${account.code} - ${account.name}`,
+          description: `Created account ${account.code} - ${account.name}`,
+          newValue: account as unknown as Record<string, unknown>,
+        })
+        .catch((err) => console.error("Audit log failed:", err));
     }
     return docRef.id;
   }
@@ -142,7 +161,7 @@ class AccountService {
     tenantId: string,
     id: string,
     updates: Partial<Account>,
-    audit?: { userId: string; userEmail: string; userName?: string }
+    audit?: { userId: string; userEmail: string; userName?: string },
   ): Promise<void> {
     const docRef = doc(db, paths.account(tenantId, id));
     const before = audit ? await getDoc(docRef).catch(() => null) : null;
@@ -153,26 +172,35 @@ class AccountService {
     this.invalidateCache(tenantId);
 
     if (audit) {
-      const oldValue = before?.exists() ? (before.data() as Record<string, unknown>) : undefined;
-      await auditLogService.log({
-        ...audit,
-        tenantId,
-        action: 'accounting.account_update',
-        entityId: id,
-        entityType: 'account',
-        entityName: typeof updates.code === 'string' && typeof updates.name === 'string'
-          ? `${updates.code} - ${updates.name}`
-          : id,
-        description: `Updated account ${typeof updates.code === 'string' ? updates.code : id}`,
-        oldValue,
-        newValue: updates as unknown as Record<string, unknown>,
-      }).catch(err => console.error('Audit log failed:', err));
+      const oldValue = before?.exists()
+        ? (before.data() as Record<string, unknown>)
+        : undefined;
+      await auditLogService
+        .log({
+          ...audit,
+          tenantId,
+          action: "accounting.account_update",
+          entityId: id,
+          entityType: "account",
+          entityName:
+            typeof updates.code === "string" && typeof updates.name === "string"
+              ? `${updates.code} - ${updates.name}`
+              : id,
+          description: `Updated account ${typeof updates.code === "string" ? updates.code : id}`,
+          oldValue,
+          newValue: updates as unknown as Record<string, unknown>,
+        })
+        .catch((err) => console.error("Audit log failed:", err));
     }
   }
 
   async getAccount(tenantId: string, id: string): Promise<Account | null> {
     if (this.isCacheFresh(tenantId)) {
-      return this.accountCache.get(tenantId)!.accounts.find((account) => account.id === id) ?? null;
+      return (
+        this.accountCache
+          .get(tenantId)!
+          .accounts.find((account) => account.id === id) ?? null
+      );
     }
 
     const docRef = doc(db, paths.account(tenantId, id));
@@ -183,7 +211,10 @@ class AccountService {
     return null;
   }
 
-  async getAccountByCode(tenantId: string, code: string): Promise<Account | null> {
+  async getAccountByCode(
+    tenantId: string,
+    code: string,
+  ): Promise<Account | null> {
     const accounts = await this.getCachedAccounts(tenantId);
     return accounts.find((account) => account.code === code) ?? null;
   }
@@ -192,12 +223,19 @@ class AccountService {
    * Add a newly introduced system account to an existing tenant chart.
    * Uses a deterministic document ID so concurrent first use is idempotent.
    */
-  async ensureSystemAccountByCode(tenantId: string, code: string): Promise<Account> {
-    const existing = (await this.getAllAccounts(tenantId, true))
-      .find((account) => account.code === code) ?? null;
+  async ensureSystemAccountByCode(
+    tenantId: string,
+    code: string,
+  ): Promise<Account> {
+    const existing =
+      (await this.getAllAccounts(tenantId, true)).find(
+        (account) => account.code === code,
+      ) ?? null;
     if (existing) {
       if (!existing.isActive) {
-        throw new Error(`Required system account ${code} is inactive. Reactivate it before posting.`);
+        throw new Error(
+          `Required system account ${code} is inactive. Reactivate it before posting.`,
+        );
       }
       return existing;
     }
@@ -214,10 +252,14 @@ class AccountService {
     if (deterministicDoc.exists()) {
       const data = deterministicDoc.data() as Partial<Account>;
       if (data.code !== code) {
-        throw new Error(`Account document system-${code} is already used by code ${data.code || 'unknown'}.`);
+        throw new Error(
+          `Account document system-${code} is already used by code ${data.code || "unknown"}.`,
+        );
       }
       if (data.isActive === false) {
-        throw new Error(`Required system account ${code} is inactive. Reactivate it before posting.`);
+        throw new Error(
+          `Required system account ${code} is inactive. Reactivate it before posting.`,
+        );
       }
       this.invalidateCache(tenantId);
       return { id: deterministicDoc.id, ...data } as Account;
@@ -237,13 +279,21 @@ class AccountService {
     };
   }
 
-  async getAllAccounts(tenantId: string, forceRefresh: boolean = false): Promise<Account[]> {
+  async getAllAccounts(
+    tenantId: string,
+    forceRefresh: boolean = false,
+  ): Promise<Account[]> {
     return this.getCachedAccounts(tenantId, forceRefresh);
   }
 
-  async getAccountsByType(tenantId: string, type: Account['type']): Promise<Account[]> {
+  async getAccountsByType(
+    tenantId: string,
+    type: Account["type"],
+  ): Promise<Account[]> {
     const accounts = await this.getCachedAccounts(tenantId);
-    return accounts.filter((account) => account.type === type && account.isActive);
+    return accounts.filter(
+      (account) => account.type === type && account.isActive,
+    );
   }
 
   async deleteAccount(tenantId: string, id: string): Promise<void> {
@@ -261,7 +311,7 @@ class AccountService {
    */
   async initializeChartOfAccounts(
     tenantId: string,
-    audit?: { userId: string; userEmail: string; userName?: string }
+    audit?: { userId: string; userEmail: string; userName?: string },
   ): Promise<void> {
     const existingAccounts = await this.getAllAccounts(tenantId, true);
     if (existingAccounts.length > 0) {
@@ -290,15 +340,17 @@ class AccountService {
     this.invalidateCache(tenantId);
 
     if (audit) {
-      await auditLogService.log({
-        ...audit,
-        tenantId,
-        action: 'accounting.coa_initialize',
-        entityId: tenantId,
-        entityType: 'chart_of_accounts',
-        description: 'Initialized chart of accounts',
-        metadata: { count: defaultAccounts.length },
-      }).catch(err => console.error('Audit log failed:', err));
+      await auditLogService
+        .log({
+          ...audit,
+          tenantId,
+          action: "accounting.coa_initialize",
+          entityId: tenantId,
+          entityType: "chart_of_accounts",
+          description: "Initialized chart of accounts",
+          metadata: { count: defaultAccounts.length },
+        })
+        .catch((err) => console.error("Audit log failed:", err));
     }
   }
 }
@@ -315,30 +367,34 @@ class JournalEntryService {
   private async assertFiscalPeriodAllowsPosting(
     tenantId: string,
     fiscalYear: number,
-    fiscalPeriod: number
+    fiscalPeriod: number,
   ): Promise<void> {
-    const period = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, fiscalYear, fiscalPeriod);
+    const period = await fiscalPeriodService.getPeriodByYearAndPeriod(
+      tenantId,
+      fiscalYear,
+      fiscalPeriod,
+    );
     if (!period) {
       // Backwards-compatible: if fiscal periods are not configured yet, allow posting.
       return;
     }
-    if (period.status !== 'open') {
+    if (period.status !== "open") {
       throw new Error(
-        `Fiscal period ${fiscalYear}-${String(fiscalPeriod).padStart(2, '0')} is ${period.status}. ` +
-        'Reopen the period to post/void entries.'
+        `Fiscal period ${fiscalYear}-${String(fiscalPeriod).padStart(2, "0")} is ${period.status}. ` +
+          "Reopen the period to post/void entries.",
       );
     }
   }
 
   async getJournalEntryBySource(
     tenantId: string,
-    source: JournalEntry['source'],
-    sourceId: string
+    source: JournalEntry["source"],
+    sourceId: string,
   ): Promise<JournalEntry | null> {
     const q = query(
       this.collectionRef(tenantId),
-      where('source', '==', source),
-      where('sourceId', '==', sourceId)
+      where("source", "==", source),
+      where("sourceId", "==", sourceId),
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
@@ -346,28 +402,35 @@ class JournalEntryService {
     // Edits replace a posted source entry by voiding the old journal and
     // posting a new one. Always return the active entry, not an arbitrary
     // Firestore result left behind by that history.
-    const statusRank: Record<JournalEntry['status'], number> = {
+    const statusRank: Record<JournalEntry["status"], number> = {
       posted: 0,
       draft: 1,
       void: 2,
     };
-    const entries = snapshot.docs.map((entryDoc) => ({
-      id: entryDoc.id,
-      ...entryDoc.data(),
-    } as JournalEntry));
+    const entries = snapshot.docs.map(
+      (entryDoc) =>
+        ({
+          id: entryDoc.id,
+          ...entryDoc.data(),
+        }) as JournalEntry,
+    );
     entries.sort((a, b) => {
       const rank = statusRank[a.status] - statusRank[b.status];
       if (rank !== 0) return rank;
-      const numberOrder = (b.entryNumber || '').localeCompare(a.entryNumber || '');
-      return numberOrder || (b.id || '').localeCompare(a.id || '');
+      const numberOrder = (b.entryNumber || "").localeCompare(
+        a.entryNumber || "",
+      );
+      return numberOrder || (b.id || "").localeCompare(a.id || "");
     });
     return entries[0];
   }
 
   async createJournalEntry(
     tenantId: string,
-    entry: Omit<JournalEntry, 'id' | 'createdAt' | 'entryNumber'> & { entryNumber?: string },
-    txn?: Transaction
+    entry: Omit<JournalEntry, "id" | "createdAt" | "entryNumber"> & {
+      entryNumber?: string;
+    },
+    txn?: Transaction,
   ): Promise<string> {
     const normalized = normalizeJournalAmounts(
       entry.lines,
@@ -382,7 +445,7 @@ class JournalEntryService {
     };
 
     // Enforce fiscal period controls (posted entries only).
-    if (normalizedEntry.status === 'posted') {
+    if (normalizedEntry.status === "posted") {
       await this.assertFiscalPeriodAllowsPosting(
         tenantId,
         normalizedEntry.fiscalYear,
@@ -409,19 +472,26 @@ class JournalEntryService {
         createdAt: serverTimestamp(),
       };
 
-      if (finalEntry.status === 'posted') {
+      if (finalEntry.status === "posted") {
         // Ensure posted metadata is present for posted-on-create entries.
-        if (!('postedAt' in journalPayload) || journalPayload.postedAt === undefined) {
+        if (
+          !("postedAt" in journalPayload) ||
+          journalPayload.postedAt === undefined
+        ) {
           journalPayload.postedAt = serverTimestamp();
         }
-        if (!('postedBy' in journalPayload) || journalPayload.postedBy === undefined) {
-          journalPayload.postedBy = finalEntry.postedBy || finalEntry.createdBy || 'system';
+        if (
+          !("postedBy" in journalPayload) ||
+          journalPayload.postedBy === undefined
+        ) {
+          journalPayload.postedBy =
+            finalEntry.postedBy || finalEntry.createdBy || "system";
         }
       }
 
       transaction.set(journalDocRef, journalPayload);
 
-      if (finalEntry.status === 'posted') {
+      if (finalEntry.status === "posted") {
         for (const line of finalEntry.lines) {
           const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
           transaction.set(glDocRef, {
@@ -442,18 +512,22 @@ class JournalEntryService {
         }
 
         // Audit trail: posted journal entry (includes auto-generated postings)
-        const actor = finalEntry.postedBy || finalEntry.createdBy || 'system';
-        const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${journalDocRef.id}_post`);
+        const actor = finalEntry.postedBy || finalEntry.createdBy || "system";
+        const auditDocRef = doc(
+          db,
+          paths.auditLogs(tenantId),
+          `acct_${journalDocRef.id}_post`,
+        );
         transaction.set(auditDocRef, {
           userId: actor,
           userEmail: actor,
-          action: 'accounting.journal_post',
-          module: 'accounting',
+          action: "accounting.journal_post",
+          module: "accounting",
           description: `Posted journal entry ${finalEntry.entryNumber}`,
           timestamp: serverTimestamp(),
           tenantId,
           entityId: journalDocRef.id,
-          entityType: 'journal_entry',
+          entityType: "journal_entry",
           entityName: finalEntry.entryNumber,
           metadata: {
             source: finalEntry.source,
@@ -462,7 +536,7 @@ class JournalEntryService {
             totalCredit: finalEntry.totalCredit,
             date: finalEntry.date,
           },
-          severity: 'info',
+          severity: "info",
         });
       }
     };
@@ -476,7 +550,10 @@ class JournalEntryService {
     return journalDocRef.id;
   }
 
-  async getJournalEntry(tenantId: string, id: string): Promise<JournalEntry | null> {
+  async getJournalEntry(
+    tenantId: string,
+    id: string,
+  ): Promise<JournalEntry | null> {
     const docRef = doc(db, paths.journalEntry(tenantId, id));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -485,39 +562,49 @@ class JournalEntryService {
     return null;
   }
 
-  async getAllJournalEntries(tenantId: string, options?: {
-    status?: JournalEntry['status'];
-    source?: string;
-    startDate?: string;
-    endDate?: string;
-    fiscalYear?: number;
-    maxResults?: number;
-  }): Promise<JournalEntry[]> {
-    const { queryConstraints } = this.buildJournalEntryQueryConstraints(options);
+  async getAllJournalEntries(
+    tenantId: string,
+    options?: {
+      status?: JournalEntry["status"];
+      source?: string;
+      startDate?: string;
+      endDate?: string;
+      fiscalYear?: number;
+      maxResults?: number;
+    },
+  ): Promise<JournalEntry[]> {
+    const { queryConstraints } =
+      this.buildJournalEntryQueryConstraints(options);
     if (options?.maxResults) {
       queryConstraints.push(limit(options.maxResults));
     }
     const q = query(this.collectionRef(tenantId), ...queryConstraints);
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry));
+    return snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as JournalEntry,
+    );
   }
 
-  async getJournalEntriesPage(tenantId: string, options?: {
-    status?: JournalEntry['status'];
-    source?: string;
-    startDate?: string;
-    endDate?: string;
-    fiscalYear?: number;
-    pageSize?: number;
-    startAfterDoc?: DocumentSnapshot;
-  }): Promise<{
+  async getJournalEntriesPage(
+    tenantId: string,
+    options?: {
+      status?: JournalEntry["status"];
+      source?: string;
+      startDate?: string;
+      endDate?: string;
+      fiscalYear?: number;
+      pageSize?: number;
+      startAfterDoc?: DocumentSnapshot;
+    },
+  ): Promise<{
     entries: JournalEntry[];
     lastDoc: DocumentSnapshot | null;
     hasMore: boolean;
   }> {
     const pageSize = options?.pageSize ?? 100;
-    const { queryConstraints } = this.buildJournalEntryQueryConstraints(options);
+    const { queryConstraints } =
+      this.buildJournalEntryQueryConstraints(options);
     queryConstraints.push(limit(pageSize + 1));
 
     if (options?.startAfterDoc) {
@@ -529,14 +616,16 @@ class JournalEntryService {
 
     const docs = snapshot.docs.slice(0, pageSize);
     return {
-      entries: docs.map((doc) => ({ id: doc.id, ...doc.data() } as JournalEntry)),
+      entries: docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() }) as JournalEntry,
+      ),
       lastDoc: docs.length > 0 ? docs[docs.length - 1] : null,
       hasMore: snapshot.docs.length > pageSize,
     };
   }
 
   private buildJournalEntryQueryConstraints(options?: {
-    status?: JournalEntry['status'];
+    status?: JournalEntry["status"];
     source?: string;
     startDate?: string;
     endDate?: string;
@@ -546,22 +635,22 @@ class JournalEntryService {
     const constraints: Parameters<typeof query>[1][] = [];
 
     if (options?.status) {
-      constraints.push(where('status', '==', options.status));
+      constraints.push(where("status", "==", options.status));
     }
     if (options?.source) {
-      constraints.push(where('source', '==', options.source));
+      constraints.push(where("source", "==", options.source));
     }
     if (options?.fiscalYear) {
-      constraints.push(where('fiscalYear', '==', options.fiscalYear));
+      constraints.push(where("fiscalYear", "==", options.fiscalYear));
     }
     if (options?.startDate) {
-      constraints.push(where('date', '>=', options.startDate));
+      constraints.push(where("date", ">=", options.startDate));
     }
     if (options?.endDate) {
-      constraints.push(where('date', '<=', options.endDate));
+      constraints.push(where("date", "<=", options.endDate));
     }
 
-    constraints.push(orderBy('date', 'desc'));
+    constraints.push(orderBy("date", "desc"));
 
     return { queryConstraints: constraints };
   }
@@ -575,7 +664,10 @@ class JournalEntryService {
     drafts: number;
     totalDebit: number;
   }> {
-    const baseQuery = query(this.collectionRef(tenantId), where('fiscalYear', '==', fiscalYear));
+    const baseQuery = query(
+      this.collectionRef(tenantId),
+      where("fiscalYear", "==", fiscalYear),
+    );
     const snapshot = await getDocs(baseQuery);
 
     let total = 0;
@@ -586,10 +678,10 @@ class JournalEntryService {
     for (const doc of snapshot.docs) {
       const data = doc.data();
       total++;
-      if (data.status === 'posted') {
+      if (data.status === "posted") {
         posted++;
         totalDebit = addMoney(totalDebit, Number(data.totalDebit) || 0);
-      } else if (data.status === 'draft') {
+      } else if (data.status === "draft") {
         drafts++;
       }
     }
@@ -599,18 +691,22 @@ class JournalEntryService {
 
   async getEntryCountByStatus(
     tenantId: string,
-    status: JournalEntry['status'],
+    status: JournalEntry["status"],
   ): Promise<number> {
-    const snapshot = await getDocs(query(this.collectionRef(tenantId), where('status', '==', status)));
+    const snapshot = await getDocs(
+      query(this.collectionRef(tenantId), where("status", "==", status)),
+    );
     return snapshot.size;
   }
 
-  async getLatestPayrollDashboardEntry(tenantId: string): Promise<JournalEntry | null> {
+  async getLatestPayrollDashboardEntry(
+    tenantId: string,
+  ): Promise<JournalEntry | null> {
     const payrollQuery = query(
       this.collectionRef(tenantId),
-      where('status', '==', 'posted'),
-      where('source', '==', 'payroll'),
-      orderBy('date', 'desc'),
+      where("status", "==", "posted"),
+      where("source", "==", "payroll"),
+      orderBy("date", "desc"),
       limit(1),
     );
     const payrollSnapshot = await getDocs(payrollQuery);
@@ -619,20 +715,31 @@ class JournalEntryService {
     }
 
     const latestPayrollDoc = payrollSnapshot.docs[0];
-    return { id: latestPayrollDoc.id, ...latestPayrollDoc.data() } as JournalEntry;
+    return {
+      id: latestPayrollDoc.id,
+      ...latestPayrollDoc.data(),
+    } as JournalEntry;
   }
 
-  async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
+  async postJournalEntry(
+    tenantId: string,
+    id: string,
+    postedBy: string,
+  ): Promise<void> {
     const journalDocRef = doc(db, paths.journalEntry(tenantId, id));
 
     // Pre-check fiscal period status (query not transaction-safe)
     const preSnap = await getDoc(journalDocRef);
     if (!preSnap.exists()) {
-      throw new Error('Journal entry not found');
+      throw new Error("Journal entry not found");
     }
     const preEntry = { id: preSnap.id, ...preSnap.data() } as JournalEntry;
-    if (preEntry.status === 'draft') {
-      await this.assertFiscalPeriodAllowsPosting(tenantId, preEntry.fiscalYear, preEntry.fiscalPeriod);
+    if (preEntry.status === "draft") {
+      await this.assertFiscalPeriodAllowsPosting(
+        tenantId,
+        preEntry.fiscalYear,
+        preEntry.fiscalPeriod,
+      );
     }
 
     // Use transaction to ensure atomicity: journal status update + GL entries creation
@@ -640,20 +747,22 @@ class JournalEntryService {
       // Read the journal entry within the transaction
       const journalDoc = await transaction.get(journalDocRef);
       if (!journalDoc.exists()) {
-        throw new Error('Journal entry not found');
+        throw new Error("Journal entry not found");
       }
 
       const entry = { id: journalDoc.id, ...journalDoc.data() } as JournalEntry;
-      if (entry.status === 'posted') {
-        throw new Error('Journal entry is already posted');
+      if (entry.status === "posted") {
+        throw new Error("Journal entry is already posted");
       }
-      if (entry.status !== 'draft') {
-        throw new Error(`Only draft journal entries can be posted (current: ${entry.status})`);
+      if (entry.status !== "draft") {
+        throw new Error(
+          `Only draft journal entries can be posted (current: ${entry.status})`,
+        );
       }
 
       // Update journal entry status
       transaction.update(journalDocRef, {
-        status: 'posted',
+        status: "posted",
         postedAt: serverTimestamp(),
         postedBy,
       });
@@ -683,13 +792,13 @@ class JournalEntryService {
       transaction.set(auditDocRef, {
         userId: postedBy,
         userEmail: postedBy,
-        action: 'accounting.journal_post',
-        module: 'accounting',
+        action: "accounting.journal_post",
+        module: "accounting",
         description: `Posted journal entry ${entry.entryNumber}`,
         timestamp: serverTimestamp(),
         tenantId,
         entityId: id,
-        entityType: 'journal_entry',
+        entityType: "journal_entry",
         entityName: entry.entryNumber,
         metadata: {
           source: entry.source,
@@ -698,28 +807,37 @@ class JournalEntryService {
           totalCredit: entry.totalCredit,
           date: entry.date,
         },
-        severity: 'info',
+        severity: "info",
       });
     });
   }
 
-  async voidJournalEntry(tenantId: string, id: string, voidedBy: string, reason: string): Promise<void> {
+  async voidJournalEntry(
+    tenantId: string,
+    id: string,
+    voidedBy: string,
+    reason: string,
+  ): Promise<void> {
     const docRef = doc(db, paths.journalEntry(tenantId, id));
     const existing = await getDoc(docRef);
     if (!existing.exists()) {
-      throw new Error('Journal entry not found');
+      throw new Error("Journal entry not found");
     }
     const entry = { ...existing.data(), id: existing.id } as JournalEntry;
-    if (entry.status !== 'posted') {
-      throw new Error('Only posted journal entries can be voided');
+    if (entry.status !== "posted") {
+      throw new Error("Only posted journal entries can be voided");
     }
 
-    await this.assertFiscalPeriodAllowsPosting(tenantId, entry.fiscalYear, entry.fiscalPeriod);
+    await this.assertFiscalPeriodAllowsPosting(
+      tenantId,
+      entry.fiscalYear,
+      entry.fiscalPeriod,
+    );
 
     await runTransaction(db, async (transaction) => {
       // 1. Mark journal entry as void
       transaction.update(docRef, {
-        status: 'void',
+        status: "void",
         voidedAt: serverTimestamp(),
         voidedBy,
         voidReason: reason,
@@ -736,8 +854,8 @@ class JournalEntryService {
           entryNumber: `${entry.entryNumber}-VOID`,
           entryDate: entry.date,
           description: `VOID: ${line.description || entry.description}`,
-          debit: line.credit,   // Swap: original credit becomes debit
-          credit: line.debit,   // Swap: original debit becomes credit
+          debit: line.credit, // Swap: original credit becomes debit
+          credit: line.debit, // Swap: original debit becomes credit
           balance: 0,
           fiscalYear: entry.fiscalYear,
           fiscalPeriod: entry.fiscalPeriod,
@@ -750,13 +868,13 @@ class JournalEntryService {
       transaction.set(auditDocRef, {
         userId: voidedBy,
         userEmail: voidedBy,
-        action: 'accounting.journal_void',
-        module: 'accounting',
-        description: `Voided journal entry ${entry.entryNumber}${reason ? `: ${reason}` : ''}`,
+        action: "accounting.journal_void",
+        module: "accounting",
+        description: `Voided journal entry ${entry.entryNumber}${reason ? `: ${reason}` : ""}`,
         timestamp: serverTimestamp(),
         tenantId,
         entityId: id,
-        entityType: 'journal_entry',
+        entityType: "journal_entry",
         entityName: entry.entryNumber,
         metadata: {
           source: entry.source,
@@ -766,7 +884,7 @@ class JournalEntryService {
           date: entry.date,
           reason,
         },
-        severity: 'critical',
+        severity: "critical",
       });
     });
   }
@@ -788,9 +906,9 @@ class JournalEntryService {
     journalEntry: JournalEntry,
     transaction: Transaction,
     voidedBy: string,
-    reason: string
+    reason: string,
   ): void {
-    if (journalEntry.status !== 'posted') {
+    if (journalEntry.status !== "posted") {
       // Nothing to reverse for draft or already-voided entries
       return;
     }
@@ -799,7 +917,7 @@ class JournalEntryService {
 
     // 1. Mark journal entry as void
     transaction.update(journalDocRef, {
-      status: 'void',
+      status: "void",
       voidedAt: serverTimestamp(),
       voidedBy,
       voidReason: reason,
@@ -816,8 +934,8 @@ class JournalEntryService {
         entryNumber: `${journalEntry.entryNumber}-VOID`,
         entryDate: journalEntry.date,
         description: `VOID: ${line.description || journalEntry.description}`,
-        debit: line.credit,   // Swap: original credit becomes debit
-        credit: line.debit,   // Swap: original debit becomes credit
+        debit: line.credit, // Swap: original credit becomes debit
+        credit: line.debit, // Swap: original debit becomes credit
         balance: 0,
         fiscalYear: journalEntry.fiscalYear,
         fiscalPeriod: journalEntry.fiscalPeriod,
@@ -826,17 +944,21 @@ class JournalEntryService {
     }
 
     // Audit trail: voided journal entry (inside parent transaction)
-    const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${journalEntryId}_void`);
+    const auditDocRef = doc(
+      db,
+      paths.auditLogs(tenantId),
+      `acct_${journalEntryId}_void`,
+    );
     transaction.set(auditDocRef, {
       userId: voidedBy,
       userEmail: voidedBy,
-      action: 'accounting.journal_void',
-      module: 'accounting',
-      description: `Voided journal entry ${journalEntry.entryNumber}${reason ? `: ${reason}` : ''}`,
+      action: "accounting.journal_void",
+      module: "accounting",
+      description: `Voided journal entry ${journalEntry.entryNumber}${reason ? `: ${reason}` : ""}`,
       timestamp: serverTimestamp(),
       tenantId,
       entityId: journalEntryId,
-      entityType: 'journal_entry',
+      entityType: "journal_entry",
       entityName: journalEntry.entryNumber,
       metadata: {
         source: journalEntry.source,
@@ -846,7 +968,7 @@ class JournalEntryService {
         date: journalEntry.date,
         reason,
       },
-      severity: 'critical',
+      severity: "critical",
     });
   }
 
@@ -858,14 +980,18 @@ class JournalEntryService {
       createdBy: string;
       reason: string;
       txn?: Transaction;
-    }
+    },
   ): Promise<string> {
     if (!originalEntry?.id) {
-      throw new Error('Original journal entry is missing id');
+      throw new Error("Original journal entry is missing id");
     }
 
     const { year, period: month } = getFiscalDateParts(params.date);
-    const entryNumber = await this.getNextEntryNumber(tenantId, year, params.txn);
+    const entryNumber = await this.getNextEntryNumber(
+      tenantId,
+      year,
+      params.txn,
+    );
 
     const lines: JournalEntryLine[] = originalEntry.lines.map((line, idx) => ({
       lineNumber: idx + 1,
@@ -880,17 +1006,17 @@ class JournalEntryService {
       projectId: line.projectId,
     }));
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: params.date,
       description: `Reversal of ${originalEntry.entryNumber}: ${params.reason}`,
-      source: 'adjustment',
+      source: "adjustment",
       sourceId: originalEntry.id,
       sourceRef: originalEntry.entryNumber,
       lines,
       totalDebit: originalEntry.totalDebit,
       totalCredit: originalEntry.totalCredit,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: params.createdBy,
       fiscalYear: year,
@@ -907,57 +1033,72 @@ class JournalEntryService {
    * scale (1-2 admins). If high-volume concurrent numbering is needed, switch to
    * a distributed counter or timestamp-based IDs (e.g., JE-2026-10-ABC1).
    */
-  async getNextEntryNumber(tenantId: string, year: number, txn?: Transaction): Promise<string> {
+  async getNextEntryNumber(
+    tenantId: string,
+    year: number,
+    txn?: Transaction,
+  ): Promise<string> {
     const settingsRef = doc(db, paths.accountingSettings(tenantId));
     const currentYear = parseInt(getTodayTL().slice(0, 4), 10);
 
     const doWork = async (transaction: Transaction) => {
       const settingsSnap = await transaction.get(settingsRef);
 
-      let prefix = 'JE';
+      let prefix = "JE";
       let nextNum = 1;
 
       if (settingsSnap.exists()) {
         const settings = settingsSnap.data() as Partial<AccountingSettings> & {
           nextJournalNumberByYear?: Record<string, number>;
         };
-        prefix = settings.journalEntryPrefix || 'JE';
+        prefix = settings.journalEntryPrefix || "JE";
 
         const byYear = settings.nextJournalNumberByYear || {};
         const yearKey = String(year);
         const fromYearCounter = byYear[yearKey];
 
-        if (typeof fromYearCounter === 'number' && fromYearCounter > 0) {
+        if (typeof fromYearCounter === "number" && fromYearCounter > 0) {
           nextNum = Math.floor(fromYearCounter);
         } else if (
           year === currentYear &&
-          typeof settings.nextJournalNumber === 'number' &&
+          typeof settings.nextJournalNumber === "number" &&
           settings.nextJournalNumber > 0
         ) {
           nextNum = Math.floor(settings.nextJournalNumber);
         }
 
-        transaction.set(settingsRef, {
-          journalEntryPrefix: prefix,
-          nextJournalNumber: year === currentYear ? nextNum + 1 : settings.nextJournalNumber || 1,
-          nextJournalNumberByYear: {
-            ...byYear,
-            [yearKey]: nextNum + 1,
+        transaction.set(
+          settingsRef,
+          {
+            journalEntryPrefix: prefix,
+            nextJournalNumber:
+              year === currentYear
+                ? nextNum + 1
+                : settings.nextJournalNumber || 1,
+            nextJournalNumberByYear: {
+              ...byYear,
+              [yearKey]: nextNum + 1,
+            },
+            updatedAt: serverTimestamp(),
           },
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+          { merge: true },
+        );
       } else {
-        transaction.set(settingsRef, {
-          journalEntryPrefix: 'JE',
-          nextJournalNumber: year === currentYear ? 2 : 1,
-          nextJournalNumberByYear: {
-            [String(year)]: 2,
+        transaction.set(
+          settingsRef,
+          {
+            journalEntryPrefix: "JE",
+            nextJournalNumber: year === currentYear ? 2 : 1,
+            nextJournalNumberByYear: {
+              [String(year)]: 2,
+            },
+            updatedAt: serverTimestamp(),
           },
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+          { merge: true },
+        );
       }
 
-      return `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
+      return `${prefix}-${year}-${String(nextNum).padStart(4, "0")}`;
     };
 
     if (txn) {
@@ -982,48 +1123,57 @@ class JournalEntryService {
     return runTransaction(db, async (transaction) => {
       const settingsSnap = await transaction.get(settingsRef);
 
-      let prefix = 'JE';
+      let prefix = "JE";
       let nextNum = 1;
 
       if (settingsSnap.exists()) {
         const settings = settingsSnap.data() as Partial<AccountingSettings> & {
           nextJournalNumberByYear?: Record<string, number>;
         };
-        prefix = settings.journalEntryPrefix || 'JE';
+        prefix = settings.journalEntryPrefix || "JE";
 
         const byYear = settings.nextJournalNumberByYear || {};
         const yearKey = String(year);
         const fromYearCounter = byYear[yearKey];
 
-        if (typeof fromYearCounter === 'number' && fromYearCounter > 0) {
+        if (typeof fromYearCounter === "number" && fromYearCounter > 0) {
           nextNum = Math.floor(fromYearCounter);
         } else if (
           year === currentYear &&
-          typeof settings.nextJournalNumber === 'number' &&
+          typeof settings.nextJournalNumber === "number" &&
           settings.nextJournalNumber > 0
         ) {
           nextNum = Math.floor(settings.nextJournalNumber);
         }
 
         const newNext = nextNum + blockSize;
-        transaction.set(settingsRef, {
-          journalEntryPrefix: prefix,
-          nextJournalNumber: year === currentYear ? newNext : settings.nextJournalNumber || 1,
-          nextJournalNumberByYear: {
-            ...byYear,
-            [yearKey]: newNext,
+        transaction.set(
+          settingsRef,
+          {
+            journalEntryPrefix: prefix,
+            nextJournalNumber:
+              year === currentYear ? newNext : settings.nextJournalNumber || 1,
+            nextJournalNumberByYear: {
+              ...byYear,
+              [yearKey]: newNext,
+            },
+            updatedAt: serverTimestamp(),
           },
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+          { merge: true },
+        );
       } else {
-        transaction.set(settingsRef, {
-          journalEntryPrefix: 'JE',
-          nextJournalNumber: year === currentYear ? 1 + blockSize : 1,
-          nextJournalNumberByYear: {
-            [String(year)]: 1 + blockSize,
+        transaction.set(
+          settingsRef,
+          {
+            journalEntryPrefix: "JE",
+            nextJournalNumber: year === currentYear ? 1 + blockSize : 1,
+            nextJournalNumberByYear: {
+              [String(year)]: 1 + blockSize,
+            },
+            updatedAt: serverTimestamp(),
           },
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
+          { merge: true },
+        );
       }
 
       return { start: nextNum, end: nextNum + blockSize - 1, prefix };
@@ -1032,7 +1182,7 @@ class JournalEntryService {
 
   /** Format an entry number from a block allocation. */
   formatEntryNumber(prefix: string, year: number, num: number): string {
-    return `${prefix}-${year}-${String(num).padStart(4, '0')}`;
+    return `${prefix}-${year}-${String(num).padStart(4, "0")}`;
   }
 
   /**
@@ -1041,65 +1191,73 @@ class JournalEntryService {
   async createFromPayroll(
     tenantId: string,
     payrollRun: TLPayrollRun,
-    records: TLPayrollRecord[]
+    records: TLPayrollRecord[],
   ): Promise<string> {
-    const totals = summarizePayrollForAccounting(records.map((record) => ({
-      totalGrossPay: record.grossPay,
-      totalDeductions: record.totalDeductions,
-      netPay: record.netPay,
-      deductions: record.deductions,
-      employerTaxes: [{ type: 'inss_employer', amount: record.inssEmployer }],
-    })));
+    const totals = summarizePayrollForAccounting(
+      records.map((record) => ({
+        totalGrossPay: record.grossPay,
+        totalDeductions: record.totalDeductions,
+        netPay: record.netPay,
+        deductions: record.deductions,
+        employerTaxes: [{ type: "inss_employer", amount: record.inssEmployer }],
+      })),
+    );
 
-    return this.createFromPayrollSummary({
-      periodStart: payrollRun.periodStart,
-      periodEnd: payrollRun.periodEnd,
-      payDate: payrollRun.payDate,
-      totalGrossPay: totals.totalWagesExpense,
-      totalINSSEmployer: totals.totalINSSEmployer,
-      totalIncomeTax: totals.totalIncomeTax,
-      totalINSSEmployee: totals.totalINSSEmployee,
-      totalNetPay: totals.totalNetPay,
-      totalAdvanceRepayments: totals.totalAdvanceRepayments,
-      totalOtherDeductions: totals.totalOtherDeductions,
-      employeeCount: payrollRun.employeeCount,
-      approvedBy: payrollRun.approvedBy,
-      sourceId: payrollRun.id,
-    }, tenantId);
+    return this.createFromPayrollSummary(
+      {
+        periodStart: payrollRun.periodStart,
+        periodEnd: payrollRun.periodEnd,
+        payDate: payrollRun.payDate,
+        totalGrossPay: totals.totalWagesExpense,
+        totalINSSEmployer: totals.totalINSSEmployer,
+        totalIncomeTax: totals.totalIncomeTax,
+        totalINSSEmployee: totals.totalINSSEmployee,
+        totalNetPay: totals.totalNetPay,
+        totalAdvanceRepayments: totals.totalAdvanceRepayments,
+        totalOtherDeductions: totals.totalOtherDeductions,
+        employeeCount: payrollRun.employeeCount,
+        approvedBy: payrollRun.approvedBy,
+        sourceId: payrollRun.id,
+      },
+      tenantId,
+    );
   }
 
   /**
    * Create journal entry from summary payroll totals (generic payroll flow)
    * Use this when detailed TL payroll records are not available.
    */
-  async createFromPayrollSummary(summary: {
-    periodStart: string;
-    periodEnd: string;
-    payDate: string;
-    totalGrossPay: number;
-    totalINSSEmployer: number;
-    totalIncomeTax: number;
-    totalINSSEmployee: number;
-    totalNetPay: number;
-    totalAdvanceRepayments?: number;
-    totalOtherDeductions?: number;
-    employeeCount: number;
-    approvedBy?: string;
-    sourceId?: string;
-    allocations?: Array<{
-      projectCode: string;
-      fundingSource: string;
-      grossPay: number;
-      inssEmployer: number;
-    }>;
-  }, tenantId: string): Promise<string> {
+  async createFromPayrollSummary(
+    summary: {
+      periodStart: string;
+      periodEnd: string;
+      payDate: string;
+      totalGrossPay: number;
+      totalINSSEmployer: number;
+      totalIncomeTax: number;
+      totalINSSEmployee: number;
+      totalNetPay: number;
+      totalAdvanceRepayments?: number;
+      totalOtherDeductions?: number;
+      employeeCount: number;
+      approvedBy?: string;
+      sourceId?: string;
+      allocations?: Array<{
+        projectCode: string;
+        fundingSource: string;
+        grossPay: number;
+        inssEmployer: number;
+      }>;
+    },
+    tenantId: string,
+  ): Promise<string> {
     if (summary.sourceId) {
       const existing = await this.getJournalEntryBySource(
         tenantId,
-        'payroll',
+        "payroll",
         summary.sourceId,
       );
-      if (existing?.id && existing.status === 'posted') {
+      if (existing?.id && existing.status === "posted") {
         return existing.id;
       }
     }
@@ -1131,35 +1289,52 @@ class JournalEntryService {
         account = await accountService.getAccountByCode(tenantId, code);
       }
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        // An older chart predates newer system codes (2260 entered the default
+        // chart 2026-07-11) and initializeChartOfAccounts no-ops once any
+        // chart exists — backfill just the missing system account, the same
+        // way the bill/advance/withholding posting paths do. Every payroll
+        // journal code is isSystem in the standard chart, so this only throws
+        // when the account exists but was deactivated.
+        account = await accountService.ensureSystemAccountByCode(
+          tenantId,
+          code,
+        );
+      }
+      if (!account?.id) {
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       resolved.set(code, { id: account.id, name: account.name });
     }
 
-    const { lines: journalLines, totalDebit, totalCredit } = buildPayrollJournalLines(
-      summary,
-      (code) => {
-        const account = resolved.get(code);
-        if (!account) {
-          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
-        }
-        return account;
-      },
-    );
+    const {
+      lines: journalLines,
+      totalDebit,
+      totalCredit,
+    } = buildPayrollJournalLines(summary, (code) => {
+      const account = resolved.get(code);
+      if (!account) {
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
+      }
+      return account;
+    });
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: summary.payDate,
       description: `Payroll for ${summary.periodStart} to ${summary.periodEnd}`,
-      source: 'payroll',
+      source: "payroll",
       sourceId: summary.sourceId,
       sourceRef: `Payroll Run - ${summary.employeeCount} employees`,
       lines: journalLines,
       totalDebit,
       totalCredit,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
-      postedBy: summary.approvedBy || 'system',
+      postedBy: summary.approvedBy || "system",
       fiscalYear: year,
       fiscalPeriod: month,
     };
@@ -1181,7 +1356,7 @@ class JournalEntryService {
     invoice: Invoice,
     createdBy: string,
     txn?: Transaction,
-    resolvedAccounts?: Record<string, { id: string; name: string }>
+    resolvedAccounts?: Record<string, { id: string; name: string }>,
   ): Promise<string> {
     const invoiceDate = invoice.issueDate;
     const { year, period: month } = getFiscalDateParts(invoiceDate);
@@ -1191,13 +1366,19 @@ class JournalEntryService {
       if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       return { id: account.id, name: account.name };
     };
 
     const mapping = MONEY_JOURNAL_MAPPINGS.invoiceCreated;
-    const codes = { receivable: mapping.debit.code, revenue: mapping.credit.code, tax: '2310' };
+    const codes = {
+      receivable: mapping.debit.code,
+      revenue: mapping.credit.code,
+      tax: "2310",
+    };
     // Pre-resolve accounts (tax only when the invoice carries VAT), then hand
     // the pure, unit-tested builder a synchronous resolver.
     const resolved = new Map<string, { id: string; name: string }>();
@@ -1207,28 +1388,36 @@ class JournalEntryService {
       resolved.set(codes.tax, await getAccountId(codes.tax));
     }
     const { lines, totalDebit, totalCredit } = buildInvoiceJournalLines(
-      { id: invoice.id, invoiceNumber: invoice.invoiceNumber, customerName: invoice.customerName, total: invoice.total, taxAmount: invoice.taxAmount },
+      {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customerName,
+        total: invoice.total,
+        taxAmount: invoice.taxAmount,
+      },
       (code) => {
         const account = resolved.get(code);
         if (!account) {
-          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+          throw new Error(
+            `Missing account for code ${code}. Initialize chart of accounts first.`,
+          );
         }
         return account;
       },
       codes,
     );
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: invoiceDate,
       description: `Invoice ${invoice.invoiceNumber} - ${invoice.customerName}`,
-      source: 'invoice',
+      source: "invoice",
       sourceId: invoice.id,
       sourceRef: invoice.invoiceNumber,
       lines,
       totalDebit,
       totalCredit,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1256,7 +1445,7 @@ class JournalEntryService {
     },
     createdBy: string,
     txn?: Transaction,
-    resolvedAccounts?: Record<string, { id: string; name: string }>
+    resolvedAccounts?: Record<string, { id: string; name: string }>,
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(payment.date);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
@@ -1265,15 +1454,17 @@ class JournalEntryService {
       if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       return { id: account.id, name: account.name };
     };
 
     // Use Cash on Hand for cash payments, Bank for others
-    const cashCode = payment.method === 'cash' ? '1110' : '1120';
+    const cashCode = payment.method === "cash" ? "1110" : "1120";
     const cashAccount = await getAccountId(cashCode);
-    const arAccount = await getAccountId('1210');
+    const arAccount = await getAccountId("1210");
 
     const lines: JournalEntryLine[] = [
       {
@@ -1288,7 +1479,7 @@ class JournalEntryService {
       {
         lineNumber: 2,
         accountId: arAccount.id,
-        accountCode: '1210',
+        accountCode: "1210",
         accountName: arAccount.name,
         debit: 0,
         credit: payment.amount,
@@ -1296,17 +1487,17 @@ class JournalEntryService {
       },
     ];
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: payment.date,
       description: `Payment received for ${payment.invoiceNumber} - ${payment.customerName}`,
-      source: 'payment',
+      source: "payment",
       sourceId: payment.invoiceId,
       sourceRef: payment.reference || payment.invoiceNumber,
       lines,
       totalDebit: payment.amount,
       totalCredit: payment.amount,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1326,7 +1517,7 @@ class JournalEntryService {
     bill: Bill,
     createdBy: string,
     txn?: Transaction,
-    resolvedAccounts?: Record<string, { id: string; name: string }>
+    resolvedAccounts?: Record<string, { id: string; name: string }>,
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(bill.billDate);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
@@ -1336,15 +1527,19 @@ class JournalEntryService {
       if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       return { id: account.id, name: account.name };
     };
 
     // Get expense account from category
-    const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[bill.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+    const expenseMapping =
+      EXPENSE_CATEGORY_TO_ACCOUNT[bill.category] ||
+      EXPENSE_CATEGORY_TO_ACCOUNT.other;
     const expenseAccount = await getAccountId(expenseMapping.code);
-    const apAccount = await getAccountId('2110');
+    const apAccount = await getAccountId("2110");
 
     const lines: JournalEntryLine[] = [
       {
@@ -1359,7 +1554,7 @@ class JournalEntryService {
       {
         lineNumber: 2,
         accountId: apAccount.id,
-        accountCode: '2110',
+        accountCode: "2110",
         accountName: apAccount.name,
         debit: 0,
         credit: bill.total,
@@ -1367,17 +1562,17 @@ class JournalEntryService {
       },
     ];
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: bill.billDate,
       description: `Bill from ${bill.vendorName} - ${bill.description}`,
-      source: 'bill',
+      source: "bill",
       sourceId: bill.id,
       sourceRef: bill.billNumber || `Bill-${bill.id.slice(0, 8)}`,
       lines,
       totalDebit: bill.total,
       totalCredit: bill.total,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1407,7 +1602,7 @@ class JournalEntryService {
     },
     createdBy: string,
     txn?: Transaction,
-    resolvedAccounts?: Record<string, { id: string; name: string }>
+    resolvedAccounts?: Record<string, { id: string; name: string }>,
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(payment.date);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
@@ -1416,7 +1611,9 @@ class JournalEntryService {
       if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       return { id: account.id, name: account.name };
     };
@@ -1425,12 +1622,19 @@ class JournalEntryService {
     // withholding account only when tax is withheld. Then hand the pure,
     // unit-tested builder a synchronous resolver.
     const { withholdingTax } = calculateBillPaymentPostingAmounts(
-      payment.amount, payment.cashPaid, payment.withholdingTax,
+      payment.amount,
+      payment.cashPaid,
+      payment.withholdingTax,
     );
-    const codes = { payable: '2110', cashOnHand: '1110', bank: '1120', withholding: '2320' };
+    const codes = {
+      payable: "2110",
+      cashOnHand: "1110",
+      bank: "1120",
+      withholding: "2320",
+    };
     const resolved = new Map<string, { id: string; name: string }>();
     resolved.set(codes.payable, await getAccountId(codes.payable));
-    const cashCode = payment.method === 'cash' ? codes.cashOnHand : codes.bank;
+    const cashCode = payment.method === "cash" ? codes.cashOnHand : codes.bank;
     resolved.set(cashCode, await getAccountId(cashCode));
     if (withholdingTax > 0) {
       resolved.set(codes.withholding, await getAccountId(codes.withholding));
@@ -1439,31 +1643,37 @@ class JournalEntryService {
     const refLabel = payment.billNumber || `Bill-${payment.billId.slice(0, 8)}`;
     const { lines, totalDebit, totalCredit } = buildBillPaymentJournalLines(
       {
-        amount: payment.amount, cashPaid: payment.cashPaid, withholdingTax: payment.withholdingTax,
-        method: payment.method, vendorName: payment.vendorName,
-        billNumber: payment.billNumber, billId: payment.billId,
+        amount: payment.amount,
+        cashPaid: payment.cashPaid,
+        withholdingTax: payment.withholdingTax,
+        method: payment.method,
+        vendorName: payment.vendorName,
+        billNumber: payment.billNumber,
+        billId: payment.billId,
       },
       (code) => {
         const account = resolved.get(code);
         if (!account) {
-          throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+          throw new Error(
+            `Missing account for code ${code}. Initialize chart of accounts first.`,
+          );
         }
         return account;
       },
       codes,
     );
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: payment.date,
       description: `Bill payment to ${payment.vendorName} - ${refLabel}`,
-      source: 'payment',
+      source: "payment",
       sourceId: payment.billId,
       sourceRef: payment.reference || refLabel,
       lines,
       totalDebit,
       totalCredit,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1484,7 +1694,7 @@ class JournalEntryService {
       period: string;
       paymentDate: string;
       amount: number;
-      method: 'bank_transfer' | 'cash_at_bnu';
+      method: "bank_transfer" | "cash_at_bnu";
       paymentReference: string;
       proofUrl: string;
     },
@@ -1494,22 +1704,22 @@ class JournalEntryService {
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(remittance.paymentDate);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
-    const withholdingAccount = resolvedAccounts['2320'];
-    const cashCode = remittance.method === 'cash_at_bnu' ? '1110' : '1120';
+    const withholdingAccount = resolvedAccounts["2320"];
+    const cashCode = remittance.method === "cash_at_bnu" ? "1110" : "1120";
     const cashAccount = resolvedAccounts[cashCode];
     if (!withholdingAccount?.id) {
-      throw new Error('Missing account for code 2320.');
+      throw new Error("Missing account for code 2320.");
     }
     if (!cashAccount?.id) {
       throw new Error(`Missing account for code ${cashCode}.`);
     }
 
     const amount = roundMoney(remittance.amount);
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: remittance.paymentDate,
       description: `Supplier withholding remittance - ${remittance.period}`,
-      source: 'tax_payment',
+      source: "tax_payment",
       sourceId: remittance.id,
       sourceRef: remittance.paymentReference,
       attachments: [remittance.proofUrl],
@@ -1517,7 +1727,7 @@ class JournalEntryService {
         {
           lineNumber: 1,
           accountId: withholdingAccount.id,
-          accountCode: '2320',
+          accountCode: "2320",
           accountName: withholdingAccount.name,
           debit: amount,
           credit: 0,
@@ -1535,7 +1745,7 @@ class JournalEntryService {
       ],
       totalDebit: amount,
       totalCredit: amount,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1554,7 +1764,7 @@ class JournalEntryService {
       purpose: string;
       issueDate: string;
       amount: number;
-      fundingMethod: 'cash' | 'bank_transfer';
+      fundingMethod: "cash" | "bank_transfer";
       issueReference: string;
       issueProofUrl: string;
     },
@@ -1564,50 +1774,54 @@ class JournalEntryService {
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(advance.issueDate);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
-    const advanceAccount = resolvedAccounts['1230'];
-    const cashCode = advance.fundingMethod === 'cash' ? '1110' : '1120';
+    const advanceAccount = resolvedAccounts["1230"];
+    const cashCode = advance.fundingMethod === "cash" ? "1110" : "1120";
     const cashAccount = resolvedAccounts[cashCode];
     if (!advanceAccount?.id || !cashAccount?.id) {
-      throw new Error('Cash advance accounts were not resolved.');
+      throw new Error("Cash advance accounts were not resolved.");
     }
     const amount = roundMoney(advance.amount);
-    return this.createJournalEntry(tenantId, {
-      entryNumber,
-      date: advance.issueDate,
-      description: `Expense advance to ${advance.employeeName}`,
-      source: 'cash_advance',
-      sourceId: advance.id,
-      sourceRef: advance.issueReference,
-      attachments: [advance.issueProofUrl],
-      lines: [
-        {
-          lineNumber: 1,
-          accountId: advanceAccount.id,
-          accountCode: '1230',
-          accountName: advanceAccount.name,
-          debit: amount,
-          credit: 0,
-          description: advance.purpose,
-        },
-        {
-          lineNumber: 2,
-          accountId: cashAccount.id,
-          accountCode: cashCode,
-          accountName: cashAccount.name,
-          debit: 0,
-          credit: amount,
-          description: `Advance issued - ${advance.issueReference}`,
-        },
-      ],
-      totalDebit: amount,
-      totalCredit: amount,
-      status: 'posted',
-      postedAt: serverTimestamp(),
-      postedBy: createdBy,
-      fiscalYear: year,
-      fiscalPeriod: month,
-      createdBy,
-    }, txn);
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: advance.issueDate,
+        description: `Expense advance to ${advance.employeeName}`,
+        source: "cash_advance",
+        sourceId: advance.id,
+        sourceRef: advance.issueReference,
+        attachments: [advance.issueProofUrl],
+        lines: [
+          {
+            lineNumber: 1,
+            accountId: advanceAccount.id,
+            accountCode: "1230",
+            accountName: advanceAccount.name,
+            debit: amount,
+            credit: 0,
+            description: advance.purpose,
+          },
+          {
+            lineNumber: 2,
+            accountId: cashAccount.id,
+            accountCode: cashCode,
+            accountName: cashAccount.name,
+            debit: 0,
+            credit: amount,
+            description: `Advance issued - ${advance.issueReference}`,
+          },
+        ],
+        totalDebit: amount,
+        totalCredit: amount,
+        status: "posted",
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
   }
 
   async createFromCashAdvanceClearing(
@@ -1616,13 +1830,13 @@ class JournalEntryService {
       id: string;
       advanceId: string;
       employeeName: string;
-      type: 'expense' | 'return';
+      type: "expense" | "return";
       date: string;
       amount: number;
       description: string;
       proofUrl: string;
       expenseAccountCode?: string;
-      returnMethod?: 'cash' | 'bank_transfer';
+      returnMethod?: "cash" | "bank_transfer";
       reference?: string;
     },
     createdBy: string,
@@ -1631,54 +1845,62 @@ class JournalEntryService {
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(clearing.date);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
-    const advanceAccount = resolvedAccounts['1230'];
-    if (!advanceAccount?.id) throw new Error('Missing account for code 1230.');
-    const debitCode = clearing.type === 'expense'
-      ? clearing.expenseAccountCode
-      : clearing.returnMethod === 'cash' ? '1110' : '1120';
+    const advanceAccount = resolvedAccounts["1230"];
+    if (!advanceAccount?.id) throw new Error("Missing account for code 1230.");
+    const debitCode =
+      clearing.type === "expense"
+        ? clearing.expenseAccountCode
+        : clearing.returnMethod === "cash"
+          ? "1110"
+          : "1120";
     if (!debitCode || !resolvedAccounts[debitCode]?.id) {
-      throw new Error('Cash advance clearing account was not resolved.');
+      throw new Error("Cash advance clearing account was not resolved.");
     }
     const debitAccount = resolvedAccounts[debitCode];
     const amount = roundMoney(clearing.amount);
-    const sourceRef = clearing.reference || `Advance-${clearing.advanceId.slice(0, 8)}`;
-    return this.createJournalEntry(tenantId, {
-      entryNumber,
-      date: clearing.date,
-      description: `${clearing.type === 'expense' ? 'Expense receipt' : 'Unused cash returned'} - ${clearing.employeeName}`,
-      source: 'cash_advance',
-      sourceId: clearing.id,
-      sourceRef,
-      attachments: [clearing.proofUrl],
-      lines: [
-        {
-          lineNumber: 1,
-          accountId: debitAccount.id,
-          accountCode: debitCode,
-          accountName: debitAccount.name,
-          debit: amount,
-          credit: 0,
-          description: clearing.description,
-        },
-        {
-          lineNumber: 2,
-          accountId: advanceAccount.id,
-          accountCode: '1230',
-          accountName: advanceAccount.name,
-          debit: 0,
-          credit: amount,
-          description: `Clear staff expense advance - ${clearing.employeeName}`,
-        },
-      ],
-      totalDebit: amount,
-      totalCredit: amount,
-      status: 'posted',
-      postedAt: serverTimestamp(),
-      postedBy: createdBy,
-      fiscalYear: year,
-      fiscalPeriod: month,
-      createdBy,
-    }, txn);
+    const sourceRef =
+      clearing.reference || `Advance-${clearing.advanceId.slice(0, 8)}`;
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: clearing.date,
+        description: `${clearing.type === "expense" ? "Expense receipt" : "Unused cash returned"} - ${clearing.employeeName}`,
+        source: "cash_advance",
+        sourceId: clearing.id,
+        sourceRef,
+        attachments: [clearing.proofUrl],
+        lines: [
+          {
+            lineNumber: 1,
+            accountId: debitAccount.id,
+            accountCode: debitCode,
+            accountName: debitAccount.name,
+            debit: amount,
+            credit: 0,
+            description: clearing.description,
+          },
+          {
+            lineNumber: 2,
+            accountId: advanceAccount.id,
+            accountCode: "1230",
+            accountName: advanceAccount.name,
+            debit: 0,
+            credit: amount,
+            description: `Clear staff expense advance - ${clearing.employeeName}`,
+          },
+        ],
+        totalDebit: amount,
+        totalCredit: amount,
+        status: "posted",
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
   }
 
   /**
@@ -1691,7 +1913,7 @@ class JournalEntryService {
     expense: Expense,
     createdBy: string,
     txn?: Transaction,
-    resolvedAccounts?: Record<string, { id: string; name: string }>
+    resolvedAccounts?: Record<string, { id: string; name: string }>,
   ): Promise<string> {
     const { year, period: month } = getFiscalDateParts(expense.date);
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
@@ -1701,17 +1923,21 @@ class JournalEntryService {
       if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
-        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+        throw new Error(
+          `Missing account for code ${code}. Initialize chart of accounts first.`,
+        );
       }
       return { id: account.id, name: account.name };
     };
 
     // Get expense account from category
-    const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[expense.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+    const expenseMapping =
+      EXPENSE_CATEGORY_TO_ACCOUNT[expense.category] ||
+      EXPENSE_CATEGORY_TO_ACCOUNT.other;
     const expenseAccount = await getAccountId(expenseMapping.code);
 
     // Use Cash on Hand for cash payments, Bank for others
-    const cashCode = expense.paymentMethod === 'cash' ? '1110' : '1120';
+    const cashCode = expense.paymentMethod === "cash" ? "1110" : "1120";
     const cashAccount = await getAccountId(cashCode);
 
     const lines: JournalEntryLine[] = [
@@ -1735,17 +1961,17 @@ class JournalEntryService {
       },
     ];
 
-    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+    const journalEntry: Omit<JournalEntry, "id" | "createdAt"> = {
       entryNumber,
       date: expense.date,
-      description: `Expense: ${expense.description}${expense.vendorName ? ` - ${expense.vendorName}` : ''}`,
-      source: 'receipt', // Using 'receipt' for direct expenses
+      description: `Expense: ${expense.description}${expense.vendorName ? ` - ${expense.vendorName}` : ""}`,
+      source: "receipt", // Using 'receipt' for direct expenses
       sourceId: expense.id,
       sourceRef: `EXP-${expense.id.slice(0, 8)}`,
       lines,
       totalDebit: expense.amount,
       totalCredit: expense.amount,
-      status: 'posted',
+      status: "posted",
       postedAt: serverTimestamp(),
       postedBy: createdBy,
       fiscalYear: year,
@@ -1765,7 +1991,10 @@ class GeneralLedgerService {
     return collection(db, paths.generalLedger(tenantId));
   }
 
-  async createEntriesFromJournal(tenantId: string, journalEntry: JournalEntry): Promise<void> {
+  async createEntriesFromJournal(
+    tenantId: string,
+    journalEntry: JournalEntry,
+  ): Promise<void> {
     const batch = writeBatch(db);
 
     for (const line of journalEntry.lines) {
@@ -1800,7 +2029,7 @@ class GeneralLedgerService {
       fiscalYear?: number;
       accountType?: AccountType;
       accountSubType?: AccountSubType;
-    }
+    },
   ): Promise<{ entries: GeneralLedgerEntry[]; openingBalance: number }> {
     // Credit-normal accounts: liability, equity, revenue.
     // Exceptions for contra/temporary accounts in our simplified COA:
@@ -1811,46 +2040,54 @@ class GeneralLedgerService {
       const subType = options?.accountSubType;
       if (!type) return false;
 
-      if (type === 'asset') return subType === 'accumulated_depreciation';
-      if (type === 'expense') return false;
-      if (type === 'liability' || type === 'revenue') return true;
-      if (type === 'equity') return subType !== 'dividends';
+      if (type === "asset") return subType === "accumulated_depreciation";
+      if (type === "expense") return false;
+      if (type === "liability" || type === "revenue") return true;
+      if (type === "equity") return subType !== "dividends";
       return false;
     })();
 
     if (options?.accountCode) {
-      const periodQueryConstraints = [where('accountCode', '==', options.accountCode)];
+      const periodQueryConstraints = [
+        where("accountCode", "==", options.accountCode),
+      ];
 
       if (options.startDate) {
-        periodQueryConstraints.push(where('entryDate', '>=', options.startDate));
+        periodQueryConstraints.push(
+          where("entryDate", ">=", options.startDate),
+        );
       }
       if (options.endDate) {
-        periodQueryConstraints.push(where('entryDate', '<=', options.endDate));
+        periodQueryConstraints.push(where("entryDate", "<=", options.endDate));
       }
 
       const periodQuery = query(
         this.collectionRef(tenantId),
         ...periodQueryConstraints,
-        orderBy('entryDate'),
+        orderBy("entryDate"),
       );
       const periodSnapshot = await getDocs(periodQuery);
       const periodEntries = periodSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as GeneralLedgerEntry))
+        .map((doc) => ({ id: doc.id, ...doc.data() }) as GeneralLedgerEntry)
         .sort((a, b) => {
           const dateCmp = a.entryDate.localeCompare(b.entryDate);
           if (dateCmp !== 0) return dateCmp;
-          const numberCmp = (a.entryNumber || '').localeCompare(b.entryNumber || '');
+          const numberCmp = (a.entryNumber || "").localeCompare(
+            b.entryNumber || "",
+          );
           if (numberCmp !== 0) return numberCmp;
-          return (a.id || '').localeCompare(b.id || '');
+          return (a.id || "").localeCompare(b.id || "");
         });
 
       let openingBalance = 0;
       if (options.startDate) {
-        const openingSnapshot = await getDocs(query(
-          this.collectionRef(tenantId),
-          where('accountCode', '==', options.accountCode),
-          where('entryDate', '<', options.startDate),
-        ));
+        const openingSnapshot = await getDocs(
+          query(
+            this.collectionRef(tenantId),
+            where("accountCode", "==", options.accountCode),
+            where("entryDate", "<", options.startDate),
+          ),
+        );
 
         let openingDebit = 0;
         let openingCredit = 0;
@@ -1865,7 +2102,7 @@ class GeneralLedgerService {
       }
 
       let runningBalance = openingBalance;
-      const entries = periodEntries.map(entry => {
+      const entries = periodEntries.map((entry) => {
         runningBalance = isCreditNormal
           ? addMoney(runningBalance, subtractMoney(entry.credit, entry.debit))
           : addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
@@ -1877,22 +2114,36 @@ class GeneralLedgerService {
 
     // Support legacy rows where accountId stored as accountCode by querying both.
     const queries = [
-      query(this.collectionRef(tenantId), where('accountId', '==', accountKey), orderBy('entryDate')),
-      query(this.collectionRef(tenantId), where('accountCode', '==', accountKey), orderBy('entryDate')),
+      query(
+        this.collectionRef(tenantId),
+        where("accountId", "==", accountKey),
+        orderBy("entryDate"),
+      ),
+      query(
+        this.collectionRef(tenantId),
+        where("accountCode", "==", accountKey),
+        orderBy("entryDate"),
+      ),
     ];
 
     if (options?.fiscalYear) {
-      queries[0] = query(queries[0], where('fiscalYear', '==', options.fiscalYear));
-      queries[1] = query(queries[1], where('fiscalYear', '==', options.fiscalYear));
+      queries[0] = query(
+        queries[0],
+        where("fiscalYear", "==", options.fiscalYear),
+      );
+      queries[1] = query(
+        queries[1],
+        where("fiscalYear", "==", options.fiscalYear),
+      );
     }
 
-    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+    const snapshots = await Promise.all(queries.map((q) => getDocs(q)));
 
     // Merge and dedupe by doc id
     const seen = new Set<string>();
     let allEntries: GeneralLedgerEntry[] = [];
-    snapshots.forEach(snapshot => {
-      snapshot.docs.forEach(doc => {
+    snapshots.forEach((snapshot) => {
+      snapshot.docs.forEach((doc) => {
         if (!seen.has(doc.id)) {
           seen.add(doc.id);
           allEntries.push({ id: doc.id, ...doc.data() } as GeneralLedgerEntry);
@@ -1903,9 +2154,11 @@ class GeneralLedgerService {
     allEntries.sort((a, b) => {
       const dateCmp = a.entryDate.localeCompare(b.entryDate);
       if (dateCmp !== 0) return dateCmp;
-      const numberCmp = (a.entryNumber || '').localeCompare(b.entryNumber || '');
+      const numberCmp = (a.entryNumber || "").localeCompare(
+        b.entryNumber || "",
+      );
       if (numberCmp !== 0) return numberCmp;
-      return (a.id || '').localeCompare(b.id || '');
+      return (a.id || "").localeCompare(b.id || "");
     });
 
     // Split into pre-period (opening) and in-period entries
@@ -1913,8 +2166,12 @@ class GeneralLedgerService {
     let periodEntries: GeneralLedgerEntry[] = allEntries;
 
     if (options?.startDate) {
-      const prePeriod = allEntries.filter(e => e.entryDate < options.startDate!);
-      periodEntries = allEntries.filter(e => e.entryDate >= options.startDate!);
+      const prePeriod = allEntries.filter(
+        (e) => e.entryDate < options.startDate!,
+      );
+      periodEntries = allEntries.filter(
+        (e) => e.entryDate >= options.startDate!,
+      );
 
       // Compute opening balance from pre-period entries
       for (const entry of prePeriod) {
@@ -1925,12 +2182,14 @@ class GeneralLedgerService {
     }
 
     if (options?.endDate) {
-      periodEntries = periodEntries.filter(e => e.entryDate <= options.endDate!);
+      periodEntries = periodEntries.filter(
+        (e) => e.entryDate <= options.endDate!,
+      );
     }
 
     // Calculate running balance starting from opening balance
     let runningBalance = openingBalance;
-    const entries = periodEntries.map(entry => {
+    const entries = periodEntries.map((entry) => {
       runningBalance = isCreditNormal
         ? addMoney(runningBalance, subtractMoney(entry.credit, entry.debit))
         : addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
@@ -1944,20 +2203,25 @@ class GeneralLedgerService {
     tenantId: string,
     accountId: string,
     accountCode?: string,
-    asOfDate?: string
+    asOfDate?: string,
   ): Promise<number> {
     const queries = [
-      query(this.collectionRef(tenantId), where('accountId', '==', accountId)),
+      query(this.collectionRef(tenantId), where("accountId", "==", accountId)),
     ];
     if (accountCode) {
-      queries.push(query(this.collectionRef(tenantId), where('accountCode', '==', accountCode)));
+      queries.push(
+        query(
+          this.collectionRef(tenantId),
+          where("accountCode", "==", accountCode),
+        ),
+      );
     }
 
-    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+    const snapshots = await Promise.all(queries.map((q) => getDocs(q)));
     const seen = new Set<string>();
     let entries: GeneralLedgerEntry[] = [];
-    snapshots.forEach(snapshot => {
-      snapshot.docs.forEach(doc => {
+    snapshots.forEach((snapshot) => {
+      snapshot.docs.forEach((doc) => {
         if (!seen.has(doc.id)) {
           seen.add(doc.id);
           entries.push(doc.data() as GeneralLedgerEntry);
@@ -1966,10 +2230,10 @@ class GeneralLedgerService {
     });
 
     if (asOfDate) {
-      entries = entries.filter(e => e.entryDate <= asOfDate);
+      entries = entries.filter((e) => e.entryDate <= asOfDate);
     }
 
-    return sumMoney(entries.map(e => subtractMoney(e.debit, e.credit)));
+    return sumMoney(entries.map((e) => subtractMoney(e.debit, e.credit)));
   }
 }
 
@@ -1982,10 +2246,10 @@ class TrialBalanceService {
     tenantId: string,
     asOfDate: string,
     _fiscalYear: number,
-  ): Promise<{ isBalanced: boolean; source: 'aggregate' | 'empty' }> {
+  ): Promise<{ isBalanced: boolean; source: "aggregate" | "empty" }> {
     const ledgerUpToDate = query(
       collection(db, paths.generalLedger(tenantId)),
-      where('entryDate', '<=', asOfDate),
+      where("entryDate", "<=", asOfDate),
     );
     const snapshot = await getDocs(ledgerUpToDate);
 
@@ -1998,12 +2262,12 @@ class TrialBalanceService {
     }
 
     if (totalDebit === 0 && totalCredit === 0) {
-      return { isBalanced: true, source: 'empty' };
+      return { isBalanced: true, source: "empty" };
     }
 
     return {
       isBalanced: toDecimal(totalDebit).minus(totalCredit).abs().lessThan(0.01),
-      source: 'aggregate',
+      source: "aggregate",
     };
   }
 
@@ -2024,7 +2288,9 @@ class TrialBalanceService {
     periodCreditById: Map<string, number>;
     periodCreditByCode: Map<string, number>;
   }> {
-    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+    const { balanceSnapshotService } = await import(
+      "@/services/balanceSnapshotService"
+    );
 
     const openingById = new Map<string, number>();
     const openingByCode = new Map<string, number>();
@@ -2041,7 +2307,10 @@ class TrialBalanceService {
     };
 
     // Try to find a snapshot that covers everything before cutoffDate
-    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, cutoffDate);
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(
+      tenantId,
+      cutoffDate,
+    );
 
     if (snapshot) {
       // Populate opening balances from snapshot
@@ -2080,8 +2349,12 @@ class TrialBalanceService {
         }
       }
     } else {
-      const entries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, endDate);
-      entries.forEach(entry => {
+      const entries = await balanceSnapshotService.queryGLDelta(
+        tenantId,
+        undefined,
+        endDate,
+      );
+      entries.forEach((entry) => {
         if (entry.entryDate > endDate) return;
         const net = subtractMoney(entry.debit, entry.credit);
         if (entry.entryDate < cutoffDate) {
@@ -2103,7 +2376,12 @@ class TrialBalanceService {
     };
   }
 
-  async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number, periodStart?: string): Promise<TrialBalance> {
+  async generateTrialBalance(
+    tenantId: string,
+    asOfDate: string,
+    fiscalYear: number,
+    periodStart?: string,
+  ): Promise<TrialBalance> {
     const effectivePeriodStart = periodStart || `${fiscalYear}-01-01`;
 
     const [allAccounts, balanceMaps] = await Promise.all([
@@ -2128,7 +2406,12 @@ class TrialBalanceService {
     for (const account of accounts) {
       if (!account.isActive) continue;
 
-      const openingNet = getAccountNet(openingById, openingByCode, account.id!, account.code);
+      const openingNet = getAccountNet(
+        openingById,
+        openingByCode,
+        account.id!,
+        account.code,
+      );
       const periodDebit = getAccountNet(
         periodDebitById,
         periodDebitByCode,
@@ -2144,10 +2427,13 @@ class TrialBalanceService {
       const periodNet = subtractMoney(periodDebit, periodCredit);
       const closingNet = addMoney(openingNet, periodNet);
 
-      if (toDecimal(openingNet).abs().lessThan(0.01)
-        && toDecimal(periodDebit).abs().lessThan(0.01)
-        && toDecimal(periodCredit).abs().lessThan(0.01)
-        && toDecimal(closingNet).abs().lessThan(0.01)) continue;
+      if (
+        toDecimal(openingNet).abs().lessThan(0.01) &&
+        toDecimal(periodDebit).abs().lessThan(0.01) &&
+        toDecimal(periodCredit).abs().lessThan(0.01) &&
+        toDecimal(closingNet).abs().lessThan(0.01)
+      )
+        continue;
 
       rows.push({
         accountId: account.id!,
@@ -2155,18 +2441,20 @@ class TrialBalanceService {
         accountName: account.name,
         accountType: account.type,
         openingDebit: openingNet > 0 ? openingNet : 0,
-        openingCredit: openingNet < 0 ? toMoney(toDecimal(openingNet).abs()) : 0,
+        openingCredit:
+          openingNet < 0 ? toMoney(toDecimal(openingNet).abs()) : 0,
         periodDebit,
         periodCredit,
         closingDebit: closingNet > 0 ? closingNet : 0,
-        closingCredit: closingNet < 0 ? toMoney(toDecimal(closingNet).abs()) : 0,
+        closingCredit:
+          closingNet < 0 ? toMoney(toDecimal(closingNet).abs()) : 0,
       });
     }
 
     rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
 
-    const totalDebit = sumMoney(rows.map(r => r.closingDebit));
-    const totalCredit = sumMoney(rows.map(r => r.closingCredit));
+    const totalDebit = sumMoney(rows.map((r) => r.closingDebit));
+    const totalCredit = sumMoney(rows.map((r) => r.closingCredit));
 
     return {
       asOfDate,
@@ -2177,7 +2465,7 @@ class TrialBalanceService {
       totalCredit,
       isBalanced: toDecimal(totalDebit).minus(totalCredit).abs().lessThan(0.01),
       generatedAt: new Date(),
-      generatedBy: 'system',
+      generatedBy: "system",
     };
   }
 
@@ -2187,12 +2475,19 @@ class TrialBalanceService {
     periodEnd: string,
     fiscalYear: number,
   ): Promise<IncomeStatement> {
-    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+    const { balanceSnapshotService } = await import(
+      "@/services/balanceSnapshotService"
+    );
 
-    const accounts = dedupeAccountsByCode(await accountService.getAllAccounts(tenantId));
+    const accounts = dedupeAccountsByCode(
+      await accountService.getAllAccounts(tenantId),
+    );
 
     // Try snapshot+delta; fallback to full scan
-    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, periodStart);
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(
+      tenantId,
+      periodStart,
+    );
 
     const balanceById = new Map<string, number>();
     const balanceByCode = new Map<string, number>();
@@ -2212,19 +2507,27 @@ class TrialBalanceService {
         addToMoneyMap(balanceByCode, e.accountCode, net);
       }
     } else {
-      const entries = await balanceSnapshotService.queryGLRange(tenantId, periodStart, periodEnd);
-      entries.forEach(entry => {
+      const entries = await balanceSnapshotService.queryGLRange(
+        tenantId,
+        periodStart,
+        periodEnd,
+      );
+      entries.forEach((entry) => {
         const net = subtractMoney(entry.debit, entry.credit);
         addToMoneyMap(balanceById, entry.accountId, net);
         addToMoneyMap(balanceByCode, entry.accountCode, net);
       });
     }
 
-    const { revenueItems, expenseItems, totalRevenue, totalExpenses, netIncome } =
-      deriveIncomeStatement(
-        accounts as ReportAccount[],
-        (account) => getAccountNet(balanceById, balanceByCode, account.id!, account.code),
-      );
+    const {
+      revenueItems,
+      expenseItems,
+      totalRevenue,
+      totalExpenses,
+      netIncome,
+    } = deriveIncomeStatement(accounts as ReportAccount[], (account) =>
+      getAccountNet(balanceById, balanceByCode, account.id!, account.code),
+    );
 
     return {
       periodStart,
@@ -2235,9 +2538,9 @@ class TrialBalanceService {
       expenseItems,
       totalExpenses,
       netIncome,
-      netIncomeLabel: netIncome >= 0 ? 'Net Profit' : 'Net Loss',
+      netIncomeLabel: netIncome >= 0 ? "Net Profit" : "Net Loss",
       generatedAt: new Date(),
-      generatedBy: 'system',
+      generatedBy: "system",
     };
   }
 
@@ -2246,10 +2549,17 @@ class TrialBalanceService {
     asOfDate: string,
     fiscalYear: number,
   ): Promise<BalanceSheet> {
-    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+    const { balanceSnapshotService } = await import(
+      "@/services/balanceSnapshotService"
+    );
 
-    const accounts = dedupeAccountsByCode(await accountService.getAllAccounts(tenantId));
-    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, asOfDate);
+    const accounts = dedupeAccountsByCode(
+      await accountService.getAllAccounts(tenantId),
+    );
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(
+      tenantId,
+      asOfDate,
+    );
 
     const balanceById = new Map<string, number>();
     const balanceByCode = new Map<string, number>();
@@ -2272,10 +2582,13 @@ class TrialBalanceService {
         addToMoneyMap(balanceById, e.accountId, net);
         addToMoneyMap(balanceByCode, e.accountCode, net);
       }
-
     } else {
-      const entries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
-      entries.forEach(entry => {
+      const entries = await balanceSnapshotService.queryGLDelta(
+        tenantId,
+        undefined,
+        asOfDate,
+      );
+      entries.forEach((entry) => {
         const net = subtractMoney(entry.debit, entry.credit);
         addToMoneyMap(balanceById, entry.accountId, net);
         addToMoneyMap(balanceByCode, entry.accountCode, net);
@@ -2283,13 +2596,15 @@ class TrialBalanceService {
     }
 
     const {
-      assetItems, totalAssets,
-      liabilityItems, totalLiabilities,
-      equityItems, totalEquity,
+      assetItems,
+      totalAssets,
+      liabilityItems,
+      totalLiabilities,
+      equityItems,
+      totalEquity,
       isBalanced,
-    } = deriveBalanceSheet(
-      accounts as ReportAccount[],
-      (account) => getAccountNet(balanceById, balanceByCode, account.id!, account.code),
+    } = deriveBalanceSheet(accounts as ReportAccount[], (account) =>
+      getAccountNet(balanceById, balanceByCode, account.id!, account.code),
     );
 
     return {
@@ -2303,7 +2618,7 @@ class TrialBalanceService {
       totalEquity,
       isBalanced,
       generatedAt: new Date(),
-      generatedBy: 'system',
+      generatedBy: "system",
     };
   }
 }
@@ -2321,12 +2636,16 @@ class FiscalPeriodService {
     return collection(db, paths.fiscalPeriods(tenantId));
   }
 
-  async getPeriodByYearAndPeriod(tenantId: string, year: number, period: number): Promise<FiscalPeriod | null> {
+  async getPeriodByYearAndPeriod(
+    tenantId: string,
+    year: number,
+    period: number,
+  ): Promise<FiscalPeriod | null> {
     const q = query(
       this.periodCollection(tenantId),
-      where('year', '==', year),
-      where('period', '==', period),
-      limit(1)
+      where("year", "==", year),
+      where("period", "==", period),
+      limit(1),
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
@@ -2334,7 +2653,11 @@ class FiscalPeriodService {
     return { id: docSnap.id, ...docSnap.data() } as FiscalPeriod;
   }
 
-  async createFiscalYear(tenantId: string, year: number, createdBy?: string): Promise<string> {
+  async createFiscalYear(
+    tenantId: string,
+    year: number,
+    createdBy?: string,
+  ): Promise<string> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
@@ -2342,7 +2665,7 @@ class FiscalPeriodService {
       year,
       startDate,
       endDate,
-      status: 'open',
+      status: "open",
       openingBalancesPosted: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -2357,34 +2680,43 @@ class FiscalPeriodService {
         fiscalYearId: docRef.id,
         year,
         period: month,
-        startDate: `${year}-${String(month).padStart(2, '0')}-01`,
-        endDate: `${year}-${String(month).padStart(2, '0')}-${lastDay}`,
-        status: 'open',
+        startDate: `${year}-${String(month).padStart(2, "0")}-01`,
+        endDate: `${year}-${String(month).padStart(2, "0")}-${lastDay}`,
+        status: "open",
         createdAt: serverTimestamp(),
       });
     }
     await batch.commit();
 
     if (createdBy) {
-      await auditLogService.log({
-        userId: createdBy,
-        userEmail: createdBy,
-        action: 'accounting.period_create_year',
-        tenantId,
-        entityId: docRef.id,
-        entityType: 'fiscal_year',
-        entityName: String(year),
-        description: `Created fiscal year ${year}`,
-        metadata: { year },
-        severity: 'info',
-      }).catch(err => console.error('Audit log failed:', err));
+      await auditLogService
+        .log({
+          userId: createdBy,
+          userEmail: createdBy,
+          action: "accounting.period_create_year",
+          tenantId,
+          entityId: docRef.id,
+          entityType: "fiscal_year",
+          entityName: String(year),
+          description: `Created fiscal year ${year}`,
+          metadata: { year },
+          severity: "info",
+        })
+        .catch((err) => console.error("Audit log failed:", err));
     }
 
     return docRef.id;
   }
 
-  async getFiscalYear(tenantId: string, year: number): Promise<FiscalYear | null> {
-    const q = query(this.yearCollection(tenantId), where('year', '==', year), limit(1));
+  async getFiscalYear(
+    tenantId: string,
+    year: number,
+  ): Promise<FiscalYear | null> {
+    const q = query(
+      this.yearCollection(tenantId),
+      where("year", "==", year),
+      limit(1),
+    );
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
@@ -2398,9 +2730,9 @@ class FiscalPeriodService {
 
     const q = query(
       this.periodCollection(tenantId),
-      where('year', '==', year),
-      where('period', '==', month),
-      limit(1)
+      where("year", "==", year),
+      where("period", "==", month),
+      limit(1),
     );
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
@@ -2408,117 +2740,169 @@ class FiscalPeriodService {
     return { id: doc.id, ...doc.data() } as FiscalPeriod;
   }
 
-  async getPeriodsForYear(tenantId: string, year: number): Promise<FiscalPeriod[]> {
+  async getPeriodsForYear(
+    tenantId: string,
+    year: number,
+  ): Promise<FiscalPeriod[]> {
     const q = query(
       this.periodCollection(tenantId),
-      where('year', '==', year),
-      orderBy('period', 'asc')
+      where("year", "==", year),
+      orderBy("period", "asc"),
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FiscalPeriod));
+    return snapshot.docs.map(
+      (d) => ({ id: d.id, ...d.data() }) as FiscalPeriod,
+    );
   }
 
-  async closePeriod(tenantId: string, periodId: string, closedBy: string): Promise<void> {
+  async closePeriod(
+    tenantId: string,
+    periodId: string,
+    closedBy: string,
+  ): Promise<void> {
     const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
     const before = await getDoc(docRef);
-    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
+    const period = before.exists()
+      ? ({ id: before.id, ...before.data() } as FiscalPeriod)
+      : null;
     await updateDoc(docRef, {
-      status: 'closed',
+      status: "closed",
       closedAt: serverTimestamp(),
       closedBy,
     });
 
-    await auditLogService.log({
-      userId: closedBy,
-      userEmail: closedBy,
-      action: 'accounting.period_close',
-      tenantId,
-      entityId: periodId,
-      entityType: 'fiscal_period',
-      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
-      description: period
-        ? `Closed fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
-        : `Closed fiscal period ${periodId}`,
-      metadata: period ? { year: period.year, period: period.period } : undefined,
-      severity: 'warning',
-    }).catch(err => console.error('Audit log failed:', err));
+    await auditLogService
+      .log({
+        userId: closedBy,
+        userEmail: closedBy,
+        action: "accounting.period_close",
+        tenantId,
+        entityId: periodId,
+        entityType: "fiscal_period",
+        entityName: period
+          ? `${period.year}-${String(period.period).padStart(2, "0")}`
+          : periodId,
+        description: period
+          ? `Closed fiscal period ${period.year}-${String(period.period).padStart(2, "0")}`
+          : `Closed fiscal period ${periodId}`,
+        metadata: period
+          ? { year: period.year, period: period.period }
+          : undefined,
+        severity: "warning",
+      })
+      .catch((err) => console.error("Audit log failed:", err));
 
     // Generate balance snapshot for the closed period (async, non-blocking)
     if (period) {
-      import('@/services/balanceSnapshotService').then(({ balanceSnapshotService }) =>
-        balanceSnapshotService.generateSnapshot(tenantId, period, closedBy)
-      ).catch(err => console.error('Snapshot generation failed:', err));
+      import("@/services/balanceSnapshotService")
+        .then(({ balanceSnapshotService }) =>
+          balanceSnapshotService.generateSnapshot(tenantId, period, closedBy),
+        )
+        .catch((err) => console.error("Snapshot generation failed:", err));
     }
   }
 
-  async reopenPeriod(tenantId: string, periodId: string, reopenedBy: string): Promise<void> {
+  async reopenPeriod(
+    tenantId: string,
+    periodId: string,
+    reopenedBy: string,
+  ): Promise<void> {
     const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
     const before = await getDoc(docRef);
-    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
-    if (period?.status === 'locked') {
-      throw new Error('Locked fiscal periods cannot be reopened');
+    const period = before.exists()
+      ? ({ id: before.id, ...before.data() } as FiscalPeriod)
+      : null;
+    if (period?.status === "locked") {
+      throw new Error("Locked fiscal periods cannot be reopened");
     }
     await updateDoc(docRef, {
-      status: 'open',
+      status: "open",
       closedAt: null,
       closedBy: null,
     });
 
-    await auditLogService.log({
-      userId: reopenedBy,
-      userEmail: reopenedBy,
-      action: 'accounting.period_reopen',
-      tenantId,
-      entityId: periodId,
-      entityType: 'fiscal_period',
-      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
-      description: period
-        ? `Reopened fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
-        : `Reopened fiscal period ${periodId}`,
-      metadata: period ? { year: period.year, period: period.period } : undefined,
-      severity: 'warning',
-    }).catch(err => console.error('Audit log failed:', err));
+    await auditLogService
+      .log({
+        userId: reopenedBy,
+        userEmail: reopenedBy,
+        action: "accounting.period_reopen",
+        tenantId,
+        entityId: periodId,
+        entityType: "fiscal_period",
+        entityName: period
+          ? `${period.year}-${String(period.period).padStart(2, "0")}`
+          : periodId,
+        description: period
+          ? `Reopened fiscal period ${period.year}-${String(period.period).padStart(2, "0")}`
+          : `Reopened fiscal period ${periodId}`,
+        metadata: period
+          ? { year: period.year, period: period.period }
+          : undefined,
+        severity: "warning",
+      })
+      .catch((err) => console.error("Audit log failed:", err));
 
     // Delete stale snapshots for the reopened period and everything after it
     if (period) {
-      import('@/services/balanceSnapshotService').then(({ balanceSnapshotService }) =>
-        balanceSnapshotService.deleteSnapshotsFromDate(tenantId, period.endDate)
-      ).catch(err => console.error('Snapshot deletion failed:', err));
+      import("@/services/balanceSnapshotService")
+        .then(({ balanceSnapshotService }) =>
+          balanceSnapshotService.deleteSnapshotsFromDate(
+            tenantId,
+            period.endDate,
+          ),
+        )
+        .catch((err) => console.error("Snapshot deletion failed:", err));
     }
   }
 
-  async lockPeriod(tenantId: string, periodId: string, lockedBy: string): Promise<void> {
+  async lockPeriod(
+    tenantId: string,
+    periodId: string,
+    lockedBy: string,
+  ): Promise<void> {
     const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
     const before = await getDoc(docRef);
-    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
-    if (period?.status === 'locked') return;
-    if (period?.status === 'open') {
-      throw new Error('Fiscal period must be closed before it can be locked');
+    const period = before.exists()
+      ? ({ id: before.id, ...before.data() } as FiscalPeriod)
+      : null;
+    if (period?.status === "locked") return;
+    if (period?.status === "open") {
+      throw new Error("Fiscal period must be closed before it can be locked");
     }
 
     await updateDoc(docRef, {
-      status: 'locked',
+      status: "locked",
       lockedAt: serverTimestamp(),
       lockedBy,
     });
 
-    await auditLogService.log({
-      userId: lockedBy,
-      userEmail: lockedBy,
-      action: 'accounting.period_lock',
-      tenantId,
-      entityId: periodId,
-      entityType: 'fiscal_period',
-      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
-      description: period
-        ? `Locked fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
-        : `Locked fiscal period ${periodId}`,
-      metadata: period ? { year: period.year, period: period.period } : undefined,
-      severity: 'critical',
-    }).catch(err => console.error('Audit log failed:', err));
+    await auditLogService
+      .log({
+        userId: lockedBy,
+        userEmail: lockedBy,
+        action: "accounting.period_lock",
+        tenantId,
+        entityId: periodId,
+        entityType: "fiscal_period",
+        entityName: period
+          ? `${period.year}-${String(period.period).padStart(2, "0")}`
+          : periodId,
+        description: period
+          ? `Locked fiscal period ${period.year}-${String(period.period).padStart(2, "0")}`
+          : `Locked fiscal period ${periodId}`,
+        metadata: period
+          ? { year: period.year, period: period.period }
+          : undefined,
+        severity: "critical",
+      })
+      .catch((err) => console.error("Audit log failed:", err));
   }
 
-  async updateFiscalYear(tenantId: string, yearId: string, updates: Partial<FiscalYear>): Promise<void> {
+  async updateFiscalYear(
+    tenantId: string,
+    yearId: string,
+    updates: Partial<FiscalYear>,
+  ): Promise<void> {
     const docRef = doc(db, paths.fiscalYear(tenantId, yearId));
     await updateDoc(docRef, {
       ...updates,
@@ -2544,7 +2928,11 @@ class AccountingSettingsService {
     return null;
   }
 
-  async updateSettings(tenantId: string, settings: Partial<AccountingSettings>, updatedBy: string): Promise<void> {
+  async updateSettings(
+    tenantId: string,
+    settings: Partial<AccountingSettings>,
+    updatedBy: string,
+  ): Promise<void> {
     const existing = await this.getSettings(tenantId);
     if (existing) {
       await updateDoc(this.docRef(tenantId), {
@@ -2554,14 +2942,14 @@ class AccountingSettingsService {
       });
     } else {
       // Create default settings
-      const { setDoc } = await import('firebase/firestore');
+      const { setDoc } = await import("firebase/firestore");
       await setDoc(this.docRef(tenantId), {
         ...settings,
-        journalEntryPrefix: 'JE',
-        invoicePrefix: 'INV',
+        journalEntryPrefix: "JE",
+        invoicePrefix: "INV",
         nextJournalNumber: 1,
         nextInvoiceNumber: 1,
-        currency: 'USD',
+        currency: "USD",
         fiscalYearStart: 1, // January
         autoGeneratePayrollJournals: true,
         updatedAt: serverTimestamp(),

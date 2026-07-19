@@ -2958,6 +2958,11 @@ const messages = {
         "description": "Aprova {{type}} husi {{name}} (loron {{days}})?",
         "confirm": "Aprova & Avizu"
       },
+      "overBalance": {
+        "title": "Liu saldu lisensa",
+        "description": "Nu'udar administradór ita bele fó nafatin — loron extra sei rejista ba empregadu.",
+        "confirm": "Fó nafatin"
+      },
       "notifyNotice": "{{name}} sei simu avizu liuhusi email kona-ba desizaun ida ne'e.",
       "reject": {
         "title": "Rejeita Pedido Lisensa",

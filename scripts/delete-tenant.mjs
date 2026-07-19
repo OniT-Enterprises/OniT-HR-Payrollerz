@@ -50,7 +50,14 @@ const ROOT_COLLECTIONS = [
   'recurringDeductions', 'taxReports', 'taxFilings', 'bankTransfers',
   'attendance', 'attendanceImports', 'analytics', 'invoice_links', 'okrs',
   'jobPrivateDetails', 'jobApplications', 'onboarding', 'offboarding', 'mail',
-  'audit_logs',
+  'audit_logs', 'accountantPartnerRequests',
+];
+
+// Sweeps on a non-tenantId field: accountant-partner requests also reference
+// the ACCOUNTANT's practice via partnerTenantId, so deleting the accountant's
+// tenant must clear the requests pointing at it too.
+const ROOT_ALT_FIELD_SWEEPS = [
+  { collection: 'accountantPartnerRequests', field: 'partnerTenantId' },
 ];
 
 // Top-level collections keyed by tenantId that ALSO contain their own
@@ -146,6 +153,13 @@ async function main() {
       if (n === 0) continue;
       if (CONFIRM) { const d = await deleteQueryRecursive(q); console.log(`   🗑  ${name} (+subcollections) (${tid}): ${d}`); grand += d; }
       else { console.log(`   • legacy ${name} (+subcollections) (${tid}): ${n}`); grand += n; }
+    }
+    for (const { collection: name, field } of ROOT_ALT_FIELD_SWEEPS) {
+      const q = db.collection(name).where(field, '==', tid);
+      const n = (await q.count().get()).data().count;
+      if (n === 0) continue;
+      if (CONFIRM) { const d = await deleteQuery(q); console.log(`   🗑  ${name} by ${field} (${tid}): ${d}`); grand += d; }
+      else { console.log(`   • ${name} by ${field} (${tid}): ${n}`); grand += n; }
     }
     for (const name of ROOT_DOC_ID_COLLECTIONS) {
       const ref = db.doc(`${name}/${tid}`);

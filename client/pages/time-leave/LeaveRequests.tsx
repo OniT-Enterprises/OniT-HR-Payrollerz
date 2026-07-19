@@ -131,7 +131,9 @@ export default function LeaveRequests() {
   const isAdmin = role === "owner" || role === "hr-admin";
   const isManager = role === "manager";
   const isAccountant = role === "accountant";
-  const managerDepartmentId = isManager ? session?.member.departmentId : undefined;
+  const managerDepartmentId = isManager
+    ? session?.member.departmentId
+    : undefined;
   const canDecide = isAdmin || isManager;
   const canSelectEmployee = isAdmin || isManager;
   const canReadAll = isAdmin || isAccountant;
@@ -139,6 +141,12 @@ export default function LeaveRequests() {
   const [filter, setFilter] = useState<RequestFilter>("all");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [approveTarget, setApproveTarget] = useState<LeaveRequest | null>(null);
+  // Set when the server blocks a create/approve for exceeding entitlement and
+  // the current user (owner/HR admin) may knowingly grant it anyway.
+  const [overridePrompt, setOverridePrompt] = useState<{
+    kind: "create" | "approve";
+    message: string;
+  } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<LeaveRequest | null>(null);
   const [cancelTarget, setCancelTarget] = useState<LeaveRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -152,9 +160,12 @@ export default function LeaveRequests() {
     reason: "",
   });
 
-  const teamQueryEnabled = canReadAll || Boolean(isManager && managerDepartmentId);
+  const teamQueryEnabled =
+    canReadAll || Boolean(isManager && managerDepartmentId);
   const teamRequestsQuery = useLeaveRequests(
-    isManager && managerDepartmentId ? { departmentId: managerDepartmentId } : undefined,
+    isManager && managerDepartmentId
+      ? { departmentId: managerDepartmentId }
+      : undefined,
     teamQueryEnabled,
   );
   const ownRequestsQuery = useEmployeeLeaveRequests(
@@ -178,7 +189,8 @@ export default function LeaveRequests() {
         ? { department: managerDepartmentName }
         : {}),
     },
-    showRequestDialog && canSelectEmployee &&
+    showRequestDialog &&
+      canSelectEmployee &&
       (!isManager || Boolean(managerDepartmentName)),
   );
   const settingsQuery = useQuery({
@@ -199,11 +211,15 @@ export default function LeaveRequests() {
     queryKey: ["tenants", tenantId, "leave-holidays", requestYears],
     queryFn: async () => {
       const overrides = await Promise.all(
-        requestYears.map((year) => holidayService.listTenantHolidayOverrides(tenantId, year)),
+        requestYears.map((year) =>
+          holidayService.listTenantHolidayOverrides(tenantId, year),
+        ),
       );
-      const dates = new Set(requestYears.flatMap((year) =>
-        getTLPublicHolidays(year).map((holiday) => holiday.date),
-      ));
+      const dates = new Set(
+        requestYears.flatMap((year) =>
+          getTLPublicHolidays(year).map((holiday) => holiday.date),
+        ),
+      );
       for (const override of overrides.flat()) {
         if (override.isHoliday) dates.add(override.date);
         else dates.delete(override.date);
@@ -228,31 +244,47 @@ export default function LeaveRequests() {
   }, [canReadAll, isManager, ownRequestsQuery.data, teamRequestsQuery.data]);
 
   const policies = settingsQuery.data?.timeOffPolicies;
-  const leaveTypes = useMemo(() => policies ? policyOptions(policies) : [], [policies]);
+  const leaveTypes = useMemo(
+    () => (policies ? policyOptions(policies) : []),
+    [policies],
+  );
   const directoryEmployees = directoryQuery.data ?? [];
   const availableEmployees = !isManager
     ? directoryEmployees
     : managerDepartmentName
       ? directoryEmployees.filter(
-          (employee) => employee.jobDetails.department === managerDepartmentName,
+          (employee) =>
+            employee.jobDetails.department === managerDepartmentName,
         )
       : [];
 
   const effectiveEmployeeId = canSelectEmployee
     ? form.employeeId
-    : currentEmployeeId ?? "";
-  const selectedEmployee = availableEmployees.find(
-    (employee) => employee.id === effectiveEmployeeId,
-  ) ?? (effectiveEmployeeId === currentEmployeeId ? ownEmployeeQuery.data : undefined);
+    : (currentEmployeeId ?? "");
+  const selectedEmployee =
+    availableEmployees.find(
+      (employee) => employee.id === effectiveEmployeeId,
+    ) ??
+    (effectiveEmployeeId === currentEmployeeId
+      ? ownEmployeeQuery.data
+      : undefined);
   const selectedBalanceQuery = useLeaveBalance(
     showRequestDialog && effectiveEmployeeId ? effectiveEmployeeId : undefined,
-    isManager && effectiveEmployeeId !== currentEmployeeId ? managerDepartmentId : undefined,
+    isManager && effectiveEmployeeId !== currentEmployeeId
+      ? managerDepartmentId
+      : undefined,
   );
-  const selectedPolicy = leaveTypes.find((policy) => policy.id === form.leaveType);
-  const selectedBalanceItem = balanceItem(selectedBalanceQuery.data, form.leaveType);
+  const selectedPolicy = leaveTypes.find(
+    (policy) => policy.id === form.leaveType,
+  );
+  const selectedBalanceItem = balanceItem(
+    selectedBalanceQuery.data,
+    form.leaveType,
+  );
 
   const duration = useMemo(() => {
-    if (!form.startDate || !form.endDate || form.endDate < form.startDate) return 0;
+    if (!form.startDate || !form.endDate || form.endDate < form.startDate)
+      return 0;
     if (form.halfDay && form.startDate === form.endDate) return 0.5;
     return calculateWorkingDays(
       form.startDate,
@@ -261,11 +293,15 @@ export default function LeaveRequests() {
     );
   }, [form.endDate, form.halfDay, form.startDate, holidaysQuery.data]);
 
-  const filteredRequests = filter === "all"
-    ? requests
-    : requests.filter((request) => request.status === filter);
-  const pendingCount = requests.filter((request) => request.status === "pending").length;
-  const loading = settingsQuery.isLoading ||
+  const filteredRequests =
+    filter === "all"
+      ? requests
+      : requests.filter((request) => request.status === filter);
+  const pendingCount = requests.filter(
+    (request) => request.status === "pending",
+  ).length;
+  const loading =
+    settingsQuery.isLoading ||
     (teamQueryEnabled && teamRequestsQuery.isLoading) ||
     (!canReadAll && Boolean(currentEmployeeId) && ownRequestsQuery.isLoading);
 
@@ -273,22 +309,29 @@ export default function LeaveRequests() {
     if (KNOWN_LEAVE_TYPES.has(leaveType)) {
       return t(`timeLeave.leaveRequests.leaveTypes.${leaveType}`);
     }
-    return leaveTypes.find((policy) => policy.id === leaveType)?.name || fallback || leaveType;
+    return (
+      leaveTypes.find((policy) => policy.id === leaveType)?.name ||
+      fallback ||
+      leaveType
+    );
   };
 
   const statusLabel = (status: LeaveStatus) =>
     t(`timeLeave.leaveRequests.status.${status}`);
 
   const statusClass = (status: LeaveStatus) => {
-    if (status === "approved") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-    if (status === "pending") return "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
-    if (status === "rejected") return "border-destructive/25 bg-destructive/10 text-destructive";
+    if (status === "approved")
+      return "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+    if (status === "pending")
+      return "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+    if (status === "rejected")
+      return "border-destructive/25 bg-destructive/10 text-destructive";
     return "border-border bg-muted text-muted-foreground";
   };
 
   const resetForm = () => {
     setForm({
-      employeeId: canSelectEmployee ? "" : currentEmployeeId ?? "",
+      employeeId: canSelectEmployee ? "" : (currentEmployeeId ?? ""),
       leaveType: "",
       startDate: "",
       endDate: "",
@@ -307,8 +350,11 @@ export default function LeaveRequests() {
   const approveMutation = useApproveLeaveRequest();
   const rejectMutation = useRejectLeaveRequest();
   const cancelMutation = useCancelLeaveRequest();
-  const saving = createMutation.isPending || approveMutation.isPending ||
-    rejectMutation.isPending || cancelMutation.isPending;
+  const saving =
+    createMutation.isPending ||
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    cancelMutation.isPending;
 
   const notifyDecision = async (
     request: LeaveRequest,
@@ -316,10 +362,15 @@ export default function LeaveRequests() {
     reason?: string,
   ) => {
     try {
-      const emailed = await leaveService.notifyLeaveDecision(tenantId, request, decision, {
-        approverName: user?.displayName || user?.email || "HR",
-        reason,
-      });
+      const emailed = await leaveService.notifyLeaveDecision(
+        tenantId,
+        request,
+        decision,
+        {
+          approverName: user?.displayName || user?.email || "HR",
+          reason,
+        },
+      );
       if (!emailed) {
         toast({
           title: t("timeLeave.leaveRequests.toast.noEmailTitle"),
@@ -338,10 +389,44 @@ export default function LeaveRequests() {
     }
   };
 
-  const submitRequest = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!effectiveEmployeeId || !form.leaveType || !form.startDate ||
-      !form.endDate || !form.reason.trim() || duration <= 0 || !selectedEmployee) {
+  // The createLeaveRequest/approveLeaveRequest callables block requests that
+  // exceed the employee's remaining entitlement. Owners/HR admins may retry
+  // with overrideBalance (server re-checks the role); everyone else just sees
+  // the server's explanation instead of a generic failure.
+  const entitlementBreachMessage = (error: unknown): string | null => {
+    const { code, message } = (error ?? {}) as {
+      code?: string;
+      message?: string;
+    };
+    return code === "functions/failed-precondition" &&
+      typeof message === "string" &&
+      message.includes("exceeds entitlement")
+      ? message
+      : null;
+  };
+  const serverMessage = (error: unknown): string | null => {
+    const { code, message } = (error ?? {}) as {
+      code?: string;
+      message?: string;
+    };
+    return typeof code === "string" &&
+      code.startsWith("functions/") &&
+      typeof message === "string" &&
+      message.trim()
+      ? message
+      : null;
+  };
+
+  const doSubmitRequest = async (overrideBalance: boolean) => {
+    if (
+      !effectiveEmployeeId ||
+      !form.leaveType ||
+      !form.startDate ||
+      !form.endDate ||
+      !form.reason.trim() ||
+      duration <= 0 ||
+      !selectedEmployee
+    ) {
       toast({
         title: t("timeLeave.leaveRequests.toast.validationTitle"),
         description: t("timeLeave.leaveRequests.toast.validationDesc"),
@@ -358,15 +443,22 @@ export default function LeaveRequests() {
       return;
     }
 
-    const departmentName = selectedEmployee.jobDetails.department ||
+    const departmentName =
+      selectedEmployee.jobDetails.department ||
       t("timeLeave.leaveRequests.dialog.unassigned");
-    const departmentId = departments.find(
-      (department) => department.name === departmentName,
-    )?.id ?? session?.member.departmentId ?? "";
+    const departmentId =
+      departments.find((department) => department.name === departmentName)
+        ?.id ??
+      session?.member.departmentId ??
+      "";
     try {
       await createMutation.mutateAsync({
         employeeId: effectiveEmployeeId,
-        employeeName: employeeName(selectedEmployee) || user?.displayName || user?.email || "Employee",
+        employeeName:
+          employeeName(selectedEmployee) ||
+          user?.displayName ||
+          user?.email ||
+          "Employee",
         department: departmentName,
         departmentId,
         leaveType: form.leaveType as LeaveType,
@@ -375,12 +467,14 @@ export default function LeaveRequests() {
         endDate: form.endDate,
         duration,
         halfDay: form.halfDay && form.startDate === form.endDate,
-        halfDayType: form.halfDay && form.startDate === form.endDate
-          ? form.halfDayType
-          : undefined,
+        halfDayType:
+          form.halfDay && form.startDate === form.endDate
+            ? form.halfDayType
+            : undefined,
         reason: form.reason.trim(),
         hasCertificate: false,
         certificateType: selectedPolicy?.certificateType,
+        ...(overrideBalance ? { overrideBalance: true } : {}),
       });
       setShowRequestDialog(false);
       resetForm();
@@ -388,16 +482,30 @@ export default function LeaveRequests() {
         title: t("timeLeave.leaveRequests.toast.successTitle"),
         description: t("timeLeave.leaveRequests.toast.successDesc"),
       });
-    } catch {
+    } catch (error) {
+      const breach = entitlementBreachMessage(error);
+      if (breach && isAdmin && !overrideBalance) {
+        // The request dialog stays open with the form intact; confirming
+        // resubmits with the admin override.
+        setOverridePrompt({ kind: "create", message: breach });
+        return;
+      }
       toast({
         title: t("timeLeave.leaveRequests.toast.errorTitle"),
-        description: t("timeLeave.leaveRequests.toast.submitFailed"),
+        description:
+          serverMessage(error) ??
+          t("timeLeave.leaveRequests.toast.submitFailed"),
         variant: "destructive",
       });
     }
   };
 
-  const approve = async () => {
+  const submitRequest = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await doSubmitRequest(false);
+  };
+
+  const approve = async (overrideBalance = false) => {
     if (!approveTarget?.id) return;
     const request = approveTarget;
     const requestId = approveTarget.id;
@@ -406,6 +514,7 @@ export default function LeaveRequests() {
         requestId,
         approverId: user?.uid || "",
         approverName: user?.displayName || user?.email || "HR",
+        ...(overrideBalance ? { overrideBalance: true } : {}),
       });
       setApproveTarget(null);
       toast({
@@ -415,10 +524,17 @@ export default function LeaveRequests() {
         }),
       });
       void notifyDecision(request, "approved");
-    } catch {
+    } catch (error) {
+      const breach = entitlementBreachMessage(error);
+      if (breach && isAdmin && !overrideBalance) {
+        setOverridePrompt({ kind: "approve", message: breach });
+        return;
+      }
       toast({
         title: t("timeLeave.leaveRequests.toast.errorTitle"),
-        description: t("timeLeave.leaveRequests.toast.approveFailed"),
+        description:
+          serverMessage(error) ??
+          t("timeLeave.leaveRequests.toast.approveFailed"),
         variant: "destructive",
       });
     }
@@ -491,16 +607,26 @@ export default function LeaveRequests() {
             subtitle={t("timeLeave.leaveRequests.subtitle")}
             icon={CalendarDays}
             iconColor="text-cyan-600"
-            actions={canCreate ? (
-              <Button disabled>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("timeLeave.leaveRequests.actions.newRequest")}
-              </Button>
-            ) : undefined}
+            actions={
+              canCreate ? (
+                <Button disabled>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("timeLeave.leaveRequests.actions.newRequest")}
+                </Button>
+              ) : undefined
+            }
           />
 
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist">
-            {(["all", "pending", "approved", "rejected", "cancelled"] as RequestFilter[]).map((status) => (
+            {(
+              [
+                "all",
+                "pending",
+                "approved",
+                "rejected",
+                "cancelled",
+              ] as RequestFilter[]
+            ).map((status) => (
               <Button
                 key={status}
                 type="button"
@@ -555,12 +681,14 @@ export default function LeaveRequests() {
           subtitle={t("timeLeave.leaveRequests.subtitle")}
           icon={CalendarDays}
           iconColor="text-cyan-600"
-          actions={canCreate ? (
-            <Button onClick={openRequestDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t("timeLeave.leaveRequests.actions.newRequest")}
-            </Button>
-          ) : undefined}
+          actions={
+            canCreate ? (
+              <Button onClick={openRequestDialog}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("timeLeave.leaveRequests.actions.newRequest")}
+              </Button>
+            ) : undefined
+          }
         />
 
         {isManager && !managerDepartmentId && (
@@ -583,7 +711,15 @@ export default function LeaveRequests() {
         )}
 
         <div className="mb-4 flex gap-2 overflow-x-auto pb-1" role="tablist">
-          {(["all", "pending", "approved", "rejected", "cancelled"] as RequestFilter[]).map((status) => (
+          {(
+            [
+              "all",
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled",
+            ] as RequestFilter[]
+          ).map((status) => (
             <Button
               key={status}
               type="button"
@@ -604,7 +740,9 @@ export default function LeaveRequests() {
         {filteredRequests.length === 0 ? (
           <div className="rounded-xl border border-border/70 bg-card px-4 py-12 text-center">
             <CalendarDays className="mx-auto mb-3 h-10 w-10 text-cyan-600" />
-            <h2 className="font-semibold">{t("timeLeave.leaveRequests.table.empty")}</h2>
+            <h2 className="font-semibold">
+              {t("timeLeave.leaveRequests.table.empty")}
+            </h2>
             {canCreate && (
               <Button className="mt-5" onClick={openRequestDialog}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -624,50 +762,91 @@ export default function LeaveRequests() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-semibold">{request.employeeName}</h2>
-                        <Badge variant="outline" className={statusClass(request.status)}>
+                        <h2 className="font-semibold">
+                          {request.employeeName}
+                        </h2>
+                        <Badge
+                          variant="outline"
+                          className={statusClass(request.status)}
+                        >
                           {statusLabel(request.status)}
                         </Badge>
                       </div>
                       <p className="mt-1 text-sm font-medium text-foreground/90">
-                        {leaveTypeLabel(request.leaveType, request.leaveTypeLabel)}
+                        {leaveTypeLabel(
+                          request.leaveType,
+                          request.leaveTypeLabel,
+                        )}
                         <span className="font-normal text-muted-foreground">
-                          {" · "}{t("timeLeave.leaveRequests.table.durationValue", { days: request.duration })}
+                          {" · "}
+                          {t("timeLeave.leaveRequests.table.durationValue", {
+                            days: request.duration,
+                          })}
                         </span>
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {formatDateTL(parseDateISO(request.startDate), { day: "numeric", month: "short", year: "numeric" })}
+                        {formatDateTL(parseDateISO(request.startDate), {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                         {request.endDate !== request.startDate && (
-                          <> — {formatDateTL(parseDateISO(request.endDate), { day: "numeric", month: "short", year: "numeric" })}</>
+                          <>
+                            {" "}
+                            —{" "}
+                            {formatDateTL(parseDateISO(request.endDate), {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </>
                         )}
-                        {request.department ? <> · {request.department}</> : null}
+                        {request.department ? (
+                          <> · {request.department}</>
+                        ) : null}
                       </p>
                       {request.reason && (
-                        <p className="mt-2 line-clamp-2 text-sm text-foreground/80">{request.reason}</p>
-                      )}
-                      {request.status === "rejected" && request.rejectionReason && (
-                        <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                          {request.rejectionReason}
+                        <p className="mt-2 line-clamp-2 text-sm text-foreground/80">
+                          {request.reason}
                         </p>
                       )}
+                      {request.status === "rejected" &&
+                        request.rejectionReason && (
+                          <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                            {request.rejectionReason}
+                          </p>
+                        )}
                     </div>
 
                     {request.status === "pending" && (
                       <div className="flex shrink-0 flex-wrap gap-2">
-                        {canDecide && (!isManager || request.departmentId === managerDepartmentId) && (
-                          <>
-                            <Button size="sm" onClick={() => setApproveTarget(request)}>
-                              <Check className="mr-1.5 h-4 w-4" />
-                              {t("timeLeave.leaveRequests.actions.approve")}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setRejectTarget(request)}>
-                              <X className="mr-1.5 h-4 w-4" />
-                              {t("timeLeave.leaveRequests.actions.reject")}
-                            </Button>
-                          </>
-                        )}
+                        {canDecide &&
+                          (!isManager ||
+                            request.departmentId === managerDepartmentId) && (
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => setApproveTarget(request)}
+                              >
+                                <Check className="mr-1.5 h-4 w-4" />
+                                {t("timeLeave.leaveRequests.actions.approve")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setRejectTarget(request)}
+                              >
+                                <X className="mr-1.5 h-4 w-4" />
+                                {t("timeLeave.leaveRequests.actions.reject")}
+                              </Button>
+                            </>
+                          )}
                         {isOwn && (
-                          <Button size="sm" variant="ghost" onClick={() => setCancelTarget(request)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setCancelTarget(request)}
+                          >
                             {t("timeLeave.leaveRequests.actions.cancel")}
                           </Button>
                         )}
@@ -681,23 +860,38 @@ export default function LeaveRequests() {
         )}
       </main>
 
-      <Dialog open={showRequestDialog} onOpenChange={(open) => {
-        setShowRequestDialog(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={showRequestDialog}
+        onOpenChange={(open) => {
+          setShowRequestDialog(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t("timeLeave.leaveRequests.dialog.title")}</DialogTitle>
-            <DialogDescription>{t("timeLeave.leaveRequests.dialog.description")}</DialogDescription>
+            <DialogTitle>
+              {t("timeLeave.leaveRequests.dialog.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("timeLeave.leaveRequests.dialog.description")}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={submitRequest} className="space-y-4">
             {canSelectEmployee ? (
               <div className="space-y-2">
                 <Label>{t("timeLeave.leaveRequests.dialog.employee")}</Label>
-                <Select value={form.employeeId} onValueChange={(employeeId) =>
-                  setForm((current) => ({ ...current, employeeId }))}>
+                <Select
+                  value={form.employeeId}
+                  onValueChange={(employeeId) =>
+                    setForm((current) => ({ ...current, employeeId }))
+                  }
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("timeLeave.leaveRequests.dialog.employeePlaceholder")} />
+                    <SelectValue
+                      placeholder={t(
+                        "timeLeave.leaveRequests.dialog.employeePlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {availableEmployees.map((employee) => (
@@ -710,21 +904,34 @@ export default function LeaveRequests() {
               </div>
             ) : (
               <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-sm font-medium">
-                {employeeName(ownEmployeeQuery.data) || user?.displayName || user?.email}
+                {employeeName(ownEmployeeQuery.data) ||
+                  user?.displayName ||
+                  user?.email}
               </div>
             )}
 
             <div className="space-y-2">
               <Label>{t("timeLeave.leaveRequests.dialog.leaveType")}</Label>
-              <Select value={form.leaveType} onValueChange={(leaveType) =>
-                setForm((current) => ({ ...current, leaveType }))}>
+              <Select
+                value={form.leaveType}
+                onValueChange={(leaveType) =>
+                  setForm((current) => ({ ...current, leaveType }))
+                }
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("timeLeave.leaveRequests.dialog.leaveTypePlaceholder")} />
+                  <SelectValue
+                    placeholder={t(
+                      "timeLeave.leaveRequests.dialog.leaveTypePlaceholder",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {leaveTypes.map((policy) => (
                     <SelectItem key={policy.id} value={policy.id}>
-                      {leaveTypeLabel(policy.id, policy.name)} · {t("timeLeave.leaveRequests.dialog.daysPerYear", { days: policy.daysPerYear })}
+                      {leaveTypeLabel(policy.id, policy.name)} ·{" "}
+                      {t("timeLeave.leaveRequests.dialog.daysPerYear", {
+                        days: policy.daysPerYear,
+                      })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -733,7 +940,9 @@ export default function LeaveRequests() {
 
             {form.leaveType && (
               <div className="rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-sm">
-                <p className="font-medium">{t("timeLeave.leaveRequests.dialog.balanceTitle")}</p>
+                <p className="font-medium">
+                  {t("timeLeave.leaveRequests.dialog.balanceTitle")}
+                </p>
                 <p className="mt-1 text-muted-foreground">
                   {selectedBalanceItem
                     ? t("timeLeave.leaveRequests.dialog.balanceSummary", {
@@ -747,42 +956,55 @@ export default function LeaveRequests() {
                         pending: 0,
                       })}
                 </p>
-                {selectedPolicy?.requiresCertificate && selectedPolicy.certificateType && (
-                  <p className="mt-1 text-amber-700 dark:text-amber-300">
-                    {t("timeLeave.leaveRequests.dialog.requiresCertificate", {
-                      certificate: selectedPolicy.certificateType,
-                    })}
-                  </p>
-                )}
+                {selectedPolicy?.requiresCertificate &&
+                  selectedPolicy.certificateType && (
+                    <p className="mt-1 text-amber-700 dark:text-amber-300">
+                      {t("timeLeave.leaveRequests.dialog.requiresCertificate", {
+                        certificate: selectedPolicy.certificateType,
+                      })}
+                    </p>
+                  )}
               </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="leave-start">{t("timeLeave.leaveRequests.dialog.startDate")}</Label>
+                <Label htmlFor="leave-start">
+                  {t("timeLeave.leaveRequests.dialog.startDate")}
+                </Label>
                 <Input
                   id="leave-start"
                   type="date"
                   value={form.startDate}
-                  onChange={(event) => setForm((current) => ({
-                    ...current,
-                    startDate: event.target.value,
-                    halfDay: current.halfDay && event.target.value === current.endDate,
-                  }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      startDate: event.target.value,
+                      halfDay:
+                        current.halfDay &&
+                        event.target.value === current.endDate,
+                    }))
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="leave-end">{t("timeLeave.leaveRequests.dialog.endDate")}</Label>
+                <Label htmlFor="leave-end">
+                  {t("timeLeave.leaveRequests.dialog.endDate")}
+                </Label>
                 <Input
                   id="leave-end"
                   type="date"
                   min={form.startDate || undefined}
                   value={form.endDate}
-                  onChange={(event) => setForm((current) => ({
-                    ...current,
-                    endDate: event.target.value,
-                    halfDay: current.halfDay && event.target.value === current.startDate,
-                  }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      endDate: event.target.value,
+                      halfDay:
+                        current.halfDay &&
+                        event.target.value === current.startDate,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -792,22 +1014,32 @@ export default function LeaveRequests() {
                 <input
                   type="checkbox"
                   checked={form.halfDay}
-                  onChange={(event) => setForm((current) => ({
-                    ...current,
-                    halfDay: event.target.checked,
-                  }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      halfDay: event.target.checked,
+                    }))
+                  }
                   className="h-4 w-4 accent-primary"
                 />
                 {t("timeLeave.leaveRequests.dialog.halfDay")}
                 {form.halfDay && (
-                  <Select value={form.halfDayType} onValueChange={(halfDayType: "morning" | "afternoon") =>
-                    setForm((current) => ({ ...current, halfDayType }))}>
+                  <Select
+                    value={form.halfDayType}
+                    onValueChange={(halfDayType: "morning" | "afternoon") =>
+                      setForm((current) => ({ ...current, halfDayType }))
+                    }
+                  >
                     <SelectTrigger className="ml-auto h-9 w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="morning">{t("timeLeave.leaveRequests.dialog.halfDayMorning")}</SelectItem>
-                      <SelectItem value="afternoon">{t("timeLeave.leaveRequests.dialog.halfDayAfternoon")}</SelectItem>
+                      <SelectItem value="morning">
+                        {t("timeLeave.leaveRequests.dialog.halfDayMorning")}
+                      </SelectItem>
+                      <SelectItem value="afternoon">
+                        {t("timeLeave.leaveRequests.dialog.halfDayAfternoon")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -815,31 +1047,55 @@ export default function LeaveRequests() {
             )}
 
             {form.startDate && form.endDate && (
-              <p className={cn(
-                "rounded-lg px-3 py-2 text-sm font-medium",
-                duration > 0 ? "bg-cyan-500/10 text-cyan-800 dark:text-cyan-200" : "bg-destructive/10 text-destructive",
-              )}>
-                {t("timeLeave.leaveRequests.dialog.durationValue", { days: duration })}
+              <p
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm font-medium",
+                  duration > 0
+                    ? "bg-cyan-500/10 text-cyan-800 dark:text-cyan-200"
+                    : "bg-destructive/10 text-destructive",
+                )}
+              >
+                {t("timeLeave.leaveRequests.dialog.durationValue", {
+                  days: duration,
+                })}
               </p>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="leave-reason">{t("timeLeave.leaveRequests.dialog.reason")}</Label>
+              <Label htmlFor="leave-reason">
+                {t("timeLeave.leaveRequests.dialog.reason")}
+              </Label>
               <Textarea
                 id="leave-reason"
                 value={form.reason}
-                onChange={(event) => setForm((current) => ({ ...current, reason: event.target.value }))}
-                placeholder={t("timeLeave.leaveRequests.dialog.reasonPlaceholder")}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
+                }
+                placeholder={t(
+                  "timeLeave.leaveRequests.dialog.reasonPlaceholder",
+                )}
                 rows={3}
               />
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowRequestDialog(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRequestDialog(false)}
+              >
                 {t("timeLeave.leaveRequests.actions.cancel")}
               </Button>
-              <Button type="submit" disabled={saving || holidaysQuery.isLoading}>
-                {(saving || holidaysQuery.isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button
+                type="submit"
+                disabled={saving || holidaysQuery.isLoading}
+              >
+                {(saving || holidaysQuery.isLoading) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {t("timeLeave.leaveRequests.actions.submit")}
               </Button>
             </DialogFooter>
@@ -847,20 +1103,32 @@ export default function LeaveRequests() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(approveTarget)} onOpenChange={(open) => !open && setApproveTarget(null)}>
+      <AlertDialog
+        open={Boolean(approveTarget)}
+        onOpenChange={(open) => !open && setApproveTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("timeLeave.leaveRequests.approveConfirm.title")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("timeLeave.leaveRequests.approveConfirm.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {approveTarget ? t("timeLeave.leaveRequests.approveConfirm.description", {
-                name: approveTarget.employeeName,
-                type: leaveTypeLabel(approveTarget.leaveType, approveTarget.leaveTypeLabel),
-                days: approveTarget.duration,
-              }) : ""}
+              {approveTarget
+                ? t("timeLeave.leaveRequests.approveConfirm.description", {
+                    name: approveTarget.employeeName,
+                    type: leaveTypeLabel(
+                      approveTarget.leaveType,
+                      approveTarget.leaveTypeLabel,
+                    ),
+                    days: approveTarget.duration,
+                  })
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("timeLeave.leaveRequests.actions.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("timeLeave.leaveRequests.actions.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction onClick={() => void approve()} disabled={saving}>
               {t("timeLeave.leaveRequests.approveConfirm.confirm")}
             </AlertDialogAction>
@@ -868,21 +1136,68 @@ export default function LeaveRequests() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={Boolean(rejectTarget)} onOpenChange={(open) => {
-        if (!open) {
-          setRejectTarget(null);
-          setRejectionReason("");
-        }
-      }}>
+      {/* Balance override: the server blocked the request for exceeding the
+          employee's entitlement; owners/HR admins may grant it knowingly. */}
+      <AlertDialog
+        open={Boolean(overridePrompt)}
+        onOpenChange={(open) => !open && setOverridePrompt(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("timeLeave.leaveRequests.overBalance.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {overridePrompt?.message}{" "}
+              {t("timeLeave.leaveRequests.overBalance.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {t("timeLeave.leaveRequests.actions.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={saving}
+              onClick={() => {
+                const prompt = overridePrompt;
+                setOverridePrompt(null);
+                if (!prompt) return;
+                if (prompt.kind === "create") void doSubmitRequest(true);
+                else void approve(true);
+              }}
+            >
+              {t("timeLeave.leaveRequests.overBalance.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={Boolean(rejectTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectTarget(null);
+            setRejectionReason("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("timeLeave.leaveRequests.reject.title")}</DialogTitle>
+            <DialogTitle>
+              {t("timeLeave.leaveRequests.reject.title")}
+            </DialogTitle>
             <DialogDescription>
-              {rejectTarget ? t("timeLeave.leaveRequests.reject.description", { name: rejectTarget.employeeName }) : ""}
+              {rejectTarget
+                ? t("timeLeave.leaveRequests.reject.description", {
+                    name: rejectTarget.employeeName,
+                  })
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label htmlFor="rejection-reason">{t("timeLeave.leaveRequests.reject.reason")}</Label>
+            <Label htmlFor="rejection-reason">
+              {t("timeLeave.leaveRequests.reject.reason")}
+            </Label>
             <Textarea
               id="rejection-reason"
               value={rejectionReason}
@@ -894,22 +1209,34 @@ export default function LeaveRequests() {
             <Button variant="outline" onClick={() => setRejectTarget(null)}>
               {t("timeLeave.leaveRequests.actions.cancel")}
             </Button>
-            <Button variant="destructive" onClick={() => void reject()} disabled={saving}>
+            <Button
+              variant="destructive"
+              onClick={() => void reject()}
+              disabled={saving}
+            >
               {t("timeLeave.leaveRequests.reject.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(cancelTarget)} onOpenChange={(open) => !open && setCancelTarget(null)}>
+      <AlertDialog
+        open={Boolean(cancelTarget)}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("timeLeave.leaveRequests.actions.cancel")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("timeLeave.leaveRequests.actions.cancel")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {cancelTarget
                 ? t("timeLeave.leaveRequests.approveConfirm.description", {
                     name: cancelTarget.employeeName,
-                    type: leaveTypeLabel(cancelTarget.leaveType, cancelTarget.leaveTypeLabel),
+                    type: leaveTypeLabel(
+                      cancelTarget.leaveType,
+                      cancelTarget.leaveTypeLabel,
+                    ),
                     days: cancelTarget.duration,
                   })
                 : ""}

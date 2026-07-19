@@ -2958,6 +2958,11 @@ const messages = {
         "description": "Aprovar {{type}} de {{name}} ({{days}} dia(s))?",
         "confirm": "Aprovar e Notificar"
       },
+      "overBalance": {
+        "title": "Além do saldo de licença",
+        "description": "Como administrador, pode concedê-la mesmo assim — os dias extra ficam registados para o trabalhador.",
+        "confirm": "Conceder mesmo assim"
+      },
       "notifyNotice": "{{name}} será notificado por email sobre esta decisão.",
       "reject": {
         "title": "Rejeitar Pedido de Licença",
