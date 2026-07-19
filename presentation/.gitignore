@@ -1,0 +1,5 @@
+audio/
+recordings/
+tmp/
+*.mp4
+node_modules/

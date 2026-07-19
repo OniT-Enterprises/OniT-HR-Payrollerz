@@ -19,6 +19,7 @@ export default [
       "server/",
       "mobile/",
       "packages/xefe-mobile/", // React Native shared package — linted via the mobile apps
+      "presentation/", // demo-video render pipeline (Node scripts), not app code
       "client/i18n/translations.ts",
       "client/i18n/locales/",
       "public/sw.js",

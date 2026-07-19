@@ -1,0 +1,204 @@
+═══════════════════════════════════════════════════════════════════════════
+XEFE — PRODUCT VIDEO VOICEOVER (English)   [v4 — 2026-07 — comprehensive cut]
+HR, payroll & accounting for Timor-Leste — the full tour + the engine story.
+═══════════════════════════════════════════════════════════════════════════
+
+Voice: ElevenLabs "Alice". Warm, clear, unhurried. Plain language for a
+non-technical business owner. "Xefe" is spoken "Sheffy" (pronunciation override
+in generate-audio.mjs); bank acronyms are spelled out there too.
+
+Scene map (audio-bearing scenes; interstitials are silent, see render.mjs):
+  0 Intro (card) · 1 Problem (card) · 2 Dashboard · 3 People · 4 Hiring
+  · 5 Time & Leave · 6 Shifts · 7 Run payroll · 8 Approve & payslips
+  · 9 The engine · 10 File · 11 Pay · 12 Invoices · 13 Bills & expenses
+  · 14 Accounting · 15 Reports · 16 XefeBot · 17 Mobile · 18 Languages
+  · 19 Trust (card) · 20 Close (card)
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 0 — INTRO   (target 8s)   [logo card]
+───────────────────────────────────────────────────────────────────────────
+
+This is Xefe — HR, payroll, and accounting, built for the way business really
+works in Timor-Leste.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 1 — THE PROBLEM   (target 15s)   [styled card]
+───────────────────────────────────────────────────────────────────────────
+
+Payroll here is not simple. Social security, withholding tax, the
+thirteenth-month subsídio anual, the labour code — every month, for every
+employee. Most businesses run it on spreadsheets… and hope. Xefe runs it
+properly.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 2 — DASHBOARD   (target 15s)   [rec 02-dashboard]
+───────────────────────────────────────────────────────────────────────────
+
+Sign in, and the day is already sorted. Who is working, what the next payday
+will cost, every deadline that matters — tracked for you. And an assistant you
+can simply ask… who's on leave today?
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 3 — PEOPLE   (target 13s)   [rec 03-people]
+───────────────────────────────────────────────────────────────────────────
+
+Your whole team lives in one place — positions, salaries, departments, and
+documents. Add someone in seconds… or import the roster you already keep in a
+spreadsheet.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 4 — HIRING   (target 14s)   [rec 04-hiring]
+───────────────────────────────────────────────────────────────────────────
+
+Hiring is built in, too. Post a role, and applications line up in one
+pipeline — scored, shortlisted, interviewed, hired. And the contract that
+follows already speaks Timor-Leste's rules on probation and terms.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 5 — TIME & LEAVE   (target 14s)   [rec 05-timeleave]
+───────────────────────────────────────────────────────────────────────────
+
+Attendance flows in every day — lateness, overtime, night hours, all counted
+for you. Leave is one tap to request and one tap to decide, and the balances
+simply stay right.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 6 — SHIFTS   (target 12s)   [rec 06-shifts]
+───────────────────────────────────────────────────────────────────────────
+
+Plan next week in minutes. Publish the rota, and everyone sees their shifts on
+their own phone — mornings, evenings, and every covered slot at a glance.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 7 — RUN PAYROLL   (target 22s)   [rec 07-runpayroll]
+───────────────────────────────────────────────────────────────────────────
+
+Now run payroll. Pick the period, and watch. Hours pull straight from
+attendance. Overtime at time-and-a-half. Night work at plus twenty-five
+percent. Social security, and withholding tax on everything over five hundred
+dollars. Every employee, calculated to the cent, right in front of you.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 8 — APPROVE & PAYSLIPS   (target 15s)   [rec 08-approve]
+───────────────────────────────────────────────────────────────────────────
+
+A second person approves — that rule is built in. The books update themselves,
+and every employee gets a payslip in Tetun, Portuguese, or English — delivered
+straight to their phone in the Ekipa app.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 9 — THE ENGINE   (target 19s)   [rec 09-engine]
+───────────────────────────────────────────────────────────────────────────
+
+Underneath is the part you never see. Timor-Leste's labour, tax, and
+social-security law — written into code, article by article. Checked, to the
+cent, against real payrolls, and against the tax authority's own assessments.
+One tap on the surface. The law, running underneath.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 10 — FILE   (target 15s)   [rec 10-tax]
+───────────────────────────────────────────────────────────────────────────
+
+When it is time to file, the returns are already prepared — monthly
+withholding tax, and the social-security declaration in the government's own
+format, ready to submit. Every deadline counts down, so nothing is ever late.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 11 — PAY   (target 14s)   [rec 11-bank]
+───────────────────────────────────────────────────────────────────────────
+
+Then pay everyone at once. Xefe builds the exact transfer pack your bank
+expects — the salary list, the signed payment order, even the cover email, in
+Portuguese — ready for BNU or BNCTL.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 12 — INVOICES   (target 15s)   [rec 12-invoices]
+───────────────────────────────────────────────────────────────────────────
+
+Money coming in lives here too. Make an invoice in a minute and send it
+straight to WhatsApp — your customer opens a page in Tetun, and when they pay,
+your books already know.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 13 — BILLS & EXPENSES   (target 15s)   [rec 13-expenses]
+───────────────────────────────────────────────────────────────────────────
+
+Bills and expenses go in just as fast — snap a receipt, and Xefe reads it for
+you. And when a supplier's invoice needs tax withheld, the engine already
+knows the rate — and locks it onto the bill.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 14 — ACCOUNTING   (target 16s)   [rec 14-accounting]
+───────────────────────────────────────────────────────────────────────────
+
+Because behind everything, Xefe keeps real double-entry accounts. Every pay
+run, every invoice, every bill posts its own journal — ledger, trial balance,
+profit and loss — balanced to the cent, without you touching a thing.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 15 — REPORTS   (target 13s)   [rec 15-reports]
+───────────────────────────────────────────────────────────────────────────
+
+Every question has a report. Payroll cost by month, by department, by funding
+source. Leave balances. Donor packs for NGOs. Each one a tap away — and each
+one ready to export.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 16 — XEFEBOT   (target 14s)   [rec 16-bot]
+───────────────────────────────────────────────────────────────────────────
+
+Or skip the clicking, and just ask. XefeBot reads your live data — yours, and
+never anyone else's — and answers in plain language, right here, or on
+WhatsApp.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 17 — MOBILE   (target 13s)   [rec 17-mobile]
+───────────────────────────────────────────────────────────────────────────
+
+And all of it fits in a pocket. The whole system runs beautifully on a phone,
+on real Timor-Leste connections — and your staff carry their payslips, leave,
+and shifts with them, in the Ekipa app.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 18 — LANGUAGES   (target 11s)   [rec 18-languages]
+───────────────────────────────────────────────────────────────────────────
+
+And it speaks your language. Tetun, English, Portuguese — the whole system,
+switched in one tap. Even the payslips.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 19 — TRUST   (target 16s)   [styled card]
+───────────────────────────────────────────────────────────────────────────
+
+Underneath it all — real controls. Two people to approve a payroll. Books that
+refuse to go out of balance. Every action logged, every record backed up. And
+nobody — not even the boss — can quietly change the numbers.
+
+
+───────────────────────────────────────────────────────────────────────────
+SCENE 20 — CLOSE   (target 14s)   [logo card]
+───────────────────────────────────────────────────────────────────────────
+
+Xefe. Your whole back office, in one system, built for Timor-Leste. Free to
+set up, free to explore — four dollars per employee when you run real payroll.
+Start today, at xefe dot T L.

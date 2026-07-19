@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>Hotel Esplanada — Found on Google</title>
+<style>
+  @font-face { font-family: 'Aclonica'; src: url('../fonts/Aclonica-Regular.ttf') format('truetype'); font-display: block; }
+  @font-face { font-family: 'Lato'; src: url('../fonts/Lato-Regular.ttf') format('truetype'); font-weight: 400; font-display: block; }
+  @font-face { font-family: 'Lato'; src: url('../fonts/Lato-Bold.ttf') format('truetype'); font-weight: 700; font-display: block; }
+
+  :root {
+    --navy: #214569;
+    --navy-deep: #16304a;
+    --amber: #f59e0b;
+    --cream: #f7f5f8;
+    --muted: rgba(247,245,248,0.62);
+    --card: rgba(255,255,255,0.05);
+    --card-border: rgba(247,245,248,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: radial-gradient(1200px 800px at 50% -10%, #2a557f 0%, var(--navy) 46%, var(--navy-deep) 100%);
+    color: var(--cream);
+    font-family: 'Lato', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { width: 1920px; height: 1080px; padding: 96px 128px; display: flex; flex-direction: column; }
+
+  .eyebrow {
+    font-size: 24px; letter-spacing: .32em; text-transform: uppercase; color: var(--amber);
+    font-weight: 700; display: flex; align-items: center; gap: 20px;
+    opacity: 0; animation: rise .8s ease-out .1s forwards;
+  }
+  .eyebrow::before { content: ''; width: 64px; height: 3px; background: var(--amber); display: inline-block; }
+  h1 {
+    font-family: 'Aclonica', 'Lato', serif; font-size: 96px; line-height: 1.02; margin-top: 22px;
+    font-weight: 400; letter-spacing: -0.5px;
+    opacity: 0; animation: rise .9s ease-out .28s forwards;
+  }
+  h1 .sub { display:block; font-family:'Lato',sans-serif; font-size: 30px; font-weight: 400; color: var(--muted); margin-top: 18px; letter-spacing: .01em; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 68px; }
+  .tile {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 28px;
+    padding: 48px 44px; backdrop-filter: blur(4px);
+    opacity: 0; transform: translateY(28px); animation: rise .8s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .tile:nth-child(1) { animation-delay: .7s; }
+  .tile:nth-child(2) { animation-delay: 1.0s; }
+  .tile:nth-child(3) { animation-delay: 1.3s; }
+  .tile .num { font-family: 'Aclonica','Lato',serif; font-size: 118px; line-height: 1; color: var(--cream); font-weight: 400; }
+  .tile .num .pre { color: var(--amber); }
+  .tile .cap { font-size: 27px; color: var(--muted); margin-top: 22px; line-height: 1.35; }
+  .tile .hint { font-size: 21px; color: var(--amber); margin-top: 14px; font-weight: 700; letter-spacing:.02em; }
+
+  .foot { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; }
+  .countries { opacity: 0; animation: rise .8s ease-out 1.8s forwards; }
+  .countries .label { font-size: 24px; color: var(--muted); margin-bottom: 20px; letter-spacing:.02em; }
+  .chips { display: flex; gap: 16px; flex-wrap: wrap; max-width: 1150px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 12px; padding: 14px 24px;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--card-border); border-radius: 999px;
+    font-size: 26px; font-weight: 700; color: var(--cream);
+    opacity: 0; transform: translateY(14px); animation: rise .6s ease-out forwards;
+  }
+  .chip .flag { font-size: 30px; line-height: 1; }
+  .chip:nth-child(1){animation-delay:2.0s} .chip:nth-child(2){animation-delay:2.15s}
+  .chip:nth-child(3){animation-delay:2.3s} .chip:nth-child(4){animation-delay:2.45s}
+  .chip:nth-child(5){animation-delay:2.6s} .chip:nth-child(6){animation-delay:2.75s}
+
+  .brand { text-align: right; opacity: 0; animation: rise .8s ease-out 2.2s forwards; flex-shrink: 0; }
+  .brand .name { font-family:'Aclonica',serif; font-size: 34px; color: var(--cream); }
+  .brand .src { font-size: 20px; color: var(--muted); margin-top: 8px; }
+
+  @keyframes rise { to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Google Search &nbsp;·&nbsp; April – July 2026</div>
+    <h1>Found on Google
+      <span class="sub">A brand-new website, already showing up where guests look.</span>
+    </h1>
+
+    <div class="tiles">
+      <div class="tile">
+        <div class="num" data-to="6900" data-suffix="+">0</div>
+        <div class="cap">times shown in Google search<br>in the first three months</div>
+      </div>
+      <div class="tile">
+        <div class="num"><span class="pre">#</span><span data-to="2">0</span></div>
+        <div class="cap">ranking for “hotel esplanada dili”</div>
+        <div class="hint">near the top of page one</div>
+      </div>
+      <div class="tile">
+        <div class="num" data-to="221">0</div>
+        <div class="cap">visits to the site<br>straight from Google</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="countries">
+        <div class="label">Guests searching from</div>
+        <div class="chips">
+          <span class="chip"><span class="flag">🇹🇱</span> Timor-Leste</span>
+          <span class="chip"><span class="flag">🇦🇺</span> Australia</span>
+          <span class="chip"><span class="flag">🇸🇬</span> Singapore</span>
+          <span class="chip"><span class="flag">🇺🇸</span> United States</span>
+          <span class="chip"><span class="flag">🇬🇧</span> United Kingdom</span>
+          <span class="chip"><span class="flag">🇮🇩</span> Indonesia</span>
+        </div>
+      </div>
+      <div class="brand">
+        <div class="name">Hotel Esplanada</div>
+        <div class="src">hotelesplanada.com</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Count-up animation for each .num[data-to], easing out, staggered to match CSS reveals.
+    function countUp(el, to, suffix, dur, delay) {
+      const start = performance.now() + delay;
+      function frame(now) {
+        if (now < start) { requestAnimationFrame(frame); return; }
+        const p = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const val = Math.round(to * ease);
+        el.textContent = val.toLocaleString('en-US') + (p >= 1 && suffix ? suffix : '');
+        if (p < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+    window.addEventListener('load', () => {
+      document.querySelectorAll('.num[data-to]').forEach((el, i) => {
+        const to = Number(el.getAttribute('data-to'));
+        const suffix = el.getAttribute('data-suffix') || '';
+        countUp(el, to, suffix, 1600, 700 + i * 300);
+      });
+      // count-up for the nested "#2" span
+      const pre = document.querySelector('.num .pre');
+      if (pre) { const span = pre.nextElementSibling; if (span && span.dataset.to) countUp(span, 2, '', 900, 1000); }
+    });
+  </script>
+</body>
+</html>
