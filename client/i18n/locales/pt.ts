@@ -20,7 +20,7 @@ const messages = {
       "s6Title": "Os seus direitos",
       "s6Body": "Se é funcionário, peça ao administrador do seu empregador para ver ou corrigir as suas informações — é o empregador que controla esses registos. Os candidatos a emprego podem contactar a empresa à qual se candidataram.",
       "s7Title": "Dúvidas",
-      "s7Body": "Contacte-nos em info@naroman.tl."
+      "s7Body": "Contacte-nos em suporte@onit.tl."
     },
     "terms": {
       "title": "Termos de Serviço",
@@ -41,7 +41,7 @@ const messages = {
       "s7Title": "Lei aplicável",
       "s7Body": "Estes termos regem-se pelas leis de Timor-Leste.",
       "s8Title": "Contacto",
-      "s8Body": "info@naroman.tl"
+      "s8Body": "suporte@onit.tl"
     }
   },
   "common": {
@@ -795,6 +795,29 @@ const messages = {
         "description": "Receba ajuda para configurar funcionários, regras da folha e o primeiro ficheiro bancário de quem entende as empresas locais.",
         "primary": "Começar grátis",
         "whatsapp": "Falar connosco no WhatsApp"
+      },
+      "founding": {
+        "badge": "Oferta de fundador",
+        "title": "6 meses grátis para empresas fundadoras",
+        "description": "Estamos a integrar as primeiras empresas de Timor-Leste. Registe-se agora e use folha de pagamento, pessoas e contabilidade grátis durante 6 meses — com configuração e apoio local.",
+        "cta": "Aproveitar os 6 meses",
+        "note": "Para novas empresas de Timor-Leste que se registem durante o período de fundação. Sem cartão — envie-nos uma mensagem no WhatsApp após o registo e ativamos."
+      },
+      "faq": {
+        "eyebrow": "Perguntas",
+        "title": "Perguntas frequentes sobre o Xefe",
+        "q1": "O Xefe trata do WIT, INSS e subsídio anual?",
+        "a1": "Sim. O Xefe calcula a retenção de WIT, as contribuições para o INSS, horas extra e o subsídio anual (13.º) em cada processamento, e mantém cada valor visível para revisão antes de finalizar.",
+        "q2": "Que bancos de Timor-Leste é que o Xefe suporta?",
+        "a2": "O Xefe prepara ficheiros de pagamento de salários para o BNU, BNCTL, Mandiri e ANZ, para não ter de reescrever cada transferência.",
+        "q3": "O Xefe está disponível em Tétum?",
+        "a3": "Sim — toda a aplicação funciona em Tétum, Inglês e Português, e pode mudar de idioma a qualquer momento.",
+        "q4": "Quanto custa o Xefe?",
+        "a4": "Um preço único de 4 USD por funcionário por mês, com todas as funcionalidades incluídas. Configurar e preparar a folha é grátis; só precisa de subscrição para finalizar um processamento real. As empresas fundadoras que aderirem agora têm 6 meses grátis.",
+        "q5": "Preciso de instalar alguma coisa?",
+        "a5": "Não. O Xefe funciona no seu navegador, e a sua equipa pode usar a aplicação Ekipa no Android para recibos de vencimento, licenças e marcação de ponto.",
+        "q6": "O Xefe inclui contabilidade?",
+        "a6": "Sim. O Xefe tem contabilidade de partidas dobradas a sério — lançamentos, razão geral, balancete, demonstração de resultados e balanço — além de faturação a clientes, tudo ligado à folha de pagamento."
       }
     },
     "hero": {
@@ -5994,7 +6017,7 @@ const messages = {
       "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       "addVendor": "Adicionar \"{{name}}\"",
       "vendorAdded": "Fornecedor \"{{name}}\" adicionado",
-      "vendorAddFailed": "Não foi possível adicionar o fornecedor",
+      "vendorAddFailed": "Não foi possível adicionar o fornecedor"
     },
     "expenses": {
       "title": "Despesas",

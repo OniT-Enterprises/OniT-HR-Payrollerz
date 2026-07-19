@@ -20,7 +20,7 @@ const messages = {
       "s6Title": "Ita-nia direitu",
       "s6Body": "Se Ita mak funsionáriu, husu ba Ita-nia empregadór nia administradór atu haree ka hadia Ita-nia informasaun — empregadór mak kontrola rejistu sira-ne'e. Kandidatu ba serbisu bele kontaktu empreza ne'ebé sira aplika ba.",
       "s7Title": "Pergunta",
-      "s7Body": "Kontaktu ami iha info@naroman.tl."
+      "s7Body": "Kontaktu ami iha suporte@onit.tl."
     },
     "terms": {
       "title": "Termu Servisu",
@@ -41,7 +41,7 @@ const messages = {
       "s7Title": "Lei aplikável",
       "s7Body": "Termu sira-ne'e tuir lei Timor-Leste nian.",
       "s8Title": "Kontaktu",
-      "s8Body": "info@naroman.tl"
+      "s8Body": "suporte@onit.tl"
     }
   },
   "common": {
@@ -795,6 +795,29 @@ const messages = {
         "description": "Hetan ajuda atu konfigura funsionáriu, regra folha no ficheiru banku dahuluk husi ema ne'ebé komprende negósiu lokal.",
         "primary": "Hahú grátis",
         "whatsapp": "Ko'alia ho ami iha WhatsApp"
+      },
+      "founding": {
+        "badge": "Oferta fundadór",
+        "title": "Fulan 6 grátis ba negósiu fundadór sira",
+        "description": "Ami sei simu negósiu dahuluk sira iha Timor-Leste. Rejista agora no uza folha de pagamentu, ema no kontabilidade grátis durante fulan 6 — ho konfigurasaun no suporte lokal.",
+        "cta": "Foti ita-nia fulan 6",
+        "note": "Ba negósiu foun iha Timor-Leste ne'ebé rejista durante períodu fundadór. La presiza kartaun — haruka mensajen mai ami iha WhatsApp bainhira rejista tiha ona no ami sei ativa."
+      },
+      "faq": {
+        "eyebrow": "Pergunta sira",
+        "title": "Pergunta baibain kona-ba Xefe",
+        "q1": "Xefe kalkula WIT, INSS no subsídiu anuál ka lae?",
+        "a1": "Sin. Xefe kalkula retensaun WIT, kontribuisaun INSS, oras-servisu-liu no subsídiu anuál (fulan-13) ba kada folha de pagamentu, no husik montante hotu vizível atu revee molok ita finaliza.",
+        "q2": "Xefe suporta banku Timor-Leste saida sira?",
+        "a2": "Xefe prepara ficheiru pagamentu saláriu ba BNU, BNCTL, Mandiri no ANZ, atu ita la presiza hakerek fali kada transferénsia.",
+        "q3": "Xefe disponível iha Tetun ka lae?",
+        "a3": "Sin — aplikasaun tomak servisu iha Tetun, Ingles no Portugés, no ita bele troka lian iha kualkér momentu.",
+        "q4": "Xefe nia presu hira?",
+        "a4": "Presu úniku $4 kada funsionáriu kada fulan, inklui funsionalidade hotu. Konfigura no prepara folha de pagamentu grátis; presiza subskrisaun de'it atu finaliza folha loos ida. Negósiu fundadór ne'ebé tama agora hetan fulan 6 grátis.",
+        "q5": "Presiza instala buat ruma ka lae?",
+        "a5": "Lae. Xefe servisu iha ita-nia navegadór web, no ita-nia ekipa bele uza aplikasaun Ekipa iha Android ba resibu saláriu, lisensa no rejistu oras.",
+        "q6": "Xefe inklui kontabilidade ka lae?",
+        "a6": "Inklui. Xefe iha kontabilidade double-entry loos — lansamentu jornál, razaun jerál, balancete, demonstrasaun rendimentu no balansu — no mós fatura kliente, hotu ligadu ho folha de pagamentu."
       }
     },
     "hero": {
@@ -5994,7 +6017,7 @@ const messages = {
       "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       "addVendor": "Aumenta \"{{name}}\"",
       "vendorAdded": "Fornesedor \"{{name}}\" aumenta ona",
-      "vendorAddFailed": "La konsege aumenta fornesedor",
+      "vendorAddFailed": "La konsege aumenta fornesedor"
     },
     "expenses": {
       "title": "Despeza",

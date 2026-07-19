@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 
 import { Crescent } from "@/components/marketing/Crescent";
+import { FoundingOffer } from "@/components/marketing/FoundingOffer";
 import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
 import { PublicNav } from "@/components/marketing/PublicNav";
@@ -54,6 +55,10 @@ export default function Pricing() {
             </div>
           </div>
         </section>
+
+        <div className="mx-auto mt-4 max-w-4xl px-5 sm:px-6 lg:px-8">
+          <FoundingOffer />
+        </div>
 
         <PackagePicker showHeader={false} />
 

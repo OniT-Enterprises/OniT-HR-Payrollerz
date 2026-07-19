@@ -15,6 +15,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Crescent } from "@/components/marketing/Crescent";
+import { FoundingOffer } from "@/components/marketing/FoundingOffer";
+import { MarketingFaq } from "@/components/marketing/MarketingFaq";
 import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
 import { PayslipExample } from "@/components/marketing/PayslipExample";
 import { PublicFooter } from "@/components/marketing/PublicFooter";
@@ -259,6 +261,12 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="border-t border-white/[0.06] py-8 sm:py-10">
+          <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+            <FoundingOffer />
+          </div>
+        </section>
+
         <section
           id="how-it-works"
           className="lp-defer scroll-mt-32 border-t border-white/[0.06] py-20 lg:py-24"
@@ -477,6 +485,8 @@ export default function Landing() {
             </div>
           </div>
         </section>
+
+        <MarketingFaq />
 
         <section className="lp-defer relative overflow-hidden border-t border-white/[0.06] py-20 lg:py-24">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.08),transparent_48%)]" />

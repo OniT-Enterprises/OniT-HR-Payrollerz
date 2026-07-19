@@ -20,7 +20,7 @@ const messages = {
       "s6Title": "Your rights",
       "s6Body": "If you are an employee, ask your employer's administrator to view or correct your information — your employer controls those records. Job applicants can contact the company they applied to.",
       "s7Title": "Questions",
-      "s7Body": "Contact us at info@naroman.tl."
+      "s7Body": "Contact us at suporte@onit.tl."
     },
     "terms": {
       "title": "Terms of Service",
@@ -41,7 +41,7 @@ const messages = {
       "s7Title": "Governing law",
       "s7Body": "These terms are governed by the laws of Timor-Leste.",
       "s8Title": "Contact",
-      "s8Body": "info@naroman.tl"
+      "s8Body": "suporte@onit.tl"
     }
   },
   "common": {
@@ -795,6 +795,29 @@ const messages = {
         "description": "Get help setting up employees, payroll rules and your first bank file from people who understand local business.",
         "primary": "Start free",
         "whatsapp": "Talk to us on WhatsApp"
+      },
+      "founding": {
+        "badge": "Founding offer",
+        "title": "6 months free for founding businesses",
+        "description": "We're onboarding the first businesses in Timor-Leste. Join now and run payroll, people and accounting free for 6 months — with hands-on local setup and support.",
+        "cta": "Claim your 6 months",
+        "note": "For new Timor-Leste businesses that sign up during the founding period. No card required — message us on WhatsApp after you sign up and we'll activate it."
+      },
+      "faq": {
+        "eyebrow": "Questions",
+        "title": "Common questions about Xefe",
+        "q1": "Does Xefe handle WIT, INSS and subsídio anual?",
+        "a1": "Yes. Xefe calculates WIT withholding, INSS contributions, overtime and the 13th-month subsídio anual on every payroll run, and keeps each amount visible for review before you finalize.",
+        "q2": "Which Timor-Leste banks does Xefe support?",
+        "a2": "Xefe prepares salary payment files for BNU, BNCTL, Mandiri and ANZ, so you don't retype each transfer.",
+        "q3": "Is Xefe available in Tetun?",
+        "a3": "Yes — the whole app works in Tetun, English and Portuguese, and you can switch language at any time.",
+        "q4": "How much does Xefe cost?",
+        "a4": "One flat price of $4 per employee per month, with every feature included. Setting up and building payroll is free; a subscription is only needed to finalize a real payroll run. Founding businesses that join now get 6 months free.",
+        "q5": "Do I need to install anything?",
+        "a5": "No. Xefe runs in your web browser, and your team can use the Ekipa app on Android for payslips, leave and clock-in.",
+        "q6": "Does Xefe include accounting?",
+        "a6": "Yes. Xefe has real double-entry accounting — journal entries, general ledger, trial balance, income statement and balance sheet — plus customer invoicing, all connected to payroll."
       }
     },
     "hero": {
@@ -5994,7 +6017,7 @@ const messages = {
       "vendorOnFile": "On the document: {{name}} — not in your vendor list yet.",
       "addVendor": "Add \"{{name}}\"",
       "vendorAdded": "Vendor \"{{name}}\" added",
-      "vendorAddFailed": "Could not add the vendor",
+      "vendorAddFailed": "Could not add the vendor"
     },
     "expenses": {
       "title": "Expenses",

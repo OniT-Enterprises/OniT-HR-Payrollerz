@@ -24,7 +24,7 @@ export const translations = {
         "s6Title": "Your rights",
         "s6Body": "If you are an employee, ask your employer's administrator to view or correct your information — your employer controls those records. Job applicants can contact the company they applied to.",
         "s7Title": "Questions",
-        "s7Body": "Contact us at info@naroman.tl."
+        "s7Body": "Contact us at suporte@onit.tl."
       },
       "terms": {
         "title": "Terms of Service",
@@ -45,7 +45,7 @@ export const translations = {
         "s7Title": "Governing law",
         "s7Body": "These terms are governed by the laws of Timor-Leste.",
         "s8Title": "Contact",
-        "s8Body": "info@naroman.tl"
+        "s8Body": "suporte@onit.tl"
       }
     },
     "common": {
@@ -799,6 +799,29 @@ export const translations = {
           "description": "Get help setting up employees, payroll rules and your first bank file from people who understand local business.",
           "primary": "Start free",
           "whatsapp": "Talk to us on WhatsApp"
+        },
+        "founding": {
+          "badge": "Founding offer",
+          "title": "6 months free for founding businesses",
+          "description": "We're onboarding the first businesses in Timor-Leste. Join now and run payroll, people and accounting free for 6 months — with hands-on local setup and support.",
+          "cta": "Claim your 6 months",
+          "note": "For new Timor-Leste businesses that sign up during the founding period. No card required — message us on WhatsApp after you sign up and we'll activate it."
+        },
+        "faq": {
+          "eyebrow": "Questions",
+          "title": "Common questions about Xefe",
+          "q1": "Does Xefe handle WIT, INSS and subsídio anual?",
+          "a1": "Yes. Xefe calculates WIT withholding, INSS contributions, overtime and the 13th-month subsídio anual on every payroll run, and keeps each amount visible for review before you finalize.",
+          "q2": "Which Timor-Leste banks does Xefe support?",
+          "a2": "Xefe prepares salary payment files for BNU, BNCTL, Mandiri and ANZ, so you don't retype each transfer.",
+          "q3": "Is Xefe available in Tetun?",
+          "a3": "Yes — the whole app works in Tetun, English and Portuguese, and you can switch language at any time.",
+          "q4": "How much does Xefe cost?",
+          "a4": "One flat price of $4 per employee per month, with every feature included. Setting up and building payroll is free; a subscription is only needed to finalize a real payroll run. Founding businesses that join now get 6 months free.",
+          "q5": "Do I need to install anything?",
+          "a5": "No. Xefe runs in your web browser, and your team can use the Ekipa app on Android for payslips, leave and clock-in.",
+          "q6": "Does Xefe include accounting?",
+          "a6": "Yes. Xefe has real double-entry accounting — journal entries, general ledger, trial balance, income statement and balance sheet — plus customer invoicing, all connected to payroll."
         }
       },
       "hero": {
@@ -7441,7 +7464,7 @@ export const translations = {
         "s6Title": "Ita-nia direitu",
         "s6Body": "Se Ita mak funsionáriu, husu ba Ita-nia empregadór nia administradór atu haree ka hadia Ita-nia informasaun — empregadór mak kontrola rejistu sira-ne'e. Kandidatu ba serbisu bele kontaktu empreza ne'ebé sira aplika ba.",
         "s7Title": "Pergunta",
-        "s7Body": "Kontaktu ami iha info@naroman.tl."
+        "s7Body": "Kontaktu ami iha suporte@onit.tl."
       },
       "terms": {
         "title": "Termu Servisu",
@@ -7462,7 +7485,7 @@ export const translations = {
         "s7Title": "Lei aplikável",
         "s7Body": "Termu sira-ne'e tuir lei Timor-Leste nian.",
         "s8Title": "Kontaktu",
-        "s8Body": "info@naroman.tl"
+        "s8Body": "suporte@onit.tl"
       }
     },
     "common": {
@@ -8216,6 +8239,29 @@ export const translations = {
           "description": "Hetan ajuda atu konfigura funsionáriu, regra folha no ficheiru banku dahuluk husi ema ne'ebé komprende negósiu lokal.",
           "primary": "Hahú grátis",
           "whatsapp": "Ko'alia ho ami iha WhatsApp"
+        },
+        "founding": {
+          "badge": "Oferta fundadór",
+          "title": "Fulan 6 grátis ba negósiu fundadór sira",
+          "description": "Ami sei simu negósiu dahuluk sira iha Timor-Leste. Rejista agora no uza folha de pagamentu, ema no kontabilidade grátis durante fulan 6 — ho konfigurasaun no suporte lokal.",
+          "cta": "Foti ita-nia fulan 6",
+          "note": "Ba negósiu foun iha Timor-Leste ne'ebé rejista durante períodu fundadór. La presiza kartaun — haruka mensajen mai ami iha WhatsApp bainhira rejista tiha ona no ami sei ativa."
+        },
+        "faq": {
+          "eyebrow": "Pergunta sira",
+          "title": "Pergunta baibain kona-ba Xefe",
+          "q1": "Xefe kalkula WIT, INSS no subsídiu anuál ka lae?",
+          "a1": "Sin. Xefe kalkula retensaun WIT, kontribuisaun INSS, oras-servisu-liu no subsídiu anuál (fulan-13) ba kada folha de pagamentu, no husik montante hotu vizível atu revee molok ita finaliza.",
+          "q2": "Xefe suporta banku Timor-Leste saida sira?",
+          "a2": "Xefe prepara ficheiru pagamentu saláriu ba BNU, BNCTL, Mandiri no ANZ, atu ita la presiza hakerek fali kada transferénsia.",
+          "q3": "Xefe disponível iha Tetun ka lae?",
+          "a3": "Sin — aplikasaun tomak servisu iha Tetun, Ingles no Portugés, no ita bele troka lian iha kualkér momentu.",
+          "q4": "Xefe nia presu hira?",
+          "a4": "Presu úniku $4 kada funsionáriu kada fulan, inklui funsionalidade hotu. Konfigura no prepara folha de pagamentu grátis; presiza subskrisaun de'it atu finaliza folha loos ida. Negósiu fundadór ne'ebé tama agora hetan fulan 6 grátis.",
+          "q5": "Presiza instala buat ruma ka lae?",
+          "a5": "Lae. Xefe servisu iha ita-nia navegadór web, no ita-nia ekipa bele uza aplikasaun Ekipa iha Android ba resibu saláriu, lisensa no rejistu oras.",
+          "q6": "Xefe inklui kontabilidade ka lae?",
+          "a6": "Inklui. Xefe iha kontabilidade double-entry loos — lansamentu jornál, razaun jerál, balancete, demonstrasaun rendimentu no balansu — no mós fatura kliente, hotu ligadu ho folha de pagamentu."
         }
       },
       "hero": {
@@ -14858,7 +14904,7 @@ export const translations = {
         "s6Title": "Os seus direitos",
         "s6Body": "Se é funcionário, peça ao administrador do seu empregador para ver ou corrigir as suas informações — é o empregador que controla esses registos. Os candidatos a emprego podem contactar a empresa à qual se candidataram.",
         "s7Title": "Dúvidas",
-        "s7Body": "Contacte-nos em info@naroman.tl."
+        "s7Body": "Contacte-nos em suporte@onit.tl."
       },
       "terms": {
         "title": "Termos de Serviço",
@@ -14879,7 +14925,7 @@ export const translations = {
         "s7Title": "Lei aplicável",
         "s7Body": "Estes termos regem-se pelas leis de Timor-Leste.",
         "s8Title": "Contacto",
-        "s8Body": "info@naroman.tl"
+        "s8Body": "suporte@onit.tl"
       }
     },
     "common": {
@@ -15633,6 +15679,29 @@ export const translations = {
           "description": "Receba ajuda para configurar funcionários, regras da folha e o primeiro ficheiro bancário de quem entende as empresas locais.",
           "primary": "Começar grátis",
           "whatsapp": "Falar connosco no WhatsApp"
+        },
+        "founding": {
+          "badge": "Oferta de fundador",
+          "title": "6 meses grátis para empresas fundadoras",
+          "description": "Estamos a integrar as primeiras empresas de Timor-Leste. Registe-se agora e use folha de pagamento, pessoas e contabilidade grátis durante 6 meses — com configuração e apoio local.",
+          "cta": "Aproveitar os 6 meses",
+          "note": "Para novas empresas de Timor-Leste que se registem durante o período de fundação. Sem cartão — envie-nos uma mensagem no WhatsApp após o registo e ativamos."
+        },
+        "faq": {
+          "eyebrow": "Perguntas",
+          "title": "Perguntas frequentes sobre o Xefe",
+          "q1": "O Xefe trata do WIT, INSS e subsídio anual?",
+          "a1": "Sim. O Xefe calcula a retenção de WIT, as contribuições para o INSS, horas extra e o subsídio anual (13.º) em cada processamento, e mantém cada valor visível para revisão antes de finalizar.",
+          "q2": "Que bancos de Timor-Leste é que o Xefe suporta?",
+          "a2": "O Xefe prepara ficheiros de pagamento de salários para o BNU, BNCTL, Mandiri e ANZ, para não ter de reescrever cada transferência.",
+          "q3": "O Xefe está disponível em Tétum?",
+          "a3": "Sim — toda a aplicação funciona em Tétum, Inglês e Português, e pode mudar de idioma a qualquer momento.",
+          "q4": "Quanto custa o Xefe?",
+          "a4": "Um preço único de 4 USD por funcionário por mês, com todas as funcionalidades incluídas. Configurar e preparar a folha é grátis; só precisa de subscrição para finalizar um processamento real. As empresas fundadoras que aderirem agora têm 6 meses grátis.",
+          "q5": "Preciso de instalar alguma coisa?",
+          "a5": "Não. O Xefe funciona no seu navegador, e a sua equipa pode usar a aplicação Ekipa no Android para recibos de vencimento, licenças e marcação de ponto.",
+          "q6": "O Xefe inclui contabilidade?",
+          "a6": "Sim. O Xefe tem contabilidade de partidas dobradas a sério — lançamentos, razão geral, balancete, demonstração de resultados e balanço — além de faturação a clientes, tudo ligado à folha de pagamento."
         }
       },
       "hero": {
