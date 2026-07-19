@@ -1,13 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { formatDateTL } from "@/lib/dateUtils";
 import { exportToCSV } from "@/lib/csvExport";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -20,8 +13,10 @@ import {
 } from "@/components/ui/select";
 import {
   ReportEmptyState,
+  ReportExportCard,
   ReportPage,
   ReportPageSkeleton,
+  ReportSection,
   ReportToolbar,
 } from "@/components/reports/ReportLayout";
 import { useAllEmployees } from "@/hooks/useEmployees";
@@ -30,9 +25,13 @@ import { useI18n } from "@/i18n/I18nProvider";
 import {
   Users,
   Download,
+  FileText,
+  Home,
   UserPlus,
+  UserMinus,
   Building,
   Calendar,
+  CalendarDays,
   FileSpreadsheet,
   WifiOff,
 } from "lucide-react";
@@ -347,337 +346,265 @@ export default function EmployeeReports() {
         </ReportToolbar>
         {/* Report Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-5 w-5 text-blue-600" />
-                {t("reports.employee.cards.directory.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.employee.cards.directory.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.employee.cards.directory.totalRecords")}
-                  </span>
-                  <span className="font-medium">{employees.length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.employee.cards.directory.active")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                  >
-                    {activeEmployees.length}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.employee.cards.directory.inactive")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-muted text-muted-foreground"
-                  >
-                    {inactiveEmployees.length}
-                  </Badge>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportDirectory}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.employee.cards.directory.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Users}
+            accent="blue"
+            title={t("reports.employee.cards.directory.title")}
+            description={t("reports.employee.cards.directory.description")}
+            rows={[
+              {
+                icon: FileText,
+                label: t("reports.employee.cards.directory.totalRecords"),
+                value: employees.length,
+              },
+              {
+                icon: UserPlus,
+                label: t("reports.employee.cards.directory.active"),
+                value: activeEmployees.length,
+                tone: activeEmployees.length ? "positive" : "muted",
+              },
+              {
+                icon: UserMinus,
+                label: t("reports.employee.cards.directory.inactive"),
+                value: inactiveEmployees.length,
+                tone: "muted",
+              },
+            ]}
+            exportLabel={t("reports.employee.cards.directory.export")}
+            onExport={exportDirectory}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <UserPlus className="h-5 w-5 text-green-600" />
-                {t("reports.employee.cards.newHires.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.employee.cards.newHires.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.employee.cards.newHires.count")}
-                  </span>
-                  <span className="font-medium">{newHires.length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.shared.periodLabel")}
-                  </span>
-                  <span className="font-medium">
-                    {getDateRangeLabel(dateRange)}
-                  </span>
-                </div>
-                {newHires.length > 0 && (
-                  <div className="text-xs text-muted-foreground">
-                    {t("reports.employee.cards.newHires.latest", {
-                      name: `${newHires[0]?.personalInfo?.firstName || ""} ${newHires[0]?.personalInfo?.lastName || ""}`.trim(),
-                    })}
-                  </div>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportNewHires}
-                disabled={newHires.length === 0}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.employee.cards.newHires.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={UserPlus}
+            accent="primary"
+            title={t("reports.employee.cards.newHires.title")}
+            description={t("reports.employee.cards.newHires.description")}
+            rows={[
+              {
+                icon: Users,
+                label: t("reports.employee.cards.newHires.count"),
+                value: newHires.length,
+              },
+              {
+                icon: CalendarDays,
+                label: t("reports.shared.periodLabel"),
+                value: getDateRangeLabel(dateRange),
+                tone: "plain",
+              },
+            ]}
+            footnote={
+              newHires.length > 0
+                ? t("reports.employee.cards.newHires.latest", {
+                    name: `${newHires[0]?.personalInfo?.firstName || ""} ${newHires[0]?.personalInfo?.lastName || ""}`.trim(),
+                  })
+                : undefined
+            }
+            exportLabel={t("reports.employee.cards.newHires.export")}
+            onExport={exportNewHires}
+            exportDisabled={newHires.length === 0}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Building className="h-5 w-5 text-purple-600" />
-                {t("reports.employee.cards.headcount.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.employee.cards.headcount.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 mb-4 max-h-32 overflow-y-auto">
-                {Object.entries(departmentCounts)
-                  .sort((a, b) => (b[1] as number) - (a[1] as number))
-                  .slice(0, 4)
-                  .map(([dept, count]) => (
-                    <div key={dept} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground truncate">
-                        {dept}
-                      </span>
-                      <Badge variant="outline">{count as number}</Badge>
-                    </div>
-                  ))}
-                {Object.keys(departmentCounts).length > 4 && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("reports.employee.cards.headcount.moreDepartments", {
-                      count: String(Object.keys(departmentCounts).length - 4),
-                    })}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportHeadcount}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.employee.cards.headcount.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Building}
+            accent="violet"
+            title={t("reports.employee.cards.headcount.title")}
+            description={t("reports.employee.cards.headcount.description")}
+            rows={Object.entries(departmentCounts)
+              .sort((a, b) => (b[1] as number) - (a[1] as number))
+              .slice(0, 4)
+              .map(([dept, count]) => ({
+                icon: Home,
+                label: dept,
+                value: count as number,
+              }))}
+            footnote={
+              Object.keys(departmentCounts).length > 4
+                ? t("reports.employee.cards.headcount.moreDepartments", {
+                    count: String(Object.keys(departmentCounts).length - 4),
+                  })
+                : undefined
+            }
+            exportLabel={t("reports.employee.cards.headcount.export")}
+            onExport={exportHeadcount}
+          />
         </div>
 
         {/* Employment Type Breakdown */}
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileSpreadsheet className="h-5 w-5 text-violet-600" />
-              {t("reports.employee.types.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.employee.types.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 space-y-3">
-              {Object.entries(employmentTypes)
-                .sort((a, b) => (b[1] as number) - (a[1] as number))
-                .map(([type, count]) => {
-                  const pct =
-                    employees.length > 0
-                      ? ((count as number) / employees.length) * 100
-                      : 0;
-                  return (
-                    <div
-                      key={type}
-                      className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm"
-                    >
-                      <span className="text-muted-foreground">
-                        {getEmploymentTypeLabel(type)}
+        <ReportSection
+          icon={FileSpreadsheet}
+          title={t("reports.employee.types.title")}
+          description={t("reports.employee.types.description")}
+        >
+          <div className="mb-4 space-y-2">
+            {Object.entries(employmentTypes)
+              .sort((a, b) => (b[1] as number) - (a[1] as number))
+              .map(([type, count]) => {
+                const pct =
+                  employees.length > 0
+                    ? ((count as number) / employees.length) * 100
+                    : 0;
+                return (
+                  <div
+                    key={type}
+                    className="flex min-h-9 items-center justify-between gap-3 text-sm"
+                  >
+                    <span className="truncate text-muted-foreground">
+                      {getEmploymentTypeLabel(type)}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {pct.toFixed(0)}%
                       </span>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xs tabular-nums text-muted-foreground">
-                          {pct.toFixed(0)}%
-                        </span>
-                        <Badge variant="outline" className="tabular-nums">
-                          {count as number}
-                        </Badge>
+                      <span className="rounded-lg bg-muted px-2.5 py-1 text-sm font-semibold tabular-nums">
+                        {count as number}
                       </span>
-                    </div>
-                  );
-                })}
-            </div>
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={exportEmploymentTypes}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {t("reports.employee.types.export")}
-            </Button>
-          </CardContent>
-        </Card>
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={exportEmploymentTypes}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {t("reports.employee.types.export")}
+          </Button>
+        </ReportSection>
 
         {/* Recent Employees Table */}
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-5 w-5 text-violet-600" />
-              {t("reports.employee.recent.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.employee.recent.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {employees.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                <p>{t("reports.employee.recent.empty")}</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3 md:hidden">
-                  {recentEmployees.map((emp) => (
-                    <div
-                      key={emp.id}
-                      className="rounded-lg border border-border/50 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-medium">
-                            {emp.personalInfo?.firstName}{" "}
-                            {emp.personalInfo?.lastName}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {emp.jobDetails?.employeeId}
-                          </div>
+        <ReportSection
+          icon={Calendar}
+          title={t("reports.employee.recent.title")}
+          description={t("reports.employee.recent.description")}
+        >
+          {employees.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <p>{t("reports.employee.recent.empty")}</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 md:hidden">
+                {recentEmployees.map((emp) => (
+                  <div
+                    key={emp.id}
+                    className="rounded-lg border border-border/50 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium">
+                          {emp.personalInfo?.firstName}{" "}
+                          {emp.personalInfo?.lastName}
                         </div>
-                        <Badge
-                          className={
-                            emp.status === "active"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-muted text-muted-foreground"
-                          }
-                        >
-                          {getStatusLabel(emp.status)}
-                        </Badge>
+                        <div className="text-sm text-muted-foreground">
+                          {emp.jobDetails?.employeeId}
+                        </div>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.employee.recent.table.department")}
-                          </p>
-                          <p>{emp.jobDetails?.department || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.employee.recent.table.position")}
-                          </p>
-                          <p>{emp.jobDetails?.position || "-"}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.employee.recent.table.hireDate")}
-                          </p>
-                          <p>
-                            {emp.jobDetails?.hireDate
-                              ? formatDateTL(emp.jobDetails.hireDate)
-                              : "-"}
-                          </p>
-                        </div>
+                      <Badge
+                        className={
+                          emp.status === "active"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-muted text-muted-foreground"
+                        }
+                      >
+                        {getStatusLabel(emp.status)}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.employee.recent.table.department")}
+                        </p>
+                        <p>{emp.jobDetails?.department || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.employee.recent.table.position")}
+                        </p>
+                        <p>{emp.jobDetails?.position || "-"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.employee.recent.table.hireDate")}
+                        </p>
+                        <p>
+                          {emp.jobDetails?.hireDate
+                            ? formatDateTL(emp.jobDetails.hireDate)
+                            : "-"}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.employee.recent.table.employee")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.employee.recent.table.department")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.employee.recent.table.position")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.employee.recent.table.hireDate")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("reports.employee.recent.table.status")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentEmployees.map((emp) => (
-                        <tr key={emp.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3">
-                            <div>
-                              <div className="font-medium">
-                                {emp.personalInfo?.firstName}{" "}
-                                {emp.personalInfo?.lastName}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {emp.jobDetails?.employeeId}
-                              </div>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.employee.recent.table.employee")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.employee.recent.table.department")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.employee.recent.table.position")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.employee.recent.table.hireDate")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("reports.employee.recent.table.status")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentEmployees.map((emp) => (
+                      <tr key={emp.id} className="border-b hover:bg-muted/50">
+                        <td className="p-3">
+                          <div>
+                            <div className="font-medium">
+                              {emp.personalInfo?.firstName}{" "}
+                              {emp.personalInfo?.lastName}
                             </div>
-                          </td>
-                          <td className="p-3">
-                            {emp.jobDetails?.department || "-"}
-                          </td>
-                          <td className="p-3">
-                            {emp.jobDetails?.position || "-"}
-                          </td>
-                          <td className="p-3">
-                            {emp.jobDetails?.hireDate
-                              ? formatDateTL(emp.jobDetails.hireDate)
-                              : "-"}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Badge
-                              className={
-                                emp.status === "active"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-muted text-muted-foreground"
-                              }
-                            >
-                              {getStatusLabel(emp.status)}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                            <div className="text-sm text-muted-foreground">
+                              {emp.jobDetails?.employeeId}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {emp.jobDetails?.department || "-"}
+                        </td>
+                        <td className="p-3">
+                          {emp.jobDetails?.position || "-"}
+                        </td>
+                        <td className="p-3">
+                          {emp.jobDetails?.hireDate
+                            ? formatDateTL(emp.jobDetails.hireDate)
+                            : "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge
+                            className={
+                              emp.status === "active"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-muted text-muted-foreground"
+                            }
+                          >
+                            {getStatusLabel(emp.status)}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </ReportSection>
       </ReportPage>
     </>
   );

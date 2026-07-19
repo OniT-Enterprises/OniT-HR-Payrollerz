@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ReportCardHeader,
   ReportEmptyState,
   ReportPage,
   ReportSummary,
@@ -438,11 +439,11 @@ export default function PayrollAllocationReport() {
         />
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FolderKanban className="h-4 w-4" />
-              {t("reports.payrollAllocation.table.title")}
-            </CardTitle>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={FolderKanban}
+              title={t("reports.payrollAllocation.table.title")}
+            />
           </CardHeader>
           <CardContent>
             {loading ? (

@@ -1,13 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { addDaysISO, formatDateTL, getTodayTL } from "@/lib/dateUtils";
 import { exportToCSV as exportCSVFile } from "@/lib/csvExport";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,6 +26,7 @@ import {
 import {
   ReportEmptyState,
   ReportPage,
+  ReportSection,
 } from "@/components/reports/ReportLayout";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
@@ -790,182 +785,166 @@ export default function CustomReports() {
         }
       >
         {/* Report templates */}
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileText className="h-5 w-5 text-violet-600" />
-              {t("reports.custom.templatesTitle")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.custom.templatesDescription")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {savedReports.length === 0 ? (
-              <ReportEmptyState
-                icon={BarChart3}
-                title={t("reports.custom.noTemplates")}
-              />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {savedReports.map((report) => (
-                  <Card
-                    key={report.id}
-                    className="border-border/70 shadow-none transition-colors hover:border-violet-400/50"
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {getDataSourceIcon(report.dataSource)}
-                          <h4 className="font-medium truncate">
-                            {getTemplateName(report)}
-                          </h4>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {t("reports.custom.columnCount", {
-                            count: report.columns.length,
+        <ReportSection
+          icon={FileText}
+          title={t("reports.custom.templatesTitle")}
+          description={t("reports.custom.templatesDescription")}
+        >
+          {savedReports.length === 0 ? (
+            <ReportEmptyState
+              icon={BarChart3}
+              title={t("reports.custom.noTemplates")}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedReports.map((report) => (
+                <Card
+                  key={report.id}
+                  className="border-border/70 shadow-none transition-colors hover:border-violet-400/50"
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {getDataSourceIcon(report.dataSource)}
+                        <h4 className="font-medium truncate">
+                          {getTemplateName(report)}
+                        </h4>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {t("reports.custom.columnCount", {
+                          count: report.columns.length,
+                        })}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      {getTemplateDescription(report)}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                      <span>{t("reports.custom.template")}</span>
+                      {report.lastRun && (
+                        <span>
+                          {t("reports.custom.lastRun", {
+                            date: formatDateTL(report.lastRun),
                           })}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {getTemplateDescription(report)}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                        <span>{t("reports.custom.template")}</span>
-                        {report.lastRun && (
-                          <span>
-                            {t("reports.custom.lastRun", {
-                              date: formatDateTL(report.lastRun),
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={() => runReport(report)}
-                          disabled={loading}
-                        >
-                          <Play className="h-3 w-3 mr-1" />
-                          {t("reports.custom.run")}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => runReport(report)}
+                        disabled={loading}
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        {t("reports.custom.run")}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </ReportSection>
 
         {/* Report Preview */}
         {previewData && (
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Eye className="h-5 w-5 text-violet-600" />
-                    {t("reports.custom.previewTitle")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("reports.custom.recordsFound", {
-                      count: previewData.length,
-                    })}
-                  </CardDescription>
+          <ReportSection
+            icon={Eye}
+            title={t("reports.custom.previewTitle")}
+            description={t("reports.custom.recordsFound", {
+              count: previewData.length,
+            })}
+            actions={
+              <>
+                <Button
+                  className="flex-1 sm:flex-none"
+                  variant="outline"
+                  onClick={exportToCSV}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("reports.custom.exportCsv")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-11 w-11 shrink-0"
+                  onClick={() => setPreviewData(null)}
+                  aria-label={t("reports.custom.clearPreview")}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            }
+          >
+            {previewData.length === 0 ? (
+              <ReportEmptyState
+                icon={FileText}
+                title={t("reports.custom.noMatches")}
+              />
+            ) : (
+              <>
+                <div className="space-y-3 md:hidden">
+                  {previewData.slice(0, 20).map((row, index) => (
+                    <dl
+                      key={index}
+                      className="space-y-2 rounded-lg border border-border/70 p-4"
+                    >
+                      {localizedPreviewColumns.map((column) => (
+                        <div
+                          key={column.key}
+                          className="flex items-start justify-between gap-4 text-sm"
+                        >
+                          <dt className="text-muted-foreground">
+                            {column.label}
+                          </dt>
+                          <dd className="max-w-[60%] break-words text-right font-medium">
+                            {getColumnValue(row, column.key)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ))}
                 </div>
-                <div className="flex w-full gap-2 sm:w-auto">
-                  <Button
-                    className="flex-1 sm:flex-none"
-                    variant="outline"
-                    onClick={exportToCSV}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("reports.custom.exportCsv")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={() => setPreviewData(null)}
-                    aria-label={t("reports.custom.clearPreview")}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {previewData.length === 0 ? (
-                <ReportEmptyState
-                  icon={FileText}
-                  title={t("reports.custom.noMatches")}
-                />
-              ) : (
-                <>
-                  <div className="space-y-3 md:hidden">
-                    {previewData.slice(0, 20).map((row, index) => (
-                      <dl
-                        key={index}
-                        className="space-y-2 rounded-lg border border-border/70 p-4"
-                      >
-                        {localizedPreviewColumns.map((column) => (
-                          <div
-                            key={column.key}
-                            className="flex items-start justify-between gap-4 text-sm"
-                          >
-                            <dt className="text-muted-foreground">
-                              {column.label}
-                            </dt>
-                            <dd className="max-w-[60%] break-words text-right font-medium">
-                              {getColumnValue(row, column.key)}
-                            </dd>
-                          </div>
-                        ))}
-                      </dl>
-                    ))}
-                  </div>
 
-                  <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        {localizedPreviewColumns.map((col) => (
+                          <th
+                            key={col.key}
+                            className="text-left p-3 font-medium"
+                          >
+                            {col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.slice(0, 20).map((row, idx) => (
+                        <tr key={idx} className="border-b hover:bg-muted/50">
                           {localizedPreviewColumns.map((col) => (
-                            <th
-                              key={col.key}
-                              className="text-left p-3 font-medium"
-                            >
-                              {col.label}
-                            </th>
+                            <td key={col.key} className="p-3">
+                              {getColumnValue(row, col.key)}
+                            </td>
                           ))}
                         </tr>
-                      </thead>
-                      <tbody>
-                        {previewData.slice(0, 20).map((row, idx) => (
-                          <tr key={idx} className="border-b hover:bg-muted/50">
-                            {localizedPreviewColumns.map((col) => (
-                              <td key={col.key} className="p-3">
-                                {getColumnValue(row, col.key)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {previewData.length > 20 && (
-                    <p className="text-center text-sm text-muted-foreground mt-4">
-                      {t("reports.custom.showingLimited", {
-                        count: previewData.length,
-                      })}
-                    </p>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {previewData.length > 20 && (
+                  <p className="text-center text-sm text-muted-foreground mt-4">
+                    {t("reports.custom.showingLimited", {
+                      count: previewData.length,
+                    })}
+                  </p>
+                )}
+              </>
+            )}
+          </ReportSection>
         )}
       </ReportPage>
     </>

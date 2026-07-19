@@ -8,13 +8,8 @@
 
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ReportCardHeader } from "@/components/reports/ReportLayout";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -473,11 +468,14 @@ export default function INSSMonthly() {
           </div>
 
           <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Skeleton className="h-4 w-40" />
-              </CardTitle>
-              <Skeleton className="h-4 w-64" />
+            <CardHeader className="pb-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -665,14 +663,13 @@ export default function INSSMonthly() {
         )}
 
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building className="h-5 w-5 text-muted-foreground" />
-              {t("reports.inssMonthly.generate.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.inssMonthly.generate.description")}
-            </CardDescription>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={Building}
+              accent="primary"
+              title={t("reports.inssMonthly.generate.title")}
+              description={t("reports.inssMonthly.generate.description")}
+            />
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -739,42 +736,39 @@ export default function INSSMonthly() {
 
         {selectedReturn && (
           <Card className="mb-6">
-            <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <CardTitle className="text-base">
-                    {t("reports.inssMonthly.selected.title", {
-                      period: formatPeriodLabel(selectedReturn.reportingPeriod),
-                    })}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {t("reports.inssMonthly.selected.description", {
-                      employer:
-                        selectedReturn.employerName || company.legalName || "-",
-                      tin:
-                        selectedReturn.employerTIN || company.tinNumber || "-",
-                    })}
-                  </CardDescription>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={handleExportCSV}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("reports.inssMonthly.actions.export")}
-                  </Button>
-                  <Button variant="outline" onClick={handleExportDrExcel}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("reports.inssMonthly.actions.exportDr") ||
-                      "DR Excel (INSS portal)"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleDownloadPaymentOrder}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("paymentOrders.action")}
-                  </Button>
-                </div>
-              </div>
+            <CardHeader className="pb-4">
+              <ReportCardHeader
+                icon={Shield}
+                accent="primary"
+                title={t("reports.inssMonthly.selected.title", {
+                  period: formatPeriodLabel(selectedReturn.reportingPeriod),
+                })}
+                description={t("reports.inssMonthly.selected.description", {
+                  employer:
+                    selectedReturn.employerName || company.legalName || "-",
+                  tin: selectedReturn.employerTIN || company.tinNumber || "-",
+                })}
+                actions={
+                  <>
+                    <Button variant="outline" onClick={handleExportCSV}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {t("reports.inssMonthly.actions.export")}
+                    </Button>
+                    <Button variant="outline" onClick={handleExportDrExcel}>
+                      <Download className="h-4 w-4 mr-2" />
+                      {t("reports.inssMonthly.actions.exportDr") ||
+                        "DR Excel (INSS portal)"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleDownloadPaymentOrder}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {t("paymentOrders.action")}
+                    </Button>
+                  </>
+                }
+              />
             </CardHeader>
             <CardContent>
               <dl className="mb-6 grid gap-x-8 sm:grid-cols-2">
@@ -933,13 +927,13 @@ export default function INSSMonthly() {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              {t("reports.inssMonthly.tracker.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.inssMonthly.tracker.description")}
-            </CardDescription>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={Calendar}
+              accent="primary"
+              title={t("reports.inssMonthly.tracker.title")}
+              description={t("reports.inssMonthly.tracker.description")}
+            />
           </CardHeader>
           <CardContent>
             <div className="space-y-3 md:hidden">

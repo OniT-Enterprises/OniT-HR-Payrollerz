@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -19,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import {
   ReportEmptyState,
+  ReportExportCard,
   ReportPage,
   ReportPageSkeleton,
+  ReportSection,
   ReportToolbar,
 } from "@/components/reports/ReportLayout";
 import { useAllDepartments } from "@/hooks/useDepartments";
@@ -28,7 +23,16 @@ import { useAllEmployees } from "@/hooks/useEmployees";
 import type { Department } from "@/services/departmentService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
-import { Building, Download, Users, TrendingUp, WifiOff } from "lucide-react";
+import {
+  Building,
+  CalendarDays,
+  Home,
+  Users,
+  UserCheck,
+  UserPlus,
+  TrendingUp,
+  WifiOff,
+} from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { exportToCSV } from "@/lib/csvExport";
@@ -272,330 +276,255 @@ export default function DepartmentReports() {
         </ReportToolbar>
         {/* Report Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Building className="h-5 w-5 text-violet-600" />
-                {t("reports.department.cards.overview.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.department.cards.overview.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.department.cards.overview.departments")}
-                  </span>
-                  <span className="font-medium">{totalDepartments}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.department.cards.overview.totalStaff")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                  >
-                    {totalEmployees}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.department.cards.overview.withDirector")}
-                  </span>
-                  <Badge variant="outline">
-                    {departments.filter((d) => d.director).length}
-                  </Badge>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportDepartmentOverview}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.department.cards.overview.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Building}
+            accent="violet"
+            title={t("reports.department.cards.overview.title")}
+            description={t("reports.department.cards.overview.description")}
+            rows={[
+              {
+                icon: Home,
+                label: t("reports.department.cards.overview.departments"),
+                value: totalDepartments,
+              },
+              {
+                icon: Users,
+                label: t("reports.department.cards.overview.totalStaff"),
+                value: totalEmployees,
+                tone: totalEmployees ? "positive" : "muted",
+              },
+              {
+                icon: UserCheck,
+                label: t("reports.department.cards.overview.withDirector"),
+                value: departments.filter((d) => d.director).length,
+              },
+            ]}
+            exportLabel={t("reports.department.cards.overview.export")}
+            onExport={exportDepartmentOverview}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-5 w-5 text-blue-600" />
-                {t("reports.department.cards.staffing.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.department.cards.staffing.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                {departmentStats.slice(0, 3).map((s) => (
-                  <div
-                    key={s.department.id}
-                    className="flex justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground truncate max-w-[140px]">
-                      {s.department.name}
-                    </span>
-                    <Badge variant="outline">
-                      {t("reports.department.cards.staffing.staffCount", {
-                        count: String(s.headcount),
-                      })}
-                    </Badge>
-                  </div>
-                ))}
-                {departmentStats.length > 3 && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("reports.department.cards.staffing.moreDepartments", {
-                      count: String(departmentStats.length - 3),
-                    })}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportStaffingReport}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.department.cards.staffing.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Users}
+            accent="blue"
+            title={t("reports.department.cards.staffing.title")}
+            description={t("reports.department.cards.staffing.description")}
+            rows={departmentStats.slice(0, 3).map((s) => ({
+              icon: Home,
+              label: s.department.name,
+              value: t("reports.department.cards.staffing.staffCount", {
+                count: String(s.headcount),
+              }),
+            }))}
+            footnote={
+              departmentStats.length > 3
+                ? t("reports.department.cards.staffing.moreDepartments", {
+                    count: String(departmentStats.length - 3),
+                  })
+                : undefined
+            }
+            exportLabel={t("reports.department.cards.staffing.export")}
+            onExport={exportStaffingReport}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                {t("reports.department.cards.growth.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.department.cards.growth.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.department.cards.growth.totalNewHires")}
-                  </span>
-                  <span className="font-medium">
-                    {departmentStats.reduce((sum, s) => sum + s.newHires, 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.shared.periodLabel")}
-                  </span>
-                  <Badge variant="outline">
-                    {getDateRangeLabel(dateRange)}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.department.cards.growth.departmentsWithHires")}
-                  </span>
-                  <span className="font-medium">
-                    {departmentStats.filter((s) => s.newHires > 0).length}
-                  </span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportGrowthReport}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.department.cards.growth.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={TrendingUp}
+            accent="primary"
+            title={t("reports.department.cards.growth.title")}
+            description={t("reports.department.cards.growth.description")}
+            rows={[
+              {
+                icon: UserPlus,
+                label: t("reports.department.cards.growth.totalNewHires"),
+                value: departmentStats.reduce((sum, s) => sum + s.newHires, 0),
+              },
+              {
+                icon: CalendarDays,
+                label: t("reports.shared.periodLabel"),
+                value: getDateRangeLabel(dateRange),
+                tone: "plain",
+              },
+              {
+                icon: Building,
+                label: t(
+                  "reports.department.cards.growth.departmentsWithHires",
+                ),
+                value: departmentStats.filter((s) => s.newHires > 0).length,
+              },
+            ]}
+            exportLabel={t("reports.department.cards.growth.export")}
+            onExport={exportGrowthReport}
+          />
         </div>
 
         {/* Department Table */}
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Building className="h-5 w-5 text-violet-600" />
-              {t("reports.department.table.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.department.table.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {departmentStats.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("reports.department.table.empty")}</p>
-                <p className="text-sm mb-4">
-                  {t("reports.department.table.emptyDescription")}
-                </p>
-                {canManageTenant && (
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/settings/departments")}
+        <ReportSection
+          icon={Building}
+          title={t("reports.department.table.title")}
+          description={t("reports.department.table.description")}
+        >
+          {departmentStats.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>{t("reports.department.table.empty")}</p>
+              <p className="text-sm mb-4">
+                {t("reports.department.table.emptyDescription")}
+              </p>
+              {canManageTenant && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/settings/departments")}
+                >
+                  <Building className="h-4 w-4 mr-2" />
+                  {t("reports.department.table.goToDepartments")}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3 md:hidden">
+                {departmentStats.map((s) => (
+                  <div
+                    key={s.department.id}
+                    className="rounded-lg border border-border/50 p-4"
                   >
-                    <Building className="h-4 w-4 mr-2" />
-                    {t("reports.department.table.goToDepartments")}
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3 md:hidden">
-                  {departmentStats.map((s) => (
-                    <div
-                      key={s.department.id}
-                      className="rounded-lg border border-border/50 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{
-                              backgroundColor: s.department.color || "#8b5cf6",
-                            }}
-                          />
-                          <span className="font-medium">
-                            {s.department.name}
-                          </span>
-                        </div>
-                        <Badge variant="outline">{s.headcount}</Badge>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-3 w-3 rounded-full"
+                          style={{
+                            backgroundColor: s.department.color || "#8b5cf6",
+                          }}
+                        />
+                        <span className="font-medium">{s.department.name}</span>
                       </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.department.table.columns.director")}
-                          </p>
-                          <p>{s.department.director || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.department.table.columns.manager")}
-                          </p>
-                          <p>{s.department.manager || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.department.table.columns.active")}
-                          </p>
-                          <p>{s.activeEmployees}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.department.table.columns.newHires")}
-                          </p>
-                          <p>{s.newHires > 0 ? `+${s.newHires}` : "0"}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground">
-                            {t("reports.department.table.columns.avgTenure")}
-                          </p>
-                          <p>
-                            {s.averageTenure > 0
-                              ? `${s.averageTenure.toFixed(0)} ${t("reports.shared.monthsShort")}`
-                              : "-"}
-                          </p>
-                        </div>
+                      <Badge variant="outline">{s.headcount}</Badge>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.department.table.columns.director")}
+                        </p>
+                        <p>{s.department.director || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.department.table.columns.manager")}
+                        </p>
+                        <p>{s.department.manager || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.department.table.columns.active")}
+                        </p>
+                        <p>{s.activeEmployees}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.department.table.columns.newHires")}
+                        </p>
+                        <p>{s.newHires > 0 ? `+${s.newHires}` : "0"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-muted-foreground">
+                          {t("reports.department.table.columns.avgTenure")}
+                        </p>
+                        <p>
+                          {s.averageTenure > 0
+                            ? `${s.averageTenure.toFixed(0)} ${t("reports.shared.monthsShort")}`
+                            : "-"}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
 
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.department.table.columns.department")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.department.table.columns.director")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("reports.department.table.columns.manager")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("reports.department.table.columns.headcount")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("reports.department.table.columns.active")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("reports.department.table.columns.newHires")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("reports.department.table.columns.avgTenure")}
-                        </th>
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.department.table.columns.department")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.department.table.columns.director")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("reports.department.table.columns.manager")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("reports.department.table.columns.headcount")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("reports.department.table.columns.active")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("reports.department.table.columns.newHires")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("reports.department.table.columns.avgTenure")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departmentStats.map((s) => (
+                      <tr
+                        key={s.department.id}
+                        className="border-b hover:bg-muted/50"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{
+                                backgroundColor:
+                                  s.department.color || "#8b5cf6",
+                              }}
+                            />
+                            <span className="font-medium">
+                              {s.department.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          {s.department.director || (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {s.department.manager || (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge variant="outline">{s.headcount}</Badge>
+                        </td>
+                        <td className="p-3 text-center">{s.activeEmployees}</td>
+                        <td className="p-3 text-center">
+                          {s.newHires > 0 ? (
+                            <Badge variant="outline">+{s.newHires}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {s.averageTenure > 0 ? (
+                            <span>
+                              {s.averageTenure.toFixed(0)}{" "}
+                              {t("reports.shared.monthsShort")}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {departmentStats.map((s) => (
-                        <tr
-                          key={s.department.id}
-                          className="border-b hover:bg-muted/50"
-                        >
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{
-                                  backgroundColor:
-                                    s.department.color || "#8b5cf6",
-                                }}
-                              />
-                              <span className="font-medium">
-                                {s.department.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            {s.department.director || (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-3">
-                            {s.department.manager || (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Badge variant="outline">{s.headcount}</Badge>
-                          </td>
-                          <td className="p-3 text-center">
-                            {s.activeEmployees}
-                          </td>
-                          <td className="p-3 text-center">
-                            {s.newHires > 0 ? (
-                              <Badge variant="outline">+{s.newHires}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground">0</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            {s.averageTenure > 0 ? (
-                              <span>
-                                {s.averageTenure.toFixed(0)}{" "}
-                                {t("reports.shared.monthsShort")}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </ReportSection>
       </ReportPage>
     </>
   );

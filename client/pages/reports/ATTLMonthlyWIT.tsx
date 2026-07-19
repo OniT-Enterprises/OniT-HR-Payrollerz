@@ -10,13 +10,8 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ReportCardHeader } from "@/components/reports/ReportLayout";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -713,19 +708,12 @@ export default function ATTLMonthlyWIT() {
           {/* Generate Return Card */}
           <Card>
             <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">
-                    {t("reports.attlMonthlyWit.generate.title")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("reports.attlMonthlyWit.generate.description")}
-                  </CardDescription>
-                </div>
-              </div>
+              <ReportCardHeader
+                icon={FileText}
+                accent="amber"
+                title={t("reports.attlMonthlyWit.generate.title")}
+                description={t("reports.attlMonthlyWit.generate.description")}
+              />
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -795,19 +783,12 @@ export default function ATTLMonthlyWIT() {
           {/* Company Info Card */}
           <Card>
             <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">
-                    {t("reports.attlMonthlyWit.company.title")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("reports.attlMonthlyWit.company.description")}
-                  </CardDescription>
-                </div>
-              </div>
+              <ReportCardHeader
+                icon={Building}
+                accent="blue"
+                title={t("reports.attlMonthlyWit.company.title")}
+                description={t("reports.attlMonthlyWit.company.description")}
+              />
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div>
@@ -849,19 +830,12 @@ export default function ATTLMonthlyWIT() {
           {/* Quick Stats Card */}
           <Card>
             <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">
-                    {t("reports.attlMonthlyWit.summary.title")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("reports.attlMonthlyWit.summary.description")}
-                  </CardDescription>
-                </div>
-              </div>
+              <ReportCardHeader
+                icon={DollarSign}
+                accent="primary"
+                title={t("reports.attlMonthlyWit.summary.title")}
+                description={t("reports.attlMonthlyWit.summary.description")}
+              />
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-muted">
@@ -900,14 +874,18 @@ export default function ATTLMonthlyWIT() {
 
         {/* How to pay — ATTL's published payment channel for wage income tax */}
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {t("reports.attlMonthlyWit.payment.title") || "How to pay (ATTL)"}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.attlMonthlyWit.payment.description") ||
-                "Deliver 3 copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked “electronic payment”. Due by the 15th of the following month."}
-            </CardDescription>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={Landmark}
+              accent="primary"
+              title={
+                t("reports.attlMonthlyWit.payment.title") || "How to pay (ATTL)"
+              }
+              description={
+                t("reports.attlMonthlyWit.payment.description") ||
+                "Deliver 3 copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked “electronic payment”. Due by the 15th of the following month."
+              }
+            />
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
@@ -961,55 +939,56 @@ export default function ATTLMonthlyWIT() {
         {/* Return Preview */}
         {selectedReturn && (
           <Card>
-            <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">
-                      {t("reports.attlMonthlyWit.preview.title", {
-                        period: formatPeriodLabel(
-                          selectedReturn.reportingPeriod,
-                        ),
-                      })}
-                    </CardTitle>
-                    <CardDescription>
-                      {t("reports.attlMonthlyWit.preview.periodDescription", {
-                        start: selectedReturn.periodStartDate,
-                        end: selectedReturn.periodEndDate,
-                      })}
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportOfficialForm}
-                  >
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    {t("reports.attlMonthlyWit.actions.officialForm")}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    CSV
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadPaymentOrder}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("paymentOrders.action")}
-                  </Button>
-                </div>
-              </div>
+            <CardHeader className="pb-4">
+              <ReportCardHeader
+                icon={FileText}
+                title={t("reports.attlMonthlyWit.preview.title", {
+                  period: formatPeriodLabel(selectedReturn.reportingPeriod),
+                })}
+                description={t(
+                  "reports.attlMonthlyWit.preview.periodDescription",
+                  {
+                    start: selectedReturn.periodStartDate,
+                    end: selectedReturn.periodEndDate,
+                  },
+                )}
+                actions={
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportOfficialForm}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      {t("reports.attlMonthlyWit.actions.officialForm")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportCSV}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportPDF}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadPaymentOrder}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {t("paymentOrders.action")}
+                    </Button>
+                  </>
+                }
+              />
             </CardHeader>
             <CardContent>
               {/* Assisted e-Tax filing — the two numbers the portal wants */}
@@ -1163,20 +1142,12 @@ export default function ATTLMonthlyWIT() {
 
         {/* Filing History */}
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-              </div>
-              <div>
-                <CardTitle className="text-base">
-                  {t("reports.attlMonthlyWit.history.title")}
-                </CardTitle>
-                <CardDescription>
-                  {t("reports.attlMonthlyWit.history.description")}
-                </CardDescription>
-              </div>
-            </div>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={Calendar}
+              title={t("reports.attlMonthlyWit.history.title")}
+              description={t("reports.attlMonthlyWit.history.description")}
+            />
           </CardHeader>
           <CardContent>
             <div className="space-y-3 md:hidden">

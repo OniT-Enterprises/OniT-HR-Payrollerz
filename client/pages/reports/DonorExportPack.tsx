@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  ReportCardHeader,
   ReportEmptyState,
   ReportPage,
   ReportSummary,
@@ -257,11 +258,11 @@ export default function DonorExportPack() {
         />
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileSpreadsheet className="h-4 w-4" />
-              {t("reports.donorExportPack.summary.title")}
-            </CardTitle>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={FileSpreadsheet}
+              title={t("reports.donorExportPack.summary.title")}
+            />
           </CardHeader>
           <CardContent>
             {isLoading ? (

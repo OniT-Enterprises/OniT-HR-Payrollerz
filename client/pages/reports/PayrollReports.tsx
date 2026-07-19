@@ -1,13 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -22,6 +15,7 @@ import {
   ReportEmptyState,
   ReportPage,
   ReportPageSkeleton,
+  ReportSection,
   ReportToolbar,
 } from "@/components/reports/ReportLayout";
 import { usePayrollRuns, usePayrollRecordsByRun } from "@/hooks/usePayroll";
@@ -307,319 +301,307 @@ export default function PayrollReports() {
             </ReportToolbar>
 
             {/* Summary report card */}
-            <Card className="border-border/70 shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-5 w-5 text-primary" />
-                  {t("reports.payrollRun.summary.title")}
-                </CardTitle>
-                <CardDescription>
-                  {activeRun
-                    ? `${runLabel(activeRun)} · ${activeRun.employeeCount ?? records.length} ${t("reports.payrollRun.summary.employees")}`
-                    : t("reports.payrollRun.summary.description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recordsLoading ? (
-                  <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-                    {summaryRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
+            <ReportSection
+              icon={FileText}
+              accent="primary"
+              title={t("reports.payrollRun.summary.title")}
+              description={
+                activeRun
+                  ? `${runLabel(activeRun)} · ${activeRun.employeeCount ?? records.length} ${t("reports.payrollRun.summary.employees")}`
+                  : t("reports.payrollRun.summary.description")
+              }
+            >
+              {recordsLoading ? (
+                <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
+                  {summaryRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
+                    >
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton
+                        className={row.strong ? "h-5 w-20" : "h-4 w-16"}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
+                  {summaryRows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
+                    >
+                      <span className="text-sm text-muted-foreground">
+                        {row.label}
+                      </span>
+                      <span
+                        className={`tabular-nums ${row.strong ? "text-base font-semibold" : "text-sm font-medium"} ${row.tone ?? ""}`}
                       >
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton
-                          className={
-                            row.strong ? "h-5 w-20" : "h-4 w-16"
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-                    {summaryRows.map((row) => (
-                      <div
-                        key={row.label}
-                        className="flex items-center justify-between gap-3 border-b border-border/40 pb-2"
-                      >
-                        <span className="text-sm text-muted-foreground">
-                          {row.label}
-                        </span>
-                        <span
-                          className={`tabular-nums ${row.strong ? "text-base font-semibold" : "text-sm font-medium"} ${row.tone ?? ""}`}
-                        >
-                          {row.value}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ReportSection>
 
             {/* Per-employee breakdown */}
-            <Card className="border-border/70 shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-5 w-5 text-primary" />
-                  {t("reports.payrollRun.table.title")}
-                </CardTitle>
-                <CardDescription>
-                  {t("reports.payrollRun.table.description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recordsLoading ? (
-                  <>
-                    <div className="space-y-3 md:hidden">
-                      {Array.from({ length: 5 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className="rounded-lg border border-border/70 p-4"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1.5">
-                              <Skeleton className="h-4 w-32" />
-                              <Skeleton className="h-3 w-24" />
-                            </div>
-                          </div>
-                          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
-                            {Array.from({ length: 4 }).map((__, cellIndex) => (
-                              <div key={cellIndex} className="space-y-1">
-                                <Skeleton className="h-3 w-14" />
-                                <Skeleton className="h-4 w-16" />
-                              </div>
-                            ))}
+            <ReportSection
+              icon={FileText}
+              accent="primary"
+              title={t("reports.payrollRun.table.title")}
+              description={t("reports.payrollRun.table.description")}
+            >
+              {recordsLoading ? (
+                <>
+                  <div className="space-y-3 md:hidden">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="rounded-lg border border-border/70 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-1.5">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-24" />
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="hidden overflow-x-auto md:block">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="p-3 text-left font-medium">
-                              {t("reports.payrollRun.table.employee")}
-                            </th>
-                            <th className="p-3 text-left font-medium">
-                              {t("reports.payrollRun.table.department")}
-                            </th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.gross")}
-                            </th>
-                            <th className="p-3 text-right font-medium">WIT</th>
-                            <th className="p-3 text-right font-medium">INSS</th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.other")}
-                            </th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.net")}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Array.from({ length: 5 }).map((_, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-3">
-                                <Skeleton className="h-4 w-28" />
-                                <Skeleton className="mt-1 h-3 w-16" />
-                              </td>
-                              <td className="p-3">
-                                <Skeleton className="h-4 w-20" />
-                              </td>
-                              <td className="p-3 text-right">
-                                <Skeleton className="ml-auto h-4 w-16" />
-                              </td>
-                              <td className="p-3 text-right">
-                                <Skeleton className="ml-auto h-4 w-14" />
-                              </td>
-                              <td className="p-3 text-right">
-                                <Skeleton className="ml-auto h-4 w-14" />
-                              </td>
-                              <td className="p-3 text-right">
-                                <Skeleton className="ml-auto h-4 w-14" />
-                              </td>
-                              <td className="p-3 text-right">
-                                <Skeleton className="ml-auto h-4 w-16" />
-                              </td>
-                            </tr>
+                        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                          {Array.from({ length: 4 }).map((__, cellIndex) => (
+                            <div key={cellIndex} className="space-y-1">
+                              <Skeleton className="h-3 w-14" />
+                              <Skeleton className="h-4 w-16" />
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                ) : records.length === 0 ? (
-                  <div className="rounded-lg border p-6 text-sm text-muted-foreground">
-                    {t("reports.payrollRun.table.empty")}
-                  </div>
-                ) : (
-                  <>
-                    {duplicateEmployeeNumbers.size > 0 && (
-                      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-                        <span>
-                          {t("reports.payrollRun.duplicatesWarning", {
-                            count: duplicateEmployeeNumbers.size,
-                          })}
-                        </span>
+                        </div>
                       </div>
-                    )}
+                    ))}
+                  </div>
 
-                    <div className="space-y-3 md:hidden">
-                      {sortedRecords.map((record) => (
-                        <div
-                          key={record.id ?? record.employeeId}
-                          className="rounded-lg border border-border/70 p-4"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold">
-                                {record.employeeName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {[record.employeeNumber, record.department]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </p>
-                            </div>
-                            {duplicateEmployeeNumbers.has(
-                              record.employeeNumber || record.employeeName,
-                            ) && (
-                              <Badge className="shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                {t("reports.payrollRun.duplicateBadge")}
-                              </Badge>
-                            )}
-                          </div>
-                          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                            <div>
-                              <dt className="text-xs text-muted-foreground">
-                                {t("reports.payrollRun.table.gross")}
-                              </dt>
-                              <dd className="mt-0.5 font-medium tabular-nums">
-                                {fmt(record.totalGrossPay ?? 0)}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-muted-foreground">
-                                WIT
-                              </dt>
-                              <dd className="mt-0.5 font-medium tabular-nums">
-                                {fmt(witOf(record))}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-muted-foreground">
-                                INSS
-                              </dt>
-                              <dd className="mt-0.5 font-medium tabular-nums">
-                                {fmt(inssEmpOf(record))}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-xs text-muted-foreground">
-                                {t("reports.payrollRun.table.net")}
-                              </dt>
-                              <dd className="mt-0.5 font-semibold tabular-nums">
-                                {fmt(record.netPay ?? 0)}
-                              </dd>
-                            </div>
-                          </dl>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="hidden overflow-x-auto md:block">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="p-3 text-left font-medium">
-                              {t("reports.payrollRun.table.employee")}
-                            </th>
-                            <th className="p-3 text-left font-medium">
-                              {t("reports.payrollRun.table.department")}
-                            </th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.gross")}
-                            </th>
-                            <th className="p-3 text-right font-medium">WIT</th>
-                            <th className="p-3 text-right font-medium">INSS</th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.other")}
-                            </th>
-                            <th className="p-3 text-right font-medium">
-                              {t("reports.payrollRun.table.net")}
-                            </th>
+                  <div className="hidden overflow-x-auto md:block">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="p-3 text-left font-medium">
+                            {t("reports.payrollRun.table.employee")}
+                          </th>
+                          <th className="p-3 text-left font-medium">
+                            {t("reports.payrollRun.table.department")}
+                          </th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.gross")}
+                          </th>
+                          <th className="p-3 text-right font-medium">WIT</th>
+                          <th className="p-3 text-right font-medium">INSS</th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.other")}
+                          </th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.net")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <tr key={index} className="border-b">
+                            <td className="p-3">
+                              <Skeleton className="h-4 w-28" />
+                              <Skeleton className="mt-1 h-3 w-16" />
+                            </td>
+                            <td className="p-3">
+                              <Skeleton className="h-4 w-20" />
+                            </td>
+                            <td className="p-3 text-right">
+                              <Skeleton className="ml-auto h-4 w-16" />
+                            </td>
+                            <td className="p-3 text-right">
+                              <Skeleton className="ml-auto h-4 w-14" />
+                            </td>
+                            <td className="p-3 text-right">
+                              <Skeleton className="ml-auto h-4 w-14" />
+                            </td>
+                            <td className="p-3 text-right">
+                              <Skeleton className="ml-auto h-4 w-14" />
+                            </td>
+                            <td className="p-3 text-right">
+                              <Skeleton className="ml-auto h-4 w-16" />
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {sortedRecords.map((r) => (
-                            <tr
-                              key={r.id ?? r.employeeId}
-                              className="border-b hover:bg-muted/50"
-                            >
-                              <td className="p-3">
-                                <div className="font-medium">
-                                  {r.employeeName}
-                                  {duplicateEmployeeNumbers.has(
-                                    r.employeeNumber || r.employeeName,
-                                  ) && (
-                                    <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
-                                      {t("reports.payrollRun.duplicateBadge")}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {r.employeeNumber}
-                                </div>
-                              </td>
-                              <td className="p-3">{r.department}</td>
-                              <td className="p-3 text-right tabular-nums">
-                                {fmt(r.totalGrossPay ?? 0)}
-                              </td>
-                              <td className="p-3 text-right tabular-nums">
-                                {fmt(witOf(r))}
-                              </td>
-                              <td className="p-3 text-right tabular-nums">
-                                {fmt(inssEmpOf(r))}
-                              </td>
-                              <td className="p-3 text-right tabular-nums text-muted-foreground">
-                                {fmt(otherDedOf(r))}
-                              </td>
-                              <td className="p-3 text-right font-medium tabular-nums">
-                                {fmt(r.netPay ?? 0)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t-2 bg-muted/40 font-semibold">
-                            <td className="p-3" colSpan={2}>
-                              {t("reports.payrollRun.table.totals")}
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : records.length === 0 ? (
+                <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+                  {t("reports.payrollRun.table.empty")}
+                </div>
+              ) : (
+                <>
+                  {duplicateEmployeeNumbers.size > 0 && (
+                    <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
+                      <span>
+                        {t("reports.payrollRun.duplicatesWarning", {
+                          count: duplicateEmployeeNumbers.size,
+                        })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="space-y-3 md:hidden">
+                    {sortedRecords.map((record) => (
+                      <div
+                        key={record.id ?? record.employeeId}
+                        className="rounded-lg border border-border/70 p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">
+                              {record.employeeName}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {[record.employeeNumber, record.department]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </p>
+                          </div>
+                          {duplicateEmployeeNumbers.has(
+                            record.employeeNumber || record.employeeName,
+                          ) && (
+                            <Badge className="shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              {t("reports.payrollRun.duplicateBadge")}
+                            </Badge>
+                          )}
+                        </div>
+                        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              {t("reports.payrollRun.table.gross")}
+                            </dt>
+                            <dd className="mt-0.5 font-medium tabular-nums">
+                              {fmt(record.totalGrossPay ?? 0)}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              WIT
+                            </dt>
+                            <dd className="mt-0.5 font-medium tabular-nums">
+                              {fmt(witOf(record))}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              INSS
+                            </dt>
+                            <dd className="mt-0.5 font-medium tabular-nums">
+                              {fmt(inssEmpOf(record))}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="text-xs text-muted-foreground">
+                              {t("reports.payrollRun.table.net")}
+                            </dt>
+                            <dd className="mt-0.5 font-semibold tabular-nums">
+                              {fmt(record.netPay ?? 0)}
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="p-3 text-left font-medium">
+                            {t("reports.payrollRun.table.employee")}
+                          </th>
+                          <th className="p-3 text-left font-medium">
+                            {t("reports.payrollRun.table.department")}
+                          </th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.gross")}
+                          </th>
+                          <th className="p-3 text-right font-medium">WIT</th>
+                          <th className="p-3 text-right font-medium">INSS</th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.other")}
+                          </th>
+                          <th className="p-3 text-right font-medium">
+                            {t("reports.payrollRun.table.net")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedRecords.map((r) => (
+                          <tr
+                            key={r.id ?? r.employeeId}
+                            className="border-b hover:bg-muted/50"
+                          >
+                            <td className="p-3">
+                              <div className="font-medium">
+                                {r.employeeName}
+                                {duplicateEmployeeNumbers.has(
+                                  r.employeeNumber || r.employeeName,
+                                ) && (
+                                  <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
+                                    {t("reports.payrollRun.duplicateBadge")}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {r.employeeNumber}
+                              </div>
+                            </td>
+                            <td className="p-3">{r.department}</td>
+                            <td className="p-3 text-right tabular-nums">
+                              {fmt(r.totalGrossPay ?? 0)}
                             </td>
                             <td className="p-3 text-right tabular-nums">
-                              {fmt(totals.gross)}
+                              {fmt(witOf(r))}
                             </td>
                             <td className="p-3 text-right tabular-nums">
-                              {fmt(totals.wit)}
-                            </td>
-                            <td className="p-3 text-right tabular-nums">
-                              {fmt(totals.inssEmp)}
+                              {fmt(inssEmpOf(r))}
                             </td>
                             <td className="p-3 text-right tabular-nums text-muted-foreground">
-                              {fmt(totals.other)}
+                              {fmt(otherDedOf(r))}
                             </td>
-                            <td className="p-3 text-right tabular-nums">
-                              {fmt(totals.net)}
+                            <td className="p-3 text-right font-medium tabular-nums">
+                              {fmt(r.netPay ?? 0)}
                             </td>
                           </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 bg-muted/40 font-semibold">
+                          <td className="p-3" colSpan={2}>
+                            {t("reports.payrollRun.table.totals")}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {fmt(totals.gross)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {fmt(totals.wit)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {fmt(totals.inssEmp)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums text-muted-foreground">
+                            {fmt(totals.other)}
+                          </td>
+                          <td className="p-3 text-right tabular-nums">
+                            {fmt(totals.net)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </>
+              )}
+            </ReportSection>
           </div>
         )}
       </ReportPage>

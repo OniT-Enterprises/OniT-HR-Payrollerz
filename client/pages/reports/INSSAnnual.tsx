@@ -7,13 +7,8 @@
 
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ReportCardHeader } from "@/components/reports/ReportLayout";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -271,14 +266,14 @@ export default function INSSAnnual() {
           </div>
 
           <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                <Skeleton className="h-5 w-40" />
-              </CardTitle>
-              <CardDescription>
-                <Skeleton className="h-4 w-64" />
-              </CardDescription>
+            <CardHeader className="pb-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -313,14 +308,13 @@ export default function INSSAnnual() {
         />
 
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarDays className="h-5 w-5 text-muted-foreground" />
-              {t("reports.inssAnnual.generate.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.inssAnnual.generate.description")}
-            </CardDescription>
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={CalendarDays}
+              accent="primary"
+              title={t("reports.inssAnnual.generate.title")}
+              description={t("reports.inssAnnual.generate.description")}
+            />
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -358,27 +352,25 @@ export default function INSSAnnual() {
 
         {summary && (
           <Card className="mb-6">
-            <CardHeader>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <CardTitle className="text-base">
-                    {t("reports.inssAnnual.summary.title", {
-                      year: summary.year,
-                    })}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {t("reports.inssAnnual.summary.description", {
-                      employer: summary.employerName || "-",
-                      tin: summary.employerTIN || "-",
-                      monthsFiled: summary.monthsFiled,
-                    })}
-                  </CardDescription>
-                </div>
-                <Button variant="outline" onClick={handleExportCSV}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {t("reports.inssAnnual.actions.export")}
-                </Button>
-              </div>
+            <CardHeader className="pb-4">
+              <ReportCardHeader
+                icon={Shield}
+                accent="primary"
+                title={t("reports.inssAnnual.summary.title", {
+                  year: summary.year,
+                })}
+                description={t("reports.inssAnnual.summary.description", {
+                  employer: summary.employerName || "-",
+                  tin: summary.employerTIN || "-",
+                  monthsFiled: summary.monthsFiled,
+                })}
+                actions={
+                  <Button variant="outline" onClick={handleExportCSV}>
+                    <Download className="h-4 w-4 mr-2" />
+                    {t("reports.inssAnnual.actions.export")}
+                  </Button>
+                }
+              />
             </CardHeader>
             <CardContent>
               {summary.monthsFiled < 12 && (

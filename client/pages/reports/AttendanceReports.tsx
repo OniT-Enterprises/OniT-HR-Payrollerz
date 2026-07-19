@@ -1,14 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { formatDateTL } from "@/lib/dateUtils";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,7 +13,9 @@ import {
 import {
   ReportPage,
   ReportEmptyState,
+  ReportExportCard,
   ReportPageSkeleton,
+  ReportSection,
   ReportToolbar,
 } from "@/components/reports/ReportLayout";
 import { attendanceService } from "@/services/attendanceService";
@@ -30,11 +24,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Clock,
-  Download,
+  Clock3,
+  CalendarCheck,
   CalendarDays,
+  ClipboardList,
   Timer,
+  TrendingUp,
   Calendar,
   Lock,
+  Users,
+  UserCheck,
+  UserX,
   WifiOff,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -399,352 +399,272 @@ export default function AttendanceReports() {
         </ReportToolbar>
         {/* Report Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-5 w-5 text-violet-600" />
-                {t("reports.attendance.cards.summary.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.attendance.cards.summary.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.attendance.cards.summary.totalRecords")}
-                  </span>
-                  <span className="font-medium">{totalRecords}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("timeLeave.attendance.status.present")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                  >
-                    {statusBreakdown.present || 0}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("timeLeave.attendance.status.late")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                  >
-                    {statusBreakdown.late || 0}
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("timeLeave.attendance.status.absent")}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300"
-                  >
-                    {statusBreakdown.absent || 0}
-                  </Badge>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportAttendance}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.attendance.cards.summary.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Clock}
+            accent="cyan"
+            title={t("reports.attendance.cards.summary.title")}
+            description={t("reports.attendance.cards.summary.description")}
+            rows={[
+              {
+                icon: ClipboardList,
+                label: t("reports.attendance.cards.summary.totalRecords"),
+                value: totalRecords,
+              },
+              {
+                icon: UserCheck,
+                label: t("timeLeave.attendance.status.present"),
+                value: statusBreakdown.present || 0,
+                tone: statusBreakdown.present ? "positive" : "muted",
+              },
+              {
+                icon: Clock3,
+                label: t("timeLeave.attendance.status.late"),
+                value: statusBreakdown.late || 0,
+                tone: statusBreakdown.late ? "attention" : "muted",
+              },
+              {
+                icon: UserX,
+                label: t("timeLeave.attendance.status.absent"),
+                value: statusBreakdown.absent || 0,
+                tone: statusBreakdown.absent ? "critical" : "muted",
+              },
+            ]}
+            exportLabel={t("reports.attendance.cards.summary.export")}
+            onExport={exportAttendance}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CalendarDays className="h-5 w-5 text-purple-600" />
-                {t("reports.attendance.cards.leave.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.attendance.cards.leave.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.attendance.cards.leave.employees")}
-                  </span>
-                  <span className="font-medium">{leaveBalances.length}</span>
-                </div>
-                {Object.entries(leaveByType)
-                  .slice(0, 3)
-                  .map(([type, days]) => (
-                    <div key={type} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground capitalize">
-                        {type}
-                      </span>
-                      <Badge variant="outline">
-                        {t("reports.attendance.cards.leave.daysUsed", { days })}
-                      </Badge>
-                    </div>
-                  ))}
-                {Object.keys(leaveByType).length === 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {t("reports.attendance.cards.leave.none")}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportLeaveBalances}
-                disabled={leaveBalances.length === 0}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.attendance.cards.leave.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={CalendarDays}
+            accent="violet"
+            title={t("reports.attendance.cards.leave.title")}
+            description={t("reports.attendance.cards.leave.description")}
+            rows={[
+              {
+                icon: Users,
+                label: t("reports.attendance.cards.leave.employees"),
+                value: leaveBalances.length,
+              },
+              ...Object.entries(leaveByType)
+                .slice(0, 3)
+                .map(([type, days]) => ({
+                  icon: CalendarCheck,
+                  label: <span className="capitalize">{type}</span>,
+                  value: t("reports.attendance.cards.leave.daysUsed", {
+                    days,
+                  }),
+                })),
+            ]}
+            footnote={
+              Object.keys(leaveByType).length === 0
+                ? t("reports.attendance.cards.leave.none")
+                : undefined
+            }
+            exportLabel={t("reports.attendance.cards.leave.export")}
+            onExport={exportLeaveBalances}
+            exportDisabled={leaveBalances.length === 0}
+          />
 
-          <Card className="border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Timer className="h-5 w-5 text-blue-600" />
-                {t("reports.attendance.cards.overtime.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("reports.attendance.cards.overtime.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.attendance.cards.overtime.total")}
-                  </span>
-                  <span className="font-medium">
-                    {t("reports.attendance.cards.overtime.hoursValue", {
-                      hours: totalOvertimeHours.toFixed(1),
-                    })}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.attendance.cards.overtime.records")}
-                  </span>
-                  <Badge variant="outline">
-                    {
-                      attendanceRecords.filter((r) => r.overtimeHours > 0)
-                        .length
-                    }
-                  </Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {t("reports.attendance.cards.overtime.average")}
-                  </span>
-                  <span className="font-medium">
-                    {t("reports.attendance.cards.overtime.hoursValue", {
-                      hours:
-                        attendanceRecords.filter((r) => r.overtimeHours > 0)
-                          .length > 0
-                          ? (
-                              totalOvertimeHours /
-                              attendanceRecords.filter(
-                                (r) => r.overtimeHours > 0,
-                              ).length
-                            ).toFixed(1)
-                          : 0,
-                    })}
-                  </span>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={exportOvertime}
-                disabled={!attendanceRecords.some((r) => r.overtimeHours > 0)}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t("reports.attendance.cards.overtime.export")}
-              </Button>
-            </CardContent>
-          </Card>
+          <ReportExportCard
+            icon={Timer}
+            accent="blue"
+            title={t("reports.attendance.cards.overtime.title")}
+            description={t("reports.attendance.cards.overtime.description")}
+            rows={[
+              {
+                icon: Clock,
+                label: t("reports.attendance.cards.overtime.total"),
+                value: t("reports.attendance.cards.overtime.hoursValue", {
+                  hours: totalOvertimeHours.toFixed(1),
+                }),
+              },
+              {
+                icon: ClipboardList,
+                label: t("reports.attendance.cards.overtime.records"),
+                value: attendanceRecords.filter((r) => r.overtimeHours > 0)
+                  .length,
+              },
+              {
+                icon: TrendingUp,
+                label: t("reports.attendance.cards.overtime.average"),
+                value: t("reports.attendance.cards.overtime.hoursValue", {
+                  hours:
+                    attendanceRecords.filter((r) => r.overtimeHours > 0)
+                      .length > 0
+                      ? (
+                          totalOvertimeHours /
+                          attendanceRecords.filter((r) => r.overtimeHours > 0)
+                            .length
+                        ).toFixed(1)
+                      : 0,
+                }),
+              },
+            ]}
+            exportLabel={t("reports.attendance.cards.overtime.export")}
+            onExport={exportOvertime}
+            exportDisabled={!attendanceRecords.some((r) => r.overtimeHours > 0)}
+          />
         </div>
 
         {/* Recent Attendance Table */}
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-5 w-5 text-violet-600" />
-              {t("reports.attendance.recent.title")}
-            </CardTitle>
-            <CardDescription>
-              {t("reports.attendance.recent.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {attendanceRecords.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>{t("reports.attendance.recent.emptyTitle")}</p>
-                <p className="text-sm">
-                  {t("reports.attendance.recent.emptyDescription")}
-                </p>
+        <ReportSection
+          icon={Calendar}
+          title={t("reports.attendance.recent.title")}
+          description={t("reports.attendance.recent.description")}
+        >
+          {attendanceRecords.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>{t("reports.attendance.recent.emptyTitle")}</p>
+              <p className="text-sm">
+                {t("reports.attendance.recent.emptyDescription")}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Mobile card layout */}
+              <div className="space-y-3 md:hidden">
+                {recentAttendanceRecords.map((record) => (
+                  <div
+                    key={record.id}
+                    className="rounded-lg border border-border/50 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium">{record.employeeName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {record.department || "-"}
+                        </div>
+                      </div>
+                      <Badge
+                        className={
+                          record.status === "present"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : record.status === "late"
+                              ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+                              : record.status === "absent"
+                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-muted text-muted-foreground"
+                        }
+                      >
+                        {getStatusLabel(record.status)}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("timeLeave.attendance.csv.date")}
+                        </p>
+                        <p>{formatDateTL(record.date)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("timeLeave.timeTracking.table.totalHours")}
+                        </p>
+                        <p>
+                          {record.totalHours?.toFixed(1) || 0}
+                          {record.overtimeHours > 0 && (
+                            <span className="text-xs text-blue-600 ml-1">
+                              (+{record.overtimeHours.toFixed(1)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("timeLeave.attendance.table.clockIn")}
+                        </p>
+                        <p>{record.clockIn || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("timeLeave.attendance.table.clockOut")}
+                        </p>
+                        <p>{record.clockOut || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <>
-                {/* Mobile card layout */}
-                <div className="space-y-3 md:hidden">
-                  {recentAttendanceRecords.map((record) => (
-                    <div
-                      key={record.id}
-                      className="rounded-lg border border-border/50 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
+
+              {/* Desktop table */}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-3 font-medium">
+                        {t("timeLeave.attendance.csv.date")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("timeLeave.attendance.table.employee")}
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        {t("timeLeave.attendance.table.department")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("timeLeave.attendance.table.clockIn")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("timeLeave.attendance.table.clockOut")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("timeLeave.timeTracking.table.totalHours")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("timeLeave.attendance.table.status")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentAttendanceRecords.map((record) => (
+                      <tr
+                        key={record.id}
+                        className="border-b hover:bg-muted/50"
+                      >
+                        <td className="p-3">{formatDateTL(record.date)}</td>
+                        <td className="p-3">
                           <div className="font-medium">
                             {record.employeeName}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {record.department || "-"}
-                          </div>
-                        </div>
-                        <Badge
-                          className={
-                            record.status === "present"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : record.status === "late"
-                                ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
-                                : record.status === "absent"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-muted text-muted-foreground"
-                          }
-                        >
-                          {getStatusLabel(record.status)}
-                        </Badge>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.attendance.csv.date")}
-                          </p>
-                          <p>{formatDateTL(record.date)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.timeTracking.table.totalHours")}
-                          </p>
-                          <p>
-                            {record.totalHours?.toFixed(1) || 0}
-                            {record.overtimeHours > 0 && (
-                              <span className="text-xs text-blue-600 ml-1">
-                                (+{record.overtimeHours.toFixed(1)})
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.attendance.table.clockIn")}
-                          </p>
-                          <p>{record.clockIn || "-"}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.attendance.table.clockOut")}
-                          </p>
-                          <p>{record.clockOut || "-"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Desktop table */}
-                <div className="hidden overflow-x-auto md:block">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3 font-medium">
-                          {t("timeLeave.attendance.csv.date")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("timeLeave.attendance.table.employee")}
-                        </th>
-                        <th className="text-left p-3 font-medium">
-                          {t("timeLeave.attendance.table.department")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("timeLeave.attendance.table.clockIn")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("timeLeave.attendance.table.clockOut")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("timeLeave.timeTracking.table.totalHours")}
-                        </th>
-                        <th className="text-center p-3 font-medium">
-                          {t("timeLeave.attendance.table.status")}
-                        </th>
+                        </td>
+                        <td className="p-3">{record.department || "-"}</td>
+                        <td className="p-3 text-center">
+                          {record.clockIn || "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          {record.clockOut || "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span>{record.totalHours?.toFixed(1) || 0}</span>
+                          {record.overtimeHours > 0 && (
+                            <span className="text-xs text-blue-600 ml-1">
+                              (+{record.overtimeHours.toFixed(1)}{" "}
+                              {t("timeLeave.attendance.table.overtime")})
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Badge
+                            className={
+                              record.status === "present"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                : record.status === "late"
+                                  ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+                                  : record.status === "absent"
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                    : "bg-muted text-muted-foreground"
+                            }
+                          >
+                            {getStatusLabel(record.status)}
+                          </Badge>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {recentAttendanceRecords.map((record) => (
-                        <tr
-                          key={record.id}
-                          className="border-b hover:bg-muted/50"
-                        >
-                          <td className="p-3">{formatDateTL(record.date)}</td>
-                          <td className="p-3">
-                            <div className="font-medium">
-                              {record.employeeName}
-                            </div>
-                          </td>
-                          <td className="p-3">{record.department || "-"}</td>
-                          <td className="p-3 text-center">
-                            {record.clockIn || "-"}
-                          </td>
-                          <td className="p-3 text-center">
-                            {record.clockOut || "-"}
-                          </td>
-                          <td className="p-3 text-center">
-                            <span>{record.totalHours?.toFixed(1) || 0}</span>
-                            {record.overtimeHours > 0 && (
-                              <span className="text-xs text-blue-600 ml-1">
-                                (+{record.overtimeHours.toFixed(1)}{" "}
-                                {t("timeLeave.attendance.table.overtime")})
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Badge
-                              className={
-                                record.status === "present"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                  : record.status === "late"
-                                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
-                                    : record.status === "absent"
-                                      ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                      : "bg-muted text-muted-foreground"
-                              }
-                            >
-                              {getStatusLabel(record.status)}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </ReportSection>
       </ReportPage>
     </>
   );
