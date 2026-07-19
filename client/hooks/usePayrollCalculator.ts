@@ -21,7 +21,6 @@ import { useAttendanceSummary } from "@/hooks/useAttendance";
 import {
   calculateHourlyRate,
   calculateTLPayroll,
-  calculateSubsidioAnual,
   validateTLPayrollInput,
   type TLPayrollInput,
   type TLBonusINSSCategory,
@@ -36,10 +35,11 @@ import {
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import type { PayrollConfig } from "@/types/settings";
-import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
+import { addMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+import { resolveLeaverFinalPay } from "@/lib/payroll/leaver-final-pay";
 import { holidayService } from "@/services/holidayService";
 import type { Employee } from "@/services/employeeService";
 import {
@@ -105,69 +105,6 @@ function getInPeriodTermination(
 ): string | null {
   const end = employee.terminationDate || null;
   return end && end >= periodStart && end <= periodEnd ? end : null;
-}
-
-/**
- * Resolves the once-only final-pay inputs for the engine. Shared by the two
- * TLPayrollInput builders (display calc + validation/records) so they can
- * never diverge on how a leaver is paid.
- *
- *  - Art. 56 severance fires (via terminationDate) ONLY if no service
- *    compensation has already been committed for this employee this year —
- *    so a second run over the same period does not re-pay it.
- *  - Art. 44 subsidio for a leaver is the termination-year entitlement net of
- *    whatever 13th month is already committed (annual run or a prior final
- *    run), clamped at 0.
- *  - A non-leaver follows the ordinary includeSubsidioAnual toggle.
- */
-export function resolveLeaverFinalPay(args: {
-  inPeriodTermination: string | null;
-  monthlySalary: number;
-  hireDate: string;
-  asOfDate: Date;
-  includeSubsidioAnual: boolean;
-  subsidioConfig?: { proRataForNewEmployees?: boolean };
-  committed: { serviceCompensation: number; subsidioAnual: number };
-}): { terminationDate: string | undefined; subsidioAnual: number } {
-  const {
-    inPeriodTermination,
-    monthlySalary,
-    hireDate,
-    asOfDate,
-    includeSubsidioAnual,
-    subsidioConfig,
-    committed,
-  } = args;
-
-  if (!inPeriodTermination) {
-    return {
-      terminationDate: undefined,
-      subsidioAnual: includeSubsidioAnual
-        ? calculateSubsidioAnual(
-            monthlySalary,
-            hireDate,
-            asOfDate,
-            subsidioConfig,
-          )
-        : 0,
-    };
-  }
-
-  const entitlement = calculateSubsidioAnual(
-    monthlySalary,
-    hireDate,
-    new Date(`${inPeriodTermination}T00:00:00`),
-    { ...subsidioConfig, terminationDate: inPeriodTermination },
-  );
-  return {
-    // Skip severance if it was already paid/committed in an earlier run.
-    terminationDate:
-      committed.serviceCompensation > 0 ? undefined : inPeriodTermination,
-    subsidioAnual: maxMoney(
-      0,
-      subtractMoney(entitlement, committed.subsidioAnual),
-    ),
-  };
 }
 
 export function usePayrollCalculator({

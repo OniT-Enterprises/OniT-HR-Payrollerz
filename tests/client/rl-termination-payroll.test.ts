@@ -7,7 +7,7 @@ import {
 import { calculateProRataHours } from '@/lib/payroll/run-payroll-helpers';
 import { TL_WORKING_HOURS } from '@/lib/payroll/constants-tl';
 import { maxMoney, subtractMoney } from '@/lib/currency';
-import { resolveLeaverFinalPay } from '@/hooks/usePayrollCalculator';
+import { resolveLeaverFinalPay } from '@/lib/payroll/leaver-final-pay';
 
 /**
  * REAL-LIFE SCENARIO: mid-period termination / final-pay run (KEY = termination-payroll)
