@@ -9,21 +9,11 @@ import {
   useTenantId,
 } from "@/contexts/TenantContext";
 import { leaveService, type NewLeaveRequest } from "@/services/leaveService";
-
-export const leaveKeys = {
-  all: (tenantId: string) => ["tenants", tenantId, "leave"] as const,
-  requests: (tenantId: string) =>
-    [...leaveKeys.all(tenantId), "requests"] as const,
-  requestList: (tenantId: string, filters?: Record<string, unknown>) =>
-    [...leaveKeys.requests(tenantId), filters ?? {}] as const,
-  employeeRequests: (tenantId: string, employeeId: string) =>
-    [...leaveKeys.requests(tenantId), "employee", employeeId] as const,
-  balances: (tenantId: string) =>
-    [...leaveKeys.all(tenantId), "balances"] as const,
-  balance: (tenantId: string, employeeId: string) =>
-    [...leaveKeys.balances(tenantId), employeeId] as const,
-  stats: (tenantId: string) => [...leaveKeys.all(tenantId), "stats"] as const,
-};
+// Re-exported from a Firebase-free module so tests can import the key factory
+// without loading this hook's service/context graph (which evaluates
+// firebase-core and needs VITE_FIREBASE_* env). See client/hooks/leaveKeys.ts.
+export { leaveKeys } from "@/hooks/leaveKeys";
+import { leaveKeys } from "@/hooks/leaveKeys";
 
 /**
  * Fetch all leave requests (admin/manager view)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leaveKeys } from "@/hooks/useLeaveRequests";
+import { leaveKeys } from "@/hooks/leaveKeys";
 
 const TID = "tenant-a";
 
