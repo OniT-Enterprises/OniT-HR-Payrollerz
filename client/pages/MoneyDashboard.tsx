@@ -2,7 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon, cardIconNameFromArt } from "@/components/ui/CardIcon";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -190,38 +191,29 @@ export default function MoneyDashboard() {
   const hubCards = [
     {
       title: t("moduleDashboards.money.cards.invoices"),
-      art: "/images/illustrations/xefe-card-money.webp",
-      meta: t("moduleDashboards.money.cards.outstanding", {
-        amount: formatMoney(stats.totalOutstanding),
-      }),
+      purpose: t("moduleDashboards.money.cards.invoicesPurpose"),
+      action: t("moduleDashboards.money.cards.invoicesAction"),
       path: "/money/invoices",
       icon: FileText,
     },
     {
       title: t("moduleDashboards.money.cards.bills"),
-      art: "/images/illustrations/xefe-card-mn-bills.webp",
-      meta:
-        payablesSummary.overdueCount > 0
-          ? t("moduleDashboards.money.cards.overdue", {
-              count: payablesSummary.overdueCount,
-            })
-          : t("moduleDashboards.money.cards.dueThisWeek", {
-              amount: formatMoney(payablesSummary.dueThisWeek),
-            }),
+      purpose: t("moduleDashboards.money.cards.billsPurpose"),
+      action: t("moduleDashboards.money.cards.billsAction"),
       path: "/money/bills",
       icon: Receipt,
     },
     ...(canManageExpenses ? [{
       title: t("moduleDashboards.money.cards.expenses"),
-      art: "/images/illustrations/xefe-card-mn-expenses.webp",
-      meta: t("moduleDashboards.money.cards.expensesMeta"),
+      purpose: t("moduleDashboards.money.cards.expensesPurpose"),
+      action: t("moduleDashboards.money.cards.expensesAction"),
       path: "/money/expenses",
       icon: Wallet,
     }] : []),
     {
       title: t("moduleDashboards.money.cards.financialReports"),
-      art: "/images/illustrations/xefe-card-reports.webp",
-      meta: t("moduleDashboards.money.cards.financialReportsMeta"),
+      purpose: t("moduleDashboards.money.cards.financialReportsPurpose"),
+      action: t("moduleDashboards.money.cards.financialReportsAction"),
       path: canManageExpenses
         ? "/money/financials/profit-loss"
         : "/money/financials/ar-aging",
@@ -238,38 +230,29 @@ export default function MoneyDashboard() {
       <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          {/* Header — module icon in the page's accent tile anchors the title
-              (same tinted-tile treatment as the hub cards below) */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10">
-              <Wallet className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {t("moduleDashboards.money.title")}
-              </h1>
-              <p className="mt-0.5 text-sm text-foreground/70">
-                {t("moduleDashboards.money.summary", {
-                  collected: formatMoney(stats.revenueThisMonth),
-                  outstanding: formatMoney(stats.totalOutstanding),
-                })}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => navigate("/money/bills")}>
-              {t("moduleDashboards.money.viewBills")}
-            </Button>
-            {canManageTenant && (
-              <Button onClick={() => navigate("/money/invoices/new")}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("moduleDashboards.money.newInvoice")}
+        <PageHeader
+          size="lg"
+          title={t("moduleDashboards.money.title")}
+          icon={Wallet}
+          iconColor="text-indigo-500"
+          subtitle={t("moduleDashboards.money.summary", {
+            collected: formatMoney(stats.revenueThisMonth),
+            outstanding: formatMoney(stats.totalOutstanding),
+          })}
+          actions={
+            <>
+              <Button variant="outline" onClick={() => navigate("/money/bills")}>
+                {t("moduleDashboards.money.viewBills")}
               </Button>
-            )}
-          </div>
-        </div>
+              {canManageTenant && (
+                <Button onClick={() => navigate("/money/invoices/new")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("moduleDashboards.money.newInvoice")}
+                </Button>
+              )}
+            </>
+          }
+        />
 
         {/* Needs attention */}
         <section>
@@ -305,30 +288,15 @@ export default function MoneyDashboard() {
         {/* Module hub */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubCards.map((card) => (
-            <button
+            <HubCard
               key={card.path}
+              icon={card.icon}
+              title={card.title}
+              purpose={card.purpose}
+              action={card.action}
+              accent="indigo"
               onClick={() => navigate(card.path)}
-              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:hover:border-indigo-400/40 dark:hover:bg-indigo-950/20 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
-            >
-              {hasCardIcon(cardIconNameFromArt(card.art)) ? (
-                <CardIcon
-                  name={cardIconNameFromArt(card.art)!}
-                  className="h-12 w-12 text-foreground [--card-icon-accent:#4f46e5] dark:[--card-icon-accent:#818cf8] sm:h-16 sm:w-16"
-                />
-              ) : (
-                <img
-                  src={card.art}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                />
-              )}
-              <div>
-                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.meta}</p>
-              </div>
-            </button>
+            />
           ))}
         </section>
       </div>

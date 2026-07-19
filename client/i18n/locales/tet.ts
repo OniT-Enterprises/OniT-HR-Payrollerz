@@ -6893,7 +6893,15 @@ const messages = {
         "onLeaveToday": "{{count}} iha lisensa ohin",
         "performance": "Dezempénhu",
         "activeGoal": "objetivu ativu {{count}}",
-        "activeGoals": "objetivu ativu {{count}}"
+        "activeGoals": "objetivu ativu {{count}}",
+        "staffPurpose": "Jere ita-nia ekipa no sira-nia dadus",
+        "staffAction": "Haree pessoál",
+        "hiringPurpose": "Publika vaga no akompaña kandidatu",
+        "hiringAction": "Haree rekrutamentu",
+        "timeLeavePurpose": "Rejista prezensa no jere lisensa",
+        "timeLeaveAction": "Loke tempu & lisensa",
+        "performancePurpose": "Avalia dezempénhu no defini objetivu",
+        "performanceAction": "Haree dezempénhu"
       }
     },
     "scheduling": {
@@ -6927,7 +6935,13 @@ const messages = {
         "hoursRecordedToday": "oras rejistadu ohin",
         "shifts": "Turnu",
         "shiftsMeta": "Planeia lista turnu semanal",
-        "shiftsThisWeek": "turnu iha semana ida-ne'e"
+        "shiftsThisWeek": "turnu iha semana ida-ne'e",
+        "attendancePurpose": "Rejista oras no marka prezensa",
+        "attendanceAction": "Haree prezensa",
+        "leavePurpose": "Aprova pedidu no kontrola saldu",
+        "leaveAction": "Haree lisensa",
+        "shiftsPurpose": "Planeia lista turnu no kobertura",
+        "shiftsAction": "Haree turnu"
       }
     },
     "payroll": {
@@ -6958,7 +6972,15 @@ const messages = {
         "readyToPay": "{{count}} prontu atu selu",
         "exportPay": "Esporta & selu",
         "taxInss": "Impostu & INSS",
-        "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron"
+        "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron",
+        "runPayrollPurpose": "Kalkula siklu ida-ne'e no finaliza saláriu",
+        "runPayrollAction": "Hahú prosesu ida",
+        "historyPurpose": "Haree fila-fali prosesu uluk no resibu salariu",
+        "historyAction": "Haree istória",
+        "bankTransfersPurpose": "Halo pakote banku no selu saláriu",
+        "bankTransfersAction": "Loke pagamentu",
+        "taxInssPurpose": "Prepara deklarasaun WIT no Seguransa Sosiál",
+        "taxInssAction": "Haree deklarasaun"
       }
     },
     "money": {
@@ -6987,7 +7009,15 @@ const messages = {
         "expenses": "Despeza",
         "expensesMeta": "Kontrola gastu",
         "financialReports": "Relatóriu Finanseiru",
-        "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT"
+        "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT",
+        "invoicesPurpose": "Kria, haruka no akompaña fatura",
+        "invoicesAction": "Haree fatura",
+        "billsPurpose": "Rejista konta fornesedór no selu",
+        "billsAction": "Haree konta",
+        "expensesPurpose": "Rejista no kategoriza gastu negósiu",
+        "expensesAction": "Haree despeza",
+        "financialReportsPurpose": "Lukru/lakon, fluxu osan no VAT",
+        "financialReportsAction": "Haree relatóriu"
       }
     },
     "accounting": {
@@ -7017,7 +7047,15 @@ const messages = {
         "balanceSheet": "Balansu",
         "live": "Ativu",
         "pendingPayroll": "Hein saláriu",
-        "financialPosition": "Pozisaun finanseira"
+        "financialPosition": "Pozisaun finanseira",
+        "chartOfAccountsPurpose": "Ita-nia konta razaun no estrutura",
+        "chartOfAccountsAction": "Haree plano konta",
+        "journalEntriesPurpose": "Lansa no haree entrada diáriu",
+        "journalEntriesAction": "Haree diáriu",
+        "trialBalancePurpose": "Verifika débitu hanesan kréditu",
+        "trialBalanceAction": "Haree balancete",
+        "balanceSheetPurpose": "Ativu, pasivu no kapitál",
+        "balanceSheetAction": "Haree balansu"
       }
     },
     "reports": {
@@ -7032,6 +7070,7 @@ const messages = {
       "filingRunway": "Prazu deklarasaun",
       "allGood": "Laiha deklarasaun impostu atu entrega — prazu hotu klaru.",
       "browseReports": "Buka relatóriu",
+      "browseAction": "Haree relatóriu",
       "compliance": {
         "filingOverdue": "deklarasaun {{count}} atrasu",
         "filingsOverdue": "deklarasaun {{count}} atrasu",

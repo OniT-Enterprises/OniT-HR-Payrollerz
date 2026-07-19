@@ -143,7 +143,7 @@ export default function TaxReports() {
         <PageHeader
           title={t("taxReports.title")}
           subtitle={t("taxReports.subtitle")}
-          cardIcon="pr-tax" icon={Shield}
+          icon={Shield}
           iconColor="text-primary"
           actions={
             hasOverdue ? (

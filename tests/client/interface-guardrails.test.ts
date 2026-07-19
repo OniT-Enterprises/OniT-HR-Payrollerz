@@ -51,11 +51,11 @@ describe("interface guardrails", () => {
     const topBar = read("client/components/layout/TopBar.tsx");
     const globalStyles = read("client/global.css");
 
+    // Compact live signals stay surfaced — recorded-attendance in the header
+    // subtitle and shift/attendance counts in the attention strip — while the
+    // hub cards are pure navigation (purpose + action), matching every module.
     expect(dashboard).toContain(
-      't("moduleDashboards.scheduling.cards.recordedToday")',
-    );
-    expect(dashboard).toContain(
-      't("moduleDashboards.scheduling.cards.shiftsThisWeek")',
+      'moduleDashboards.scheduling.subtitleRecorded',
     );
     expect(dashboard).toContain(
       '"moduleDashboards.scheduling.attention.draftShifts"',

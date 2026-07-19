@@ -6893,7 +6893,15 @@ const messages = {
         "onLeaveToday": "{{count}} on leave today",
         "performance": "Performance",
         "activeGoal": "{{count}} active goal",
-        "activeGoals": "{{count}} active goals"
+        "activeGoals": "{{count}} active goals",
+        "staffPurpose": "Manage your team and their details",
+        "staffAction": "View staff",
+        "hiringPurpose": "Post jobs and track candidates",
+        "hiringAction": "View hiring",
+        "timeLeavePurpose": "Track attendance and manage leave",
+        "timeLeaveAction": "Open time & leave",
+        "performancePurpose": "Review performance and set goals",
+        "performanceAction": "View performance"
       }
     },
     "scheduling": {
@@ -6927,7 +6935,13 @@ const messages = {
         "hoursRecordedToday": "hours recorded today",
         "shifts": "Shifts",
         "shiftsMeta": "Plan weekly rosters",
-        "shiftsThisWeek": "shifts this week"
+        "shiftsThisWeek": "shifts this week",
+        "attendancePurpose": "Record hours and clock-ins",
+        "attendanceAction": "View attendance",
+        "leavePurpose": "Approve requests and track balances",
+        "leaveAction": "View leave",
+        "shiftsPurpose": "Plan rosters and shift coverage",
+        "shiftsAction": "View shifts"
       }
     },
     "payroll": {
@@ -6958,7 +6972,15 @@ const messages = {
         "readyToPay": "{{count}} ready to pay",
         "exportPay": "Export & pay",
         "taxInss": "Tax & INSS",
-        "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d"
+        "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d",
+        "runPayrollPurpose": "Calculate this cycle and finalise pay",
+        "runPayrollAction": "Start a run",
+        "historyPurpose": "Review past runs and payslips",
+        "historyAction": "View history",
+        "bankTransfersPurpose": "Build the bank pack and pay salaries",
+        "bankTransfersAction": "Open payments",
+        "taxInssPurpose": "Prepare WIT and social-security filings",
+        "taxInssAction": "View filings"
       }
     },
     "money": {
@@ -6987,7 +7009,15 @@ const messages = {
         "expenses": "Expenses",
         "expensesMeta": "Track spending",
         "financialReports": "Financial Reports",
-        "financialReportsMeta": "P&L · cashflow · VAT"
+        "financialReportsMeta": "P&L · cashflow · VAT",
+        "invoicesPurpose": "Create, send and track invoices",
+        "invoicesAction": "View invoices",
+        "billsPurpose": "Record supplier bills and pay them",
+        "billsAction": "View bills",
+        "expensesPurpose": "Log and categorise business spending",
+        "expensesAction": "View expenses",
+        "financialReportsPurpose": "P&L, cash flow and VAT statements",
+        "financialReportsAction": "View reports"
       }
     },
     "accounting": {
@@ -7017,7 +7047,15 @@ const messages = {
         "balanceSheet": "Balance Sheet",
         "live": "Live",
         "pendingPayroll": "Pending payroll",
-        "financialPosition": "Financial position"
+        "financialPosition": "Financial position",
+        "chartOfAccountsPurpose": "Your ledger accounts and structure",
+        "chartOfAccountsAction": "View chart",
+        "journalEntriesPurpose": "Post and review journal entries",
+        "journalEntriesAction": "View journal",
+        "trialBalancePurpose": "Check debits equal credits",
+        "trialBalanceAction": "View trial balance",
+        "balanceSheetPurpose": "Assets, liabilities and equity",
+        "balanceSheetAction": "View balance sheet"
       }
     },
     "reports": {
@@ -7032,6 +7070,7 @@ const messages = {
       "filingRunway": "Filing runway",
       "allGood": "No tax filings due — the reporting runway is clear.",
       "browseReports": "Browse reports",
+      "browseAction": "View reports",
       "compliance": {
         "filingOverdue": "{{count}} filing overdue",
         "filingsOverdue": "{{count}} filings overdue",

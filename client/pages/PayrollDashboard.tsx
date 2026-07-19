@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon } from "@/components/ui/CardIcon";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -37,6 +36,8 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 
 function PayrollDashboardSkeleton() {
   return (
@@ -277,6 +278,8 @@ export default function PayrollDashboard() {
       art: "/images/illustrations/xefe-card-payroll.webp",
       svg: "payroll",
       meta: t("moduleDashboards.payroll.cards.staffInCycle", { count: activeEmployees }),
+      purpose: t("moduleDashboards.payroll.cards.runPayrollPurpose"),
+      action: t("moduleDashboards.payroll.cards.runPayrollAction"),
       path: "/payroll/run",
       icon: Play,
     },
@@ -293,6 +296,8 @@ export default function PayrollDashboard() {
               { count: payrollRuns.length },
             )
           : t("moduleDashboards.payroll.cards.noRuns"),
+      purpose: t("moduleDashboards.payroll.cards.historyPurpose"),
+      action: t("moduleDashboards.payroll.cards.historyAction"),
       path: "/payroll/history",
       icon: History,
     },
@@ -304,6 +309,8 @@ export default function PayrollDashboard() {
         readyToPay > 0
           ? t("moduleDashboards.payroll.cards.readyToPay", { count: readyToPay })
           : t("moduleDashboards.payroll.cards.exportPay"),
+      purpose: t("moduleDashboards.payroll.cards.bankTransfersPurpose"),
+      action: t("moduleDashboards.payroll.cards.bankTransfersAction"),
       path: "/payroll/payments",
       icon: Banknote,
     },
@@ -315,6 +322,8 @@ export default function PayrollDashboard() {
         witDays,
         inssDays,
       }),
+      purpose: t("moduleDashboards.payroll.cards.taxInssPurpose"),
+      action: t("moduleDashboards.payroll.cards.taxInssAction"),
       path: "/payroll/tax",
       icon: FileSpreadsheet,
     },
@@ -333,19 +342,13 @@ export default function PayrollDashboard() {
       <ModuleSectionNav config={payrollNavConfig} />
 
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          {/* Header — module icon in the page's accent tile anchors the title
-              (same tinted-tile treatment as the hub cards below) */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-              <Calculator className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("moduleDashboards.payroll.title")}
-            </h1>
-            <p className="mt-0.5 text-sm text-foreground/70">
+        <PageHeader
+          size="lg"
+          title={t("moduleDashboards.payroll.title")}
+          icon={Calculator}
+          iconColor="text-primary"
+          subtitle={
+            <>
               {canReadEmployeeDirectory && (
                 <>
                   {t("moduleDashboards.payroll.estimatedGross", {
@@ -354,7 +357,7 @@ export default function PayrollDashboard() {
                   ·{" "}
                 </>
               )}
-              {t("moduleDashboards.payroll.nextPaydayIn")} {" "}
+              {t("moduleDashboards.payroll.nextPaydayIn")}{" "}
               <span className="font-medium text-foreground">
                 {daysUntilPayday}{" "}
                 {t(
@@ -364,25 +367,23 @@ export default function PayrollDashboard() {
                 )}
               </span>{" "}
               ({formatDateTL(nextPayDate, { month: "long", day: "numeric" })}).
-            </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/payroll/history")}
-            >
-              <History className="mr-2 h-4 w-4" />
-              {t("moduleDashboards.payroll.historyAction")}
-            </Button>
-            {canManageTenant && (
-              <Button onClick={() => navigate("/payroll/run")}>
-                <Play className="mr-2 h-4 w-4" />
-                {t("moduleDashboards.payroll.runAction")}
+            </>
+          }
+          actions={
+            <>
+              <Button variant="outline" onClick={() => navigate("/payroll/history")}>
+                <History className="mr-2 h-4 w-4" />
+                {t("moduleDashboards.payroll.historyAction")}
               </Button>
-            )}
-          </div>
-        </div>
+              {canManageTenant && (
+                <Button onClick={() => navigate("/payroll/run")}>
+                  <Play className="mr-2 h-4 w-4" />
+                  {t("moduleDashboards.payroll.runAction")}
+                </Button>
+              )}
+            </>
+          }
+        />
 
         {/* Needs attention */}
         <section>
@@ -421,35 +422,19 @@ export default function PayrollDashboard() {
           )}
         </section>
 
-        {/* Module hub */}
+        {/* Module hub — clear navigation cards: icon badge, title, one-line
+            purpose, and an action row anchored at the bottom. */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubCards.map((card) => (
-            <button
+            <HubCard
               key={card.path}
+              icon={card.icon}
+              title={card.title}
+              purpose={card.purpose}
+              action={card.action}
+              accent="green"
               onClick={() => navigate(card.path)}
-              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
-            >
-              {hasCardIcon(card.svg) ? (
-                <CardIcon
-                  name={card.svg}
-                  className="h-12 w-12 text-foreground [--card-icon-accent:#6A9C29] dark:[--card-icon-accent:#8cc63f] sm:h-16 sm:w-16"
-                />
-              ) : (
-                <img
-                  src={card.art}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                />
-              )}
-              <div>
-                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
-                  {card.meta}
-                </p>
-              </div>
-            </button>
+            />
           ))}
         </section>
       </div>

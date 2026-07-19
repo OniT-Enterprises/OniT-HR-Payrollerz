@@ -6893,7 +6893,15 @@ const messages = {
         "onLeaveToday": "{{count}} de licença hoje",
         "performance": "Desempenho",
         "activeGoal": "{{count}} objetivo ativo",
-        "activeGoals": "{{count}} objetivos ativos"
+        "activeGoals": "{{count}} objetivos ativos",
+        "staffPurpose": "Gerir a sua equipa e os seus dados",
+        "staffAction": "Ver pessoal",
+        "hiringPurpose": "Publicar vagas e acompanhar candidatos",
+        "hiringAction": "Ver recrutamento",
+        "timeLeavePurpose": "Registar assiduidade e gerir licenças",
+        "timeLeaveAction": "Abrir tempo & licenças",
+        "performancePurpose": "Avaliar o desempenho e definir objetivos",
+        "performanceAction": "Ver desempenho"
       }
     },
     "scheduling": {
@@ -6927,7 +6935,13 @@ const messages = {
         "hoursRecordedToday": "horas registadas hoje",
         "shifts": "Turnos",
         "shiftsMeta": "Planear escalas semanais",
-        "shiftsThisWeek": "turnos esta semana"
+        "shiftsThisWeek": "turnos esta semana",
+        "attendancePurpose": "Registar horas e marcações de ponto",
+        "attendanceAction": "Ver assiduidade",
+        "leavePurpose": "Aprovar pedidos e acompanhar saldos",
+        "leaveAction": "Ver licenças",
+        "shiftsPurpose": "Planear escalas e cobertura de turnos",
+        "shiftsAction": "Ver turnos"
       }
     },
     "payroll": {
@@ -6958,7 +6972,15 @@ const messages = {
         "readyToPay": "{{count}} prontos para pagar",
         "exportPay": "Exportar e pagar",
         "taxInss": "Imposto & INSS",
-        "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d"
+        "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d",
+        "runPayrollPurpose": "Calcular este ciclo e finalizar os salários",
+        "runPayrollAction": "Iniciar um processamento",
+        "historyPurpose": "Rever processamentos anteriores e recibos",
+        "historyAction": "Ver histórico",
+        "bankTransfersPurpose": "Criar o pacote bancário e pagar salários",
+        "bankTransfersAction": "Abrir pagamentos",
+        "taxInssPurpose": "Preparar declarações de WIT e Segurança Social",
+        "taxInssAction": "Ver declarações"
       }
     },
     "money": {
@@ -6987,7 +7009,15 @@ const messages = {
         "expenses": "Despesas",
         "expensesMeta": "Acompanhar gastos",
         "financialReports": "Relatórios Financeiros",
-        "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA"
+        "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA",
+        "invoicesPurpose": "Criar, enviar e acompanhar faturas",
+        "invoicesAction": "Ver faturas",
+        "billsPurpose": "Registar faturas de fornecedores e pagá-las",
+        "billsAction": "Ver contas",
+        "expensesPurpose": "Registar e categorizar despesas do negócio",
+        "expensesAction": "Ver despesas",
+        "financialReportsPurpose": "Demonstrações de resultados, fluxo de caixa e IVA",
+        "financialReportsAction": "Ver relatórios"
       }
     },
     "accounting": {
@@ -7017,7 +7047,15 @@ const messages = {
         "balanceSheet": "Balanço",
         "live": "Atualizado",
         "pendingPayroll": "Folha pendente",
-        "financialPosition": "Posição financeira"
+        "financialPosition": "Posição financeira",
+        "chartOfAccountsPurpose": "As suas contas e a estrutura do razão",
+        "chartOfAccountsAction": "Ver plano de contas",
+        "journalEntriesPurpose": "Lançar e rever entradas do diário",
+        "journalEntriesAction": "Ver diário",
+        "trialBalancePurpose": "Verificar se débitos igualam créditos",
+        "trialBalanceAction": "Ver balancete",
+        "balanceSheetPurpose": "Ativos, passivos e capital próprio",
+        "balanceSheetAction": "Ver balanço"
       }
     },
     "reports": {
@@ -7032,6 +7070,7 @@ const messages = {
       "filingRunway": "Próximas declarações",
       "allGood": "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
       "browseReports": "Explorar relatórios",
+      "browseAction": "Ver relatórios",
       "compliance": {
         "filingOverdue": "{{count}} declaração em atraso",
         "filingsOverdue": "{{count}} declarações em atraso",

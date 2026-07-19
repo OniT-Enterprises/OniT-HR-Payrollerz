@@ -606,30 +606,39 @@ export default function Dashboard() {
               <button
                 key={card.key}
                 onClick={card.onClick}
-                className={`group flex flex-col rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} ${
+                className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 sm:p-5 ${PRESSABLE} ${
                   index >= 2 ? "hidden sm:flex" : ""
                 }`}
               >
-                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <card.icon className="h-4 w-4 text-primary" />
+                {/* Oversized, faint watermark of the card's own icon, tucked in
+                    the top-right corner and clipped by the card. */}
+                <card.icon
+                  aria-hidden
+                  className="pointer-events-none absolute -right-4 -top-3 h-24 w-24 text-foreground/[0.05]"
+                />
+                {/* Green circular icon badge */}
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
+                  <card.icon className="h-5 w-5 text-primary" />
                 </div>
-                <p className="text-2xl font-bold tabular-nums">{card.big}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{card.label}</p>
+                <p className="text-3xl font-bold leading-none tabular-nums">{card.big}</p>
+                <p className="mt-2 text-sm font-medium">{card.label}</p>
                 {card.context && (
                   <p
-                    className={`mt-1 text-xs ${
+                    className={`mt-0.5 text-xs ${
                       card.contextTone === "warn"
                         ? "text-amber-600 dark:text-amber-400"
-                        : "text-foreground/70"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {card.context}
                   </p>
                 )}
-                <p className="mt-auto flex items-center gap-1 pt-2 text-xs font-medium text-primary">
-                  {card.action}
-                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                </p>
+                <div className="mt-auto border-t border-border/60 pt-2.5">
+                  <p className="flex items-center gap-1 text-xs font-medium text-primary">
+                    {card.action}
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </p>
+                </div>
               </button>
             ))}
           </div>

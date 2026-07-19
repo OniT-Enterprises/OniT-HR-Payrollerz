@@ -22,7 +22,7 @@ import {
   filterModuleNavConfigByPermissions,
 } from "@/lib/moduleNav";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
-import { type SectionId, navColors, navTreeLine } from "@/lib/sectionTheme";
+import { type SectionId, navColors, navTreeDot } from "@/lib/sectionTheme";
 import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -217,11 +217,47 @@ function useSidebarExpansion(visibleModules: ModuleDef[]) {
 
 // --- Sub-components ---
 
+// A small node sitting on the submenu's vertical connector line, one per
+// nested item. The active item is a touch larger for a whisper of emphasis.
+//
+// Two layers so the dot reads as the SAME colour as the line with no
+// transparency stacking where they overlap: an opaque sidebar-coloured disc
+// masks the line underneath, and the same tint the line uses (colorClass, a
+// translucent hue) sits on top — compositing over the sidebar background to the
+// identical colour, not doubling up.
+function NavDot({ active, colorClass }: { active: boolean; colorClass: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute left-0 top-1/2 -ml-[0.5px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sidebar transition-all ${
+        active ? "h-2 w-2" : "h-1.5 w-1.5"
+      }`}
+    >
+      <span className={`block h-full w-full rounded-full ${colorClass}`} />
+    </span>
+  );
+}
+
+// The submenu's vertical connector line, drawn to run only from the first dot
+// to the last dot (both sit at their row's vertical centre = half a row from
+// the container edges; rows are h-11 / md:h-9). Sits where a border-l would,
+// so it lines up with the dots. Any few-px imprecision at the ends is hidden
+// under the opaque dots, so the line never overhangs or leaves a stub.
+function NavTreeLine({ colorClass }: { colorClass: string }) {
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute -left-px top-[1.375rem] bottom-[1.375rem] w-px md:top-[1.125rem] md:bottom-[1.125rem] ${colorClass}`}
+    />
+  );
+}
+
 interface NavLinkProps {
   label: string;
   path: string;
   Icon: ComponentType<{ className?: string }>;
   iconColorClass?: string;
+  dotColorClass?: string;
   indent?: number;
   labelKey?: string;
   collapsed: boolean;
@@ -230,7 +266,7 @@ interface NavLinkProps {
   t: (key: string) => string;
 }
 
-function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, collapsed, pathname, onNavigate, t }: NavLinkProps) {
+function NavLink({ label, path, Icon, iconColorClass, dotColorClass, indent = 0, labelKey, collapsed, pathname, onNavigate, t }: NavLinkProps) {
   const displayLabel = labelKey ? (t(`nav.${labelKey}`) || label) : label;
   const active = isPathActive(pathname, path);
 
@@ -278,6 +314,7 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
         }
       `}
     >
+      {indent > 0 && <NavDot active={active} colorClass={dotColorClass ?? "bg-sidebar-foreground/30"} />}
       <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
       <span className="truncate">{displayLabel}</span>
     </button>
@@ -306,13 +343,14 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
     <div key={sectionKey} className="space-y-0.5">
       <div
         className={`
-          w-full flex items-center gap-3 h-11 pl-4 pr-1 rounded-r-lg text-sm transition-colors md:h-9 md:pr-3
+          relative w-full flex items-center gap-3 h-11 pl-4 pr-1 rounded-r-lg text-sm transition-colors md:h-9 md:pr-3
           ${sectionActive
             ? "text-sidebar-foreground font-medium"
             : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           }
         `}
       >
+        <NavDot active={sectionActive} colorClass={navTreeDot[mod.id]} />
         <button
           onClick={() => onNavigate(section.path)}
           aria-current={pathname === section.path ? "page" : undefined}
@@ -334,8 +372,9 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
       {sectionExpanded && (
         <div
           id={contentId}
-          className={`relative ml-[2.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}
+          className={`relative ml-[2.19rem] border-l border-transparent space-y-0.5`}
         >
+          <NavTreeLine colorClass={navTreeDot[mod.id]} />
           {section.subPages.map((page) => (
             <NavLink
               key={page.path}
@@ -343,6 +382,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
               path={page.path}
               Icon={page.icon}
               iconColorClass={iconColor}
+              dotColorClass={navTreeDot[mod.id]}
               indent={2}
               labelKey={page.labelKey}
               collapsed={collapsed}
@@ -435,8 +475,9 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
       {isExpanded && (
         <div
           id={contentId}
-          className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}
+          className={`relative ml-[1.19rem] border-l border-transparent space-y-0.5`}
         >
+          <NavTreeLine colorClass={navTreeDot[mod.id]} />
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (
@@ -446,6 +487,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
                   path={section.path}
                   Icon={section.icon}
                   iconColorClass={iconColor}
+                  dotColorClass={navTreeDot[mod.id]}
                   indent={1}
                   labelKey={section.labelKey}
                   collapsed={collapsed}

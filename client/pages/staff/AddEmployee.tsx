@@ -979,8 +979,8 @@ export default function AddEmployee() {
               </div>
 
               {/* Emergency Contact */}
-              <div className="p-4 border rounded-lg bg-red-50/50 dark:bg-red-950/20">
-                <h3 className="font-medium mb-3 text-red-800 dark:text-red-200">
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <h3 className="font-medium mb-3">
                   {t("addEmployee.fields.emergencyTitle")}
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

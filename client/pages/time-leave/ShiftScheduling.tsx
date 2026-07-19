@@ -549,7 +549,6 @@ export default function ShiftScheduling() {
           <PageHeader
             title={t("timeLeave.shiftScheduling.title")}
             subtitle={t("timeLeave.shiftScheduling.subtitle")}
-            cardIcon="tl-shifts"
             icon={Calendar}
             iconColor="text-cyan-600"
           />
@@ -606,7 +605,6 @@ export default function ShiftScheduling() {
         <PageHeader
           title={t("timeLeave.shiftScheduling.title")}
           subtitle={t("timeLeave.shiftScheduling.subtitle")}
-          cardIcon="tl-shifts"
           icon={Calendar}
           iconColor="text-cyan-600"
           actions={canLoadSchedule ? (

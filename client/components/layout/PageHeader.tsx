@@ -55,6 +55,8 @@ interface PageHeaderProps {
   className?: string;
   /** Optional title sizing override for pages that use the full page-title scale. */
   titleClassName?: string;
+  /** "lg" is the module-home (level-1) size — bigger tile + title; default "sm" for sub-pages. */
+  size?: "sm" | "lg";
 }
 
 export default function PageHeader({
@@ -66,6 +68,7 @@ export default function PageHeader({
   actions,
   className = "",
   titleClassName,
+  size = "sm",
 }: PageHeaderProps) {
   // Derive accent border color from iconColor (e.g. "text-blue-500" -> "border-blue-500")
   const accentBorder = iconColor.replace("text-", "border-");
@@ -73,33 +76,37 @@ export default function PageHeader({
     /blue|cyan|green|indigo|orange|violet|primary/,
   )?.[0];
   const showCardIcon = cardIcon && hasCardIcon(cardIcon);
+  const isLg = size === "lg";
+  // Level-1 (module home) tile is larger than level-2 (sub-pages).
+  const tile = isLg ? "h-14 w-14 rounded-2xl" : "h-11 w-11 rounded-xl";
+  const lucideSize = isLg ? "h-7 w-7" : "h-5 w-5";
+  const cardIconSize = isLg ? "h-9 w-9" : "h-8 w-8";
 
   return (
     <div className={`mb-4 ${className}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          {/* Level-2 header tile: uniform 44px rounded-xl regardless of icon
-              type. (Module dashboards use the level-1 size: 56px rounded-2xl.) */}
           {showCardIcon ? (
             <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+              className={`flex shrink-0 items-center justify-center ${tile} ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
             >
               <CardIcon
                 name={cardIcon!}
-                className={`h-8 w-8 text-foreground ${colorKey ? ACCENT[colorKey] : ""}`}
+                className={`${cardIconSize} text-foreground ${colorKey ? ACCENT[colorKey] : ""}`}
               />
             </div>
           ) : Icon ? (
             <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+              className={`flex shrink-0 items-center justify-center ${tile} ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
             >
-              <Icon className={`h-5 w-5 ${iconColor}`} />
+              <Icon className={`${lucideSize} ${iconColor}`} />
             </div>
           ) : null}
           <div className="min-w-0">
             <h1
               className={cn(
-                "truncate text-lg font-bold tracking-tight",
+                "truncate font-bold tracking-tight",
+                isLg ? "text-2xl" : "text-lg",
                 titleClassName,
               )}
             >

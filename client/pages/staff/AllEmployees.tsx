@@ -998,7 +998,7 @@ export default function AllEmployees() {
         <PageHeader
           title={t("employees.title")}
           subtitle={t("employees.subtitle")}
-          cardIcon="people" icon={Users}
+          icon={Users}
           iconColor="text-blue-500"
           actions={canManageTenant ? (
             <>
@@ -1391,7 +1391,9 @@ export default function AllEmployees() {
                     </>
                   ) : (
                     <>
-                      <img src="/images/illustrations/xefe-card-people.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                        <Users className="h-8 w-8 text-muted-foreground" />
+                      </div>
                       <h3 className="text-lg font-semibold mb-2">
                         {t("employees.empty.noEmployeesTitle")}
                       </h3>

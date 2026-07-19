@@ -149,7 +149,6 @@ export default function BalanceSheet() {
         <PageHeader
           title={t("accounting.balanceSheet.title")}
           subtitle={t("accounting.balanceSheet.subtitle")}
-          cardIcon="ac-balance"
           icon={Scale}
           iconColor="text-orange-500"
           actions={

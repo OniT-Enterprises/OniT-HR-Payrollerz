@@ -739,7 +739,7 @@ export default function Attendance() {
             ) : (
               formatDateLabel(selectedDate)
             )}
-            cardIcon="tl-attendance" icon={Clock}
+            icon={Clock}
             iconColor="text-cyan-500"
             actions={canManageAttendance ? (
               <>
@@ -832,7 +832,7 @@ export default function Attendance() {
           ) : (
             formatDateLabel(selectedDate)
           )}
-          cardIcon="tl-attendance" icon={Clock}
+          icon={Clock}
           iconColor="text-cyan-500"
           actions={canManageAttendance ? (
             <>

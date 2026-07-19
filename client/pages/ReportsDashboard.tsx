@@ -2,11 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  CardIcon,
-  hasCardIcon,
-  cardIconNameFromArt,
-} from "@/components/ui/CardIcon";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -282,36 +279,27 @@ export default function ReportsDashboard() {
       <ModuleSectionNav config={reportsNavConfig} />
 
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          {/* Header — module icon in the page's accent tile anchors the title
-              (same tinted-tile treatment as the hub cards below) */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-500/10">
-              <BarChart3 className="h-7 w-7 text-violet-600 dark:text-violet-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {t("moduleDashboards.reports.title")}
-              </h1>
-              <p className="mt-0.5 text-sm text-foreground/70">
-                {canManageTenant
-                  ? t(
-                      familyCards.length === 1
-                        ? "moduleDashboards.reports.summarySingle"
-                        : "moduleDashboards.reports.summaryPlural",
-                      { count: familyCards.length, compliance: compliancePhrase },
-                    )
-                  : t(
-                      familyCards.length === 1
-                        ? "moduleDashboards.reports.summaryReadOnlySingle"
-                        : "moduleDashboards.reports.summaryReadOnlyPlural",
-                      { count: familyCards.length },
-                    )}
-              </p>
-            </div>
-          </div>
-          <div className="w-full sm:w-auto">
+        <PageHeader
+          size="lg"
+          title={t("moduleDashboards.reports.title")}
+          icon={BarChart3}
+          iconColor="text-violet-500"
+          subtitle={
+            canManageTenant
+              ? t(
+                  familyCards.length === 1
+                    ? "moduleDashboards.reports.summarySingle"
+                    : "moduleDashboards.reports.summaryPlural",
+                  { count: familyCards.length, compliance: compliancePhrase },
+                )
+              : t(
+                  familyCards.length === 1
+                    ? "moduleDashboards.reports.summaryReadOnlySingle"
+                    : "moduleDashboards.reports.summaryReadOnlyPlural",
+                  { count: familyCards.length },
+                )
+          }
+          actions={
             <Button
               className="w-full sm:w-auto"
               onClick={() => navigate("/reports/custom")}
@@ -319,8 +307,8 @@ export default function ReportsDashboard() {
               <Wrench className="mr-2 h-4 w-4" />
               {t("reports.custom.buildReport")}
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Filing runway */}
         {hasPayroll && canManageTenant && (
@@ -368,34 +356,15 @@ export default function ReportsDashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
             {familyCards.map((card) => (
-              <button
+              <HubCard
                 key={card.id}
+                icon={card.icon}
+                title={card.title}
+                purpose={card.description}
+                action={t("moduleDashboards.reports.browseAction")}
+                accent="violet"
                 onClick={() => navigate(card.path)}
-                className="flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 text-left shadow-sm transition-colors hover:border-violet-400/50 sm:min-h-0 sm:gap-3 sm:p-5"
-              >
-                {hasCardIcon(cardIconNameFromArt(card.art)) ? (
-                  <CardIcon
-                    name={cardIconNameFromArt(card.art)!}
-                    className="h-12 w-12 text-foreground [--card-icon-accent:#7c3aed] dark:[--card-icon-accent:#a78bfa] sm:h-16 sm:w-16"
-                  />
-                ) : (
-                  <img
-                    src={card.art}
-                    alt=""
-                    aria-hidden
-                    loading="lazy"
-                    className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                  />
-                )}
-                <div>
-                  <p className="text-sm font-semibold sm:text-base">
-                    {card.title}
-                  </p>
-                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">
-                    {card.description}
-                  </p>
-                </div>
-              </button>
+              />
             ))}
           </div>
         </section>

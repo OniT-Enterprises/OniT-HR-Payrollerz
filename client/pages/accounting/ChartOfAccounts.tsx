@@ -517,7 +517,6 @@ export default function ChartOfAccounts() {
         <PageHeader
           title={t("accounting.chartOfAccounts.title")}
           subtitle={t("accounting.chartOfAccounts.subtitle")}
-          cardIcon="ac-chart"
           icon={BookOpen}
           iconColor="text-orange-500"
           actions={canManageTenant ? (

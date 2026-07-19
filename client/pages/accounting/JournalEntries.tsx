@@ -593,7 +593,6 @@ export default function JournalEntries() {
         <PageHeader
           title={t("accounting.journalEntries.title")}
           subtitle={t("accounting.journalEntries.subtitle")}
-          cardIcon="ac-journal"
           icon={SquarePen}
           iconColor="text-orange-500"
           actions={canManageTenant ? (

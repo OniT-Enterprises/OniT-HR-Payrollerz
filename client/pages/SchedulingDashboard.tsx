@@ -1,7 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon, cardIconNameFromArt } from "@/components/ui/CardIcon";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -153,7 +154,6 @@ export default function SchedulingDashboard() {
   const shifts = shiftsQuery.data ?? [];
 
   const activeEmployees = employeeSummary?.active ?? 0;
-  const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
   const pendingLeave = leaveStats?.pendingRequests ?? 0;
 
   const records = todayAttendance ?? [];
@@ -229,28 +229,22 @@ export default function SchedulingDashboard() {
   const hubCards = [
     {
       title: t("moduleDashboards.scheduling.cards.attendance"),
-      art: "/images/illustrations/xefe-card-tl-attendance.webp",
-      value: canReadEmployeeDirectory ? `${recordedToday} / ${activeEmployees}` : String(recordedToday),
-      meta: canReadEmployeeDirectory
-        ? t("moduleDashboards.scheduling.cards.recordedToday")
-        : t("moduleDashboards.scheduling.cards.attendanceMeta"),
+      purpose: t("moduleDashboards.scheduling.cards.attendancePurpose"),
+      action: t("moduleDashboards.scheduling.cards.attendanceAction"),
       path: "/time-leave/attendance",
       icon: CalendarCheck,
     },
     {
-      // Pending requests already surface in the attention strip above.
       title: t("moduleDashboards.scheduling.cards.leave"),
-      art: "/images/illustrations/xefe-card-tl-leave.webp",
-      value: String(onLeaveToday),
-      meta: t("moduleDashboards.scheduling.cards.onLeaveTodayLabel"),
+      purpose: t("moduleDashboards.scheduling.cards.leavePurpose"),
+      action: t("moduleDashboards.scheduling.cards.leaveAction"),
       path: "/time-leave/leave",
       icon: CalendarDays,
     },
     ...(canReadShifts ? [{
       title: t("moduleDashboards.scheduling.cards.shifts"),
-      art: "/images/illustrations/xefe-card-tl-shifts.webp",
-      value: String(weekShifts.length),
-      meta: t("moduleDashboards.scheduling.cards.shiftsThisWeek"),
+      purpose: t("moduleDashboards.scheduling.cards.shiftsPurpose"),
+      action: t("moduleDashboards.scheduling.cards.shiftsAction"),
       path: "/time-leave/shifts",
       icon: Calendar,
     }] : []),
@@ -265,26 +259,20 @@ export default function SchedulingDashboard() {
       <ModuleSectionNav config={timeLeaveNavConfig} />
 
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        {/* Header — module icon in the page's accent tile anchors the title
-            (same tinted-tile treatment as the hub cards below) */}
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cyan-500/10">
-            <Clock className="h-7 w-7 text-cyan-600 dark:text-cyan-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("moduleDashboards.scheduling.title")}
-            </h1>
-            <p className="mt-0.5 text-sm text-foreground/70">
-              {canReadEmployeeDirectory && activeEmployees > 0
-                ? t("moduleDashboards.scheduling.subtitleRecorded", {
-                    recorded: recordedToday,
-                    total: activeEmployees,
-                  })
-                : t("moduleDashboards.scheduling.subtitleEmpty")}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          size="lg"
+          title={t("moduleDashboards.scheduling.title")}
+          icon={Clock}
+          iconColor="text-cyan-500"
+          subtitle={
+            canReadEmployeeDirectory && activeEmployees > 0
+              ? t("moduleDashboards.scheduling.subtitleRecorded", {
+                  recorded: recordedToday,
+                  total: activeEmployees,
+                })
+              : t("moduleDashboards.scheduling.subtitleEmpty")
+          }
+        />
 
         {/* Needs attention */}
         <section>
@@ -323,35 +311,15 @@ export default function SchedulingDashboard() {
         {/* Module hub */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {hubCards.map((card) => (
-            <button
+            <HubCard
               key={card.path}
+              icon={card.icon}
+              title={card.title}
+              purpose={card.purpose}
+              action={card.action}
+              accent="cyan"
               onClick={() => navigate(card.path)}
-              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-cyan-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
-            >
-              <div className="flex items-start justify-between gap-2">
-                {hasCardIcon(cardIconNameFromArt(card.art)) ? (
-                  <CardIcon
-                    name={cardIconNameFromArt(card.art)!}
-                    className="h-12 w-12 text-foreground [--card-icon-accent:#0891b2] dark:[--card-icon-accent:#22d3ee] sm:h-16 sm:w-16"
-                  />
-                ) : (
-                  <img
-                    src={card.art}
-                    alt=""
-                    aria-hidden
-                    loading="lazy"
-                    className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                  />
-                )}
-                <span className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">
-                  {card.value}
-                </span>
-              </div>
-              <div className="mt-auto">
-                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.meta}</p>
-              </div>
-            </button>
+            />
           ))}
         </section>
       </div>

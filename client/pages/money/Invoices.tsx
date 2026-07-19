@@ -375,7 +375,7 @@ export default function Invoices() {
         <PageHeader
           title={t('money.invoices.title') || 'Invoices'}
           subtitle={t('money.invoices.subtitle') || 'Create and manage invoices'}
-          cardIcon="money" icon={FileText}
+          icon={FileText}
           iconColor="text-indigo-500"
           actions={
             <>

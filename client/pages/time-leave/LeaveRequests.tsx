@@ -489,7 +489,6 @@ export default function LeaveRequests() {
           <PageHeader
             title={t("timeLeave.leaveRequests.title")}
             subtitle={t("timeLeave.leaveRequests.subtitle")}
-            cardIcon="tl-leave"
             icon={CalendarDays}
             iconColor="text-cyan-600"
             actions={canCreate ? (
@@ -554,7 +553,6 @@ export default function LeaveRequests() {
         <PageHeader
           title={t("timeLeave.leaveRequests.title")}
           subtitle={t("timeLeave.leaveRequests.subtitle")}
-          cardIcon="tl-leave"
           icon={CalendarDays}
           iconColor="text-cyan-600"
           actions={canCreate ? (

@@ -6897,7 +6897,15 @@ export const translations = {
           "onLeaveToday": "{{count}} on leave today",
           "performance": "Performance",
           "activeGoal": "{{count}} active goal",
-          "activeGoals": "{{count}} active goals"
+          "activeGoals": "{{count}} active goals",
+          "staffPurpose": "Manage your team and their details",
+          "staffAction": "View staff",
+          "hiringPurpose": "Post jobs and track candidates",
+          "hiringAction": "View hiring",
+          "timeLeavePurpose": "Track attendance and manage leave",
+          "timeLeaveAction": "Open time & leave",
+          "performancePurpose": "Review performance and set goals",
+          "performanceAction": "View performance"
         }
       },
       "scheduling": {
@@ -6931,7 +6939,13 @@ export const translations = {
           "hoursRecordedToday": "hours recorded today",
           "shifts": "Shifts",
           "shiftsMeta": "Plan weekly rosters",
-          "shiftsThisWeek": "shifts this week"
+          "shiftsThisWeek": "shifts this week",
+          "attendancePurpose": "Record hours and clock-ins",
+          "attendanceAction": "View attendance",
+          "leavePurpose": "Approve requests and track balances",
+          "leaveAction": "View leave",
+          "shiftsPurpose": "Plan rosters and shift coverage",
+          "shiftsAction": "View shifts"
         }
       },
       "payroll": {
@@ -6962,7 +6976,15 @@ export const translations = {
           "readyToPay": "{{count}} ready to pay",
           "exportPay": "Export & pay",
           "taxInss": "Tax & INSS",
-          "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d"
+          "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d",
+          "runPayrollPurpose": "Calculate this cycle and finalise pay",
+          "runPayrollAction": "Start a run",
+          "historyPurpose": "Review past runs and payslips",
+          "historyAction": "View history",
+          "bankTransfersPurpose": "Build the bank pack and pay salaries",
+          "bankTransfersAction": "Open payments",
+          "taxInssPurpose": "Prepare WIT and social-security filings",
+          "taxInssAction": "View filings"
         }
       },
       "money": {
@@ -6991,7 +7013,15 @@ export const translations = {
           "expenses": "Expenses",
           "expensesMeta": "Track spending",
           "financialReports": "Financial Reports",
-          "financialReportsMeta": "P&L · cashflow · VAT"
+          "financialReportsMeta": "P&L · cashflow · VAT",
+          "invoicesPurpose": "Create, send and track invoices",
+          "invoicesAction": "View invoices",
+          "billsPurpose": "Record supplier bills and pay them",
+          "billsAction": "View bills",
+          "expensesPurpose": "Log and categorise business spending",
+          "expensesAction": "View expenses",
+          "financialReportsPurpose": "P&L, cash flow and VAT statements",
+          "financialReportsAction": "View reports"
         }
       },
       "accounting": {
@@ -7021,7 +7051,15 @@ export const translations = {
           "balanceSheet": "Balance Sheet",
           "live": "Live",
           "pendingPayroll": "Pending payroll",
-          "financialPosition": "Financial position"
+          "financialPosition": "Financial position",
+          "chartOfAccountsPurpose": "Your ledger accounts and structure",
+          "chartOfAccountsAction": "View chart",
+          "journalEntriesPurpose": "Post and review journal entries",
+          "journalEntriesAction": "View journal",
+          "trialBalancePurpose": "Check debits equal credits",
+          "trialBalanceAction": "View trial balance",
+          "balanceSheetPurpose": "Assets, liabilities and equity",
+          "balanceSheetAction": "View balance sheet"
         }
       },
       "reports": {
@@ -7036,6 +7074,7 @@ export const translations = {
         "filingRunway": "Filing runway",
         "allGood": "No tax filings due — the reporting runway is clear.",
         "browseReports": "Browse reports",
+        "browseAction": "View reports",
         "compliance": {
           "filingOverdue": "{{count}} filing overdue",
           "filingsOverdue": "{{count}} filings overdue",
@@ -14275,7 +14314,15 @@ export const translations = {
           "onLeaveToday": "{{count}} iha lisensa ohin",
           "performance": "Dezempénhu",
           "activeGoal": "objetivu ativu {{count}}",
-          "activeGoals": "objetivu ativu {{count}}"
+          "activeGoals": "objetivu ativu {{count}}",
+          "staffPurpose": "Jere ita-nia ekipa no sira-nia dadus",
+          "staffAction": "Haree pessoál",
+          "hiringPurpose": "Publika vaga no akompaña kandidatu",
+          "hiringAction": "Haree rekrutamentu",
+          "timeLeavePurpose": "Rejista prezensa no jere lisensa",
+          "timeLeaveAction": "Loke tempu & lisensa",
+          "performancePurpose": "Avalia dezempénhu no defini objetivu",
+          "performanceAction": "Haree dezempénhu"
         }
       },
       "scheduling": {
@@ -14309,7 +14356,13 @@ export const translations = {
           "hoursRecordedToday": "oras rejistadu ohin",
           "shifts": "Turnu",
           "shiftsMeta": "Planeia lista turnu semanal",
-          "shiftsThisWeek": "turnu iha semana ida-ne'e"
+          "shiftsThisWeek": "turnu iha semana ida-ne'e",
+          "attendancePurpose": "Rejista oras no marka prezensa",
+          "attendanceAction": "Haree prezensa",
+          "leavePurpose": "Aprova pedidu no kontrola saldu",
+          "leaveAction": "Haree lisensa",
+          "shiftsPurpose": "Planeia lista turnu no kobertura",
+          "shiftsAction": "Haree turnu"
         }
       },
       "payroll": {
@@ -14340,7 +14393,15 @@ export const translations = {
           "readyToPay": "{{count}} prontu atu selu",
           "exportPay": "Esporta & selu",
           "taxInss": "Impostu & INSS",
-          "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron"
+          "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron",
+          "runPayrollPurpose": "Kalkula siklu ida-ne'e no finaliza saláriu",
+          "runPayrollAction": "Hahú prosesu ida",
+          "historyPurpose": "Haree fila-fali prosesu uluk no resibu salariu",
+          "historyAction": "Haree istória",
+          "bankTransfersPurpose": "Halo pakote banku no selu saláriu",
+          "bankTransfersAction": "Loke pagamentu",
+          "taxInssPurpose": "Prepara deklarasaun WIT no Seguransa Sosiál",
+          "taxInssAction": "Haree deklarasaun"
         }
       },
       "money": {
@@ -14369,7 +14430,15 @@ export const translations = {
           "expenses": "Despeza",
           "expensesMeta": "Kontrola gastu",
           "financialReports": "Relatóriu Finanseiru",
-          "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT"
+          "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT",
+          "invoicesPurpose": "Kria, haruka no akompaña fatura",
+          "invoicesAction": "Haree fatura",
+          "billsPurpose": "Rejista konta fornesedór no selu",
+          "billsAction": "Haree konta",
+          "expensesPurpose": "Rejista no kategoriza gastu negósiu",
+          "expensesAction": "Haree despeza",
+          "financialReportsPurpose": "Lukru/lakon, fluxu osan no VAT",
+          "financialReportsAction": "Haree relatóriu"
         }
       },
       "accounting": {
@@ -14399,7 +14468,15 @@ export const translations = {
           "balanceSheet": "Balansu",
           "live": "Ativu",
           "pendingPayroll": "Hein saláriu",
-          "financialPosition": "Pozisaun finanseira"
+          "financialPosition": "Pozisaun finanseira",
+          "chartOfAccountsPurpose": "Ita-nia konta razaun no estrutura",
+          "chartOfAccountsAction": "Haree plano konta",
+          "journalEntriesPurpose": "Lansa no haree entrada diáriu",
+          "journalEntriesAction": "Haree diáriu",
+          "trialBalancePurpose": "Verifika débitu hanesan kréditu",
+          "trialBalanceAction": "Haree balancete",
+          "balanceSheetPurpose": "Ativu, pasivu no kapitál",
+          "balanceSheetAction": "Haree balansu"
         }
       },
       "reports": {
@@ -14414,6 +14491,7 @@ export const translations = {
         "filingRunway": "Prazu deklarasaun",
         "allGood": "Laiha deklarasaun impostu atu entrega — prazu hotu klaru.",
         "browseReports": "Buka relatóriu",
+        "browseAction": "Haree relatóriu",
         "compliance": {
           "filingOverdue": "deklarasaun {{count}} atrasu",
           "filingsOverdue": "deklarasaun {{count}} atrasu",
@@ -21653,7 +21731,15 @@ export const translations = {
           "onLeaveToday": "{{count}} de licença hoje",
           "performance": "Desempenho",
           "activeGoal": "{{count}} objetivo ativo",
-          "activeGoals": "{{count}} objetivos ativos"
+          "activeGoals": "{{count}} objetivos ativos",
+          "staffPurpose": "Gerir a sua equipa e os seus dados",
+          "staffAction": "Ver pessoal",
+          "hiringPurpose": "Publicar vagas e acompanhar candidatos",
+          "hiringAction": "Ver recrutamento",
+          "timeLeavePurpose": "Registar assiduidade e gerir licenças",
+          "timeLeaveAction": "Abrir tempo & licenças",
+          "performancePurpose": "Avaliar o desempenho e definir objetivos",
+          "performanceAction": "Ver desempenho"
         }
       },
       "scheduling": {
@@ -21687,7 +21773,13 @@ export const translations = {
           "hoursRecordedToday": "horas registadas hoje",
           "shifts": "Turnos",
           "shiftsMeta": "Planear escalas semanais",
-          "shiftsThisWeek": "turnos esta semana"
+          "shiftsThisWeek": "turnos esta semana",
+          "attendancePurpose": "Registar horas e marcações de ponto",
+          "attendanceAction": "Ver assiduidade",
+          "leavePurpose": "Aprovar pedidos e acompanhar saldos",
+          "leaveAction": "Ver licenças",
+          "shiftsPurpose": "Planear escalas e cobertura de turnos",
+          "shiftsAction": "Ver turnos"
         }
       },
       "payroll": {
@@ -21718,7 +21810,15 @@ export const translations = {
           "readyToPay": "{{count}} prontos para pagar",
           "exportPay": "Exportar e pagar",
           "taxInss": "Imposto & INSS",
-          "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d"
+          "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d",
+          "runPayrollPurpose": "Calcular este ciclo e finalizar os salários",
+          "runPayrollAction": "Iniciar um processamento",
+          "historyPurpose": "Rever processamentos anteriores e recibos",
+          "historyAction": "Ver histórico",
+          "bankTransfersPurpose": "Criar o pacote bancário e pagar salários",
+          "bankTransfersAction": "Abrir pagamentos",
+          "taxInssPurpose": "Preparar declarações de WIT e Segurança Social",
+          "taxInssAction": "Ver declarações"
         }
       },
       "money": {
@@ -21747,7 +21847,15 @@ export const translations = {
           "expenses": "Despesas",
           "expensesMeta": "Acompanhar gastos",
           "financialReports": "Relatórios Financeiros",
-          "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA"
+          "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA",
+          "invoicesPurpose": "Criar, enviar e acompanhar faturas",
+          "invoicesAction": "Ver faturas",
+          "billsPurpose": "Registar faturas de fornecedores e pagá-las",
+          "billsAction": "Ver contas",
+          "expensesPurpose": "Registar e categorizar despesas do negócio",
+          "expensesAction": "Ver despesas",
+          "financialReportsPurpose": "Demonstrações de resultados, fluxo de caixa e IVA",
+          "financialReportsAction": "Ver relatórios"
         }
       },
       "accounting": {
@@ -21777,7 +21885,15 @@ export const translations = {
           "balanceSheet": "Balanço",
           "live": "Atualizado",
           "pendingPayroll": "Folha pendente",
-          "financialPosition": "Posição financeira"
+          "financialPosition": "Posição financeira",
+          "chartOfAccountsPurpose": "As suas contas e a estrutura do razão",
+          "chartOfAccountsAction": "Ver plano de contas",
+          "journalEntriesPurpose": "Lançar e rever entradas do diário",
+          "journalEntriesAction": "Ver diário",
+          "trialBalancePurpose": "Verificar se débitos igualam créditos",
+          "trialBalanceAction": "Ver balancete",
+          "balanceSheetPurpose": "Ativos, passivos e capital próprio",
+          "balanceSheetAction": "Ver balanço"
         }
       },
       "reports": {
@@ -21792,6 +21908,7 @@ export const translations = {
         "filingRunway": "Próximas declarações",
         "allGood": "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
         "browseReports": "Explorar relatórios",
+        "browseAction": "Ver relatórios",
         "compliance": {
           "filingOverdue": "{{count}} declaração em atraso",
           "filingsOverdue": "{{count}} declarações em atraso",

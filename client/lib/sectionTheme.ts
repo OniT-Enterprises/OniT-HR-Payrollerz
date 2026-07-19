@@ -121,3 +121,14 @@ export const navTreeLine: Record<SectionId, string> = {
   accounting: "border-orange-500/30",
   reports: "border-violet-500/30",
 };
+
+/** Background tint for the connector-line dots — matches navTreeLine's hue. */
+export const navTreeDot: Record<SectionId, string> = {
+  dashboard: "bg-primary/30",
+  people: "bg-blue-500/30",
+  scheduling: "bg-cyan-500/30",
+  payroll: "bg-primary/30",
+  money: "bg-indigo-500/30",
+  accounting: "bg-orange-500/30",
+  reports: "bg-violet-500/30",
+};

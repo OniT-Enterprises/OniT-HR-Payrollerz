@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon } from "@/components/ui/CardIcon";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -172,21 +173,16 @@ export default function PeopleDashboard() {
   const employeeSummary = employeeSummaryQuery.data;
   const recentEmployees = recentEmployeesQuery.data;
   const leaveStats = leaveStatsQuery.data;
-  const goalStats = goalStatsQuery.data;
-  const interviewStats = interviewStatsQuery.data;
   const trainingStats = trainingStatsQuery.data;
   const disciplinaryStats = disciplinaryStatsQuery.data;
 
   const activeEmployees = employeeSummary?.active ?? 0;
   const employeesWithIssues = employeeSummary?.employeesWithIssues ?? 0;
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
-  const onLeaveToday = hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0;
-  const interviewsScheduled = hasHiring ? interviewStats?.scheduled ?? 0 : 0;
   const trainingExpiring = hasPerformance ? trainingStats?.expiringSoon ?? 0 : 0;
   const disciplinaryOpen = hasPerformance
     ? (disciplinaryStats?.open ?? 0) + (disciplinaryStats?.inReview ?? 0)
     : 0;
-  const goalsActive = hasPerformance ? goalStats?.active ?? 0 : 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,50 +246,36 @@ export default function PeopleDashboard() {
     {
       show: hasStaff,
       title: t("moduleDashboards.people.cards.staff"),
-      meta: t("moduleDashboards.people.cards.active", { count: activeEmployees }),
+      purpose: t("moduleDashboards.people.cards.staffPurpose"),
+      action: t("moduleDashboards.people.cards.staffAction"),
       path: "/people/employees",
       icon: Users,
-      art: "/images/illustrations/xefe-card-people.webp",
-      svg: "people",
     },
     {
       show: hasHiring,
       title: t("moduleDashboards.people.cards.hiring"),
-      meta: t(
-        interviewsScheduled === 1
-          ? "moduleDashboards.people.cards.interviewScheduled"
-          : "moduleDashboards.people.cards.interviewsScheduled",
-        { count: interviewsScheduled },
-      ),
+      purpose: t("moduleDashboards.people.cards.hiringPurpose"),
+      action: t("moduleDashboards.people.cards.hiringAction"),
       path: "/people/jobs",
       icon: Briefcase,
-      art: "/images/illustrations/xefe-card-hiring.webp",
-      svg: "hiring",
     },
     {
       // Pending requests already surface in the attention strip above —
       // show a complementary fact here instead of repeating it.
       show: hasTimeleave,
       title: t("moduleDashboards.people.cards.timeLeave"),
-      meta: t("moduleDashboards.people.cards.onLeaveToday", { count: onLeaveToday }),
+      purpose: t("moduleDashboards.people.cards.timeLeavePurpose"),
+      action: t("moduleDashboards.people.cards.timeLeaveAction"),
       path: "/time-leave",
       icon: CalendarClock,
-      art: "/images/illustrations/xefe-card-timeleave.webp",
-      svg: "timeleave",
     },
     {
       show: hasPerformance,
       title: t("moduleDashboards.people.cards.performance"),
-      meta: t(
-        goalsActive === 1
-          ? "moduleDashboards.people.cards.activeGoal"
-          : "moduleDashboards.people.cards.activeGoals",
-        { count: goalsActive },
-      ),
+      purpose: t("moduleDashboards.people.cards.performancePurpose"),
+      action: t("moduleDashboards.people.cards.performanceAction"),
       path: "/people/reviews",
       icon: Target,
-      art: "/images/illustrations/xefe-card-performance.webp",
-      svg: "performance",
     },
   ].filter((card) => card.show);
 
@@ -310,34 +292,28 @@ export default function PeopleDashboard() {
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
         {/* Header + search */}
         <div className="space-y-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            {/* Header — module icon in the page's accent tile anchors the title
-                (same tinted-tile treatment as the hub cards below) */}
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-500/10">
-                <Users className="h-7 w-7 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {t("moduleDashboards.people.title")}
-                </h1>
-                <p className="mt-0.5 text-sm text-foreground/70">
-                  {hasStaff
-                    ? t("moduleDashboards.people.subtitle", { count: activeEmployees })
-                    : t("moduleDashboards.people.subtitleNoStaff")}
-                </p>
-              </div>
-            </div>
-            {hasStaff && canManageTenant && (
-              <Button
-                onClick={() => navigate("/people/add")}
-                className="bg-blue-600 text-white hover:bg-blue-700"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t("moduleDashboards.people.addEmployee")}
-              </Button>
-            )}
-          </div>
+          <PageHeader
+            size="lg"
+            title={t("moduleDashboards.people.title")}
+            icon={Users}
+            iconColor="text-blue-500"
+            subtitle={
+              hasStaff
+                ? t("moduleDashboards.people.subtitle", { count: activeEmployees })
+                : t("moduleDashboards.people.subtitleNoStaff")
+            }
+            actions={
+              hasStaff && canManageTenant ? (
+                <Button
+                  onClick={() => navigate("/people/add")}
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  {t("moduleDashboards.people.addEmployee")}
+                </Button>
+              ) : undefined
+            }
+          />
 
           {hasStaff && (
             <form onSubmit={handleSearch} className="relative">
@@ -391,30 +367,15 @@ export default function PeopleDashboard() {
         {hubCards.length > 0 && (
           <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {hubCards.map((card) => (
-              <button
+              <HubCard
                 key={card.path}
+                icon={card.icon}
+                title={card.title}
+                purpose={card.purpose}
+                action={card.action}
+                accent="blue"
                 onClick={() => navigate(card.path)}
-                className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-blue-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
-              >
-                {hasCardIcon(card.svg) ? (
-                  <CardIcon
-                    name={card.svg}
-                    className="h-12 w-12 text-foreground [--card-icon-accent:#2563eb] dark:[--card-icon-accent:#60a5fa] sm:h-16 sm:w-16"
-                  />
-                ) : (
-                  <img
-                    src={card.art}
-                    alt=""
-                    aria-hidden
-                    loading="lazy"
-                    className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                  />
-                )}
-                <div>
-                  <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.meta}</p>
-                </div>
-              </button>
+              />
             ))}
           </section>
         )}

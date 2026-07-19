@@ -516,7 +516,6 @@ export default function CustomReports() {
         <ReportPage
           title={t("reports.custom.title")}
           subtitle={t("reports.custom.subtitle")}
-          cardIcon="reports"
           icon={BarChart3}
           maxWidth="lg"
         >
@@ -540,7 +539,6 @@ export default function CustomReports() {
       <ReportPage
         title={t("reports.custom.title")}
         subtitle={t("reports.custom.subtitle")}
-        cardIcon="reports"
         icon={BarChart3}
         actions={
           <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>

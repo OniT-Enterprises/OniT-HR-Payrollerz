@@ -2,7 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CardIcon, hasCardIcon, cardIconNameFromArt } from "@/components/ui/CardIcon";
+import { HubCard } from "@/components/dashboard/HubCard";
+import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
@@ -152,37 +153,29 @@ export default function AccountingDashboard() {
   const hubCards = [
     {
       title: t("moduleDashboards.accounting.cards.chartOfAccounts"),
-      art: "/images/illustrations/xefe-card-ac-chart.webp",
-      meta: t("moduleDashboards.accounting.cards.ledgerStructure"),
+      purpose: t("moduleDashboards.accounting.cards.chartOfAccountsPurpose"),
+      action: t("moduleDashboards.accounting.cards.chartOfAccountsAction"),
       path: "/accounting/chart",
       icon: BookOpen,
     },
     {
       title: t("moduleDashboards.accounting.cards.journalEntries"),
-      art: "/images/illustrations/xefe-card-ac-journal.webp",
-      meta: t("moduleDashboards.accounting.cards.pending", {
-        count: dashboardData.pendingEntries,
-      }),
+      purpose: t("moduleDashboards.accounting.cards.journalEntriesPurpose"),
+      action: t("moduleDashboards.accounting.cards.journalEntriesAction"),
       path: "/accounting/journal",
       icon: FileSpreadsheet,
     },
     {
       title: t("moduleDashboards.accounting.cards.trialBalance"),
-      art: "/images/illustrations/xefe-card-accounting.webp",
-      meta: balanceHealth.trialBalanced
-        ? t("moduleDashboards.accounting.cards.balanced")
-        : t("moduleDashboards.accounting.cards.outOfBalance"),
+      purpose: t("moduleDashboards.accounting.cards.trialBalancePurpose"),
+      action: t("moduleDashboards.accounting.cards.trialBalanceAction"),
       path: "/accounting/statements/trial-balance",
       icon: Scale,
     },
     {
       title: t("moduleDashboards.accounting.cards.balanceSheet"),
-      art: "/images/illustrations/xefe-card-ac-balance.webp",
-      meta: hasPayroll
-        ? dashboardData.payrollPosted
-          ? t("moduleDashboards.accounting.cards.live")
-          : t("moduleDashboards.accounting.cards.pendingPayroll")
-        : t("moduleDashboards.accounting.cards.financialPosition"),
+      purpose: t("moduleDashboards.accounting.cards.balanceSheetPurpose"),
+      action: t("moduleDashboards.accounting.cards.balanceSheetAction"),
       path: "/accounting/statements/balance-sheet",
       icon: Building2,
     },
@@ -197,45 +190,38 @@ export default function AccountingDashboard() {
       <ModuleSectionNav config={accountingNavConfig} />
 
       <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          {/* Header — module icon in the page's accent tile anchors the title
-              (same tinted-tile treatment as the hub cards below) */}
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-orange-500/10">
-              <Landmark className="h-7 w-7 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {t("moduleDashboards.accounting.title")}
-              </h1>
-              <p className="mt-0.5 text-sm text-foreground/70">
-                {hasPayroll
-                  ? dashboardData.payrollPosted && lastPayrollDate
-                    ? t("moduleDashboards.accounting.summaryPosted", {
-                        date: lastPayrollDate,
-                        amount: formatCurrencyTL(dashboardData.lastPayrollAmount),
-                      })
-                    : t("moduleDashboards.accounting.summaryNotPosted")
-                  : t("moduleDashboards.accounting.summaryNoPayroll")}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {canManageTenant && (
-              <Button variant="outline" onClick={() => navigate("/accounting/journal?action=new")}>
-                <FilePlus className="mr-2 h-4 w-4" />
-                {t("moduleDashboards.accounting.newEntry")}
-              </Button>
-            )}
-            {hasPayroll && (
-              <Button onClick={() => navigate("/accounting/journal?filter=payroll")}>
-                <Eye className="mr-2 h-4 w-4" />
-                {t("moduleDashboards.accounting.reviewPayroll")}
-              </Button>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          size="lg"
+          title={t("moduleDashboards.accounting.title")}
+          icon={Landmark}
+          iconColor="text-orange-500"
+          subtitle={
+            hasPayroll
+              ? dashboardData.payrollPosted && lastPayrollDate
+                ? t("moduleDashboards.accounting.summaryPosted", {
+                    date: lastPayrollDate,
+                    amount: formatCurrencyTL(dashboardData.lastPayrollAmount),
+                  })
+                : t("moduleDashboards.accounting.summaryNotPosted")
+              : t("moduleDashboards.accounting.summaryNoPayroll")
+          }
+          actions={
+            <>
+              {canManageTenant && (
+                <Button variant="outline" onClick={() => navigate("/accounting/journal?action=new")}>
+                  <FilePlus className="mr-2 h-4 w-4" />
+                  {t("moduleDashboards.accounting.newEntry")}
+                </Button>
+              )}
+              {hasPayroll && (
+                <Button onClick={() => navigate("/accounting/journal?filter=payroll")}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t("moduleDashboards.accounting.reviewPayroll")}
+                </Button>
+              )}
+            </>
+          }
+        />
 
         {/* Needs attention */}
         <section>
@@ -273,30 +259,15 @@ export default function AccountingDashboard() {
         {/* Module hub */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {hubCards.map((card) => (
-            <button
+            <HubCard
               key={card.path}
+              icon={card.icon}
+              title={card.title}
+              purpose={card.purpose}
+              action={card.action}
+              accent="orange"
               onClick={() => navigate(card.path)}
-              className="group flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/60 bg-card p-3 text-left transition-colors hover:border-orange-400/40 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
-            >
-              {hasCardIcon(cardIconNameFromArt(card.art)) ? (
-                <CardIcon
-                  name={cardIconNameFromArt(card.art)!}
-                  className="h-12 w-12 text-foreground [--card-icon-accent:#ea580c] dark:[--card-icon-accent:#fb923c] sm:h-16 sm:w-16"
-                />
-              ) : (
-                <img
-                  src={card.art}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className="h-12 w-12 object-contain sm:h-16 sm:w-16"
-                />
-              )}
-              <div>
-                <p className="text-sm font-semibold sm:text-base">{card.title}</p>
-                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground sm:text-sm">{card.meta}</p>
-              </div>
-            </button>
+            />
           ))}
         </section>
       </div>
