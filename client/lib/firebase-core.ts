@@ -3,6 +3,16 @@ import { connectAuthEmulator, getAuth } from "firebase/auth";
 
 function getRequiredEnv(key: string, value: string | undefined): string {
   if (!value) {
+    // Under vitest, any test that transitively imports this module (via a hook
+    // or service) would otherwise crash at load with a missing-env error — CI's
+    // unit-test step injects no VITE_FIREBASE_* secrets, and a local .env.local
+    // masks it so it only fails in CI. Fall back to inert dummy config in test
+    // mode only; nothing connects to real Firebase in unit tests. This can
+    // never affect a real build: import.meta.env.MODE is 'production'/'development'
+    // there and VITEST is undefined.
+    if (import.meta.env?.MODE === "test" || import.meta.env?.VITEST) {
+      return `test-${key}`;
+    }
     throw new Error(
       `Missing required environment variable: ${key}\n` +
       `Copy .env.example to .env.local and fill in the Firebase config values.`,
