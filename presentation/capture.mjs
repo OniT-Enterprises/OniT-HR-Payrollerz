@@ -26,6 +26,7 @@
  *
  * Demo creds (scripts/seed-demo-tenant.mjs + presentation/prep-demo-*.mjs).
  */
+import './env.mjs';
 import { chromium } from 'playwright';
 import { mkdir, rm, rename } from 'fs/promises';
 import { existsSync } from 'fs';

@@ -11,7 +11,11 @@ const INDEX_PATH = join(BUILD_DIR, "index.html");
 // Raised 308 -> 310 (2026-07-18): marketing grain tile + sanctioned motion
 // utilities in the entry CSS, plus the publicPaths/boot-splash refactor,
 // added ~0.3 KiB gzip. Deliberate features, not creep. Keep this tight.
-const MAX_INITIAL_GZIP_KIB = 310;
+// Raised 310 -> 312 (2026-07-19): locale-prefixed marketing routes (/tet, /pt)
+// + hreflang SEO plumbing live in the entry (routes.tsx, publicLocale,
+// publicPaths); ~0.8 KiB gzip, and CI's Node gzips ~0.8 KiB larger than local.
+// Deliberate feature, not creep. Keep this tight.
+const MAX_INITIAL_GZIP_KIB = 312;
 const FORBIDDEN_INITIAL_CHUNKS = [
   "firebase-firestore",
   "react-pdf",

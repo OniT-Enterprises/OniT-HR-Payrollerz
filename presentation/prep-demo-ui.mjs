@@ -6,6 +6,7 @@
  *
  *   node prep-demo-ui.mjs
  */
+import './env.mjs';
 import { chromium } from 'playwright';
 import { mkdir, rm } from 'fs/promises';
 import { existsSync } from 'fs';

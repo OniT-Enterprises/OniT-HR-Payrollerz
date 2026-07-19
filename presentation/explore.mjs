@@ -1,4 +1,5 @@
 /** Scout authenticated app screens: log in once, screenshot each route. */
+import './env.mjs';
 import { chromium } from 'playwright';
 
 const SITE = process.env.XEFE_URL || 'https://xefe.tl';

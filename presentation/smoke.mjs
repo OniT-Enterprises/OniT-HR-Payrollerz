@@ -1,4 +1,5 @@
 /** Login smoke test: sign into xefe.tl as the demo user, wait for REAL content, screenshot. */
+import './env.mjs';
 import { chromium } from 'playwright';
 
 const ROOT = process.env.XEFE_URL || 'https://xefe.tl';
