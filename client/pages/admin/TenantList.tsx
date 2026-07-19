@@ -18,6 +18,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Building2,
+  Calculator,
   Plus,
   Search,
   Eye,
@@ -30,6 +31,7 @@ import {
   Calendar,
   Database,
 } from "lucide-react";
+import { isAccountantPartnerTenant } from "@/lib/accountantPartners";
 import { useAllTenants, useTenantStats } from "@/hooks/useAdmin";
 import { TenantConfig, TenantStatus } from "@/types/tenant";
 import { OptionalTimestamp } from "@/types/firebase";
@@ -76,6 +78,72 @@ function ModulePillGrid({ features }: { features: TenantConfig["features"] }) {
       })}
     </div>
   );
+}
+
+// Accountant partner firms don't run HR/payroll for a workforce — their
+// workspace is finance tools plus the defining privilege of working across
+// their clients' books. Show that capability profile instead of the generic
+// eight HR module pills so a superadmin reads the tenant for what it is.
+function AccountantCapabilityGrid({ tenant }: { tenant: TenantConfig }) {
+  const chips: { label: string; on: boolean; accent?: boolean }[] = [
+    { label: "Money", on: tenant.features?.money !== false },
+    { label: "Acct", on: tenant.features?.accounting !== false },
+    { label: "Reports", on: tenant.features?.reports !== false },
+    { label: "Clients", on: true, accent: true },
+    { label: "Adv. tax", on: tenant.advancedTaxMode !== false, accent: true },
+  ];
+  return (
+    <div className="flex flex-wrap gap-1 max-w-[220px]">
+      {chips.map((chip) => (
+        <span
+          key={chip.label}
+          className={`rounded px-1.5 py-0.5 text-center text-[10px] font-medium leading-4 ${
+            chip.accent
+              ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
+              : chip.on
+                ? "bg-primary/15 text-primary"
+                : "bg-muted text-muted-foreground/50"
+          }`}
+        >
+          {chip.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// Accountant partners get an indigo calculator mark; everyone else the amber
+// building. Keeps the two tenant kinds instantly distinguishable in the list.
+function TenantIcon({ tenantId }: { tenantId: string }) {
+  if (isAccountantPartnerTenant(tenantId)) {
+    return (
+      <div className="rounded-lg bg-indigo-500/10 p-2">
+        <Calculator className="h-4 w-4 text-indigo-500" />
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-lg bg-amber-500/10 p-2">
+      <Building2 className="h-4 w-4 text-amber-500" />
+    </div>
+  );
+}
+
+function AccountantBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="text-[10px] border-indigo-500/40 text-indigo-600 dark:text-indigo-300"
+    >
+      Accountant
+    </Badge>
+  );
+}
+
+function TenantModules({ tenant }: { tenant: TenantConfig }) {
+  return isAccountantPartnerTenant(tenant.id)
+    ? <AccountantCapabilityGrid tenant={tenant} />
+    : <ModulePillGrid features={tenant.features} />;
 }
 
 function TenantUsersCell({ tenant }: { tenant: TenantConfig }) {
@@ -367,11 +435,12 @@ export default function TenantList() {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3">
-                            <div className="rounded-lg bg-amber-500/10 p-2">
-                              <Building2 className="h-4 w-4 text-amber-500" />
-                            </div>
+                            <TenantIcon tenantId={tenant.id} />
                             <div>
-                              <p className="font-medium">{tenant.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{tenant.name}</p>
+                                {isAccountantPartnerTenant(tenant.id) && <AccountantBadge />}
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 {tenant.legalName || t("admin.tenantList.legalNameNotSet")}
                               </p>
@@ -383,7 +452,7 @@ export default function TenantList() {
                           </Badge>
                         </div>
                         <div className="mt-4 flex flex-wrap items-start gap-4">
-                          <ModulePillGrid features={tenant.features} />
+                          <TenantModules tenant={tenant} />
                           <TenantUsersCell tenant={tenant} />
                         </div>
                         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -430,11 +499,12 @@ export default function TenantList() {
                       <TableRow key={tenant.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-amber-500/10">
-                              <Building2 className="h-4 w-4 text-amber-500" />
-                            </div>
+                            <TenantIcon tenantId={tenant.id} />
                             <div>
-                              <p className="font-medium">{tenant.name}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{tenant.name}</p>
+                                {isAccountantPartnerTenant(tenant.id) && <AccountantBadge />}
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 {tenant.legalName || t("admin.tenantList.legalNameNotSet")}
                               </p>
@@ -448,7 +518,7 @@ export default function TenantList() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <ModulePillGrid features={tenant.features} />
+                          <TenantModules tenant={tenant} />
                         </TableCell>
                         <TableCell>
                           <TenantUsersCell tenant={tenant} />
