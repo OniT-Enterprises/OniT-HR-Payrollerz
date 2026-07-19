@@ -20,7 +20,7 @@ export function FoundingOffer({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-400/[0.09] via-white/[0.02] to-lime-400/[0.07] p-6 sm:p-7",
+        "relative overflow-hidden rounded-2xl border border-amber-400/25 bg-amber-400/[0.04] p-6 sm:p-7",
         className,
       )}
     >

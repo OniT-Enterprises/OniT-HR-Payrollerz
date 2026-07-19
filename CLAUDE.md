@@ -24,7 +24,8 @@ OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, 
 - **State**: React Context + TanStack React Query
 - **Backend**: Firebase (Firestore/Auth)
 - **Server**: Express.js REST API (Xefe API) + OpenClaw bot gateway
-- **Deployment**: Firebase Hosting + Hetzner VPS
+- **Deployment**: Hetzner VPS (nginx static SPA); Firebase for Firestore/Auth/Functions only
+- **Analytics**: GA4 via gtag.js in `index.html` (property `G-WVYDBVTC1P`); relies on GA4 Enhanced Measurement for SPA route views. Marketing UTMs (e.g. `utm_source=tetumdili`) land here.
 
 ## Firebase Configuration
 
@@ -54,12 +55,15 @@ firebase deploy --only hosting       # Deploy hosting only
 
 ## Hetzner VPS
 
-**Production**: payroll.naroman.tl (65.109.173.122)
+**Production**: xefe.tl (65.109.173.122). Served from `/var/www/xefe.tl/dist/spa`.
+`meza.naroman.tl` / `payroll.naroman.tl` now 301 → xefe.tl. The push-to-deploy
+webhook is dead — deploys are the manual build + rsync below.
 
 ```bash
-ssh hetzner
-# Manual deploy:
-npm run build && rsync -avz --delete dist/spa/ hetzner:/var/www/payroll.naroman.tl/dist/spa/
+npm run build   # vite → dist/spa + per-route static heads
+rsync -az --delete --exclude='.well-known' -e "ssh -i ~/.ssh/id_hetzner" \
+  dist/spa/ root@65.109.173.122:/var/www/xefe.tl/dist/spa/
+ssh -i ~/.ssh/id_hetzner root@65.109.173.122 'chown -R www-data:www-data /var/www/xefe.tl/dist/spa'
 ```
 
 ## Key Directories

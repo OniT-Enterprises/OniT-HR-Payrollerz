@@ -1,6 +1,6 @@
 # Xefe Marketing Design Language
 
-_Last updated: 2026-07-18. Scope: the PUBLIC pages — `/`, `/how-it-works`,
+_Last updated: 2026-07-19. Scope: the PUBLIC pages — `/`, `/how-it-works`,
 `/pricing`, `/accountants`, legal pages. The authenticated app is governed by
 `STYLE_GUIDE.md` (calm, no gradients); this document covers the one place
 drama is allowed. Read both before touching public pages._
@@ -83,6 +83,18 @@ diacritics). Distinctiveness comes from treatment, not from adding fonts:
 - Sections: `py-20 lg:py-24`, separated by hairline `border-t`, one eyebrow +
   one H2 + one paragraph before any grid.
 - Numbered steps: oversized ghost numerals (`01…04`) + short titles — keep.
+- **Founding-offer callout** (`components/marketing/FoundingOffer.tsx`): a
+  single-accent gold flat-tint card (`border-amber-400/25 bg-amber-400/[0.04]`,
+  matching the pricing card) — badge + a bold **paragraph** title (not an `<h*>`,
+  so it doesn't disturb the page heading outline) + one solid CTA + fine print.
+  Shown as a band below the Home hero and above the Pricing card. Copy is i18n
+  (`landing.simple.founding.*`). Stays gold-only on both pages — do **not**
+  reintroduce a second accent (see §2, §7).
+- **FAQ accordion** (`components/marketing/MarketingFaq.tsx`): native
+  `<details>`/`<summary>` cards, single page accent, a `Plus` glyph that rotates
+  to `×` on open. Emits **FAQPage JSON-LD via Helmet built from the same visible
+  strings**, so structured data can't drift from the copy. Content in
+  `landing.simple.faq.*` (6 Q&A). No emoji, no gradient — on-palette.
 
 ## 6. Motion
 
@@ -135,3 +147,7 @@ The fastest tells that a site was generated, and therefore banned:
    landing workflow numerals enlarged to the oversized ghost style; off-palette
    blue icon on the payslip block corrected to amber; WhatsApp number updated
    sitewide to +670 7337 1307.
+6. ✅ (2026-07-19) Founding-user offer ("6 months free") callout on Home +
+   Pricing, and a FAQ section on Home with FAQPage schema. Kept single-accent
+   gold — an initial amber→lime gradient on the callout was corrected to a flat
+   amber tint (it broke the one-accent-per-page rule in §2/§7).
