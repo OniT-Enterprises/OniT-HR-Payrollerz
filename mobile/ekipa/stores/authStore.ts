@@ -88,18 +88,25 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    // Best-effort pre-sign-out cleanup, all while the session is still valid:
+    //  - unregister push so the device stops receiving this user's notifications
+    //  - wipe sensitive cached salary/tenant data so nothing lingers on a
+    //    shared device after sign-out
+    //  - drop the Google session so the account picker shows next time
+    // NONE of these may block the actual sign-out: if any rejects, the session
+    // must still be dropped (a prior regression left users signed in when a
+    // pre-clear threw). allSettled ensures each runs and no rejection escapes.
+    const currentUserId = auth.currentUser?.uid;
+    await Promise.allSettled([
+      currentUserId
+        ? unregisterPushNotifications(currentUserId)
+        : Promise.resolve(),
+      usePayslipStore.getState().clearCache(),
+      useTenantStore.getState().clearTenant(),
+      signOutGoogleNative(),
+    ]);
+
     try {
-      const currentUserId = auth.currentUser?.uid;
-      if (currentUserId) {
-        await unregisterPushNotifications(currentUserId);
-      }
-      // Wipe sensitive cached data before dropping the session so salary and
-      // tenant data never linger on a shared device after sign-out. This runs
-      // for every sign-out entry point (profile screen + error screens).
-      await usePayslipStore.getState().clearCache();
-      await useTenantStore.getState().clearTenant();
-      // Also drop the Google session so the account picker shows next time.
-      await signOutGoogleNative();
       await firebaseSignOut(auth);
       set({ user: null, profile: null });
     } catch {

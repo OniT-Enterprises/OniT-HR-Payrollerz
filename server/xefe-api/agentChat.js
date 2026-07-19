@@ -44,6 +44,48 @@ const ALLOWED_FIRST_SEGMENTS = new Set([
   'reports', 'verify', 'fiscal-years',
 ]);
 
+// Per-endpoint-area RBAC. The agent reads through an unrestricted internal
+// service credential, so WITHOUT this it would be a confused deputy: any tenant
+// member (even a viewer/manager the app denies finance access) could ask the bot
+// for payslips, journals, or PII. Each endpoint area maps to the same module the
+// web/firestore.rules gate it behind; the bot must honor the caller's modules.
+// null = no module required (e.g. health/verify).
+const ENDPOINT_AREA_MODULE = {
+  employees: 'staff', departments: 'staff', stats: 'staff',
+  leave: 'timeleave', attendance: 'timeleave',
+  jobs: 'hiring', 'job-applications': 'hiring', interviews: 'hiring', onboarding: 'hiring',
+  payroll: 'payroll',
+  invoices: 'money', bills: 'money', expenses: 'money',
+  accounts: 'accounting', 'journal-entries': 'accounting', journals: 'accounting',
+  'trial-balance': 'accounting', 'fiscal-years': 'accounting',
+  reports: 'reports',
+  verify: null,
+};
+
+// Mirrors client/types/tenant.ts DEFAULT_ROLE_PERMISSIONS — the effective
+// modules a role has when a member carries no explicit per-member module list.
+const DEFAULT_ROLE_MODULES = {
+  owner: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
+  'hr-admin': ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
+  accountant: ['staff', 'timeleave', 'payroll', 'money', 'accounting', 'reports'],
+  manager: ['staff', 'timeleave', 'performance'],
+  viewer: [],
+  superadmin: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
+};
+
+// Whether the caller (req.tenantAccess) may read a given endpoint area.
+function accessAllowsEndpoint(access, endpoint) {
+  const first = String(endpoint).slice(1).split(/[/?]/)[0];
+  const required = ENDPOINT_AREA_MODULE[first];
+  if (required === null || required === undefined) return true; // ungated area
+  if (!access) return false; // fail closed if access wasn't threaded through
+  if (access.isSuperAdmin || access.role === 'owner' || access.role === 'hr-admin') return true;
+  const effective = (Array.isArray(access.modules) && access.modules.length > 0)
+    ? access.modules
+    : (DEFAULT_ROLE_MODULES[access.role] || []);
+  return effective.includes(required);
+}
+
 const STEP_LABELS = [
   [/^\/(employees|departments|stats)/, 'Checking your team'],
   [/^\/payroll/, 'Checking payroll'],
@@ -95,8 +137,16 @@ const SESSION_TTL_MS = 60 * 60 * 1000;
 const MAX_HISTORY_MESSAGES = 12;
 const sessions = new Map(); // `${tenantId}::${sessionKey}` -> { at, messages: [{role, text}] }
 
-function sessionEntry(tenantId, sessionKey) {
-  const id = `${tenantId}::${sessionKey || 'default'}`;
+// Session history is keyed by tenant + USER + sessionKey. userId is essential:
+// sessionKey comes from the client body, so without the uid one member could
+// pass another member's sessionKey and read their conversation history within
+// the tenant. 'anon' only occurs if a caller fails to thread the uid.
+function sessionId(tenantId, userId, sessionKey) {
+  return `${tenantId}::${userId || 'anon'}::${sessionKey || 'default'}`;
+}
+
+function sessionEntry(tenantId, userId, sessionKey) {
+  const id = sessionId(tenantId, userId, sessionKey);
   const now = Date.now();
   for (const [key, value] of sessions) {
     if (now - value.at > SESSION_TTL_MS) sessions.delete(key);
@@ -107,8 +157,8 @@ function sessionEntry(tenantId, sessionKey) {
   return entry;
 }
 
-function rememberTurn(tenantId, sessionKey, userText, assistantText) {
-  const entry = sessionEntry(tenantId, sessionKey);
+function rememberTurn(tenantId, userId, sessionKey, userText, assistantText) {
+  const entry = sessionEntry(tenantId, userId, sessionKey);
   entry.messages.push({ role: 'user', text: userText.slice(0, 1500) });
   entry.messages.push({ role: 'assistant', text: assistantText.slice(0, 1500) });
   if (entry.messages.length > MAX_HISTORY_MESSAGES) {
@@ -116,8 +166,8 @@ function rememberTurn(tenantId, sessionKey, userText, assistantText) {
   }
 }
 
-function clearSession(tenantId, sessionKey) {
-  sessions.delete(`${tenantId}::${sessionKey || 'default'}`);
+function clearSession(tenantId, userId, sessionKey) {
+  sessions.delete(sessionId(tenantId, userId, sessionKey));
 }
 
 // ── Tool: tenant-pinned read-only data access ────────────────────────────
@@ -129,7 +179,7 @@ function validateEndpoint(endpoint) {
   return null;
 }
 
-async function buildXefeMcpServer(tenantId, onToolCall) {
+async function buildXefeMcpServer(tenantId, onToolCall, access) {
   const { tool, createSdkMcpServer } = await loadSdk();
   const { z } = require('zod');
 
@@ -143,6 +193,18 @@ async function buildXefeMcpServer(tenantId, onToolCall) {
       const problem = validateEndpoint(endpoint);
       if (problem) {
         return { content: [{ type: 'text', text: `Error: ${problem}` }], isError: true };
+      }
+      // Enforce the caller's module access — the internal credential below is
+      // unrestricted, so this is the only thing stopping the bot from reading
+      // data the signed-in member is not allowed to see (payslips, financials,
+      // PII). Refuse rather than fetch when the member lacks the module.
+      if (!accessAllowsEndpoint(access, endpoint)) {
+        return {
+          content: [{ type: 'text', text:
+            'Error: you do not have access to this information in Xefe. ' +
+            'Ask an owner or admin if you need it.' }],
+          isError: true,
+        };
       }
       onToolCall?.(endpoint);
       try {
@@ -186,8 +248,8 @@ function systemPrompt(tenantId) {
   ].join('\n');
 }
 
-function buildPrompt(tenantId, sessionKey, message) {
-  const { messages } = sessionEntry(tenantId, sessionKey);
+function buildPrompt(tenantId, userId, sessionKey, message) {
+  const { messages } = sessionEntry(tenantId, userId, sessionKey);
   if (messages.length === 0) return message;
   const transcript = messages
     .map((m) => `${m.role === 'user' ? 'User' : 'XefeBot'}: ${m.text}`)
@@ -196,7 +258,7 @@ function buildPrompt(tenantId, sessionKey, message) {
 }
 
 // ── Core runner ───────────────────────────────────────────────────────────
-async function runOnce({ tenantId, prompt, token, onEvent }) {
+async function runOnce({ tenantId, prompt, token, onEvent, access }) {
   const { query } = await loadSdk();
   const abortController = new AbortController();
   const timeout = setTimeout(() => abortController.abort(), CHAT_TIMEOUT_MS);
@@ -208,7 +270,7 @@ async function runOnce({ tenantId, prompt, token, onEvent }) {
       activeSteps.push(label);
       onEvent?.({ type: 'step', content: label, status: 'active' });
     }
-  });
+  }, access);
 
   const options = {
     model: CHAT_MODEL,
@@ -274,20 +336,20 @@ async function runOnce({ tenantId, prompt, token, onEvent }) {
  * Run one XefeBot chat turn. Emits ChatPanel SSE events via onEvent
  * ({type: status|step|chunk|complete|error}) and returns the final text.
  */
-async function runAgentChat({ tenantId, message, sessionKey, onEvent }) {
+async function runAgentChat({ tenantId, message, sessionKey, onEvent, access, userId }) {
   const tokens = resolveOauthTokens();
   if (tokens.length === 0) throw new Error('Agent chat is not configured');
 
   onEvent?.({ type: 'status', content: 'Thinking...' });
-  const prompt = buildPrompt(tenantId, sessionKey, message);
+  const prompt = buildPrompt(tenantId, userId, sessionKey, message);
 
   let lastError = null;
   for (let i = 0; i < tokens.length; i++) {
     const isLast = i === tokens.length - 1;
     try {
-      const { text, emitted } = await runOnce({ tenantId, prompt, token: tokens[i], onEvent });
+      const { text, emitted } = await runOnce({ tenantId, prompt, token: tokens[i], onEvent, access });
       if (text) {
-        rememberTurn(tenantId, sessionKey, message, text);
+        rememberTurn(tenantId, userId, sessionKey, message, text);
         onEvent?.({ type: 'complete', content: text });
         return text;
       }
@@ -361,4 +423,4 @@ async function runAgentCompose({ systemPrompt: sys, userPrompt }) {
   throw lastError ?? new Error('Compose produced no response');
 }
 
-module.exports = { agentChatEnabled, runAgentChat, runAgentCompose, clearSession };
+module.exports = { agentChatEnabled, runAgentChat, runAgentCompose, clearSession, accessAllowsEndpoint };

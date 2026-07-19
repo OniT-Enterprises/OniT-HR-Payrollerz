@@ -71,6 +71,27 @@ function defaultDueDate(): string {
   return toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
 }
 
+/**
+ * Match an AI-extracted vendor name against the tenant's vendor list.
+ *
+ * Requires an EXACT normalized-equality match. Normalization already strips
+ * case, spacing and punctuation, so "Timor Telecom" still matches
+ * "timortelecom", but a weak substring hit no longer misattaches a bill to an
+ * unrelated vendor (the old code auto-selected on `.includes()`, so
+ * "timortelecom".includes("ti") matched a 2-letter vendor "TI"). When there is
+ * no confident match, returns null so the field is left unselected and the user
+ * picks or adds the vendor.
+ */
+export function matchVendorByName<T extends { id: string; name: string }>(
+  vendors: T[],
+  aiVendorName: string,
+): T | null {
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const target = norm(aiVendorName);
+  if (!target) return null;
+  return vendors.find((v) => norm(v.name) === target) ?? null;
+}
+
 interface QuickBillDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -189,14 +210,11 @@ export default function QuickBillDialog({ open, onOpenChange, initialFiles }: Qu
   };
 
   // Match the extracted vendor name against the vendor list once both exist.
+  // Only auto-select on an exact normalized match — anything weaker is left for
+  // the user to confirm via the "add / pick vendor" prompt below.
   useEffect(() => {
     if (!aiVendorName || vendorId || vendors.length === 0) return;
-    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const target = norm(aiVendorName);
-    if (!target) return;
-    const match =
-      vendors.find((v) => norm(v.name) === target) ??
-      vendors.find((v) => target.includes(norm(v.name)) || norm(v.name).includes(target));
+    const match = matchVendorByName(vendors, aiVendorName);
     if (match) {
       setVendorId(match.id);
       setAiVendorName(null);

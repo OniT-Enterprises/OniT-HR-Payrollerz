@@ -40,6 +40,11 @@ const STANDARD_DAILY_HOURS = 8;
 let _polling = false;
 let _pollTimer: ReturnType<typeof setInterval> | null = null;
 let _syncing = false;
+// Per-batch in-flight guard. The `_syncing` flag only serialises syncAll();
+// the backoff setTimeout retry and manual retry (retryBatch → syncSingleBatch)
+// both call syncBatch() directly, so without this a single batch could be
+// synced by two paths at once and create duplicate attendance records.
+const _inFlight = new Set<string>();
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -97,6 +102,10 @@ function determineStatus(
 async function syncBatch(batch: SyncBatch): Promise<void> {
   if (batch.syncAttempts >= MAX_ATTEMPTS) return;
 
+  // Refuse to sync a batch that is already being synced by another path.
+  if (_inFlight.has(batch.id)) return;
+  _inFlight.add(batch.id);
+
   updateBatchSyncStatus(batch.id, 'uploading');
 
   try {
@@ -118,10 +127,14 @@ async function syncBatch(batch: SyncBatch): Promise<void> {
     if (batch.recordType === 'clock_in') {
       await syncClockInBatch(batch, records, photoUrl);
     } else {
+      // Throws if any worker's matching clock-in hasn't synced yet, so the
+      // batch stays pending/error and retries instead of being marked synced
+      // with zero writes (which would silently drop the whole clock-out).
       await syncClockOutBatch(batch, records, photoUrl);
     }
 
-    // 4. Mark as synced
+    // 4. Mark as synced — only reached when the batch actually wrote/matched
+    //    its records (clock-out throws above otherwise).
     updateBatchSyncStatus(batch.id, 'synced');
 
     // 5. Cleanup local photo
@@ -138,6 +151,8 @@ async function syncBatch(batch: SyncBatch): Promise<void> {
       const delay = BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length - 1)];
       setTimeout(() => syncBatch({ ...batch, syncAttempts: attempt + 1 }), delay);
     }
+  } finally {
+    _inFlight.delete(batch.id);
   }
 }
 
@@ -227,6 +242,8 @@ async function syncClockOutBatch(
   records: PendingClockIn[],
   photoUrl: string | undefined
 ): Promise<void> {
+  const unresolved: string[] = [];
+
   for (const record of records) {
     // Find the existing clock-in record for this employee + date
     const q = query(
@@ -239,7 +256,14 @@ async function syncClockOutBatch(
     );
 
     const snap = await getDocs(q);
-    if (snap.empty) continue;
+    if (snap.empty) {
+      // The matching clock-in batch hasn't synced yet. Skip this worker for
+      // now and mark the whole batch unresolved so it retries — do NOT let the
+      // caller mark it synced, or the clock-out is lost and the worker gets
+      // zero paid hours for the day.
+      unresolved.push(record.employeeId);
+      continue;
+    }
 
     // Use the first matching clock-in record
     const clockInDoc = snap.docs[0];
@@ -262,6 +286,16 @@ async function syncClockOutBatch(
       ...(photoUrl ? { clockOutPhotoUrl: photoUrl } : {}),
       updatedAt: serverTimestamp(),
     });
+  }
+
+  // Any worker whose clock-in hasn't landed yet leaves the batch unresolved.
+  // Throwing keeps it pending/error so it retries after the clock-in syncs
+  // (matched workers above were already updated idempotently, so a retry is
+  // safe). If it never resolves it surfaces via the error count after the cap.
+  if (unresolved.length > 0) {
+    throw new Error(
+      `Clock-out has ${unresolved.length} worker(s) with no synced clock-in yet; retrying`
+    );
   }
 }
 

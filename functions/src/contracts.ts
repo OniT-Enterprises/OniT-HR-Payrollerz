@@ -130,20 +130,52 @@ export const contractQuickFill = onCall(
       }
 
       const result = await response.json();
-      const content = result?.choices?.[0]?.message?.content;
+      const choice = result?.choices?.[0];
+      const finishReason = choice?.finish_reason;
+      const content = choice?.message?.content;
+
+      // A truncated completion (finish_reason "length") yields partial or
+      // malformed JSON. Never fall back to persisting that as the legal
+      // contract — fail loudly so the caller sees a real error.
+      if (finishReason === "length") {
+        logger.error("OpenAI response truncated (finish_reason=length)", {
+          tenantId,
+          templateChars: templateText.length,
+        });
+        throw new HttpsError(
+          "resource-exhausted",
+          "The contract template is too large to fill in one pass. Please shorten the template or split it into sections and try again."
+        );
+      }
 
       if (!content) {
-        logger.error("No content in OpenAI response", { tenantId });
+        logger.error("No content in OpenAI response", {
+          tenantId,
+          finishReason,
+        });
         throw new HttpsError("internal", "No response content from AI");
       }
 
+      // Parse strictly: on malformed JSON or a missing/non-string contract
+      // field, throw rather than persisting the raw (possibly partial) text.
       let contract: string;
       try {
         const parsed = JSON.parse(content);
-        contract =
-          typeof parsed?.contract === "string" ? parsed.contract : content;
-      } catch {
-        contract = content;
+        if (typeof parsed?.contract !== "string") {
+          throw new Error("AI response missing a 'contract' string field");
+        }
+        contract = parsed.contract;
+      } catch (parseError) {
+        logger.error("Failed to parse AI contract response", {
+          tenantId,
+          finishReason,
+          error:
+            parseError instanceof Error ? parseError.message : "parse error",
+        });
+        throw new HttpsError(
+          "internal",
+          "AI returned a malformed contract. Please try again."
+        );
       }
 
       if (!contract.trim()) {

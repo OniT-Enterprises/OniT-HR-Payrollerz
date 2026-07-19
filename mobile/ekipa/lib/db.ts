@@ -189,8 +189,12 @@ export function insertClockIn(record: PendingClockIn): void {
 
 export function getPendingBatches(): SyncBatch[] {
   const db = getDb();
+  // Oldest-first: the sync engine processes batches in this order, and a
+  // clock-out batch can only resolve once its earlier clock-in batch has
+  // landed in Firestore. Syncing newest-first would run the clock-out before
+  // its clock-in and permanently drop the clock-out (zero paid hours).
   const rows = db.getAllSync<SyncBatchRow>(
-    `SELECT * FROM sync_batches WHERE sync_status IN ('pending', 'error') ORDER BY created_at DESC`
+    `SELECT * FROM sync_batches WHERE sync_status IN ('pending', 'error') ORDER BY created_at ASC`
   );
   return rows.map(mapBatchRow);
 }
@@ -270,23 +274,28 @@ export function updateBatchSyncStatus(
   error?: string
 ): void {
   const db = getDb();
+  // Count exactly one attempt per real round-trip: increment only on the
+  // 'uploading' (start) transition. syncBatch also calls this on the 'error'
+  // and 'synced' transitions of the same attempt, which must NOT re-increment
+  // (a double bump would exhaust the retry cap in half the tries and strand
+  // offline batches).
   db.runSync(
     `UPDATE sync_batches SET
       sync_status = ?,
       sync_error = ?,
-      sync_attempts = sync_attempts + 1,
+      sync_attempts = sync_attempts + CASE WHEN ? = 'uploading' THEN 1 ELSE 0 END,
       synced_at = CASE WHEN ? = 'synced' THEN datetime('now') ELSE synced_at END
     WHERE id = ?`,
-    [status, error ?? null, status, batchId]
+    [status, error ?? null, status, status, batchId]
   );
   db.runSync(
     `UPDATE pending_clockins SET
       sync_status = ?,
       sync_error = ?,
-      sync_attempts = sync_attempts + 1,
+      sync_attempts = sync_attempts + CASE WHEN ? = 'uploading' THEN 1 ELSE 0 END,
       synced_at = CASE WHEN ? = 'synced' THEN datetime('now') ELSE synced_at END
     WHERE batch_id = ?`,
-    [status, error ?? null, status, batchId]
+    [status, error ?? null, status, status, batchId]
   );
 }
 

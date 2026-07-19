@@ -4813,6 +4813,8 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
         tenantId,
         message: trimmedMessage,
         sessionKey: sanitizeSessionKey(sessionKey || 'default'),
+        access: req.tenantAccess,
+        userId: req.user.uid,
       });
       return res.json({ success: true, reply, actions: [], requestId });
     } catch (error) {
@@ -5068,6 +5070,8 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
         message: trimmedMessage,
         sessionKey: sanitizeSessionKey(sessionKey || 'default'),
         onEvent: sendEvent,
+        access: req.tenantAccess,
+        userId: req.user.uid,
       });
     } catch (error) {
       console.error(`[agent-chat] ${requestId} stream failed:`, error.message);

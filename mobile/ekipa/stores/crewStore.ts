@@ -18,6 +18,7 @@ import {
   getTodayClockInsWithoutClockOut,
 } from '../lib/db';
 import { syncAll } from '../lib/syncEngine';
+import { nowDiliHHMM, todayDiliYYYYMMDD } from '../lib/dateInput';
 import type {
   CrewMember,
   SyncBatch,
@@ -27,16 +28,6 @@ import type {
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
-
-function nowHHMM(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function todayYYYYMMDD(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function getErrorMessage(error: unknown): string | undefined {
@@ -100,7 +91,7 @@ export const useCrewStore = create<CrewState>((set, get) => ({
   selectedWorkerIds: new Set(),
   currentSiteId: null,
   currentSiteName: null,
-  currentDate: todayYYYYMMDD(),
+  currentDate: todayDiliYYYYMMDD(),
   currentPhoto: null,
   currentLocation: null,
   clockInMode: 'clock_in',
@@ -192,7 +183,7 @@ export const useCrewStore = create<CrewState>((set, get) => ({
 
     try {
       const batchId = generateId();
-      const time = nowHHMM();
+      const time = nowDiliHHMM();
 
       // Create batch record
       const batch: SyncBatch = {

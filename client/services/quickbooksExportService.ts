@@ -23,7 +23,7 @@ import type {
   QBExportLog,
   QBExportOptions,
 } from '@/types/quickbooks';
-import { addMoney, roundMoney, sumMoney, multiplyMoney } from '@/lib/currency';
+import { addMoney, roundMoney, sumMoney, multiplyMoney, subtractMoney, maxMoney } from '@/lib/currency';
 
 // ============================================
 // JOURNAL ENTRY BUILDER
@@ -33,10 +33,11 @@ interface PayrollTotals {
   grossPay: number;
   baseSalary: number;
   overtime: number;
-  allowances: number;
+  allowances: number;       // All cash earnings that are not base or overtime
   wit: number;              // Income tax (WIT 10%)
   inssEmployee: number;     // INSS 4%
   inssEmployer: number;     // INSS 6%
+  otherDeductions: number;  // Loan/advance repayments, court orders, benefits, etc.
   netPay: number;
   employeeCount: number;
   byDepartment?: Map<string, PayrollTotals>;
@@ -57,6 +58,7 @@ function aggregatePayrollTotals(
     wit: 0,
     inssEmployee: 0,
     inssEmployer: 0,
+    otherDeductions: 0,
     netPay: 0,
     employeeCount: records.length,
     byDepartment: groupByDepartment ? new Map() : undefined,
@@ -72,46 +74,67 @@ function aggregatePayrollTotals(
       : (record as PayrollRecord).totalGrossPay;
     totals.grossPay = addMoney(totals.grossPay, grossPay);
 
-    // Base salary vs overtime
+    // Split the FULL gross across base salary, overtime, and everything else so
+    // the wage-expense debit reconciles to gross wages, no matter which earning
+    // types a record carries (allowances, bonus, subsidio anual, night/holiday/
+    // rest premiums, service compensation, per diem, transport/food, ...).
+    // Whatever isn't plain regular or overtime pay falls into the allowances /
+    // other-earnings bucket, so base + overtime + allowances always equals
+    // gross. This mirrors buildPayrollJournalLines, which debits the full gross
+    // (client/lib/accounting/calculations.ts).
+    let baseSalary: number;
+    let overtime: number;
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
-      totals.baseSalary = addMoney(totals.baseSalary, tlRecord.monthlySalary || 0);
-      totals.overtime = addMoney(totals.overtime, multiplyMoney((tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0), 1.5));
+      baseSalary = tlRecord.monthlySalary || 0;
+      overtime = multiplyMoney((tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0), 1.5);
     } else {
       const genRecord = record as PayrollRecord;
-      const regularPay = genRecord.earnings?.find(e => e.type === 'regular')?.amount || 0;
-      const overtimePay = genRecord.earnings?.find(e => e.type === 'overtime')?.amount || 0;
-      totals.baseSalary = addMoney(totals.baseSalary, regularPay);
-      totals.overtime = addMoney(totals.overtime, overtimePay);
+      baseSalary = genRecord.earnings?.find(e => e.type === 'regular')?.amount || 0;
+      overtime = genRecord.earnings?.find(e => e.type === 'overtime')?.amount || 0;
     }
-
-    // Allowances (estimate from the difference)
-    const allowances = isTLRecord ? 0 : 0; // Will need to enhance if tracking allowances
+    // Keep the split within gross so no component goes negative and the three
+    // always sum to gross (the raw base/overtime can exceed gross when e.g. a
+    // monthly salary is reduced by unpaid absence).
+    baseSalary = maxMoney(0, Math.min(baseSalary, grossPay));
+    overtime = maxMoney(0, Math.min(overtime, subtractMoney(grossPay, baseSalary)));
+    const allowances = subtractMoney(grossPay, baseSalary, overtime);
+    totals.baseSalary = addMoney(totals.baseSalary, baseSalary);
+    totals.overtime = addMoney(totals.overtime, overtime);
     totals.allowances = addMoney(totals.allowances, allowances);
 
-    // Tax deductions
+    // Tax deductions (map generic federal tax -> WIT, social security -> INSS)
+    let wit: number;
+    let inssEmployee: number;
+    let inssEmployer: number;
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
-      totals.wit = addMoney(totals.wit, tlRecord.incomeTax || 0);
-      totals.inssEmployee = addMoney(totals.inssEmployee, tlRecord.inssEmployee || 0);
-      totals.inssEmployer = addMoney(totals.inssEmployer, tlRecord.inssEmployer || 0);
+      wit = tlRecord.incomeTax || 0;
+      inssEmployee = tlRecord.inssEmployee || 0;
+      inssEmployer = tlRecord.inssEmployer || 0;
     } else {
-      // Generic record - map federal tax to WIT, social security to INSS
       const genRecord = record as PayrollRecord;
-      const incomeTax = genRecord.deductions?.find(d => d.type === 'income_tax')?.amount || 0;
-      const inssEmployee = genRecord.deductions?.find(d => d.type === 'inss_employee')?.amount || 0;
-      totals.wit = addMoney(totals.wit, incomeTax);
-      totals.inssEmployee = addMoney(totals.inssEmployee, inssEmployee);
-      // Employer contributions
-      const employerINSS = genRecord.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0;
-      totals.inssEmployer = addMoney(totals.inssEmployer, employerINSS);
+      wit = genRecord.deductions?.find(d => d.type === 'income_tax')?.amount || 0;
+      inssEmployee = genRecord.deductions?.find(d => d.type === 'inss_employee')?.amount || 0;
+      inssEmployer = genRecord.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0;
     }
+    totals.wit = addMoney(totals.wit, wit);
+    totals.inssEmployee = addMoney(totals.inssEmployee, inssEmployee);
+    totals.inssEmployer = addMoney(totals.inssEmployer, inssEmployer);
 
     // Net pay
     const netPay = isTLRecord
       ? (record as TLPayrollRecord).netPay
       : (record as PayrollRecord).netPay;
     totals.netPay = addMoney(totals.netPay, netPay);
+
+    // Every remaining reduction to take-home pay (loan/advance repayments, court
+    // orders, benefit contributions, etc.) must still be credited or the journal
+    // will not balance. Derive it from the record's own gross and net so the
+    // credit side always equals gross wages by construction:
+    //   net + WIT + employee INSS + other == gross.
+    const otherDeductions = maxMoney(0, subtractMoney(grossPay, netPay, wit, inssEmployee));
+    totals.otherDeductions = addMoney(totals.otherDeductions, otherDeductions);
 
     // Department grouping
     if (groupByDepartment && totals.byDepartment) {
@@ -125,6 +148,7 @@ function aggregatePayrollTotals(
           wit: 0,
           inssEmployee: 0,
           inssEmployer: 0,
+          otherDeductions: 0,
           netPay: 0,
           employeeCount: 0,
         });
@@ -181,14 +205,15 @@ function buildJournalLines(
     });
   }
 
-  // Allowances expense
+  // Allowances / other earnings expense (bonus, subsidio anual, night/holiday/
+  // rest premiums, service compensation, per diem, transport/food, ...)
   if (totals.allowances > 0) {
     lines.push({
       accountCode: '5160',
       accountName: getAccountName('5160'),
       debit: roundMoney(totals.allowances),
       credit: 0,
-      memo: 'Allowances',
+      memo: 'Allowances and other earnings',
       className: 'Payroll',
     });
   }
@@ -239,6 +264,20 @@ function buildJournalLines(
       debit: 0,
       credit: roundMoney(totals.inssEmployer),
       memo: 'INSS employer (6%)',
+      className: 'Payroll',
+    });
+  }
+
+  // Other Payroll Deductions Payable (loan/advance repayments, court orders,
+  // benefit contributions, etc.) — required for the entry to balance whenever a
+  // record withholds anything beyond WIT and employee INSS.
+  if (totals.otherDeductions > 0) {
+    lines.push({
+      accountCode: '2260',
+      accountName: getAccountName('2260'),
+      debit: 0,
+      credit: roundMoney(totals.otherDeductions),
+      memo: 'Other payroll deductions',
       className: 'Payroll',
     });
   }
@@ -494,6 +533,13 @@ export function getDefaultMappings(): QBAccountMapping[] {
       onitAccountCode: '2250',
       onitAccountName: 'Subsidio Anual Accrued',
       qbAccountName: 'Payroll Liabilities:13th Month Accrual',
+      accountType: 'liability',
+      isDefault: true,
+    },
+    {
+      onitAccountCode: '2260',
+      onitAccountName: 'Other Payroll Deductions Payable',
+      qbAccountName: 'Payroll Liabilities:Other Deductions',
       accountType: 'liability',
       isDefault: true,
     },

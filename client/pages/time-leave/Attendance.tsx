@@ -86,6 +86,67 @@ function normalizeImportHeader(value: string): string {
   return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
 }
 
+/**
+ * Parse a clock time from an import cell into 24-hour "HH:MM", or null when the
+ * cell isn't a time we can trust.
+ *
+ * Handles plain 24h ("17:00", "9:05" -> "09:05") and 12h values with a
+ * meridiem ("5:00 PM" -> "17:00", "5:00pm" -> "17:00", "12:00 AM" -> "00:00").
+ *
+ * The old strict check used an UNANCHORED /^\d{1,2}:\d{2}/ and then sliced the
+ * first 5 characters, so "5:00 PM" matched, dropped the meridiem, and became
+ * "05:00" — a silent 12-hour error. This anchors the pattern and converts the
+ * meridiem instead of discarding it.
+ */
+export function parseImportTime(raw: string): string | null {
+  const value = (raw ?? "").trim();
+  if (!value) return null;
+  const match = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?$/);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (minute > 59) return null;
+  const meridiem = match[3]?.toLowerCase();
+  if (meridiem) {
+    if (hour < 1 || hour > 12) return null;
+    if (meridiem === "am") hour = hour === 12 ? 0 : hour;
+    else hour = hour === 12 ? 12 : hour + 12;
+  } else if (hour > 23) {
+    return null;
+  }
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+export type SkippedImportReason = "employee" | "date" | "time";
+
+export interface SkippedImportRow {
+  /** 1-based row number in the source file (the header counts as row 1). */
+  rowNumber: number;
+  reason: SkippedImportReason;
+  /** The offending value, so the admin can find and fix the row. */
+  detail: string;
+}
+
+/**
+ * Build a one-line, human summary of the rows an import dropped, e.g.
+ * "45 of 120 rows were skipped and not imported: 20 with no matching employee,
+ * 15 with an invalid date, 10 with an invalid time." Returns "" when nothing
+ * was skipped. Kept pure so the silent-loss behaviour can be unit-tested.
+ */
+export function describeSkippedImport(
+  skipped: SkippedImportRow[],
+  totalRows: number,
+): string {
+  if (skipped.length === 0) return "";
+  const counts: Record<SkippedImportReason, number> = { employee: 0, date: 0, time: 0 };
+  for (const row of skipped) counts[row.reason] += 1;
+  const parts: string[] = [];
+  if (counts.employee) parts.push(`${counts.employee} with no matching employee`);
+  if (counts.date) parts.push(`${counts.date} with an invalid date`);
+  if (counts.time) parts.push(`${counts.time} with an invalid time`);
+  return `${skipped.length} of ${totalRows} rows were skipped and not imported: ${parts.join(", ")}.`;
+}
+
 function excelCellText(value: unknown): string {
   if (value instanceof Date) {
     const year = value.getFullYear();
@@ -237,6 +298,23 @@ export default function Attendance() {
   // Import data
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
+  // Rows the last import dropped (bad date/time or no employee match), surfaced
+  // so an admin never silently loses rows from a fingerprint/CSV export.
+  const [skippedRows, setSkippedRows] = useState<SkippedImportRow[]>([]);
+  const [skippedTotal, setSkippedTotal] = useState(0);
+
+  const skipReasonLabel = (reason: SkippedImportReason) => {
+    switch (reason) {
+      case "employee":
+        return t("timeLeave.attendance.import.skipEmployee") || "no matching employee";
+      case "date":
+        return t("timeLeave.attendance.import.skipDate") || "invalid date";
+      case "time":
+        return t("timeLeave.attendance.import.skipTime") || "invalid time";
+      default:
+        return reason;
+    }
+  };
 
   // Format date for display
   const formatDateLabel = (dateStr: string) => {
@@ -503,6 +581,8 @@ export default function Attendance() {
 
     try {
       setImporting(true);
+      setSkippedRows([]);
+      setSkippedTotal(0);
 
       const rows = await parseAttendanceImport(importFile);
 
@@ -535,13 +615,26 @@ export default function Attendance() {
         return "";
       };
 
+      // Rows that fail parsing/matching are collected with a reason instead of
+      // being silently dropped, so the admin sees exactly what didn't import.
+      const skipped: SkippedImportRow[] = [];
+      let rowNumber = 1; // header is row 1; data rows start at 2
       for (const row of rows) {
+        rowNumber += 1;
         const importedDate = readValue(row, "date", "work_date");
         const importedClockIn = readValue(row, "clock_in", "clockin", "check_in");
         const importedClockOut = readValue(row, "clock_out", "clockout", "check_out");
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(importedDate) || !/^\d{1,2}:\d{2}/.test(importedClockIn)) {
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(importedDate)) {
+          skipped.push({ rowNumber, reason: "date", detail: importedDate || "(empty)" });
           continue;
         }
+        const clockIn = parseImportTime(importedClockIn);
+        if (!clockIn) {
+          skipped.push({ rowNumber, reason: "time", detail: importedClockIn || "(empty)" });
+          continue;
+        }
+        const clockOut = importedClockOut ? parseImportTime(importedClockOut) ?? "" : "";
 
         // Find employee
         let employee: Employee | undefined;
@@ -563,11 +656,18 @@ export default function Attendance() {
             department,
             departmentId: departments.find((item) => item.name === department)?.id,
             date: importedDate,
-            clockIn: importedClockIn.slice(0, 5),
-            clockOut: importedClockOut ? importedClockOut.slice(0, 5) : "",
+            clockIn,
+            clockOut,
+          });
+        } else {
+          skipped.push({
+            rowNumber,
+            reason: "employee",
+            detail: importedName || importedEmployeeId || "(no name/ID)",
           });
         }
       }
+      let totalRows = rows.length;
 
       // Strict parse found nothing usable — let XefeBot normalize the messy
       // file server-side (any columns, date or time formats), then run the
@@ -578,12 +678,25 @@ export default function Attendance() {
           const tableText = await fileToTableText(importFile);
           if (tableText.trim()) {
             const aiRows = await extractTable(tableText, tenantId, "attendance");
+            // The AI re-parsed the whole file, so strict-pass skips no longer
+            // apply — track the AI pass's own no-match drops instead.
+            skipped.length = 0;
+            totalRows = aiRows.length;
+            let aiRowNumber = 0;
             for (const row of aiRows) {
+              aiRowNumber += 1;
               const employee =
                 employeesById.get(row.employee) ||
                 employeesByJobId.get(row.employee) ||
                 employeesByName.get(row.employee.toLowerCase());
-              if (!employee) continue;
+              if (!employee) {
+                skipped.push({
+                  rowNumber: aiRowNumber,
+                  reason: "employee",
+                  detail: row.employee || "(no name/ID)",
+                });
+                continue;
+              }
               const department = employee.jobDetails.department;
               records.push({
                 employeeId: employee.id!,
@@ -602,13 +715,20 @@ export default function Attendance() {
         }
       }
 
+      // Surface skipped rows (in-dialog list) regardless of the outcome below.
+      setSkippedRows(skipped);
+      setSkippedTotal(totalRows);
+      const skippedSummary = describeSkippedImport(skipped, totalRows);
+
       if (records.length === 0) {
         toast({
           title: t("timeLeave.attendance.toast.importErrorTitle"),
-          description: t("timeLeave.attendance.toast.importEmpty"),
+          description: skippedSummary
+            ? `${t("timeLeave.attendance.toast.importEmpty")} ${skippedSummary}`
+            : t("timeLeave.attendance.toast.importEmpty"),
           variant: "destructive",
         });
-        return;
+        return; // keep the dialog open so the skipped list stays visible
       }
 
       if (usedAi) {
@@ -624,20 +744,28 @@ export default function Attendance() {
         importedBy: user?.uid || "unknown",
       });
 
+      const importCompleteDesc = t("timeLeave.attendance.toast.importCompleteDesc", {
+        success: result.stats.success,
+        duplicates: result.stats.duplicates,
+        errors: result.stats.errors,
+      });
       toast({
         title: t("timeLeave.attendance.toast.importCompleteTitle"),
-        description: t("timeLeave.attendance.toast.importCompleteDesc", {
-          success: result.stats.success,
-          duplicates: result.stats.duplicates,
-          errors: result.stats.errors,
-        }),
+        description: skippedSummary
+          ? `${importCompleteDesc} ${skippedSummary}`
+          : importCompleteDesc,
+        variant: skipped.length > 0 ? "destructive" : undefined,
       });
 
       // Invalidate attendance queries to refetch
       queryClient.invalidateQueries({ queryKey: attendanceKeys.all(tenantId) });
 
       setImportFile(null);
-      setShowImportDialog(false);
+      // Keep the dialog open when rows were skipped so the admin can review the
+      // list; otherwise close as before.
+      if (skipped.length === 0) {
+        setShowImportDialog(false);
+      }
     } catch (error) {
       console.error("Import error:", error);
       toast({
@@ -851,8 +979,17 @@ export default function Attendance() {
         />
 
         {/* Import Dialog */}
-        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-          <DialogContent>
+        <Dialog
+          open={showImportDialog}
+          onOpenChange={(open) => {
+            setShowImportDialog(open);
+            if (!open) {
+              setSkippedRows([]);
+              setSkippedTotal(0);
+            }
+          }}
+        >
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {t("timeLeave.attendance.import.title")}
@@ -867,15 +1004,47 @@ export default function Attendance() {
                 <Input
                   type="file"
                   accept=".csv,.xlsx"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    setImportFile(e.target.files?.[0] || null);
+                    setSkippedRows([]);
+                    setSkippedTotal(0);
+                  }}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   {t("timeLeave.attendance.import.format")}
                 </p>
               </div>
+
+              {skippedRows.length > 0 && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
+                  <p className="text-sm font-medium text-foreground">
+                    {(
+                      t("timeLeave.attendance.import.skippedSummary") ||
+                      "{{count}} of {{total}} rows were skipped and not imported"
+                    )
+                      .replace("{{count}}", String(skippedRows.length))
+                      .replace("{{total}}", String(skippedTotal))}
+                  </p>
+                  <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+                    {skippedRows.map((skippedRow, index) => (
+                      <li key={`${skippedRow.rowNumber}-${index}`}>
+                        {(t("timeLeave.attendance.import.rowLabel") || "Row")} {skippedRow.rowNumber}: {skipReasonLabel(skippedRow.reason)}
+                        {skippedRow.detail ? ` — ${skippedRow.detail}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setSkippedRows([]);
+                  setSkippedTotal(0);
+                }}
+              >
                 {t("timeLeave.attendance.actions.cancel")}
               </Button>
               <Button onClick={handleImportFile} disabled={importing || !importFile}>

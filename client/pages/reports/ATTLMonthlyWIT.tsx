@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ReportCardHeader } from "@/components/reports/ReportLayout";
@@ -275,15 +276,20 @@ export default function ATTLMonthlyWIT() {
       selectedReturn.totalWITWithheld.toFixed(2),
     ]);
 
-    const csvContent = [
-      // Header info
-      `${t("reports.attlMonthlyWit.csv.employer")}: ${selectedReturn.employerName}`,
-      `${t("reports.attlMonthlyWit.csv.tinLabel")}: ${selectedReturn.employerTIN}`,
-      `${t("reports.attlMonthlyWit.csv.period")}: ${selectedReturn.reportingPeriod}`,
-      "",
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
-    ].join("\n");
+    // Escape every field via papaparse so a comma, quote, or newline in an
+    // employee/company name cannot corrupt the CSV. The header info lines are
+    // single-column rows; the table is a ragged block below them.
+    const csvContent = Papa.unparse(
+      [
+        [`${t("reports.attlMonthlyWit.csv.employer")}: ${selectedReturn.employerName}`],
+        [`${t("reports.attlMonthlyWit.csv.tinLabel")}: ${selectedReturn.employerTIN}`],
+        [`${t("reports.attlMonthlyWit.csv.period")}: ${selectedReturn.reportingPeriod}`],
+        [],
+        headers,
+        ...rows,
+      ],
+      { newline: "\n" },
+    );
 
     // Download
     const blob = new Blob(["\uFEFF" + csvContent], {

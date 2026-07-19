@@ -33,3 +33,20 @@ export function isValidISODate(dateStr: string): boolean {
     date.getDate() === d
   );
 }
+
+// Asia/Dili is a fixed UTC+9 offset (no DST). Attendance stamps must reflect
+// Dili wall-clock time, not the device's timezone — a phone left on another
+// timezone would otherwise record the wrong day/time for payroll.
+const DILI_OFFSET_MS = 9 * 60 * 60 * 1_000;
+
+/** Today's date as YYYY-MM-DD in Asia/Dili (UTC+9), regardless of device tz. */
+export function todayDiliYYYYMMDD(): string {
+  const d = new Date(Date.now() + DILI_OFFSET_MS);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+/** Current time as HH:MM in Asia/Dili (UTC+9), regardless of device tz. */
+export function nowDiliHHMM(): string {
+  const d = new Date(Date.now() + DILI_OFFSET_MS);
+  return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+}

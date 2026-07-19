@@ -6,6 +6,8 @@
  * fill path (contractQuickFill cloud function), not here.
  */
 
+import { getTodayTL } from "@/lib/dateUtils";
+
 export interface ContractFillData {
   employee: Record<string, string>;
   company: Record<string, string>;
@@ -181,7 +183,9 @@ export function buildContractFillData(params: {
       email: company?.email || "",
     },
     contract: {
-      date: toDisplayDate(new Date().toISOString().slice(0, 10)),
+      // TL-local (Asia/Dili, UTC+9) calendar date. Using UTC here would render
+      // yesterday's date on the contract between 00:00–09:00 Dili time.
+      date: toDisplayDate(getTodayTL()),
     },
   };
 }

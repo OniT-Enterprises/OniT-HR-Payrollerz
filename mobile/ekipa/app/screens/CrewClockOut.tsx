@@ -36,6 +36,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { useCrewStore } from '../../stores/crewStore';
 import { compressPhoto, savePhotoLocally } from '../../lib/photoUtils';
+import { nowDiliHHMM } from '../../lib/dateInput';
 import { WorkerCheckRow } from '../../components/WorkerCheckRow';
 import { Card } from '../../components/Card';
 import { EmptyState } from '../../components/EmptyState';
@@ -243,11 +244,6 @@ export default function CrewClockOutScreen() {
     );
   };
 
-  const nowHHMM = () => {
-    const d = new Date();
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
-
   const renderStep3 = () => (
     <ScrollView style={styles.stepContent} contentContainerStyle={{ gap: 16 }}>
       <SectionLabel style={styles.stepLabel}>{t('crew.reviewSubmit')}</SectionLabel>
@@ -259,7 +255,7 @@ export default function CrewClockOutScreen() {
         </View>
         <View style={styles.reviewRow}>
           <Text style={styles.reviewLabel}>{t('crew.clockOutTime')}</Text>
-          <Text style={styles.reviewValue}>{nowHHMM()}</Text>
+          <Text style={styles.reviewValue}>{nowDiliHHMM()}</Text>
         </View>
         <View style={styles.reviewRow}>
           <Text style={styles.reviewLabel}>{t('crew.workers')}</Text>
@@ -280,7 +276,7 @@ export default function CrewClockOutScreen() {
               {w.firstName} {w.lastName}
             </Text>
             <Text style={styles.reviewWorkerDept}>
-              {getClockInTime(w.employeeId)} → {nowHHMM()}
+              {getClockInTime(w.employeeId)} → {nowDiliHHMM()}
             </Text>
           </View>
         ))}
