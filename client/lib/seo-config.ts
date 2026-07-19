@@ -67,6 +67,22 @@ export const seoConfig = {
       },
     },
   },
+  security: {
+    title: 'Security — How Xefe Protects Your Business',
+    description: "Server-enforced tenant isolation, two-person payroll approval, tamper-protected billing, daily backups with point-in-time recovery, and a rules test suite that runs before every deploy.",
+    keywords: 'Xefe security, payroll data security, Timor-Leste payroll privacy, data protection',
+    url: '/security',
+    alternates: {
+      tet: {
+        title: 'Seguransa — Oinsá Xefe Proteje Ita-nia Negósiu',
+        description: "Izolamentu tenant iha servidor, aprovasaun folha ho ema rua, kobransa protejidu, backup loron-loron ho rekuperasaun point-in-time, no teste regra-seguransa molok kada deploy.",
+      },
+      pt: {
+        title: 'Segurança — Como o Xefe Protege o Seu Negócio',
+        description: "Isolamento por empresa imposto no servidor, aprovação de folha a duas pessoas, faturação protegida, backups diários com recuperação pontual e uma suite de regras testada antes de cada deploy.",
+      },
+    },
+  },
   engine: {
     title: 'The Xefe Engine — Verified Timor-Leste Payroll & Accounting',
     description: "Inside Xefe's payroll and accounting engine: Timor-Leste labour, tax and INSS law implemented rule by rule, checked against real-world practice and official tax-authority assessments to the cent.",
@@ -295,6 +311,12 @@ export const seoConfig = {
     description: 'Create and manage journal entries for financial transactions.',
     keywords: 'journal entries, accounting entries, bookkeeping',
     url: '/accounting/journal',
+  },
+  fixedAssets: {
+    title: 'Fixed Assets',
+    description: 'Fixed-asset register with straight-line depreciation schedules, monthly posting and disposals.',
+    keywords: 'fixed assets, depreciation, asset register',
+    url: '/accounting/fixed-assets',
   },
   generalLedger: {
     title: 'General Ledger',

@@ -13,7 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.processRecurringInvoices = void 0;
+exports.processRecurringInvoices = exports.TL_TIMEZONE = void 0;
+exports.getTodayTL = getTodayTL;
+exports.fiscalPeriodIsOpenOrMissing = fiscalPeriodIsOpenOrMissing;
+exports.allocateNextJournalEntryNumber = allocateNextJournalEntryNumber;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const firestore_1 = require("firebase-admin/firestore");
 const v2_1 = require("firebase-functions/v2");
@@ -22,13 +25,13 @@ const db = (0, firestore_1.getFirestore)();
 // ────────────────────────────────────────────
 // Date helpers (Timor-Leste, UTC+9)
 // ────────────────────────────────────────────
-const TL_TIMEZONE = "Asia/Dili";
+exports.TL_TIMEZONE = "Asia/Dili";
 function formatDateISO_TL(date) {
     return new Intl.DateTimeFormat("en-CA", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
-        timeZone: TL_TIMEZONE,
+        timeZone: exports.TL_TIMEZONE,
     }).format(date);
 }
 function getTodayTL() {
@@ -493,7 +496,7 @@ async function attemptAutoSendInvoice(tenantId, invoiceId, todayTL, resolvedAcco
  */
 exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
     schedule: "15 0 * * *", // 00:15 every day
-    timeZone: TL_TIMEZONE,
+    timeZone: exports.TL_TIMEZONE,
     region: "asia-southeast1",
 }, async () => {
     const todayTL = getTodayTL();

@@ -263,6 +263,15 @@ async function writeAdminAudit(entry) {
         firebase_functions_1.logger.warn("Failed to write admin audit entry:", error);
     }
 }
+/** Escape the small set of HTML-significant characters for interpolation. */
+function esc(value) {
+    return (value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;");
+}
 /**
  * Generates a Firebase password reset link and queues it on the `mail`
  * collection (sent via Resend by sendQueuedEmail).
@@ -270,7 +279,7 @@ async function writeAdminAudit(entry) {
 async function queuePasswordSetupEmail(params) {
     const resetLink = await (0, auth_1.getAuth)().generatePasswordResetLink(params.email);
     const orgLine = params.tenantName
-        ? `<p>You have been given access to <strong>${params.tenantName}</strong> on Xefe.</p>`
+        ? `<p>You have been given access to <strong>${esc(params.tenantName)}</strong> on Xefe.</p>`
         : "";
     const subject = params.isNewUser
         ? params.tenantName

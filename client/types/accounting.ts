@@ -104,7 +104,9 @@ export type JournalEntrySource =
   | 'receipt'
   | 'adjustment'
   | 'closing'
-  | 'opening';
+  | 'opening'
+  | 'recurring'
+  | 'depreciation';
 
 export interface JournalEntry {
   id?: string;
@@ -167,6 +169,97 @@ export interface JournalEntryLine {
   departmentId?: string;
   employeeId?: string;
   projectId?: string;
+}
+
+// ============================================
+// RECURRING JOURNAL TEMPLATES
+// ============================================
+// A saved journal entry that the scheduler (functions/src/accounting.ts,
+// processRecurringJournals) posts automatically every month: rent accruals,
+// insurance amortization, depreciation overrides, etc. Templates are created
+// from an existing entry ("Make recurring…" in Journal Entries).
+
+export interface RecurringJournalTemplate {
+  id?: string;
+  name: string;                 // Shown as the posted entry's description
+  lines: JournalEntryLine[];    // Must balance; copied verbatim to each posting
+  totalDebit: number;
+  totalCredit: number;
+
+  frequency: 'monthly';         // v1: monthly only
+  dayOfMonth: number;           // 1–31; clamped to each month's length
+  nextRunDate: string;          // YYYY-MM-DD — the next date to post
+  endDate?: string;             // optional last posting date (inclusive)
+  active: boolean;
+
+  // Posting trail (written by the scheduler)
+  lastRunDate?: string;
+  lastEntryNumber?: string;
+  postedCount?: number;
+
+  createdBy: string;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
+}
+
+// ============================================
+// FIXED ASSETS
+// ============================================
+// The register is the depreciation subledger: each asset tracks its own
+// accumulated depreciation and the last period posted. Monthly charges are
+// posted in one aggregate journal per period (source 'depreciation') by
+// fixedAssetService.postDepreciationForPeriod; schedule math lives in
+// client/lib/accounting/depreciation.ts (pure, unit-tested).
+
+export type DepreciationMethod = 'straight_line';
+
+export type FixedAssetStatus = 'active' | 'fully_depreciated' | 'disposed';
+
+export interface FixedAsset {
+  id?: string;
+  name: string;
+  assetClass: string;            // e.g. Equipment, Vehicles — drives account + default life
+  reference?: string;            // serial / plate / internal tag
+  description?: string;
+
+  acquisitionDate: string;       // YYYY-MM-DD
+  acquisitionCost: number;
+  residualValue: number;         // salvage value; depreciable = cost − residual
+  usefulLifeMonths: number;
+  method: DepreciationMethod;
+
+  // Posting accounts (codes; ids resolved at posting time)
+  assetAccountCode: string;      // 1510–1550
+  accumulatedAccountCode: string; // 1590
+  expenseAccountCode: string;    // 5800
+
+  // Depreciation state
+  depreciationStartPeriod: string;   // 'YYYY-MM' — full-month convention
+  depreciatedThroughPeriod?: string; // last 'YYYY-MM' posted
+  accumulatedDepreciation: number;
+
+  status: FixedAssetStatus;
+
+  // Disposal
+  disposalDate?: string;
+  disposalProceeds?: number;
+  disposalJournalEntryId?: string;
+
+  createdBy: string;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
+}
+
+/** One posted depreciation run (doc id = period 'YYYY-MM') — idempotency guard. */
+export interface FixedAssetPosting {
+  id?: string;
+  period: string;                // YYYY-MM
+  journalEntryId: string;
+  entryNumber: string;
+  totalAmount: number;
+  assetCount: number;
+  postedBy: string;
+  postedAt?: FirestoreTimestamp;
 }
 
 // ============================================

@@ -20,7 +20,7 @@ const db = getFirestore();
 // Date helpers (Timor-Leste, UTC+9)
 // ────────────────────────────────────────────
 
-const TL_TIMEZONE = "Asia/Dili";
+export const TL_TIMEZONE = "Asia/Dili";
 
 function formatDateISO_TL(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -31,7 +31,7 @@ function formatDateISO_TL(date: Date): string {
   }).format(date);
 }
 
-function getTodayTL(): string {
+export function getTodayTL(): string {
   return formatDateISO_TL(new Date());
 }
 
@@ -151,7 +151,7 @@ async function getAccountByCode(tenantId: string, code: string): Promise<{ id: s
   return { id: doc.id, name: data.name || code };
 }
 
-async function fiscalPeriodIsOpenOrMissing(tenantId: string, dateISO: string): Promise<boolean> {
+export async function fiscalPeriodIsOpenOrMissing(tenantId: string, dateISO: string): Promise<boolean> {
   const dt = parseDateISO(dateISO);
   const year = dt.getUTCFullYear();
   const month = dt.getUTCMonth() + 1;
@@ -243,7 +243,7 @@ async function allocateNextInvoiceNumber(
 /**
  * Allocate the next journal entry number (mirrors client journalEntryService.getNextEntryNumber()).
  */
-async function allocateNextJournalEntryNumber(
+export async function allocateNextJournalEntryNumber(
   tenantId: string,
   transaction: FirebaseFirestore.Transaction,
   journalYear: number,

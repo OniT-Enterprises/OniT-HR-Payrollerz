@@ -153,18 +153,39 @@ exports.getAllUsers = (0, https_1.onCall)(async (request) => {
         // Get all user documents
         const usersSnapshot = await db.collection("users").get();
         const auth = (0, auth_1.getAuth)();
-        const users = await Promise.all(usersSnapshot.docs.map(async (doc) => {
-            var _a, _b;
-            const userData = doc.data();
-            let authUser = null;
+        // Batch-resolve Auth records instead of one auth.getUser() per document.
+        // The Admin SDK accepts up to 100 identifiers per getUsers() call, so we
+        // chunk the UIDs and look them up in parallel across chunks. Users present
+        // in Firestore but missing from Auth come back via `notFound` and are left
+        // absent from the map — the same effect as the previous per-user failure
+        // path, so the merge below still falls back to the Firestore fields.
+        const AUTH_LOOKUP_CHUNK_SIZE = 100;
+        const uids = usersSnapshot.docs.map((doc) => doc.id);
+        const authUserByUid = new Map();
+        for (let i = 0; i < uids.length; i += AUTH_LOOKUP_CHUNK_SIZE) {
+            const chunk = uids.slice(i, i + AUTH_LOOKUP_CHUNK_SIZE);
             try {
-                authUser = await auth.getUser(doc.id);
+                const result = await auth.getUsers(chunk.map((uid) => ({ uid })));
+                for (const authUser of result.users) {
+                    authUserByUid.set(authUser.uid, authUser);
+                }
+                for (const notFound of result.notFound) {
+                    const missingUid = "uid" in notFound ? notFound.uid : JSON.stringify(notFound);
+                    firebase_functions_1.logger.warn(`Could not find auth user for ${missingUid}`);
+                }
             }
             catch (error) {
-                firebase_functions_1.logger.warn(`Could not find auth user for ${doc.id}`);
+                // Never let a single failing chunk abort the whole call — the affected
+                // users simply fall back to their Firestore fields, as before.
+                firebase_functions_1.logger.warn(`Batch auth lookup failed for a chunk of users:`, error);
             }
+        }
+        const users = usersSnapshot.docs.map((doc) => {
+            var _a, _b;
+            const userData = doc.data();
+            const authUser = authUserByUid.get(doc.id);
             return Object.assign(Object.assign({ uid: doc.id }, userData), { email: (authUser === null || authUser === void 0 ? void 0 : authUser.email) || userData.email, displayName: (authUser === null || authUser === void 0 ? void 0 : authUser.displayName) || userData.displayName, photoURL: (authUser === null || authUser === void 0 ? void 0 : authUser.photoURL) || userData.photoURL, emailVerified: authUser === null || authUser === void 0 ? void 0 : authUser.emailVerified, disabled: authUser === null || authUser === void 0 ? void 0 : authUser.disabled, lastSignInTime: (_a = authUser === null || authUser === void 0 ? void 0 : authUser.metadata) === null || _a === void 0 ? void 0 : _a.lastSignInTime, creationTime: (_b = authUser === null || authUser === void 0 ? void 0 : authUser.metadata) === null || _b === void 0 ? void 0 : _b.creationTime });
-        }));
+        });
         return { users };
     }
     catch (error) {

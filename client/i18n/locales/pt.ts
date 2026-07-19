@@ -190,6 +190,7 @@ const messages = {
     "vatReturns": "Declarações IVA",
     "chartOfAccounts": "Plano de Contas",
     "journalEntries": "Lançamentos",
+    "fixedAssets": "Ativos Fixos",
     "generalLedger": "Razão Geral",
     "statements": "Extratos",
     "trialBalance": "Balancete",
@@ -1312,6 +1313,96 @@ const messages = {
           "desc": "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo."
         }
       }
+    }
+  },
+  "securityPage": {
+    "nav": {
+      "page": "Segurança",
+      "controls": "Controlos",
+      "data": "Os seus dados",
+      "privacy": "Privacidade"
+    },
+    "hero": {
+      "eyebrow": "Como o Xefe protege o seu negócio",
+      "title": "Software de dinheiro tem um dever:",
+      "titleAccent": "nunca perder, nunca expor, nunca mentir.",
+      "description": "Tudo nesta página está a funcionar hoje — não é um roteiro. É a camada de segurança debaixo de cada folha, fatura e lançamento no Xefe."
+    },
+    "controls": {
+      "eyebrow": "Controlos reais",
+      "title": "Impostos no servidor, não só no ecrã",
+      "description": "Esconder um botão não é segurança. As regras do Xefe vivem na camada da base de dados, onde não podem ser contornadas.",
+      "cards": {
+        "rules": {
+          "title": "Regras de segurança no servidor",
+          "description": "Cada leitura e escrita passa por regras de isolamento impostas pela própria base de dados. A interface nunca é a única barreira."
+        },
+        "twoPerson": {
+          "title": "Duas pessoas para finalizar a folha",
+          "description": "Quem prepara uma folha não a pode aprovar — salvo se a empresa optar explicitamente pelo modo individual. A regra é imposta na base de dados, não na app."
+        },
+        "billing": {
+          "title": "Faturação protegida contra alterações",
+          "description": "Um dono não consegue atribuir-se uma subscrição: os campos de faturação da própria conta só podem ser escritos pelo webhook verificado do fornecedor de pagamentos."
+        },
+        "tested": {
+          "title": "Testado antes de cada deploy",
+          "description": "Cada versão corre verificação de tipos, mais de seiscentos testes automáticos e a suite completa de regras de segurança contra as regras de produção — automaticamente, antes de sair."
+        }
+      }
+    },
+    "data": {
+      "eyebrow": "Os seus dados",
+      "title": "Guardados em segurança, sempre recuperáveis",
+      "description": "O Xefe corre no Google Cloud (Firebase) — a mesma infraestrutura do Gmail — com os registos da sua empresa isolados de todos os outros clientes.",
+      "note": "Os dados são seus. Exporte trabalhadores, histórico de folha, lançamentos e relatórios a qualquer momento — sem aprisionamento, sem taxa de exportação.",
+      "points": {
+        "encryption": {
+          "title": "Encriptado em trânsito e em repouso",
+          "description": "Todo o tráfego é encriptado por TLS e tudo o que é guardado é encriptado em repouso pelo Google Cloud."
+        },
+        "backups": {
+          "title": "Backups diários + recuperação pontual",
+          "description": "Backups automáticos diários, com recuperação point-in-time ativa para restaurar registos a um momento preciso."
+        },
+        "isolation": {
+          "title": "Isolamento estrito por empresa",
+          "description": "Cada registo carrega a identidade da sua empresa e as regras tornam impossível o acesso entre empresas — incluindo para o XefeBot, cujo acesso a dados é fixado à sua empresa no servidor."
+        },
+        "audit": {
+          "title": "Um rasto de auditoria com memória",
+          "description": "Aprovações de folha, ações administrativas e lançamentos contabilísticos ficam registados com quem fez o quê, e quando."
+        }
+      }
+    },
+    "privacy": {
+      "eyebrow": "Privacidade por construção",
+      "title": "O que é privado fica privado",
+      "description": "Dados salariais são a coisa mais sensível que uma empresa guarda. Os padrões do Xefe tratam-nos assim.",
+      "points": {
+        "email": {
+          "title": "Um destinatário por email",
+          "description": "Cada notificação sai individualmente — os funcionários nunca veem os endereços uns dos outros."
+        },
+        "links": {
+          "title": "Links impossíveis de adivinhar, revogáveis",
+          "description": "As páginas públicas de faturas usam links longos e aleatórios que não podem ser listados — e pode desativar um link a qualquer momento."
+        },
+        "roles": {
+          "title": "Papéis que espelham funções reais",
+          "description": "Donos, administradores de RH, contabilistas, gestores e funcionários veem exatamente o que a sua função exige — o contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento."
+        },
+        "payslips": {
+          "title": "Recibos só chegam ao seu dono",
+          "description": "O recibo de cada trabalhador vai só para esse trabalhador — na app Ekipa, no seu próprio telemóvel."
+        }
+      },
+      "disclosure": "Encontrou uma falha de segurança? Queremos ouvi-la, com discrição e rapidez:"
+    },
+    "cta": {
+      "title": "A segurança é uma camada do motor.",
+      "description": "A mesma disciplina corre na aritmética da folha, nas declarações fiscais e nos livros.",
+      "engine": "Ver o motor"
     }
   },
   "enginePage": {
@@ -5126,6 +5217,75 @@ const messages = {
       "sourceRevenue": "Receita",
       "sourceReceipt": "Recibo",
       "sourcePayment": "Pagamento"
+    },
+    "fixedAssets": {
+      "title": "Ativos Fixos",
+      "subtitle": "O registo de ativos: mapas de depreciação, registo mensal, abates",
+      "export": "Exportar registo",
+      "postDepreciation": "Registar depreciação",
+      "addAsset": "Adicionar ativo",
+      "addDescription": "O Xefe deprecia em linha reta a partir do mês de aquisição e regista um lançamento por mês.",
+      "empty": "Ainda não há ativos. Adicione o primeiro — a máquina de café conta.",
+      "loadError": "Não foi possível carregar os ativos fixos. Tente novamente.",
+      "saveError": "Não foi possível guardar. Tente novamente.",
+      "exportError": "Não foi possível exportar o registo. Tente novamente.",
+      "createdTitle": "Ativo adicionado",
+      "deletedTitle": "Ativo eliminado",
+      "deleteTitle": "Eliminar ativo?",
+      "deleteDescription": "\"{{name}}\" não tem depreciação registada, por isso pode ser removido.",
+      "summaryCount": "{{count}} ativos em serviço",
+      "summaryCost": "Custo",
+      "summaryAccumulated": "Depreciação acumulada",
+      "summaryNbv": "Valor contabilístico líquido",
+      "colAsset": "Ativo",
+      "colClass": "Classe",
+      "colAcquired": "Adquirido",
+      "colCost": "Custo",
+      "colAccumulated": "Acumulada",
+      "colNbv": "Valor líquido",
+      "colPeriod": "Período",
+      "colCharge": "Encargo",
+      "colStatus": "Estado",
+      "colActions": "Ações",
+      "rowTotal": "Total",
+      "schedule": "Mapa",
+      "scheduleDescription": "Linha reta durante {{life}} meses; as linhas a cinzento já foram registadas.",
+      "dispose": "Abater",
+      "disposeTitle": "Abater {{name}}",
+      "disposeDescription": "Remove o ativo dos livros e regista automaticamente o ganho ou a perda.",
+      "disposeConfirm": "Abater ativo",
+      "disposedTitle": "Ativo abatido",
+      "disposedGain": "Ganho no abate: {{amount}}",
+      "disposedLoss": "Perda no abate: {{amount}}",
+      "disposePreviewGain": "Valor líquido {{nbv}} — esta venda regista um ganho de {{amount}}.",
+      "disposePreviewLoss": "Valor líquido {{nbv}} — esta venda regista uma perda de {{amount}}.",
+      "fieldName": "Nome do ativo",
+      "fieldReference": "Referência / série",
+      "fieldAcquired": "Data de aquisição",
+      "fieldCost": "Custo (USD)",
+      "fieldResidual": "Valor residual",
+      "fieldLife": "Vida útil (meses)",
+      "fieldLifeHint": "Pré-preenchido pela classe; ajuste por ativo. Terrenos nunca depreciam.",
+      "fieldPeriod": "Período a registar",
+      "fieldDisposeDate": "Data do abate",
+      "fieldProceeds": "Valor recebido (USD)",
+      "monthlyPreview": "Encargo mensal: {{amount}}",
+      "postDescription": "Um lançamento agregado (Db 5800 / Cr 1590) cobrindo todos os ativos devidos, recuperação incluída.",
+      "postNothing": "Nada a depreciar neste período.",
+      "postHint": "Um período registado não pode ser registado duas vezes. Para corrigir, reverta o lançamento e ajuste os ativos.",
+      "postConfirm": "Registar {{amount}}",
+      "postedTitle": "Depreciação registada",
+      "postedDescription": "{{period}}: {{amount}} lançado no diário.",
+      "statusActive": "Ativo",
+      "statusFully": "Totalmente depreciado",
+      "statusDisposed": "Abatido",
+      "classes": {
+        "land": "Terrenos",
+        "buildings": "Edifícios",
+        "equipment": "Equipamento",
+        "vehicles": "Viaturas",
+        "furniture": "Mobiliário"
+      }
     },
     "recurring": {
       "title": "Lançamentos recorrentes",

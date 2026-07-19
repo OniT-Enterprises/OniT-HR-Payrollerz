@@ -16,6 +16,7 @@ import type { ComponentType } from "react";
 import type { SectionId } from "./sectionTheme";
 import type { ModulePermission, TenantRole } from "@/types/tenant";
 import {
+  Package,
   LayoutDashboard,
   // People
   Users,
@@ -430,6 +431,15 @@ export const accountingNavConfig: ModuleNavConfig = {
       icon: Landmark,
       path: "/accounting/ledger",
       matchPaths: ["/accounting/ledger"],
+      subPages: [],
+    },
+    {
+      id: "fixed-assets",
+      label: "Fixed Assets",
+      labelKey: "fixedAssets",
+      icon: Package,
+      path: "/accounting/fixed-assets",
+      matchPaths: ["/accounting/fixed-assets"],
       subPages: [],
     },
     {

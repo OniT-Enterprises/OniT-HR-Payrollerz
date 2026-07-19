@@ -190,6 +190,7 @@ const messages = {
     "vatReturns": "Deklarasaun VAT",
     "chartOfAccounts": "Planu Konta",
     "journalEntries": "Lansu Jornál",
+    "fixedAssets": "Ativos Fixos",
     "generalLedger": "Livru Razaun",
     "statements": "Demonstrasaun",
     "trialBalance": "Balansu Tentativa",
@@ -1312,6 +1313,96 @@ const messages = {
           "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
         }
       }
+    }
+  },
+  "securityPage": {
+    "nav": {
+      "page": "Seguransa",
+      "controls": "Kontrolu",
+      "data": "Ita-nia dadus",
+      "privacy": "Privasidade"
+    },
+    "hero": {
+      "eyebrow": "Oinsá Xefe proteje Ita-nia negósiu",
+      "title": "Software osan nian iha knaar ida:",
+      "titleAccent": "nunka lakon, nunka fakar, nunka bosok.",
+      "description": "Buat hotu iha pájina ne'e la'o ona ohin loron — la'ós planu. Ne'e mak kamada seguransa iha okos folha pagamentu, fatura no lansamentu hotu-hotu iha Xefe."
+    },
+    "controls": {
+      "eyebrow": "Kontrolu loloos",
+      "title": "Obriga iha servidor, la'ós de'it iha ekrã",
+      "description": "Subar botaun ida la'ós seguransa. Xefe nia regra hela iha kamada base-dadus, ne'ebé ema la bele liu.",
+      "cards": {
+        "rules": {
+          "title": "Regra seguransa iha servidor",
+          "description": "Leitura no gravasaun ida-idak liu husi regra izolamentu empreza nian ne'ebé base-dadus rasik obriga. Interface nunka sai portaun mesak."
+        },
+        "twoPerson": {
+          "title": "Ema rua atu finaliza folha",
+          "description": "Ema ne'ebé prepara folha pagamentu la bele aprova rasik — só se negósiu hili klaramente modu mesak. Regra ne'e obriga iha base-dadus, la'ós iha aplikasaun."
+        },
+        "billing": {
+          "title": "Kobransa proteje husi mudansa",
+          "description": "Na'in negósiu la bele fó subskrisaun ba nia an: kampu kobransa iha nia konta rasik bele muda de'it husi webhook verifikadu husi fornesedor pagamentu."
+        },
+        "tested": {
+          "title": "Testa molok kada deploy",
+          "description": "Kada versaun halo verifikasaun tipu, teste automátiku liu 600, no suite regra-seguransa kompletu hasoru regra produsaun — automátiku, molok buat ida sai."
+        }
+      }
+    },
+    "data": {
+      "eyebrow": "Ita-nia dadus",
+      "title": "Rai ho seguru, bele rekupera nafatin",
+      "description": "Xefe la'o iha Google Cloud (Firebase) — infraestrutura hanesan ne'ebé halo Gmail la'o — ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
+      "note": "Ita-nia dadus Ita-nian. Esporta Ita-nia trabalhador, istória folha, lansamentu no relatóriu kualker momentu — la iha lock-in, la iha taxa esportasaun.",
+      "points": {
+        "encryption": {
+          "title": "Enkripta iha viajen no iha deskansa",
+          "description": "Tráfiku hotu ho enkriptasaun TLS, no buat hotu ne'ebé rai mós iha enkriptasaun husi Google Cloud."
+        },
+        "backups": {
+          "title": "Backup loron-loron + rekuperasaun ba momentu",
+          "description": "Backup automátiku loron-loron, ho rekuperasaun point-in-time ativu atu bele restaura rejistu ba momentu loloos ida."
+        },
+        "isolation": {
+          "title": "Izolamentu tenant rigorozu",
+          "description": "Rejistu ida-idak lori Ita-nia empreza nia identidade no regra sira halo asesu entre-empreza impossível — inklui ba XefeBot, ne'ebé nia asesu dadus fixa ba Ita-nia empreza iha servidor."
+        },
+        "audit": {
+          "title": "Rejistu auditoria ne'ebé hanoin",
+          "description": "Aprovasaun folha, asaun admin no lansamentu kontabilidade rejista ho sé halo saida, no bainhira."
+        }
+      }
+    },
+    "privacy": {
+      "eyebrow": "Privasidade husi konstrusaun",
+      "title": "Buat privadu kontinua privadu",
+      "description": "Dadus saláriu mak buat sensível liu ne'ebé negósiu ida rai. Xefe nia padraun trata nia hanesan ne'e.",
+      "points": {
+        "email": {
+          "title": "Simu-na'in ida kada email",
+          "description": "Notifikasaun ida-idak sai individualmente — funsionáriu nunka haree malu nia enderesu, nunka."
+        },
+        "links": {
+          "title": "Ligasaun la bele adivinha, bele revoga",
+          "description": "Pájina fatura públiku uza ligasaun naruk aleatóriu ne'ebé la bele lista — no Ita bele hamate ligasaun ida kualker momentu."
+        },
+        "roles": {
+          "title": "Papel tuir servisu loloos",
+          "description": "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree de'it saida mak sira-nia servisu presiza — kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu."
+        },
+        "payslips": {
+          "title": "Payslip to'o de'it nia na'in",
+          "description": "Payslip kada trabalhador ba trabalhador ne'e de'it — iha aplikasaun Ekipa, iha nia telemóvel rasik."
+        }
+      },
+      "disclosure": "Hetan problema seguransa? Ami hakarak rona, ho kalma no lalais:"
+    },
+    "cta": {
+      "title": "Seguransa mak kamada ida husi motór.",
+      "description": "Disiplina hanesan la'o iha aritmétika folha, deklarasaun impostu no livru sira.",
+      "engine": "Haree motór"
     }
   },
   "enginePage": {
@@ -3753,6 +3844,75 @@ const messages = {
       "sourceRevenue": "Rendimentu",
       "sourceReceipt": "Reseitu",
       "sourcePayment": "Pagamentu"
+    },
+    "fixedAssets": {
+      "title": "Ativos Fixos",
+      "subtitle": "Registu ativu: eskala depresiaun, rejistu mensál, abate",
+      "export": "Esporta registu",
+      "postDepreciation": "Rejista depresiaun",
+      "addAsset": "Aumenta ativu",
+      "addDescription": "Xefe halo depresiaun liña-loos hahú husi fulan sosa nian, no rejista lansamentu ida kada fulan.",
+      "empty": "Seidauk iha ativu. Aumenta primeiru — másina kafé mós sura.",
+      "loadError": "La bele karrega ativu fixu. Favór koko fila fali.",
+      "saveError": "La bele rai. Favór koko fila fali.",
+      "exportError": "La bele esporta registu. Favór koko fila fali.",
+      "createdTitle": "Ativu aumenta ona",
+      "deletedTitle": "Ativu hamoos ona",
+      "deleteTitle": "Hamoos ativu?",
+      "deleteDescription": "\"{{name}}\" seidauk iha depresiaun rejistadu, entaun bele hamoos kedas.",
+      "summaryCount": "Ativu {{count}} iha servisu",
+      "summaryCost": "Kustu",
+      "summaryAccumulated": "Depresiaun akumulada",
+      "summaryNbv": "Valor livru líkidu",
+      "colAsset": "Ativu",
+      "colClass": "Klase",
+      "colAcquired": "Sosa iha",
+      "colCost": "Kustu",
+      "colAccumulated": "Akumulada",
+      "colNbv": "Valor livru",
+      "colPeriod": "Períodu",
+      "colCharge": "Montante",
+      "colStatus": "Estadu",
+      "colActions": "Asaun",
+      "rowTotal": "Totál",
+      "schedule": "Eskala",
+      "scheduleDescription": "Liña-loos durante fulan {{life}}; liña kinur rejista tiha ona.",
+      "dispose": "Abate",
+      "disposeTitle": "Abate {{name}}",
+      "disposeDescription": "Hasai ativu husi livru no rejista lukru ka lakon automátiku.",
+      "disposeConfirm": "Halo abate ba ativu",
+      "disposedTitle": "Ativu abate ona",
+      "disposedGain": "Lukru husi abate: {{amount}}",
+      "disposedLoss": "Lakon husi abate: {{amount}}",
+      "disposePreviewGain": "Valor livru {{nbv}} — fa'an ne'e hamosu lukru {{amount}}.",
+      "disposePreviewLoss": "Valor livru {{nbv}} — fa'an ne'e hamosu lakon {{amount}}.",
+      "fieldName": "Naran ativu",
+      "fieldReference": "Referénsia / série",
+      "fieldAcquired": "Data sosa",
+      "fieldCost": "Kustu (USD)",
+      "fieldResidual": "Valor rezidual",
+      "fieldLife": "Vida útil (fulan)",
+      "fieldLifeHint": "Prienxe ona husi klase; bele muda kada ativu. Rai nunka depresiaun.",
+      "fieldPeriod": "Períodu atu rejista",
+      "fieldDisposeDate": "Data abate",
+      "fieldProceeds": "Osan simu (USD)",
+      "monthlyPreview": "Montante mensál: {{amount}}",
+      "postDescription": "Lansamentu agregadu ida (Db 5800 / Kr 1590) kobre ativu hotu ne'ebé tenke selu, inklui atrazu.",
+      "postNothing": "La iha depresiaun ba períodu ne'e.",
+      "postHint": "Períodu ne'ebé rejista tiha ona la bele rejista dala rua. Atu hadi'a, halo reversaun lansamentu no ajusta ativu.",
+      "postConfirm": "Rejista {{amount}}",
+      "postedTitle": "Depresiaun rejista ona",
+      "postedDescription": "{{period}}: {{amount}} tama ba jornál.",
+      "statusActive": "Ativu",
+      "statusFully": "Depresiaun kompletu",
+      "statusDisposed": "Abate ona",
+      "classes": {
+        "land": "Rai",
+        "buildings": "Edifísiu",
+        "equipment": "Ekipamentu",
+        "vehicles": "Veíkulu",
+        "furniture": "Mobília"
+      }
     },
     "recurring": {
       "title": "Lansamentu rekorrente",

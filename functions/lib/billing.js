@@ -27,6 +27,18 @@ const STRIPE_SECRET_KEY = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
 const DEFAULT_APP_URL = "https://xefe.tl";
+/**
+ * How long a freshly created checkout session holds the "one checkout at a time"
+ * lock on a tenant. Long enough to cover the window between creating a Checkout
+ * Session and the completion webhook landing (so two rapid clicks or two admins
+ * cannot each spin up their own subscription), short enough that an abandoned
+ * checkout frees the lock for a legitimate retry. The webhook clears it on
+ * completion; an existing-subscription check in Stripe backstops longer delays.
+ */
+const CHECKOUT_LOCK_TTL_MS = 10 * 60 * 1000;
+/** Stripe subscription statuses that represent a real, billable subscription
+ * already attached to the customer — a second checkout must be refused. */
+const BLOCKING_SUBSCRIPTION_STATUSES = new Set(["active", "trialing", "past_due", "unpaid"]);
 function stripeClient() {
     return new stripe_1.default(STRIPE_SECRET_KEY.value());
 }
@@ -74,7 +86,26 @@ function hasActiveManualSubscription(tenant) {
     if (tenant.manualSubscription !== true)
         return false;
     const paidUntil = tenant.subscriptionPaidUntil;
-    return typeof (paidUntil === null || paidUntil === void 0 ? void 0 : paidUntil.toMillis) === "function" && paidUntil.toMillis() > Date.now();
+    return (typeof (paidUntil === null || paidUntil === void 0 ? void 0 : paidUntil.toMillis) === "function" &&
+        paidUntil.toMillis() > Date.now());
+}
+/**
+ * True while a recent checkout is still in flight for this tenant (the marker
+ * has not expired). Used to reject a second concurrent checkout before the first
+ * one's webhook has set stripeSubscriptionId.
+ */
+function pendingCheckoutActive(tenant, now) {
+    const pending = tenant.pendingCheckout;
+    return (typeof (pending === null || pending === void 0 ? void 0 : pending.at) === "number" && now - pending.at < CHECKOUT_LOCK_TTL_MS);
+}
+/**
+ * Read a Stripe subscription period boundary (seconds). Newer Stripe API
+ * versions expose current_period_start/end on the subscription item rather than
+ * the subscription, so fall back to the item.
+ */
+function readSubscriptionPeriodSec(sub, item, field) {
+    var _a;
+    return ((_a = sub[field]) !== null && _a !== void 0 ? _a : item === null || item === void 0 ? void 0 : item[field]);
 }
 /**
  * Billing actions are for tenant owners/hr-admins — or superadmins, who can
@@ -91,24 +122,61 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
     var _a, _b;
     const auth = (0, authz_1.requireAuth)(request);
     const { tenantId, returnUrl } = ((_a = request.data) !== null && _a !== void 0 ? _a : {});
-    const billingInterval = ((_b = request.data) === null || _b === void 0 ? void 0 : _b.billingInterval) === "year" ? "year" : "month";
+    const billingInterval = ((_b = request.data) === null || _b === void 0 ? void 0 : _b.billingInterval) === "year"
+        ? "year"
+        : "month";
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
     }
     await requireBillingManager(tenantId, auth);
     const db = (0, firestore_1.getFirestore)();
     const tenantRef = db.doc(`tenants/${tenantId}`);
-    const tenantSnap = await tenantRef.get();
-    if (!tenantSnap.exists) {
-        throw new https_1.HttpsError("not-found", "Tenant not found");
+    // Atomically re-check the guards AND claim a short-lived checkout lock, so
+    // two near-simultaneous callable invocations (double click / two admins)
+    // cannot both create a session before the first webhook lands and end up
+    // with two Stripe subscriptions (finding 8). The lock is released by the
+    // completion webhook, on a short TTL, or by the failure cleanup below.
+    const now = Date.now();
+    const tenant = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(tenantRef);
+        if (!snap.exists) {
+            throw new https_1.HttpsError("not-found", "Tenant not found");
+        }
+        const data = snap.data();
+        if (typeof data.stripeSubscriptionId === "string" &&
+            data.stripeSubscriptionId) {
+            throw new https_1.HttpsError("failed-precondition", "This tenant already has an active Stripe subscription; use the billing portal instead");
+        }
+        if (hasActiveManualSubscription(data)) {
+            throw new https_1.HttpsError("failed-precondition", "This tenant already has an active offline subscription");
+        }
+        if (pendingCheckoutActive(data, now)) {
+            throw new https_1.HttpsError("failed-precondition", "A checkout was just started for this tenant; complete it or try again in a few minutes");
+        }
+        tx.set(tenantRef, { pendingCheckout: { at: now } }, { merge: true });
+        return data;
+    });
+    // From here on we hold the checkout lock; release it if anything fails so
+    // the tenant is not stuck unable to retry.
+    try {
+        return await buildCheckoutSession({
+            db,
+            tenantRef,
+            tenantId,
+            tenant,
+            billingInterval,
+            returnUrl,
+        });
     }
-    const tenant = tenantSnap.data();
-    if (typeof tenant.stripeSubscriptionId === "string" && tenant.stripeSubscriptionId) {
-        throw new https_1.HttpsError("failed-precondition", "This tenant already has an active Stripe subscription; use the billing portal instead");
+    catch (error) {
+        await tenantRef
+            .set({ pendingCheckout: firestore_1.FieldValue.delete() }, { merge: true })
+            .catch((cleanupError) => console.error("Failed to release checkout lock after error:", cleanupError));
+        throw error;
     }
-    if (hasActiveManualSubscription(tenant)) {
-        throw new https_1.HttpsError("failed-precondition", "This tenant already has an active offline subscription");
-    }
+});
+async function buildCheckoutSession(args) {
+    const { db, tenantRef, tenantId, tenant, billingInterval, returnUrl } = args;
     let pricing;
     try {
         pricing = await getBillingPricing(db);
@@ -134,12 +202,28 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
     let customerId = tenant.stripeCustomerId;
     if (!customerId) {
         const customer = await stripe.customers.create({
-            email: tenant.billingEmail || tenant.ownerEmail || undefined,
+            email: tenant.billingEmail ||
+                tenant.ownerEmail ||
+                undefined,
             name: tenant.name || tenantId,
             metadata: { tenantId },
         });
         customerId = customer.id;
         await tenantRef.set({ stripeCustomerId: customerId }, { merge: true });
+    }
+    else {
+        // Backstop for the double-subscribe race (finding 8): if a prior checkout
+        // already produced a subscription but its webhook has not yet written
+        // stripeSubscriptionId back to the tenant, refuse rather than create a
+        // second one. Only pre-existing customers can already have subscriptions.
+        const existing = await stripe.subscriptions.list({
+            customer: customerId,
+            status: "all",
+            limit: 100,
+        });
+        if (existing.data.some((s) => BLOCKING_SUBSCRIPTION_STATUSES.has(s.status))) {
+            throw new https_1.HttpsError("failed-precondition", "This tenant already has a Stripe subscription; use the billing portal instead");
+        }
     }
     const base = safeReturnBase(returnUrl);
     const unitAmountCents = (0, billingPricing_1.getStripeUnitAmountCents)(pricing, billingInterval);
@@ -174,7 +258,7 @@ exports.createCheckoutSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KE
         cancel_url: `${base}/billing?status=cancel`,
     });
     return { url: session.url };
-});
+}
 exports.createBillingPortalSession = (0, https_1.onCall)({ secrets: [STRIPE_SECRET_KEY], cors: true }, async (request) => {
     var _a, _b;
     const auth = (0, authz_1.requireAuth)(request);
@@ -196,20 +280,22 @@ exports.createBillingPortalSession = (0, https_1.onCall)({ secrets: [STRIPE_SECR
     return { url: portal.url };
 });
 async function applySubscription(db, tenantId, sub) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g;
     const item = sub.items.data[0];
     const quantity = (_a = item === null || item === void 0 ? void 0 : item.quantity) !== null && _a !== void 0 ? _a : 1;
     const unitAmount = (_c = (_b = item === null || item === void 0 ? void 0 : item.price) === null || _b === void 0 ? void 0 : _b.unit_amount) !== null && _c !== void 0 ? _c : 0;
     const billingInterval = ((_e = (_d = item === null || item === void 0 ? void 0 : item.price) === null || _d === void 0 ? void 0 : _d.recurring) === null || _e === void 0 ? void 0 : _e.interval) === "year" ? "year" : "month";
     const annualMonthsChargedRaw = Number((_f = sub.metadata) === null || _f === void 0 ? void 0 : _f.annualMonthsCharged);
-    const annualMonthsCharged = Number.isInteger(annualMonthsChargedRaw) && annualMonthsChargedRaw >= 1 && annualMonthsChargedRaw <= 12
+    const annualMonthsCharged = Number.isInteger(annualMonthsChargedRaw) &&
+        annualMonthsChargedRaw >= 1 &&
+        annualMonthsChargedRaw <= 12
         ? annualMonthsChargedRaw
         : 10;
     const { billingAmount, monthlyAmount, billingMonths } = (0, billingPricing_1.calculateSubscriptionAmounts)(unitAmount, quantity, billingInterval, annualMonthsCharged);
     const active = sub.status === "active" || sub.status === "trialing";
-    const periodEndSec = (_g = sub.current_period_end) !== null && _g !== void 0 ? _g : item === null || item === void 0 ? void 0 : item.current_period_end;
+    const periodEndSec = readSubscriptionPeriodSec(sub, item, "current_period_end");
     const patch = {
-        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : (_h = sub.customer) === null || _h === void 0 ? void 0 : _h.id,
+        stripeCustomerId: typeof sub.customer === "string" ? sub.customer : (_g = sub.customer) === null || _g === void 0 ? void 0 : _g.id,
         monthlySubscriptionAmount: monthlyAmount,
         subscriptionBillingAmount: billingAmount,
         subscriptionBillingInterval: billingInterval,
@@ -218,10 +304,60 @@ async function applySubscription(db, tenantId, sub) {
         subscriptionAnnualMonthsCharged: annualMonthsCharged,
         // stripeSubscriptionId is the "can finalize payroll" gate; only set it while active.
         stripeSubscriptionId: active ? sub.id : firestore_1.FieldValue.delete(),
+        // A subscription now exists (or is gone); release any in-flight checkout lock.
+        pendingCheckout: firestore_1.FieldValue.delete(),
     };
     if (periodEndSec)
         patch.subscriptionPaidUntil = firestore_1.Timestamp.fromMillis(periodEndSec * 1000);
     await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
+}
+/**
+ * Bring an ANNUAL subscription's seat count in line with the billed employee
+ * count WITHOUT double-charging seasonal staff (docs/BILLING.md finding 5).
+ *
+ * Annual terms are prepaid, so seats paid for at the start of the term must not
+ * be billed a second time when they are removed for the low season and re-added
+ * for the high season. We bank the peak seats already paid within the current
+ * term (`subscriptionAnnualPaidSeats`, keyed to the term start
+ * `subscriptionTermStart`, reset on renewal), re-add banked seats for free, and
+ * prorate/invoice only seats that exceed that paid peak. Reductions carry no
+ * credit and apply at renewal, matching docs/BILLING.md ("Added annual seats are
+ * prorated and invoiced immediately; annual seat reductions apply at renewal").
+ */
+async function syncAnnualSeats(stripe, sub, item, desiredQuantity, tenantDoc) {
+    var _a;
+    const subId = sub.id;
+    const currentQty = (_a = item.quantity) !== null && _a !== void 0 ? _a : 0;
+    const startSec = readSubscriptionPeriodSec(sub, item, "current_period_start");
+    const termStartMs = typeof startSec === "number" ? startSec * 1000 : undefined;
+    const stored = tenantDoc.data();
+    const paidSeats = (0, billingPricing_1.effectiveAnnualPaidSeats)(stored.subscriptionAnnualPaidSeats, stored.subscriptionTermStart, termStartMs, currentQty);
+    const updates = (0, billingPricing_1.planAnnualSeatUpdates)(currentQty, desiredQuantity, paidSeats);
+    for (const update of updates) {
+        await stripe.subscriptions.update(subId, {
+            items: [{ id: item.id, quantity: update.quantity }],
+            proration_behavior: update.prorationBehavior,
+        });
+    }
+    if (updates.length > 0) {
+        console.log(`Tenant ${tenantDoc.id}: annual seats ${currentQty} -> ${desiredQuantity} ` +
+            `(paid peak this term: ${paidSeats})`);
+    }
+    // Persist the banked peak (and advance the term baseline on renewal) so
+    // re-adds stay free and survive a delayed/lost webhook. newPaidSeats never
+    // drops: a reduction keeps the peak, an invoiced increase raises it.
+    const newPaidSeats = Math.max(paidSeats, desiredQuantity);
+    const patch = {};
+    if (stored.subscriptionAnnualPaidSeats !== newPaidSeats) {
+        patch.subscriptionAnnualPaidSeats = newPaidSeats;
+    }
+    if (termStartMs !== undefined &&
+        stored.subscriptionTermStart !== termStartMs) {
+        patch.subscriptionTermStart = termStartMs;
+    }
+    if (Object.keys(patch).length > 0) {
+        await tenantDoc.ref.set(patch, { merge: true });
+    }
 }
 /**
  * Daily true-up: keep each subscribed tenant's Stripe quantity equal to their
@@ -229,16 +365,18 @@ async function applySubscription(db, tenantId, sub) {
  * employees cost more" stays true after
  * checkout day (quantity is otherwise frozen at whatever it was on subscribe).
  * Monthly plans change on the next invoice without part-month charges. Annual
- * plans immediately prorate added seats so a customer cannot add staff for free
- * for the rest of a prepaid year; seat reductions take effect at renewal. The
- * customer.subscription.updated webhook then syncs the tenant billing snapshot.
+ * plans prorate genuinely new seats (above the peak already paid this term) so a
+ * customer cannot add staff for free for the rest of a prepaid year, yet seats
+ * already paid for are never charged twice when re-added; seat reductions take
+ * effect at renewal. The customer.subscription.updated webhook then syncs the
+ * tenant billing snapshot.
  */
 exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
     schedule: "0 3 * * *", // daily at 03:00 Dili time (quiet hours)
     timeZone: "Asia/Dili",
     secrets: [STRIPE_SECRET_KEY],
 }, async () => {
-    var _a, _b;
+    var _a;
     const db = (0, firestore_1.getFirestore)();
     const stripe = stripeClient();
     const pricing = await getBillingPricing(db);
@@ -259,11 +397,15 @@ exports.syncSubscriptionQuantities = (0, scheduler_1.onSchedule)({
             if (sub.status !== "active" && sub.status !== "trialing")
                 continue;
             const item = sub.items.data[0];
-            if (item && item.quantity !== quantity) {
-                const annualIncrease = ((_a = item.price.recurring) === null || _a === void 0 ? void 0 : _a.interval) === "year" && quantity > ((_b = item.quantity) !== null && _b !== void 0 ? _b : 0);
+            if (item && ((_a = item.price.recurring) === null || _a === void 0 ? void 0 : _a.interval) === "year") {
+                await syncAnnualSeats(stripe, sub, item, quantity, tenantDoc);
+            }
+            else if (item && item.quantity !== quantity) {
+                // Monthly: quantity change applies on the next invoice, no part-month
+                // proration in either direction (unchanged behaviour).
                 await stripe.subscriptions.update(subId, {
                     items: [{ id: item.id, quantity }],
-                    proration_behavior: annualIncrease ? "always_invoice" : "none",
+                    proration_behavior: "none",
                 });
                 console.log(`Tenant ${tenantId}: subscription quantity ${item.quantity} -> ${quantity}`);
             }
@@ -311,7 +453,13 @@ exports.sendRenewalReminders = (0, scheduler_1.onSchedule)({
                 continue;
             const paidUntilMs = paidUntilTs.toMillis();
             const daysLeft = (paidUntilMs - Date.now()) / (24 * 60 * 60 * 1000);
-            const stage = daysLeft < 0 ? "lapsed" : daysLeft <= 1 ? "d1" : daysLeft <= 7 ? "d7" : null;
+            const stage = daysLeft < 0
+                ? "lapsed"
+                : daysLeft <= 1
+                    ? "d1"
+                    : daysLeft <= 7
+                        ? "d7"
+                        : null;
             if (!stage)
                 continue;
             const sentFor = ((_a = data.renewalReminders) !== null && _a !== void 0 ? _a : {});
@@ -406,7 +554,9 @@ exports.stripeWebhook = (0, https_1.onRequest)({ secrets: [STRIPE_SECRET_KEY, ST
                 const session = event.data.object;
                 const tenantId = (_a = session.metadata) === null || _a === void 0 ? void 0 : _a.tenantId;
                 if (tenantId && session.subscription) {
-                    const subId = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+                    const subId = typeof session.subscription === "string"
+                        ? session.subscription
+                        : session.subscription.id;
                     const sub = await stripe.subscriptions.retrieve(subId);
                     await applySubscription(db, tenantId, sub);
                 }

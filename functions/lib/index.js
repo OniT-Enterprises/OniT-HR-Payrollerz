@@ -34,5 +34,6 @@ __exportStar(require("./email"), exports);
 __exportStar(require("./authEmails"), exports);
 __exportStar(require("./invoiceLinks"), exports);
 __exportStar(require("./notifications"), exports);
+__exportStar(require("./accounting"), exports);
 // You can add more function modules here as they're created
 //# sourceMappingURL=index.js.map

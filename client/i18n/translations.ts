@@ -194,6 +194,7 @@ export const translations = {
       "vatReturns": "VAT Returns",
       "chartOfAccounts": "Chart of Accounts",
       "journalEntries": "Journal Entries",
+      "fixedAssets": "Fixed Assets",
       "generalLedger": "General Ledger",
       "statements": "Statements",
       "trialBalance": "Trial Balance",
@@ -1316,6 +1317,96 @@ export const translations = {
             "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
           }
         }
+      }
+    },
+    "securityPage": {
+      "nav": {
+        "page": "Security",
+        "controls": "Controls",
+        "data": "Your data",
+        "privacy": "Privacy"
+      },
+      "hero": {
+        "eyebrow": "How Xefe protects your business",
+        "title": "Money software has one job:",
+        "titleAccent": "never lose, never leak, never lie.",
+        "description": "Everything on this page is running today — not a roadmap. It is the safety layer under every payroll run, invoice and journal in Xefe."
+      },
+      "controls": {
+        "eyebrow": "Real controls",
+        "title": "Enforced on the server, not just the screen",
+        "description": "Hiding a button is not security. Xefe's rules live in the database layer, where they cannot be talked around.",
+        "cards": {
+          "rules": {
+            "title": "Server-side security rules",
+            "description": "Every single read and write passes tenant-isolation rules enforced by the database itself. The interface is never the only gate."
+          },
+          "twoPerson": {
+            "title": "Two people to finalize payroll",
+            "description": "The person who prepares a payroll run cannot approve it — unless a business explicitly opts into solo mode. The rule is enforced in the database, not the app."
+          },
+          "billing": {
+            "title": "Tamper-protected billing",
+            "description": "A business owner cannot grant themselves a subscription: billing fields on their own account are writable only by the payment provider's verified webhook."
+          },
+          "tested": {
+            "title": "Tested before every deploy",
+            "description": "Every release runs type checks, six hundred plus automated tests, and the full security-rules suite against the production rules — automatically, before anything ships."
+          }
+        }
+      },
+      "data": {
+        "eyebrow": "Your data",
+        "title": "Stored safely, recoverable always",
+        "description": "Xefe runs on Google Cloud (Firebase) — the same infrastructure that runs Gmail — with your company's records isolated from every other tenant.",
+        "note": "Your data is yours. Export your employees, payroll history, journals and reports at any time — no lock-in, no export fee.",
+        "points": {
+          "encryption": {
+            "title": "Encrypted in transit and at rest",
+            "description": "All traffic is TLS-encrypted, and everything stored is encrypted at rest by Google Cloud."
+          },
+          "backups": {
+            "title": "Daily backups + point-in-time recovery",
+            "description": "Automatic daily backups, with point-in-time recovery enabled so records can be restored to a precise moment."
+          },
+          "isolation": {
+            "title": "Strict tenant isolation",
+            "description": "Every record carries your company's identity and the rules make cross-company access impossible — including for XefeBot, whose data access is pinned to your company on the server."
+          },
+          "audit": {
+            "title": "An audit trail that remembers",
+            "description": "Payroll approvals, admin actions and accounting postings are logged with who did what, and when."
+          }
+        }
+      },
+      "privacy": {
+        "eyebrow": "Privacy by construction",
+        "title": "Private things stay private",
+        "description": "Salary data is the most sensitive thing a business holds. Xefe's defaults treat it that way.",
+        "points": {
+          "email": {
+            "title": "One recipient per email",
+            "description": "Every notification goes out individually — staff never see each other's addresses, ever."
+          },
+          "links": {
+            "title": "Unguessable, revocable links",
+            "description": "Public invoice pages use long random links that cannot be listed or enumerated — and you can kill a link at any time."
+          },
+          "roles": {
+            "title": "Roles that match real jobs",
+            "description": "Owners, HR admins, accountants, managers, and staff each see exactly what their job needs — an accountant gets the books without member management; a manager sees only their department."
+          },
+          "payslips": {
+            "title": "Payslips reach only their owner",
+            "description": "Each employee's payslip goes to that employee — in the Ekipa app, on their own phone."
+          }
+        },
+        "disclosure": "Found a security issue? We want to hear about it, quietly and quickly:"
+      },
+      "cta": {
+        "title": "Security is one layer of the engine.",
+        "description": "The same discipline runs through the payroll arithmetic, the tax filings and the books.",
+        "engine": "See the engine"
       }
     },
     "enginePage": {
@@ -5131,6 +5222,75 @@ export const translations = {
         "sourceReceipt": "Receipt",
         "sourcePayment": "Payment"
       },
+      "fixedAssets": {
+        "title": "Fixed Assets",
+        "subtitle": "The asset register: depreciation schedules, monthly posting, disposals",
+        "export": "Export register",
+        "postDepreciation": "Post depreciation",
+        "addAsset": "Add asset",
+        "addDescription": "Xefe depreciates straight-line from the acquisition month and posts one journal per month.",
+        "empty": "No assets yet. Add the first one — the espresso machine counts.",
+        "loadError": "Could not load fixed assets. Please try again.",
+        "saveError": "Could not save. Please try again.",
+        "exportError": "Could not export the register. Please try again.",
+        "createdTitle": "Asset added",
+        "deletedTitle": "Asset deleted",
+        "deleteTitle": "Delete asset?",
+        "deleteDescription": "\"{{name}}\" has no posted depreciation, so it can be removed outright.",
+        "summaryCount": "{{count}} assets in service",
+        "summaryCost": "Cost",
+        "summaryAccumulated": "Accumulated depreciation",
+        "summaryNbv": "Net book value",
+        "colAsset": "Asset",
+        "colClass": "Class",
+        "colAcquired": "Acquired",
+        "colCost": "Cost",
+        "colAccumulated": "Accumulated",
+        "colNbv": "Net book value",
+        "colPeriod": "Period",
+        "colCharge": "Charge",
+        "colStatus": "Status",
+        "colActions": "Actions",
+        "rowTotal": "Total",
+        "schedule": "Schedule",
+        "scheduleDescription": "Straight-line over {{life}} months; greyed rows are already posted.",
+        "dispose": "Dispose",
+        "disposeTitle": "Dispose {{name}}",
+        "disposeDescription": "Removes the asset from the books and posts the gain or loss automatically.",
+        "disposeConfirm": "Dispose asset",
+        "disposedTitle": "Asset disposed",
+        "disposedGain": "Gain on disposal: {{amount}}",
+        "disposedLoss": "Loss on disposal: {{amount}}",
+        "disposePreviewGain": "Net book value {{nbv}} — this sale books a gain of {{amount}}.",
+        "disposePreviewLoss": "Net book value {{nbv}} — this sale books a loss of {{amount}}.",
+        "fieldName": "Asset name",
+        "fieldReference": "Reference / serial",
+        "fieldAcquired": "Acquisition date",
+        "fieldCost": "Cost (USD)",
+        "fieldResidual": "Residual value",
+        "fieldLife": "Useful life (months)",
+        "fieldLifeHint": "Pre-filled from the class; adjust per asset. Land never depreciates.",
+        "fieldPeriod": "Period to post",
+        "fieldDisposeDate": "Disposal date",
+        "fieldProceeds": "Proceeds (USD)",
+        "monthlyPreview": "Monthly charge: {{amount}}",
+        "postDescription": "One aggregate journal (Dr 5800 / Cr 1590) covering every asset due, catch-up included.",
+        "postNothing": "Nothing to depreciate for this period.",
+        "postHint": "A posted period cannot be posted twice. To correct it, reverse the journal entry and adjust the assets.",
+        "postConfirm": "Post {{amount}}",
+        "postedTitle": "Depreciation posted",
+        "postedDescription": "{{period}}: {{amount}} posted to the journal.",
+        "statusActive": "Active",
+        "statusFully": "Fully depreciated",
+        "statusDisposed": "Disposed",
+        "classes": {
+          "land": "Land",
+          "buildings": "Buildings",
+          "equipment": "Equipment",
+          "vehicles": "Vehicles",
+          "furniture": "Furniture & fixtures"
+        }
+      },
       "recurring": {
         "title": "Recurring entries",
         "description": "Journal entries Xefe posts for you every month — rent accruals, amortization, standing adjustments.",
@@ -7827,6 +7987,7 @@ export const translations = {
       "vatReturns": "Deklarasaun VAT",
       "chartOfAccounts": "Planu Konta",
       "journalEntries": "Lansu Jornál",
+      "fixedAssets": "Ativos Fixos",
       "generalLedger": "Livru Razaun",
       "statements": "Demonstrasaun",
       "trialBalance": "Balansu Tentativa",
@@ -8949,6 +9110,96 @@ export const translations = {
             "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
           }
         }
+      }
+    },
+    "securityPage": {
+      "nav": {
+        "page": "Seguransa",
+        "controls": "Kontrolu",
+        "data": "Ita-nia dadus",
+        "privacy": "Privasidade"
+      },
+      "hero": {
+        "eyebrow": "Oinsá Xefe proteje Ita-nia negósiu",
+        "title": "Software osan nian iha knaar ida:",
+        "titleAccent": "nunka lakon, nunka fakar, nunka bosok.",
+        "description": "Buat hotu iha pájina ne'e la'o ona ohin loron — la'ós planu. Ne'e mak kamada seguransa iha okos folha pagamentu, fatura no lansamentu hotu-hotu iha Xefe."
+      },
+      "controls": {
+        "eyebrow": "Kontrolu loloos",
+        "title": "Obriga iha servidor, la'ós de'it iha ekrã",
+        "description": "Subar botaun ida la'ós seguransa. Xefe nia regra hela iha kamada base-dadus, ne'ebé ema la bele liu.",
+        "cards": {
+          "rules": {
+            "title": "Regra seguransa iha servidor",
+            "description": "Leitura no gravasaun ida-idak liu husi regra izolamentu empreza nian ne'ebé base-dadus rasik obriga. Interface nunka sai portaun mesak."
+          },
+          "twoPerson": {
+            "title": "Ema rua atu finaliza folha",
+            "description": "Ema ne'ebé prepara folha pagamentu la bele aprova rasik — só se negósiu hili klaramente modu mesak. Regra ne'e obriga iha base-dadus, la'ós iha aplikasaun."
+          },
+          "billing": {
+            "title": "Kobransa proteje husi mudansa",
+            "description": "Na'in negósiu la bele fó subskrisaun ba nia an: kampu kobransa iha nia konta rasik bele muda de'it husi webhook verifikadu husi fornesedor pagamentu."
+          },
+          "tested": {
+            "title": "Testa molok kada deploy",
+            "description": "Kada versaun halo verifikasaun tipu, teste automátiku liu 600, no suite regra-seguransa kompletu hasoru regra produsaun — automátiku, molok buat ida sai."
+          }
+        }
+      },
+      "data": {
+        "eyebrow": "Ita-nia dadus",
+        "title": "Rai ho seguru, bele rekupera nafatin",
+        "description": "Xefe la'o iha Google Cloud (Firebase) — infraestrutura hanesan ne'ebé halo Gmail la'o — ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
+        "note": "Ita-nia dadus Ita-nian. Esporta Ita-nia trabalhador, istória folha, lansamentu no relatóriu kualker momentu — la iha lock-in, la iha taxa esportasaun.",
+        "points": {
+          "encryption": {
+            "title": "Enkripta iha viajen no iha deskansa",
+            "description": "Tráfiku hotu ho enkriptasaun TLS, no buat hotu ne'ebé rai mós iha enkriptasaun husi Google Cloud."
+          },
+          "backups": {
+            "title": "Backup loron-loron + rekuperasaun ba momentu",
+            "description": "Backup automátiku loron-loron, ho rekuperasaun point-in-time ativu atu bele restaura rejistu ba momentu loloos ida."
+          },
+          "isolation": {
+            "title": "Izolamentu tenant rigorozu",
+            "description": "Rejistu ida-idak lori Ita-nia empreza nia identidade no regra sira halo asesu entre-empreza impossível — inklui ba XefeBot, ne'ebé nia asesu dadus fixa ba Ita-nia empreza iha servidor."
+          },
+          "audit": {
+            "title": "Rejistu auditoria ne'ebé hanoin",
+            "description": "Aprovasaun folha, asaun admin no lansamentu kontabilidade rejista ho sé halo saida, no bainhira."
+          }
+        }
+      },
+      "privacy": {
+        "eyebrow": "Privasidade husi konstrusaun",
+        "title": "Buat privadu kontinua privadu",
+        "description": "Dadus saláriu mak buat sensível liu ne'ebé negósiu ida rai. Xefe nia padraun trata nia hanesan ne'e.",
+        "points": {
+          "email": {
+            "title": "Simu-na'in ida kada email",
+            "description": "Notifikasaun ida-idak sai individualmente — funsionáriu nunka haree malu nia enderesu, nunka."
+          },
+          "links": {
+            "title": "Ligasaun la bele adivinha, bele revoga",
+            "description": "Pájina fatura públiku uza ligasaun naruk aleatóriu ne'ebé la bele lista — no Ita bele hamate ligasaun ida kualker momentu."
+          },
+          "roles": {
+            "title": "Papel tuir servisu loloos",
+            "description": "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree de'it saida mak sira-nia servisu presiza — kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu."
+          },
+          "payslips": {
+            "title": "Payslip to'o de'it nia na'in",
+            "description": "Payslip kada trabalhador ba trabalhador ne'e de'it — iha aplikasaun Ekipa, iha nia telemóvel rasik."
+          }
+        },
+        "disclosure": "Hetan problema seguransa? Ami hakarak rona, ho kalma no lalais:"
+      },
+      "cta": {
+        "title": "Seguransa mak kamada ida husi motór.",
+        "description": "Disiplina hanesan la'o iha aritmétika folha, deklarasaun impostu no livru sira.",
+        "engine": "Haree motór"
       }
     },
     "enginePage": {
@@ -11390,6 +11641,75 @@ export const translations = {
         "sourceRevenue": "Rendimentu",
         "sourceReceipt": "Reseitu",
         "sourcePayment": "Pagamentu"
+      },
+      "fixedAssets": {
+        "title": "Ativos Fixos",
+        "subtitle": "Registu ativu: eskala depresiaun, rejistu mensál, abate",
+        "export": "Esporta registu",
+        "postDepreciation": "Rejista depresiaun",
+        "addAsset": "Aumenta ativu",
+        "addDescription": "Xefe halo depresiaun liña-loos hahú husi fulan sosa nian, no rejista lansamentu ida kada fulan.",
+        "empty": "Seidauk iha ativu. Aumenta primeiru — másina kafé mós sura.",
+        "loadError": "La bele karrega ativu fixu. Favór koko fila fali.",
+        "saveError": "La bele rai. Favór koko fila fali.",
+        "exportError": "La bele esporta registu. Favór koko fila fali.",
+        "createdTitle": "Ativu aumenta ona",
+        "deletedTitle": "Ativu hamoos ona",
+        "deleteTitle": "Hamoos ativu?",
+        "deleteDescription": "\"{{name}}\" seidauk iha depresiaun rejistadu, entaun bele hamoos kedas.",
+        "summaryCount": "Ativu {{count}} iha servisu",
+        "summaryCost": "Kustu",
+        "summaryAccumulated": "Depresiaun akumulada",
+        "summaryNbv": "Valor livru líkidu",
+        "colAsset": "Ativu",
+        "colClass": "Klase",
+        "colAcquired": "Sosa iha",
+        "colCost": "Kustu",
+        "colAccumulated": "Akumulada",
+        "colNbv": "Valor livru",
+        "colPeriod": "Períodu",
+        "colCharge": "Montante",
+        "colStatus": "Estadu",
+        "colActions": "Asaun",
+        "rowTotal": "Totál",
+        "schedule": "Eskala",
+        "scheduleDescription": "Liña-loos durante fulan {{life}}; liña kinur rejista tiha ona.",
+        "dispose": "Abate",
+        "disposeTitle": "Abate {{name}}",
+        "disposeDescription": "Hasai ativu husi livru no rejista lukru ka lakon automátiku.",
+        "disposeConfirm": "Halo abate ba ativu",
+        "disposedTitle": "Ativu abate ona",
+        "disposedGain": "Lukru husi abate: {{amount}}",
+        "disposedLoss": "Lakon husi abate: {{amount}}",
+        "disposePreviewGain": "Valor livru {{nbv}} — fa'an ne'e hamosu lukru {{amount}}.",
+        "disposePreviewLoss": "Valor livru {{nbv}} — fa'an ne'e hamosu lakon {{amount}}.",
+        "fieldName": "Naran ativu",
+        "fieldReference": "Referénsia / série",
+        "fieldAcquired": "Data sosa",
+        "fieldCost": "Kustu (USD)",
+        "fieldResidual": "Valor rezidual",
+        "fieldLife": "Vida útil (fulan)",
+        "fieldLifeHint": "Prienxe ona husi klase; bele muda kada ativu. Rai nunka depresiaun.",
+        "fieldPeriod": "Períodu atu rejista",
+        "fieldDisposeDate": "Data abate",
+        "fieldProceeds": "Osan simu (USD)",
+        "monthlyPreview": "Montante mensál: {{amount}}",
+        "postDescription": "Lansamentu agregadu ida (Db 5800 / Kr 1590) kobre ativu hotu ne'ebé tenke selu, inklui atrazu.",
+        "postNothing": "La iha depresiaun ba períodu ne'e.",
+        "postHint": "Períodu ne'ebé rejista tiha ona la bele rejista dala rua. Atu hadi'a, halo reversaun lansamentu no ajusta ativu.",
+        "postConfirm": "Rejista {{amount}}",
+        "postedTitle": "Depresiaun rejista ona",
+        "postedDescription": "{{period}}: {{amount}} tama ba jornál.",
+        "statusActive": "Ativu",
+        "statusFully": "Depresiaun kompletu",
+        "statusDisposed": "Abate ona",
+        "classes": {
+          "land": "Rai",
+          "buildings": "Edifísiu",
+          "equipment": "Ekipamentu",
+          "vehicles": "Veíkulu",
+          "furniture": "Mobília"
+        }
       },
       "recurring": {
         "title": "Lansamentu rekorrente",
@@ -15460,6 +15780,7 @@ export const translations = {
       "vatReturns": "Declarações IVA",
       "chartOfAccounts": "Plano de Contas",
       "journalEntries": "Lançamentos",
+      "fixedAssets": "Ativos Fixos",
       "generalLedger": "Razão Geral",
       "statements": "Extratos",
       "trialBalance": "Balancete",
@@ -16582,6 +16903,96 @@ export const translations = {
             "desc": "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo."
           }
         }
+      }
+    },
+    "securityPage": {
+      "nav": {
+        "page": "Segurança",
+        "controls": "Controlos",
+        "data": "Os seus dados",
+        "privacy": "Privacidade"
+      },
+      "hero": {
+        "eyebrow": "Como o Xefe protege o seu negócio",
+        "title": "Software de dinheiro tem um dever:",
+        "titleAccent": "nunca perder, nunca expor, nunca mentir.",
+        "description": "Tudo nesta página está a funcionar hoje — não é um roteiro. É a camada de segurança debaixo de cada folha, fatura e lançamento no Xefe."
+      },
+      "controls": {
+        "eyebrow": "Controlos reais",
+        "title": "Impostos no servidor, não só no ecrã",
+        "description": "Esconder um botão não é segurança. As regras do Xefe vivem na camada da base de dados, onde não podem ser contornadas.",
+        "cards": {
+          "rules": {
+            "title": "Regras de segurança no servidor",
+            "description": "Cada leitura e escrita passa por regras de isolamento impostas pela própria base de dados. A interface nunca é a única barreira."
+          },
+          "twoPerson": {
+            "title": "Duas pessoas para finalizar a folha",
+            "description": "Quem prepara uma folha não a pode aprovar — salvo se a empresa optar explicitamente pelo modo individual. A regra é imposta na base de dados, não na app."
+          },
+          "billing": {
+            "title": "Faturação protegida contra alterações",
+            "description": "Um dono não consegue atribuir-se uma subscrição: os campos de faturação da própria conta só podem ser escritos pelo webhook verificado do fornecedor de pagamentos."
+          },
+          "tested": {
+            "title": "Testado antes de cada deploy",
+            "description": "Cada versão corre verificação de tipos, mais de seiscentos testes automáticos e a suite completa de regras de segurança contra as regras de produção — automaticamente, antes de sair."
+          }
+        }
+      },
+      "data": {
+        "eyebrow": "Os seus dados",
+        "title": "Guardados em segurança, sempre recuperáveis",
+        "description": "O Xefe corre no Google Cloud (Firebase) — a mesma infraestrutura do Gmail — com os registos da sua empresa isolados de todos os outros clientes.",
+        "note": "Os dados são seus. Exporte trabalhadores, histórico de folha, lançamentos e relatórios a qualquer momento — sem aprisionamento, sem taxa de exportação.",
+        "points": {
+          "encryption": {
+            "title": "Encriptado em trânsito e em repouso",
+            "description": "Todo o tráfego é encriptado por TLS e tudo o que é guardado é encriptado em repouso pelo Google Cloud."
+          },
+          "backups": {
+            "title": "Backups diários + recuperação pontual",
+            "description": "Backups automáticos diários, com recuperação point-in-time ativa para restaurar registos a um momento preciso."
+          },
+          "isolation": {
+            "title": "Isolamento estrito por empresa",
+            "description": "Cada registo carrega a identidade da sua empresa e as regras tornam impossível o acesso entre empresas — incluindo para o XefeBot, cujo acesso a dados é fixado à sua empresa no servidor."
+          },
+          "audit": {
+            "title": "Um rasto de auditoria com memória",
+            "description": "Aprovações de folha, ações administrativas e lançamentos contabilísticos ficam registados com quem fez o quê, e quando."
+          }
+        }
+      },
+      "privacy": {
+        "eyebrow": "Privacidade por construção",
+        "title": "O que é privado fica privado",
+        "description": "Dados salariais são a coisa mais sensível que uma empresa guarda. Os padrões do Xefe tratam-nos assim.",
+        "points": {
+          "email": {
+            "title": "Um destinatário por email",
+            "description": "Cada notificação sai individualmente — os funcionários nunca veem os endereços uns dos outros."
+          },
+          "links": {
+            "title": "Links impossíveis de adivinhar, revogáveis",
+            "description": "As páginas públicas de faturas usam links longos e aleatórios que não podem ser listados — e pode desativar um link a qualquer momento."
+          },
+          "roles": {
+            "title": "Papéis que espelham funções reais",
+            "description": "Donos, administradores de RH, contabilistas, gestores e funcionários veem exatamente o que a sua função exige — o contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento."
+          },
+          "payslips": {
+            "title": "Recibos só chegam ao seu dono",
+            "description": "O recibo de cada trabalhador vai só para esse trabalhador — na app Ekipa, no seu próprio telemóvel."
+          }
+        },
+        "disclosure": "Encontrou uma falha de segurança? Queremos ouvi-la, com discrição e rapidez:"
+      },
+      "cta": {
+        "title": "A segurança é uma camada do motor.",
+        "description": "A mesma disciplina corre na aritmética da folha, nas declarações fiscais e nos livros.",
+        "engine": "Ver o motor"
       }
     },
     "enginePage": {
@@ -20396,6 +20807,75 @@ export const translations = {
         "sourceRevenue": "Receita",
         "sourceReceipt": "Recibo",
         "sourcePayment": "Pagamento"
+      },
+      "fixedAssets": {
+        "title": "Ativos Fixos",
+        "subtitle": "O registo de ativos: mapas de depreciação, registo mensal, abates",
+        "export": "Exportar registo",
+        "postDepreciation": "Registar depreciação",
+        "addAsset": "Adicionar ativo",
+        "addDescription": "O Xefe deprecia em linha reta a partir do mês de aquisição e regista um lançamento por mês.",
+        "empty": "Ainda não há ativos. Adicione o primeiro — a máquina de café conta.",
+        "loadError": "Não foi possível carregar os ativos fixos. Tente novamente.",
+        "saveError": "Não foi possível guardar. Tente novamente.",
+        "exportError": "Não foi possível exportar o registo. Tente novamente.",
+        "createdTitle": "Ativo adicionado",
+        "deletedTitle": "Ativo eliminado",
+        "deleteTitle": "Eliminar ativo?",
+        "deleteDescription": "\"{{name}}\" não tem depreciação registada, por isso pode ser removido.",
+        "summaryCount": "{{count}} ativos em serviço",
+        "summaryCost": "Custo",
+        "summaryAccumulated": "Depreciação acumulada",
+        "summaryNbv": "Valor contabilístico líquido",
+        "colAsset": "Ativo",
+        "colClass": "Classe",
+        "colAcquired": "Adquirido",
+        "colCost": "Custo",
+        "colAccumulated": "Acumulada",
+        "colNbv": "Valor líquido",
+        "colPeriod": "Período",
+        "colCharge": "Encargo",
+        "colStatus": "Estado",
+        "colActions": "Ações",
+        "rowTotal": "Total",
+        "schedule": "Mapa",
+        "scheduleDescription": "Linha reta durante {{life}} meses; as linhas a cinzento já foram registadas.",
+        "dispose": "Abater",
+        "disposeTitle": "Abater {{name}}",
+        "disposeDescription": "Remove o ativo dos livros e regista automaticamente o ganho ou a perda.",
+        "disposeConfirm": "Abater ativo",
+        "disposedTitle": "Ativo abatido",
+        "disposedGain": "Ganho no abate: {{amount}}",
+        "disposedLoss": "Perda no abate: {{amount}}",
+        "disposePreviewGain": "Valor líquido {{nbv}} — esta venda regista um ganho de {{amount}}.",
+        "disposePreviewLoss": "Valor líquido {{nbv}} — esta venda regista uma perda de {{amount}}.",
+        "fieldName": "Nome do ativo",
+        "fieldReference": "Referência / série",
+        "fieldAcquired": "Data de aquisição",
+        "fieldCost": "Custo (USD)",
+        "fieldResidual": "Valor residual",
+        "fieldLife": "Vida útil (meses)",
+        "fieldLifeHint": "Pré-preenchido pela classe; ajuste por ativo. Terrenos nunca depreciam.",
+        "fieldPeriod": "Período a registar",
+        "fieldDisposeDate": "Data do abate",
+        "fieldProceeds": "Valor recebido (USD)",
+        "monthlyPreview": "Encargo mensal: {{amount}}",
+        "postDescription": "Um lançamento agregado (Db 5800 / Cr 1590) cobrindo todos os ativos devidos, recuperação incluída.",
+        "postNothing": "Nada a depreciar neste período.",
+        "postHint": "Um período registado não pode ser registado duas vezes. Para corrigir, reverta o lançamento e ajuste os ativos.",
+        "postConfirm": "Registar {{amount}}",
+        "postedTitle": "Depreciação registada",
+        "postedDescription": "{{period}}: {{amount}} lançado no diário.",
+        "statusActive": "Ativo",
+        "statusFully": "Totalmente depreciado",
+        "statusDisposed": "Abatido",
+        "classes": {
+          "land": "Terrenos",
+          "buildings": "Edifícios",
+          "equipment": "Equipamento",
+          "vehicles": "Viaturas",
+          "furniture": "Mobiliário"
+        }
       },
       "recurring": {
         "title": "Lançamentos recorrentes",

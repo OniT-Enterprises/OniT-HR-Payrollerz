@@ -190,6 +190,7 @@ const messages = {
     "vatReturns": "VAT Returns",
     "chartOfAccounts": "Chart of Accounts",
     "journalEntries": "Journal Entries",
+    "fixedAssets": "Fixed Assets",
     "generalLedger": "General Ledger",
     "statements": "Statements",
     "trialBalance": "Trial Balance",
@@ -1312,6 +1313,96 @@ const messages = {
           "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
         }
       }
+    }
+  },
+  "securityPage": {
+    "nav": {
+      "page": "Security",
+      "controls": "Controls",
+      "data": "Your data",
+      "privacy": "Privacy"
+    },
+    "hero": {
+      "eyebrow": "How Xefe protects your business",
+      "title": "Money software has one job:",
+      "titleAccent": "never lose, never leak, never lie.",
+      "description": "Everything on this page is running today — not a roadmap. It is the safety layer under every payroll run, invoice and journal in Xefe."
+    },
+    "controls": {
+      "eyebrow": "Real controls",
+      "title": "Enforced on the server, not just the screen",
+      "description": "Hiding a button is not security. Xefe's rules live in the database layer, where they cannot be talked around.",
+      "cards": {
+        "rules": {
+          "title": "Server-side security rules",
+          "description": "Every single read and write passes tenant-isolation rules enforced by the database itself. The interface is never the only gate."
+        },
+        "twoPerson": {
+          "title": "Two people to finalize payroll",
+          "description": "The person who prepares a payroll run cannot approve it — unless a business explicitly opts into solo mode. The rule is enforced in the database, not the app."
+        },
+        "billing": {
+          "title": "Tamper-protected billing",
+          "description": "A business owner cannot grant themselves a subscription: billing fields on their own account are writable only by the payment provider's verified webhook."
+        },
+        "tested": {
+          "title": "Tested before every deploy",
+          "description": "Every release runs type checks, six hundred plus automated tests, and the full security-rules suite against the production rules — automatically, before anything ships."
+        }
+      }
+    },
+    "data": {
+      "eyebrow": "Your data",
+      "title": "Stored safely, recoverable always",
+      "description": "Xefe runs on Google Cloud (Firebase) — the same infrastructure that runs Gmail — with your company's records isolated from every other tenant.",
+      "note": "Your data is yours. Export your employees, payroll history, journals and reports at any time — no lock-in, no export fee.",
+      "points": {
+        "encryption": {
+          "title": "Encrypted in transit and at rest",
+          "description": "All traffic is TLS-encrypted, and everything stored is encrypted at rest by Google Cloud."
+        },
+        "backups": {
+          "title": "Daily backups + point-in-time recovery",
+          "description": "Automatic daily backups, with point-in-time recovery enabled so records can be restored to a precise moment."
+        },
+        "isolation": {
+          "title": "Strict tenant isolation",
+          "description": "Every record carries your company's identity and the rules make cross-company access impossible — including for XefeBot, whose data access is pinned to your company on the server."
+        },
+        "audit": {
+          "title": "An audit trail that remembers",
+          "description": "Payroll approvals, admin actions and accounting postings are logged with who did what, and when."
+        }
+      }
+    },
+    "privacy": {
+      "eyebrow": "Privacy by construction",
+      "title": "Private things stay private",
+      "description": "Salary data is the most sensitive thing a business holds. Xefe's defaults treat it that way.",
+      "points": {
+        "email": {
+          "title": "One recipient per email",
+          "description": "Every notification goes out individually — staff never see each other's addresses, ever."
+        },
+        "links": {
+          "title": "Unguessable, revocable links",
+          "description": "Public invoice pages use long random links that cannot be listed or enumerated — and you can kill a link at any time."
+        },
+        "roles": {
+          "title": "Roles that match real jobs",
+          "description": "Owners, HR admins, accountants, managers, and staff each see exactly what their job needs — an accountant gets the books without member management; a manager sees only their department."
+        },
+        "payslips": {
+          "title": "Payslips reach only their owner",
+          "description": "Each employee's payslip goes to that employee — in the Ekipa app, on their own phone."
+        }
+      },
+      "disclosure": "Found a security issue? We want to hear about it, quietly and quickly:"
+    },
+    "cta": {
+      "title": "Security is one layer of the engine.",
+      "description": "The same discipline runs through the payroll arithmetic, the tax filings and the books.",
+      "engine": "See the engine"
     }
   },
   "enginePage": {
@@ -5126,6 +5217,75 @@ const messages = {
       "sourceRevenue": "Revenue",
       "sourceReceipt": "Receipt",
       "sourcePayment": "Payment"
+    },
+    "fixedAssets": {
+      "title": "Fixed Assets",
+      "subtitle": "The asset register: depreciation schedules, monthly posting, disposals",
+      "export": "Export register",
+      "postDepreciation": "Post depreciation",
+      "addAsset": "Add asset",
+      "addDescription": "Xefe depreciates straight-line from the acquisition month and posts one journal per month.",
+      "empty": "No assets yet. Add the first one — the espresso machine counts.",
+      "loadError": "Could not load fixed assets. Please try again.",
+      "saveError": "Could not save. Please try again.",
+      "exportError": "Could not export the register. Please try again.",
+      "createdTitle": "Asset added",
+      "deletedTitle": "Asset deleted",
+      "deleteTitle": "Delete asset?",
+      "deleteDescription": "\"{{name}}\" has no posted depreciation, so it can be removed outright.",
+      "summaryCount": "{{count}} assets in service",
+      "summaryCost": "Cost",
+      "summaryAccumulated": "Accumulated depreciation",
+      "summaryNbv": "Net book value",
+      "colAsset": "Asset",
+      "colClass": "Class",
+      "colAcquired": "Acquired",
+      "colCost": "Cost",
+      "colAccumulated": "Accumulated",
+      "colNbv": "Net book value",
+      "colPeriod": "Period",
+      "colCharge": "Charge",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "rowTotal": "Total",
+      "schedule": "Schedule",
+      "scheduleDescription": "Straight-line over {{life}} months; greyed rows are already posted.",
+      "dispose": "Dispose",
+      "disposeTitle": "Dispose {{name}}",
+      "disposeDescription": "Removes the asset from the books and posts the gain or loss automatically.",
+      "disposeConfirm": "Dispose asset",
+      "disposedTitle": "Asset disposed",
+      "disposedGain": "Gain on disposal: {{amount}}",
+      "disposedLoss": "Loss on disposal: {{amount}}",
+      "disposePreviewGain": "Net book value {{nbv}} — this sale books a gain of {{amount}}.",
+      "disposePreviewLoss": "Net book value {{nbv}} — this sale books a loss of {{amount}}.",
+      "fieldName": "Asset name",
+      "fieldReference": "Reference / serial",
+      "fieldAcquired": "Acquisition date",
+      "fieldCost": "Cost (USD)",
+      "fieldResidual": "Residual value",
+      "fieldLife": "Useful life (months)",
+      "fieldLifeHint": "Pre-filled from the class; adjust per asset. Land never depreciates.",
+      "fieldPeriod": "Period to post",
+      "fieldDisposeDate": "Disposal date",
+      "fieldProceeds": "Proceeds (USD)",
+      "monthlyPreview": "Monthly charge: {{amount}}",
+      "postDescription": "One aggregate journal (Dr 5800 / Cr 1590) covering every asset due, catch-up included.",
+      "postNothing": "Nothing to depreciate for this period.",
+      "postHint": "A posted period cannot be posted twice. To correct it, reverse the journal entry and adjust the assets.",
+      "postConfirm": "Post {{amount}}",
+      "postedTitle": "Depreciation posted",
+      "postedDescription": "{{period}}: {{amount}} posted to the journal.",
+      "statusActive": "Active",
+      "statusFully": "Fully depreciated",
+      "statusDisposed": "Disposed",
+      "classes": {
+        "land": "Land",
+        "buildings": "Buildings",
+        "equipment": "Equipment",
+        "vehicles": "Vehicles",
+        "furniture": "Furniture & fixtures"
+      }
     },
     "recurring": {
       "title": "Recurring entries",

@@ -56,7 +56,12 @@ import {
   Lock,
   AlertCircle,
   RotateCcw,
+  Repeat,
 } from "lucide-react";
+import {
+  RecurringJournalsPanel,
+  MakeRecurringDialog,
+} from "@/components/accounting/RecurringJournalsPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useAccounts,
@@ -101,6 +106,7 @@ const JOURNAL_SOURCE_OPTIONS: Array<{
   { value: "payment", labelKey: "accounting.journalEntries.sourcePayment" },
   { value: "receipt", labelKey: "accounting.journalEntries.sourceReceipt" },
   { value: "adjustment", labelKey: "accounting.journalEntries.sourceAdjustment" },
+  { value: "recurring", labelKey: "accounting.journalEntries.sourceRecurring" },
   { value: "closing", labelKey: "accounting.journalEntries.sourceClosing" },
 ];
 const JOURNAL_SOURCE_FILTERS = new Set(
@@ -114,7 +120,9 @@ export default function JournalEntries() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
-  const { canManage } = useTenant();
+  const { canManage, session } = useTenant();
+  const [showRecurringPanel, setShowRecurringPanel] = useState(false);
+  const [makeRecurringEntry, setMakeRecurringEntry] = useState<JournalEntry | null>(null);
   const canManageTenant = canManage();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -596,6 +604,15 @@ export default function JournalEntries() {
           icon={SquarePen}
           iconColor="text-orange-500"
           actions={canManageTenant ? (
+            <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowRecurringPanel(true)}
+            >
+              <Repeat className="h-4 w-4 mr-2" />
+              {t("accounting.recurring.title")}
+            </Button>
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
                 <Button onClick={resetForm} variant="outline" size="sm">
@@ -786,6 +803,7 @@ export default function JournalEntries() {
                   </div>
                 </DialogContent>
             </Dialog>
+            </div>
           ) : undefined}
         />
         <MoreDetailsSection className="mb-6">
@@ -1041,6 +1059,7 @@ export default function JournalEntries() {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   {canManageTenant && entry.status === "posted" && !isLocked && (
+                                    <>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1053,6 +1072,19 @@ export default function JournalEntries() {
                                       <RotateCcw className="h-3 w-3 mr-1" />
                                       {t("accounting.journalEntries.reverseEntry")}
                                     </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setMakeRecurringEntry(entry);
+                                      }}
+                                      className="h-7 text-xs"
+                                    >
+                                      <Repeat className="h-3 w-3 mr-1" />
+                                      {t("accounting.recurring.makeRecurringAction")}
+                                    </Button>
+                                    </>
                                   )}
                                   <Button
                                     variant="ghost"
@@ -1180,6 +1212,23 @@ export default function JournalEntries() {
           )}
         </DialogContent>
       </Dialog>
+
+      {session?.tid && (
+        <>
+          <RecurringJournalsPanel
+            tenantId={session.tid}
+            open={showRecurringPanel}
+            onOpenChange={setShowRecurringPanel}
+            canManage={canManageTenant}
+          />
+          <MakeRecurringDialog
+            tenantId={session.tid}
+            entry={makeRecurringEntry}
+            onOpenChange={(open) => !open && setMakeRecurringEntry(null)}
+            createdBy={user?.email || user?.uid || "unknown"}
+          />
+        </>
+      )}
     </div>
   );
 }

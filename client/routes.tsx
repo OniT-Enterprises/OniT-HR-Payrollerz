@@ -59,6 +59,7 @@ const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
 const Pricing = lazyWithRetry(() => import("@/pages/Pricing"));
 const AccountantPartners = lazyWithRetry(() => import("@/pages/AccountantPartners"));
 const XefeEngine = lazyWithRetry(() => import("@/pages/XefeEngine"));
+const SecurityPage = lazyWithRetry(() => import("@/pages/SecurityPage"));
 const AccountantPortfolioDashboard = lazyWithRetry(() => import("@/pages/AccountantPortfolioDashboard"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
@@ -133,6 +134,7 @@ const BankReconciliation = lazyWithRetry(() => import("@/pages/money/BankReconci
 const ChartOfAccounts = lazyWithRetry(() => import("@/pages/accounting/ChartOfAccounts"));
 const JournalEntries = lazyWithRetry(() => import("@/pages/accounting/JournalEntries"));
 const GeneralLedger = lazyWithRetry(() => import("@/pages/accounting/GeneralLedger"));
+const FixedAssets = lazyWithRetry(() => import("@/pages/accounting/FixedAssets"));
 const TrialBalance = lazyWithRetry(() => import("@/pages/accounting/TrialBalance"));
 const IncomeStatement = lazyWithRetry(() => import("@/pages/accounting/IncomeStatement"));
 const AccountingBalanceSheet = lazyWithRetry(() => import("@/pages/accounting/BalanceSheet"));
@@ -202,6 +204,7 @@ export const authRoutes = (
     <Route path="/pricing" element={marketingRoute(<Pricing />)} />
     <Route path="/accountants" element={marketingRoute(<AccountantPartners />)} />
     <Route path="/engine" element={marketingRoute(<XefeEngine />)} />
+    <Route path="/security" element={marketingRoute(<SecurityPage />)} />
     {/* Locale-prefixed marketing pages (/tet/..., /pt/...) so each language is
         crawlable at its own URL (hreflang). PublicLocaleSync inside PublicNav
         switches the i18n locale from the prefix. English stays at the bare path. */}
@@ -212,6 +215,7 @@ export const authRoutes = (
         <Route path={`/${prefix}/pricing`} element={marketingRoute(<Pricing />)} />
         <Route path={`/${prefix}/accountants`} element={marketingRoute(<AccountantPartners />)} />
         <Route path={`/${prefix}/engine`} element={marketingRoute(<XefeEngine />)} />
+        <Route path={`/${prefix}/security`} element={marketingRoute(<SecurityPage />)} />
       </React.Fragment>
     ))}
     <Route path="/features" element={<Navigate to="/how-it-works" replace />} />
@@ -794,6 +798,14 @@ export const accountingRoutes = (
       element={
         <FeatureRoute requiredModule="accounting">
           <GeneralLedger />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/fixed-assets"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <FixedAssets />
         </FeatureRoute>
       }
     />

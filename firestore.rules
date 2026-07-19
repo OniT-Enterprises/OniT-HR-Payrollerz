@@ -704,6 +704,29 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      // Recurring journal templates. The daily scheduler
+      // (functions/src/accounting.ts) posts them with the Admin SDK; clients
+      // only manage the templates themselves.
+      match /recurringJournals/{templateId} {
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+      }
+
+      // Fixed-asset register (the depreciation subledger).
+      match /fixedAssets/{assetId} {
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+      }
+
+      // One doc per posted depreciation period (YYYY-MM) — the idempotency
+      // guard for fixedAssetService.postDepreciationForPeriod. Never edited
+      // or deleted from clients: reversing a period is a manual journal task.
+      match /fixedAssetPostings/{period} {
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow update, delete: if isSuperAdmin();
+      }
+
       match /fiscalYears/{yearId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
