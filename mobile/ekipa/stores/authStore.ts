@@ -13,6 +13,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { signInWithGoogleNative, signOutGoogleNative } from '@xefe/mobile';
 import { auth, db } from '../lib/firebase';
 import { unregisterPushNotifications } from '../lib/notifications';
+import { usePayslipStore } from './payslipStore';
+import { useTenantStore } from './tenantStore';
 
 interface UserProfile {
   uid: string;
@@ -91,6 +93,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (currentUserId) {
         await unregisterPushNotifications(currentUserId);
       }
+      // Wipe sensitive cached data before dropping the session so salary and
+      // tenant data never linger on a shared device after sign-out. This runs
+      // for every sign-out entry point (profile screen + error screens).
+      await usePayslipStore.getState().clearCache();
+      await useTenantStore.getState().clearTenant();
       // Also drop the Google session so the account picker shows next time.
       await signOutGoogleNative();
       await firebaseSignOut(auth);

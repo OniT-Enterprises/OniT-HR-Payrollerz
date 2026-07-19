@@ -95,7 +95,8 @@ service cloud.firestore {
           'manualSubscription', 'monthlySubscriptionAmount',
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
-          'subscriptionAnnualMonthsCharged'
+          'subscriptionAnnualMonthsCharged',
+          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout'
         ]);
     }
 
@@ -326,7 +327,8 @@ service cloud.firestore {
           'manualSubscription', 'monthlySubscriptionAmount',
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
-          'subscriptionAnnualMonthsCharged'
+          'subscriptionAnnualMonthsCharged',
+          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout'
         ]);
 
       // Creating new tenants requires authentication and self-ownership

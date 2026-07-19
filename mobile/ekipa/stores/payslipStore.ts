@@ -5,14 +5,30 @@
 import { create } from 'zustand';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { t } from '../lib/i18n';
 import type { Payslip, PayslipEarning, PayslipDeduction } from '../types/payslip';
 
-const PAYSLIP_CACHE_KEY = '@ekipa/payslips_cache';
+// Salary data is sensitive. On a shared device a different identity (another
+// employee, or the same person after switching tenant/employee) must never be
+// able to read the previous identity's cached payslips offline. The cache is
+// therefore keyed by the full identity triple (uid + tenantId + employeeId),
+// and every key shares this prefix so sign-out can wipe them all at once.
+const PAYSLIP_CACHE_PREFIX = '@ekipa/payslips_cache';
 const MAX_CACHED_PAYSLIPS = 6;
 
 const MONTHS_TO_FETCH = 12;
+
+/**
+ * Build the identity-scoped AsyncStorage key for the current user's payslips.
+ * Returns null (skip caching) if any identity component is missing, so we never
+ * write salary data to an ambiguous, cross-identity-readable key.
+ */
+function payslipCacheKey(tenantId: string, employeeId: string): string | null {
+  const uid = auth.currentUser?.uid;
+  if (!uid || !tenantId || !employeeId) return null;
+  return `${PAYSLIP_CACHE_PREFIX}:${uid}:${tenantId}:${employeeId}`;
+}
 
 interface PayslipState {
   payslips: Payslip[];
@@ -24,6 +40,7 @@ interface PayslipState {
   selectPayslip: (payslip: Payslip) => void;
   clearSelection: () => void;
   clear: () => void;
+  clearCache: () => Promise<void>;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -156,6 +173,7 @@ export const usePayslipStore = create<PayslipState>((set) => ({
 
   fetchPayslips: async (tenantId: string, employeeId: string) => {
     set({ loading: true, error: null });
+    const cacheKey = payslipCacheKey(tenantId, employeeId);
     try {
       const periods = getRecentPeriods(MONTHS_TO_FETCH);
       const results: Payslip[] = [];
@@ -183,26 +201,30 @@ export const usePayslipStore = create<PayslipState>((set) => ({
       // Sort by period descending (most recent first)
       results.sort((a, b) => b.period.localeCompare(a.period));
 
-      // Cache the latest payslips for offline access
-      try {
-        const toCache = results.slice(0, MAX_CACHED_PAYSLIPS);
-        await AsyncStorage.setItem(PAYSLIP_CACHE_KEY, JSON.stringify(toCache));
-      } catch {
-        // Cache write failure is non-critical
+      // Cache the latest payslips for offline access (identity-scoped only).
+      if (cacheKey) {
+        try {
+          const toCache = results.slice(0, MAX_CACHED_PAYSLIPS);
+          await AsyncStorage.setItem(cacheKey, JSON.stringify(toCache));
+        } catch {
+          // Cache write failure is non-critical
+        }
       }
 
       set({ payslips: results, loading: false });
     } catch {
-      // On network failure, try to load from cache
-      try {
-        const cached = await AsyncStorage.getItem(PAYSLIP_CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached) as Payslip[];
-          set({ payslips: parsed, loading: false, error: null });
-          return;
+      // On network failure, try to load from this identity's cache only.
+      if (cacheKey) {
+        try {
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached) as Payslip[];
+            set({ payslips: parsed, loading: false, error: null });
+            return;
+          }
+        } catch {
+          // Cache read also failed
         }
-      } catch {
-        // Cache read also failed
       }
       set({ payslips: [], loading: false, error: 'fetchError' });
     }
@@ -211,4 +233,20 @@ export const usePayslipStore = create<PayslipState>((set) => ({
   selectPayslip: (payslip: Payslip) => set({ selectedPayslip: payslip }),
   clearSelection: () => set({ selectedPayslip: null }),
   clear: () => set({ payslips: [], selectedPayslip: null, loading: false, error: null }),
+
+  // Wipe all cached salary data — in-memory and every identity-scoped key on
+  // disk (including any legacy unscoped key) — so nothing survives sign-out on
+  // a shared device. Best-effort: never block sign-out on cache cleanup.
+  clearCache: async () => {
+    set({ payslips: [], selectedPayslip: null, loading: false, error: null });
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const payslipKeys = keys.filter((k) => k.startsWith(PAYSLIP_CACHE_PREFIX));
+      if (payslipKeys.length > 0) {
+        await AsyncStorage.multiRemove(payslipKeys);
+      }
+    } catch {
+      // Best-effort cleanup
+    }
+  },
 }));

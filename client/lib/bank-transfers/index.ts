@@ -215,11 +215,26 @@ export function downloadBankFile(result: BankFileResult): void {
 }
 
 /**
- * Format period as MMM-YYYY
+ * Canonical machine period key, e.g. "2026-07".
+ *
+ * Bank-facing Portuguese documents localize the month from this key — the
+ * emailed BNU/BNCTL pack (payment-pack.ts) turns "2026-07" into
+ * "Julho de 2026" for the cover email and Excel headings. Emitting an
+ * English-locale label here (the old "JUL2026") could not be parsed by that
+ * localizer, so the month leaked through untranslated onto bank documents.
+ * The CSV/txt exports interpolate this key directly (references, filenames).
  */
 function formatPeriod(startDate: string, endDate: string): string {
   const end = new Date(endDate);
-  return `${end.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' }).toUpperCase()}${end.getFullYear()}`;
+  // en-CA yields an ISO-style "YYYY-MM-DD"; slice to the "YYYY-MM" month key.
+  return end
+    .toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'Asia/Dili',
+    })
+    .slice(0, 7);
 }
 
 /**

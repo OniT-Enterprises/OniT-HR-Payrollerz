@@ -55,7 +55,9 @@ export function generateBNCTLFile(
   lines.push(`TOTAL,${summary.transactionCount} records,${formatAmount(summary.totalAmount)} USD`);
   lines.push(`Generated,${new Date().toISOString()}`);
 
-  const content = lines.join('\n');
+  // Prepend a UTF-8 BOM so Excel reads accented TL/PT beneficiary names
+  // (ç, ã, é) correctly instead of mojibake when the CSV is opened directly.
+  const content = '﻿' + lines.join('\n');
   const fileName = `BNCTL_Salaries_${summary.payrollPeriod}_${valueDate}.csv`;
 
   return {

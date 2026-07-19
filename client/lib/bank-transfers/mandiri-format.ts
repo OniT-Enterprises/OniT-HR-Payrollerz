@@ -58,6 +58,9 @@ export function generateMandiriFile(
   ].join('');
   lines.push(trailer);
 
+  // No UTF-8 BOM here (unlike the CSV formats): this is a fixed-width .txt
+  // machine-upload file parsed by byte offset, not opened in Excel — a 3-byte
+  // BOM prefix would shift every field position and corrupt the parse.
   const content = lines.join('\n');
   const fileName = `MANDIRI_Salaries_${summary.payrollPeriod}_${formatDateYYYYMMDD(summary.valueDate)}.txt`;
 

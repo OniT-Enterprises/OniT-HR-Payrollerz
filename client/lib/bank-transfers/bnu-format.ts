@@ -46,7 +46,9 @@ export function generateBNUFile(
   lines.push(`# Company: ${companyName}`);
   lines.push(`# Generated: ${new Date().toISOString()}`);
 
-  const content = lines.join('\n');
+  // Prepend a UTF-8 BOM so Excel reads accented TL/PT beneficiary names
+  // (ç, ã, é) correctly instead of mojibake when the CSV is opened directly.
+  const content = '﻿' + lines.join('\n');
   const fileName = `BNU_Salaries_${summary.payrollPeriod}_${formatDateYYYYMMDD(summary.valueDate)}.csv`;
 
   return {

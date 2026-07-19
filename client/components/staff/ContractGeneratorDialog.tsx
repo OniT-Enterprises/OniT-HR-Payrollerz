@@ -33,12 +33,12 @@ import { Download, FileText, Loader2, Paperclip, Sparkles, Wand2 } from "lucide-
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useSettings } from "@/hooks/useSettings";
 import { getFunctionsLazy } from "@/lib/firebase";
 import {
   contractTemplateService,
   type ContractTemplate,
 } from "@/services/contractTemplateService";
-import { settingsService } from "@/services/settingsService";
 import {
   buildContractFillData,
   fillTemplateTokens,
@@ -90,12 +90,9 @@ export default function ContractGeneratorDialog({
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: settings } = useQuery({
-    queryKey: [tenantId, "settings"],
-    queryFn: () => settingsService.getSettings(tenantId),
-    enabled: open && !!tenantId,
-    staleTime: 5 * 60 * 1000,
-  });
+  // Canonical settings query (settingsKeys.all) so a settings update
+  // invalidates and refreshes the values shown here (finding 13).
+  const { data: settings } = useSettings(open);
 
   const fillData: ContractFillData = useMemo(
     () =>

@@ -22,6 +22,7 @@ export const leaveKeys = {
     [...leaveKeys.all(tenantId), "balances"] as const,
   balance: (tenantId: string, employeeId: string) =>
     [...leaveKeys.balances(tenantId), employeeId] as const,
+  stats: (tenantId: string) => [...leaveKeys.all(tenantId), "stats"] as const,
 };
 
 /**
@@ -110,6 +111,7 @@ export function useCreateLeaveRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
       queryClient.invalidateQueries({ queryKey: leaveKeys.balances(tenantId) });
+      queryClient.invalidateQueries({ queryKey: leaveKeys.stats(tenantId) });
     },
   });
 }
@@ -142,6 +144,7 @@ export function useApproveLeaveRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
       queryClient.invalidateQueries({ queryKey: leaveKeys.balances(tenantId) });
+      queryClient.invalidateQueries({ queryKey: leaveKeys.stats(tenantId) });
     },
   });
 }
@@ -180,11 +183,7 @@ export function useLeaveStats(
     Boolean(effectiveFilters?.employeeId || effectiveFilters?.departmentId);
 
   return useQuery({
-    queryKey: [
-      ...leaveKeys.all(tenantId),
-      "stats",
-      effectiveFilters ?? {},
-    ] as const,
+    queryKey: [...leaveKeys.stats(tenantId), effectiveFilters ?? {}] as const,
     queryFn: () => leaveService.getLeaveStats(tenantId, effectiveFilters),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -216,6 +215,7 @@ export function useRejectLeaveRequest() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
+      queryClient.invalidateQueries({ queryKey: leaveKeys.stats(tenantId) });
     },
   });
 }
@@ -229,6 +229,7 @@ export function useCancelLeaveRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
       queryClient.invalidateQueries({ queryKey: leaveKeys.balances(tenantId) });
+      queryClient.invalidateQueries({ queryKey: leaveKeys.stats(tenantId) });
     },
   });
 }
