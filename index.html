@@ -4,6 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Google tag (gtag.js) — GA4 property G-WVYDBVTC1P. GA4 Enhanced
+         Measurement tracks SPA route changes via the History API, so the
+         initial config page_view + client-side navigations are both captured;
+         UTM params (e.g. utm_source=tetumdili from the translator ad) are read
+         as the session source. NOTE: the site's Content-Security-Policy (nginx
+         snippets/xefe-headers.conf) is report-only today; add
+         https://www.googletagmanager.com to script-src and
+         https://www.google-analytics.com + https://www.googletagmanager.com to
+         connect-src before ever enforcing the CSP, or GA will break. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WVYDBVTC1P"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WVYDBVTC1P');
+    </script>
+
     <!-- Primary Meta Tags -->
     <title>Xefe — HR, Payroll & Accounting for Timor-Leste</title>
     <meta name="title" content="Xefe — HR, Payroll & Accounting for Timor-Leste" />
