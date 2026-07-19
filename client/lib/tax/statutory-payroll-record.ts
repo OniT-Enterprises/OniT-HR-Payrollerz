@@ -39,13 +39,36 @@ export interface TLStatutoryEmployerIdentity {
 
 export class MissingStatutoryPayrollDataError extends Error {
   readonly field: string;
+  readonly employee?: string;
 
-  constructor(field: string) {
+  constructor(field: string, employee?: string) {
+    const who = employee ? ` for ${employee}` : "";
     super(
-      `Cannot generate a statutory filing because a paid payroll record has no valid ${field}. Reprocess or explicitly backfill the record; Xefe will not infer compliance values.`,
+      `Cannot generate a statutory filing because a paid payroll record${who} has no valid ${field}. Reprocess or explicitly backfill the record; Xefe will not infer compliance values.`,
     );
     this.name = "MissingStatutoryPayrollDataError";
     this.field = field;
+    this.employee = employee;
+  }
+}
+
+/**
+ * Runs a per-employee statutory read block and, if it fails because a record
+ * is missing a compliance value, re-throws the same error tagged with the
+ * employee's name so the export surfaces WHO needs backfilling instead of a
+ * nameless "a paid payroll record" message across a 300-row roster.
+ */
+export function withStatutoryEmployeeContext<T>(
+  employeeLabel: string | undefined,
+  read: () => T,
+): T {
+  try {
+    return read();
+  } catch (error) {
+    if (error instanceof MissingStatutoryPayrollDataError && !error.employee) {
+      throw new MissingStatutoryPayrollDataError(error.field, employeeLabel);
+    }
+    throw error;
   }
 }
 

@@ -58,6 +58,7 @@ import {
   requireStatutoryPayrollEmployeeId,
   requireStatutoryPayrollResidency,
   requireStatutoryText,
+  withStatutoryEmployeeContext,
   type TLStatutoryPayrollRecord,
 } from '@/lib/tax/statutory-payroll-record';
 
@@ -264,8 +265,15 @@ class TaxFilingService {
       }
     >();
     periodRecords.forEach((rec) => {
-      const employeeId = requireStatutoryPayrollEmployeeId(rec);
-      const isResident = requireStatutoryPayrollResidency(rec);
+      const recLabel = typeof rec.employeeId === 'string' ? rec.employeeId : undefined;
+      const { employeeId, isResident, wagesPaid, witTaxableAmount, witWithheld } =
+        withStatutoryEmployeeContext(recLabel, () => ({
+          employeeId: requireStatutoryPayrollEmployeeId(rec),
+          isResident: requireStatutoryPayrollResidency(rec),
+          wagesPaid: requireStatutoryPayrollAmount(rec, 'wagesPaid'),
+          witTaxableAmount: requireStatutoryPayrollAmount(rec, 'witTaxableAmount'),
+          witWithheld: requireStatutoryPayrollAmount(rec, 'incomeTax'),
+        }));
       const existing = totalsByEmployee.get(employeeId);
       if (existing && existing.isResident !== isResident) {
         throw new MissingStatutoryPayrollDataError('a consistent isResident classification within the filing period');
@@ -277,9 +285,9 @@ class TaxFilingService {
         isResident,
       };
       totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(accumulated.grossWages, requireStatutoryPayrollAmount(rec, 'wagesPaid')),
-        taxableWages: addMoney(accumulated.taxableWages, requireStatutoryPayrollAmount(rec, 'witTaxableAmount')),
-        witWithheld: addMoney(accumulated.witWithheld, requireStatutoryPayrollAmount(rec, 'incomeTax')),
+        grossWages: addMoney(accumulated.grossWages, wagesPaid),
+        taxableWages: addMoney(accumulated.taxableWages, witTaxableAmount),
+        witWithheld: addMoney(accumulated.witWithheld, witWithheld),
         isResident,
       });
     });
@@ -388,22 +396,28 @@ class TaxFilingService {
       }
     >();
     periodRecords.forEach((rec) => {
-      const employeeId = requireStatutoryPayrollEmployeeId(rec);
-      const isResident = requireStatutoryPayrollResidency(rec);
-      const employeeINSS = requireStatutoryPayrollAmount(rec, 'inssEmployee');
-      const employerINSS = requireStatutoryPayrollAmount(rec, 'inssEmployer');
-      const contributionBase = requireStatutoryPayrollAmount(rec, 'inssBase');
-      if (!Array.isArray(rec.earnings)) {
-        throw new MissingStatutoryPayrollDataError('earnings');
-      }
-      const annualSubsidy = rec.earnings
-        .filter((e) => e?.type === 'subsidio_anual')
-        .reduce((sum, earning) => {
-          if (typeof earning.amount !== 'number' || !Number.isFinite(earning.amount) || earning.amount < 0) {
-            throw new MissingStatutoryPayrollDataError('subsidio_anual earning amount');
+      const recLabel = typeof rec.employeeId === 'string' ? rec.employeeId : undefined;
+      const { employeeId, isResident, employeeINSS, employerINSS, contributionBase, annualSubsidy } =
+        withStatutoryEmployeeContext(recLabel, () => {
+          if (!Array.isArray(rec.earnings)) {
+            throw new MissingStatutoryPayrollDataError('earnings');
           }
-          return addMoney(sum, earning.amount);
-        }, 0);
+          return {
+            employeeId: requireStatutoryPayrollEmployeeId(rec),
+            isResident: requireStatutoryPayrollResidency(rec),
+            employeeINSS: requireStatutoryPayrollAmount(rec, 'inssEmployee'),
+            employerINSS: requireStatutoryPayrollAmount(rec, 'inssEmployer'),
+            contributionBase: requireStatutoryPayrollAmount(rec, 'inssBase'),
+            annualSubsidy: rec.earnings
+              .filter((e) => e?.type === 'subsidio_anual')
+              .reduce((sum, earning) => {
+                if (typeof earning.amount !== 'number' || !Number.isFinite(earning.amount) || earning.amount < 0) {
+                  throw new MissingStatutoryPayrollDataError('subsidio_anual earning amount');
+                }
+                return addMoney(sum, earning.amount);
+              }, 0),
+          };
+        });
 
       const existing = totalsByEmployee.get(employeeId);
       if (existing && existing.isResident !== isResident) {
@@ -420,14 +434,19 @@ class TaxFilingService {
         isResident,
       };
 
+      const { wagesPaid, incomeTaxAmount, netPayAmount } = withStatutoryEmployeeContext(recLabel, () => ({
+        wagesPaid: requireStatutoryPayrollAmount(rec, 'wagesPaid'),
+        incomeTaxAmount: requireStatutoryPayrollAmount(rec, 'incomeTax'),
+        netPayAmount: requireStatutoryPayrollAmount(rec, 'netPay'),
+      }));
       totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(accumulated.grossWages, requireStatutoryPayrollAmount(rec, 'wagesPaid')),
+        grossWages: addMoney(accumulated.grossWages, wagesPaid),
         employeeINSS: addMoney(accumulated.employeeINSS, employeeINSS),
         employerINSS: addMoney(accumulated.employerINSS, employerINSS),
         contributionBase: addMoney(accumulated.contributionBase, contributionBase),
-        incomeTax: addMoney(accumulated.incomeTax, requireStatutoryPayrollAmount(rec, 'incomeTax')),
+        incomeTax: addMoney(accumulated.incomeTax, incomeTaxAmount),
         annualSubsidy: addMoney(accumulated.annualSubsidy, annualSubsidy),
-        netPay: addMoney(accumulated.netPay, requireStatutoryPayrollAmount(rec, 'netPay')),
+        netPay: addMoney(accumulated.netPay, netPayAmount),
         isResident,
       });
     });

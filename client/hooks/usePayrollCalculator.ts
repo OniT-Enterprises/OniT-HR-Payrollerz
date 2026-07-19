@@ -256,19 +256,31 @@ export function usePayrollCalculator({
 
     const initialData = activeEmployees.map((employee): EmployeePayrollData => {
       const hireDate = employee.jobDetails.hireDate || "";
-      const regularHours = calculateProRataHours(
+      const proratedHours = calculateProRataHours(
         hireDate,
         periodStart,
         periodEnd,
         defaultHours,
       );
+      // Salaried pay is a fixed monthly amount with any shortfall docked via the
+      // absence deduction (not by scaling regularHours — calculateRegularPay
+      // ignores hours for salaried). So for a mid-period hire we keep the full
+      // expected hours as the baseline and book the pre-hire days as absence;
+      // the existing absence deduction then prorates the pay. A full-period
+      // employee has proratedHours === defaultHours, so preHireAbsence is 0 and
+      // nothing changes. This also makes the attendance sync correct: it
+      // measures absence against the full-month expectation.
+      const preHireAbsence = Number(
+        Math.max(0, defaultHours - proratedHours).toFixed(2),
+      );
+      const regularHours = defaultHours;
       const row: EmployeePayrollData = {
         employee,
         regularHours,
         overtimeHours: 0,
         nightShiftHours: 0,
         holidayHours: 0,
-        absenceHours: 0,
+        absenceHours: preHireAbsence,
         lateArrivalMinutes: 0,
         sickDays: 0,
         perDiem: 0,
@@ -281,7 +293,7 @@ export function usePayrollCalculator({
           regularHours,
           overtimeHours: 0,
           nightShiftHours: 0,
-          absenceHours: 0,
+          absenceHours: preHireAbsence,
           lateArrivalMinutes: 0,
           bonus: 0,
           bonusINSSCategory: null,

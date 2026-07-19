@@ -22,6 +22,7 @@ import {
   requireStatutoryPayrollAmount,
   requireStatutoryPayrollEmployeeId,
   requireStatutoryPayrollResidency,
+  withStatutoryEmployeeContext,
 } from '@/lib/tax/statutory-payroll-record';
 
 const MONTHS_PT = [
@@ -160,15 +161,23 @@ export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExpor
   let rowIdx = headerRowIdx + 1;
   for (const emp of ret.employees) {
     const row = ws.getRow(rowIdx);
-    const employeeId = requireStatutoryPayrollEmployeeId(emp);
-    const gross = requireStatutoryPayrollAmount(emp, 'grossWages');
-    const annualSubsidy = requireStatutoryPayrollAmount(emp, 'annualSubsidy');
-    const incomeTax = requireStatutoryPayrollAmount(emp, 'incomeTax');
-    const netPay = requireStatutoryPayrollAmount(emp, 'netPay');
-    const isResident = requireStatutoryPayrollResidency(emp);
-    if (annualSubsidy > gross) {
-      throw new MissingStatutoryPayrollDataError('annualSubsidy not exceeding grossWages');
-    }
+    const empLabel = emp.fullName || emp.employeeId;
+    const { employeeId, gross, annualSubsidy, incomeTax, netPay, isResident } =
+      withStatutoryEmployeeContext(empLabel, () => {
+        const g = requireStatutoryPayrollAmount(emp, 'grossWages');
+        const sub = requireStatutoryPayrollAmount(emp, 'annualSubsidy');
+        if (sub > g) {
+          throw new MissingStatutoryPayrollDataError('annualSubsidy not exceeding grossWages');
+        }
+        return {
+          employeeId: requireStatutoryPayrollEmployeeId(emp),
+          gross: g,
+          annualSubsidy: sub,
+          incomeTax: requireStatutoryPayrollAmount(emp, 'incomeTax'),
+          netPay: requireStatutoryPayrollAmount(emp, 'netPay'),
+          isResident: requireStatutoryPayrollResidency(emp),
+        };
+      });
 
     row.getCell(COL.employeeNo).value = employeeId;
     row.getCell(COL.niss).value = emp.inssNumber || '';
