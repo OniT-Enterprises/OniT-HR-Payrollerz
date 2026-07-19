@@ -1380,7 +1380,7 @@ const messages = {
       "description": "Payroll software is usually tested only against its own assumptions. The Xefe engine is checked against three independent kinds of evidence.",
       "tierLabel": "Tier",
       "tier1Name": "Primary law",
-      "tier1": "Every statutory rule is implemented with boundary tests — 601 automated tests across the product, around 176 on payroll and tax arithmetic alone: threshold edges, four- and five-week months, night work across midnight, severance dates, the deduction ceiling.",
+      "tier1": "Every statutory rule is implemented with boundary tests — more than 600 automated tests across the product, around 176 on payroll and tax arithmetic alone: threshold edges, four- and five-week months, night work across midnight, severance dates, the deduction ceiling.",
       "tier2Name": "Real-world practice",
       "tier2": "The engine reproduces worked payroll results prepared by practicing Timor-Leste accountants — hundreds of monthly calculations matched to the cent, including local conventions like the 190-hour salary divisor, which Xefe offers as an explicit setting.",
       "tier3Name": "Official assessments",

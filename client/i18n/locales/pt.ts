@@ -1380,7 +1380,7 @@ const messages = {
       "description": "O software de folha costuma ser testado apenas contra as suas próprias suposições. O motor do Xefe é verificado contra três tipos independentes de evidência.",
       "tierLabel": "Nível",
       "tier1Name": "Lei primária",
-      "tier1": "Cada regra legal é implementada com testes de fronteira — 601 testes automáticos em todo o produto, cerca de 176 só na aritmética de folha e impostos: limiares, meses de quatro e cinco semanas, trabalho noturno através da meia-noite, datas de compensação, o teto de deduções.",
+      "tier1": "Cada regra legal é implementada com testes de fronteira — mais de 600 testes automáticos em todo o produto, cerca de 176 só na aritmética de folha e impostos: limiares, meses de quatro e cinco semanas, trabalho noturno através da meia-noite, datas de compensação, o teto de deduções.",
       "tier2Name": "Prática real",
       "tier2": "O motor reproduz resultados de folha preparados por contabilistas em exercício em Timor-Leste — centenas de cálculos mensais reproduzidos ao cêntimo, incluindo convenções locais como o divisor salarial de 190 horas, que o Xefe oferece como configuração explícita.",
       "tier3Name": "Avaliações oficiais",

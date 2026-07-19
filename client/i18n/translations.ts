@@ -692,7 +692,8 @@ export const translations = {
         "forAccountants": "For accountants",
         "menu": "Menu",
         "overview": "Overview",
-        "home": "Home"
+        "home": "Home",
+        "engine": "The engine"
       },
       "simple": {
         "nav": {
@@ -1315,6 +1316,156 @@ export const translations = {
             "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
           }
         }
+      }
+    },
+    "enginePage": {
+      "nav": {
+        "law": "The law",
+        "proof": "Proof",
+        "pipeline": "One run",
+        "trust": "Trust"
+      },
+      "hero": {
+        "eyebrow": "The engine inside Xefe",
+        "title": "One tap says Finalize payroll.",
+        "titleAccent": "The law runs underneath.",
+        "description": "Xefe keeps its screens simple because the hard part lives in the engine: Timor-Leste's labour, tax and social-security law, implemented rule by rule and checked against how payroll is really done here.",
+        "statTests": "automated tests",
+        "statStatutes": "statutes in code",
+        "statAccounts": "TL chart accounts",
+        "statLanguages": "languages"
+      },
+      "trace": {
+        "heading": "Engine trace — one employee, one month",
+        "profile": "Store supervisor · monthly salary · resident",
+        "hourlyRate": "Hourly rate",
+        "inssNote": "The INSS base excludes overtime and the food allowance",
+        "employerInss": "Employer INSS (6%) — an employer cost, not a deduction",
+        "thirteenth": "13th-month accrual, due 20 December",
+        "perMonth": "/month",
+        "footCeiling": "Deduction ceiling check: $139.32 withheld ≤ $423.97 (30% of wages), within the Art. 42(3) limit.",
+        "footPrecision": "Every amount is exact decimal arithmetic — the engine never uses floating point. Even the hourly-rate divisor is a setting: the annualized default shown here, or the 190-hour convention many Timorese accountants use."
+      },
+      "law": {
+        "eyebrow": "Statutes in code",
+        "title": "The law, running in code",
+        "description": "The payroll core implements Law 4/2012, Law 8/2008, Law 12/2016, DL 20/2017 and DL 30/2021 — with the statutory text quoted in the code next to the arithmetic it governs. These are tested rules, not lookup tables.",
+        "labourSub": "Labour law",
+        "labour": {
+          "hours": "44-hour week, 8-hour day",
+          "ot": "Overtime ×1.5 · rest day and public holiday ×2.0 · night work +25%",
+          "otCap": "Overtime capped at 16 h/week and 4 h/day, validated on every run",
+          "sick": "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
+          "cap": "30% monthly deduction ceiling, reconciled to the cent",
+          "thirteenth": "13th month, prorated, due 20 December",
+          "severance": "Severance: one month per completed five years of service"
+        },
+        "taxSub": "Wage income tax & withholding",
+        "tax": {
+          "resident": "Residents: 10% on wages above $500/month, per employee",
+          "nonResident": "Non-residents: flat 10% from the first dollar",
+          "periods": "Threshold prorated by the actual pay periods in the month",
+          "wht": "Supplier withholding: nine categories, from rent to construction",
+          "refuse": "Petroleum-regime payrolls are refused, never guessed"
+        },
+        "inssSub": "Social security",
+        "inss": {
+          "rates": "4% employee + 6% employer, uncapped base",
+          "exclude": "Base excludes overtime, per-diems, and travel, food and housing allowances",
+          "include": "Base includes the 13th month",
+          "bonus": "Bonuses must be classified before they contribute — the engine will not guess"
+        },
+        "configTitle": "Configurable, never inventive",
+        "configDescription": "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops. It never guesses a compliance figure."
+      },
+      "proof": {
+        "eyebrow": "Evidence",
+        "title": "Checked against the real world",
+        "description": "Payroll software is usually tested only against its own assumptions. The Xefe engine is checked against three independent kinds of evidence.",
+        "tierLabel": "Tier",
+        "tier1Name": "Primary law",
+        "tier1": "Every statutory rule is implemented with boundary tests — more than 600 automated tests across the product, around 176 on payroll and tax arithmetic alone: threshold edges, four- and five-week months, night work across midnight, severance dates, the deduction ceiling.",
+        "tier2Name": "Real-world practice",
+        "tier2": "The engine reproduces worked payroll results prepared by practicing Timor-Leste accountants — hundreds of monthly calculations matched to the cent, including local conventions like the 190-hour salary divisor, which Xefe offers as an explicit setting.",
+        "tier3Name": "Official assessments",
+        "tier3": "Where the tax authority's own assessed figures are available, Xefe's arithmetic matches them to the cent — across withholding categories from rent to construction, for resident and non-resident wages alike. In one case the authority corrected a mis-filed return to exactly the figure Xefe computes by default.",
+        "ratesTitle": "Withholding rates the engine applies",
+        "ratesNote": "Under Law 8/2008. Assessed rows are confirmed against the tax authority's own arithmetic.",
+        "rateCategory": "Category",
+        "rateRate": "Rate",
+        "rateBasis": "Basis",
+        "rates": {
+          "rent": "Rent (land and buildings)",
+          "construction": "Construction",
+          "consulting": "Construction consulting",
+          "nonresWages": "Non-resident wages",
+          "resWages": "Resident wages",
+          "royalty": "Royalties and prizes",
+          "transport": "Air and sea transport",
+          "mining": "Mining and mining support"
+        },
+        "basisConfirmed": "Matches official assessments",
+        "basisStatute": "Statutory rate"
+      },
+      "pipeline": {
+        "eyebrow": "The pipeline",
+        "title": "One run. Everything downstream.",
+        "description": "The owner sees a wizard. The engine runs six stages — each validated and recoverable.",
+        "steps": {
+          "compile": {
+            "title": "Compile",
+            "description": "Attendance, shifts and approved leave fold into payroll inputs. Night hours are detected automatically in the 21:00–06:00 window, even across midnight. Paid leave offsets absences, and mid-month hires are prorated exactly."
+          },
+          "guard": {
+            "title": "Guard",
+            "description": "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. Approval is a two-person rule enforced in the security rules themselves — and finalizing a run is the only thing in Xefe that needs a subscription."
+          },
+          "post": {
+            "title": "Post",
+            "description": "A balanced double-entry journal posts automatically to a 77-account Timor-Leste chart — salaries and employer INSS debited, net pay and every statutory liability credited to its own account. An unbalanced entry is refused outright."
+          },
+          "deliver": {
+            "title": "Deliver",
+            "description": "Every employee receives a payslip PDF — in Tetun, Portuguese or English — with employer contributions, year-to-date figures and a signature block. Ekipa app users get a push notification the moment it is ready."
+          },
+          "file": {
+            "title": "File",
+            "description": "The INSS Declaração de Remunerações in the official column layout and the ATTL consolidated monthly tax form generate themselves, with payment details filled in and due dates adjusted to the next Timor-Leste business day."
+          },
+          "pay": {
+            "title": "Pay",
+            "description": "Not a file no bank accepts: the exact two-sheet Excel pack and Portuguese cover email that BNU and BNCTL branches process, with a signed payment order. Businesses on QuickBooks export the journal as CSV or IIF instead."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Security & scale",
+        "title": "Built to be trusted",
+        "description": "Money software earns its trust in the parts nobody sees.",
+        "cards": {
+          "rules": {
+            "title": "Rules, not promises",
+            "description": "Tenant isolation, the payroll paywall and the two-person approval rule are enforced in server-side security rules, not just in the interface. A business owner cannot even grant themselves a subscription — billing fields are tamper-protected."
+          },
+          "roles": {
+            "title": "A real accountant role",
+            "description": "An accountant can run payroll, books and filings with no administrative power — no members, no settings, no billing. Exactly the shape an external bookkeeper needs."
+          },
+          "scale": {
+            "title": "Fails safe at scale",
+            "description": "Payroll writes are batched and recoverable — a half-written run is detected and repaired, never silently wrong. Statutory exports are scale-tested against hundreds of employees, and year-to-date totals always re-aggregate from source records."
+          },
+          "privacy": {
+            "title": "Private by construction",
+            "description": "Every email goes out to one recipient at a time — staff never see each other's addresses. Invoice links are unguessable and never listable, and payslips reach only their owner."
+          }
+        }
+      },
+      "cta": {
+        "title": "See it run on your own payroll.",
+        "description": "Setting up is free: add your team, build a draft run, and inspect every number on this page in your own books. You only subscribe when you finalize a real payroll.",
+        "secondary": "See pricing",
+        "footnote": "The employee above is illustrative — the arithmetic is the engine's own."
       }
     },
     "howItWorks": {
@@ -8136,7 +8287,8 @@ export const translations = {
         "forAccountants": "Ba kontabilista sira",
         "menu": "Menu",
         "overview": "Vizaun jerál",
-        "home": "Inísiu"
+        "home": "Inísiu",
+        "engine": "Motór"
       },
       "simple": {
         "nav": {
@@ -8759,6 +8911,156 @@ export const translations = {
             "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
           }
         }
+      }
+    },
+    "enginePage": {
+      "nav": {
+        "law": "Lei",
+        "proof": "Evidénsia",
+        "pipeline": "Folha ida",
+        "trust": "Konfiansa"
+      },
+      "hero": {
+        "eyebrow": "Motór iha Xefe laran",
+        "title": "Klik ida de'it atu finaliza folha pagamentu.",
+        "titleAccent": "Lei mak halo servisu iha okos.",
+        "description": "Xefe nia ekrã simples tanba parte difísil hela iha motór laran: lei laboral, impostu no seguransa sosiál Timor-Leste nian, implementadu regra ida-idak no verifikadu ho oinsá folha pagamentu halo loloos iha rai laran.",
+        "statTests": "teste automátiku",
+        "statStatutes": "lei iha kódigu",
+        "statAccounts": "konta kontabilidade TL",
+        "statLanguages": "lian"
+      },
+      "trace": {
+        "heading": "Kalkulasaun motór nian — trabalhador ida, fulan ida",
+        "profile": "Supervizór loja · saláriu mensál · rezidente",
+        "hourlyRate": "Taxa oráriu",
+        "inssNote": "Base INSS la inklui oras extra no subsídiu ai-han",
+        "employerInss": "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",
+        "thirteenth": "Subsídiu anuál (fulan-13), tenke selu to'o 20 Dezembru",
+        "perMonth": "/fulan",
+        "footCeiling": "Verifikasaun limite dedusaun: $139.32 ≤ $423.97 (30% husi saláriu), tuir limite Art. 42(3).",
+        "footPrecision": "Montante hotu-hotu uza aritmétika desimál loloos — motór nunka uza floating point. Divizór ba taxa oráriu mós konfigurável: padraun anualizadu iha ne'e, ka konvensaun oras-190 ne'ebé kontabilista Timor-oan barak uza."
+      },
+      "law": {
+        "eyebrow": "Lei iha kódigu",
+        "title": "Lei ne'ebé la'o iha kódigu",
+        "description": "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
+        "labourSub": "Lei laboral",
+        "labour": {
+          "hours": "Semana oras 44, loron oras 8",
+          "ot": "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+          "otCap": "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
+          "sick": "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
+          "cap": "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
+          "thirteenth": "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
+          "severance": "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak"
+        },
+        "taxSub": "Impostu saláriu no retensaun",
+        "tax": {
+          "resident": "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
+          "nonResident": "La'ós rezidente: 10% husi dolar primeiru",
+          "periods": "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
+          "wht": "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+          "refuse": "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha"
+        },
+        "inssSub": "Seguransa sosiál",
+        "inss": {
+          "rates": "4% trabalhador + 6% empregador, base la iha limite",
+          "exclude": "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
+          "include": "Base inklui subsídiu anuál (fulan-13)",
+          "bonus": "Bónus tenke klasifika uluk molok tama base — motór la adivinha"
+        },
+        "configTitle": "Konfigurável, maibé nunka inventa",
+        "configDescription": "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para. Xefe nunka adivinha valór konformidade."
+      },
+      "proof": {
+        "eyebrow": "Evidénsia",
+        "title": "Verifikadu ho mundu reál",
+        "description": "Software folha pagamentu baibain testa de'it ho nia hanoin rasik. Motór Xefe verifika ho evidénsia independente tolu.",
+        "tierLabel": "Nivel",
+        "tier1Name": "Lei primária",
+        "tier1": "Regra lei nian ida-idak implementadu ho teste fronteira — teste automátiku liu 600 iha produtu tomak, maizumenus 176 ba kalkulasaun folha no impostu de'it: limite $500, fulan ho semana 4 ka 5, servisu kalan liu meia-noite, data kompensasaun, limite dedusaun.",
+        "tier2Name": "Pratika reál",
+        "tier2": "Motór reproduz rezultadu folha pagamentu ne'ebé kontabilista Timor-Leste nian prepara ona — kalkulasaun mensál atus ba atus hanesan to'o sentavu, inklui konvensaun lokál hanesan divizór saláriu oras-190, ne'ebé Xefe oferese nudar konfigurasaun klaru.",
+        "tier3Name": "Avaliasaun ofisiál",
+        "tier3": "Bainhira autoridade tributária nia númeru avaliasaun rasik disponivel, aritmétika Xefe nian hanesan to'o sentavu — iha kategoria retensaun husi renda to'o konstrusaun, ba saláriu rezidente no la'ós rezidente. Iha kazu ida, autoridade korrije deklarasaun sala ba valór ne'ebé Xefe kalkula nudar padraun.",
+        "ratesTitle": "Taxa retensaun ne'ebé motór aplika",
+        "ratesNote": "Tuir Lei 8/2008. Liña ho avaliasaun konfirma ho aritmétika autoridade tributária nian rasik.",
+        "rateCategory": "Kategoria",
+        "rateRate": "Taxa",
+        "rateBasis": "Baze",
+        "rates": {
+          "rent": "Renda (rai no uma)",
+          "construction": "Konstrusaun",
+          "consulting": "Konsultoria konstrusaun",
+          "nonresWages": "Saláriu la'ós rezidente",
+          "resWages": "Saláriu rezidente",
+          "royalty": "Royalty no prémiu",
+          "transport": "Transporte aéreu no marítimu",
+          "mining": "Minas no apoiu minas"
+        },
+        "basisConfirmed": "Hanesan avaliasaun ofisiál",
+        "basisStatute": "Taxa lei nian"
+      },
+      "pipeline": {
+        "eyebrow": "Prosesu",
+        "title": "Folha ida. Buat hotu tuir mai.",
+        "description": "Na'in haree wizard ida. Motór halo etapa neen — ida-idak validadu no bele rekupera se falla.",
+        "steps": {
+          "compile": {
+            "title": "Kompila",
+            "description": "Prezensa, turnu no lisensa aprovadu tama ba folha pagamentu. Oras kalan deteta automátiku iha janela 21:00–06:00, mós liu meia-noite. Lisensa selu substitui falta, no trabalhador foun iha fulan klaran kalkula proporsionál loloos."
+          },
+          "guard": {
+            "title": "Proteje",
+            "description": "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Aprovasaun presiza ema rua — regra ne'e iha regra seguransa rasik — no finaliza folha mak buat úniku iha Xefe ne'ebé presiza subskrisaun."
+          },
+          "post": {
+            "title": "Lansa",
+            "description": "Lansamentu jornál double-entry balansadu tama automátiku ba planu konta TL ho konta 77 — saláriu no INSS empregador iha débitu, saláriu líkidu no obrigasaun lei nian ida-idak iha kréditu ho nia konta rasik. Lansamentu la balansadu — motór rekuza."
+          },
+          "deliver": {
+            "title": "Entrega",
+            "description": "Trabalhador ida-idak simu payslip PDF — iha Tetun, Portugés ka Inglés — ho kontribuisaun empregador nian, totál tinan nian no fatin asina. Uza-na'in aplikasaun Ekipa simu notifikasaun push bainhira prontu."
+          },
+          "file": {
+            "title": "Deklara",
+            "description": "Declaração de Remunerações INSS iha formatu ofisiál no formuláriu impostu mensál ATTL prepara an rasik, ho detalle pagamentu preenchidu no data limite ajustadu ba loron servisu tuir mai iha Timor-Leste."
+          },
+          "pay": {
+            "title": "Selu",
+            "description": "La'ós ficheiru ne'ebé banku la simu: pakote Excel ho folha rua no email kapa iha Portugés ne'ebé sukursál BNU no BNCTL prosesa, ho ordem pagamentu asinadu. Empreza ho QuickBooks bele esporta jornál nudar CSV ka IIF."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Seguransa no eskala",
+        "title": "Harii atu hetan konfiansa",
+        "description": "Software osan nian hetan konfiansa iha parte ne'ebé ema la haree.",
+        "cards": {
+          "rules": {
+            "title": "Regra, la'ós promesa",
+            "description": "Izolamentu empreza nian, paywall folha no regra aprovasaun ema-rua obriga iha regra seguransa servidor nian, la'ós de'it iha interface. Na'in empreza la bele fó subskrisaun ba nia an — kampu kobransa proteje husi mudansa."
+          },
+          "roles": {
+            "title": "Papel kontabilista loloos",
+            "description": "Kontabilista bele halo folha, livru no deklarasaun sein poder administrativu — la iha membru, la iha konfigurasaun, la iha kobransa. Forma loloos ne'ebé kontabilista esternu presiza."
+          },
+          "scale": {
+            "title": "Seguru iha eskala",
+            "description": "Gravasaun folha halo iha lote no bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun lei nian testa ho trabalhador atus ba atus, no totál tinan nian sempre kalkula fila fali husi rejistu orijinál."
+          },
+          "privacy": {
+            "title": "Privadu husi konstrusaun",
+            "description": "Email ida-idak sai ba simu-na'in ida de'it — funsionáriu nunka haree malu nia enderesu. Ligasaun fatura la bele adivinha no la bele lista, no payslip to'o de'it nia na'in."
+          }
+        }
+      },
+      "cta": {
+        "title": "Haree nia la'o ho Ita-nia folha rasik.",
+        "description": "Konfigura grátis: aumenta Ita-nia ekipa, halo folha rascunho ida, no haree númeru hotu iha pájina ne'e iha Ita-nia livru rasik. Ita subskreve de'it bainhira finaliza folha reál.",
+        "secondary": "Haree presu",
+        "footnote": "Trabalhador iha leten ilustrativu de'it — aritmétika mak motór nian rasik."
       }
     },
     "howItWorks": {
@@ -15580,7 +15882,8 @@ export const translations = {
         "forAccountants": "Para contabilistas",
         "menu": "Menu",
         "overview": "Visão geral",
-        "home": "Início"
+        "home": "Início",
+        "engine": "O motor"
       },
       "simple": {
         "nav": {
@@ -16203,6 +16506,156 @@ export const translations = {
             "desc": "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo."
           }
         }
+      }
+    },
+    "enginePage": {
+      "nav": {
+        "law": "A lei",
+        "proof": "Prova",
+        "pipeline": "Uma folha",
+        "trust": "Confiança"
+      },
+      "hero": {
+        "eyebrow": "O motor dentro do Xefe",
+        "title": "Um toque diz Finalizar folha.",
+        "titleAccent": "Por baixo, corre a lei.",
+        "description": "O Xefe mantém os ecrãs simples porque a parte difícil vive no motor: a lei laboral, fiscal e de segurança social de Timor-Leste, implementada regra a regra e verificada contra a forma como a folha realmente se faz no país.",
+        "statTests": "testes automáticos",
+        "statStatutes": "diplomas no código",
+        "statAccounts": "contas no plano TL",
+        "statLanguages": "línguas"
+      },
+      "trace": {
+        "heading": "Cálculo do motor — um trabalhador, um mês",
+        "profile": "Supervisor de loja · salário mensal · residente",
+        "hourlyRate": "Taxa horária",
+        "inssNote": "A base de INSS exclui as horas extra e o subsídio de alimentação",
+        "employerInss": "INSS do empregador (6%) — custo do empregador, não é dedução",
+        "thirteenth": "Provisão do 13.º mês, a pagar até 20 de dezembro",
+        "perMonth": "/mês",
+        "footCeiling": "Verificação do teto de deduções: $139.32 retidos ≤ $423.97 (30% do salário), dentro do limite do Art. 42(3).",
+        "footPrecision": "Todos os valores usam aritmética decimal exata — o motor nunca usa vírgula flutuante. Até o divisor da taxa horária é configurável: o padrão anualizado mostrado aqui, ou a convenção das 190 horas usada por muitos contabilistas timorenses."
+      },
+      "law": {
+        "eyebrow": "Diplomas no código",
+        "title": "A lei, a correr no código",
+        "description": "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
+        "labourSub": "Lei laboral",
+        "labour": {
+          "hours": "Semana de 44 horas, dia de 8 horas",
+          "ot": "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+          "otCap": "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
+          "sick": "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
+          "cap": "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
+          "thirteenth": "13.º mês, proporcional, a pagar até 20 de dezembro",
+          "severance": "Compensação: um mês por cada cinco anos completos de serviço"
+        },
+        "taxSub": "Imposto sobre salários e retenções",
+        "tax": {
+          "resident": "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
+          "nonResident": "Não residentes: 10% desde o primeiro dólar",
+          "periods": "Limiar ajustado aos períodos de pagamento reais do mês",
+          "wht": "Retenção a fornecedores: nove categorias, da renda à construção",
+          "refuse": "Folhas do regime petrolífero são recusadas, nunca adivinhadas"
+        },
+        "inssSub": "Segurança social",
+        "inss": {
+          "rates": "4% trabalhador + 6% empregador, base sem teto",
+          "exclude": "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
+          "include": "A base inclui o 13.º mês",
+          "bonus": "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha"
+        },
+        "configTitle": "Configurável, nunca inventivo",
+        "configDescription": "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para. Nunca adivinha um valor de conformidade."
+      },
+      "proof": {
+        "eyebrow": "Evidência",
+        "title": "Verificado contra o mundo real",
+        "description": "O software de folha costuma ser testado apenas contra as suas próprias suposições. O motor do Xefe é verificado contra três tipos independentes de evidência.",
+        "tierLabel": "Nível",
+        "tier1Name": "Lei primária",
+        "tier1": "Cada regra legal é implementada com testes de fronteira — mais de 600 testes automáticos em todo o produto, cerca de 176 só na aritmética de folha e impostos: limiares, meses de quatro e cinco semanas, trabalho noturno através da meia-noite, datas de compensação, o teto de deduções.",
+        "tier2Name": "Prática real",
+        "tier2": "O motor reproduz resultados de folha preparados por contabilistas em exercício em Timor-Leste — centenas de cálculos mensais reproduzidos ao cêntimo, incluindo convenções locais como o divisor salarial de 190 horas, que o Xefe oferece como configuração explícita.",
+        "tier3Name": "Avaliações oficiais",
+        "tier3": "Onde existem valores avaliados pela própria autoridade tributária, a aritmética do Xefe corresponde ao cêntimo — em categorias de retenção da renda à construção, para salários de residentes e não residentes. Num dos casos, a autoridade corrigiu uma declaração errada exatamente para o valor que o Xefe calcula por defeito.",
+        "ratesTitle": "Taxas de retenção que o motor aplica",
+        "ratesNote": "Ao abrigo da Lei 8/2008. As linhas avaliadas estão confirmadas contra a aritmética da própria autoridade tributária.",
+        "rateCategory": "Categoria",
+        "rateRate": "Taxa",
+        "rateBasis": "Base",
+        "rates": {
+          "rent": "Renda (terrenos e edifícios)",
+          "construction": "Construção",
+          "consulting": "Consultoria de construção",
+          "nonresWages": "Salários de não residentes",
+          "resWages": "Salários de residentes",
+          "royalty": "Royalties e prémios",
+          "transport": "Transporte aéreo e marítimo",
+          "mining": "Minas e apoio mineiro"
+        },
+        "basisConfirmed": "Corresponde às avaliações oficiais",
+        "basisStatute": "Taxa legal"
+      },
+      "pipeline": {
+        "eyebrow": "O processo",
+        "title": "Uma folha. Tudo a jusante.",
+        "description": "O dono vê um assistente. O motor corre seis etapas — cada uma validada e recuperável.",
+        "steps": {
+          "compile": {
+            "title": "Compilar",
+            "description": "A assiduidade, os turnos e as licenças aprovadas entram na folha. As horas noturnas são detetadas automaticamente na janela 21:00–06:00, mesmo através da meia-noite. As licenças pagas compensam faltas e as admissões a meio do mês são calculadas proporcionalmente."
+          },
+          "guard": {
+            "title": "Proteger",
+            "description": "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. A aprovação exige duas pessoas — imposta nas próprias regras de segurança — e finalizar a folha é a única coisa no Xefe que exige subscrição."
+          },
+          "post": {
+            "title": "Lançar",
+            "description": "Um lançamento contabilístico de dupla entrada, equilibrado, entra automaticamente num plano de contas TL com 77 contas — salários e INSS do empregador a débito, salário líquido e cada obrigação legal a crédito na sua própria conta. Um lançamento desequilibrado é recusado."
+          },
+          "deliver": {
+            "title": "Entregar",
+            "description": "Cada trabalhador recebe o recibo em PDF — em tétum, português ou inglês — com as contribuições do empregador, os totais do ano e o campo de assinatura. Quem usa a app Ekipa recebe uma notificação assim que está pronto."
+          },
+          "file": {
+            "title": "Declarar",
+            "description": "A Declaração de Remunerações do INSS no formato oficial e o formulário mensal consolidado da ATTL geram-se sozinhos, com os dados de pagamento preenchidos e os prazos ajustados ao dia útil seguinte em Timor-Leste."
+          },
+          "pay": {
+            "title": "Pagar",
+            "description": "Não é um ficheiro que nenhum banco aceita: é o pacote Excel de duas folhas e o email de cobertura em português que os balcões do BNU e do BNCTL processam, com ordem de pagamento assinada. Quem usa QuickBooks exporta o lançamento em CSV ou IIF."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Segurança e escala",
+        "title": "Feito para merecer confiança",
+        "description": "O software de dinheiro ganha confiança nas partes que ninguém vê.",
+        "cards": {
+          "rules": {
+            "title": "Regras, não promessas",
+            "description": "O isolamento de cada empresa, o paywall da folha e a regra de aprovação a duas pessoas são impostos nas regras de segurança do servidor, não apenas na interface. Um dono nem sequer consegue atribuir-se uma subscrição — os campos de faturação estão protegidos contra alteração."
+          },
+          "roles": {
+            "title": "Um papel de contabilista a sério",
+            "description": "Um contabilista pode tratar da folha, dos livros e das declarações sem qualquer poder administrativo — sem membros, sem definições, sem faturação. Exatamente a forma de que um contabilista externo precisa."
+          },
+          "scale": {
+            "title": "Seguro em escala",
+            "description": "As gravações da folha são feitas em lotes e são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações legais são testadas com centenas de trabalhadores e os totais do ano recalculam-se sempre a partir dos registos de origem."
+          },
+          "privacy": {
+            "title": "Privado por construção",
+            "description": "Cada email sai para um destinatário de cada vez — os funcionários nunca veem os endereços uns dos outros. Os links de faturas são impossíveis de adivinhar e não são listáveis, e cada recibo chega só ao seu dono."
+          }
+        }
+      },
+      "cta": {
+        "title": "Veja-o a correr na sua própria folha.",
+        "description": "Configurar é grátis: adicione a equipa, construa uma folha de rascunho e inspecione cada número desta página nos seus próprios livros. Só subscreve quando finalizar uma folha real.",
+        "secondary": "Ver preços",
+        "footnote": "O trabalhador acima é ilustrativo — a aritmética é a do próprio motor."
       }
     },
     "howItWorks": {

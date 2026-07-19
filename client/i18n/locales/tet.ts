@@ -1380,7 +1380,7 @@ const messages = {
       "description": "Software folha pagamentu baibain testa de'it ho nia hanoin rasik. Motór Xefe verifika ho evidénsia independente tolu.",
       "tierLabel": "Nivel",
       "tier1Name": "Lei primária",
-      "tier1": "Regra lei nian ida-idak implementadu ho teste fronteira — teste automátiku 601 iha produtu tomak, maizumenus 176 ba kalkulasaun folha no impostu de'it: limite $500, fulan ho semana 4 ka 5, servisu kalan liu meia-noite, data kompensasaun, limite dedusaun.",
+      "tier1": "Regra lei nian ida-idak implementadu ho teste fronteira — teste automátiku liu 600 iha produtu tomak, maizumenus 176 ba kalkulasaun folha no impostu de'it: limite $500, fulan ho semana 4 ka 5, servisu kalan liu meia-noite, data kompensasaun, limite dedusaun.",
       "tier2Name": "Pratika reál",
       "tier2": "Motór reproduz rezultadu folha pagamentu ne'ebé kontabilista Timor-Leste nian prepara ona — kalkulasaun mensál atus ba atus hanesan to'o sentavu, inklui konvensaun lokál hanesan divizór saláriu oras-190, ne'ebé Xefe oferese nudar konfigurasaun klaru.",
       "tier3Name": "Avaliasaun ofisiál",

@@ -1,28 +1,41 @@
 /**
  * Shared top navigation for the public marketing pages (/, /how-it-works,
- * /pricing, /accountants). Every menu item is a real page — never a
+ * /pricing, /accountants, /engine). Every menu item is a real page — never a
  * scroll-to-section link — and the bar is identical on every page with the
  * current page highlighted, so moving around the site never disorients.
  * In-page sections belong in PublicSectionNav, not here.
+ *
+ * This bar also owns the URL↔locale contract for the marketing site: Tetun
+ * and Portuguese live under /tet and /pt prefixes (crawlable per-language
+ * URLs, see client/lib/publicLocale.ts). Landing on a prefixed URL switches
+ * the i18n locale; switching locale rewrites the URL to the matching prefix.
  */
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/I18nProvider";
+import {
+  isLocalizedPublicPath,
+  localeFromPath,
+  stripLocalePrefix,
+  withLocalePrefix,
+} from "@/lib/publicLocale";
 
 const NAV_LINKS = [
   { to: "/", labelKey: "landing.nav.home" },
   { to: "/how-it-works", labelKey: "landing.simple.nav.howItWorks" },
+  { to: "/engine", labelKey: "landing.nav.engine" },
   { to: "/pricing", labelKey: "landing.nav.pricing" },
   { to: "/accountants", labelKey: "landing.nav.forAccountants" },
 ] as const;
 
 export function PublicNav() {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const location = useLocation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Public pages scroll the window (the app shell's scroll reset only covers
@@ -36,11 +49,39 @@ export function PublicNav() {
     }
   }, [location]);
 
+  // URL↔locale sync. Which side wins depends on what changed:
+  // the user navigating to a prefixed URL switches the locale; the user
+  // switching locale (with the URL unchanged) rewrites the URL prefix.
+  // On first mount a prefixed URL wins; a bare URL leaves the stored
+  // preference alone so shared English links don't force a language.
+  const prev = useRef({ pathname: location.pathname, locale });
+  useEffect(() => {
+    const pathChanged = prev.current.pathname !== location.pathname;
+    const localeChanged = prev.current.locale !== locale;
+    prev.current = { pathname: location.pathname, locale };
+
+    const urlLocale = localeFromPath(location.pathname);
+    if (localeChanged && !pathChanged) {
+      if (isLocalizedPublicPath(location.pathname) && urlLocale !== locale) {
+        navigate(
+          withLocalePrefix(location.pathname, locale) + location.hash,
+          { replace: true },
+        );
+      }
+    } else if (urlLocale !== "en" && locale !== urlLocale) {
+      setLocale(urlLocale);
+    }
+  }, [location.pathname, location.hash, locale, navigate, setLocale]);
+
+  // Links keep the visitor inside the language they are browsing in.
+  const urlLocale = localeFromPath(location.pathname);
+  const localized = (to: string) => withLocalePrefix(to, urlLocale);
+
   // "/landing" renders the same Landing page as "/", so Home stays lit there.
-  const isActive = (to: string) =>
-    to === "/"
-      ? location.pathname === "/" || location.pathname === "/landing"
-      : location.pathname === to;
+  const isActive = (to: string) => {
+    const bare = stripLocalePrefix(location.pathname);
+    return to === "/" ? bare === "/" || bare === "/landing" : bare === to;
+  };
 
   return (
     <nav
@@ -48,7 +89,7 @@ export function PublicNav() {
       className="fixed inset-x-0 top-0 z-40 border-b border-white/[0.06] bg-[#0a0a0b]/95 md:bg-[#0a0a0b]/85 md:backdrop-blur-lg"
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" aria-label="Xefe" className="shrink-0">
+        <Link to={localized("/")} aria-label="Xefe" className="shrink-0">
           <img
             src="/images/illustrations/xefe-logo-light.webp"
             alt="Xefe"
@@ -62,7 +103,7 @@ export function PublicNav() {
           {NAV_LINKS.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={localized(link.to)}
               aria-current={isActive(link.to) ? "page" : undefined}
               className={cn(
                 "text-sm transition-colors hover:text-white",
@@ -111,7 +152,7 @@ export function PublicNav() {
           {NAV_LINKS.map((link) => (
             <Link
               key={link.to}
-              to={link.to}
+              to={localized(link.to)}
               onClick={() => setMenuOpen(false)}
               aria-current={isActive(link.to) ? "page" : undefined}
               className={cn(

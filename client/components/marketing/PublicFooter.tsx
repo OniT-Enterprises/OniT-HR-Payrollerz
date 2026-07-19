@@ -3,11 +3,14 @@
  * matching the PublicNav pages plus legal and support, so the site reads as
  * one place regardless of which page the visitor is on.
  */
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
+import { localeFromPath, withLocalePrefix } from "@/lib/publicLocale";
 
 export function PublicFooter() {
   const { t } = useI18n();
+  const { pathname } = useLocation();
+  const localized = (to: string) => withLocalePrefix(to, localeFromPath(pathname));
 
   return (
     <footer className="border-t border-white/[0.06] bg-black/40 py-10">
@@ -26,13 +29,16 @@ export function PublicFooter() {
           </span>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-zinc-400">
-          <Link to="/how-it-works" className="transition-colors hover:text-white">
+          <Link to={localized("/how-it-works")} className="transition-colors hover:text-white">
             {t("landing.footer.links.howItWorks")}
           </Link>
-          <Link to="/pricing" className="transition-colors hover:text-white">
+          <Link to={localized("/engine")} className="transition-colors hover:text-white">
+            {t("landing.nav.engine")}
+          </Link>
+          <Link to={localized("/pricing")} className="transition-colors hover:text-white">
             {t("landing.nav.pricing")}
           </Link>
-          <Link to="/accountants" className="transition-colors hover:text-white">
+          <Link to={localized("/accountants")} className="transition-colors hover:text-white">
             {t("landing.footer.links.accountants")}
           </Link>
           <Link to="/privacy" className="transition-colors hover:text-white">

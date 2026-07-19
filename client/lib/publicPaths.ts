@@ -11,6 +11,7 @@ export const PUBLIC_PATHS = [
   "/how-it-works",
   "/pricing",
   "/accountants",
+  "/engine",
   "/features",
   "/unauthorized",
   "/apply/",
@@ -20,5 +21,10 @@ export const PUBLIC_PATHS = [
 ];
 
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // /tet/... and /pt/... serve the same marketing pages per-language
+  // (client/lib/publicLocale.ts); "/tet" and "/pt" alone are the localized
+  // landing pages.
+  const bare = pathname.replace(/^\/(tet|pt)(?=\/|$)/, "") || "/";
+  if (bare === "/" && pathname !== "/") return true; // /tet or /pt landing
+  return PUBLIC_PATHS.some((p) => bare.startsWith(p));
 }

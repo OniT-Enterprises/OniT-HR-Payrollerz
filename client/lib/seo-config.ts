@@ -8,24 +8,80 @@ export const seoConfig = {
     description: 'Xefe is HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual and Lei Trabalho compliance, bank payroll files, and double-entry accounting. In Tetun, English and Portuguese.',
     keywords: 'HR software Timor-Leste, payroll software Timor-Leste, sistema folha de pagamento, INSS, WIT, subsidio anual, Lei Trabalho, accounting software Timor-Leste, Tetun payroll',
     url: '/',
+    alternates: {
+      tet: {
+        title: 'RH, Folha Pagamentu no Kontabilidade ba Timor-Leste',
+        description: 'Xefe mak software RH, folha pagamentu no kontabilidade ba Timor-Leste — INSS, WIT, subsídiu anuál no konformidade Lei Laboral, ficheiru banku, no kontabilidade double-entry. Iha Tetun, Inglés no Portugés.',
+      },
+      pt: {
+        title: 'RH, Folha de Pagamento e Contabilidade para Timor-Leste',
+        description: 'O Xefe é software de RH, folha de pagamento e contabilidade para Timor-Leste — INSS, WIT, subsídio anual e conformidade com a Lei do Trabalho, ficheiros bancários e contabilidade de dupla entrada. Em tétum, inglês e português.',
+      },
+    },
   },
   howItWorks: {
     title: 'How Xefe Works for Businesses and Accountants',
     description: 'See how Xefe connects people, Timor-Leste payroll, bank files, WIT and INSS reporting, and balanced accounting — simple for everyday users and reviewable by accountants.',
     keywords: 'how Xefe works, Timor-Leste payroll workflow, payroll accounting Timor-Leste, INSS reporting, WIT reporting, accounting software for accountants',
     url: '/how-it-works',
+    alternates: {
+      tet: {
+        title: 'Oinsá Xefe Funsiona ba Empreza no Kontabilista',
+        description: "Haree oinsá Xefe liga ema, folha pagamentu Timor-Leste, ficheiru banku, relatóriu WIT no INSS, no kontabilidade balansadu — simples ba uza-na'in no bele revee husi kontabilista.",
+      },
+      pt: {
+        title: 'Como o Xefe Funciona para Empresas e Contabilistas',
+        description: 'Veja como o Xefe liga pessoas, folha de pagamento de Timor-Leste, ficheiros bancários, relatórios de WIT e INSS e contabilidade equilibrada — simples no dia a dia e revisível por contabilistas.',
+      },
+    },
   },
   pricing: {
     title: 'Pricing — One Flat Price Per Employee',
     description: 'Xefe pricing for Timor-Leste businesses: one flat price per employee per month with every feature included. Set up free — subscribe only when you finalize a real payroll run.',
     keywords: 'Xefe pricing, payroll software price Timor-Leste, HR software cost, per employee pricing, presu Xefe',
     url: '/pricing',
+    alternates: {
+      tet: {
+        title: "Presu — Presu Ida De'it ba Trabalhador Ida-idak",
+        description: "Presu Xefe ba empreza Timor-Leste: presu ida de'it ba trabalhador ida-idak kada fulan ho funsaun hotu inkluidu. Konfigura grátis — subskreve de'it bainhira finaliza folha pagamentu reál.",
+      },
+      pt: {
+        title: 'Preços — Um Preço Único por Trabalhador',
+        description: 'Preços do Xefe para empresas de Timor-Leste: um preço único por trabalhador por mês, com todas as funcionalidades incluídas. Configure grátis — subscreva só quando finalizar uma folha real.',
+      },
+    },
   },
   accountantPartners: {
     title: 'Accountant Partners for Timor-Leste Businesses',
     description: "Choose a Xefe accounting partner, request a consultation, and grant secure accountant access only when you are ready. Partner announcement coming soon.",
     keywords: "accountant Timor-Leste, accounting firm Dili, bookkeeping Timor-Leste, payroll accountant, Xefe accountant access",
     url: '/accountants',
+    alternates: {
+      tet: {
+        title: 'Parseiru Kontabilista ba Empreza Timor-Leste',
+        description: 'Hili parseiru kontabilidade Xefe nian, husu konsulta, no fó asesu kontabilista seguru bainhira Ita prontu de\'it.',
+      },
+      pt: {
+        title: 'Parceiros Contabilistas para Empresas de Timor-Leste',
+        description: 'Escolha um parceiro de contabilidade Xefe, peça uma consulta e conceda acesso seguro de contabilista apenas quando estiver pronto.',
+      },
+    },
+  },
+  engine: {
+    title: 'The Xefe Engine — Verified Timor-Leste Payroll & Accounting',
+    description: "Inside Xefe's payroll and accounting engine: Timor-Leste labour, tax and INSS law implemented rule by rule, checked against real-world practice and official tax-authority assessments to the cent.",
+    keywords: 'Timor-Leste payroll engine, WIT calculation, INSS calculation, payroll compliance Timor-Leste, double-entry payroll accounting, withholding tax Timor-Leste, Xefe engine',
+    url: '/engine',
+    alternates: {
+      tet: {
+        title: 'Motór Xefe — Folha Pagamentu no Kontabilidade Verifikadu',
+        description: "Iha motór Xefe nia laran: lei laboral, impostu no INSS Timor-Leste nian implementadu regra ida-idak, verifikadu ho pratika reál no avaliasaun ofisiál autoridade tributária nian to'o sentavu.",
+      },
+      pt: {
+        title: 'O Motor Xefe — Folha e Contabilidade Verificadas',
+        description: 'Dentro do motor de folha e contabilidade do Xefe: a lei laboral, fiscal e de INSS de Timor-Leste implementada regra a regra, verificada contra a prática real e avaliações oficiais da autoridade tributária, ao cêntimo.',
+      },
+    },
   },
   accountantPortfolio: {
     title: 'Accountant Client Review',

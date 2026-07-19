@@ -58,6 +58,7 @@ const ForgotPassword = lazyWithRetry(() => import("@/pages/auth/ForgotPassword")
 const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
 const Pricing = lazyWithRetry(() => import("@/pages/Pricing"));
 const AccountantPartners = lazyWithRetry(() => import("@/pages/AccountantPartners"));
+const XefeEngine = lazyWithRetry(() => import("@/pages/XefeEngine"));
 const AccountantPortfolioDashboard = lazyWithRetry(() => import("@/pages/AccountantPortfolioDashboard"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
@@ -200,6 +201,19 @@ export const authRoutes = (
     <Route path="/how-it-works" element={marketingRoute(<ProductDetails />)} />
     <Route path="/pricing" element={marketingRoute(<Pricing />)} />
     <Route path="/accountants" element={marketingRoute(<AccountantPartners />)} />
+    <Route path="/engine" element={marketingRoute(<XefeEngine />)} />
+    {/* Locale-prefixed marketing pages (/tet/..., /pt/...) so each language is
+        crawlable at its own URL (hreflang). PublicLocaleSync inside PublicNav
+        switches the i18n locale from the prefix. English stays at the bare path. */}
+    {["tet", "pt"].map((prefix) => (
+      <React.Fragment key={prefix}>
+        <Route path={`/${prefix}`} element={marketingRoute(<Landing />)} />
+        <Route path={`/${prefix}/how-it-works`} element={marketingRoute(<ProductDetails />)} />
+        <Route path={`/${prefix}/pricing`} element={marketingRoute(<Pricing />)} />
+        <Route path={`/${prefix}/accountants`} element={marketingRoute(<AccountantPartners />)} />
+        <Route path={`/${prefix}/engine`} element={marketingRoute(<XefeEngine />)} />
+      </React.Fragment>
+    ))}
     <Route path="/features" element={<Navigate to="/how-it-works" replace />} />
     <Route path="/unauthorized" element={<Unauthorized />} />
     <Route
