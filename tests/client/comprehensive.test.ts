@@ -246,17 +246,17 @@ describe("Timor-Leste Net Pay Calculations", () => {
 
 describe("Subsidio Anual (13th Month) Calculations", () => {
   it("should calculate full 13th month for 12 months worked", () => {
-    const result = calculateSubsidioAnual(1000, 12, "2024-01-01", new Date("2024-12-31"));
+    const result = calculateSubsidioAnual(1000, "2024-01-01", new Date("2024-12-31"));
     expect(result).toBe(1000);
   });
 
   it("should pro-rate for 6 months worked", () => {
-    const result = calculateSubsidioAnual(1000, 6, "2024-07-01", new Date("2024-12-31"));
+    const result = calculateSubsidioAnual(1000, "2024-07-01", new Date("2024-12-31"));
     expect(result).toBe(500); // 6/12 of 1000
   });
 
   it("should pro-rate for 1 month worked", () => {
-    const result = calculateSubsidioAnual(1200, 1, "2024-12-01", new Date("2024-12-31"));
+    const result = calculateSubsidioAnual(1200, "2024-12-01", new Date("2024-12-31"));
     expect(result).toBe(100); // 1/12 of 1200
   });
 });

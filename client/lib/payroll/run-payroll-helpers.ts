@@ -12,6 +12,7 @@ export interface EmployeePayrollData {
   overtimeHours: number;
   nightShiftHours: number;
   holidayHours: number;
+  restDayHours: number;
   absenceHours: number;
   lateArrivalMinutes: number;
   sickDays: number;
@@ -25,6 +26,8 @@ export interface EmployeePayrollData {
     regularHours: number;
     overtimeHours: number;
     nightShiftHours: number;
+    holidayHours: number;
+    restDayHours: number;
     absenceHours: number;
     lateArrivalMinutes: number;
     bonus: number;
@@ -92,16 +95,19 @@ export const formatPayDate = (date: string): string => {
 };
 
 /**
- * Calculate pro-rated hours for mid-period hires.
- * If the employee's hire date falls within [periodStart, periodEnd],
- * returns prorated hours based on calendar days worked vs total days in period.
- * If hired before the period, returns the full defaultHours unchanged.
+ * Calculate pro-rated hours for a partial period of EMPLOYMENT — both edges.
+ * The employed window is [hireDate, employmentEndDate]; hours are prorated by
+ * the calendar-day overlap of that window with [periodStart, periodEnd].
+ * A full-period employee (hired on/before start, no end before period end)
+ * gets defaultHours unchanged. employmentEndDate is the termination date or a
+ * fixed-term contract end — omitted/later than the period means no end edge.
  */
 export function calculateProRataHours(
   hireDate: string,
   periodStart: string,
   periodEnd: string,
   defaultHours: number,
+  employmentEndDate?: string | null,
 ): number {
   if (!hireDate || !periodStart || !periodEnd) return defaultHours;
 
@@ -114,15 +120,29 @@ export function calculateProRataHours(
     return defaultHours;
   }
 
-  // Hired before or on period start — full hours
-  if (hire <= start) return defaultHours;
+  // Employment end (invalid dates are ignored, matching the hire-edge policy)
+  let empEnd: Date | null = null;
+  if (employmentEndDate) {
+    const parsed = new Date(`${employmentEndDate}T00:00:00`);
+    if (!isNaN(parsed.getTime())) empEnd = parsed;
+  }
 
-  // Hired after period end — zero hours (shouldn't normally happen for active employees)
+  // Employment ended before the period, or hired after it — zero hours
+  if (empEnd && empEnd < start) return 0;
   if (hire > end) return 0;
 
-  // Mid-period hire: prorate by calendar days
+  const effectiveStart = hire > start ? hire : start;
+  const effectiveEnd = empEnd && empEnd < end ? empEnd : end;
+  if (effectiveEnd < effectiveStart) return 0;
+
+  // Full period worked — full hours
+  if (effectiveStart.getTime() === start.getTime() && effectiveEnd.getTime() === end.getTime()) {
+    return defaultHours;
+  }
+
+  // Partial period: prorate by calendar days
   const totalDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const daysWorked = Math.round((end.getTime() - hire.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const daysWorked = Math.round((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
   // Round to 2 decimal places
   return Math.round((defaultHours * daysWorked / totalDays) * 100) / 100;

@@ -59,6 +59,66 @@ describe("Self-Service Signup Security Rules", () => {
     );
   });
 
+  it("blocks creating a tenant pre-subscribed (paywall bypass via create)", async () => {
+    const uid = "would-be-freeloader";
+    const db = testEnv.authenticatedContext(uid).firestore();
+    const farFuture = new Date("2035-01-01");
+
+    // The exact bypass: mint the tenant already carrying an active manual
+    // subscription so the payroll finalize paywall passes forever.
+    await assertFails(
+      setDoc(doc(db, "tenants/freeloader"), {
+        id: "freeloader",
+        name: "Freeloader Ltd",
+        createdBy: uid,
+        plan: "free",
+        status: "active",
+        manualSubscription: true,
+        subscriptionPaidUntil: farFuture,
+      }),
+    );
+
+    // Forged Stripe linkage on create is equally blocked.
+    await assertFails(
+      setDoc(doc(db, "tenants/freeloader"), {
+        id: "freeloader",
+        name: "Freeloader Ltd",
+        createdBy: uid,
+        plan: "free",
+        status: "active",
+        stripeSubscriptionId: "sub_forged",
+      }),
+    );
+
+    // So is any other billing metadata field.
+    await assertFails(
+      setDoc(doc(db, "tenants/freeloader"), {
+        id: "freeloader",
+        name: "Freeloader Ltd",
+        createdBy: uid,
+        plan: "free",
+        status: "active",
+        subscriptionPaidUntil: farFuture,
+      }),
+    );
+
+    // The full legitimate provisionOrganization payload still works.
+    await assertSucceeds(
+      setDoc(doc(db, "tenants/freeloader"), {
+        id: "freeloader",
+        name: "Freeloader Ltd",
+        slug: "freeloader",
+        status: "active",
+        plan: "free",
+        limits: { maxEmployees: 10 },
+        createdBy: uid,
+        branding: {},
+        features: { payroll: true },
+        settings: { timezone: "Asia/Dili", currency: "USD" },
+      }),
+    );
+  });
+
   it("rejects creating a tenant on behalf of another user", async () => {
     const db = testEnv.authenticatedContext("self-serve-owner").firestore();
 

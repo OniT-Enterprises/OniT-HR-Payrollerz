@@ -86,6 +86,39 @@ describe("TL payroll calculations", () => {
     expect(result.incomeTax).toBe(80);
   });
 
+  it("reports the actual WIT bracket base, not tax divided by rate", () => {
+    // Regression: witTaxableAmount used to be reverse-derived as incomeTax / rate,
+    // which only lands on $0.10 multiples once the tax is rounded to the cent.
+    const result = calculateTLPayroll(makeBaseInput({ monthlySalary: 600.05 }));
+    expect(result.taxableIncome).toBe(600.05);
+    // 10% on (600.05 - 500) = 10.005 -> rounds half-up to $10.01...
+    expect(result.incomeTax).toBe(10.01);
+    // ...but the reported base is the exact bracket amount, not 10.01 / 0.10 = 100.10.
+    expect(result.witTaxableAmount).toBe(100.05);
+  });
+
+  it("reports the full taxable income as the WIT base for non-residents", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: false, hasTaxExemption: false },
+      })
+    );
+    expect(result.incomeTax).toBe(80);
+    expect(result.witTaxableAmount).toBe(800);
+  });
+
+  it("reports a zero WIT base for tax-exempt employees", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: true, hasTaxExemption: true },
+      })
+    );
+    expect(result.incomeTax).toBe(0);
+    expect(result.witTaxableAmount).toBe(0);
+  });
+
   it("applies zero WIT for resident below $500 threshold", () => {
     const result = calculateTLPayroll(makeBaseInput({ monthlySalary: 400 }));
     expect(result.incomeTax).toBe(0);
@@ -230,25 +263,25 @@ describe("Statutory exemptions (shareholders)", () => {
 
 describe("Subsidio Anual pro-ration", () => {
   it("returns full salary for 12 months worked", () => {
-    const result = calculateSubsidioAnual(1000, 12, "2024-01-01", new Date("2025-12-15"));
+    const result = calculateSubsidioAnual(1000, "2024-01-01", new Date("2025-12-15"));
     expect(result).toBe(1000);
   });
 
   it("pro-rates for mid-year hire (6 months)", () => {
     // Hired July 2025, as of December 2025 = 6 months
-    const result = calculateSubsidioAnual(1200, 12, "2025-07-01", new Date("2025-12-15"));
+    const result = calculateSubsidioAnual(1200, "2025-07-01", new Date("2025-12-15"));
     // 6/12 * 1200 = 600
     expect(result).toBe(600);
   });
 
   it("pro-rates for 1 month worked", () => {
-    const result = calculateSubsidioAnual(1200, 1, "2025-12-01", new Date("2025-12-15"));
+    const result = calculateSubsidioAnual(1200, "2025-12-01", new Date("2025-12-15"));
     // 1/12 * 1200 = 100
     expect(result).toBe(100);
   });
 
   it("returns 0 for future hire date", () => {
-    const result = calculateSubsidioAnual(1000, 0, "2026-06-01", new Date("2025-12-15"));
+    const result = calculateSubsidioAnual(1000, "2026-06-01", new Date("2025-12-15"));
     expect(result).toBe(0);
   });
 

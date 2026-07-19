@@ -810,6 +810,23 @@ export default function Offboarding() {
                               <span className="font-medium">{t("hiring.offboarding.finalPay.amount") || "Service compensation"}</span>
                               <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.serviceCompensation)}</span>
                             </div>
+                            {typeof selectedCase.article56FinalPay.subsidioAnual === "number" && (
+                              <>
+                                <div className="flex justify-between gap-4 border-t border-border/70 pt-2">
+                                  <span className="font-medium">
+                                    {t("hiring.offboarding.finalPay.subsidio") || "13th month (Art. 44)"}
+                                    <span className="ml-1 font-normal text-muted-foreground">
+                                      {selectedCase.article56FinalPay.subsidioAnualMonths}/12
+                                    </span>
+                                  </span>
+                                  <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.subsidioAnual)}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {t("hiring.offboarding.finalPay.subsidioNote")
+                                    || "Gross entitlement for this year — deduct any 13th month already paid through payroll this year."}
+                                </p>
+                              </>
+                            )}
                           </div>
                         ) : (
                           <div className="space-y-1 text-xs text-muted-foreground">

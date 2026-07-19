@@ -162,16 +162,23 @@ export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExpor
   for (const emp of ret.employees) {
     const row = ws.getRow(rowIdx);
     const empLabel = emp.fullName || emp.employeeId;
-    const { employeeId, gross, annualSubsidy, incomeTax, netPay, isResident } =
+    // The declared-base columns MUST come from the INSS contribution base the
+    // 4%/6% were actually levied on — NOT grossWages, which includes cash
+    // earnings excluded from the base by DL 20/2017 Art. 9 (per diem, food/
+    // transport allowances, overtime). Using gross made the per-row declared
+    // total diverge from the contribution columns and from the Resumo sheet.
+    const { employeeId, contributionBase, annualSubsidy, incomeTax, netPay, isResident } =
       withStatutoryEmployeeContext(empLabel, () => {
-        const g = requireStatutoryPayrollAmount(emp, 'grossWages');
+        const base = requireStatutoryPayrollAmount(emp, 'contributionBase');
+        // Subsídio anual is contributable (isINSSBase), so it is a slice of
+        // the base — it can never exceed it on a well-formed record.
         const sub = requireStatutoryPayrollAmount(emp, 'annualSubsidy');
-        if (sub > g) {
-          throw new MissingStatutoryPayrollDataError('annualSubsidy not exceeding grossWages');
+        if (sub > base) {
+          throw new MissingStatutoryPayrollDataError('annualSubsidy not exceeding the INSS contribution base');
         }
         return {
           employeeId: requireStatutoryPayrollEmployeeId(emp),
-          gross: g,
+          contributionBase: base,
           annualSubsidy: sub,
           incomeTax: requireStatutoryPayrollAmount(emp, 'incomeTax'),
           netPay: requireStatutoryPayrollAmount(emp, 'netPay'),
@@ -187,9 +194,9 @@ export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExpor
     row.getCell(COL.contributesSS).value = 'Sim';
     // Full contributory month by SS convention; adjust in the file if needed.
     row.getCell(COL.contractDays).value = 30;
-    row.getCell(COL.baseSalary).value = subtractMoney(gross, annualSubsidy);
+    row.getCell(COL.baseSalary).value = subtractMoney(contributionBase, annualSubsidy);
     if (annualSubsidy > 0) row.getCell(COL.annualSubsidy).value = annualSubsidy;
-    row.getCell(COL.totalDeclared).value = gross;
+    row.getCell(COL.totalDeclared).value = contributionBase;
     row.getCell(COL.incomeTax).value = incomeTax;
     row.getCell(COL.employerSS).value = emp.employerContribution;
     row.getCell(COL.workerSS).value = emp.employeeContribution;

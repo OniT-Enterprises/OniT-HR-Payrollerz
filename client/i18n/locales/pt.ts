@@ -688,7 +688,8 @@ const messages = {
       "forAccountants": "Para contabilistas",
       "menu": "Menu",
       "overview": "Visão geral",
-      "home": "Início"
+      "home": "Início",
+      "engine": "O motor"
     },
     "simple": {
       "nav": {
@@ -1313,6 +1314,156 @@ const messages = {
       }
     }
   },
+  "enginePage": {
+    "nav": {
+      "law": "A lei",
+      "proof": "Prova",
+      "pipeline": "Uma folha",
+      "trust": "Confiança"
+    },
+    "hero": {
+      "eyebrow": "O motor dentro do Xefe",
+      "title": "Um toque diz Finalizar folha.",
+      "titleAccent": "Por baixo, corre a lei.",
+      "description": "O Xefe mantém os ecrãs simples porque a parte difícil vive no motor: a lei laboral, fiscal e de segurança social de Timor-Leste, implementada regra a regra e verificada contra a forma como a folha realmente se faz no país.",
+      "statTests": "testes automáticos",
+      "statStatutes": "diplomas no código",
+      "statAccounts": "contas no plano TL",
+      "statLanguages": "línguas"
+    },
+    "trace": {
+      "heading": "Cálculo do motor — um trabalhador, um mês",
+      "profile": "Supervisor de loja · salário mensal · residente",
+      "hourlyRate": "Taxa horária",
+      "inssNote": "A base de INSS exclui as horas extra e o subsídio de alimentação",
+      "employerInss": "INSS do empregador (6%) — custo do empregador, não é dedução",
+      "thirteenth": "Provisão do 13.º mês, a pagar até 20 de dezembro",
+      "perMonth": "/mês",
+      "footCeiling": "Verificação do teto de deduções: $139.32 retidos ≤ $423.97 (30% do salário), dentro do limite do Art. 42(3).",
+      "footPrecision": "Todos os valores usam aritmética decimal exata — o motor nunca usa vírgula flutuante. Até o divisor da taxa horária é configurável: o padrão anualizado mostrado aqui, ou a convenção das 190 horas usada por muitos contabilistas timorenses."
+    },
+    "law": {
+      "eyebrow": "Diplomas no código",
+      "title": "A lei, a correr no código",
+      "description": "O núcleo da folha implementa a Lei 4/2012, a Lei 8/2008, a Lei 12/2016, o DL 20/2017 e o DL 30/2021 — com o texto legal citado no código, ao lado da aritmética que governa. São regras testadas, não tabelas.",
+      "labourSub": "Lei laboral",
+      "labour": {
+        "hours": "Semana de 44 horas, dia de 8 horas",
+        "ot": "Horas extra ×1,5 · dia de descanso e feriado ×2,0 · trabalho noturno +25%",
+        "otCap": "Horas extra limitadas a 16 h/semana e 4 h/dia, validado em cada folha",
+        "sick": "Baixa por doença: dias 1–6 a 100%, dias 7–12 a 50%, controlada ao longo do ano",
+        "cap": "Teto de deduções de 30% por mês, reconciliado ao cêntimo",
+        "thirteenth": "13.º mês, proporcional, a pagar até 20 de dezembro",
+        "severance": "Compensação: um mês por cada cinco anos completos de serviço"
+      },
+      "taxSub": "Imposto sobre salários e retenções",
+      "tax": {
+        "resident": "Residentes: 10% sobre salários acima de $500/mês, por trabalhador",
+        "nonResident": "Não residentes: 10% desde o primeiro dólar",
+        "periods": "Limiar ajustado aos períodos de pagamento reais do mês",
+        "wht": "Retenção a fornecedores: nove categorias, da renda à construção",
+        "refuse": "Folhas do regime petrolífero são recusadas, nunca adivinhadas"
+      },
+      "inssSub": "Segurança social",
+      "inss": {
+        "rates": "4% trabalhador + 6% empregador, base sem teto",
+        "exclude": "A base exclui horas extra, ajudas de custo e subsídios de viagem, alimentação e alojamento",
+        "include": "A base inclui o 13.º mês",
+        "bonus": "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha"
+      },
+      "configTitle": "Configurável, nunca inventivo",
+      "configDescription": "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para. Nunca adivinha um valor de conformidade."
+    },
+    "proof": {
+      "eyebrow": "Evidência",
+      "title": "Verificado contra o mundo real",
+      "description": "O software de folha costuma ser testado apenas contra as suas próprias suposições. O motor do Xefe é verificado contra três tipos independentes de evidência.",
+      "tierLabel": "Nível",
+      "tier1Name": "Lei primária",
+      "tier1": "Cada regra legal é implementada com testes de fronteira — 601 testes automáticos em todo o produto, cerca de 176 só na aritmética de folha e impostos: limiares, meses de quatro e cinco semanas, trabalho noturno através da meia-noite, datas de compensação, o teto de deduções.",
+      "tier2Name": "Prática real",
+      "tier2": "O motor reproduz resultados de folha preparados por contabilistas em exercício em Timor-Leste — centenas de cálculos mensais reproduzidos ao cêntimo, incluindo convenções locais como o divisor salarial de 190 horas, que o Xefe oferece como configuração explícita.",
+      "tier3Name": "Avaliações oficiais",
+      "tier3": "Onde existem valores avaliados pela própria autoridade tributária, a aritmética do Xefe corresponde ao cêntimo — em categorias de retenção da renda à construção, para salários de residentes e não residentes. Num dos casos, a autoridade corrigiu uma declaração errada exatamente para o valor que o Xefe calcula por defeito.",
+      "ratesTitle": "Taxas de retenção que o motor aplica",
+      "ratesNote": "Ao abrigo da Lei 8/2008. As linhas avaliadas estão confirmadas contra a aritmética da própria autoridade tributária.",
+      "rateCategory": "Categoria",
+      "rateRate": "Taxa",
+      "rateBasis": "Base",
+      "rates": {
+        "rent": "Renda (terrenos e edifícios)",
+        "construction": "Construção",
+        "consulting": "Consultoria de construção",
+        "nonresWages": "Salários de não residentes",
+        "resWages": "Salários de residentes",
+        "royalty": "Royalties e prémios",
+        "transport": "Transporte aéreo e marítimo",
+        "mining": "Minas e apoio mineiro"
+      },
+      "basisConfirmed": "Corresponde às avaliações oficiais",
+      "basisStatute": "Taxa legal"
+    },
+    "pipeline": {
+      "eyebrow": "O processo",
+      "title": "Uma folha. Tudo a jusante.",
+      "description": "O dono vê um assistente. O motor corre seis etapas — cada uma validada e recuperável.",
+      "steps": {
+        "compile": {
+          "title": "Compilar",
+          "description": "A assiduidade, os turnos e as licenças aprovadas entram na folha. As horas noturnas são detetadas automaticamente na janela 21:00–06:00, mesmo através da meia-noite. As licenças pagas compensam faltas e as admissões a meio do mês são calculadas proporcionalmente."
+        },
+        "guard": {
+          "title": "Proteger",
+          "description": "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. A aprovação exige duas pessoas — imposta nas próprias regras de segurança — e finalizar a folha é a única coisa no Xefe que exige subscrição."
+        },
+        "post": {
+          "title": "Lançar",
+          "description": "Um lançamento contabilístico de dupla entrada, equilibrado, entra automaticamente num plano de contas TL com 77 contas — salários e INSS do empregador a débito, salário líquido e cada obrigação legal a crédito na sua própria conta. Um lançamento desequilibrado é recusado."
+        },
+        "deliver": {
+          "title": "Entregar",
+          "description": "Cada trabalhador recebe o recibo em PDF — em tétum, português ou inglês — com as contribuições do empregador, os totais do ano e o campo de assinatura. Quem usa a app Ekipa recebe uma notificação assim que está pronto."
+        },
+        "file": {
+          "title": "Declarar",
+          "description": "A Declaração de Remunerações do INSS no formato oficial e o formulário mensal consolidado da ATTL geram-se sozinhos, com os dados de pagamento preenchidos e os prazos ajustados ao dia útil seguinte em Timor-Leste."
+        },
+        "pay": {
+          "title": "Pagar",
+          "description": "Não é um ficheiro que nenhum banco aceita: é o pacote Excel de duas folhas e o email de cobertura em português que os balcões do BNU e do BNCTL processam, com ordem de pagamento assinada. Quem usa QuickBooks exporta o lançamento em CSV ou IIF."
+        }
+      }
+    },
+    "trust": {
+      "eyebrow": "Segurança e escala",
+      "title": "Feito para merecer confiança",
+      "description": "O software de dinheiro ganha confiança nas partes que ninguém vê.",
+      "cards": {
+        "rules": {
+          "title": "Regras, não promessas",
+          "description": "O isolamento de cada empresa, o paywall da folha e a regra de aprovação a duas pessoas são impostos nas regras de segurança do servidor, não apenas na interface. Um dono nem sequer consegue atribuir-se uma subscrição — os campos de faturação estão protegidos contra alteração."
+        },
+        "roles": {
+          "title": "Um papel de contabilista a sério",
+          "description": "Um contabilista pode tratar da folha, dos livros e das declarações sem qualquer poder administrativo — sem membros, sem definições, sem faturação. Exatamente a forma de que um contabilista externo precisa."
+        },
+        "scale": {
+          "title": "Seguro em escala",
+          "description": "As gravações da folha são feitas em lotes e são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações legais são testadas com centenas de trabalhadores e os totais do ano recalculam-se sempre a partir dos registos de origem."
+        },
+        "privacy": {
+          "title": "Privado por construção",
+          "description": "Cada email sai para um destinatário de cada vez — os funcionários nunca veem os endereços uns dos outros. Os links de faturas são impossíveis de adivinhar e não são listáveis, e cada recibo chega só ao seu dono."
+        }
+      }
+    },
+    "cta": {
+      "title": "Veja-o a correr na sua própria folha.",
+      "description": "Configurar é grátis: adicione a equipa, construa uma folha de rascunho e inspecione cada número desta página nos seus próprios livros. Só subscreve quando finalizar uma folha real.",
+      "secondary": "Ver preços",
+      "footnote": "O trabalhador acima é ilustrativo — a aritmética é a do próprio motor."
+    }
+  },
   "howItWorks": {
     "nav": {
       "workflow": "Como o trabalho flui",
@@ -1423,9 +1574,9 @@ const messages = {
       "calculationEyebrow": "Exemplo mensal de folha",
       "calculationTitle": "Cálculo de trabalhador residente",
       "formulas": {
-        "wit": "IRT: 10% × ($1,480 − $500) = $98.00",
-        "employeeInss": "INSS do trabalhador: 4% × $1,380 = $55.20",
-        "employerInss": "INSS do empregador: 6% × $1,380 = $82.80"
+        "wit": "IRT: 10% × ($1,413.22 − $500) = $91.32",
+        "employeeInss": "INSS do trabalhador: 4% × $1,200 = $48.00",
+        "employerInss": "INSS do empregador: 6% × $1,200 = $72.00"
       },
       "journalEyebrow": "Lançamento contabilístico gerado",
       "journalTitle": "Lançamento de folha equilibrado",
@@ -1444,7 +1595,7 @@ const messages = {
         "total": "Total equilibrado"
       },
       "journalNote": "Os totais do lançamento correspondem ao custo do empregador e mantêm separados os passivos de INSS do trabalhador e do empregador.",
-      "disclaimer": "Exemplo mensal sintético e ilustrativo para um trabalhador residente. O subsídio de alimentação aparece fora da base de INSS. O tratamento real depende da configuração do trabalhador e da rubrica, da lei aplicável e de eventuais isenções."
+      "disclaimer": "Exemplo mensal sintético e ilustrativo para um trabalhador residente. As horas extra e o subsídio de alimentação aparecem fora da base de INSS. O tratamento real depende da configuração do trabalhador e da rubrica, da lei aplicável e de eventuais isenções."
     },
     "controls": {
       "eyebrow": "Controlos e resultados úteis",
@@ -6390,6 +6541,8 @@ const messages = {
     "hours": "Horas",
     "ot": "HE",
     "night": "Noite",
+    "holiday": "Feriado",
+    "restDay": "Descanso",
     "bonus": "Bónus",
     "bonusType": "Tipo de bónus",
     "bonusTypeRequired": "Escolher tipo",
@@ -6453,6 +6606,8 @@ const messages = {
     "regularPay": "Pagamento Regular",
     "overtimePay": "Pagamento de Horas Extra",
     "nightShift": "Turno Noturno",
+    "holidayPay": "Pagamento de Feriado",
+    "restDayPay": "Pagamento de Dia de Descanso",
     "thirteenthMonth": "13.º Mês",
     "incomeTax": "Imposto sobre Rendimento",
     "inssEmployee4": "INSS (4%)",

@@ -23,7 +23,9 @@ const ret: MonthlyINSSReturn = {
       employeeContribution: 40,
       employerContribution: 60,
       totalContribution: 100,
-      grossWages: 1000,
+      // Gross exceeds the base by a $150 per-diem excluded from the INSS base
+      // (DL 20/2017 Art. 9) — declared columns must use contributionBase.
+      grossWages: 1150,
       annualSubsidy: 100,
       incomeTax: 50,
       netPay: 910,
@@ -62,9 +64,9 @@ describe('INSS DR Excel export', () => {
     expect(first.getCell(6).value).toBe('NISS001');
     expect(first.getCell(8).value).toBe('Contratado nacional');
     expect(first.getCell(14).value).toBe('Sim');
-    expect(first.getCell(21).value).toBe(900); // base = gross − 13th
+    expect(first.getCell(21).value).toBe(900); // base = contribution base − 13th
     expect(first.getCell(22).value).toBe(100); // subsídio anual
-    expect(first.getCell(25).value).toBe(1000); // total declared
+    expect(first.getCell(25).value).toBe(1000); // total declared = contribution base (NOT the $1150 gross)
     expect(first.getCell(26).value).toBe(50); // 10% imposto
     expect(first.getCell(27).value).toBe(60); // 6% EE
     expect(first.getCell(28).value).toBe(40); // 4% worker

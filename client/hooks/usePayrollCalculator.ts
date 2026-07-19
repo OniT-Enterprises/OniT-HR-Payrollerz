@@ -36,7 +36,7 @@ import {
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import type { PayrollConfig } from "@/types/settings";
-import { addMoney, sumMoney } from "@/lib/currency";
+import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
 import type { Employee } from "@/services/employeeService";
@@ -54,6 +54,9 @@ import {
 
 interface UsePayrollCalculatorOptions {
   activeEmployees: Employee[];
+  /** Terminated employees; those whose termination falls inside the pay
+   * period are added to the roster for their final-pay run. */
+  terminatedEmployees?: Employee[];
   tenantId: string;
   userId: string;
   payrollConfig?: PayrollConfig;
@@ -69,8 +72,39 @@ function isShareholder(employee: Employee): boolean {
   return (employee.jobDetails.employmentType || "").toLowerCase() === "shareholder";
 }
 
+/**
+ * Employment end for HOURS proration: the offboarding-stamped termination
+ * date, or a fixed-term contract end. Honored only when it falls INSIDE the
+ * pay period — a stale past date must never zero out an active employee's
+ * pay, and a future one is out of scope for this run.
+ */
+function getInPeriodEmploymentEnd(
+  employee: Employee,
+  periodStart: string,
+  periodEnd: string,
+): string | null {
+  const end = employee.terminationDate || employee.jobDetails.contractEndDate || null;
+  return end && end >= periodStart && end <= periodEnd ? end : null;
+}
+
+/**
+ * Termination for FINAL-PAY items (Art. 56 severance + Art. 44 subsidio):
+ * only the deliberate offboarding-stamped terminationDate — a contract end
+ * date alone may just precede a renewal, and severance must not auto-pay on
+ * a guess.
+ */
+function getInPeriodTermination(
+  employee: Employee,
+  periodStart: string,
+  periodEnd: string,
+): string | null {
+  const end = employee.terminationDate || null;
+  return end && end >= periodStart && end <= periodEnd ? end : null;
+}
+
 export function usePayrollCalculator({
   activeEmployees,
+  terminatedEmployees,
   tenantId,
   userId,
   payrollConfig,
@@ -144,6 +178,9 @@ export function usePayrollCalculator({
       ? { monthlyHoursDivisor: 190, rounding: 'up' as const }
       : undefined,
     minimumWage: payrollConfig.minimumWage,
+    subsidioAnual: {
+      proRataForNewEmployees: payrollConfig.subsidioAnual?.proRataForNewEmployees ?? true,
+    },
   }) : undefined, [payrollConfig]);
   const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
   const ytdQuery = useQuery({
@@ -164,6 +201,19 @@ export function usePayrollCalculator({
   const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
   const attendanceSyncRequestRef = useRef(0);
 
+  // Roster: active employees plus leavers whose employment ended inside this
+  // pay period — their final run pays the worked fraction, Art. 56 service
+  // compensation, and the netted Art. 44 subsidio.
+  const rosterEmployees = useMemo(() => {
+    if (!terminatedEmployees || terminatedEmployees.length === 0) {
+      return activeEmployees;
+    }
+    const leavers = terminatedEmployees.filter((employee) =>
+      Boolean(getInPeriodEmploymentEnd(employee, periodStart, periodEnd)),
+    );
+    return leavers.length > 0 ? [...activeEmployees, ...leavers] : activeEmployees;
+  }, [activeEmployees, terminatedEmployees, periodStart, periodEnd]);
+
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
     const monthlySalary = data.employee.compensation.monthlySalary || 0;
@@ -171,9 +221,36 @@ export function usePayrollCalculator({
     const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
     const monthsWorkedThisYear = asOfDate.getMonth() + 1;
     const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-    const subsidioAnual = includeSubsidioAnual
-      ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
-      : 0;
+    // A leaver's final run: severance fires in the engine via terminationDate,
+    // and the Art. 44 subsidio is owed regardless of the run-level toggle —
+    // net of any 13th month already paid this year (YTD), so an annual run
+    // followed by a same-year termination cannot double-pay.
+    const inPeriodTermination = getInPeriodTermination(
+      data.employee,
+      periodStart,
+      periodEnd,
+    );
+    const ytdSubsidioPaid =
+      ytdByEmployee[data.employee.id || ""]?.ytdSubsidioAnual || 0;
+    const subsidioAnual = inPeriodTermination
+      ? maxMoney(
+          0,
+          subtractMoney(
+            calculateSubsidioAnual(
+              monthlySalary,
+              hireDate,
+              new Date(`${inPeriodTermination}T00:00:00`),
+              {
+                ...calculationConfig?.subsidioAnual,
+                terminationDate: inPeriodTermination,
+              },
+            ),
+            ytdSubsidioPaid,
+          ),
+        )
+      : includeSubsidioAnual
+        ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, calculationConfig?.subsidioAnual)
+        : 0;
     // Per-employee frequency overrides the run-level selector
     const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
     const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
@@ -195,7 +272,7 @@ export function usePayrollCalculator({
       overtimeHours: data.overtimeHours,
       nightShiftHours: data.nightShiftHours,
       holidayHours: data.holidayHours,
-      restDayHours: 0,
+      restDayHours: data.restDayHours,
       absenceHours: data.absenceHours,
       lateArrivalMinutes: data.lateArrivalMinutes,
       sickDaysUsed: data.sickDays,
@@ -208,6 +285,9 @@ export function usePayrollCalculator({
       transportAllowance: data.allowances,
       otherEarnings: 0,
       subsidioAnual,
+      // Fires the engine's Art. 56 service-compensation earning in the
+      // leaver's final run only (never for past terminations).
+      terminationDate: inPeriodTermination || undefined,
       nonCashBenefits: 0,
       nonCashBenefitINSSCategory: null,
       taxInfo: {
@@ -232,7 +312,7 @@ export function usePayrollCalculator({
       console.error("Calculation error for employee:", data.employee.id, error);
       return null;
     }
-  }, [payFrequency, payDate, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
+  }, [payFrequency, payDate, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
 
   const latestCalculatorRef = useRef(calculateForEmployee);
   const [appliedCalculator, setAppliedCalculator] = useState(
@@ -246,7 +326,7 @@ export function usePayrollCalculator({
   // Initialize rows when the employee set or period changes. The calculator ref
   // keeps async config/YTD changes from resetting manual row edits.
   useEffect(() => {
-    if (activeEmployees.length === 0) {
+    if (rosterEmployees.length === 0) {
       setEmployeePayrollData([]);
       return;
     }
@@ -254,22 +334,25 @@ export function usePayrollCalculator({
     const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
     const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
 
-    const initialData = activeEmployees.map((employee): EmployeePayrollData => {
+    const initialData = rosterEmployees.map((employee): EmployeePayrollData => {
       const hireDate = employee.jobDetails.hireDate || "";
       const proratedHours = calculateProRataHours(
         hireDate,
         periodStart,
         periodEnd,
         defaultHours,
+        getInPeriodEmploymentEnd(employee, periodStart, periodEnd),
       );
       // Salaried pay is a fixed monthly amount with any shortfall docked via the
       // absence deduction (not by scaling regularHours — calculateRegularPay
-      // ignores hours for salaried). So for a mid-period hire we keep the full
-      // expected hours as the baseline and book the pre-hire days as absence;
-      // the existing absence deduction then prorates the pay. A full-period
-      // employee has proratedHours === defaultHours, so preHireAbsence is 0 and
-      // nothing changes. This also makes the attendance sync correct: it
-      // measures absence against the full-month expectation.
+      // ignores hours for salaried). So for a partial period of employment
+      // (mid-period hire, or a leaver's final period) we keep the full
+      // expected hours as the baseline and book the unemployed days as
+      // absence; the existing absence deduction then prorates the pay. A
+      // full-period employee has proratedHours === defaultHours, so the
+      // seeded absence is 0 and nothing changes. This also makes the
+      // attendance sync correct: it measures absence against the full-month
+      // expectation.
       const preHireAbsence = Number(
         Math.max(0, defaultHours - proratedHours).toFixed(2),
       );
@@ -280,6 +363,7 @@ export function usePayrollCalculator({
         overtimeHours: 0,
         nightShiftHours: 0,
         holidayHours: 0,
+        restDayHours: 0,
         absenceHours: preHireAbsence,
         lateArrivalMinutes: 0,
         sickDays: 0,
@@ -293,6 +377,8 @@ export function usePayrollCalculator({
           regularHours,
           overtimeHours: 0,
           nightShiftHours: 0,
+          holidayHours: 0,
+          restDayHours: 0,
           absenceHours: preHireAbsence,
           lateArrivalMinutes: 0,
           bonus: 0,
@@ -309,7 +395,7 @@ export function usePayrollCalculator({
     });
 
     setEmployeePayrollData(initialData);
-  }, [activeEmployees, payFrequency, periodStart, periodEnd]);
+  }, [rosterEmployees, payFrequency, periodStart, periodEnd]);
 
   // Recalculate every existing row when tax configuration, YTD totals, pay
   // date, frequency, or Subsidio settings change. Because row state is not a
@@ -334,6 +420,8 @@ export function usePayrollCalculator({
     updated.regularHours !== updated.originalValues.regularHours ||
     updated.overtimeHours !== updated.originalValues.overtimeHours ||
     updated.nightShiftHours !== updated.originalValues.nightShiftHours ||
+    updated.holidayHours !== updated.originalValues.holidayHours ||
+    updated.restDayHours !== updated.originalValues.restDayHours ||
     updated.absenceHours !== updated.originalValues.absenceHours ||
     updated.lateArrivalMinutes !== updated.originalValues.lateArrivalMinutes ||
     updated.bonus !== updated.originalValues.bonus ||
@@ -350,7 +438,7 @@ export function usePayrollCalculator({
   ) => {
     if (!Number.isFinite(value)) return;
 
-    const hourFields = ["regularHours", "overtimeHours", "nightShiftHours", "holidayHours"];
+    const hourFields = ["regularHours", "overtimeHours", "nightShiftHours", "holidayHours", "restDayHours"];
     const moneyFields = ["bonus", "perDiem", "allowances"];
 
     if (hourFields.includes(field)) {
@@ -406,6 +494,8 @@ export function usePayrollCalculator({
           regularHours: d.originalValues.regularHours,
           overtimeHours: d.originalValues.overtimeHours,
           nightShiftHours: d.originalValues.nightShiftHours,
+          holidayHours: d.originalValues.holidayHours,
+          restDayHours: d.originalValues.restDayHours,
           absenceHours: d.originalValues.absenceHours,
           lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
           bonus: d.originalValues.bonus,
@@ -588,7 +678,7 @@ export function usePayrollCalculator({
   // ─── Compliance issues ──────────────────────────────────────────
 
   const complianceIssues = useMemo(() => {
-    const raw = getComplianceIssues(activeEmployees);
+    const raw = getComplianceIssues(rosterEmployees);
     // Group by employee
     const map = new Map<string, { employee: Employee; issues: string[] }>();
     raw.forEach(({ employee, issue }) => {
@@ -597,7 +687,7 @@ export function usePayrollCalculator({
       map.get(id)!.issues.push(issue);
     });
     return Array.from(map.values());
-  }, [activeEmployees]);
+  }, [rosterEmployees]);
 
   const hasComplianceIssues = complianceIssues.length > 0;
 
@@ -679,9 +769,33 @@ export function usePayrollCalculator({
       const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
       const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-      const subsidioAnual = includeSubsidioAnual
-        ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
-        : 0;
+      // Mirrors calculateForEmployee's leaver handling — keep in sync.
+      const inPeriodTermination = getInPeriodTermination(
+        data.employee,
+        periodStart,
+        periodEnd,
+      );
+      const ytdSubsidioPaid =
+        ytdByEmployee[data.employee.id || ""]?.ytdSubsidioAnual || 0;
+      const subsidioAnual = inPeriodTermination
+        ? maxMoney(
+            0,
+            subtractMoney(
+              calculateSubsidioAnual(
+                monthlySalary,
+                hireDate,
+                new Date(`${inPeriodTermination}T00:00:00`),
+                {
+                  ...calculationConfig?.subsidioAnual,
+                  terminationDate: inPeriodTermination,
+                },
+              ),
+              ytdSubsidioPaid,
+            ),
+          )
+        : includeSubsidioAnual
+          ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, calculationConfig?.subsidioAnual)
+          : 0;
       const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
       const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
       const isResident =
@@ -702,7 +816,7 @@ export function usePayrollCalculator({
         overtimeHours: data.overtimeHours,
         nightShiftHours: data.nightShiftHours,
         holidayHours: data.holidayHours,
-        restDayHours: 0,
+        restDayHours: data.restDayHours,
         absenceHours: data.absenceHours,
         lateArrivalMinutes: data.lateArrivalMinutes,
         sickDaysUsed: data.sickDays,
@@ -715,6 +829,7 @@ export function usePayrollCalculator({
         transportAllowance: data.allowances,
         otherEarnings: 0,
         subsidioAnual,
+        terminationDate: inPeriodTermination || undefined,
         nonCashBenefits: 0,
         nonCashBenefitINSSCategory: null,
         taxInfo: {
@@ -740,7 +855,7 @@ export function usePayrollCalculator({
       }
     }
     return allErrors;
-  }, [payDate, payFrequency, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
+  }, [payDate, payFrequency, periodStart, periodEnd, includeSubsidioAnual, ytdByEmployee, calculationConfig]);
 
   // ─── Build payroll run / records ────────────────────────────────
 
@@ -839,6 +954,8 @@ export function usePayrollCalculator({
   return {
     // State
     employeePayrollData,
+    // Active employees plus in-period leavers getting their final-pay run
+    rosterEmployees,
     searchTerm,
     setSearchTerm,
     expandedRows,

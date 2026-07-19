@@ -5,9 +5,11 @@
  * and reuses the product's own lightweight `payslipStrings` so the labels are
  * trilingual (Tetun / English / Portuguese).
  *
- * Figures are illustrative but internally consistent and match the hero
- * calc card: $1,480 gross → −$98 WIT (10% over $500) → −$55.20 INSS (4%)
- * → $1,326.80 net.
+ * Figures are illustrative but engine-exact and match the hero calc card:
+ * $1,413.22 gross → −$91.32 WIT (10% over $500) → −$48.00 INSS (4% of the
+ * $1,200 base — overtime and the food allowance are outside the INSS base
+ * per DL 20/2017 Art. 9) → $1,273.90 net. Hourly rate uses the engine's
+ * annualized default: 1,200 × 12 ÷ (44 × 52) = $6.29.
  */
 import {
   payslipStrings,
@@ -41,15 +43,15 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
   const x = extra[locale];
 
   const basic = 1200,
-    overtime = 180,
+    overtime = 113.22, // 12 h × $6.29 × 1.5 (engine's annualized hourly rate)
     food = 100;
-  const grossEarnings = basic + overtime + food; // 1480
-  const wit = 98,
-    inss = 55.2;
-  const totalDeductions = wit + inss; // 153.20
-  const net = grossEarnings - totalDeductions; // 1326.80
-  const employerInss = 82.8; // 6% of cash pay ($1,380, meal allowance excluded)
-  const subsidioMonthly = +(grossEarnings / 12).toFixed(2); // 123.33
+  const grossEarnings = basic + overtime + food; // 1413.22
+  const wit = 91.32, // 10% × (1,413.22 − 500)
+    inss = 48; // 4% × 1,200 — OT + food allowance excluded (DL 20/2017 Art. 9)
+  const totalDeductions = wit + inss; // 139.32
+  const net = grossEarnings - totalDeductions; // 1273.90
+  const employerInss = 72; // 6% × 1,200, same INSS base as the employee share
+  const subsidioMonthly = +(basic / 12).toFixed(2); // 100.00 — one month's salary ÷ 12
 
   const earnings = [
     { code: "SL_B", desc: s.auditBaseSalary, ref: "", amount: basic },
@@ -117,7 +119,7 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
             label={s.position}
             value={locale === "en" ? "Store Supervisor" : "Supervizór Loja"}
           />
-          <Info label={s.hourlyRate} value={money(6.92)} />
+          <Info label={s.hourlyRate} value={money(6.29)} />
         </div>
 
         {/* Combined earnings / deductions table */}

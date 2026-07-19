@@ -149,52 +149,52 @@ export default function ProductDetails() {
 
   const calculationRows = [
     { label: t("landing.tax.example.basicSalary"), value: 1200 },
-    { label: t("landing.tax.example.overtime"), value: 180 },
+    { label: t("landing.tax.example.overtime"), value: 113.22 },
     { label: t("landing.tax.example.foodAllowance"), value: 100 },
-    { label: t("landing.tax.example.gross"), value: 1480, strong: true },
-    { label: t("landing.tax.example.wit"), value: -98 },
-    { label: t("landing.tax.example.inss"), value: -55.2 },
-    { label: t("landing.tax.example.net"), value: 1326.8, total: true },
-    { label: t("howItWorks.example.employerInss"), value: 82.8 },
-    { label: t("howItWorks.example.employerCost"), value: 1562.8, strong: true },
+    { label: t("landing.tax.example.gross"), value: 1413.22, strong: true },
+    { label: t("landing.tax.example.wit"), value: -91.32 },
+    { label: t("landing.tax.example.inss"), value: -48 },
+    { label: t("landing.tax.example.net"), value: 1273.9, total: true },
+    { label: t("howItWorks.example.employerInss"), value: 72 },
+    { label: t("howItWorks.example.employerCost"), value: 1485.22, strong: true },
   ];
 
   const journalLines: JournalLine[] = [
     {
       code: "5110",
       account: t("howItWorks.example.accounts.wages"),
-      debit: 1480,
+      debit: 1413.22,
       credit: 0,
     },
     {
       code: "5150",
       account: t("howItWorks.example.accounts.employerInssExpense"),
-      debit: 82.8,
+      debit: 72,
       credit: 0,
     },
     {
       code: "2210",
       account: t("howItWorks.example.accounts.netPayable"),
       debit: 0,
-      credit: 1326.8,
+      credit: 1273.9,
     },
     {
       code: "2220",
       account: t("howItWorks.example.accounts.witPayable"),
       debit: 0,
-      credit: 98,
+      credit: 91.32,
     },
     {
       code: "2230",
       account: t("howItWorks.example.accounts.employeeInssPayable"),
       debit: 0,
-      credit: 55.2,
+      credit: 48,
     },
     {
       code: "2240",
       account: t("howItWorks.example.accounts.employerInssPayable"),
       debit: 0,
-      credit: 82.8,
+      credit: 72,
     },
   ];
 
@@ -561,8 +561,8 @@ export default function ProductDetails() {
                     <tfoot className="border-t border-amber-400/20 bg-amber-400/[0.06] font-bold text-amber-200">
                       <tr>
                         <td className="px-4 py-3">{t("howItWorks.example.table.total")}</td>
-                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1562.8, locale)}</td>
-                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1562.8, locale)}</td>
+                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1485.22, locale)}</td>
+                        <td className="px-4 py-3 text-right font-mono">{formatUSD(1485.22, locale)}</td>
                       </tr>
                     </tfoot>
                   </table>

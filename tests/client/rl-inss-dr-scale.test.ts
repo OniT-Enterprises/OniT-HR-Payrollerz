@@ -55,7 +55,10 @@ function buildReturn(): {
       totalContribution: roundMoney(
         employeeContribution + employerContribution,
       ),
-      grossWages: base,
+      // Gross deliberately EXCEEDS the base (a $25 food allowance excluded
+      // from the base by DL 20/2017 Art. 9) — the DR's declared columns must
+      // come from contributionBase, never gross.
+      grossWages: roundMoney(base + 25),
       annualSubsidy: 0,
       incomeTax,
       netPay,
@@ -114,16 +117,25 @@ describe('INSS DR export at scale (rl-inss-dr-scale)', () => {
         emp.employerContribution,
         2,
       );
+      // Declared base comes from the INSS contribution base, NOT gross —
+      // gross here carries a $25 excluded allowance and must not leak in.
       expect(ws.getCell(r, COL_TOTAL_DECLARED).value).toBeCloseTo(
-        emp.grossWages,
+        emp.contributionBase,
         2,
       );
-      // annualSubsidy is 0 -> base salary column equals gross.
+      // annualSubsidy is 0 -> base salary column equals the contribution base.
       expect(ws.getCell(r, COL_BASE_SALARY).value).toBeCloseTo(
-        emp.grossWages,
+        emp.contributionBase,
         2,
       );
       expect(ws.getCell(r, COL_NET_PAY).value).toBeCloseTo(emp.netPay, 2);
+      // The self-consistency INSS audits for: declared base × 4% ≈ worker SS.
+      expect(
+        Math.abs(
+          Number(ws.getCell(r, COL_TOTAL_DECLARED).value) * 0.04 -
+            Number(ws.getCell(r, COL_WORKER_SS).value),
+        ),
+      ).toBeLessThanOrEqual(0.01);
     }
   });
 

@@ -688,7 +688,8 @@ const messages = {
       "forAccountants": "For accountants",
       "menu": "Menu",
       "overview": "Overview",
-      "home": "Home"
+      "home": "Home",
+      "engine": "The engine"
     },
     "simple": {
       "nav": {
@@ -1313,6 +1314,156 @@ const messages = {
       }
     }
   },
+  "enginePage": {
+    "nav": {
+      "law": "The law",
+      "proof": "Proof",
+      "pipeline": "One run",
+      "trust": "Trust"
+    },
+    "hero": {
+      "eyebrow": "The engine inside Xefe",
+      "title": "One tap says Finalize payroll.",
+      "titleAccent": "The law runs underneath.",
+      "description": "Xefe keeps its screens simple because the hard part lives in the engine: Timor-Leste's labour, tax and social-security law, implemented rule by rule and checked against how payroll is really done here.",
+      "statTests": "automated tests",
+      "statStatutes": "statutes in code",
+      "statAccounts": "TL chart accounts",
+      "statLanguages": "languages"
+    },
+    "trace": {
+      "heading": "Engine trace — one employee, one month",
+      "profile": "Store supervisor · monthly salary · resident",
+      "hourlyRate": "Hourly rate",
+      "inssNote": "The INSS base excludes overtime and the food allowance",
+      "employerInss": "Employer INSS (6%) — an employer cost, not a deduction",
+      "thirteenth": "13th-month accrual, due 20 December",
+      "perMonth": "/month",
+      "footCeiling": "Deduction ceiling check: $139.32 withheld ≤ $423.97 (30% of wages), within the Art. 42(3) limit.",
+      "footPrecision": "Every amount is exact decimal arithmetic — the engine never uses floating point. Even the hourly-rate divisor is a setting: the annualized default shown here, or the 190-hour convention many Timorese accountants use."
+    },
+    "law": {
+      "eyebrow": "Statutes in code",
+      "title": "The law, running in code",
+      "description": "The payroll core implements Law 4/2012, Law 8/2008, Law 12/2016, DL 20/2017 and DL 30/2021 — with the statutory text quoted in the code next to the arithmetic it governs. These are tested rules, not lookup tables.",
+      "labourSub": "Labour law",
+      "labour": {
+        "hours": "44-hour week, 8-hour day",
+        "ot": "Overtime ×1.5 · rest day and public holiday ×2.0 · night work +25%",
+        "otCap": "Overtime capped at 16 h/week and 4 h/day, validated on every run",
+        "sick": "Sick pay: days 1–6 at 100%, days 7–12 at 50%, tracked across the year",
+        "cap": "30% monthly deduction ceiling, reconciled to the cent",
+        "thirteenth": "13th month, prorated, due 20 December",
+        "severance": "Severance: one month per completed five years of service"
+      },
+      "taxSub": "Wage income tax & withholding",
+      "tax": {
+        "resident": "Residents: 10% on wages above $500/month, per employee",
+        "nonResident": "Non-residents: flat 10% from the first dollar",
+        "periods": "Threshold prorated by the actual pay periods in the month",
+        "wht": "Supplier withholding: nine categories, from rent to construction",
+        "refuse": "Petroleum-regime payrolls are refused, never guessed"
+      },
+      "inssSub": "Social security",
+      "inss": {
+        "rates": "4% employee + 6% employer, uncapped base",
+        "exclude": "Base excludes overtime, per-diems, and travel, food and housing allowances",
+        "include": "Base includes the 13th month",
+        "bonus": "Bonuses must be classified before they contribute — the engine will not guess"
+      },
+      "configTitle": "Configurable, never inventive",
+      "configDescription": "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops. It never guesses a compliance figure."
+    },
+    "proof": {
+      "eyebrow": "Evidence",
+      "title": "Checked against the real world",
+      "description": "Payroll software is usually tested only against its own assumptions. The Xefe engine is checked against three independent kinds of evidence.",
+      "tierLabel": "Tier",
+      "tier1Name": "Primary law",
+      "tier1": "Every statutory rule is implemented with boundary tests — 601 automated tests across the product, around 176 on payroll and tax arithmetic alone: threshold edges, four- and five-week months, night work across midnight, severance dates, the deduction ceiling.",
+      "tier2Name": "Real-world practice",
+      "tier2": "The engine reproduces worked payroll results prepared by practicing Timor-Leste accountants — hundreds of monthly calculations matched to the cent, including local conventions like the 190-hour salary divisor, which Xefe offers as an explicit setting.",
+      "tier3Name": "Official assessments",
+      "tier3": "Where the tax authority's own assessed figures are available, Xefe's arithmetic matches them to the cent — across withholding categories from rent to construction, for resident and non-resident wages alike. In one case the authority corrected a mis-filed return to exactly the figure Xefe computes by default.",
+      "ratesTitle": "Withholding rates the engine applies",
+      "ratesNote": "Under Law 8/2008. Assessed rows are confirmed against the tax authority's own arithmetic.",
+      "rateCategory": "Category",
+      "rateRate": "Rate",
+      "rateBasis": "Basis",
+      "rates": {
+        "rent": "Rent (land and buildings)",
+        "construction": "Construction",
+        "consulting": "Construction consulting",
+        "nonresWages": "Non-resident wages",
+        "resWages": "Resident wages",
+        "royalty": "Royalties and prizes",
+        "transport": "Air and sea transport",
+        "mining": "Mining and mining support"
+      },
+      "basisConfirmed": "Matches official assessments",
+      "basisStatute": "Statutory rate"
+    },
+    "pipeline": {
+      "eyebrow": "The pipeline",
+      "title": "One run. Everything downstream.",
+      "description": "The owner sees a wizard. The engine runs six stages — each validated and recoverable.",
+      "steps": {
+        "compile": {
+          "title": "Compile",
+          "description": "Attendance, shifts and approved leave fold into payroll inputs. Night hours are detected automatically in the 21:00–06:00 window, even across midnight. Paid leave offsets absences, and mid-month hires are prorated exactly."
+        },
+        "guard": {
+          "title": "Guard",
+          "description": "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. Approval is a two-person rule enforced in the security rules themselves — and finalizing a run is the only thing in Xefe that needs a subscription."
+        },
+        "post": {
+          "title": "Post",
+          "description": "A balanced double-entry journal posts automatically to a 77-account Timor-Leste chart — salaries and employer INSS debited, net pay and every statutory liability credited to its own account. An unbalanced entry is refused outright."
+        },
+        "deliver": {
+          "title": "Deliver",
+          "description": "Every employee receives a payslip PDF — in Tetun, Portuguese or English — with employer contributions, year-to-date figures and a signature block. Ekipa app users get a push notification the moment it is ready."
+        },
+        "file": {
+          "title": "File",
+          "description": "The INSS Declaração de Remunerações in the official column layout and the ATTL consolidated monthly tax form generate themselves, with payment details filled in and due dates adjusted to the next Timor-Leste business day."
+        },
+        "pay": {
+          "title": "Pay",
+          "description": "Not a file no bank accepts: the exact two-sheet Excel pack and Portuguese cover email that BNU and BNCTL branches process, with a signed payment order. Businesses on QuickBooks export the journal as CSV or IIF instead."
+        }
+      }
+    },
+    "trust": {
+      "eyebrow": "Security & scale",
+      "title": "Built to be trusted",
+      "description": "Money software earns its trust in the parts nobody sees.",
+      "cards": {
+        "rules": {
+          "title": "Rules, not promises",
+          "description": "Tenant isolation, the payroll paywall and the two-person approval rule are enforced in server-side security rules, not just in the interface. A business owner cannot even grant themselves a subscription — billing fields are tamper-protected."
+        },
+        "roles": {
+          "title": "A real accountant role",
+          "description": "An accountant can run payroll, books and filings with no administrative power — no members, no settings, no billing. Exactly the shape an external bookkeeper needs."
+        },
+        "scale": {
+          "title": "Fails safe at scale",
+          "description": "Payroll writes are batched and recoverable — a half-written run is detected and repaired, never silently wrong. Statutory exports are scale-tested against hundreds of employees, and year-to-date totals always re-aggregate from source records."
+        },
+        "privacy": {
+          "title": "Private by construction",
+          "description": "Every email goes out to one recipient at a time — staff never see each other's addresses. Invoice links are unguessable and never listable, and payslips reach only their owner."
+        }
+      }
+    },
+    "cta": {
+      "title": "See it run on your own payroll.",
+      "description": "Setting up is free: add your team, build a draft run, and inspect every number on this page in your own books. You only subscribe when you finalize a real payroll.",
+      "secondary": "See pricing",
+      "footnote": "The employee above is illustrative — the arithmetic is the engine's own."
+    }
+  },
   "howItWorks": {
     "nav": {
       "workflow": "How work flows",
@@ -1423,9 +1574,9 @@ const messages = {
       "calculationEyebrow": "Monthly payroll example",
       "calculationTitle": "Resident employee calculation",
       "formulas": {
-        "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
-        "employeeInss": "Employee INSS: 4% × $1,380 = $55.20",
-        "employerInss": "Employer INSS: 6% × $1,380 = $82.80"
+        "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
+        "employeeInss": "Employee INSS: 4% × $1,200 = $48.00",
+        "employerInss": "Employer INSS: 6% × $1,200 = $72.00"
       },
       "journalEyebrow": "Generated accounting entry",
       "journalTitle": "Balanced payroll journal",
@@ -1444,7 +1595,7 @@ const messages = {
         "total": "Balanced total"
       },
       "journalNote": "The journal totals match the employer cost and keep employee and employer INSS liabilities separate.",
-      "disclaimer": "Illustrative synthetic monthly example for a resident employee. The food allowance is shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
+      "disclaimer": "Illustrative synthetic monthly example for a resident employee. Overtime and the food allowance are shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
     },
     "controls": {
       "eyebrow": "Controls and useful outputs",
@@ -6390,6 +6541,8 @@ const messages = {
     "hours": "Hours",
     "ot": "OT",
     "night": "Night",
+    "holiday": "Holiday",
+    "restDay": "Rest Day",
     "bonus": "Bonus",
     "bonusType": "Bonus type",
     "bonusTypeRequired": "Choose type",
@@ -6453,6 +6606,8 @@ const messages = {
     "regularPay": "Regular Pay",
     "overtimePay": "Overtime Pay",
     "nightShift": "Night Shift",
+    "holidayPay": "Holiday Pay",
+    "restDayPay": "Rest Day Pay",
     "thirteenthMonth": "13th Month",
     "incomeTax": "Income Tax",
     "inssEmployee4": "INSS (4%)",

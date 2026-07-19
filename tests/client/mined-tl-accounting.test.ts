@@ -164,13 +164,13 @@ describe("mined TL INSS cases I1-I3 and classification boundary", () => {
 describe("mined annual-subsidy cases S1-S2", () => {
   it("S1 uses one month of base salary for a full year", () => {
     expect(
-      calculateSubsidioAnual(600, 12, "2025-01-01", new Date("2025-12-15")),
+      calculateSubsidioAnual(600, "2025-01-01", new Date("2025-12-15")),
     ).toBe(600);
   });
 
   it("S2 prorates six months of service", () => {
     expect(
-      calculateSubsidioAnual(600, 6, "2025-07-01", new Date("2025-12-15")),
+      calculateSubsidioAnual(600, "2025-07-01", new Date("2025-12-15")),
     ).toBe(300);
   });
 });

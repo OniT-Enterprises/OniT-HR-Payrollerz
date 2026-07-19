@@ -688,7 +688,8 @@ const messages = {
       "forAccountants": "Ba kontabilista sira",
       "menu": "Menu",
       "overview": "Vizaun jerál",
-      "home": "Inísiu"
+      "home": "Inísiu",
+      "engine": "Motór"
     },
     "simple": {
       "nav": {
@@ -1313,6 +1314,156 @@ const messages = {
       }
     }
   },
+  "enginePage": {
+    "nav": {
+      "law": "Lei",
+      "proof": "Evidénsia",
+      "pipeline": "Folha ida",
+      "trust": "Konfiansa"
+    },
+    "hero": {
+      "eyebrow": "Motór iha Xefe laran",
+      "title": "Klik ida de'it atu finaliza folha pagamentu.",
+      "titleAccent": "Lei mak halo servisu iha okos.",
+      "description": "Xefe nia ekrã simples tanba parte difísil hela iha motór laran: lei laboral, impostu no seguransa sosiál Timor-Leste nian, implementadu regra ida-idak no verifikadu ho oinsá folha pagamentu halo loloos iha rai laran.",
+      "statTests": "teste automátiku",
+      "statStatutes": "lei iha kódigu",
+      "statAccounts": "konta kontabilidade TL",
+      "statLanguages": "lian"
+    },
+    "trace": {
+      "heading": "Kalkulasaun motór nian — trabalhador ida, fulan ida",
+      "profile": "Supervizór loja · saláriu mensál · rezidente",
+      "hourlyRate": "Taxa oráriu",
+      "inssNote": "Base INSS la inklui oras extra no subsídiu ai-han",
+      "employerInss": "INSS empregador (6%) — kustu empregador nian, la'ós dedusaun",
+      "thirteenth": "Subsídiu anuál (fulan-13), tenke selu to'o 20 Dezembru",
+      "perMonth": "/fulan",
+      "footCeiling": "Verifikasaun limite dedusaun: $139.32 ≤ $423.97 (30% husi saláriu), tuir limite Art. 42(3).",
+      "footPrecision": "Montante hotu-hotu uza aritmétika desimál loloos — motór nunka uza floating point. Divizór ba taxa oráriu mós konfigurável: padraun anualizadu iha ne'e, ka konvensaun oras-190 ne'ebé kontabilista Timor-oan barak uza."
+    },
+    "law": {
+      "eyebrow": "Lei iha kódigu",
+      "title": "Lei ne'ebé la'o iha kódigu",
+      "description": "Nukleu folha pagamentu implementa Lei 4/2012, Lei 8/2008, Lei 12/2016, DL 20/2017 no DL 30/2021 — ho testu lei nian sita iha kódigu besik kalkulasaun ne'ebé nia regula. Sira-ne'e regra ho teste, la'ós tabela de'it.",
+      "labourSub": "Lei laboral",
+      "labour": {
+        "hours": "Semana oras 44, loron oras 8",
+        "ot": "Oras extra ×1.5 · loron deskansa no feriadu ×2.0 · servisu kalan +25%",
+        "otCap": "Oras extra limite oras 16 kada semana no oras 4 kada loron, verifikadu iha folha ida-idak",
+        "sick": "Pagamentu moras: loron 1–6 ho 100%, loron 7–12 ho 50%, kontroladu durante tinan",
+        "cap": "Limite dedusaun 30% kada fulan, rekonsiliadu to'o sentavu",
+        "thirteenth": "Subsídiu anuál (fulan-13), proporsionál, tenke selu to'o 20 Dezembru",
+        "severance": "Kompensasaun servisu: fulan ida ba tinan 5 kompletu ida-idak"
+      },
+      "taxSub": "Impostu saláriu no retensaun",
+      "tax": {
+        "resident": "Rezidente: 10% ba saláriu liu $500 kada fulan, ba trabalhador ida-idak",
+        "nonResident": "La'ós rezidente: 10% husi dolar primeiru",
+        "periods": "Limite $500 ajusta tuir períodu pagamentu reál iha fulan",
+        "wht": "Retensaun ba fornesedór: kategoria sia, husi renda to'o konstrusaun",
+        "refuse": "Folha ba rejime petróleu — Xefe rekuza, nunka adivinha"
+      },
+      "inssSub": "Seguransa sosiál",
+      "inss": {
+        "rates": "4% trabalhador + 6% empregador, base la iha limite",
+        "exclude": "Base la inklui oras extra, per diem, no subsídiu viajen, ai-han no uma",
+        "include": "Base inklui subsídiu anuál (fulan-13)",
+        "bonus": "Bónus tenke klasifika uluk molok tama base — motór la adivinha"
+      },
+      "configTitle": "Konfigurável, maibé nunka inventa",
+      "configDescription": "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para. Xefe nunka adivinha valór konformidade."
+    },
+    "proof": {
+      "eyebrow": "Evidénsia",
+      "title": "Verifikadu ho mundu reál",
+      "description": "Software folha pagamentu baibain testa de'it ho nia hanoin rasik. Motór Xefe verifika ho evidénsia independente tolu.",
+      "tierLabel": "Nivel",
+      "tier1Name": "Lei primária",
+      "tier1": "Regra lei nian ida-idak implementadu ho teste fronteira — teste automátiku 601 iha produtu tomak, maizumenus 176 ba kalkulasaun folha no impostu de'it: limite $500, fulan ho semana 4 ka 5, servisu kalan liu meia-noite, data kompensasaun, limite dedusaun.",
+      "tier2Name": "Pratika reál",
+      "tier2": "Motór reproduz rezultadu folha pagamentu ne'ebé kontabilista Timor-Leste nian prepara ona — kalkulasaun mensál atus ba atus hanesan to'o sentavu, inklui konvensaun lokál hanesan divizór saláriu oras-190, ne'ebé Xefe oferese nudar konfigurasaun klaru.",
+      "tier3Name": "Avaliasaun ofisiál",
+      "tier3": "Bainhira autoridade tributária nia númeru avaliasaun rasik disponivel, aritmétika Xefe nian hanesan to'o sentavu — iha kategoria retensaun husi renda to'o konstrusaun, ba saláriu rezidente no la'ós rezidente. Iha kazu ida, autoridade korrije deklarasaun sala ba valór ne'ebé Xefe kalkula nudar padraun.",
+      "ratesTitle": "Taxa retensaun ne'ebé motór aplika",
+      "ratesNote": "Tuir Lei 8/2008. Liña ho avaliasaun konfirma ho aritmétika autoridade tributária nian rasik.",
+      "rateCategory": "Kategoria",
+      "rateRate": "Taxa",
+      "rateBasis": "Baze",
+      "rates": {
+        "rent": "Renda (rai no uma)",
+        "construction": "Konstrusaun",
+        "consulting": "Konsultoria konstrusaun",
+        "nonresWages": "Saláriu la'ós rezidente",
+        "resWages": "Saláriu rezidente",
+        "royalty": "Royalty no prémiu",
+        "transport": "Transporte aéreu no marítimu",
+        "mining": "Minas no apoiu minas"
+      },
+      "basisConfirmed": "Hanesan avaliasaun ofisiál",
+      "basisStatute": "Taxa lei nian"
+    },
+    "pipeline": {
+      "eyebrow": "Prosesu",
+      "title": "Folha ida. Buat hotu tuir mai.",
+      "description": "Na'in haree wizard ida. Motór halo etapa neen — ida-idak validadu no bele rekupera se falla.",
+      "steps": {
+        "compile": {
+          "title": "Kompila",
+          "description": "Prezensa, turnu no lisensa aprovadu tama ba folha pagamentu. Oras kalan deteta automátiku iha janela 21:00–06:00, mós liu meia-noite. Lisensa selu substitui falta, no trabalhador foun iha fulan klaran kalkula proporsionál loloos."
+        },
+        "guard": {
+          "title": "Proteje",
+          "description": "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Aprovasaun presiza ema rua — regra ne'e iha regra seguransa rasik — no finaliza folha mak buat úniku iha Xefe ne'ebé presiza subskrisaun."
+        },
+        "post": {
+          "title": "Lansa",
+          "description": "Lansamentu jornál double-entry balansadu tama automátiku ba planu konta TL ho konta 77 — saláriu no INSS empregador iha débitu, saláriu líkidu no obrigasaun lei nian ida-idak iha kréditu ho nia konta rasik. Lansamentu la balansadu — motór rekuza."
+        },
+        "deliver": {
+          "title": "Entrega",
+          "description": "Trabalhador ida-idak simu payslip PDF — iha Tetun, Portugés ka Inglés — ho kontribuisaun empregador nian, totál tinan nian no fatin asina. Uza-na'in aplikasaun Ekipa simu notifikasaun push bainhira prontu."
+        },
+        "file": {
+          "title": "Deklara",
+          "description": "Declaração de Remunerações INSS iha formatu ofisiál no formuláriu impostu mensál ATTL prepara an rasik, ho detalle pagamentu preenchidu no data limite ajustadu ba loron servisu tuir mai iha Timor-Leste."
+        },
+        "pay": {
+          "title": "Selu",
+          "description": "La'ós ficheiru ne'ebé banku la simu: pakote Excel ho folha rua no email kapa iha Portugés ne'ebé sukursál BNU no BNCTL prosesa, ho ordem pagamentu asinadu. Empreza ho QuickBooks bele esporta jornál nudar CSV ka IIF."
+        }
+      }
+    },
+    "trust": {
+      "eyebrow": "Seguransa no eskala",
+      "title": "Harii atu hetan konfiansa",
+      "description": "Software osan nian hetan konfiansa iha parte ne'ebé ema la haree.",
+      "cards": {
+        "rules": {
+          "title": "Regra, la'ós promesa",
+          "description": "Izolamentu empreza nian, paywall folha no regra aprovasaun ema-rua obriga iha regra seguransa servidor nian, la'ós de'it iha interface. Na'in empreza la bele fó subskrisaun ba nia an — kampu kobransa proteje husi mudansa."
+        },
+        "roles": {
+          "title": "Papel kontabilista loloos",
+          "description": "Kontabilista bele halo folha, livru no deklarasaun sein poder administrativu — la iha membru, la iha konfigurasaun, la iha kobransa. Forma loloos ne'ebé kontabilista esternu presiza."
+        },
+        "scale": {
+          "title": "Seguru iha eskala",
+          "description": "Gravasaun folha halo iha lote no bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun lei nian testa ho trabalhador atus ba atus, no totál tinan nian sempre kalkula fila fali husi rejistu orijinál."
+        },
+        "privacy": {
+          "title": "Privadu husi konstrusaun",
+          "description": "Email ida-idak sai ba simu-na'in ida de'it — funsionáriu nunka haree malu nia enderesu. Ligasaun fatura la bele adivinha no la bele lista, no payslip to'o de'it nia na'in."
+        }
+      }
+    },
+    "cta": {
+      "title": "Haree nia la'o ho Ita-nia folha rasik.",
+      "description": "Konfigura grátis: aumenta Ita-nia ekipa, halo folha rascunho ida, no haree númeru hotu iha pájina ne'e iha Ita-nia livru rasik. Ita subskreve de'it bainhira finaliza folha reál.",
+      "secondary": "Haree presu",
+      "footnote": "Trabalhador iha leten ilustrativu de'it — aritmétika mak motór nian rasik."
+    }
+  },
   "howItWorks": {
     "nav": {
       "workflow": "Fluxu servisu",
@@ -1423,9 +1574,9 @@ const messages = {
       "calculationEyebrow": "Ezemplu folha fulan ida",
       "calculationTitle": "Kalkulasaun trabalhador rezidente",
       "formulas": {
-        "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
-        "employeeInss": "INSS trabalhador: 4% × $1,380 = $55.20",
-        "employerInss": "INSS empregador: 6% × $1,380 = $82.80"
+        "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
+        "employeeInss": "INSS trabalhador: 4% × $1,200 = $48.00",
+        "employerInss": "INSS empregador: 6% × $1,200 = $72.00"
       },
       "journalEyebrow": "Lansu kontabil ne'ebé sistema kria",
       "journalTitle": "Lansu folha balansadu",
@@ -1444,7 +1595,7 @@ const messages = {
         "total": "Total balansadu"
       },
       "journalNote": "Total lansu konkorda ho kustu empregador no separa dívida INSS trabalhador no empregador.",
-      "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
+      "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Oras extra no subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
     },
     "controls": {
       "eyebrow": "Kontrolu no rezultadu útil",
@@ -6390,6 +6541,8 @@ const messages = {
     "hours": "Oras",
     "ot": "OT",
     "night": "Kalan",
+    "holiday": "Feriadu",
+    "restDay": "Deskansu",
     "bonus": "Bónus",
     "bonusType": "Tipu bónus",
     "bonusTypeRequired": "Hili tipu",
@@ -6453,6 +6606,8 @@ const messages = {
     "regularPay": "Saláriu Regulár",
     "overtimePay": "Pagamentu OT",
     "nightShift": "Turnu Kalan",
+    "holidayPay": "Pagamentu Feriadu",
+    "restDayPay": "Pagamentu Loron Deskansu",
     "thirteenthMonth": "Fulan 13",
     "incomeTax": "Impostu Rendimentu",
     "inssEmployee4": "INSS (4%)",

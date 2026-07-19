@@ -54,16 +54,20 @@ describe("public how Xefe works page", () => {
 
   it("shows an inspectable balanced example without presenting it as client payroll", () => {
     const page = read("client/pages/ProductDetails.tsx");
-    const grossPay = 1_480;
-    const employeeWit = 98;
-    const employeeInss = 55.2;
-    const employerInss = 82.8;
+    // Engine-consistent synthetic example: $1,200 base + 12h OT at 1.5x of
+    // the 190.6667h-divisor hourly rate ($6.29 × 1.5 × 12 = $113.22) + $100
+    // food allowance. OT and the food allowance sit OUTSIDE the INSS base
+    // (DL 20/2017 Art. 9), so INSS is 4%/6% of the $1,200 base only.
+    const grossPay = 1_413.22;
+    const employeeWit = 91.32; // 10% × (1,413.22 − 500)
+    const employeeInss = 48; // 4% × 1,200
+    const employerInss = 72; // 6% × 1,200
 
-    expect(grossPay - employeeWit - employeeInss).toBe(1_326.8);
-    expect(grossPay + employerInss).toBe(1_562.8);
-    expect(page).toContain("value: 1326.8");
-    expect(page).toContain("value: 1562.8");
-    expect(page).toContain("formatUSD(1562.8, locale)");
+    expect(Math.round((grossPay - employeeWit - employeeInss) * 100) / 100).toBe(1_273.9);
+    expect(Math.round((grossPay + employerInss) * 100) / 100).toBe(1_485.22);
+    expect(page).toContain("value: 1273.9");
+    expect(page).toContain("value: 1485.22");
+    expect(page).toContain("formatUSD(1485.22, locale)");
     expect(page).toContain('t("howItWorks.example.synthetic")');
     expect(page).not.toMatch(/from ["']recharts["']/);
   });

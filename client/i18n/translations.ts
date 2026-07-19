@@ -1427,9 +1427,9 @@ export const translations = {
         "calculationEyebrow": "Monthly payroll example",
         "calculationTitle": "Resident employee calculation",
         "formulas": {
-          "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
-          "employeeInss": "Employee INSS: 4% × $1,380 = $55.20",
-          "employerInss": "Employer INSS: 6% × $1,380 = $82.80"
+          "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
+          "employeeInss": "Employee INSS: 4% × $1,200 = $48.00",
+          "employerInss": "Employer INSS: 6% × $1,200 = $72.00"
         },
         "journalEyebrow": "Generated accounting entry",
         "journalTitle": "Balanced payroll journal",
@@ -1448,7 +1448,7 @@ export const translations = {
           "total": "Balanced total"
         },
         "journalNote": "The journal totals match the employer cost and keep employee and employer INSS liabilities separate.",
-        "disclaimer": "Illustrative synthetic monthly example for a resident employee. The food allowance is shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
+        "disclaimer": "Illustrative synthetic monthly example for a resident employee. Overtime and the food allowance are shown outside the INSS base. Actual treatment depends on the employee and pay-item setup, applicable law and any exemptions."
       },
       "controls": {
         "eyebrow": "Controls and useful outputs",
@@ -6394,6 +6394,8 @@ export const translations = {
       "hours": "Hours",
       "ot": "OT",
       "night": "Night",
+      "holiday": "Holiday",
+      "restDay": "Rest Day",
       "bonus": "Bonus",
       "bonusType": "Bonus type",
       "bonusTypeRequired": "Choose type",
@@ -6457,6 +6459,8 @@ export const translations = {
       "regularPay": "Regular Pay",
       "overtimePay": "Overtime Pay",
       "nightShift": "Night Shift",
+      "holidayPay": "Holiday Pay",
+      "restDayPay": "Rest Day Pay",
       "thirteenthMonth": "13th Month",
       "incomeTax": "Income Tax",
       "inssEmployee4": "INSS (4%)",
@@ -8867,9 +8871,9 @@ export const translations = {
         "calculationEyebrow": "Ezemplu folha fulan ida",
         "calculationTitle": "Kalkulasaun trabalhador rezidente",
         "formulas": {
-          "wit": "WIT: 10% × ($1,480 − $500) = $98.00",
-          "employeeInss": "INSS trabalhador: 4% × $1,380 = $55.20",
-          "employerInss": "INSS empregador: 6% × $1,380 = $82.80"
+          "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
+          "employeeInss": "INSS trabalhador: 4% × $1,200 = $48.00",
+          "employerInss": "INSS empregador: 6% × $1,200 = $72.00"
         },
         "journalEyebrow": "Lansu kontabil ne'ebé sistema kria",
         "journalTitle": "Lansu folha balansadu",
@@ -8888,7 +8892,7 @@ export const translations = {
           "total": "Total balansadu"
         },
         "journalNote": "Total lansu konkorda ho kustu empregador no separa dívida INSS trabalhador no empregador.",
-        "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
+        "disclaimer": "Ezemplu sintétiku ilustrativu ba trabalhador rezidente iha fulan ida. Oras extra no subsídiu ai-han iha ezemplu ida-ne'e la tama iha base INSS. Tratamentu reál depende ba konfigurasaun trabalhador no tipu pagamentu, lei ne'ebé aplika no izensaun ruma."
       },
       "controls": {
         "eyebrow": "Kontrolu no rezultadu útil",
@@ -13834,6 +13838,8 @@ export const translations = {
       "hours": "Oras",
       "ot": "OT",
       "night": "Kalan",
+      "holiday": "Feriadu",
+      "restDay": "Deskansu",
       "bonus": "Bónus",
       "bonusType": "Tipu bónus",
       "bonusTypeRequired": "Hili tipu",
@@ -13897,6 +13903,8 @@ export const translations = {
       "regularPay": "Saláriu Regulár",
       "overtimePay": "Pagamentu OT",
       "nightShift": "Turnu Kalan",
+      "holidayPay": "Pagamentu Feriadu",
+      "restDayPay": "Pagamentu Loron Deskansu",
       "thirteenthMonth": "Fulan 13",
       "incomeTax": "Impostu Rendimentu",
       "inssEmployee4": "INSS (4%)",
@@ -16307,9 +16315,9 @@ export const translations = {
         "calculationEyebrow": "Exemplo mensal de folha",
         "calculationTitle": "Cálculo de trabalhador residente",
         "formulas": {
-          "wit": "IRT: 10% × ($1,480 − $500) = $98.00",
-          "employeeInss": "INSS do trabalhador: 4% × $1,380 = $55.20",
-          "employerInss": "INSS do empregador: 6% × $1,380 = $82.80"
+          "wit": "IRT: 10% × ($1,413.22 − $500) = $91.32",
+          "employeeInss": "INSS do trabalhador: 4% × $1,200 = $48.00",
+          "employerInss": "INSS do empregador: 6% × $1,200 = $72.00"
         },
         "journalEyebrow": "Lançamento contabilístico gerado",
         "journalTitle": "Lançamento de folha equilibrado",
@@ -16328,7 +16336,7 @@ export const translations = {
           "total": "Total equilibrado"
         },
         "journalNote": "Os totais do lançamento correspondem ao custo do empregador e mantêm separados os passivos de INSS do trabalhador e do empregador.",
-        "disclaimer": "Exemplo mensal sintético e ilustrativo para um trabalhador residente. O subsídio de alimentação aparece fora da base de INSS. O tratamento real depende da configuração do trabalhador e da rubrica, da lei aplicável e de eventuais isenções."
+        "disclaimer": "Exemplo mensal sintético e ilustrativo para um trabalhador residente. As horas extra e o subsídio de alimentação aparecem fora da base de INSS. O tratamento real depende da configuração do trabalhador e da rubrica, da lei aplicável e de eventuais isenções."
       },
       "controls": {
         "eyebrow": "Controlos e resultados úteis",
@@ -21274,6 +21282,8 @@ export const translations = {
       "hours": "Horas",
       "ot": "HE",
       "night": "Noite",
+      "holiday": "Feriado",
+      "restDay": "Descanso",
       "bonus": "Bónus",
       "bonusType": "Tipo de bónus",
       "bonusTypeRequired": "Escolher tipo",
@@ -21337,6 +21347,8 @@ export const translations = {
       "regularPay": "Pagamento Regular",
       "overtimePay": "Pagamento de Horas Extra",
       "nightShift": "Turno Noturno",
+      "holidayPay": "Pagamento de Feriado",
+      "restDayPay": "Pagamento de Dia de Descanso",
       "thirteenthMonth": "13.º Mês",
       "incomeTax": "Imposto sobre Rendimento",
       "inssEmployee4": "INSS (4%)",

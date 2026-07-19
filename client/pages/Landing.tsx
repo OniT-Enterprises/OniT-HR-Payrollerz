@@ -221,7 +221,7 @@ export default function Landing() {
                   />
                   <CalculationRow
                     label={t("landing.tax.example.overtime")}
-                    value="+$180.00"
+                    value="+$113.22"
                     positive
                   />
                   <CalculationRow
@@ -231,23 +231,23 @@ export default function Landing() {
                   />
                   <CalculationRow
                     label={t("landing.tax.example.gross")}
-                    value="$1,480.00"
+                    value="$1,413.22"
                     divider
                     strong
                   />
                   <CalculationRow
                     label={t("landing.tax.example.wit")}
-                    value="−$98.00"
+                    value="−$91.32"
                     negative
                   />
                   <CalculationRow
                     label={t("landing.tax.example.inss")}
-                    value="−$55.20"
+                    value="−$48.00"
                     negative
                   />
                   <CalculationRow
                     label={t("landing.tax.example.net")}
-                    value="$1,326.80"
+                    value="$1,273.90"
                     divider
                     total
                   />

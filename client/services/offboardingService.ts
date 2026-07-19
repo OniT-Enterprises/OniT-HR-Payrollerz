@@ -22,7 +22,10 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import { calculateServiceCompensationDetails } from '@/lib/payroll/calculations-tl';
+import {
+  calculateServiceCompensationDetails,
+  calculateSubsidioAnual,
+} from '@/lib/payroll/calculations-tl';
 
 // ============================================
 // Types
@@ -61,7 +64,7 @@ export interface ExitInterview {
 }
 
 export interface Article56FinalPaySnapshot {
-  version: 1;
+  version: 1 | 2;
   monthlySalary: number;
   hireDate: string;
   terminationDate: string;
@@ -73,6 +76,16 @@ export interface Article56FinalPaySnapshot {
   inssContributable: false;
   legalBasis: 'Labour Law 4/2012 Art. 56';
   taxBasis: 'Tax Law 8/2008 Art. 1';
+  // v2: the Art. 44 prorated 13th month owed to a mid-year leaver (months
+  // worked in the termination year, whole-month convention). GROSS
+  // entitlement — if the tenant already paid this year's subsidio through a
+  // payroll run, the paid amount must be deducted by the person settling
+  // final pay (see subsidioAnualNote). Unlike the Art. 56 payment, the
+  // subsidio is INSS-contributable as well as WIT-taxable.
+  subsidioAnualMonths?: number;
+  subsidioAnual?: number;
+  subsidioAnualLegalBasis?: 'Labour Law 4/2012 Art. 44';
+  subsidioAnualNote?: string;
   calculatedBy: string;
   calculatedAt: Date;
 }
@@ -476,8 +489,29 @@ class OffboardingService {
         hireDate,
         terminationDate,
       );
+
+      // Art. 44 prorated 13th month owed for the termination year (months
+      // worked Jan-or-hire through the termination month, whole-month
+      // convention — the legal default; the tenant new-hire opt-out is a
+      // payroll-run convenience and does not reduce a leaver's entitlement).
+      const termDateObj = new Date(`${terminationDate}T00:00:00`);
+      const hireDateObj = new Date(`${hireDate}T00:00:00`);
+      const termYear = termDateObj.getFullYear();
+      const subsidioStartMonth =
+        hireDateObj.getFullYear() === termYear ? hireDateObj.getMonth() : 0;
+      const subsidioAnualMonths =
+        hireDateObj.getFullYear() > termYear
+          ? 0
+          : Math.min(12, Math.max(0, termDateObj.getMonth() - subsidioStartMonth + 1));
+      const subsidioAnual = calculateSubsidioAnual(
+        monthlySalary,
+        hireDate,
+        termDateObj,
+        { terminationDate },
+      );
+
       const snapshot: Article56FinalPaySnapshot = {
-        version: 1,
+        version: 2,
         monthlySalary: details.monthlySalary,
         hireDate: details.hireDate,
         terminationDate: details.terminationDate,
@@ -489,6 +523,11 @@ class OffboardingService {
         inssContributable: false,
         legalBasis: 'Labour Law 4/2012 Art. 56',
         taxBasis: 'Tax Law 8/2008 Art. 1',
+        subsidioAnualMonths,
+        subsidioAnual,
+        subsidioAnualLegalBasis: 'Labour Law 4/2012 Art. 44',
+        subsidioAnualNote:
+          'Gross entitlement for the termination year. Deduct any subsídio anual already paid to this employee through a payroll run this year before settling.',
         calculatedBy: calculatedBy.trim(),
         calculatedAt: new Date(),
       };

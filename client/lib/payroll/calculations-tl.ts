@@ -30,6 +30,7 @@ import {
   multiplyMoneyPartsToRoundedTotal,
   applyRate,
   addMoney,
+  roundMoney,
   subtractMoney,
   sumMoney,
   proRata,
@@ -66,6 +67,10 @@ export interface TLPayrollCalculationConfig {
   hourlyRate?: {
     monthlyHoursDivisor: number;
     rounding: 'nearest' | 'up';
+  };
+  subsidioAnual?: {
+    /** When false, current-year hires still receive the full month (tenant choice). */
+    proRataForNewEmployees?: boolean;
   };
 }
 
@@ -367,9 +372,12 @@ function calculateSickPay(
  * Calculate Timor-Leste Withholding Income Tax (WIT)
  * - Residents: 10% on income above $500/month
  * - Non-residents: 10% on all income
+ * Returns both the withheld tax and the bracket base the rate was applied to.
+ * The base feeds tax-filing reports and must NOT be reverse-derived from the
+ * cent-rounded tax (tax / rate only lands on $0.10 multiples at a 10% rate).
  * Uses decimal.js for precise currency calculations
  */
-export function calculateIncomeTax(
+export function calculateIncomeTaxWithBase(
   taxableIncome: number,
   isResident: boolean,
   payFrequency: TLPayFrequency,
@@ -379,8 +387,8 @@ export function calculateIncomeTax(
     nonResidentRate: number;
     residentThreshold: number;
   }
-): number {
-  if (taxableIncome <= 0) return 0;
+): { tax: number; taxableBase: number } {
+  if (taxableIncome <= 0) return { tax: 0, taxableBase: 0 };
 
   const rate = isResident
     ? configOverride?.residentRate ?? TL_INCOME_TAX.rate
@@ -400,11 +408,35 @@ export function calculateIncomeTax(
   if (isResident) {
     // Only tax amount above threshold
     const taxableAmount = Math.max(0, subtractMoney(taxableIncome, periodThreshold));
-    return applyRate(taxableAmount, rate);
+    return { tax: applyRate(taxableAmount, rate), taxableBase: taxableAmount };
   } else {
     // Non-residents pay on all income
-    return applyRate(taxableIncome, rate);
+    return { tax: applyRate(taxableIncome, rate), taxableBase: roundMoney(taxableIncome) };
   }
+}
+
+/**
+ * Calculate Timor-Leste Withholding Income Tax (WIT) — tax amount only.
+ * See calculateIncomeTaxWithBase for the taxable-base variant.
+ */
+export function calculateIncomeTax(
+  taxableIncome: number,
+  isResident: boolean,
+  payFrequency: TLPayFrequency,
+  totalPeriodsInMonth?: number,
+  configOverride?: {
+    residentRate: number;
+    nonResidentRate: number;
+    residentThreshold: number;
+  }
+): number {
+  return calculateIncomeTaxWithBase(
+    taxableIncome,
+    isResident,
+    payFrequency,
+    totalPeriodsInMonth,
+    configOverride,
+  ).tax;
 }
 
 /**
@@ -534,33 +566,51 @@ export function calculateServiceCompensationDetails(
 }
 
 /**
- * Calculate Subsidio Anual (13th month salary)
- * Pro-rated for employees with less than 12 months
- * Uses decimal.js for precise currency calculations
+ * Calculate Subsidio Anual (13th month salary), Labour Law 4/2012 Art. 44:
+ * one month's salary, prorated by months worked in the calendar year.
+ *
+ * For a CONTINUING employee the proration presumes service through December,
+ * so the amount is the same whether the tenant runs the subsidio in October
+ * or December — an early run no longer shorts a full-year worker. Months are
+ * counted on a whole-month convention (the hire month counts in full
+ * regardless of day-of-month): deliberate, common TL practice, and slightly
+ * employee-favourable — do not switch to day-level proration without an
+ * accountant sign-off.
+ *
+ * Employment that ENDS inside the subsidio year (options.terminationDate)
+ * caps the count at the termination month — the Art. 44 pro-rata owed to a
+ * mid-year leaver.
+ *
+ * Uses decimal.js for precise currency calculations.
  */
 export function calculateSubsidioAnual(
   monthlySalary: number,
-  monthsWorkedThisYear: number,
   hireDate: string,
-  asOfDate: Date = new Date()
+  asOfDate: Date = new Date(),
+  options?: {
+    proRataForNewEmployees?: boolean;
+    terminationDate?: string | null;
+  },
 ): number {
+  const year = asOfDate.getFullYear();
   const hireDateObj = new Date(hireDate);
-  const hireMonth = hireDateObj.getMonth();
-  const hireYear = hireDateObj.getFullYear();
+  if (hireDateObj.getFullYear() > year) return 0;
 
-  const currentMonth = asOfDate.getMonth();
-  const currentYear = asOfDate.getFullYear();
+  // Tenant may opt out of new-hire proration (full month for everyone).
+  const proRataNewHires = options?.proRataForNewEmployees ?? true;
+  const startMonth =
+    proRataNewHires && hireDateObj.getFullYear() === year
+      ? hireDateObj.getMonth()
+      : 0;
 
-  // If hired this year, calculate months worked
-  let effectiveMonths = monthsWorkedThisYear;
-  if (hireYear > currentYear) {
-    effectiveMonths = 0;
+  let endMonth = 11; // presume service through December
+  if (options?.terminationDate) {
+    const term = new Date(options.terminationDate);
+    if (term.getFullYear() < year) return 0;
+    if (term.getFullYear() === year) endMonth = term.getMonth();
   }
-  if (hireYear === currentYear) {
-    effectiveMonths = Math.max(0, currentMonth - hireMonth + 1);
-  }
 
-  // Pro-rate if less than 12 months
+  const effectiveMonths = Math.max(0, endMonth - startMonth + 1);
   return proRata(monthlySalary, Math.min(effectiveMonths, 12), TL_SUBSIDIO_ANUAL.fullYearMonths);
 }
 
@@ -921,22 +971,18 @@ export function calculateTLPayroll(
     ? 0
     : input.inssContributionBase ?? contributableRemuneration;
 
-  // Withholding Income Tax (WIT)
-  const incomeTax = input.taxInfo.hasTaxExemption
-    ? 0
-    : calculateIncomeTax(
+  // Withholding Income Tax (WIT). Report the actual bracket base alongside the
+  // tax — deriving it back as tax / rate loses cents to the tax's own rounding.
+  // Exempt employees withhold nothing and report a zero base.
+  const { tax: incomeTax, taxableBase: witTaxableAmount } = input.taxInfo.hasTaxExemption
+    ? { tax: 0, taxableBase: 0 }
+    : calculateIncomeTaxWithBase(
         taxableIncome,
         input.taxInfo.isResident,
         input.payFrequency,
         input.totalPeriodsInMonth,
         config?.incomeTax,
       );
-  const appliedIncomeTaxRate = input.taxInfo.isResident
-    ? config?.incomeTax?.residentRate ?? TL_INCOME_TAX.rate
-    : config?.incomeTax?.nonResidentRate ?? TL_INCOME_TAX.rate;
-  const witTaxableAmount = appliedIncomeTaxRate > 0
-    ? divideMoney(incomeTax, appliedIncomeTaxRate)
-    : 0;
 
   if (incomeTax > 0) {
     deductions.push({

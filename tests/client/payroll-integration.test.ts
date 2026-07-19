@@ -373,20 +373,20 @@ describe("Integration: Subsidio Anual across multiple employees", () => {
 
   it("pro-rates correctly for mid-year hires", () => {
     // Full year employee (signature: salary, monthsWorked, hireDate, asOfDate?)
-    const fullYear = calculateSubsidioAnual(800, 12, "2025-01-01", asOfDate);
+    const fullYear = calculateSubsidioAnual(800, "2025-01-01", asOfDate);
     expect(fullYear).toBeCloseTo(800, 1); // Full 13th month
 
     // July hire (6 months)
-    const halfYear = calculateSubsidioAnual(800, 6, "2025-07-01", asOfDate);
+    const halfYear = calculateSubsidioAnual(800, "2025-07-01", asOfDate);
     expect(halfYear).toBeCloseTo(400, 1); // Half 13th month
 
     // November hire (2 months)
-    const twoMonths = calculateSubsidioAnual(800, 2, "2025-11-01", asOfDate);
+    const twoMonths = calculateSubsidioAnual(800, "2025-11-01", asOfDate);
     expect(twoMonths).toBeCloseTo(133.33, 1); // 2/12 of salary
   });
 
   it("returns 0 for future hire date", () => {
-    const futureHire = calculateSubsidioAnual(800, 0, "2026-03-01", asOfDate);
+    const futureHire = calculateSubsidioAnual(800, "2026-03-01", asOfDate);
     expect(futureHire).toBe(0);
   });
 });

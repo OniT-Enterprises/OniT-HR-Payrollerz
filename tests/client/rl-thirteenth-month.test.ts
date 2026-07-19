@@ -64,22 +64,52 @@ describe('real-life: Subsídio Anual (13th month) prorated', () => {
 
   it('full-year employee (Domingas) gets one full month base salary', () => {
     // Hired years ago, worked all 12 months of the civil year.
-    const subsidy = calculateSubsidioAnual(600, 12, '2019-03-15', asOfDec);
+    const subsidy = calculateSubsidioAnual(600, '2019-03-15', asOfDec);
     expect(subsidy).toBeCloseTo(600, 2);
   });
 
   it('mid-year hire (Januário, started May) is prorated to months worked', () => {
     // Started 2026-05-10 -> May..Dec inclusive = 8 months of 12.
-    const subsidy = calculateSubsidioAnual(600, 8, '2026-05-10', asOfDec);
+    const subsidy = calculateSubsidioAnual(600, '2026-05-10', asOfDec);
     // 600 * 8/12 = 400.00
     expect(subsidy).toBeCloseTo(400, 2);
+  });
+
+  it('running the subsidio BEFORE December does not short anyone (stable amount)', () => {
+    const asOfOct = new Date('2026-10-20');
+    // Full-year employee: a full month whether run in October or December.
+    expect(calculateSubsidioAnual(600, '2019-03-15', asOfOct)).toBeCloseTo(600, 2);
+    // Mid-year hire: same prorated 8/12 in October as in December.
+    expect(calculateSubsidioAnual(600, '2026-05-10', asOfOct)).toBeCloseTo(400, 2);
+  });
+
+  it('proRataForNewEmployees=false pays new hires the full month (tenant opt-out)', () => {
+    const subsidy = calculateSubsidioAnual(600, '2026-05-10', asOfDec, {
+      proRataForNewEmployees: false,
+    });
+    expect(subsidy).toBeCloseTo(600, 2);
+  });
+
+  it('termination inside the year caps months at the termination month (Art.44 leaver)', () => {
+    // Full-year hire terminating 2026-06-15 -> Jan..Jun = 6/12 months.
+    expect(
+      calculateSubsidioAnual(600, '2019-03-15', asOfDec, { terminationDate: '2026-06-15' }),
+    ).toBeCloseTo(300, 2);
+    // May hire terminating in June -> May..Jun = 2/12.
+    expect(
+      calculateSubsidioAnual(600, '2026-05-10', asOfDec, { terminationDate: '2026-06-15' }),
+    ).toBeCloseTo(100, 2);
+    // Terminated before the subsidio year -> nothing owed this year.
+    expect(
+      calculateSubsidioAnual(600, '2019-03-15', asOfDec, { terminationDate: '2025-11-30' }),
+    ).toBe(0);
   });
 
   it('is based on BASE salary only — overtime & bonus do not change the subsidy', () => {
     // calculateSubsidioAnual only accepts monthlySalary, so it is structurally
     // base-only. Prove the payroll subsidioAnual line equals the base-derived
     // amount even when the same run carries OT and a bonus.
-    const subsidy = calculateSubsidioAnual(600, 8, '2026-05-10', asOfDec);
+    const subsidy = calculateSubsidioAnual(600, '2026-05-10', asOfDec);
     const result = calculateTLPayroll(
       baseInput({
         hireDate: '2026-05-10',
@@ -93,7 +123,7 @@ describe('real-life: Subsídio Anual (13th month) prorated', () => {
     // The subsidio line is the prorated base month, untouched by OT/bonus.
     expect(result.subsidioAnual).toBeCloseTo(400, 2);
     // A different base salary would change it; OT/bonus never do.
-    expect(calculateSubsidioAnual(900, 8, '2026-05-10', asOfDec)).toBeCloseTo(600, 2);
+    expect(calculateSubsidioAnual(900, '2026-05-10', asOfDec)).toBeCloseTo(600, 2);
   });
 
   it('subsidio is fully in the WIT base (resident 10% above $500)', () => {

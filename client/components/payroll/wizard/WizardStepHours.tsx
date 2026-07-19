@@ -139,6 +139,8 @@ export function WizardStepHours({
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.hours")}</TableHead>
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.ot")}</TableHead>
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.night")}</TableHead>
+              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.holiday")}</TableHead>
+              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.restDay")}</TableHead>
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.bonus")}</TableHead>
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.gross")}</TableHead>
               <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.deductions")}</TableHead>

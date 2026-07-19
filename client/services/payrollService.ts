@@ -42,6 +42,9 @@ export interface EmployeePayrollYTD {
   ytdIncomeTax: number;
   ytdINSSEmployee: number;
   ytdSickDaysUsed: number;
+  /** Subsídio anual (13th month) already paid this year — lets a leaver's
+   * final-pay run net the Art. 44 entitlement instead of double-paying. */
+  ytdSubsidioAnual: number;
 }
 
 // ============================================
@@ -715,6 +718,7 @@ class PayrollRecordService {
           ytdIncomeTax: 0,
           ytdINSSEmployee: 0,
           ytdSickDaysUsed: 0,
+          ytdSubsidioAnual: 0,
         };
         totals[record.employeeId] = {
           ytdGrossPay: addMoney(current.ytdGrossPay, record.totalGrossPay || 0),
@@ -728,6 +732,10 @@ class PayrollRecordService {
             record.deductions?.find((deduction) => deduction.type === 'inss_employee')?.amount || 0,
           ),
           ytdSickDaysUsed: current.ytdSickDaysUsed + ((record.sickHoursUsed || 0) / 8),
+          ytdSubsidioAnual: addMoney(
+            current.ytdSubsidioAnual,
+            record.earnings?.find((earning) => earning.type === 'subsidio_anual')?.amount || 0,
+          ),
         };
       }
     }

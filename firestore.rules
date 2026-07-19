@@ -81,10 +81,22 @@ service cloud.firestore {
         getTenantRole(tenantId) in ['owner', 'hr-admin', 'manager'];
     }
 
+    // Self-service tenant creation. The billing/paywall fields are blocked
+    // here for the same reason the tenant UPDATE rule blocks them: only the
+    // Stripe webhook / superadmins may set them. Without this guard a user
+    // could CREATE their tenant pre-subscribed (manualSubscription: true +
+    // far-future subscriptionPaidUntil) and bypass the payroll paywall.
     function canCreateOwnTenant(tenantId) {
       return isAuthenticated() &&
         request.resource.data.createdBy == request.auth.uid &&
-        request.resource.data.id == tenantId;
+        request.resource.data.id == tenantId &&
+        !request.resource.data.keys().hasAny([
+          'stripeCustomerId', 'stripeSubscriptionId', 'subscriptionPaidUntil',
+          'manualSubscription', 'monthlySubscriptionAmount',
+          'subscriptionBillingAmount', 'subscriptionBillingInterval',
+          'subscriptionBillingMonths', 'subscriptionBilledSeats',
+          'subscriptionAnnualMonthsCharged'
+        ]);
     }
 
     function canCreateInitialOwnerMembership(tenantId, memberId) {
@@ -355,7 +367,28 @@ service cloud.firestore {
         );
         // Accountants manage payroll/tax configuration but not integrations
         // (external credentials stay owner/hr-admin only).
-        allow write: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+        // payrollConfig.allowSelfApproval waives the two-person payroll
+        // approval rule, so CHANGING it is owner-only — the finance roles it
+        // constrains (hr-admin/accountant) must not be able to flip it and
+        // then self-approve their own runs. Unrelated config saves that carry
+        // the flag through unchanged still pass.
+        allow create: if isSuperAdmin() || (
+          (isTenantAdmin(tenantId) ||
+            (docId != 'integrations' && isTenantFinanceAdmin(tenantId))) &&
+          (isTenantOwner(tenantId) ||
+            request.resource.data.get('payrollConfig', {})
+              .get('allowSelfApproval', false) == false)
+        );
+        allow update: if isSuperAdmin() || (
+          (isTenantAdmin(tenantId) ||
+            (docId != 'integrations' && isTenantFinanceAdmin(tenantId))) &&
+          (isTenantOwner(tenantId) ||
+            request.resource.data.get('payrollConfig', {})
+              .get('allowSelfApproval', false) ==
+            resource.data.get('payrollConfig', {})
+              .get('allowSelfApproval', false))
+        );
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId) ||
           (docId != 'integrations' && isTenantFinanceAdmin(tenantId));
       }
 

@@ -6,6 +6,7 @@ export type TLStatutoryPayrollAmountField =
   | "wagesPaid"
   | "witTaxableAmount"
   | "inssBase"
+  | "contributionBase"
   | "incomeTax"
   | "inssEmployee"
   | "inssEmployer"
@@ -18,6 +19,7 @@ export interface TLStatutoryPayrollRecord {
   wagesPaid?: number;
   witTaxableAmount?: number;
   inssBase?: number;
+  contributionBase?: number;
   incomeTax?: number;
   inssEmployee?: number;
   inssEmployer?: number;

@@ -78,6 +78,10 @@ export default function RunPayrollWizard() {
     refetch: refetchEmployees,
   } = useEmployeeDirectory({ status: "active" });
   const activeEmployees = activeEmployeeData ?? [];
+  // Leavers terminated inside the pay period get a final-pay row (prorated
+  // hours + Art. 56 severance + netted Art. 44 subsidio) — the hook filters
+  // this list by its own period, so passing all terminated staff is correct.
+  const { data: terminatedEmployeeData } = useEmployeeDirectory({ status: "terminated" });
 
   const createPayrollMutation = useCreatePayrollRunWithRecords();
   const payrollMutationGuardRef = useRef(false);
@@ -119,6 +123,7 @@ export default function RunPayrollWizard() {
 
   const calc = usePayrollCalculator({
     activeEmployees,
+    terminatedEmployees: terminatedEmployeeData,
     tenantId,
     userId: user?.uid || "current-user",
     payrollConfig: tenantSettings?.payrollConfig,
@@ -445,7 +450,7 @@ export default function RunPayrollWizard() {
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("runPayroll.title")}
-          subtitle={t("runPayroll.processPayrollFor", { count: String(activeEmployees.length) })}
+          subtitle={t("runPayroll.processPayrollFor", { count: String(calc.rosterEmployees.length) })}
           icon={Calculator}
           iconColor="text-primary"
         />
@@ -504,7 +509,7 @@ export default function RunPayrollWizard() {
 
           <StepContent stepId="employees" currentStepId={currentStepId}>
             <WizardStepEmployees
-              employees={activeEmployees}
+              employees={calc.rosterEmployees}
               complianceIssues={calc.complianceIssues}
               excludedEmployees={calc.excludedEmployees}
               setExcludedEmployees={calc.setExcludedEmployees}
@@ -539,7 +544,7 @@ export default function RunPayrollWizard() {
               periodStart={calc.periodStart}
               periodEnd={calc.periodEnd}
               payDate={calc.payDate}
-              employeeCount={activeEmployees.length - calc.excludedEmployees.size}
+              employeeCount={calc.rosterEmployees.length - calc.excludedEmployees.size}
               editedCount={calc.editedCount}
               totals={calc.totals}
               includedEmployees={calc.getIncludedData()}

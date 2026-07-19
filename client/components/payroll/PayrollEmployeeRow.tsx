@@ -25,6 +25,8 @@ interface OriginalValues {
   regularHours: number;
   overtimeHours: number;
   nightShiftHours: number;
+  holidayHours: number;
+  restDayHours: number;
   bonus: number;
   bonusINSSCategory: TLBonusINSSCategory | null;
   perDiem: number;
@@ -37,6 +39,7 @@ interface EmployeePayrollRowData {
   overtimeHours: number;
   nightShiftHours: number;
   holidayHours: number;
+  restDayHours: number;
   sickDays: number;
   perDiem: number;
   bonus: number;
@@ -293,7 +296,7 @@ function ExpandedDetailsRow({
 }) {
   return (
     <TableRow className="bg-muted/20 hover:bg-muted/20" role="region" aria-label={`${employeeName} - details`}>
-      <TableCell colSpan={11}>
+      <TableCell colSpan={13}>
         <div className="p-4 space-y-3 ml-4 border-l-2 border-green-300 dark:border-green-700">
           {/* Earnings */}
           <div>
@@ -305,6 +308,12 @@ function ExpandedDetailsRow({
               )}
               {calculation.nightShiftPay > 0 && (
                 <EarningCard label={t('runPayroll.nightShift')} value={calculation.nightShiftPay} />
+              )}
+              {calculation.holidayPay > 0 && (
+                <EarningCard label={t('runPayroll.holidayPay')} value={calculation.holidayPay} />
+              )}
+              {calculation.restDayPay > 0 && (
+                <EarningCard label={t('runPayroll.restDayPay')} value={calculation.restDayPay} />
               )}
               {calculation.subsidioAnual > 0 && (
                 <EarningCard label={t('runPayroll.thirteenthMonth')} value={calculation.subsidioAnual} />
@@ -393,6 +402,25 @@ function PayrollEditableCells({
         employeeId={employeeId}
         field="nightShiftHours"
         ariaLabel={`${t('runPayroll.night')} - ${employeeName}`}
+        onInputChange={onInputChange}
+      />
+      {/* Hours worked on a public holiday or the weekly rest day — paid at
+          2.0x (Lei 4/2012 Art. 27). Manual entry: attendance can't tell a
+          holiday shift from a normal one yet. */}
+      <EditableInputCell
+        value={data.holidayHours}
+        originalValue={data.originalValues.holidayHours}
+        employeeId={employeeId}
+        field="holidayHours"
+        ariaLabel={`${t('runPayroll.holiday')} - ${employeeName}`}
+        onInputChange={onInputChange}
+      />
+      <EditableInputCell
+        value={data.restDayHours}
+        originalValue={data.originalValues.restDayHours}
+        employeeId={employeeId}
+        field="restDayHours"
+        ariaLabel={`${t('runPayroll.restDay')} - ${employeeName}`}
         onInputChange={onInputChange}
       />
       <BonusInputCell
