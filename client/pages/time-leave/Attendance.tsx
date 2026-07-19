@@ -76,75 +76,28 @@ import {
   type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
-import { addDaysISO, getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
+import {
+  addDaysISO,
+  getTodayTL,
+  formatDateTL,
+  parseDateISO,
+} from "@/lib/dateUtils";
 import { extractTable } from "@/lib/aiExtract";
+import {
+  parseImportTime,
+  describeSkippedImport,
+  type SkippedImportReason,
+  type SkippedImportRow,
+} from "@/lib/attendance/import-helpers";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 type AttendanceImportRow = Record<string, string>;
 
 function normalizeImportHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
-}
-
-/**
- * Parse a clock time from an import cell into 24-hour "HH:MM", or null when the
- * cell isn't a time we can trust.
- *
- * Handles plain 24h ("17:00", "9:05" -> "09:05") and 12h values with a
- * meridiem ("5:00 PM" -> "17:00", "5:00pm" -> "17:00", "12:00 AM" -> "00:00").
- *
- * The old strict check used an UNANCHORED /^\d{1,2}:\d{2}/ and then sliced the
- * first 5 characters, so "5:00 PM" matched, dropped the meridiem, and became
- * "05:00" — a silent 12-hour error. This anchors the pattern and converts the
- * meridiem instead of discarding it.
- */
-export function parseImportTime(raw: string): string | null {
-  const value = (raw ?? "").trim();
-  if (!value) return null;
-  const match = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?$/);
-  if (!match) return null;
-  let hour = Number(match[1]);
-  const minute = Number(match[2]);
-  if (minute > 59) return null;
-  const meridiem = match[3]?.toLowerCase();
-  if (meridiem) {
-    if (hour < 1 || hour > 12) return null;
-    if (meridiem === "am") hour = hour === 12 ? 0 : hour;
-    else hour = hour === 12 ? 12 : hour + 12;
-  } else if (hour > 23) {
-    return null;
-  }
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-export type SkippedImportReason = "employee" | "date" | "time";
-
-export interface SkippedImportRow {
-  /** 1-based row number in the source file (the header counts as row 1). */
-  rowNumber: number;
-  reason: SkippedImportReason;
-  /** The offending value, so the admin can find and fix the row. */
-  detail: string;
-}
-
-/**
- * Build a one-line, human summary of the rows an import dropped, e.g.
- * "45 of 120 rows were skipped and not imported: 20 with no matching employee,
- * 15 with an invalid date, 10 with an invalid time." Returns "" when nothing
- * was skipped. Kept pure so the silent-loss behaviour can be unit-tested.
- */
-export function describeSkippedImport(
-  skipped: SkippedImportRow[],
-  totalRows: number,
-): string {
-  if (skipped.length === 0) return "";
-  const counts: Record<SkippedImportReason, number> = { employee: 0, date: 0, time: 0 };
-  for (const row of skipped) counts[row.reason] += 1;
-  const parts: string[] = [];
-  if (counts.employee) parts.push(`${counts.employee} with no matching employee`);
-  if (counts.date) parts.push(`${counts.date} with an invalid date`);
-  if (counts.time) parts.push(`${counts.time} with an invalid time`);
-  return `${skipped.length} of ${totalRows} rows were skipped and not imported: ${parts.join(", ")}.`;
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 }
 
 function excelCellText(value: unknown): string {
@@ -160,7 +113,9 @@ function excelCellText(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-async function parseAttendanceImport(file: File): Promise<AttendanceImportRow[]> {
+async function parseAttendanceImport(
+  file: File,
+): Promise<AttendanceImportRow[]> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
     const { default: ExcelJS } = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
@@ -205,7 +160,9 @@ async function fileToTableText(file: File): Promise<string> {
     if (!worksheet) return "";
     const lines: string[] = [];
     worksheet.eachRow((row) => {
-      const values = (row.values as unknown[]).slice(1).map((value) => excelCellText(value));
+      const values = (row.values as unknown[])
+        .slice(1)
+        .map((value) => excelCellText(value));
       lines.push(values.join("\t"));
     });
     return lines.join("\n");
@@ -224,11 +181,16 @@ export default function Attendance() {
   const role = session?.role;
   const isAttendanceAdmin = role === "owner" || role === "hr-admin";
   const isAttendanceManager = role === "manager";
-  const managerDepartmentId = isAttendanceManager ? session?.member.departmentId : undefined;
-  const canManageAttendance = isAttendanceAdmin || Boolean(isAttendanceManager && managerDepartmentId);
+  const managerDepartmentId = isAttendanceManager
+    ? session?.member.departmentId
+    : undefined;
+  const canManageAttendance =
+    isAttendanceAdmin || Boolean(isAttendanceManager && managerDepartmentId);
   const canReadAllAttendance = isAttendanceAdmin || role === "accountant";
-  const scopedEmployeeId = canReadAllAttendance || managerDepartmentId ? undefined : currentEmployeeId;
-  const canReadAttendance = canReadAllAttendance || Boolean(managerDepartmentId || scopedEmployeeId);
+  const scopedEmployeeId =
+    canReadAllAttendance || managerDepartmentId ? undefined : currentEmployeeId;
+  const canReadAttendance =
+    canReadAllAttendance || Boolean(managerDepartmentId || scopedEmployeeId);
 
   // Today's date as default
   const today = getTodayTL();
@@ -238,7 +200,9 @@ export default function Attendance() {
   const [showMarkDialog, setShowMarkDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [editRecord, setEditRecord] = useState<AttendanceRecord | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AttendanceRecord | null>(
+    null,
+  );
   const [editForm, setEditForm] = useState({
     clockIn: "",
     clockOut: "",
@@ -250,18 +214,24 @@ export default function Attendance() {
   const isToday = selectedDate === today;
 
   // Data fetching via React Query
-  const deptQuery = useAllDepartments(tenantId, 100, canManageAttendance || isAttendanceManager);
+  const deptQuery = useAllDepartments(
+    tenantId,
+    100,
+    canManageAttendance || isAttendanceManager,
+  );
   const departments = useMemo(() => deptQuery.data ?? [], [deptQuery.data]);
-  const managerDepartmentName = departments.find((department) =>
-    department.id === managerDepartmentId)?.name;
+  const managerDepartmentName = departments.find(
+    (department) => department.id === managerDepartmentId,
+  )?.name;
   const employeesQuery = useEmployeeDirectory(
     {
-      status: 'active',
+      status: "active",
       ...(isAttendanceManager && managerDepartmentName
         ? { department: managerDepartmentName }
         : {}),
     },
-    canManageAttendance && (!isAttendanceManager || Boolean(managerDepartmentName)),
+    canManageAttendance &&
+      (!isAttendanceManager || Boolean(managerDepartmentName)),
   );
   const attendanceQuery = useAttendanceByDate(
     selectedDate,
@@ -273,18 +243,28 @@ export default function Attendance() {
   const adjustAttendanceMutation = useAdjustAttendance();
   const deleteAttendanceMutation = useDeleteAttendance();
 
-  const loading = (canManageAttendance && (employeesQuery.isLoading || deptQuery.isLoading)) || attendanceQuery.isLoading;
+  const loading =
+    (canManageAttendance &&
+      (employeesQuery.isLoading || deptQuery.isLoading)) ||
+    attendanceQuery.isLoading;
   const allEmployees = useMemo(
     () => employeesQuery.data ?? [],
-    [employeesQuery.data]
+    [employeesQuery.data],
   );
   const employees = useMemo(
-    () => isAttendanceManager
-      ? allEmployees.filter((employee) => employee.jobDetails.department === managerDepartmentName)
-      : allEmployees,
+    () =>
+      isAttendanceManager
+        ? allEmployees.filter(
+            (employee) =>
+              employee.jobDetails.department === managerDepartmentName,
+          )
+        : allEmployees,
     [allEmployees, isAttendanceManager, managerDepartmentName],
   );
-  const attendanceRecords = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
+  const attendanceRecords = useMemo(
+    () => attendanceQuery.data ?? [],
+    [attendanceQuery.data],
+  );
 
   // Form data
   const [formData, setFormData] = useState({
@@ -306,7 +286,10 @@ export default function Attendance() {
   const skipReasonLabel = (reason: SkippedImportReason) => {
     switch (reason) {
       case "employee":
-        return t("timeLeave.attendance.import.skipEmployee") || "no matching employee";
+        return (
+          t("timeLeave.attendance.import.skipEmployee") ||
+          "no matching employee"
+        );
       case "date":
         return t("timeLeave.attendance.import.skipDate") || "invalid date";
       case "time":
@@ -319,8 +302,8 @@ export default function Attendance() {
   // Format date for display
   const formatDateLabel = (dateStr: string) => {
     const date = parseDateISO(dateStr);
-    const dayName = formatDateTL(date, { weekday: 'long' });
-    const monthDay = formatDateTL(date, { month: 'short', day: 'numeric' });
+    const dayName = formatDateTL(date, { weekday: "long" });
+    const monthDay = formatDateTL(date, { month: "short", day: "numeric" });
     return `${dayName}, ${monthDay}`;
   };
 
@@ -335,15 +318,25 @@ export default function Attendance() {
   // Calculate statistics
   const stats = useMemo(() => {
     const totalEmployees = canManageAttendance ? employees.length : 0;
-    const recordedEmployees = new Set(attendanceRecords.map((record) => record.employeeId)).size;
+    const recordedEmployees = new Set(
+      attendanceRecords.map((record) => record.employeeId),
+    ).size;
     const present = attendanceRecords.filter(
-      r => r.status === 'present' || r.status === 'late'
+      (r) => r.status === "present" || r.status === "late",
     ).length;
-    const late = attendanceRecords.filter(r => r.status === 'late').length;
-    const absent = attendanceRecords.filter(r => r.status === 'absent').length;
-    const onLeave = attendanceRecords.filter(r => r.status === 'leave').length;
-    const notRecorded = totalEmployees > 0 ? Math.max(totalEmployees - recordedEmployees, 0) : 0;
-    const totalOvertimeHours = attendanceRecords.reduce((sum, r) => sum + r.overtimeHours, 0);
+    const late = attendanceRecords.filter((r) => r.status === "late").length;
+    const absent = attendanceRecords.filter(
+      (r) => r.status === "absent",
+    ).length;
+    const onLeave = attendanceRecords.filter(
+      (r) => r.status === "leave",
+    ).length;
+    const notRecorded =
+      totalEmployees > 0 ? Math.max(totalEmployees - recordedEmployees, 0) : 0;
+    const totalOvertimeHours = attendanceRecords.reduce(
+      (sum, r) => sum + r.overtimeHours,
+      0,
+    );
 
     return {
       totalEmployees,
@@ -360,7 +353,10 @@ export default function Attendance() {
   // Filter records
   const filteredRecords = useMemo(() => {
     return attendanceRecords.filter((record) => {
-      if (selectedDepartment !== "all" && record.department !== selectedDepartment) {
+      if (
+        selectedDepartment !== "all" &&
+        record.department !== selectedDepartment
+      ) {
         return false;
       }
       if (selectedStatus !== "all" && record.status !== selectedStatus) {
@@ -370,49 +366,69 @@ export default function Attendance() {
     });
   }, [attendanceRecords, selectedDepartment, selectedStatus]);
   const departmentNames = useMemo(() => {
-    return [...new Set([
-      ...departments.map((department) => department.name),
-      ...attendanceRecords.map((record) => record.department).filter(Boolean),
-    ])].sort((left, right) => left.localeCompare(right));
+    return [
+      ...new Set([
+        ...departments.map((department) => department.name),
+        ...attendanceRecords.map((record) => record.department).filter(Boolean),
+      ]),
+    ].sort((left, right) => left.localeCompare(right));
   }, [attendanceRecords, departments]);
 
-  const statusConfig: Record<AttendanceStatus, { color: string; dot: string; label: string }> = {
+  const statusConfig: Record<
+    AttendanceStatus,
+    { color: string; dot: string; label: string }
+  > = {
     present: {
-      color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+      color:
+        "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
       dot: "bg-emerald-500",
       label: t("timeLeave.attendance.status.present"),
     },
     late: {
-      color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+      color:
+        "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
       dot: "bg-amber-500",
       label: t("timeLeave.attendance.status.late"),
     },
     absent: {
-      color: "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
+      color:
+        "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
       dot: "bg-red-500",
       label: t("timeLeave.attendance.status.absent"),
     },
     half_day: {
-      color: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20",
+      color:
+        "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20",
       dot: "bg-orange-500",
       label: t("timeLeave.attendance.status.halfDay"),
     },
     leave: {
-      color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+      color:
+        "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
       dot: "bg-blue-500",
       label: t("timeLeave.attendance.status.leave"),
     },
     holiday: {
-      color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+      color:
+        "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
       dot: "bg-purple-500",
       label: t("timeLeave.attendance.status.holiday"),
     },
   };
 
   const getStatusBadge = (status: AttendanceStatus) => {
-    const cfg = statusConfig[status] || { color: "bg-muted text-muted-foreground border border-border", dot: "bg-muted-foreground", label: status };
+    const cfg = statusConfig[status] || {
+      color: "bg-muted text-muted-foreground border border-border",
+      dot: "bg-muted-foreground",
+      label: status,
+    };
     return (
-      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium", cfg.color)}>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium",
+          cfg.color,
+        )}
+      >
         <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
         {cfg.label}
       </span>
@@ -485,7 +501,7 @@ export default function Attendance() {
       return;
     }
 
-    const employee = employees.find(e => e.id === formData.employeeId);
+    const employee = employees.find((e) => e.id === formData.employeeId);
     if (!employee) {
       toast({
         title: t("timeLeave.attendance.toast.errorTitle"),
@@ -500,8 +516,9 @@ export default function Attendance() {
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department: employee.jobDetails.department,
-        departmentId: departments.find((department) =>
-          department.name === employee.jobDetails.department)?.id,
+        departmentId: departments.find(
+          (department) => department.name === employee.jobDetails.department,
+        )?.id,
         date: formData.date,
         clockIn: formData.clockIn,
         clockOut: formData.clockOut || undefined,
@@ -524,7 +541,7 @@ export default function Attendance() {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
@@ -555,7 +572,9 @@ export default function Attendance() {
 
     const { default: Papa } = await import("papaparse");
     const csv = Papa.unparse([headers, ...rows]);
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -602,8 +621,10 @@ export default function Attendance() {
       const employeesByName = new Map<string, Employee>();
       for (const emp of employees) {
         if (emp.id) employeesById.set(emp.id, emp);
-        if (emp.jobDetails?.employeeId) employeesByJobId.set(emp.jobDetails.employeeId, emp);
-        const fullName = `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`.toLowerCase();
+        if (emp.jobDetails?.employeeId)
+          employeesByJobId.set(emp.jobDetails.employeeId, emp);
+        const fullName =
+          `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`.toLowerCase();
         employeesByName.set(fullName, emp);
       }
 
@@ -622,28 +643,58 @@ export default function Attendance() {
       for (const row of rows) {
         rowNumber += 1;
         const importedDate = readValue(row, "date", "work_date");
-        const importedClockIn = readValue(row, "clock_in", "clockin", "check_in");
-        const importedClockOut = readValue(row, "clock_out", "clockout", "check_out");
+        const importedClockIn = readValue(
+          row,
+          "clock_in",
+          "clockin",
+          "check_in",
+        );
+        const importedClockOut = readValue(
+          row,
+          "clock_out",
+          "clockout",
+          "check_out",
+        );
 
         if (!/^\d{4}-\d{2}-\d{2}$/.test(importedDate)) {
-          skipped.push({ rowNumber, reason: "date", detail: importedDate || "(empty)" });
+          skipped.push({
+            rowNumber,
+            reason: "date",
+            detail: importedDate || "(empty)",
+          });
           continue;
         }
         const clockIn = parseImportTime(importedClockIn);
         if (!clockIn) {
-          skipped.push({ rowNumber, reason: "time", detail: importedClockIn || "(empty)" });
+          skipped.push({
+            rowNumber,
+            reason: "time",
+            detail: importedClockIn || "(empty)",
+          });
           continue;
         }
-        const clockOut = importedClockOut ? parseImportTime(importedClockOut) ?? "" : "";
+        const clockOut = importedClockOut
+          ? (parseImportTime(importedClockOut) ?? "")
+          : "";
 
         // Find employee
         let employee: Employee | undefined;
-        const importedEmployeeId = readValue(row, "employee_id", "employeeid", "staff_id");
+        const importedEmployeeId = readValue(
+          row,
+          "employee_id",
+          "employeeid",
+          "staff_id",
+        );
         if (importedEmployeeId) {
           const key = importedEmployeeId;
           employee = employeesById.get(key) || employeesByJobId.get(key);
         }
-        const importedName = readValue(row, "name", "employee_name", "staff_name");
+        const importedName = readValue(
+          row,
+          "name",
+          "employee_name",
+          "staff_name",
+        );
         if (!employee && importedName) {
           employee = employeesByName.get(importedName.toLowerCase());
         }
@@ -654,7 +705,8 @@ export default function Attendance() {
             employeeId: employee.id!,
             employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
             department,
-            departmentId: departments.find((item) => item.name === department)?.id,
+            departmentId: departments.find((item) => item.name === department)
+              ?.id,
             date: importedDate,
             clockIn,
             clockOut,
@@ -677,7 +729,11 @@ export default function Attendance() {
         try {
           const tableText = await fileToTableText(importFile);
           if (tableText.trim()) {
-            const aiRows = await extractTable(tableText, tenantId, "attendance");
+            const aiRows = await extractTable(
+              tableText,
+              tenantId,
+              "attendance",
+            );
             // The AI re-parsed the whole file, so strict-pass skips no longer
             // apply — track the AI pass's own no-match drops instead.
             skipped.length = 0;
@@ -702,7 +758,9 @@ export default function Attendance() {
                 employeeId: employee.id!,
                 employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
                 department,
-                departmentId: departments.find((item) => item.name === department)?.id,
+                departmentId: departments.find(
+                  (item) => item.name === department,
+                )?.id,
                 date: row.date,
                 clockIn: row.clockIn,
                 clockOut: row.clockOut || "",
@@ -734,21 +792,30 @@ export default function Attendance() {
       if (usedAi) {
         toast({
           title: t("timeLeave.attendance.toast.importAiTitle"),
-          description: t("timeLeave.attendance.toast.importAiDesc", { count: records.length }),
+          description: t("timeLeave.attendance.toast.importAiDesc", {
+            count: records.length,
+          }),
         });
       }
 
-      const result = await attendanceService.importFromDevice(tenantId, records, {
-        fileName: importFile.name,
-        deviceType: "other",
-        importedBy: user?.uid || "unknown",
-      });
+      const result = await attendanceService.importFromDevice(
+        tenantId,
+        records,
+        {
+          fileName: importFile.name,
+          deviceType: "other",
+          importedBy: user?.uid || "unknown",
+        },
+      );
 
-      const importCompleteDesc = t("timeLeave.attendance.toast.importCompleteDesc", {
-        success: result.stats.success,
-        duplicates: result.stats.duplicates,
-        errors: result.stats.errors,
-      });
+      const importCompleteDesc = t(
+        "timeLeave.attendance.toast.importCompleteDesc",
+        {
+          success: result.stats.success,
+          duplicates: result.stats.duplicates,
+          errors: result.stats.errors,
+        },
+      );
       toast({
         title: t("timeLeave.attendance.toast.importCompleteTitle"),
         description: skippedSummary
@@ -858,23 +925,36 @@ export default function Attendance() {
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
-            title={isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
-            subtitle={isToday ? (
-              <>
-                {formatDateLabel(selectedDate)}
-                <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
-              </>
-            ) : (
-              formatDateLabel(selectedDate)
-            )}
+            title={
+              isToday
+                ? t("timeLeave.attendance.titleToday")
+                : t("timeLeave.attendance.title")
+            }
+            subtitle={
+              isToday ? (
+                <>
+                  {formatDateLabel(selectedDate)}
+                  <span className="text-muted-foreground/70">
+                    {" "}
+                    · {t("timeLeave.attendance.payrollHint")}
+                  </span>
+                </>
+              ) : (
+                formatDateLabel(selectedDate)
+              )
+            }
             icon={Clock}
             iconColor="text-cyan-500"
-            actions={canManageAttendance ? (
-              <>
-                {isAttendanceAdmin && <Skeleton className="h-9 w-24 rounded-md" />}
-                <Skeleton className="h-9 w-32 rounded-md" />
-              </>
-            ) : undefined}
+            actions={
+              canManageAttendance ? (
+                <>
+                  {isAttendanceAdmin && (
+                    <Skeleton className="h-9 w-24 rounded-md" />
+                  )}
+                  <Skeleton className="h-9 w-32 rounded-md" />
+                </>
+              ) : undefined
+            }
           />
 
           {/* Inline Toolbar */}
@@ -908,7 +988,10 @@ export default function Attendance() {
             </div>
 
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="rounded-lg border border-border/50 bg-card">
+              <div
+                key={i}
+                className="rounded-lg border border-border/50 bg-card"
+              >
                 {/* Desktop layout */}
                 <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 items-center px-5 py-3">
                   <div className="space-y-1.5">
@@ -951,31 +1034,47 @@ export default function Attendance() {
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
-          title={isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
-          subtitle={isToday ? (
-            <>
-              {formatDateLabel(selectedDate)}
-              <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
-            </>
-          ) : (
-            formatDateLabel(selectedDate)
-          )}
+          title={
+            isToday
+              ? t("timeLeave.attendance.titleToday")
+              : t("timeLeave.attendance.title")
+          }
+          subtitle={
+            isToday ? (
+              <>
+                {formatDateLabel(selectedDate)}
+                <span className="text-muted-foreground/70">
+                  {" "}
+                  · {t("timeLeave.attendance.payrollHint")}
+                </span>
+              </>
+            ) : (
+              formatDateLabel(selectedDate)
+            )
+          }
           icon={Clock}
           iconColor="text-cyan-500"
-          actions={canManageAttendance ? (
-            <>
-              {isAttendanceAdmin && (
-                <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {t("timeLeave.attendance.actions.import")}
+          actions={
+            canManageAttendance ? (
+              <>
+                {isAttendanceAdmin && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowImportDialog(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {t("timeLeave.attendance.actions.import")}
+                  </Button>
+                )}
+                <Button onClick={() => openMarkDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {isToday
+                    ? t("timeLeave.attendance.actions.markToday")
+                    : t("timeLeave.attendance.actions.mark")}
                 </Button>
-              )}
-              <Button onClick={() => openMarkDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
-              </Button>
-            </>
-          ) : undefined}
+              </>
+            ) : undefined
+          }
         />
 
         {/* Import Dialog */}
@@ -1028,7 +1127,9 @@ export default function Attendance() {
                   <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
                     {skippedRows.map((skippedRow, index) => (
                       <li key={`${skippedRow.rowNumber}-${index}`}>
-                        {(t("timeLeave.attendance.import.rowLabel") || "Row")} {skippedRow.rowNumber}: {skipReasonLabel(skippedRow.reason)}
+                        {t("timeLeave.attendance.import.rowLabel") || "Row"}{" "}
+                        {skippedRow.rowNumber}:{" "}
+                        {skipReasonLabel(skippedRow.reason)}
                         {skippedRow.detail ? ` — ${skippedRow.detail}` : ""}
                       </li>
                     ))}
@@ -1047,7 +1148,10 @@ export default function Attendance() {
               >
                 {t("timeLeave.attendance.actions.cancel")}
               </Button>
-              <Button onClick={handleImportFile} disabled={importing || !importFile}>
+              <Button
+                onClick={handleImportFile}
+                disabled={importing || !importFile}
+              >
                 {importing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1076,9 +1180,7 @@ export default function Attendance() {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {t("timeLeave.attendance.mark.title")}
-              </DialogTitle>
+              <DialogTitle>{t("timeLeave.attendance.mark.title")}</DialogTitle>
               <DialogDescription>
                 {t("timeLeave.attendance.mark.description")}
               </DialogDescription>
@@ -1088,11 +1190,15 @@ export default function Attendance() {
                 <Label>{t("timeLeave.attendance.mark.employee")}</Label>
                 <Select
                   value={formData.employeeId}
-                  onValueChange={(value) => handleInputChange("employeeId", value)}
+                  onValueChange={(value) =>
+                    handleInputChange("employeeId", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={t("timeLeave.attendance.mark.employeePlaceholder")}
+                      placeholder={t(
+                        "timeLeave.attendance.mark.employeePlaceholder",
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -1138,7 +1244,9 @@ export default function Attendance() {
                   <Input
                     value={formData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
+                    placeholder={t(
+                      "timeLeave.attendance.mark.notesPlaceholder",
+                    )}
                   />
                 </div>
               </MoreDetailsSection>
@@ -1150,7 +1258,10 @@ export default function Attendance() {
                 >
                   {t("timeLeave.attendance.actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={markAttendanceMutation.isPending}>
+                <Button
+                  type="submit"
+                  disabled={markAttendanceMutation.isPending}
+                >
                   {markAttendanceMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1168,7 +1279,12 @@ export default function Attendance() {
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" className="h-9" onClick={goToPreviousDay}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={goToPreviousDay}
+            >
               <ChevronLeft className="h-4 w-4 mr-1.5" />
               {t("common.previous")}
             </Button>
@@ -1178,12 +1294,22 @@ export default function Attendance() {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="h-9 w-[180px] text-sm"
             />
-            <Button variant="outline" size="sm" className="h-9" onClick={goToNextDay}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={goToNextDay}
+            >
               {t("common.next")}
               <ChevronRight className="h-4 w-4 ml-1.5" />
             </Button>
             {!isToday && (
-              <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setSelectedDate(today)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs"
+                onClick={() => setSelectedDate(today)}
+              >
                 {t("timeLeave.attendance.actions.today") || "Today"}
               </Button>
             )}
@@ -1211,7 +1337,8 @@ export default function Attendance() {
               {stats.notRecorded > 0 && (
                 <span className="flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-muted-foreground" />
-                  {stats.notRecorded} {t("timeLeave.attendance.stats.notRecorded")}
+                  {stats.notRecorded}{" "}
+                  {t("timeLeave.attendance.stats.notRecorded")}
                 </span>
               )}
               <span className="font-medium text-foreground">
@@ -1223,33 +1350,64 @@ export default function Attendance() {
           )}
         </div>
 
-        <MoreDetailsSection className="mb-6" title={t("timeLeave.attendance.filters.title")}>
+        <MoreDetailsSection
+          className="mb-6"
+          title={t("timeLeave.attendance.filters.title")}
+        >
           <div className="flex flex-col lg:flex-row lg:items-center gap-2">
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <Select
+              value={selectedDepartment}
+              onValueChange={setSelectedDepartment}
+            >
               <SelectTrigger className="h-9 w-full lg:w-[180px] text-sm">
-                <SelectValue placeholder={t("timeLeave.attendance.filters.allDepartments")} />
+                <SelectValue
+                  placeholder={t("timeLeave.attendance.filters.allDepartments")}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("timeLeave.attendance.filters.allDepartments")}</SelectItem>
+                <SelectItem value="all">
+                  {t("timeLeave.attendance.filters.allDepartments")}
+                </SelectItem>
                 {departmentNames.map((department) => (
-                  <SelectItem key={department} value={department}>{department}</SelectItem>
+                  <SelectItem key={department} value={department}>
+                    {department}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
               <SelectTrigger className="h-9 w-full lg:w-[160px] text-sm">
-                <SelectValue placeholder={t("timeLeave.attendance.filters.allStatuses")} />
+                <SelectValue
+                  placeholder={t("timeLeave.attendance.filters.allStatuses")}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t("timeLeave.attendance.filters.allStatuses")}</SelectItem>
-                <SelectItem value="present">{t("timeLeave.attendance.status.present")}</SelectItem>
-                <SelectItem value="late">{t("timeLeave.attendance.status.late")}</SelectItem>
-                <SelectItem value="absent">{t("timeLeave.attendance.status.absent")}</SelectItem>
-                <SelectItem value="half_day">{t("timeLeave.attendance.status.halfDay")}</SelectItem>
-                <SelectItem value="leave">{t("timeLeave.attendance.status.leave")}</SelectItem>
+                <SelectItem value="all">
+                  {t("timeLeave.attendance.filters.allStatuses")}
+                </SelectItem>
+                <SelectItem value="present">
+                  {t("timeLeave.attendance.status.present")}
+                </SelectItem>
+                <SelectItem value="late">
+                  {t("timeLeave.attendance.status.late")}
+                </SelectItem>
+                <SelectItem value="absent">
+                  {t("timeLeave.attendance.status.absent")}
+                </SelectItem>
+                <SelectItem value="half_day">
+                  {t("timeLeave.attendance.status.halfDay")}
+                </SelectItem>
+                <SelectItem value="leave">
+                  {t("timeLeave.attendance.status.leave")}
+                </SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-9 lg:ml-auto" onClick={handleExportCSV}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 lg:ml-auto"
+              onClick={handleExportCSV}
+            >
               <Download className="h-3.5 w-3.5 mr-1.5" />
               {t("timeLeave.attendance.actions.export")}
             </Button>
@@ -1263,7 +1421,9 @@ export default function Attendance() {
               <Clock className="h-12 w-12 text-cyan-500" />
             </div>
             <h3 className="font-semibold text-lg text-foreground mb-1">
-              {isToday ? t("timeLeave.attendance.empty.titleToday") : t("timeLeave.attendance.empty.title")}
+              {isToday
+                ? t("timeLeave.attendance.empty.titleToday")
+                : t("timeLeave.attendance.empty.title")}
             </h3>
             {canManageAttendance && (
               <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
@@ -1274,14 +1434,19 @@ export default function Attendance() {
               {canManageAttendance && (
                 <>
                   {isAttendanceAdmin && (
-                    <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowImportDialog(true)}
+                    >
                       <Upload className="h-4 w-4 mr-2" />
                       {t("timeLeave.attendance.empty.importButton")}
                     </Button>
                   )}
                   <Button onClick={() => openMarkDialog()}>
                     <Plus className="h-4 w-4 mr-2" />
-                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
+                    {isToday
+                      ? t("timeLeave.attendance.actions.markToday")
+                      : t("timeLeave.attendance.actions.mark")}
                   </Button>
                 </>
               )}
@@ -1294,10 +1459,18 @@ export default function Attendance() {
               <span>{t("timeLeave.attendance.table.employee")}</span>
               <span>{t("timeLeave.attendance.table.clockIn")}</span>
               <span>{t("timeLeave.attendance.table.clockOut")}</span>
-              <span className="text-right">{t("timeLeave.attendance.table.regular")}</span>
-              <span className="text-right">{t("timeLeave.attendance.table.overtime")}</span>
-              <span className="text-right">{t("timeLeave.attendance.table.late")}</span>
-              <span className="text-right">{t("timeLeave.attendance.table.status")}</span>
+              <span className="text-right">
+                {t("timeLeave.attendance.table.regular")}
+              </span>
+              <span className="text-right">
+                {t("timeLeave.attendance.table.overtime")}
+              </span>
+              <span className="text-right">
+                {t("timeLeave.attendance.table.late")}
+              </span>
+              <span className="text-right">
+                {t("timeLeave.attendance.table.status")}
+              </span>
             </div>
 
             {filteredRecords.map((record) => (
@@ -1310,22 +1483,36 @@ export default function Attendance() {
                 {/* Desktop layout */}
                 <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 items-center px-5 py-3">
                   <div>
-                    <p className="font-medium text-sm text-foreground">{record.employeeName}</p>
-                    <p className="text-xs text-muted-foreground">{record.department}</p>
+                    <p className="font-medium text-sm text-foreground">
+                      {record.employeeName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {record.department}
+                    </p>
                   </div>
-                  <span className="font-mono text-sm text-foreground">{record.clockIn || "—"}</span>
-                  <span className="font-mono text-sm text-foreground">{record.clockOut || "—"}</span>
-                  <span className="font-mono text-sm text-right text-foreground">{record.regularHours.toFixed(1)}h</span>
+                  <span className="font-mono text-sm text-foreground">
+                    {record.clockIn || "—"}
+                  </span>
+                  <span className="font-mono text-sm text-foreground">
+                    {record.clockOut || "—"}
+                  </span>
+                  <span className="font-mono text-sm text-right text-foreground">
+                    {record.regularHours.toFixed(1)}h
+                  </span>
                   <span className="font-mono text-sm text-right">
                     {record.overtimeHours > 0 ? (
-                      <span className="text-orange-600 dark:text-orange-400">+{record.overtimeHours.toFixed(1)}h</span>
+                      <span className="text-orange-600 dark:text-orange-400">
+                        +{record.overtimeHours.toFixed(1)}h
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
                   </span>
                   <span className="font-mono text-sm text-right">
                     {record.lateMinutes > 0 ? (
-                      <span className="text-red-600 dark:text-red-400">{record.lateMinutes}m</span>
+                      <span className="text-red-600 dark:text-red-400">
+                        {record.lateMinutes}m
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -1351,8 +1538,12 @@ export default function Attendance() {
                 <div className="md:hidden px-4 py-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-sm text-foreground">{record.employeeName}</p>
-                      <p className="text-xs text-muted-foreground">{record.department}</p>
+                      <p className="font-medium text-sm text-foreground">
+                        {record.employeeName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {record.department}
+                      </p>
                     </div>
                     <div className="flex items-center gap-1">
                       {getStatusBadge(record.status)}
@@ -1371,16 +1562,22 @@ export default function Attendance() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="font-mono">{record.clockIn || "—"} → {record.clockOut || "—"}</span>
-                    <span className="font-mono font-medium text-foreground">{record.regularHours.toFixed(1)}h</span>
+                    <span className="font-mono">
+                      {record.clockIn || "—"} → {record.clockOut || "—"}
+                    </span>
+                    <span className="font-mono font-medium text-foreground">
+                      {record.regularHours.toFixed(1)}h
+                    </span>
                     {record.overtimeHours > 0 && (
                       <span className="font-mono text-orange-600 dark:text-orange-400">
-                        +{record.overtimeHours.toFixed(1)}h {t("timeLeave.attendance.table.overtime")}
+                        +{record.overtimeHours.toFixed(1)}h{" "}
+                        {t("timeLeave.attendance.table.overtime")}
                       </span>
                     )}
                     {record.lateMinutes > 0 && (
                       <span className="font-mono text-red-600 dark:text-red-400">
-                        {record.lateMinutes}m {t("timeLeave.attendance.table.late")}
+                        {record.lateMinutes}m{" "}
+                        {t("timeLeave.attendance.table.late")}
                       </span>
                     )}
                   </div>
@@ -1391,15 +1588,20 @@ export default function Attendance() {
         )}
       </div>
 
-      <Dialog open={Boolean(editRecord)} onOpenChange={(open) => !open && setEditRecord(null)}>
+      <Dialog
+        open={Boolean(editRecord)}
+        onOpenChange={(open) => !open && setEditRecord(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("timeLeave.timeTracking.edit.title")}</DialogTitle>
             <DialogDescription>
-              {editRecord ? t("timeLeave.timeTracking.edit.description", {
-                name: editRecord.employeeName,
-                date: formatDateTL(editRecord.date),
-              }) : ""}
+              {editRecord
+                ? t("timeLeave.timeTracking.edit.description", {
+                    name: editRecord.employeeName,
+                    date: formatDateTL(editRecord.date),
+                  })
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={saveAdjustment} className="space-y-4">
@@ -1408,14 +1610,18 @@ export default function Attendance() {
                 <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
                 <TimePicker
                   value={editForm.clockIn}
-                  onChange={(clockIn) => setEditForm((current) => ({ ...current, clockIn }))}
+                  onChange={(clockIn) =>
+                    setEditForm((current) => ({ ...current, clockIn }))
+                  }
                 />
               </div>
               <div className="space-y-2">
                 <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
                 <TimePicker
                   value={editForm.clockOut}
-                  onChange={(clockOut) => setEditForm((current) => ({ ...current, clockOut }))}
+                  onChange={(clockOut) =>
+                    setEditForm((current) => ({ ...current, clockOut }))
+                  }
                 />
               </div>
             </div>
@@ -1424,12 +1630,26 @@ export default function Attendance() {
               <Select
                 value={editForm.status}
                 onValueChange={(status: AttendanceStatus) =>
-                  setEditForm((current) => ({ ...current, status }))}
+                  setEditForm((current) => ({ ...current, status }))
+                }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {(["present", "late", "absent", "half_day", "leave", "holiday"] as AttendanceStatus[]).map((status) => (
-                    <SelectItem key={status} value={status}>{getStatusLabel(status)}</SelectItem>
+                  {(
+                    [
+                      "present",
+                      "late",
+                      "absent",
+                      "half_day",
+                      "leave",
+                      "holiday",
+                    ] as AttendanceStatus[]
+                  ).map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {getStatusLabel(status)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1441,10 +1661,12 @@ export default function Attendance() {
               <Input
                 id="attendance-adjustment-reason"
                 value={editForm.reason}
-                onChange={(event) => setEditForm((current) => ({
-                  ...current,
-                  reason: event.target.value,
-                }))}
+                onChange={(event) =>
+                  setEditForm((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))
+                }
                 placeholder={t("timeLeave.timeTracking.edit.reasonPlaceholder")}
               />
             </div>
@@ -1458,11 +1680,20 @@ export default function Attendance() {
                 {t("timeLeave.timeTracking.edit.deleteConfirm")}
               </Button>
               <div className="flex gap-2 sm:justify-end">
-                <Button type="button" variant="outline" onClick={() => setEditRecord(null)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditRecord(null)}
+                >
                   {t("timeLeave.attendance.actions.cancel")}
                 </Button>
-                <Button type="submit" disabled={adjustAttendanceMutation.isPending}>
-                  {adjustAttendanceMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button
+                  type="submit"
+                  disabled={adjustAttendanceMutation.isPending}
+                >
+                  {adjustAttendanceMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {t("timeLeave.timeTracking.edit.save")}
                 </Button>
               </div>
@@ -1471,19 +1702,28 @@ export default function Attendance() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("timeLeave.timeTracking.edit.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("timeLeave.timeTracking.edit.deleteTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteTarget ? t("timeLeave.timeTracking.edit.deleteDesc", {
-                name: deleteTarget.employeeName,
-                date: formatDateTL(deleteTarget.date),
-              }) : ""}
+              {deleteTarget
+                ? t("timeLeave.timeTracking.edit.deleteDesc", {
+                    name: deleteTarget.employeeName,
+                    date: formatDateTL(deleteTarget.date),
+                  })
+                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t("timeLeave.attendance.actions.cancel")}</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("timeLeave.attendance.actions.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void deleteRecord()}
               disabled={deleteAttendanceMutation.isPending}
@@ -1494,7 +1734,6 @@ export default function Attendance() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

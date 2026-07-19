@@ -13,6 +13,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { leaveService } from "@/services/leaveService";
+import { leaveKeys } from "@/hooks/leaveKeys";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
 import {
@@ -110,11 +111,16 @@ export default function PayrollDashboard() {
     canManageTenant ||
     session?.role === "manager";
 
-  const employeeSummaryQuery = useActiveEmployeeSummary(canReadEmployeeDirectory);
+  const employeeSummaryQuery = useActiveEmployeeSummary(
+    canReadEmployeeDirectory,
+  );
   const payrollRunsQuery = usePayrollRuns({ limit: 6 });
   const settingsQuery = useSettings();
   const leaveStatsQuery = useQuery({
-    queryKey: ["tenants", tenantId, "payrollHomeLeaveStats"],
+    // Nested under leaveKeys.stats ON PURPOSE: leave create/approve/reject/
+    // cancel invalidate that prefix, so the pending-leave number here refreshes
+    // immediately instead of sitting on a 5-minute stale count.
+    queryKey: [...leaveKeys.stats(tenantId), "payrollHome"],
     queryFn: () => leaveService.getLeaveStats(tenantId),
     enabled: hasTimeleave,
     staleTime: 5 * 60 * 1000,
@@ -130,9 +136,7 @@ export default function PayrollDashboard() {
     return <PayrollDashboardSkeleton />;
   }
 
-  if (
-    dashboardQueries.some((query) => query.data === undefined)
-  ) {
+  if (dashboardQueries.some((query) => query.data === undefined)) {
     return (
       <div className="min-h-screen bg-background">
         <SEO
@@ -193,7 +197,8 @@ export default function PayrollDashboard() {
     {
       // Brand-new tenant: "payroll is on track" would be misleading with no
       // team yet — point at the real first step instead.
-      show: canManageTenant && activeEmployees === 0 && payrollRuns.length === 0,
+      show:
+        canManageTenant && activeEmployees === 0 && payrollRuns.length === 0,
       content: <>{t("moduleDashboards.payroll.attention.addTeamFirst")}</>,
       path: "/people/add",
       icon: Users,
@@ -235,15 +240,14 @@ export default function PayrollDashboard() {
       show: canManageTenant && hasComplianceContext && witUrgency !== "ok",
       content: (
         <>
-          {t("moduleDashboards.payroll.attention.monthlyWitDueIn")} {" "}
+          {t("moduleDashboards.payroll.attention.monthlyWitDueIn")}{" "}
           <span className="font-semibold tabular-nums">{witDays}</span>{" "}
           {t(
             witDays === 1
               ? "moduleDashboards.common.day"
               : "moduleDashboards.common.days",
           )}{" "}
-          —{" "}
-          {formatDateTL(witDate, { month: "short", day: "numeric" })}
+          — {formatDateTL(witDate, { month: "short", day: "numeric" })}
         </>
       ),
       // The ATTL WIT form is accountant-only; the simple flow lands on the tax hub
@@ -255,15 +259,14 @@ export default function PayrollDashboard() {
       show: canManageTenant && hasComplianceContext && inssUrgency !== "ok",
       content: (
         <>
-          {t("moduleDashboards.payroll.attention.inssDueIn")} {" "}
+          {t("moduleDashboards.payroll.attention.inssDueIn")}{" "}
           <span className="font-semibold tabular-nums">{inssDays}</span>{" "}
           {t(
             inssDays === 1
               ? "moduleDashboards.common.day"
               : "moduleDashboards.common.days",
           )}{" "}
-          —{" "}
-          {formatDateTL(inssDate, { month: "short", day: "numeric" })}
+          — {formatDateTL(inssDate, { month: "short", day: "numeric" })}
         </>
       ),
       path: "/payroll/tax/inss-monthly",
@@ -277,7 +280,9 @@ export default function PayrollDashboard() {
       title: t("moduleDashboards.payroll.cards.runPayroll"),
       art: "/images/illustrations/xefe-card-payroll.webp",
       svg: "payroll",
-      meta: t("moduleDashboards.payroll.cards.staffInCycle", { count: activeEmployees }),
+      meta: t("moduleDashboards.payroll.cards.staffInCycle", {
+        count: activeEmployees,
+      }),
       purpose: t("moduleDashboards.payroll.cards.runPayrollPurpose"),
       action: t("moduleDashboards.payroll.cards.runPayrollAction"),
       path: "/payroll/run",
@@ -307,7 +312,9 @@ export default function PayrollDashboard() {
       svg: "pr-bank",
       meta:
         readyToPay > 0
-          ? t("moduleDashboards.payroll.cards.readyToPay", { count: readyToPay })
+          ? t("moduleDashboards.payroll.cards.readyToPay", {
+              count: readyToPay,
+            })
           : t("moduleDashboards.payroll.cards.exportPay"),
       purpose: t("moduleDashboards.payroll.cards.bankTransfersPurpose"),
       action: t("moduleDashboards.payroll.cards.bankTransfersAction"),
@@ -371,7 +378,10 @@ export default function PayrollDashboard() {
           }
           actions={
             <>
-              <Button variant="outline" onClick={() => navigate("/payroll/history")}>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/payroll/history")}
+              >
                 <History className="mr-2 h-4 w-4" />
                 {t("moduleDashboards.payroll.historyAction")}
               </Button>

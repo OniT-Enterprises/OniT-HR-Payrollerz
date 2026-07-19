@@ -3,18 +3,24 @@
  * Generates CSV and IIF files for importing payroll journal entries into QuickBooks
  */
 
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { paths } from '@/lib/paths';
-import type { PayrollRun, PayrollRecord } from '@/types/payroll';
-import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
+import { paths } from "@/lib/paths";
+
+/**
+ * Firebase is loaded lazily by the three Firestore-touching functions below
+ * (settings get/save + export log). Everything else in this module — the
+ * journal builder, mappings, CSV/IIF generators — is pure, so unit tests can
+ * import it without Firebase env config, and the page bundle doesn't pull
+ * Firestore in until an export actually happens.
+ */
+async function firestore() {
+  const [fs, { db }] = await Promise.all([
+    import("firebase/firestore"),
+    import("@/lib/firebase"),
+  ]);
+  return { ...fs, db };
+}
+import type { PayrollRun, PayrollRecord } from "@/types/payroll";
+import type { TLPayrollRun, TLPayrollRecord } from "@/types/payroll-tl";
 import type {
   QBAccountMapping,
   QBExportSettings,
@@ -22,8 +28,15 @@ import type {
   QBJournalEntry,
   QBExportLog,
   QBExportOptions,
-} from '@/types/quickbooks';
-import { addMoney, roundMoney, sumMoney, multiplyMoney, subtractMoney, maxMoney } from '@/lib/currency';
+} from "@/types/quickbooks";
+import {
+  addMoney,
+  roundMoney,
+  sumMoney,
+  multiplyMoney,
+  subtractMoney,
+  maxMoney,
+} from "@/lib/currency";
 
 // ============================================
 // JOURNAL ENTRY BUILDER
@@ -33,11 +46,11 @@ interface PayrollTotals {
   grossPay: number;
   baseSalary: number;
   overtime: number;
-  allowances: number;       // All cash earnings that are not base or overtime
-  wit: number;              // Income tax (WIT 10%)
-  inssEmployee: number;     // INSS 4%
-  inssEmployer: number;     // INSS 6%
-  otherDeductions: number;  // Loan/advance repayments, court orders, benefits, etc.
+  allowances: number; // All cash earnings that are not base or overtime
+  wit: number; // Income tax (WIT 10%)
+  inssEmployee: number; // INSS 4%
+  inssEmployer: number; // INSS 6%
+  otherDeductions: number; // Loan/advance repayments, court orders, benefits, etc.
   netPay: number;
   employeeCount: number;
   byDepartment?: Map<string, PayrollTotals>;
@@ -48,7 +61,7 @@ interface PayrollTotals {
  */
 function aggregatePayrollTotals(
   records: (PayrollRecord | TLPayrollRecord)[],
-  groupByDepartment: boolean = false
+  groupByDepartment: boolean = false,
 ): PayrollTotals {
   const totals: PayrollTotals = {
     grossPay: 0,
@@ -66,7 +79,7 @@ function aggregatePayrollTotals(
 
   for (const record of records) {
     // Handle both generic PayrollRecord and TL-specific TLPayrollRecord
-    const isTLRecord = 'incomeTax' in record;
+    const isTLRecord = "incomeTax" in record;
 
     // Gross pay
     const grossPay = isTLRecord
@@ -87,17 +100,25 @@ function aggregatePayrollTotals(
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
       baseSalary = tlRecord.monthlySalary || 0;
-      overtime = multiplyMoney((tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0), 1.5);
+      overtime = multiplyMoney(
+        (tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0),
+        1.5,
+      );
     } else {
       const genRecord = record as PayrollRecord;
-      baseSalary = genRecord.earnings?.find(e => e.type === 'regular')?.amount || 0;
-      overtime = genRecord.earnings?.find(e => e.type === 'overtime')?.amount || 0;
+      baseSalary =
+        genRecord.earnings?.find((e) => e.type === "regular")?.amount || 0;
+      overtime =
+        genRecord.earnings?.find((e) => e.type === "overtime")?.amount || 0;
     }
     // Keep the split within gross so no component goes negative and the three
     // always sum to gross (the raw base/overtime can exceed gross when e.g. a
     // monthly salary is reduced by unpaid absence).
     baseSalary = maxMoney(0, Math.min(baseSalary, grossPay));
-    overtime = maxMoney(0, Math.min(overtime, subtractMoney(grossPay, baseSalary)));
+    overtime = maxMoney(
+      0,
+      Math.min(overtime, subtractMoney(grossPay, baseSalary)),
+    );
     const allowances = subtractMoney(grossPay, baseSalary, overtime);
     totals.baseSalary = addMoney(totals.baseSalary, baseSalary);
     totals.overtime = addMoney(totals.overtime, overtime);
@@ -114,9 +135,14 @@ function aggregatePayrollTotals(
       inssEmployer = tlRecord.inssEmployer || 0;
     } else {
       const genRecord = record as PayrollRecord;
-      wit = genRecord.deductions?.find(d => d.type === 'income_tax')?.amount || 0;
-      inssEmployee = genRecord.deductions?.find(d => d.type === 'inss_employee')?.amount || 0;
-      inssEmployer = genRecord.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0;
+      wit =
+        genRecord.deductions?.find((d) => d.type === "income_tax")?.amount || 0;
+      inssEmployee =
+        genRecord.deductions?.find((d) => d.type === "inss_employee")?.amount ||
+        0;
+      inssEmployer =
+        genRecord.employerTaxes?.find((t) => t.type === "inss_employer")
+          ?.amount || 0;
     }
     totals.wit = addMoney(totals.wit, wit);
     totals.inssEmployee = addMoney(totals.inssEmployee, inssEmployee);
@@ -133,12 +159,15 @@ function aggregatePayrollTotals(
     // will not balance. Derive it from the record's own gross and net so the
     // credit side always equals gross wages by construction:
     //   net + WIT + employee INSS + other == gross.
-    const otherDeductions = maxMoney(0, subtractMoney(grossPay, netPay, wit, inssEmployee));
+    const otherDeductions = maxMoney(
+      0,
+      subtractMoney(grossPay, netPay, wit, inssEmployee),
+    );
     totals.otherDeductions = addMoney(totals.otherDeductions, otherDeductions);
 
     // Department grouping
     if (groupByDepartment && totals.byDepartment) {
-      const dept = record.department || 'Unknown';
+      const dept = record.department || "Unknown";
       if (!totals.byDepartment.has(dept)) {
         totals.byDepartment.set(dept, {
           grossPay: 0,
@@ -170,12 +199,12 @@ function aggregatePayrollTotals(
 function buildJournalLines(
   totals: PayrollTotals,
   mappings: QBAccountMapping[],
-  _includeEmployeeDetail: boolean = false
+  _includeEmployeeDetail: boolean = false,
 ): QBJournalLine[] {
   const lines: QBJournalLine[] = [];
 
   const getAccountName = (code: string): string => {
-    const mapping = mappings.find(m => m.onitAccountCode === code);
+    const mapping = mappings.find((m) => m.onitAccountCode === code);
     return mapping?.qbAccountName || mapping?.onitAccountName || code;
   };
 
@@ -184,24 +213,24 @@ function buildJournalLines(
   // Base salary expense
   if (totals.baseSalary > 0) {
     lines.push({
-      accountCode: '5110',
-      accountName: getAccountName('5110'),
+      accountCode: "5110",
+      accountName: getAccountName("5110"),
       debit: roundMoney(totals.baseSalary),
       credit: 0,
-      memo: 'Base salaries',
-      className: 'Payroll',
+      memo: "Base salaries",
+      className: "Payroll",
     });
   }
 
   // Overtime expense
   if (totals.overtime > 0) {
     lines.push({
-      accountCode: '5120',
-      accountName: getAccountName('5120'),
+      accountCode: "5120",
+      accountName: getAccountName("5120"),
       debit: roundMoney(totals.overtime),
       credit: 0,
-      memo: 'Overtime pay (150%)',
-      className: 'Payroll',
+      memo: "Overtime pay (150%)",
+      className: "Payroll",
     });
   }
 
@@ -209,24 +238,24 @@ function buildJournalLines(
   // rest premiums, service compensation, per diem, transport/food, ...)
   if (totals.allowances > 0) {
     lines.push({
-      accountCode: '5160',
-      accountName: getAccountName('5160'),
+      accountCode: "5160",
+      accountName: getAccountName("5160"),
       debit: roundMoney(totals.allowances),
       credit: 0,
-      memo: 'Allowances and other earnings',
-      className: 'Payroll',
+      memo: "Allowances and other earnings",
+      className: "Payroll",
     });
   }
 
   // INSS Employer expense (6%)
   if (totals.inssEmployer > 0) {
     lines.push({
-      accountCode: '5150',
-      accountName: getAccountName('5150'),
+      accountCode: "5150",
+      accountName: getAccountName("5150"),
       debit: roundMoney(totals.inssEmployer),
       credit: 0,
-      memo: 'INSS employer contribution (6%)',
-      className: 'Payroll',
+      memo: "INSS employer contribution (6%)",
+      className: "Payroll",
     });
   }
 
@@ -235,36 +264,36 @@ function buildJournalLines(
   // WIT Payable (10% income tax)
   if (totals.wit > 0) {
     lines.push({
-      accountCode: '2220',
-      accountName: getAccountName('2220'),
+      accountCode: "2220",
+      accountName: getAccountName("2220"),
       debit: 0,
       credit: roundMoney(totals.wit),
-      memo: 'WIT withholding (10%)',
-      className: 'Payroll',
+      memo: "WIT withholding (10%)",
+      className: "Payroll",
     });
   }
 
   // INSS Employee Payable (4%)
   if (totals.inssEmployee > 0) {
     lines.push({
-      accountCode: '2230',
-      accountName: getAccountName('2230'),
+      accountCode: "2230",
+      accountName: getAccountName("2230"),
       debit: 0,
       credit: roundMoney(totals.inssEmployee),
-      memo: 'INSS employee (4%)',
-      className: 'Payroll',
+      memo: "INSS employee (4%)",
+      className: "Payroll",
     });
   }
 
   // INSS Employer Payable (6%)
   if (totals.inssEmployer > 0) {
     lines.push({
-      accountCode: '2240',
-      accountName: getAccountName('2240'),
+      accountCode: "2240",
+      accountName: getAccountName("2240"),
       debit: 0,
       credit: roundMoney(totals.inssEmployer),
-      memo: 'INSS employer (6%)',
-      className: 'Payroll',
+      memo: "INSS employer (6%)",
+      className: "Payroll",
     });
   }
 
@@ -273,24 +302,24 @@ function buildJournalLines(
   // record withholds anything beyond WIT and employee INSS.
   if (totals.otherDeductions > 0) {
     lines.push({
-      accountCode: '2260',
-      accountName: getAccountName('2260'),
+      accountCode: "2260",
+      accountName: getAccountName("2260"),
       debit: 0,
       credit: roundMoney(totals.otherDeductions),
-      memo: 'Other payroll deductions',
-      className: 'Payroll',
+      memo: "Other payroll deductions",
+      className: "Payroll",
     });
   }
 
   // Net Payroll Payable (wages payable)
   if (totals.netPay > 0) {
     lines.push({
-      accountCode: '2210',
-      accountName: getAccountName('2210'),
+      accountCode: "2210",
+      accountName: getAccountName("2210"),
       debit: 0,
       credit: roundMoney(totals.netPay),
       memo: `Net pay (${totals.employeeCount} employees)`,
-      className: 'Payroll',
+      className: "Payroll",
     });
   }
 
@@ -304,21 +333,28 @@ export function buildJournalEntry(
   payrollRun: PayrollRun | TLPayrollRun,
   records: (PayrollRecord | TLPayrollRecord)[],
   mappings: QBAccountMapping[],
-  options: QBExportOptions
+  options: QBExportOptions,
 ): QBJournalEntry {
   const totals = aggregatePayrollTotals(records, options.groupByDepartment);
-  const lines = buildJournalLines(totals, mappings, options.includeEmployeeDetail);
+  const lines = buildJournalLines(
+    totals,
+    mappings,
+    options.includeEmployeeDetail,
+  );
 
   // Calculate totals
-  const totalDebits = sumMoney(lines.map(l => l.debit));
-  const totalCredits = sumMoney(lines.map(l => l.credit));
+  const totalDebits = sumMoney(lines.map((l) => l.debit));
+  const totalCredits = sumMoney(lines.map((l) => l.credit));
 
   // Format reference number
   const payDate = new Date(payrollRun.payDate);
-  const refNumber = `PAY-${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}`;
+  const refNumber = `PAY-${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, "0")}`;
 
   // Format period name
-  const periodName = formatPeriodName(payrollRun.periodStart, payrollRun.periodEnd);
+  const periodName = formatPeriodName(
+    payrollRun.periodStart,
+    payrollRun.periodEnd,
+  );
 
   return {
     refNumber,
@@ -339,7 +375,16 @@ export function buildJournalEntry(
  * Compatible with Transaction Pro Importer
  */
 function generateCSV(journalEntry: QBJournalEntry): string {
-  const headers = ['RefNumber', 'TxnDate', 'Account', 'Debit', 'Credit', 'Memo', 'Name', 'Class'];
+  const headers = [
+    "RefNumber",
+    "TxnDate",
+    "Account",
+    "Debit",
+    "Credit",
+    "Memo",
+    "Name",
+    "Class",
+  ];
   const rows: string[][] = [headers];
 
   // Format date as MM/DD/YYYY for QuickBooks
@@ -350,15 +395,15 @@ function generateCSV(journalEntry: QBJournalEntry): string {
       journalEntry.refNumber,
       txnDate,
       escapeCSV(line.accountName),
-      line.debit > 0 ? line.debit.toFixed(2) : '',
-      line.credit > 0 ? line.credit.toFixed(2) : '',
+      line.debit > 0 ? line.debit.toFixed(2) : "",
+      line.credit > 0 ? line.credit.toFixed(2) : "",
       escapeCSV(line.memo),
-      escapeCSV(line.name || ''),
-      escapeCSV(line.className || 'Payroll'),
+      escapeCSV(line.name || ""),
+      escapeCSV(line.className || "Payroll"),
     ]);
   }
 
-  return rows.map(row => row.join(',')).join('\n');
+  return rows.map((row) => row.join(",")).join("\n");
 }
 
 // ============================================
@@ -372,27 +417,33 @@ function generateIIF(journalEntry: QBJournalEntry): string {
   const lines: string[] = [];
 
   // IIF header
-  lines.push('!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO');
-  lines.push('!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO');
-  lines.push('!ENDTRNS');
+  lines.push(
+    "!TRNS\tTRNSID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO",
+  );
+  lines.push(
+    "!SPL\tSPLID\tTRNSTYPE\tDATE\tACCNT\tNAME\tCLASS\tAMOUNT\tDOCNUM\tMEMO",
+  );
+  lines.push("!ENDTRNS");
 
   const txnDate = formatDateForQB(journalEntry.txnDate);
 
   // First entry is TRNS
-  const firstDebit = journalEntry.lines.find(l => l.debit > 0);
+  const firstDebit = journalEntry.lines.find((l) => l.debit > 0);
   if (firstDebit) {
-    lines.push([
-      'TRNS',
-      '',
-      'GENERAL JOURNAL',
-      txnDate,
-      firstDebit.accountName,
-      '',
-      'Payroll',
-      firstDebit.debit.toFixed(2),
-      journalEntry.refNumber,
-      journalEntry.memo,
-    ].join('\t'));
+    lines.push(
+      [
+        "TRNS",
+        "",
+        "GENERAL JOURNAL",
+        txnDate,
+        firstDebit.accountName,
+        "",
+        "Payroll",
+        firstDebit.debit.toFixed(2),
+        journalEntry.refNumber,
+        journalEntry.memo,
+      ].join("\t"),
+    );
   }
 
   // Split lines (SPL)
@@ -400,23 +451,25 @@ function generateIIF(journalEntry: QBJournalEntry): string {
     if (line === firstDebit) continue;
 
     const amount = line.debit > 0 ? line.debit : -line.credit;
-    lines.push([
-      'SPL',
-      '',
-      'GENERAL JOURNAL',
-      txnDate,
-      line.accountName,
-      '',
-      'Payroll',
-      amount.toFixed(2),
-      journalEntry.refNumber,
-      line.memo,
-    ].join('\t'));
+    lines.push(
+      [
+        "SPL",
+        "",
+        "GENERAL JOURNAL",
+        txnDate,
+        line.accountName,
+        "",
+        "Payroll",
+        amount.toFixed(2),
+        journalEntry.refNumber,
+        line.memo,
+      ].join("\t"),
+    );
   }
 
-  lines.push('ENDTRNS');
+  lines.push("ENDTRNS");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }
 
 // ============================================
@@ -426,8 +479,11 @@ function generateIIF(journalEntry: QBJournalEntry): string {
 /**
  * Get QuickBooks export settings (tenant-scoped)
  */
-export async function getExportSettingsForTenant(tenantId: string): Promise<QBExportSettings> {
+export async function getExportSettingsForTenant(
+  tenantId: string,
+): Promise<QBExportSettings> {
   try {
+    const { db, doc, getDoc } = await firestore();
     const docRef = doc(db, paths.quickbooksExportSettings(tenantId));
     const docSnap = await getDoc(docRef);
 
@@ -435,13 +491,13 @@ export async function getExportSettingsForTenant(tenantId: string): Promise<QBEx
       return docSnap.data() as QBExportSettings;
     }
   } catch (error) {
-    console.error('Error loading QB export settings:', error);
+    console.error("Error loading QB export settings:", error);
     throw error;
   }
 
   // Return defaults
   return {
-    defaultFormat: 'csv',
+    defaultFormat: "csv",
     includeEmployeeDetail: false,
     groupByDepartment: false,
     accountMappings: getDefaultMappings(),
@@ -451,7 +507,11 @@ export async function getExportSettingsForTenant(tenantId: string): Promise<QBEx
 /**
  * Save QuickBooks export settings
  */
-export async function saveExportSettingsForTenant(tenantId: string, settings: QBExportSettings): Promise<void> {
+export async function saveExportSettingsForTenant(
+  tenantId: string,
+  settings: QBExportSettings,
+): Promise<void> {
+  const { db, doc, setDoc, serverTimestamp } = await firestore();
   const docRef = doc(db, paths.quickbooksExportSettings(tenantId));
   await setDoc(docRef, {
     ...settings,
@@ -466,89 +526,89 @@ export function getDefaultMappings(): QBAccountMapping[] {
   return [
     // Expenses
     {
-      onitAccountCode: '5110',
-      onitAccountName: 'Salaries and Wages',
-      qbAccountName: 'Payroll Expenses',
-      accountType: 'expense',
+      onitAccountCode: "5110",
+      onitAccountName: "Salaries and Wages",
+      qbAccountName: "Payroll Expenses",
+      accountType: "expense",
       isDefault: true,
     },
     {
-      onitAccountCode: '5150',
-      onitAccountName: 'INSS Employer Contribution',
-      qbAccountName: 'Payroll Expenses:INSS Employer',
-      accountType: 'expense',
+      onitAccountCode: "5150",
+      onitAccountName: "INSS Employer Contribution",
+      qbAccountName: "Payroll Expenses:INSS Employer",
+      accountType: "expense",
       isDefault: true,
     },
     {
-      onitAccountCode: '5120',
-      onitAccountName: 'Overtime Expense',
-      qbAccountName: 'Payroll Expenses:Overtime',
-      accountType: 'expense',
+      onitAccountCode: "5120",
+      onitAccountName: "Overtime Expense",
+      qbAccountName: "Payroll Expenses:Overtime",
+      accountType: "expense",
       isDefault: true,
     },
     {
-      onitAccountCode: '5140',
-      onitAccountName: 'Subsidio Anual Expense',
-      qbAccountName: 'Payroll Expenses:13th Month',
-      accountType: 'expense',
+      onitAccountCode: "5140",
+      onitAccountName: "Subsidio Anual Expense",
+      qbAccountName: "Payroll Expenses:13th Month",
+      accountType: "expense",
       isDefault: true,
     },
     {
-      onitAccountCode: '5160',
-      onitAccountName: 'Employee Benefits',
-      qbAccountName: 'Payroll Expenses:Allowances',
-      accountType: 'expense',
+      onitAccountCode: "5160",
+      onitAccountName: "Employee Benefits",
+      qbAccountName: "Payroll Expenses:Allowances",
+      accountType: "expense",
       isDefault: true,
     },
     // Liabilities
     {
-      onitAccountCode: '2220',
-      onitAccountName: 'Withholding Income Tax (WIT)',
-      qbAccountName: 'Payroll Liabilities:WIT Payable',
-      accountType: 'liability',
+      onitAccountCode: "2220",
+      onitAccountName: "Withholding Income Tax (WIT)",
+      qbAccountName: "Payroll Liabilities:WIT Payable",
+      accountType: "liability",
       isDefault: true,
     },
     {
-      onitAccountCode: '2230',
-      onitAccountName: 'INSS Payable - Employee',
-      qbAccountName: 'Payroll Liabilities:INSS Employee',
-      accountType: 'liability',
+      onitAccountCode: "2230",
+      onitAccountName: "INSS Payable - Employee",
+      qbAccountName: "Payroll Liabilities:INSS Employee",
+      accountType: "liability",
       isDefault: true,
     },
     {
-      onitAccountCode: '2240',
-      onitAccountName: 'INSS Payable - Employer',
-      qbAccountName: 'Payroll Liabilities:INSS Employer',
-      accountType: 'liability',
+      onitAccountCode: "2240",
+      onitAccountName: "INSS Payable - Employer",
+      qbAccountName: "Payroll Liabilities:INSS Employer",
+      accountType: "liability",
       isDefault: true,
     },
     {
-      onitAccountCode: '2210',
-      onitAccountName: 'Salaries Payable',
-      qbAccountName: 'Payroll Liabilities:Wages Payable',
-      accountType: 'liability',
+      onitAccountCode: "2210",
+      onitAccountName: "Salaries Payable",
+      qbAccountName: "Payroll Liabilities:Wages Payable",
+      accountType: "liability",
       isDefault: true,
     },
     {
-      onitAccountCode: '2250',
-      onitAccountName: 'Subsidio Anual Accrued',
-      qbAccountName: 'Payroll Liabilities:13th Month Accrual',
-      accountType: 'liability',
+      onitAccountCode: "2250",
+      onitAccountName: "Subsidio Anual Accrued",
+      qbAccountName: "Payroll Liabilities:13th Month Accrual",
+      accountType: "liability",
       isDefault: true,
     },
     {
-      onitAccountCode: '2260',
-      onitAccountName: 'Other Payroll Deductions Payable',
-      qbAccountName: 'Payroll Liabilities:Other Deductions',
-      accountType: 'liability',
+      onitAccountCode: "2260",
+      onitAccountName: "Other Payroll Deductions Payable",
+      qbAccountName: "Payroll Liabilities:Other Deductions",
+      accountType: "liability",
       isDefault: true,
     },
     // Assets
     {
-      onitAccountCode: '1130',
-      onitAccountName: 'Cash in Bank - Payroll',
-      qbAccountName: 'Checking',
-      accountType: 'asset',
+      onitAccountCode: "1130",
+      onitAccountName: "Cash in Bank - Payroll",
+      qbAccountName: "Checking",
+      accountType: "asset",
       isDefault: true,
     },
   ];
@@ -561,15 +621,21 @@ export function getDefaultMappings(): QBAccountMapping[] {
 /**
  * Log an export for audit trail
  */
-async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<string> {
+async function logExport(
+  log: Omit<QBExportLog, "id" | "createdAt">,
+): Promise<string> {
   if (!log.tenantId) {
-    throw new Error('Missing tenantId for QB export log');
+    throw new Error("Missing tenantId for QB export log");
   }
 
-  const docRef = await addDoc(collection(db, paths.qbExportLogs(log.tenantId)), {
-    ...log,
-    createdAt: serverTimestamp(),
-  });
+  const { db, addDoc, collection, serverTimestamp } = await firestore();
+  const docRef = await addDoc(
+    collection(db, paths.qbExportLogs(log.tenantId)),
+    {
+      ...log,
+      createdAt: serverTimestamp(),
+    },
+  );
   return docRef.id;
 }
 
@@ -581,7 +647,7 @@ async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<st
 
 function formatDateForQB(dateStr: string): string {
   // Convert YYYY-MM-DD to MM/DD/YYYY
-  const [year, month, day] = dateStr.split('-');
+  const [year, month, day] = dateStr.split("-");
   return `${month}/${day}/${year}`;
 }
 
@@ -589,11 +655,26 @@ function formatPeriodName(periodStart: string, periodEnd: string): string {
   const start = new Date(periodStart);
   const end = new Date(periodEnd);
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   // If same month, just show "January 2026"
-  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+  if (
+    start.getMonth() === end.getMonth() &&
+    start.getFullYear() === end.getFullYear()
+  ) {
     return `${monthNames[start.getMonth()]} ${start.getFullYear()}`;
   }
 
@@ -602,9 +683,9 @@ function formatPeriodName(periodStart: string, periodEnd: string): string {
 }
 
 function escapeCSV(value: string): string {
-  if (!value) return '';
+  if (!value) return "";
   // If contains comma, quote, or newline, wrap in quotes and escape internal quotes
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
@@ -629,41 +710,50 @@ export async function exportPayrollToQuickBooks(
   payrollRun: PayrollRun | TLPayrollRun,
   records: (PayrollRecord | TLPayrollRecord)[],
   options: QBExportOptions,
-  exportedBy: string
+  exportedBy: string,
 ): Promise<ExportResult> {
   // Get account mappings
   const settings = await getExportSettingsForTenant(tenantId);
-  const mappings = options.useCustomMappings && options.customMappings
-    ? options.customMappings
-    : settings.accountMappings;
+  const mappings =
+    options.useCustomMappings && options.customMappings
+      ? options.customMappings
+      : settings.accountMappings;
 
   // Build journal entry
-  const journalEntry = buildJournalEntry(payrollRun, records, mappings, options);
+  const journalEntry = buildJournalEntry(
+    payrollRun,
+    records,
+    mappings,
+    options,
+  );
 
   // Generate file content
   let content: string;
   let extension: string;
   let mimeType: string;
 
-  if (options.format === 'iif') {
+  if (options.format === "iif") {
     content = generateIIF(journalEntry);
-    extension = 'iif';
-    mimeType = 'text/plain';
+    extension = "iif";
+    mimeType = "text/plain";
   } else {
     content = generateCSV(journalEntry);
-    extension = 'csv';
-    mimeType = 'text/csv';
+    extension = "csv";
+    mimeType = "text/csv";
   }
 
   // Generate filename
   const payDate = new Date(payrollRun.payDate);
-  const fileName = `Xefe_Payroll_${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}.${extension}`;
+  const fileName = `Xefe_Payroll_${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, "0")}.${extension}`;
 
   // Log the export
   await logExport({
     tenantId,
-    payrollRunId: payrollRun.id || '',
-    payrollPeriod: formatPeriodName(payrollRun.periodStart, payrollRun.periodEnd),
+    payrollRunId: payrollRun.id || "",
+    payrollPeriod: formatPeriodName(
+      payrollRun.periodStart,
+      payrollRun.periodEnd,
+    ),
     payDate: payrollRun.payDate,
     exportDate: new Date().toISOString(),
     exportedBy,
@@ -685,10 +775,14 @@ export async function exportPayrollToQuickBooks(
 /**
  * Trigger file download in browser
  */
-export function downloadFile(content: string, fileName: string, mimeType: string): void {
+export function downloadFile(
+  content: string,
+  fileName: string,
+  mimeType: string,
+): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
   document.body.appendChild(link);
