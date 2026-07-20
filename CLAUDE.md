@@ -58,8 +58,12 @@ firebase deploy --only hosting       # Deploy hosting only
 ## Hetzner VPS
 
 **Production**: xefe.tl (65.109.173.122). Served from `/var/www/xefe.tl/dist/spa`.
-`meza.naroman.tl` / `payroll.naroman.tl` now 301 → xefe.tl. The push-to-deploy
-webhook is dead — deploys are the manual build + rsync below.
+`meza.naroman.tl` / `payroll.naroman.tl` now 301 → xefe.tl.
+
+**Deploys are automatic**: pushing to `main` runs `deploy.yml`, which (after
+typecheck/lint/tests/rules suite) deploys Firestore+Storage rules, Cloud
+Functions, AND rsyncs `dist/spa` to Hetzner. Do NOT also deploy manually after
+a push. The manual fallback (CI down, hotfix without a push) is:
 
 ```bash
 npm run build   # vite → dist/spa + per-route static heads
