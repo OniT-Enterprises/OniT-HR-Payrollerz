@@ -37,6 +37,7 @@ function buildDefaultTenantSettings(tenantId: string): Omit<TenantSettings, 'id'
       city: '',
       country: 'Timor-Leste',
       tinNumber: '',
+      employerNiss: '',
       businessType: 'Lda',
     },
     companyStructure: {
@@ -161,6 +162,10 @@ function normalizeTenantSettings(
         ...defaults.timeOffPolicies.paternityLeave,
         ...(data.timeOffPolicies?.paternityLeave || {}),
       },
+      miscarriageLeave: {
+        ...defaults.timeOffPolicies.miscarriageLeave,
+        ...(data.timeOffPolicies?.miscarriageLeave || {}),
+      },
       specialLeave: {
         ...defaults.timeOffPolicies.specialLeave,
         ...(data.timeOffPolicies?.specialLeave || {}),
@@ -168,6 +173,10 @@ function normalizeTenantSettings(
       unpaidLeave: {
         ...defaults.timeOffPolicies.unpaidLeave,
         ...(data.timeOffPolicies?.unpaidLeave || {}),
+      },
+      studyLeave: {
+        ...defaults.timeOffPolicies.studyLeave,
+        ...(data.timeOffPolicies?.studyLeave || {}),
       },
       customLeaveTypes: data.timeOffPolicies?.customLeaveTypes || defaults.timeOffPolicies.customLeaveTypes,
     },

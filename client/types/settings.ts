@@ -20,6 +20,8 @@ export interface CompanyDetails {
    * Do not introduce a second SERVE registration-number field.
    */
   tinNumber: string;
+  /** Employer social-security registration number used on INSS submissions. */
+  employerNiss?: string;
   logoUrl?: string;
   businessType: BusinessType;
   businessTypeOther?: string;
@@ -114,6 +116,8 @@ export interface BankAccountConfig {
   accountNumber: string;
   branchCode?: string;
   swiftCode?: string;
+  /** GL cash account credited when this real bank account makes a payment. */
+  ledgerAccountCode?: '1120' | '1130';
   isActive: boolean;
 }
 
@@ -159,11 +163,23 @@ export interface TimeOffPolicies {
   maternityLeave: LeaveTypeConfig;
   paternityLeave: LeaveTypeConfig;
   /**
+   * Lei 4/2012 Art. 59(4): "Em caso de interrupção da gravidez a trabalhadora
+   * tem direito a uma licença com a duração de 4 semanas". Employer-unpaid by
+   * default — same INSS parental-subsidy regime as maternity (DL 18/2017).
+   */
+  miscarriageLeave: LeaveTypeConfig;
+  /**
    * Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days per calendar
    * year covering marriage, family death, and community/religious events.
    */
   specialLeave: LeaveTypeConfig;
   unpaidLeave: LeaveTypeConfig;
+  /**
+   * Student-worker exam leave — Lei 4/2012 Art. 76(3): absence "sem perda da
+   * remuneração ou de quaisquer direitos, para realização de provas de
+   * avaliação" (paid, exams only; proof may be requested per Art. 76(5)).
+   */
+  studyLeave: LeaveTypeConfig;
   customLeaveTypes: LeaveTypeConfig[];
   holidayCarryOver: boolean;
   maxCarryOverDays: number;
@@ -372,6 +388,25 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     carryOverAllowed: false,
     isActive: true,
   },
+  miscarriageLeave: {
+    // Lei 4/2012 Art. 59(4): "licença com a duração de 4 semanas" after a
+    // pregnancy interruption — 4 calendar weeks ≈ 20 working days in the
+    // working-day balance math. Employer-UNPAID by default, mirroring
+    // maternity: the INSS parental subsidy (DL 18/2017) covers it, and
+    // Art. 21(3) voids the subsidy for days the worker receives salary. A
+    // tenant that explicitly sets a paid percentage chooses employer-paid
+    // leave INSTEAD of the subsidy — that stays honored.
+    id: 'miscarriage',
+    name: 'Miscarriage Leave (Art. 59.4)',
+    code: 'MCL',
+    daysPerYear: 20, // 4 weeks (Art. 59(4)) as working days
+    isPaid: false, // INSS subsidy, not employer salary (DL 18/2017)
+    paidPercentage: 0,
+    requiresCertificate: true,
+    certificateType: 'Medical Certificate',
+    carryOverAllowed: false,
+    isActive: true,
+  },
   specialLeave: {
     // Lei 4/2012 Art. 33(3): one pooled allotment covering marriage, family
     // death, and community/religious events. Employer may request proof
@@ -393,6 +428,22 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     daysPerYear: 30,
     isPaid: false,
     paidPercentage: 0,
+    requiresCertificate: false,
+    carryOverAllowed: false,
+    isActive: true,
+  },
+  studyLeave: {
+    // Lei 4/2012 Art. 76(3): the worker-student may be absent "sem perda da
+    // remuneração ou de quaisquer direitos, para realização de provas de
+    // avaliação" — PAID, exams only. 3 working days/year is Xefe's
+    // configurable default (the statute sets no annual cap). Art. 76(5):
+    // proof of student status may be requested.
+    id: 'study',
+    name: 'Study Leave (Art. 76.3)',
+    code: 'STL',
+    daysPerYear: 3,
+    isPaid: true,
+    paidPercentage: 100,
     requiresCertificate: false,
     carryOverAllowed: false,
     isActive: true,

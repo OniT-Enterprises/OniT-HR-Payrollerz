@@ -1785,6 +1785,50 @@ const messages = {
   "settings": {
     "headerTitle": "Konfigurasaun Empresa",
     "headerSubtitle": "Konfigura empresa, folha no politika RH",
+    "access": {
+      "title": "Asesu ekipa",
+      "description": "Konvida ema no kontrola parte Xefe ne'ebé sira bele uza.",
+      "invite": "Konvida ema",
+      "roles": {
+        "owner": "Na'in",
+        "hr-admin": "Administradór RH",
+        "accountant": "Kontabilista",
+        "manager": "Jestór",
+        "viewer": "Lee de'it"
+      },
+      "modules": {
+        "hiring": "Rekrutamentu",
+        "staff": "Pessoal",
+        "timeleave": "Tempu no lisensa",
+        "performance": "Dezempeñu",
+        "payroll": "Folha saláriu",
+        "money": "Osan",
+        "accounting": "Kontabilidade",
+        "reports": "Relatóriu"
+      },
+      "actionFailed": "La konsege atualiza asesu ekipa.",
+      "invitedTitle": "Konvite haruka ona",
+      "invitedDescription": "Ema ne'e bele uza email konvite atu tama ba kompañia ida-ne'e.",
+      "updatedTitle": "Asesu atualiza ona",
+      "resetSentTitle": "Reset password haruka ona",
+      "removedTitle": "Asesu hasai ona",
+      "loadFailed": "La konsege karrega membru ekipa.",
+      "empty": "La hetan membru ekipa.",
+      "unnamed": "Membru laiha naran",
+      "you": "Ita",
+      "noModules": "Laiha área asesu",
+      "resetPassword": "Reset password",
+      "inviteTitle": "Konvida ema ida",
+      "inviteDescription": "Hili papél agora. Ita bele ajusta asesu depois sira tama.",
+      "email": "Enderesu email",
+      "role": "Papél",
+      "standardAccessHint": "Papél komesa ho asesu padraun ba servisu ne'e.",
+      "sendInvite": "Haruka konvite",
+      "editTitle": "Edita asesu ekipa",
+      "accessAreas": "Área asesu",
+      "removeTitle": "Hasai ema ne'e nia asesu?",
+      "removeDescription": "{{email}} sei la bele loke tan kompañia ida-ne'e iha Xefe."
+    },
     "advancedTax": {
       "title": "Modu impostu avansadu",
       "description": "Hatudu kontrolu impostu nivel kontabilista — retensaun ba fornesedór, taxa tratadu, no formuláriu deklarasaun — ba ema hotu ne'ebé jere empresa ida-ne'e. Husik desliga se ita-nia kontabilista la husu; Xefe aplika valór seguru automátiku.",
@@ -1820,6 +1864,8 @@ const messages = {
       },
       "tinNumber": "Númeru Úniku SERVE / NIF *",
       "tinPlaceholder": "Númeru Úniku Empreza / NIF",
+      "employerNiss": "NISS Empregador",
+      "employerNissPlaceholder": "Númeru rejistu empregador INSS",
       "addressTitle": "Endereco",
       "registeredAddress": "Endereco Registu *",
       "registeredAddressPlaceholder": "Rua, edifisio, etc.",
@@ -1870,6 +1916,9 @@ const messages = {
       "save": "Rai Estrutura"
     },
     "payment": {
+      "ledgerAccount": "Konta kontabilidade",
+      "ledgerOperatingBank": "Banku — Operasaun (1120)",
+      "ledgerPayrollBank": "Banku — Pagamentu Saláriu (1130)",
       "title": "Estrutura Pagamentu",
       "description": "Konfigura metodu, konta no periodu",
       "methods": "Metodu Pagamentu",
@@ -1908,6 +1957,25 @@ const messages = {
       "save": "Rai Estrutura Pagamentu"
     },
     "timeOff": {
+      "customTypes": {
+        "title": "Tipu lisensa personalizada",
+        "hint": "Lisensa kompañia nian rasik, aumenta tan ba tipu sira iha Lei Trabálhu (ex., loron voluntáriu). Tipu ativu sira mosu iha formuláriu pedidu iha web no telemovel; bainhira dezativa tipu ida, nia la mosu tan ba pedidu foun maibé la muda sira ne'ebé iha ona.",
+        "active": "Ativu",
+        "inactive": "Inativu",
+        "name": "Naran",
+        "namePlaceholder": "ex., Loron voluntáriu",
+        "code": "Kódigu",
+        "codeTaken": "Kódigu ida-ne'e uza tiha ona ba tipu lisensa seluk.",
+        "requiresCertificate": "Presiza dokumentu prova",
+        "add": "Tau tipu",
+        "addTitle": "Tau tipu lisensa personalizada",
+        "saveReminder": "Tipu foun no tipu ne'ebé muda ona rai bainhira Ita hanehan Rai iha okos.",
+      },
+      "breastfeedingNote": "Depois fila husi lisensa maternidade, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, atu fó susu to'o bebé halo fulan 6, no falta traballadora isin-rua nian ba konsulta médiku mós selu (Lei Trabálhu Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta. Laiha buat atu konfigura iha ne'e.",
+      "miscarriageLeave": "Lisensa interrupsaun gravidés (Art. 59.4)",
+      "miscarriageLeaveHint": "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
+      "studyLeave": "Lisensa Estudu (Art. 76.3)",
+      "studyLeaveHint": "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
       "parentalInssExplainer": "INSS selu 100% diretamente ba traballadór bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017) — baibain empregadór la selu buat ida durante lisensa.",
       "parentalPaidWarning": "INSS la selu subsídiu ba loron sira ne'ebé traballadór simu saláriu (DL 18/2017 Art. 21(3)) — maternidade/paternidade ne'ebé empregadór selu troka subsídiu INSS, la aumenta ba nia.",
       "title": "Politika Lisensa",
@@ -2371,6 +2439,17 @@ const messages = {
         "contractor": "Kontratadu",
         "shareholder": "Asionista"
       },
+      "partTimeWageHelp": "Ba traballadór tempu parsiál, rejista oras kontratu no tratamentu saláriu ne'ebé reviza ona. Folha saláriu sei la asume limite tempu tomak.",
+      "contractedWeeklyHours": "Oras kontratu kada semana *",
+      "minimumWageTreatment": "Tratamentu saláriu mínimu *",
+      "minimumWageTreatmentPlaceholder": "Hili tratamentu",
+      "minimumWageTreatments": {
+        "proRata": "Pro-rata tuir oras semana",
+        "fullFloor": "Aplika limite mensál tomak",
+        "reviewedException": "Exesaun ne'ebé reviza ona"
+      },
+      "minimumWageReviewNote": "Nota revizaun *",
+      "minimumWageReviewNotePlaceholder": "Sé mak reviza no tanbasá tratamentu ne'e aplika",
       "sefopeTitle": "Registu SEFOPE (Ministeriu Traballu)",
       "sefopeTooltip": "Presiza ba empregadu TL hotu",
       "sefopeNumber": "Numero SEFOPE",
@@ -2445,6 +2524,10 @@ const messages = {
           "label": "Numero INSS",
           "description": "Numero Seguransa Sosial"
         },
+        "taxIdentificationNumber": {
+          "label": "NIF / TIN Traballadór",
+          "description": "Númeru fiskál individuál, se iha"
+        },
         "electoralCard": {
           "label": "Kartaun Eleitoral",
           "description": "Kartaun Eleitoral"
@@ -2462,6 +2545,7 @@ const messages = {
       },
       "required": "Presiza",
       "numberPlaceholder": "Hatama numero",
+      "tinPlaceholder": "Hatama NIF / TIN individuál",
       "nationality": "Nacionalidade",
       "nationalityOther": "Seluk",
       "visaTitle": "Visa Servisu",
@@ -2841,6 +2925,14 @@ const messages = {
         }
       },
       "finalPay": {
+        "decision": "Tratamentu Art. 56 ne'ebé reviza tiha ona *",
+        "decisionPlaceholder": "Hili depois kontabilista ka revizor legál reviza tiha ona",
+        "decisionInclude": "Inklui iha folla pagamentu finál",
+        "decisionExclude": "Hasai husi folla pagamentu finál",
+        "reviewWarning": "Lei nia testu no prátika komún bele hatudu rezultadu la hanesan. Xefe la hili ba Ita.",
+        "reviewNote": "Nota revizaun *",
+        "reviewNotePlaceholder": "Ema ne'ebé reviza, data, no baze ba desizaun",
+        "reviewAcknowledgement": "Ha'u konfirma katak kontabilista ka revizor legál verifika tiha ona tratamentu ida-ne'e.",
         "deathHeirsNote": "Traballadór mate ona (Art. 47(1)(b)): pagamentu ida-ne'e selu ba erdeiru sira — konfirma benefisiáriu sira ho ita-nia kontabilista.",
         "title": "Kompensasaun servisu Artigu 56",
         "description": "Fulan ida nia saláriu ba kada períodu servisu tinan lima kompletu.",
@@ -3103,6 +3195,9 @@ const messages = {
         "submit": "Submete Pedido"
       },
       "dialog": {
+        "studyLeaveHint": "Falta ho pagamentu ba prova avaliasaun de'it — traballadór-estudante sira kontinua simu saláriu iha loron avaliasaun nian (Lei Trabálhu Art. 76.3). Empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5).",
+        "miscarriageInssHint": "Depois interrupsaun gravidés, traballadora iha direitu ba lisensa semana 4 (Lei Trabálhu Art. 59.4). Baibain empregadór la selu: traballadora husu subsídiu INSS diretamente (iha fulan 6 nia laran husi loron primeiru lisensa nian) bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
+        "breastfeedingNote": "Depois fila mai, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, to'o bebé halo fulan 6 (Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta.",
         "maternityInssHint": "Traballadora husu subsídiu maternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia kada fulan, to'o loron 90, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017). Lisensa rasik mínimu semana 12, pelu menus semana 10 depois bebé moris.",
         "paternityInssHint": "Traballadór husu subsídiu paternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia iha pagamentu dala ida de'it ba loron servisu 5, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
         "parentalInssFallbackHint": "Se traballadór la kumpre kondisaun kontribuisaun, INSS la selu buat ida — lei seidauk klaru se empregadór tenke selu fali ka lae; konfirma ho ita-nia kontabilista.",
@@ -3183,6 +3278,7 @@ const messages = {
         "cancelled": "Kansela"
       },
       "leaveTypes": {
+        "miscarriage": "Lisensa interrupsaun gravidés",
         "annual": "Lisensa anual",
         "sick": "Lisensa doensa",
         "maternity": "Lisensa maternidade",
@@ -3961,7 +4057,10 @@ const messages = {
       "sourceExpense": "Despeza",
       "sourceRevenue": "Rendimentu",
       "sourceReceipt": "Reseitu",
-      "sourcePayment": "Pagamentu"
+      "sourcePayment": "Pagamentu",
+      "sourcePayrollPayment": "Pagamentu folha saláriu",
+      "sourceTaxPayment": "Pagamentu impostu / INSS",
+      "sourceFixedAssetAcquisition": "Akizisaun ativu fixu"
     },
     "fixedAssets": {
       "title": "Ativos Fixos",
@@ -4006,6 +4105,20 @@ const messages = {
       "disposePreviewLoss": "Valor livru {{nbv}} — fa'an ne'e hamosu lakon {{amount}}.",
       "fieldName": "Naran ativu",
       "fieldReference": "Referénsia / série",
+      "fieldAcquisitionOrigin": "Oinsá ativu ida-ne'e tama ba livru kontabilidade?",
+      "acquisitionOriginPlaceholder": "Hili ida",
+      "acquisitionOrigins": {
+        "bill": "Lansa ona liuhusi fatura fornecedór",
+        "opening": "Saldo abertura",
+        "postNow": "Lansa akizisaun agora"
+      },
+      "acquisitionOriginHelp": {
+        "already_posted_via_bill": "Rejista de'it. Fatura fornecedór lansa ona kustu ativu.",
+        "opening_balance": "Rejista de'it. Ativu inklui ona iha saldo abertura.",
+        "post_now": "Xefe sei débita konta ativu no krédita konta fundu dala ida de'it."
+      },
+      "fieldFundingAccount": "Selu husi / deve ba",
+      "fundingAccountPlaceholder": "Hili konta kaixa, banku, deve ka kapital",
       "fieldAcquired": "Data sosa",
       "fieldCost": "Kustu (USD)",
       "fieldResidual": "Valor rezidual",
@@ -5325,6 +5438,7 @@ const messages = {
       "subtitle": "Kria no akompaña submisaun kontribuisaun INSS mensal.",
       "due": {
         "arrearsNotice": "Pagamentu atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
+        "arrearsEstimate": "Estimativa to'o agora ba {{period}}: US$ {{amount}} ({{months}} × 1%).",
         "overdueTitle": "Tarde ona ba {{task}}",
         "overdueDescription": "{{task}} ba {{period}} tenke entrega iha {{dueDate}}.",
         "upcomingTitle": "{{task}} sei to'o data",
@@ -5393,6 +5507,10 @@ const messages = {
         "draft": "Esbosu"
       },
       "markFiled": {
+        "paymentDate": "Data pagamentu",
+        "paymentAccount": "Konta pagamentu",
+        "selectPaymentAccount": "Hili konta",
+        "cashOnHand": "Osan iha kaixa",
         "title": "Marka {{task}} hanesan hatama ona",
         "description": "Rai detallu submisaun {{task}} ba deklarasaun INSS ida-ne'e.",
         "submissionMethod": "Métodu submisaun",
@@ -5685,6 +5803,10 @@ const messages = {
         "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
       },
       "markFiled": {
+        "paymentDate": "Data pagamentu",
+        "paymentAccount": "Konta pagamentu",
+        "selectPaymentAccount": "Hili konta",
+        "cashOnHand": "Osan iha kaixa",
         "title": "Marka deklarasaun hanesan hatama ona",
         "description": "Rai detallu submisaun ba deklarasaun WIT ida-ne'e.",
         "submissionMethod": "Métodu submisaun",
@@ -6889,6 +7011,7 @@ const messages = {
     "payDateUseDate": "Uza {date}",
     "warningOTCapArt27": "liu limite oras extraordináriu Art. 27(4) (oras 4/loron / oras 16/semana) iha períodu ida-ne'e — permite de'it iha kazu forsa maiór (Art. 27(5))",
     "warningRestDayCapArt27": "servisu liu oras 8 iha loron deskansa ka feriadu — Art. 27(3) limita servisu ne'e ba oras 8",
+    "warningArt86Headcount": "deskontu INSS Art. 86 presiza traballadór {{max}} ka menus — folha ida-ne'e iha {{count}}; direitu deskontu para bainhira liu {{max}}",
     "title": "Prosesu Saláriu",
     "freePlanNotice": "Ita uza planu gratuitu. Bele prepara no reve saláriu livre — atu finaliza presiza subskrisaun.",
     "freePlanNoticeCta": "Haree planu",
@@ -7282,6 +7405,7 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "completePostsPayment": "Ida-ne'e sei marka folha pagamentu nu'udar selu tiha, atualiza saldo dedusaun sira, no lansa pagamentu banku ba kontabilidade.",
     "alsoMarkRunPaid": "Marka mós folha pagamentu nu'udar selu tiha (atualiza saldo adiantamentu no dedusaun rekorrente)",
     "markCompleted": "Marka kompletu",
     "markCompletedDesc": "Konfirma katak Ita-nia banku halo tiha ona transferensia saláriu ida-ne'e. Ida-ne'e atualiza de'it rejistu iha Xefe — la kontakta banku.",
@@ -7369,6 +7493,9 @@ const messages = {
     "toastValidationDesc": "Favór prenxe kampu obrigatóriu hotu.",
     "toastTransferSuccess": "Susesu",
     "toastTransferSuccessDesc": "Transferensia banku {{reference}} inisia ho susesu.",
+    "toastTransferRecordedDesc": "Transferensia {{reference}} rejista hanesan pendente. Haruka ficheiru ka pakote ba banku, depois marka kompletu iha ne'e.",
+    "toastMarkedCompleted": "Transferensia {{reference}} kompletu ona no pagamentu folha saláriu lansa ona.",
+    "toastMarkedFailed": "Transferensia {{reference}} marka hanesan falla.",
     "toastTransferError": "La konsege inisia transferensia. Favór koko fali.",
     "toastNoData": "Laiha Dadus",
     "toastNoDataDesc": "Laiha transferensia atu exporta.",
@@ -7390,6 +7517,7 @@ const messages = {
     "inssArrearsMonth": "fulan",
     "inssArrearsMonths": "fulan",
     "inssArrearsNotice": "Pagamentu INSS atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
+    "inssArrearsEstimate": "Estimativa to'o agora ba {{period}}: US$ {{amount}} (fulan {{months}}).",
     "title": "Impostu Folha Pagamentu & INSS",
     "subtitle": "Sentru konformidade Timor-Leste ba WIT (ATTL) no INSS mensal.",
     "actionRequired": "Presiza asaun",
@@ -7411,7 +7539,26 @@ const messages = {
     "openWitFiling": "Loke Submisaun WIT",
     "inssTitle": "Relatoriu INSS Mensal",
     "inssDesc": "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
-    "openInssFiling": "Loke Submisaun INSS"
+    "openInssFiling": "Loke Submisaun INSS",
+    "formC": {
+      "title": "Impostu rendimentu negósiu anual (Formuláriu C)",
+      "savedTitle": "Preparasaun rai ona",
+      "savedDescription": "Lista preparasaun impostu rendimentu anual atualiza ona.",
+      "saveError": "La konsege rai lista preparasaun.",
+      "reviewProgress": "Reviza preparasaun",
+      "startPreparation": "Hahu preparasaun",
+      "dialogTitle": "Prepara impostu rendimentu anual {{year}}",
+      "dialogDescription": "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
+      "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete Formuláriu C ofisiál; uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+      "checklist": {
+        "profitAndLoss": "Lucro no prejuízu reviza ona",
+        "balanceSheet": "Balansu reviza ona",
+        "cashFlow": "Relatóriu fluxu osan reviza ona",
+        "taxAdjustments": "Ajustamentu fiskál reviza ona"
+      },
+      "reviewNote": "Nota revizaun",
+      "reviewNotePlaceholder": "Revizór, buat ne'ebé sei falta, no asaun tuir mai"
+    }
   },
   "guidance": {
     "hideGuidance": "Subar orientasaun",
@@ -7655,6 +7802,9 @@ const messages = {
       "filings": {
         "monthlyWit": "WIT {{period}}",
         "annualWit": "WIT anuál {{period}}",
+        "annualIncomeTax": "Impostu rendimentu anual {{period}}",
+        "servicesTax": "Impostu servisu {{period}}",
+        "installmentTax": "Prestasaun impostu rendimentu {{period}}",
         "inssPayment": "Pagamentu INSS {{period}}",
         "inssStatement": "Deklarasaun INSS {{period}}",
         "overdue": "atrasu loron {{days}}",

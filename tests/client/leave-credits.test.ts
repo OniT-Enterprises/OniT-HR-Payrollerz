@@ -2,16 +2,20 @@ import { describe, expect, it } from "vitest";
 import { computeLeaveCredits, type LeaveCreditInput } from "@/lib/payroll/run-payroll-helpers";
 
 // Mirror the production wiring: 8h days, weekday counting, annual/sick paid,
-// unpaid not, unknown types default to paid. Maternity/paternity default to
-// EMPLOYER-UNPAID (DL 18/2017: the INSS parental subsidy replaces salary and
-// Art. 21(3) voids it for days the worker receives salary) — matching
+// unpaid not, unknown types default to paid. Maternity/paternity/miscarriage
+// default to EMPLOYER-UNPAID (DL 18/2017: the INSS parental subsidy replaces
+// salary and Art. 21(3) voids it for days the worker receives salary;
+// miscarriage — Lei 4/2012 Art. 59(4) — rides the same regime) — matching
 // TL_LEAVE_TYPES and the functions leavePayFraction fallback. The callback
 // returns the policy's paid FRACTION (1 = fully paid, 0 = unpaid, 0.5 = half
 // pay).
 const HOURS_PER_DAY = 8;
 
 const payFraction = (leaveType: string) =>
-  leaveType === "unpaid" || leaveType === "maternity" || leaveType === "paternity"
+  leaveType === "unpaid" ||
+  leaveType === "maternity" ||
+  leaveType === "paternity" ||
+  leaveType === "miscarriage"
     ? 0
     : 1;
 
@@ -61,8 +65,21 @@ describe("computeLeaveCredits", () => {
   });
 
   it("defaults unknown/custom leave types to paid", () => {
-    const credits = compute([req({ leaveType: "study" })]);
+    const credits = compute([req({ leaveType: "sabbatical" })]);
     expect(credits.get("emp-1")?.paidLeaveHours).toBe(40);
+  });
+
+  it("credits study leave (Art. 76.3 worker-student exams) as PAID hours", () => {
+    // Lei 4/2012 Art. 76(3): exam absence is "sem perda da remuneração" —
+    // TL_LEAVE_TYPES/TL_DEFAULT_LEAVE_POLICIES mark `study` isPaid: true, so
+    // payroll credits the hours instead of docking them.
+    const credits = compute([
+      req({ leaveType: "study", startDate: "2026-06-10", endDate: "2026-06-12" }),
+    ]);
+    expect(credits.get("emp-1")).toEqual({
+      paidLeaveHours: 3 * HOURS_PER_DAY,
+      sickDays: 0,
+    });
   });
 
   it("credits special leave (Art. 33.3 pooled justified absence) as PAID hours", () => {
@@ -123,6 +140,35 @@ describe("computeLeaveCredits", () => {
       req({ leaveType: "paternity", startDate: "2026-06-10", endDate: "2026-06-12" }),
     ]);
     expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("docks default miscarriage leave as unpaid absence (Art. 59.4 license, INSS subsidy)", () => {
+    // Lei 4/2012 Art. 59(4) grants the 4-week license; DL 18/2017 makes the
+    // pay INSS's, not the employer's, by default — so like maternity the days
+    // get NO paid-leave credit and stay in the absence deduction.
+    const credits = compute([req({ leaveType: "miscarriage" })]);
+    expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("still credits miscarriage when the tenant explicitly configured employer pay", () => {
+    // Same deliberate employer-paid option as maternity (voids the INSS
+    // subsidy for those days per DL 18/2017 Art. 21(3)).
+    const credits = compute(
+      [req({ leaveType: "miscarriage" })],
+      (leaveType) => (leaveType === "miscarriage" ? 1 : 0),
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 40, sickDays: 0 });
+  });
+
+  it("honors a tenant custom type's configured paid percentage", () => {
+    // Custom types come from timeOffPolicies.customLeaveTypes; the fraction
+    // callback resolves them by id exactly like built-ins. A 50%-paid
+    // "volunteer" type credits half the hours; the rest stays docked.
+    const credits = compute(
+      [req({ leaveType: "volunteer" })],
+      (leaveType) => (leaveType === "volunteer" ? 0.5 : 1),
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 20, sickDays: 0 });
   });
 
   it("still credits maternity when the tenant explicitly configured 100% employer pay", () => {

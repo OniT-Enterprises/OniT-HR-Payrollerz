@@ -3473,18 +3473,23 @@ router.post('/leave/requests', async (req, res) => {
       policies.sickLeave,
       policies.maternityLeave,
       policies.paternityLeave,
+      policies.miscarriageLeave,
       policies.specialLeave,
       policies.unpaidLeave,
+      policies.studyLeave,
       ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
     ].filter(Boolean) : [];
     const configuredPolicy = configuredPolicies.find((policy) => policy.id === leaveType);
     // 'special' = pooled justified absence (Lei 4/2012 Art. 33(3), 3 paid
     // days/year for marriage + family death + community/religious events).
+    // 'miscarriage' = 4-week license after a pregnancy interruption (Lei
+    // 4/2012 Art. 59(4)); 'study' = paid worker-student exam leave (Art.
+    // 76(3) "sem perda da remuneração").
     // 'bereavement'/'marriage' are legacy render-only types kept so existing
     // requests stay valid data — new requests should use 'special'.
     const builtInLeaveTypes = new Set([
-      'annual', 'sick', 'maternity', 'paternity', 'special', 'unpaid',
-      'bereavement', 'marriage', 'study', 'custom',
+      'annual', 'sick', 'maternity', 'paternity', 'miscarriage', 'special',
+      'unpaid', 'bereavement', 'marriage', 'study', 'custom',
     ]);
     if (!builtInLeaveTypes.has(leaveType) && !configuredPolicy) {
       return res.status(400).json({ success: false, message: 'Unknown leave type' });

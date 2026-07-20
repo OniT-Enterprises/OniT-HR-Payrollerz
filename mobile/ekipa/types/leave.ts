@@ -9,10 +9,14 @@ export type LeaveType =
   | 'sick'
   | 'maternity'
   | 'paternity'
+  // Lei 4/2012 Art. 59(4): 4-week license after a pregnancy interruption
+  // ("licença com a duração de 4 semanas").
+  | 'miscarriage'
   // Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days/year covering
   // marriage, family death, and community/religious events.
   | 'special'
   | 'unpaid'
+  // Worker-student exam leave — Lei 4/2012 Art. 76(3), paid.
   | 'study'
   | 'custom'
   // Legacy render-only: no longer requestable (pooled into 'special');

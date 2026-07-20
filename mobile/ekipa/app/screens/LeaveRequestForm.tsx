@@ -36,9 +36,13 @@ const LEAVE_TYPES: { id: LeaveType; labelKey: string }[] = [
   { id: 'sick', labelKey: 'leave.sick' },
   { id: 'maternity', labelKey: 'leave.maternity' },
   { id: 'paternity', labelKey: 'leave.paternity' },
+  // Lei 4/2012 Art. 59(4): 4-week license after a pregnancy interruption.
+  { id: 'miscarriage', labelKey: 'leave.miscarriage' },
   // Replaces the former bereavement + marriage chips — Lei 4/2012 Art. 33(3)
   // pools them into one 3-day/year "special" allotment.
   { id: 'special', labelKey: 'leave.special' },
+  // Worker-student exam leave — Lei 4/2012 Art. 76(3), paid.
+  { id: 'study', labelKey: 'leave.study' },
   { id: 'unpaid', labelKey: 'leave.unpaid' },
 ];
 

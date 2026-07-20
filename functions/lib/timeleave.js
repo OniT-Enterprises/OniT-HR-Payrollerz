@@ -21,14 +21,19 @@ const COPY_LOCK_TTL_MS = 5 * 60 * 1000;
 // are rejected — Lei 4/2012 Art. 33(3) pools them into "special" (3 paid
 // days/year for marriage + family death + community/religious events).
 // Existing bereavement/marriage requests remain valid data and still render.
+// miscarriage — Lei 4/2012 Art. 59(4): "licença com a duração de 4 semanas"
+// after a pregnancy interruption (4 calendar weeks ≈ 20 working days).
+// study — Lei 4/2012 Art. 76(3): worker-student exam absence "sem perda da
+// remuneração"; 3 working days/year is Xefe's configurable default.
 const DEFAULT_ENTITLEMENTS = {
     annual: 12,
     sick: 12,
     maternity: 84,
     paternity: 5,
+    miscarriage: 20,
     unpaid: 30,
     special: 3,
-    study: 0,
+    study: 3,
     custom: 0,
 };
 const ANNOUNCED_VARIABLE_HOLIDAYS = {
@@ -236,8 +241,10 @@ function entitlementsFromConfig(configData) {
         "sickLeave",
         "maternityLeave",
         "paternityLeave",
+        "miscarriageLeave",
         "specialLeave",
         "unpaidLeave",
+        "studyLeave",
     ];
     for (const key of policyKeys) {
         const policy = policies[key];
@@ -326,7 +333,7 @@ function committedDaysInYear(requests, leaveType, year, excludeId) {
  * they are entitled to (entitlement + carry-over, carry-over applying to annual
  * leave only, matching recomputeLeaveBalance). Returns [] when within
  * entitlement. The overage is surfaced rather than silently clamped to zero, so
- * unknown/0-entitlement types (e.g. "study") are caught instead of paid out.
+ * unknown/0-entitlement types (e.g. "custom") are caught instead of paid out.
  */
 function findEntitlementBreaches(candidate, existing, entitlements, carryOverByYear, excludeId) {
     var _a, _b;
@@ -407,8 +414,10 @@ function leavePayFraction(leaveType, config) {
             policies.sickLeave,
             policies.maternityLeave,
             policies.paternityLeave,
+            policies.miscarriageLeave,
             policies.specialLeave,
             policies.unpaidLeave,
+            policies.studyLeave,
             ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
         ]
             .map((policy) => policy)
@@ -420,13 +429,18 @@ function leavePayFraction(leaveType, config) {
         const percentage = Number((_a = configured.paidPercentage) !== null && _a !== void 0 ? _a : 100);
         return Number.isFinite(percentage) ? Math.min(1, Math.max(0, percentage / 100)) : 1;
     }
-    // Unconfigured fallback. Maternity/paternity default to UNPAID by the
-    // employer: since DL 18/2017 the INSS parental subsidy (100% of the
+    // Unconfigured fallback. Maternity/paternity/miscarriage default to UNPAID
+    // by the employer: since DL 18/2017 the INSS parental subsidy (100% of the
     // reference wage, claimed by the worker directly) replaced employer-paid
-    // parental leave, and Art. 21(3) voids the subsidy for days the worker
-    // receives salary. A tenant that explicitly configures a paid percentage
-    // for these types keeps it (deliberate employer-paid option, above).
-    return leaveType === "unpaid" || leaveType === "maternity" || leaveType === "paternity"
+    // parental leave — miscarriage (Lei 4/2012 Art. 59(4)) rides the same
+    // regime — and Art. 21(3) voids the subsidy for days the worker receives
+    // salary. A tenant that explicitly configures a paid percentage for these
+    // types keeps it (deliberate employer-paid option, above). Study leave
+    // (Art. 76(3) "sem perda da remuneração") falls through to paid.
+    return leaveType === "unpaid"
+        || leaveType === "maternity"
+        || leaveType === "paternity"
+        || leaveType === "miscarriage"
         ? 0
         : 1;
 }
@@ -894,8 +908,10 @@ exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
             policies.sickLeave,
             policies.maternityLeave,
             policies.paternityLeave,
+            policies.miscarriageLeave,
             policies.specialLeave,
             policies.unpaidLeave,
+            policies.studyLeave,
             ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
         ].map((policy) => policy)
         : [];
@@ -938,8 +954,8 @@ exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
     const entitlements = entitlementsFromConfig(configSnapshot.data());
     // Probation gate (tenant policy): annual leave cannot start before hire date
     // + probationMonthsBeforeLeave. Statutorily protected absences (sick,
-    // maternity, special) are never blocked by probation, and owners/HR admins
-    // may knowingly override, same as the balance override.
+    // maternity, miscarriage, special, study) are never blocked by probation,
+    // and owners/HR admins may knowingly override, same as the balance override.
     if (leaveType === "annual" && !overrideBalance) {
         const eligibleFrom = (0, leave_logic_1.probationEligibleFromDate)(typeof (jobDetails === null || jobDetails === void 0 ? void 0 : jobDetails.hireDate) === "string" ? jobDetails.hireDate : undefined, Number((_e = policies === null || policies === void 0 ? void 0 : policies.probationMonthsBeforeLeave) !== null && _e !== void 0 ? _e : 0));
         if (eligibleFrom && data.startDate < eligibleFrom) {

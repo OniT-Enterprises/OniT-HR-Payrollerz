@@ -1785,6 +1785,50 @@ const messages = {
   "settings": {
     "headerTitle": "Definições da Empresa",
     "headerSubtitle": "Configure a sua empresa, folha de pagamento e políticas de RH",
+    "access": {
+      "title": "Acesso da equipa",
+      "description": "Convide pessoas e controle as áreas do Xefe que podem utilizar.",
+      "invite": "Convidar pessoa",
+      "roles": {
+        "owner": "Proprietário",
+        "hr-admin": "Administrador de RH",
+        "accountant": "Contabilista",
+        "manager": "Gestor",
+        "viewer": "Consulta"
+      },
+      "modules": {
+        "hiring": "Recrutamento",
+        "staff": "Pessoas",
+        "timeleave": "Tempo e licenças",
+        "performance": "Desempenho",
+        "payroll": "Folha de pagamento",
+        "money": "Dinheiro",
+        "accounting": "Contabilidade",
+        "reports": "Relatórios"
+      },
+      "actionFailed": "Não foi possível atualizar o acesso da equipa.",
+      "invitedTitle": "Convite enviado",
+      "invitedDescription": "A pessoa pode usar o email de convite para aderir a esta empresa.",
+      "updatedTitle": "Acesso atualizado",
+      "resetSentTitle": "Reposição da palavra-passe enviada",
+      "removedTitle": "Acesso removido",
+      "loadFailed": "Não foi possível carregar os membros da equipa.",
+      "empty": "Não foram encontrados membros da equipa.",
+      "unnamed": "Membro sem nome",
+      "you": "Você",
+      "noModules": "Sem áreas de acesso",
+      "resetPassword": "Repor palavra-passe",
+      "inviteTitle": "Convidar alguém",
+      "inviteDescription": "Escolha agora uma função. Pode ajustar o acesso depois da adesão.",
+      "email": "Endereço de email",
+      "role": "Função",
+      "standardAccessHint": "A função começa com o acesso padrão para esse trabalho.",
+      "sendInvite": "Enviar convite",
+      "editTitle": "Editar acesso da equipa",
+      "accessAreas": "Áreas de acesso",
+      "removeTitle": "Remover o acesso desta pessoa?",
+      "removeDescription": "{{email}} deixará de poder abrir esta empresa no Xefe."
+    },
     "advancedTax": {
       "title": "Modo fiscal avançado",
       "description": "Mostra controlos fiscais de nível contabilista — retenção a fornecedores, taxas de tratado e formulários de declaração — a todos os que gerem esta empresa. Deixe desligado salvo indicação do seu contabilista; o Xefe aplica valores seguros por defeito.",
@@ -1820,6 +1864,8 @@ const messages = {
       },
       "tinNumber": "N.º Único SERVE / NIF *",
       "tinPlaceholder": "Número Único da Empresa / NIF",
+      "employerNiss": "NISS da entidade empregadora",
+      "employerNissPlaceholder": "Número de registo da entidade no INSS",
       "addressTitle": "Morada",
       "registeredAddress": "Morada Registada *",
       "registeredAddressPlaceholder": "Rua, nome do edifício, etc.",
@@ -1870,6 +1916,9 @@ const messages = {
       "save": "Guardar Estrutura"
     },
     "payment": {
+      "ledgerAccount": "Conta contabilística",
+      "ledgerOperatingBank": "Banco — Operações (1120)",
+      "ledgerPayrollBank": "Banco — Folha de Pagamento (1130)",
       "title": "Estrutura de Pagamento",
       "description": "Configure métodos de pagamento, contas bancárias e períodos de pagamento",
       "methods": "Métodos de Pagamento",
@@ -1908,6 +1957,25 @@ const messages = {
       "save": "Guardar Estrutura de Pagamento"
     },
     "timeOff": {
+      "customTypes": {
+        "title": "Tipos de licença personalizados",
+        "hint": "Licenças específicas da empresa, além do conjunto da Lei do Trabalho (p. ex., dias de voluntariado). Os tipos ativos aparecem no formulário de pedido na web e no telemóvel; desativar um tipo esconde-o dos novos pedidos sem afetar os existentes.",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "name": "Nome",
+        "namePlaceholder": "p. ex., Dia de voluntariado",
+        "code": "Código",
+        "codeTaken": "Este código já está a ser utilizado por outro tipo de licença.",
+        "requiresCertificate": "Requer documento comprovativo",
+        "add": "Adicionar tipo",
+        "addTitle": "Adicionar tipo de licença personalizado",
+        "saveReminder": "Os tipos novos e editados são guardados quando premir Guardar abaixo.",
+      },
+      "breastfeedingNote": "Depois de regressar da licença de maternidade, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora para amamentação até o bebé completar 6 meses, e as ausências da trabalhadora grávida para exames médicos também são pagas (Lei do Trabalho, art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte. Não há nada a configurar aqui.",
+      "miscarriageLeave": "Licença por Interrupção da Gravidez (art. 59.º(4))",
+      "miscarriageLeaveHint": "4 semanas após uma interrupção da gravidez (Lei do Trabalho, art. 59.º(4)), em dias úteis. A licença por risco clínico ANTES do parto (art. 59.º(3)) não tem duração fixa — registe-a como licença por doença com certificado médico.",
+      "studyLeave": "Licença de Estudo (art. 76.º(3))",
+      "studyLeaveHint": "Ausência paga para os trabalhadores-estudantes realizarem provas de avaliação, sem perda de remuneração (Lei do Trabalho, art. 76.º(3)). Apenas para provas — o empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)). A lei não fixa um limite anual; os dias por ano aqui são a alocação da empresa.",
       "parentalInssExplainer": "Pago a 100% pelo INSS diretamente ao trabalhador quando este tem 6 meses de contribuições nos últimos 12 (DL 18/2017) — normalmente o empregador não paga nada durante a licença.",
       "parentalPaidWarning": "O INSS não paga o subsídio nos dias em que o trabalhador recebe salário (DL 18/2017, art. 21.º(3)) — a maternidade/paternidade paga pelo empregador substitui o subsídio do INSS, não acresce a ele.",
       "title": "Políticas de Licenças",
@@ -2371,6 +2439,17 @@ const messages = {
         "contractor": "Contratado",
         "shareholder": "Acionista"
       },
+      "partTimeWageHelp": "Para trabalhadores a tempo parcial, registe as horas contratadas e o tratamento salarial acordado após revisão. A folha não presumirá o mínimo de tempo inteiro.",
+      "contractedWeeklyHours": "Horas contratadas por semana *",
+      "minimumWageTreatment": "Tratamento do salário mínimo *",
+      "minimumWageTreatmentPlaceholder": "Selecionar tratamento",
+      "minimumWageTreatments": {
+        "proRata": "Proporcional às horas semanais",
+        "fullFloor": "Aplicar mínimo mensal integral",
+        "reviewedException": "Exceção revista"
+      },
+      "minimumWageReviewNote": "Nota de revisão *",
+      "minimumWageReviewNotePlaceholder": "Quem reviu e por que se aplica este tratamento",
       "sefopeTitle": "Registo SEFOPE (Ministério do Trabalho)",
       "sefopeTooltip": "Obrigatório para todos os funcionários de TL",
       "sefopeNumber": "Número SEFOPE",
@@ -2445,6 +2524,10 @@ const messages = {
           "label": "Número INSS",
           "description": "Número da Segurança Social"
         },
+        "taxIdentificationNumber": {
+          "label": "NIF / TIN do trabalhador",
+          "description": "Número fiscal individual, se atribuído"
+        },
         "electoralCard": {
           "label": "Cartão Eleitoral",
           "description": "Kartaun Eleitoral"
@@ -2462,6 +2545,7 @@ const messages = {
       },
       "required": "Obrigatório",
       "numberPlaceholder": "Introduza o número",
+      "tinPlaceholder": "Introduza o NIF / TIN individual",
       "nationality": "Nacionalidade",
       "nationalityOther": "Outra",
       "visaTitle": "Visto de Trabalho",
@@ -2931,6 +3015,14 @@ const messages = {
         }
       },
       "finalPay": {
+        "decision": "Tratamento do art. 56.º revisto *",
+        "decisionPlaceholder": "Escolha após revisão do contabilista ou jurista",
+        "decisionInclude": "Incluir na folha final",
+        "decisionExclude": "Excluir da folha final",
+        "reviewWarning": "O texto da lei e a prática comum podem apontar para resultados diferentes. O Xefe não escolhe por si.",
+        "reviewNote": "Nota de revisão *",
+        "reviewNotePlaceholder": "Revisor, data e fundamento da decisão",
+        "reviewAcknowledgement": "Confirmo que um contabilista ou revisor jurídico verificou este tratamento.",
         "deathHeirsNote": "Trabalhador falecido (art. 47.º(1)(b)): este pagamento é devido à herança/aos herdeiros — confirme os beneficiários com o seu contabilista.",
         "title": "Compensação de serviço do Artigo 56.º",
         "description": "Um mês de salário por cada período completo de cinco anos de serviço.",
@@ -3103,6 +3195,9 @@ const messages = {
         "submit": "Submeter Pedido"
       },
       "dialog": {
+        "studyLeaveHint": "Ausência paga apenas para provas de avaliação — os trabalhadores-estudantes mantêm a remuneração nos dias de avaliação (Lei do Trabalho, art. 76.º(3)). O empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)).",
+        "miscarriageInssHint": "Após uma interrupção da gravidez, a trabalhadora tem direito a uma licença de 4 semanas (Lei do Trabalho, art. 59.º(4)). Por defeito, não é paga pelo empregador: a trabalhadora pede o subsídio parental diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença) quando tem 6 meses de contribuições nos últimos 12 (DL n.º 18/2017).",
+        "breastfeedingNote": "Depois de regressar, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora até o bebé completar 6 meses (art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte.",
         "maternityInssHint": "A trabalhadora pede o subsídio de maternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, mensalmente, até 90 dias, quando a trabalhadora tem 6 meses de contribuições nos últimos 12 (DL 18/2017). A licença em si é de, no mínimo, 12 semanas, das quais pelo menos 10 após o parto.",
         "paternityInssHint": "O trabalhador pede o subsídio de paternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, num pagamento único, pelos 5 dias úteis, quando o trabalhador tem 6 meses de contribuições nos últimos 12 (DL 18/2017).",
         "parentalInssFallbackHint": "Se o trabalhador não cumprir a condição de contribuições, o INSS não paga nada — se o empregador tem de pagar em substituição é juridicamente incerto; confirme com o seu contabilista.",
@@ -3183,6 +3278,7 @@ const messages = {
         "cancelled": "Cancelado"
       },
       "leaveTypes": {
+        "miscarriage": "Licença por Interrupção da Gravidez",
         "annual": "Férias Anuais",
         "sick": "Licença por Doença",
         "maternity": "Licença de Maternidade",
@@ -4282,6 +4378,7 @@ const messages = {
       "subtitle": "Gerar e acompanhar as submissões mensais de contribuições do INSS.",
       "due": {
         "arrearsNotice": "O pagamento em atraso vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
+        "arrearsEstimate": "Estimativa até agora para {{period}}: US$ {{amount}} ({{months}} × 1%).",
         "overdueTitle": "{{task}} em atraso",
         "overdueDescription": "{{task}} de {{period}} devia ser entregue em {{dueDate}}.",
         "upcomingTitle": "{{task}} com prazo próximo",
@@ -4350,6 +4447,10 @@ const messages = {
         "draft": "Rascunho"
       },
       "markFiled": {
+        "paymentDate": "Data de Pagamento",
+        "paymentAccount": "Conta de Pagamento",
+        "selectPaymentAccount": "Selecionar conta",
+        "cashOnHand": "Numerário em caixa",
         "title": "Marcar {{task}} como entregue",
         "description": "Registar os detalhes da submissão de {{task}} para esta declaração do INSS.",
         "submissionMethod": "Método de Submissão",
@@ -4642,6 +4743,10 @@ const messages = {
         "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
       },
       "markFiled": {
+        "paymentDate": "Data de Pagamento",
+        "paymentAccount": "Conta de Pagamento",
+        "selectPaymentAccount": "Selecionar conta",
+        "cashOnHand": "Numerário em caixa",
         "title": "Marcar Declaração como Entregue",
         "description": "Registar os detalhes da submissão desta declaração de IRT.",
         "submissionMethod": "Método de Submissão",
@@ -5351,7 +5456,10 @@ const messages = {
       "sourceExpense": "Despesa",
       "sourceRevenue": "Receita",
       "sourceReceipt": "Recibo",
-      "sourcePayment": "Pagamento"
+      "sourcePayment": "Pagamento",
+      "sourcePayrollPayment": "Pagamento da folha",
+      "sourceTaxPayment": "Pagamento de imposto / INSS",
+      "sourceFixedAssetAcquisition": "Aquisição de ativo fixo"
     },
     "fixedAssets": {
       "title": "Ativos Fixos",
@@ -5396,6 +5504,20 @@ const messages = {
       "disposePreviewLoss": "Valor líquido {{nbv}} — esta venda regista uma perda de {{amount}}.",
       "fieldName": "Nome do ativo",
       "fieldReference": "Referência / série",
+      "fieldAcquisitionOrigin": "Como entrou este ativo na contabilidade?",
+      "acquisitionOriginPlaceholder": "Selecione uma opção",
+      "acquisitionOrigins": {
+        "bill": "Já lançado através de uma fatura",
+        "opening": "Saldo de abertura",
+        "postNow": "Lançar a aquisição agora"
+      },
+      "acquisitionOriginHelp": {
+        "already_posted_via_bill": "Apenas registar. A fatura do fornecedor já lançou o custo do ativo.",
+        "opening_balance": "Apenas registar. O ativo já está incluído nos saldos de abertura.",
+        "post_now": "O Xefe debitará a conta do ativo e creditará a conta de financiamento uma única vez."
+      },
+      "fieldFundingAccount": "Pago por / devido a",
+      "fundingAccountPlaceholder": "Selecione caixa, banco, conta a pagar ou capital",
       "fieldAcquired": "Data de aquisição",
       "fieldCost": "Custo (USD)",
       "fieldResidual": "Valor residual",
@@ -6889,6 +7011,7 @@ const messages = {
     "payDateUseDate": "Usar {date}",
     "warningOTCapArt27": "excedeu o limite de horas extraordinárias do art. 27.º(4) (4h/dia / 16h/semana) neste período — só permitido em caso de força maior (art. 27.º(5))",
     "warningRestDayCapArt27": "trabalhou mais de 8h num dia de descanso ou feriado — o art. 27.º(3) limita esse trabalho a 8 horas",
+    "warningArt86Headcount": "o desconto de INSS do art. 86.º exige {{max}} trabalhadores ou menos — este processamento tem {{count}}; o direito ao desconto cessa enquanto exceder {{max}}",
     "title": "Processar Folha",
     "freePlanNotice": "Está no plano gratuito. Prepare e reveja a folha à vontade — finalizar exige uma subscrição.",
     "freePlanNoticeCta": "Ver plano",
@@ -7282,6 +7405,7 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "completePostsPayment": "Isto marca a folha de pagamento como paga, atualiza os saldos das deduções e lança o pagamento bancário na contabilidade.",
     "alsoMarkRunPaid": "Marcar também a folha de pagamento como paga (atualiza os saldos de adiantamentos e deduções recorrentes)",
     "markCompleted": "Marcar como concluída",
     "markCompletedDesc": "Confirme que o seu banco executou este lote de salários. Isto apenas atualiza o registo no Xefe — não contacta o banco.",
@@ -7369,6 +7493,9 @@ const messages = {
     "toastValidationDesc": "Por favor preencha todos os campos obrigatórios.",
     "toastTransferSuccess": "Sucesso",
     "toastTransferSuccessDesc": "Transferência bancária {{reference}} iniciada com sucesso.",
+    "toastTransferRecordedDesc": "A transferência {{reference}} foi registada como pendente. Envie o ficheiro ou pacote ao banco e depois marque-a como concluída aqui.",
+    "toastMarkedCompleted": "A transferência {{reference}} foi concluída e o pagamento da folha foi lançado.",
+    "toastMarkedFailed": "A transferência {{reference}} foi marcada como falhada.",
     "toastTransferError": "Falha ao iniciar transferência. Por favor tente novamente.",
     "toastNoData": "Sem Dados",
     "toastNoDataDesc": "Sem transferências para exportar.",
@@ -7390,6 +7517,7 @@ const messages = {
     "inssArrearsMonth": "mês",
     "inssArrearsMonths": "meses",
     "inssArrearsNotice": "O pagamento em atraso à Segurança Social vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
+    "inssArrearsEstimate": "Estimativa até agora para {{period}}: US$ {{amount}} ({{months}} mês/meses).",
     "title": "Impostos e INSS da Folha",
     "subtitle": "Centro de conformidade de Timor-Leste para IRT (ATTL) e declarações mensais de INSS.",
     "actionRequired": "Ação necessária",
@@ -7411,7 +7539,26 @@ const messages = {
     "openWitFiling": "Abrir Declaração IRT",
     "inssTitle": "Declaração Mensal de INSS",
     "inssDesc": "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
-    "openInssFiling": "Abrir Declaração INSS"
+    "openInssFiling": "Abrir Declaração INSS",
+    "formC": {
+      "title": "Imposto anual sobre o rendimento empresarial (Formulário C)",
+      "savedTitle": "Preparação guardada",
+      "savedDescription": "A lista de preparação do imposto anual foi atualizada.",
+      "saveError": "Não foi possível guardar a lista de preparação.",
+      "reviewProgress": "Rever preparação",
+      "startPreparation": "Iniciar preparação",
+      "dialogTitle": "Preparar o imposto anual de {{year}}",
+      "dialogDescription": "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
+      "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o Formulário C oficial; use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+      "checklist": {
+        "profitAndLoss": "Demonstração de resultados revista",
+        "balanceSheet": "Balanço revisto",
+        "cashFlow": "Demonstração de fluxos de caixa revista",
+        "taxAdjustments": "Ajustamentos fiscais revistos"
+      },
+      "reviewNote": "Nota de revisão",
+      "reviewNotePlaceholder": "Revisor, pontos em aberto e próxima ação"
+    }
   },
   "guidance": {
     "hideGuidance": "Ocultar orientação",
@@ -7655,6 +7802,9 @@ const messages = {
       "filings": {
         "monthlyWit": "WIT {{period}}",
         "annualWit": "WIT anual {{period}}",
+        "annualIncomeTax": "Imposto anual sobre o rendimento {{period}}",
+        "servicesTax": "Imposto sobre serviços {{period}}",
+        "installmentTax": "Prestação do imposto sobre o rendimento {{period}}",
         "inssPayment": "Pagamento de INSS {{period}}",
         "inssStatement": "Declaração de INSS {{period}}",
         "overdue": "{{days}}d em atraso",

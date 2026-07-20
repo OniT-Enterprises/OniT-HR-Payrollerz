@@ -6,6 +6,7 @@ export type {
   CompanyStructure,
   PaymentStructure,
   TimeOffPolicies,
+  LeaveTypeConfig,
   PayrollConfig,
   BusinessSector,
   PaymentMethod,

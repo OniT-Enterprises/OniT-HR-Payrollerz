@@ -29,10 +29,16 @@ export type LeaveType =
   | "sick"
   | "maternity"
   | "paternity"
+  // Lei 4/2012 Art. 59(4): "Em caso de interrupção da gravidez a trabalhadora
+  // tem direito a uma licença com a duração de 4 semanas" (≈20 working days).
+  | "miscarriage"
   // Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days/year covering
   // marriage, family death, and community/religious events.
   | "special"
   | "unpaid"
+  // Student-worker exam leave — Lei 4/2012 Art. 76(3): "sem perda da
+  // remuneração ou de quaisquer direitos, para realização de provas de
+  // avaliação".
   | "study"
   | "custom"
   // Legacy render-only: bereavement/marriage no longer exist as requestable
@@ -193,6 +199,24 @@ export const TL_LEAVE_TYPES = [
       "Unpaid by the employer: INSS pays the worker a subsidy of 100% of the reference wage directly (DL 18/2017) when they have 6 months of contributions in the last 12.",
   },
   {
+    // Lei 4/2012 Art. 59(4): "Em caso de interrupção da gravidez a
+    // trabalhadora tem direito a uma licença com a duração de 4 semanas" —
+    // 4 calendar weeks ≈ 20 working days, consistent with the working-day
+    // balance math. Employer-UNPAID by default: same DL 18/2017 INSS
+    // parentalidade regime as maternity (Art. 21(3) voids the subsidy for
+    // days the worker receives salary). Clinical-risk PRE-birth leave
+    // (Art. 59(3), duration per medical prescription) also exists — it has
+    // no fixed entitlement, so record it as sick leave with a certificate.
+    id: "miscarriage",
+    name: "Miscarriage Leave (Interrupção da Gravidez)",
+    daysPerYear: 20, // Art. 59(4): 4 weeks
+    isPaid: false,
+    requiresCertificate: true,
+    certificateType: "Medical Certificate",
+    description:
+      "4 weeks after a pregnancy interruption (Labour Law Art. 59.4). Unpaid by the employer: the worker claims the INSS parental subsidy directly (DL 18/2017) when they have 6 months of contributions in the last 12.",
+  },
+  {
     // Lei 4/2012 Art. 33(3): ONE pooled allotment of 3 paid days per calendar
     // year covering marriage, family death, and community/religious events.
     // Replaces the former separate bereavement/marriage types (which do not
@@ -211,6 +235,20 @@ export const TL_LEAVE_TYPES = [
     daysPerYear: 30,
     isPaid: false,
     requiresCertificate: false,
+  },
+  {
+    // Student-worker exam leave — Lei 4/2012 Art. 76(3): the worker-student
+    // may be absent "sem perda da remuneração ou de quaisquer direitos, para
+    // realização de provas de avaliação" (exams only). Art. 76(5): the worker
+    // "deve fazer prova da sua condição de estudante" — proof may be
+    // requested, but no fixed certificate is mandated per absence.
+    id: "study",
+    name: "Study Leave (Trabalhador-Estudante, Art. 76.3)",
+    daysPerYear: 3,
+    isPaid: true,
+    requiresCertificate: false,
+    description:
+      "Paid absence for exams (Labour Law Art. 76.3, worker-students only). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
   },
 ];
 

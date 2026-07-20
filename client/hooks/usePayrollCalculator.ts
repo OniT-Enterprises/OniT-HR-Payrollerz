@@ -907,8 +907,10 @@ export function usePayrollCalculator({
                 timeOffPolicies.sickLeave,
                 timeOffPolicies.maternityLeave,
                 timeOffPolicies.paternityLeave,
+                timeOffPolicies.miscarriageLeave,
                 timeOffPolicies.specialLeave,
                 timeOffPolicies.unpaidLeave,
+                timeOffPolicies.studyLeave,
                 ...(timeOffPolicies.customLeaveTypes ?? []),
               ]
             : [];

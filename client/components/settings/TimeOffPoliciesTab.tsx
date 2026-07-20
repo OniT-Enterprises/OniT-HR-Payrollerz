@@ -10,6 +10,9 @@ import {
   Save,
   Loader2,
   Trash2,
+  Heart,
+  GraduationCap,
+  Plus,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +36,11 @@ import { settingsService } from "@/services/settingsService";
 import { holidayService, type HolidayOverride } from "@/services/holidayService";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 
-import type { SettingsTabProps, TimeOffPolicies } from "./types";
+import type {
+  LeaveTypeConfig,
+  SettingsTabProps,
+  TimeOffPolicies,
+} from "./types";
 import {
   holidayOverrideFormSchema,
   type HolidayOverrideFormData,
@@ -55,8 +62,10 @@ function isValidTimeOffPolicies(policies: TimeOffPolicies): boolean {
     policies.sickLeave,
     policies.maternityLeave,
     policies.paternityLeave,
+    policies.miscarriageLeave,
     policies.specialLeave,
     policies.unpaidLeave,
+    policies.studyLeave,
     ...policies.customLeaveTypes,
   ];
 
@@ -94,6 +103,78 @@ export function TimeOffPoliciesTab({
   useEffect(() => {
     setTimeOffPolicies(initialTimeOff);
   }, [initialTimeOff]);
+
+  // ── Custom leave types ────────────────────────────────────────────
+  // Ids the server treats as built-in (functions createLeaveRequest whitelist
+  // + legacy render-only types) — a custom type must not shadow them.
+  const RESERVED_LEAVE_TYPE_IDS = new Set([
+    "annual",
+    "sick",
+    "maternity",
+    "paternity",
+    "miscarriage",
+    "special",
+    "unpaid",
+    "study",
+    "custom",
+    "bereavement",
+    "marriage",
+  ]);
+  const emptyCustomType = {
+    name: "",
+    code: "",
+    daysPerYear: 0,
+    paidPercentage: 100,
+    requiresCertificate: false,
+  };
+  const [newCustomType, setNewCustomType] = useState(emptyCustomType);
+  // Same id charset the server enforces (createLeaveRequest rejects anything
+  // outside /^[a-zA-Z0-9_-]+$/).
+  const customTypeId = newCustomType.code
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "");
+  const customIdTaken =
+    RESERVED_LEAVE_TYPE_IDS.has(customTypeId) ||
+    timeOffPolicies.customLeaveTypes.some((ct) => ct.id === customTypeId);
+  const canAddCustomType =
+    newCustomType.name.trim().length > 0 &&
+    customTypeId.length > 0 &&
+    !customIdTaken &&
+    isInRange(newCustomType.daysPerYear, 0, 366) &&
+    isInRange(newCustomType.paidPercentage, 0, 100);
+
+  const addCustomType = () => {
+    if (!canAddCustomType) return;
+    const custom: LeaveTypeConfig = {
+      id: customTypeId,
+      name: newCustomType.name.trim(),
+      code: newCustomType.code.trim().toUpperCase(),
+      daysPerYear: newCustomType.daysPerYear,
+      isPaid: newCustomType.paidPercentage > 0,
+      paidPercentage: newCustomType.paidPercentage,
+      requiresCertificate: newCustomType.requiresCertificate,
+      carryOverAllowed: false,
+      isActive: true,
+    };
+    setTimeOffPolicies({
+      ...timeOffPolicies,
+      customLeaveTypes: [...timeOffPolicies.customLeaveTypes, custom],
+    });
+    setNewCustomType(emptyCustomType);
+  };
+
+  const updateCustomType = (
+    index: number,
+    patch: Partial<LeaveTypeConfig>,
+  ) => {
+    setTimeOffPolicies({
+      ...timeOffPolicies,
+      customLeaveTypes: timeOffPolicies.customLeaveTypes.map((ct, i) =>
+        i === index ? { ...ct, ...patch } : ct,
+      ),
+    });
+  };
 
   // Holiday overrides (tenant-scoped)
   const [holidayYear, setHolidayYear] = useState<number>(
@@ -541,6 +622,15 @@ export function TimeOffPoliciesTab({
             <p className="text-xs text-muted-foreground">
               {t("settings.timeOff.maternityHint")}
             </p>
+            {/* Art. 62: breastfeeding dispensations ("dois períodos diários,
+                com a duração de uma hora cada", until the child is 6 months,
+                "sem perda de remuneração") and prenatal exam absences are paid
+                WORKED time, not day-based leave — deliberately note-only, see
+                docs/TIME_LEAVE.md. */}
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.breastfeedingNote") ||
+                "After returning from maternity leave, the worker is entitled to two 1-hour paid breastfeeding breaks per day until the child is 6 months old, and a pregnant worker's medical exam absences are also paid (Labour Law Art. 62) — record these in attendance as worked time, do not dock them. There is nothing to configure here."}
+            </p>
           </div>
 
           {/* Paternity Leave */}
@@ -620,6 +710,89 @@ export function TimeOffPoliciesTab({
             </p>
           </div>
 
+          {/* Miscarriage Leave — Lei 4/2012 Art. 59(4): "Em caso de
+              interrupção da gravidez a trabalhadora tem direito a uma licença
+              com a duração de 4 semanas" (default 20 working days). Same
+              DL 18/2017 INSS-subsidy regime as maternity: employer-unpaid by
+              default, and Art. 21(3) voids the subsidy for paid days. */}
+          <div className="p-4 border rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-rose-500" />
+                <span className="font-medium">
+                  {t("settings.timeOff.miscarriageLeave") ||
+                    "Miscarriage Leave (Art. 59.4)"}
+                </span>
+              </div>
+              <Badge variant="secondary">
+                {timeOffPolicies.miscarriageLeave.daysPerYear}{" "}
+                {t("settings.timeOff.days")}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.daysPerYear")}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={timeOffPolicies.miscarriageLeave.daysPerYear}
+                  onChange={(e) =>
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      miscarriageLeave: {
+                        ...timeOffPolicies.miscarriageLeave,
+                        daysPerYear: parseInt(e.target.value, 10) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.paidPercentage")}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={timeOffPolicies.miscarriageLeave.paidPercentage}
+                    onChange={(e) => {
+                      // Keep isPaid in sync with the deliberate employer-paid
+                      // choice (see maternity above).
+                      const paidPercentage = parseInt(e.target.value, 10) || 0;
+                      setTimeOffPolicies({
+                        ...timeOffPolicies,
+                        miscarriageLeave: {
+                          ...timeOffPolicies.miscarriageLeave,
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
+                        },
+                      });
+                    }}
+                  />
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.parentalInssExplainer") ||
+                "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave."}
+            </p>
+            {timeOffPolicies.miscarriageLeave.isPaid &&
+              timeOffPolicies.miscarriageLeave.paidPercentage > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    {t("settings.timeOff.parentalPaidWarning") ||
+                      "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy."}
+                  </p>
+                </div>
+              )}
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.miscarriageLeaveHint") ||
+                "4 weeks after a pregnancy interruption (Labour Law Art. 59.4), as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate."}
+            </p>
+          </div>
+
           {/* Special Leave — Lei 4/2012 Art. 33(3) pooled justified absence */}
           <div className="p-4 border rounded-lg space-y-4">
             <div className="flex items-center justify-between">
@@ -679,6 +852,285 @@ export function TimeOffPoliciesTab({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Study Leave — Lei 4/2012 Art. 76(3): the worker-student may be
+              absent "sem perda da remuneração ou de quaisquer direitos, para
+              realização de provas de avaliação" — PAID, exams only. */}
+          <div className="p-4 border rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-violet-500" />
+                <span className="font-medium">
+                  {t("settings.timeOff.studyLeave") ||
+                    "Study Leave (Art. 76.3)"}
+                </span>
+              </div>
+              <Badge variant="secondary">
+                {timeOffPolicies.studyLeave.daysPerYear}{" "}
+                {t("settings.timeOff.days")}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t("settings.timeOff.studyLeaveHint") ||
+                "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment."}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.daysPerYear")}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={timeOffPolicies.studyLeave.daysPerYear}
+                  onChange={(e) =>
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      studyLeave: {
+                        ...timeOffPolicies.studyLeave,
+                        daysPerYear: parseInt(e.target.value, 10) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.paidPercentage")}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={timeOffPolicies.studyLeave.paidPercentage}
+                    onChange={(e) =>
+                      setTimeOffPolicies({
+                        ...timeOffPolicies,
+                        studyLeave: {
+                          ...timeOffPolicies.studyLeave,
+                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Custom leave types — tenant-defined, stored in
+            timeOffPolicies.customLeaveTypes. The server (createLeaveRequest,
+            entitlementsFromConfig, leavePayFraction) already honors them by id. */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium">
+              {t("settings.timeOff.customTypes.title") || "Custom leave types"}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {t("settings.timeOff.customTypes.hint") ||
+                "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones."}
+            </p>
+          </div>
+
+          {timeOffPolicies.customLeaveTypes.map((custom, index) => (
+            <div
+              key={custom.id}
+              className="p-4 border rounded-lg space-y-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Calendar className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  <span className="font-medium truncate">{custom.name}</span>
+                  <Badge variant="outline" className="font-mono">
+                    {custom.id}
+                  </Badge>
+                  {!custom.isActive && (
+                    <Badge variant="secondary">
+                      {t("settings.timeOff.customTypes.inactive") ||
+                        "Inactive"}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch
+                    checked={custom.isActive}
+                    onCheckedChange={(checked) =>
+                      updateCustomType(index, { isActive: checked })
+                    }
+                  />
+                  <Label>
+                    {t("settings.timeOff.customTypes.active") || "Active"}
+                  </Label>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>
+                    {t("settings.timeOff.customTypes.name") || "Name"}
+                  </Label>
+                  <Input
+                    value={custom.name}
+                    onChange={(e) =>
+                      updateCustomType(index, { name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("settings.timeOff.daysPerYear")}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={custom.daysPerYear}
+                    onChange={(e) =>
+                      updateCustomType(index, {
+                        daysPerYear: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("settings.timeOff.paidPercentage")}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={custom.paidPercentage}
+                      onChange={(e) => {
+                        // isPaid stays in sync — the payroll engines pay a
+                        // policy only when isPaid === true.
+                        const paidPercentage =
+                          parseInt(e.target.value, 10) || 0;
+                        updateCustomType(index, {
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
+                        });
+                      }}
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={custom.requiresCertificate}
+                  onCheckedChange={(checked) =>
+                    updateCustomType(index, { requiresCertificate: checked })
+                  }
+                />
+                <Label>
+                  {t("settings.timeOff.customTypes.requiresCertificate") ||
+                    "Requires supporting document"}
+                </Label>
+              </div>
+            </div>
+          ))}
+
+          {/* Add form */}
+          <div className="p-4 border rounded-lg space-y-4">
+            <h4 className="font-medium">
+              {t("settings.timeOff.customTypes.addTitle") ||
+                "Add custom leave type"}
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  {t("settings.timeOff.customTypes.name") || "Name"}
+                </Label>
+                <Input
+                  value={newCustomType.name}
+                  onChange={(e) =>
+                    setNewCustomType({ ...newCustomType, name: e.target.value })
+                  }
+                  placeholder={
+                    t("settings.timeOff.customTypes.namePlaceholder") ||
+                    "e.g. Volunteer day"
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  {t("settings.timeOff.customTypes.code") || "Code"}
+                </Label>
+                <Input
+                  value={newCustomType.code}
+                  onChange={(e) =>
+                    setNewCustomType({ ...newCustomType, code: e.target.value })
+                  }
+                  placeholder="VOL"
+                />
+                {newCustomType.code.trim().length > 0 && customIdTaken && (
+                  <p className="text-sm text-destructive">
+                    {t("settings.timeOff.customTypes.codeTaken") ||
+                      "This code is already used by another leave type."}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.daysPerYear")}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={newCustomType.daysPerYear}
+                  onChange={(e) =>
+                    setNewCustomType({
+                      ...newCustomType,
+                      daysPerYear: parseInt(e.target.value, 10) || 0,
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.paidPercentage")}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={newCustomType.paidPercentage}
+                    onChange={(e) =>
+                      setNewCustomType({
+                        ...newCustomType,
+                        paidPercentage: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                  />
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={newCustomType.requiresCertificate}
+                  onCheckedChange={(checked) =>
+                    setNewCustomType({
+                      ...newCustomType,
+                      requiresCertificate: checked,
+                    })
+                  }
+                />
+                <Label>
+                  {t("settings.timeOff.customTypes.requiresCertificate") ||
+                    "Requires supporting document"}
+                </Label>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addCustomType}
+                disabled={!canAddCustomType}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t("settings.timeOff.customTypes.add") || "Add type"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.customTypes.saveReminder") ||
+                "New and edited types are stored when you press Save below."}
+            </p>
           </div>
         </div>
 

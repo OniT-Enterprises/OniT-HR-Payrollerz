@@ -143,9 +143,13 @@ const translations: Record<string, Record<Language, string>> = {
   'leave.sick': { tet: 'Lisensa moras', en: 'Sick leave', pt: 'Licença por doença', id: 'Cuti sakit' },
   'leave.maternity': { tet: 'Lisensa maternidade', en: 'Maternity leave', pt: 'Licença de maternidade', id: 'Cuti melahirkan' },
   'leave.paternity': { tet: 'Lisensa paternidade', en: 'Paternity leave', pt: 'Licença de paternidade', id: 'Cuti ayah' },
+  // Lei 4/2012 Art. 59(4): 4-week license after a pregnancy interruption.
+  'leave.miscarriage': { tet: 'Lisensa interrupsaun gravidés', en: 'Miscarriage leave', pt: 'Licença por interrupção da gravidez', id: 'Cuti keguguran' },
   'leave.unpaid': { tet: 'Lisensa la ho pagamentu', en: 'Unpaid leave', pt: 'Licença sem vencimento', id: 'Cuti tanpa gaji' },
   // Pooled justified absence — Lei 4/2012 Art. 33(3): replaces bereavement/marriage as a requestable type.
   'leave.special': { tet: 'Lisensa Espesiál', en: 'Special leave', pt: 'Licença especial', id: 'Cuti khusus' },
+  // Worker-student exam leave — Lei 4/2012 Art. 76(3), paid.
+  'leave.study': { tet: 'Lisensa estudu', en: 'Study leave', pt: 'Licença de estudo', id: 'Cuti belajar' },
   // Legacy render-only labels: existing bereavement/marriage requests still display.
   'leave.bereavement': { tet: 'Lisensa luto', en: 'Bereavement leave', pt: 'Licença por luto', id: 'Cuti berkabung' },
   'leave.marriage': { tet: 'Lisensa kazamentu', en: 'Marriage leave', pt: 'Licença por casamento', id: 'Cuti menikah' },

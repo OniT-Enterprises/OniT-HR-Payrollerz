@@ -82,7 +82,48 @@ constraint so Firestore can prove the query is authorized.
 - Approval cancels overlapping non-cancelled shifts and recomputes affected
   weekly timesheets.
 
-### Maternity and paternity (INSS-funded, employer-unpaid by default)
+### Leave types
+
+Built-in types (defaults; per-tenant slots in `timeOffPolicies` may change the
+numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
+(client/services/leaveService.ts), `TL_DEFAULT_LEAVE_POLICIES`
+(client/types/settings.ts), `DEFAULT_ENTITLEMENTS` + `entitlementsFromConfig`
++ `leavePayFraction` (functions/src/timeleave.ts), `policyOptions` +
+`KNOWN_LEAVE_TYPES` (LeaveRequests.tsx), `LEAVE_TYPE_COLORS`
+(LeaveCalendar.tsx), the Ekipa picker (mobile/ekipa), and the Xefe API
+whitelist (server/xefe-api/index.js).
+
+| id | Policy slot | Statute | Default days/yr | Employer pay default | Notes |
+|---|---|---|---|---|---|
+| `annual` | `annualLeave` | Art. 32 | 12 working days | 100% | Carry-over configurable; probation-gated |
+| `sick` | `sickLeave` | Art. 34 | 12 | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate |
+| `maternity` | `maternityLeave` | Art. 59(1) | 84 (12 weeks, ≥10 after birth) | **Unpaid** — INSS parental subsidy (DL 18/2017) | See INSS section below |
+| `paternity` | `paternityLeave` | Art. 60 | 5 working days | **Unpaid** — INSS parental subsidy | See INSS section below |
+| `miscarriage` | `miscarriageLeave` | Art. 59(4): “licença com a duração de 4 semanas” | 20 working days (≈4 weeks) | **Unpaid** — same INSS regime as maternity | Medical certificate. Clinical-risk PRE-birth leave (Art. 59(3)) has no fixed length — record it as sick leave with a certificate |
+| `special` | `specialLeave` | Art. 33(3) | 3 | 100% | One pooled allotment: marriage + family death + community/religious events; proof per Art. 33(7) |
+| `unpaid` | `unpaidLeave` | — | 30 | 0% | |
+| `study` | `studyLeave` | Art. 76(3): “sem perda da remuneração … para realização de provas de avaliação” | 3 (Xefe default; the statute sets no cap) | 100% | Exams only, worker-students; proof of enrolment/exam schedule per Art. 76(5) |
+| (custom) | `customLeaveTypes[]` | — | tenant-set | tenant-set | Created in Settings → Time Off Policies; id charset `[a-zA-Z0-9_-]`, must not shadow built-ins; deactivate instead of delete |
+
+Legacy render-only ids `bereavement`/`marriage` still display but are not
+requestable (pooled into `special`).
+
+### Breastfeeding and prenatal exams (Art. 62) — deliberately note-only
+
+Art. 62 grants the returning mother **two 1-hour paid breaks per day until the
+child is 6 months old** (“dois períodos diários, com a duração de uma hora
+cada”, “sem perda de remuneração”) and grants pregnant workers paid absence
+for medical exams. These are hour-level dispensations inside a worked day —
+they do not fit the working-day leave model (a request would wrongly consume
+day-based balance and cancel shifts), and inventing a parallel hour-based
+leave workflow would contradict the one-hours-entry-screen rule. So Xefe
+implements them as guidance only: an informational note in the maternity
+policy editor and in the maternity request dialog telling the operator to
+record the time in Attendance as **worked time and never dock it**. No
+attendance code change is needed — attendance records whatever hours the
+operator enters; the note is what keeps the two hours from being deducted.
+
+### Maternity, paternity, and miscarriage (INSS-funded, employer-unpaid by default)
 
 - Since DL 18/2017 (June 2017) the INSS parental subsidy replaced the
   employer's Lei 4/2012 Art. 61 salary duty: a worker with 6 months of
@@ -96,6 +137,10 @@ constraint so Firestore can prove the query is authorized.
   maternity/paternity as 0 (unpaid). In payroll the leave days become unpaid
   absence (docked), matching real firm practice ($0 pay + "Dias de
   parentalidade" on the DR).
+- **Miscarriage leave (Art. 59(4), 4 weeks / 20 working days) follows the
+  same regime**: employer-unpaid by default, the worker claims the INSS
+  parental subsidy directly, and the Art. 21(3) voiding rule applies
+  identically if a tenant configures a paid percentage.
 - **Voiding rule** (DL 18/2017 Art. 21(3)): the subsidy is non-cumulable with
   salary — paying salary for license days voids the subsidy for those days. A
   tenant may still explicitly configure a paid percentage (deliberate

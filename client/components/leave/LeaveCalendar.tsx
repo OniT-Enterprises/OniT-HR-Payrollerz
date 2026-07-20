@@ -25,6 +25,8 @@ const LEAVE_TYPE_COLORS: Record<LeaveType | string, { bg: string; text: string; 
   sick: { bg: "bg-red-500/20", text: "text-red-700 dark:text-red-300", border: "border-red-500/40" },
   maternity: { bg: "bg-pink-500/20", text: "text-pink-700 dark:text-pink-300", border: "border-pink-500/40" },
   paternity: { bg: "bg-blue-500/20", text: "text-blue-700 dark:text-blue-300", border: "border-blue-500/40" },
+  // 4-week license after a pregnancy interruption (Lei 4/2012 Art. 59(4)).
+  miscarriage: { bg: "bg-fuchsia-500/20", text: "text-fuchsia-700 dark:text-fuchsia-300", border: "border-fuchsia-500/40" },
   // Pooled justified absence (Lei 4/2012 Art. 33(3)) — replaces bereavement/marriage.
   special: { bg: "bg-teal-500/20", text: "text-teal-700 dark:text-teal-300", border: "border-teal-500/40" },
   unpaid: { bg: "bg-orange-500/20", text: "text-orange-700 dark:text-orange-300", border: "border-orange-500/40" },
@@ -171,7 +173,9 @@ const LEGEND_ITEMS = [
   { type: "sick", label: "Sick" },
   { type: "maternity", label: "Maternity" },
   { type: "paternity", label: "Paternity" },
+  { type: "miscarriage", label: "Miscarriage" },
   { type: "special", label: "Special" },
+  { type: "study", label: "Study" },
   { type: "unpaid", label: "Unpaid" },
 ] as const;
 

@@ -87,8 +87,11 @@ const KNOWN_LEAVE_TYPES = new Set([
   "sick",
   "maternity",
   "paternity",
+  // Lei 4/2012 Art. 59(4): 4-week license after a pregnancy interruption.
+  "miscarriage",
   "special",
   "unpaid",
+  // Lei 4/2012 Art. 76(3): paid worker-student exam absence.
   "study",
   "custom",
   // Legacy render-only: no longer requestable (pooled into "special" per
@@ -103,8 +106,10 @@ function policyOptions(policies: TimeOffPolicies): LeaveTypeConfig[] {
     policies.sickLeave,
     policies.maternityLeave,
     policies.paternityLeave,
+    policies.miscarriageLeave,
     policies.specialLeave,
     policies.unpaidLeave,
+    policies.studyLeave,
     ...policies.customLeaveTypes,
   ].filter((policy) => policy.isActive);
 }
@@ -1070,8 +1075,18 @@ export default function LeaveRequests() {
                       "3 paid days per calendar year, pooled across marriage, family death, and community or religious events (Labour Law Art. 33.3). Need more days? Request them as annual or unpaid leave. The employer may ask for supporting proof."}
                   </p>
                 )}
+                {form.leaveType === "study" && (
+                  <p className="mt-1 text-muted-foreground">
+                    {t("timeLeave.leaveRequests.dialog.studyLeaveHint") ||
+                      "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5)."}
+                  </p>
+                )}
+                {/* Miscarriage (Art. 59(4), 4-week license) rides the same
+                    DL 18/2017 INSS parental-subsidy regime as maternity:
+                    employer-unpaid by default, worker claims INSS directly. */}
                 {(form.leaveType === "maternity" ||
-                  form.leaveType === "paternity") && (
+                  form.leaveType === "paternity" ||
+                  form.leaveType === "miscarriage") && (
                   <>
                     <p className="mt-1 text-muted-foreground">
                       {form.leaveType === "maternity"
@@ -1079,10 +1094,15 @@ export default function LeaveRequests() {
                             "timeLeave.leaveRequests.dialog.maternityInssHint",
                           ) ||
                           "The worker claims the maternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage monthly, for up to 90 days, when the worker has 6 months of contributions in the last 12 (DL 18/2017). The leave itself is a minimum of 12 weeks, at least 10 of them after the birth."
-                        : t(
-                            "timeLeave.leaveRequests.dialog.paternityInssHint",
-                          ) ||
-                          "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017)."}
+                        : form.leaveType === "miscarriage"
+                          ? t(
+                              "timeLeave.leaveRequests.dialog.miscarriageInssHint",
+                            ) ||
+                            "After a pregnancy interruption the worker is entitled to a 4-week license (Labour Law Art. 59.4). It is unpaid by the employer by default: the worker claims the INSS parental subsidy directly (within 6 months of the first day of the leave) when they have 6 months of contributions in the last 12 (DL 18/2017)."
+                          : t(
+                              "timeLeave.leaveRequests.dialog.paternityInssHint",
+                            ) ||
+                            "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017)."}
                     </p>
                     <p className="mt-1 text-amber-700 dark:text-amber-300">
                       {t(
@@ -1090,6 +1110,17 @@ export default function LeaveRequests() {
                       ) ||
                         "If the worker does not meet the contribution condition, INSS pays nothing — whether the employer must pay instead is legally unsettled; confirm with your accountant."}
                     </p>
+                    {/* Art. 62(2)-(3): breastfeeding dispensations are paid
+                        WORKED time, not day-based leave — note-only on purpose
+                        (see docs/TIME_LEAVE.md). */}
+                    {form.leaveType === "maternity" && (
+                      <p className="mt-1 text-muted-foreground">
+                        {t(
+                          "timeLeave.leaveRequests.dialog.breastfeedingNote",
+                        ) ||
+                          "After returning, the worker is entitled to two 1-hour paid breaks per day until the child is 6 months old (Art. 62) — record these in attendance as worked time, do not dock them."}
+                      </p>
+                    )}
                   </>
                 )}
               </div>

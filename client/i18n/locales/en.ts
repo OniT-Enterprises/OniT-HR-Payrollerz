@@ -1785,6 +1785,50 @@ const messages = {
   "settings": {
     "headerTitle": "Company Settings",
     "headerSubtitle": "Configure your company, payroll, and HR policies",
+    "access": {
+      "title": "Team access",
+      "description": "Invite people and control which parts of Xefe they can use.",
+      "invite": "Invite person",
+      "roles": {
+        "owner": "Owner",
+        "hr-admin": "HR administrator",
+        "accountant": "Accountant",
+        "manager": "Manager",
+        "viewer": "Viewer"
+      },
+      "modules": {
+        "hiring": "Hiring",
+        "staff": "People",
+        "timeleave": "Time & leave",
+        "performance": "Performance",
+        "payroll": "Payroll",
+        "money": "Money",
+        "accounting": "Accounting",
+        "reports": "Reports"
+      },
+      "actionFailed": "Could not update team access.",
+      "invitedTitle": "Invitation sent",
+      "invitedDescription": "The person can use the invitation email to join this company.",
+      "updatedTitle": "Access updated",
+      "resetSentTitle": "Password reset sent",
+      "removedTitle": "Access removed",
+      "loadFailed": "Could not load team members.",
+      "empty": "No team members found.",
+      "unnamed": "Unnamed member",
+      "you": "You",
+      "noModules": "No access areas",
+      "resetPassword": "Reset password",
+      "inviteTitle": "Invite someone",
+      "inviteDescription": "Choose a role now. You can fine-tune access after they join.",
+      "email": "Email address",
+      "role": "Role",
+      "standardAccessHint": "The role starts with standard access for that job.",
+      "sendInvite": "Send invitation",
+      "editTitle": "Edit team access",
+      "accessAreas": "Access areas",
+      "removeTitle": "Remove this person's access?",
+      "removeDescription": "{{email}} will no longer be able to open this company in Xefe."
+    },
     "advancedTax": {
       "title": "Advanced tax mode",
       "description": "Show accountant-grade tax controls — supplier withholding, treaty rates, and tax filing forms — to everyone who manages this company. Leave this off unless your accountant asked for it; Xefe applies safe defaults either way.",
@@ -1820,6 +1864,8 @@ const messages = {
       },
       "tinNumber": "SERVE / NIF (TIN) *",
       "tinPlaceholder": "Unique Company Number / Tax ID",
+      "employerNiss": "Employer NISS",
+      "employerNissPlaceholder": "INSS employer registration number",
       "addressTitle": "Address",
       "registeredAddress": "Registered Address *",
       "registeredAddressPlaceholder": "Street address, building name, etc.",
@@ -1870,6 +1916,9 @@ const messages = {
       "save": "Save Structure"
     },
     "payment": {
+      "ledgerAccount": "Ledger account",
+      "ledgerOperatingBank": "Cash in Bank — Operating (1120)",
+      "ledgerPayrollBank": "Cash in Bank — Payroll (1130)",
       "title": "Payment Structure",
       "description": "Configure payment methods, bank accounts, and payroll periods",
       "methods": "Payment Methods",
@@ -1908,6 +1957,25 @@ const messages = {
       "save": "Save Payment Structure"
     },
     "timeOff": {
+      "customTypes": {
+        "title": "Custom leave types",
+        "hint": "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones.",
+        "active": "Active",
+        "inactive": "Inactive",
+        "name": "Name",
+        "namePlaceholder": "e.g. Volunteer day",
+        "code": "Code",
+        "codeTaken": "This code is already used by another leave type.",
+        "requiresCertificate": "Requires supporting document",
+        "add": "Add type",
+        "addTitle": "Add custom leave type",
+        "saveReminder": "New and edited types are stored when you press Save below.",
+      },
+      "breastfeedingNote": "After returning from maternity leave, the worker is entitled to two 1-hour paid breastfeeding breaks per day until the child is 6 months old, and a pregnant worker's medical exam absences are also paid (Labour Law Art. 62) — record these in attendance as worked time, do not dock them. There is nothing to configure here.",
+      "miscarriageLeave": "Miscarriage Leave (Art. 59.4)",
+      "miscarriageLeaveHint": "4 weeks after a pregnancy interruption (Labour Law Art. 59.4), as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate.",
+      "studyLeave": "Study Leave (Art. 76.3)",
+      "studyLeaveHint": "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment.",
       "parentalInssExplainer": "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave.",
       "parentalPaidWarning": "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy.",
       "title": "Time Off Policies",
@@ -2371,6 +2439,17 @@ const messages = {
         "contractor": "Contractor",
         "shareholder": "Shareholder"
       },
+      "partTimeWageHelp": "For part-time staff, record the contracted hours and the wage treatment agreed after review. Payroll will not assume the full-time floor.",
+      "contractedWeeklyHours": "Contracted hours per week *",
+      "minimumWageTreatment": "Minimum-wage treatment *",
+      "minimumWageTreatmentPlaceholder": "Choose treatment",
+      "minimumWageTreatments": {
+        "proRata": "Pro-rata by weekly hours",
+        "fullFloor": "Apply full monthly floor",
+        "reviewedException": "Reviewed exception"
+      },
+      "minimumWageReviewNote": "Review note *",
+      "minimumWageReviewNotePlaceholder": "Who reviewed it and why this treatment applies",
       "sefopeTitle": "SEFOPE Registration (Labor Ministry)",
       "sefopeTooltip": "Required for all TL employees",
       "sefopeNumber": "SEFOPE Number",
@@ -2445,6 +2524,10 @@ const messages = {
           "label": "INSS Number",
           "description": "Social Security number"
         },
+        "taxIdentificationNumber": {
+          "label": "Worker NIF / TIN",
+          "description": "Individual tax number, if issued"
+        },
         "electoralCard": {
           "label": "Electoral Card",
           "description": "Kartaun Eleitoral"
@@ -2462,6 +2545,7 @@ const messages = {
       },
       "required": "Required",
       "numberPlaceholder": "Enter number",
+      "tinPlaceholder": "Enter individual NIF / TIN",
       "nationality": "Nationality",
       "nationalityOther": "Other",
       "visaTitle": "Working Visa",
@@ -2931,6 +3015,14 @@ const messages = {
         }
       },
       "finalPay": {
+        "decision": "Reviewed Art. 56 treatment *",
+        "decisionPlaceholder": "Choose after accountant/legal review",
+        "decisionInclude": "Include in final payroll",
+        "decisionExclude": "Exclude from final payroll",
+        "reviewWarning": "The statutory text and common practice can point to different outcomes. Xefe will not choose for you.",
+        "reviewNote": "Review note *",
+        "reviewNotePlaceholder": "Reviewer, date, and basis for the decision",
+        "reviewAcknowledgement": "I confirm that an accountant or legal reviewer checked this treatment.",
         "deathHeirsNote": "Worker deceased (Art. 47(1)(b)): this payment is payable to the estate/heirs — confirm beneficiaries with your accountant.",
         "title": "Article 56 service compensation",
         "description": "One monthly salary for each completed five-year period of service.",
@@ -3103,6 +3195,9 @@ const messages = {
         "submit": "Submit Request"
       },
       "dialog": {
+        "studyLeaveHint": "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
+        "miscarriageInssHint": "After a pregnancy interruption the worker is entitled to a 4-week license (Labour Law Art. 59.4). It is unpaid by the employer by default: the worker claims the INSS parental subsidy directly (within 6 months of the first day of the leave) when they have 6 months of contributions in the last 12 (DL 18/2017).",
+        "breastfeedingNote": "After returning, the worker is entitled to two 1-hour paid breaks per day until the child is 6 months old (Art. 62) — record these in attendance as worked time, do not dock them.",
         "maternityInssHint": "The worker claims the maternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage monthly, for up to 90 days, when the worker has 6 months of contributions in the last 12 (DL 18/2017). The leave itself is a minimum of 12 weeks, at least 10 of them after the birth.",
         "paternityInssHint": "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017).",
         "parentalInssFallbackHint": "If the worker does not meet the contribution condition, INSS pays nothing — whether the employer must pay instead is legally unsettled; confirm with your accountant.",
@@ -3183,6 +3278,7 @@ const messages = {
         "cancelled": "Cancelled"
       },
       "leaveTypes": {
+        "miscarriage": "Miscarriage Leave",
         "annual": "Annual Leave",
         "sick": "Sick Leave",
         "maternity": "Maternity Leave",
@@ -4282,6 +4378,7 @@ const messages = {
       "subtitle": "Generate and track monthly INSS contribution submissions.",
       "due": {
         "arrearsNotice": "Late payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
+        "arrearsEstimate": "Estimated so far for {{period}}: US$ {{amount}} ({{months}} × 1%).",
         "overdueTitle": "Overdue {{task}}",
         "overdueDescription": "{{task}} for {{period}} was due on {{dueDate}}.",
         "upcomingTitle": "Upcoming {{task}} due",
@@ -4350,6 +4447,10 @@ const messages = {
         "draft": "Draft"
       },
       "markFiled": {
+        "paymentDate": "Payment Date",
+        "paymentAccount": "Payment Account",
+        "selectPaymentAccount": "Select account",
+        "cashOnHand": "Cash on hand",
         "title": "Mark {{task}} as filed",
         "description": "Record {{task}} submission details for this INSS return.",
         "submissionMethod": "Submission Method",
@@ -4642,6 +4743,10 @@ const messages = {
         "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
       },
       "markFiled": {
+        "paymentDate": "Payment Date",
+        "paymentAccount": "Payment Account",
+        "selectPaymentAccount": "Select account",
+        "cashOnHand": "Cash on hand",
         "title": "Mark Return as Filed",
         "description": "Record the submission details for this WIT return.",
         "submissionMethod": "Submission Method",
@@ -5351,7 +5456,10 @@ const messages = {
       "sourceExpense": "Expense",
       "sourceRevenue": "Revenue",
       "sourceReceipt": "Receipt",
-      "sourcePayment": "Payment"
+      "sourcePayment": "Payment",
+      "sourcePayrollPayment": "Payroll payment",
+      "sourceTaxPayment": "Tax / INSS payment",
+      "sourceFixedAssetAcquisition": "Fixed-asset acquisition"
     },
     "fixedAssets": {
       "title": "Fixed Assets",
@@ -5396,6 +5504,20 @@ const messages = {
       "disposePreviewLoss": "Net book value {{nbv}} — this sale books a loss of {{amount}}.",
       "fieldName": "Asset name",
       "fieldReference": "Reference / serial",
+      "fieldAcquisitionOrigin": "How did this asset enter the books?",
+      "acquisitionOriginPlaceholder": "Choose one",
+      "acquisitionOrigins": {
+        "bill": "Already posted through a bill",
+        "opening": "Opening balance",
+        "postNow": "Post the acquisition now"
+      },
+      "acquisitionOriginHelp": {
+        "already_posted_via_bill": "Register only. The supplier bill already posted the asset cost.",
+        "opening_balance": "Register only. The asset is already included in the opening balances.",
+        "post_now": "Xefe will debit the asset account and credit the funding account once."
+      },
+      "fieldFundingAccount": "Paid from / owed to",
+      "fundingAccountPlaceholder": "Choose a cash, bank, payable, or equity account",
       "fieldAcquired": "Acquisition date",
       "fieldCost": "Cost (USD)",
       "fieldResidual": "Residual value",
@@ -6889,6 +7011,7 @@ const messages = {
     "payDateUseDate": "Use {date}",
     "warningOTCapArt27": "exceeded the Art. 27(4) overtime cap (4h/day / 16h/week) in this period — allowed only for force majeure (Art. 27(5))",
     "warningRestDayCapArt27": "worked more than 8h on a rest day or public holiday — Art. 27(3) caps such work at 8 hours",
+    "warningArt86Headcount": "the Art. 86 INSS discount requires {{max}} or fewer workers — this run has {{count}}; the discount lapses while over {{max}}",
     "title": "Run Payroll",
     "freePlanNotice": "You're on the free plan. Build and review payroll freely — finalizing a run needs a subscription.",
     "freePlanNoticeCta": "View plan",
@@ -7282,6 +7405,7 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "completePostsPayment": "This will mark payroll paid, update deduction balances, and post the bank payment to accounting.",
     "alsoMarkRunPaid": "Also mark the payroll run as paid (updates advance and recurring-deduction balances)",
     "markCompleted": "Mark completed",
     "markCompletedDesc": "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank.",
@@ -7369,6 +7493,9 @@ const messages = {
     "toastValidationDesc": "Please fill in all required fields.",
     "toastTransferSuccess": "Success",
     "toastTransferSuccessDesc": "Bank transfer {{reference}} initiated successfully.",
+    "toastTransferRecordedDesc": "Transfer {{reference}} was recorded as pending. Send the bank file or pack to your bank, then mark it completed here.",
+    "toastMarkedCompleted": "Transfer {{reference}} was completed and the payroll payment was posted.",
+    "toastMarkedFailed": "Transfer {{reference}} was marked failed.",
     "toastTransferError": "Failed to initiate transfer. Please try again.",
     "toastNoData": "No Data",
     "toastNoDataDesc": "No transfers to export.",
@@ -7390,6 +7517,7 @@ const messages = {
     "inssArrearsMonth": "month",
     "inssArrearsMonths": "months",
     "inssArrearsNotice": "Late INSS payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
+    "inssArrearsEstimate": "Estimated so far for {{period}}: US$ {{amount}} ({{months}} month(s)).",
     "title": "Payroll Taxes & INSS",
     "subtitle": "Timor-Leste compliance center for WIT (ATTL) and INSS monthly filings.",
     "actionRequired": "Action required",
@@ -7411,7 +7539,26 @@ const messages = {
     "openWitFiling": "Open WIT Filing",
     "inssTitle": "INSS Monthly Return",
     "inssDesc": "Generate and export monthly INSS contribution submissions and track filing status.",
-    "openInssFiling": "Open INSS Filing"
+    "openInssFiling": "Open INSS Filing",
+    "formC": {
+      "title": "Annual business income tax (Form C)",
+      "savedTitle": "Preparation saved",
+      "savedDescription": "The annual income-tax preparation checklist was updated.",
+      "saveError": "Could not save the preparation checklist.",
+      "reviewProgress": "Review preparation",
+      "startPreparation": "Start preparation",
+      "dialogTitle": "Prepare {{year}} annual income tax",
+      "dialogDescription": "Collect the accounting reports and adjustments your accountant needs for the official return.",
+      "externalWarning": "Xefe tracks preparation only. It does not generate or file the official Form C; use the current ATTL form and obtain accountant sign-off.",
+      "checklist": {
+        "profitAndLoss": "Profit and loss reviewed",
+        "balanceSheet": "Balance sheet reviewed",
+        "cashFlow": "Cash-flow statement reviewed",
+        "taxAdjustments": "Tax adjustments reviewed"
+      },
+      "reviewNote": "Review note",
+      "reviewNotePlaceholder": "Reviewer, open items, and the next action"
+    }
   },
   "guidance": {
     "hideGuidance": "Hide guidance",
@@ -7655,6 +7802,9 @@ const messages = {
       "filings": {
         "monthlyWit": "WIT {{period}}",
         "annualWit": "Annual WIT {{period}}",
+        "annualIncomeTax": "Annual income tax {{period}}",
+        "servicesTax": "Services tax {{period}}",
+        "installmentTax": "Income-tax installment {{period}}",
         "inssPayment": "INSS payment {{period}}",
         "inssStatement": "INSS statement {{period}}",
         "overdue": "{{days}}d overdue",
