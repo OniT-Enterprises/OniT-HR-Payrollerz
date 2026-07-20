@@ -1982,10 +1982,6 @@ const messages = {
       "invalidValues": "Verifika taxa no oras. Persentajen tenke 0–100.",
       "prorataHint": "Pro-rata ba empregadu ho menus de 12 fulan",
       "save": "Rai Konfigurasaun Folha",
-      "benefitsCard": "Benefísiu",
-      "benefitsCardDesc": "Saúde, seguru no benefísiu seluk ba empregadu",
-      "deductionsCard": "Dedusaun no Adiantamentu",
-      "deductionsCardDesc": "Dedusaun regulár, empréstimu no adiantamentu saláriu",
       "statutory": {
         "title": "Fixu tuir lei Timor-Leste",
         "description": "Xefe aplika regra legál sira-ne'e automatikamente. Lei mak define sira no la bele muda.",

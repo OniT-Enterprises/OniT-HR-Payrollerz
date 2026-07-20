@@ -31,8 +31,8 @@ const ROUTE_IMPORTS: Record<string, () => Promise<unknown>> = {
   "/payroll/payments": () => import("@/pages/payroll/BankTransfers"),
   "/payroll/tax": () => import("@/pages/payroll/TaxReports"),
   "/payroll/settings": () => import("@/pages/payroll/PayrollSettings"),
-  "/payroll/settings/benefits": () => import("@/pages/payroll/BenefitsEnrollment"),
-  "/payroll/settings/deductions": () => import("@/pages/payroll/DeductionsAdvances"),
+  "/payroll/benefits": () => import("@/pages/payroll/BenefitsEnrollment"),
+  "/payroll/deductions": () => import("@/pages/payroll/DeductionsAdvances"),
 
   // Money
   "/money/invoices": () => import("@/pages/money/Invoices"),

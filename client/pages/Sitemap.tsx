@@ -274,12 +274,12 @@ const sitemapData: SitemapSection[] = [
       },
       {
         name: "Benefits",
-        path: "/payroll/settings/benefits",
+        path: "/payroll/benefits",
         description: "Manage employee benefits enrollment and deductions",
       },
       {
         name: "Deductions & Advances",
-        path: "/payroll/settings/deductions",
+        path: "/payroll/deductions",
         description:
           "Configure loan repayments, salary advances, and custom deductions",
       },

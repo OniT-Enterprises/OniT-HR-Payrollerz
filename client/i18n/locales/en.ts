@@ -1982,10 +1982,6 @@ const messages = {
       "invalidValues": "Check the rates and hours. Percentages must be 0–100.",
       "prorataHint": "Pro-rata for employees with less than 12 months",
       "save": "Save Payroll Configuration",
-      "benefitsCard": "Benefits",
-      "benefitsCardDesc": "Health, insurance, and other employee benefits",
-      "deductionsCard": "Deductions & Advances",
-      "deductionsCardDesc": "Recurring deductions, loans, and salary advances",
       "statutory": {
         "title": "Fixed by Timor-Leste law",
         "description": "Xefe applies these statutory rules automatically. They are set by law and cannot be edited.",

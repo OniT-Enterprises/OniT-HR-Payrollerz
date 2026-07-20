@@ -283,13 +283,13 @@ export const seoConfig = {
     title: 'Benefits Enrollment',
     description: 'Manage employee benefits enrollment and administration.',
     keywords: 'benefits, health insurance, INSS, WIT, employee benefits',
-    url: '/payroll/settings/benefits',
+    url: '/payroll/benefits',
   },
   deductions: {
     title: 'Deductions & Advances',
     description: 'Configure payroll deductions and manage salary advances.',
     keywords: 'deductions, salary advances, payroll deductions',
-    url: '/payroll/settings/deductions',
+    url: '/payroll/deductions',
     noIndex: true,
   },
 

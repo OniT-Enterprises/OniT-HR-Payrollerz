@@ -39,6 +39,8 @@ import {
   Banknote,
   FileSpreadsheet,
   ClipboardCheck,
+  Heart,
+  MinusCircle,
   // Money
   FileText,
   Receipt,
@@ -229,10 +231,10 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
 };
 
 /* ─── Payroll ───
- * Flat: Run, History, Payments are primary actions.
- * Configuration (rates, benefits, deductions) is NOT in the module tree —
- * it lives in the Settings area (/settings hub → /payroll/settings, which
- * links Benefits and Deductions as cards).
+ * Flat: Run, History, Payments are primary actions; Benefits and
+ * Deductions & Advances are per-employee registers (module pages).
+ * Tenant configuration (rates/tax/overtime) is NOT in the module tree —
+ * it lives in the Settings area (/settings hub → /payroll/settings).
  */
 
 export const payrollNavConfig: ModuleNavConfig = {
@@ -270,6 +272,29 @@ export const payrollNavConfig: ModuleNavConfig = {
       path: "/payroll/payments",
       matchPaths: ["/payroll/payments"],
       subPages: [],
+    },
+    // Benefits and Deductions & Advances are per-employee payroll REGISTERS
+    // (working data used while running payroll), not settings — they live in
+    // the module nav, not the Settings area.
+    {
+      id: "benefits",
+      label: "Benefits",
+      labelKey: "benefits",
+      icon: Heart,
+      path: "/payroll/benefits",
+      matchPaths: ["/payroll/benefits"],
+      subPages: [],
+      manageOnly: true,
+    },
+    {
+      id: "deductions",
+      label: "Deductions & Advances",
+      labelKey: "deductions",
+      icon: MinusCircle,
+      path: "/payroll/deductions",
+      matchPaths: ["/payroll/deductions"],
+      subPages: [],
+      manageOnly: true,
     },
     {
       id: "tax",
