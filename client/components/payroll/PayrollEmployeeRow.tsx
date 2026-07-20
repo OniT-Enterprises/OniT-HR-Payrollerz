@@ -285,6 +285,17 @@ function EarningCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+function DeductionCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="font-semibold text-sm text-red-600">
+        -{formatCurrencyTL(value)}
+      </p>
+    </div>
+  );
+}
+
 function ExpandedDetailsRow({
   employeeName,
   calculation,
@@ -328,14 +339,34 @@ function ExpandedDetailsRow({
             <div>
               <p className="text-[11px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2">{t('runPayroll.employeeDeductions')}</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
-                  <p className="text-xs text-muted-foreground">{t('runPayroll.incomeTax')}</p>
-                  <p className="font-semibold text-sm text-red-600">-{formatCurrencyTL(calculation.incomeTax)}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
-                  <p className="text-xs text-muted-foreground">{t('runPayroll.inssEmployee4')}</p>
-                  <p className="font-semibold text-sm text-red-600">-{formatCurrencyTL(calculation.inssEmployee)}</p>
-                </div>
+                <DeductionCard label={t('runPayroll.incomeTax')} value={calculation.incomeTax} />
+                <DeductionCard label={t('runPayroll.inssEmployee4')} value={calculation.inssEmployee} />
+                {/* Deductions & Advances register lines (post 30%-cap amounts
+                    from the engine) — shown only when they apply. */}
+                {calculation.advanceRepayment > 0 && (
+                  <DeductionCard
+                    label={t('runPayroll.advanceRepayment') || 'Advance Repayment'}
+                    value={calculation.advanceRepayment}
+                  />
+                )}
+                {calculation.loanRepayment > 0 && (
+                  <DeductionCard
+                    label={t('runPayroll.loanRepayment') || 'Loan Repayment'}
+                    value={calculation.loanRepayment}
+                  />
+                )}
+                {calculation.courtOrders > 0 && (
+                  <DeductionCard
+                    label={t('runPayroll.courtOrder') || 'Court Order'}
+                    value={calculation.courtOrders}
+                  />
+                )}
+                {calculation.otherDeductions > 0 && (
+                  <DeductionCard
+                    label={t('runPayroll.otherDeductions') || 'Other Deductions'}
+                    value={calculation.otherDeductions}
+                  />
+                )}
               </div>
             </div>
             <div>
@@ -408,8 +439,11 @@ function PayrollEditableCells({
         onInputChange={onInputChange}
       />
       {/* Hours worked on a public holiday or the weekly rest day — paid at
-          2.0x (Lei 4/2012 Art. 27). Manual entry: attendance can't tell a
-          holiday shift from a normal one yet. */}
+          2.0x (Lei 4/2012 Art. 27). The attendance sync now auto-classifies
+          worked public holidays into holidayHours and worked Sundays (the
+          Art. 30(2) default rest day) into restDayHours; manual entry remains
+          for non-Sunday rest days (per-employee rest-day schedules are not
+          tracked yet) and for tenants not using attendance. */}
       <EditableInputCell
         value={data.holidayHours}
         originalValue={data.originalValues.holidayHours}

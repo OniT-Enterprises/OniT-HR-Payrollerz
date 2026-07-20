@@ -31,6 +31,7 @@ import {
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
   TL_DEDUCTION_TYPE_LABELS,
+  TL_SMALL_EMPLOYER_MAX_WORKERS,
   tlSmallEmployerEmployerRate,
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
@@ -65,6 +66,11 @@ import {
   type EmployeePayrollData,
   getPayPeriodsInPayMonth,
 } from "@/lib/payroll/run-payroll-helpers";
+import {
+  aggregateRecurringInputs,
+  resolveScheduledDeductions,
+  type EmployeeRecurringInputs,
+} from "@/lib/payroll/recurring-deductions";
 
 interface UsePayrollCalculatorOptions {
   activeEmployees: Employee[];
@@ -90,6 +96,7 @@ const EMPTY_MTD_WIT: Record<
   string,
   { mtdWitTaxableIncome: number; mtdIncomeTax: number }
 > = {};
+const EMPTY_RECURRING_DEDUCTIONS: Record<string, EmployeeRecurringInputs> = {};
 
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
 // INSS enrollment, and outside minimum-wage rules.
@@ -251,6 +258,10 @@ export function usePayrollCalculator({
   const ytdByEmployee = ytdQuery.data ?? EMPTY_YTD_BY_EMPLOYEE;
 
   const {
+    // Cached period summary, also read by payrollWarnings for the
+    // Art. 27(3)/(4) hour-cap checks (per-day/per-week maxima computed by the
+    // attendance summary's classification pass).
+    data: attendanceSummaryRows,
     isFetching: attendanceSummaryFetching,
     refetch: refetchAttendanceSummary,
   } = useAttendanceSummary(periodStart, periodEnd);
@@ -330,6 +341,50 @@ export function usePayrollCalculator({
   });
   const mtdWitByEmployee = mtdWitQuery.data ?? EMPTY_MTD_WIT;
 
+  // Active Deductions & Advances register docs (advances, loans, court orders
+  // — client/pages/payroll/DeductionsAdvances.tsx) feed the engine's
+  // loanRepayment/advanceRepayment/courtOrders/otherDeductions inputs. Keyed
+  // under the 'deductions' prefix ON PURPOSE: the register page's mutations
+  // (usePayroll) invalidate ['tenants', tid, 'deductions'], so edits there
+  // refresh this immediately. markPayrollRunAsPaid stamps lastAppliedPeriod /
+  // decrements balances on these docs but has no handle on this cache, so
+  // refetchOnMount 'always' makes every wizard visit re-read the register — a
+  // second same-month run can never reuse a stale, un-stamped snapshot and
+  // double-take a deduction.
+  const recurringDeductionsQuery = useQuery({
+    queryKey: ["tenants", tenantId, "deductions", "activeForPayroll"],
+    queryFn: () =>
+      payrollService.deductions.getActiveDeductionsForPayroll(tenantId),
+    enabled: Boolean(tenantId) && activeEmployees.length > 0,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: "always",
+  });
+
+  // Per-employee engine inputs from the register: active docs only, taken at
+  // most once per period month (lastAppliedPeriod guard), advances capped at
+  // min(installment, remainingBalance). Percentage docs resolve against the
+  // employee's monthly salary.
+  const salaryByEmployee = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const employee of rosterEmployees) {
+      if (employee.id) {
+        map[employee.id] = employee.compensation.monthlySalary || 0;
+      }
+    }
+    return map;
+  }, [rosterEmployees]);
+  const recurringInputsByEmployee = useMemo(() => {
+    const docs = recurringDeductionsQuery.data;
+    if (!docs || docs.length === 0) return EMPTY_RECURRING_DEDUCTIONS;
+    return aggregateRecurringInputs(
+      resolveScheduledDeductions(docs, {
+        periodStart,
+        periodEnd,
+        salaryByEmployee,
+      }),
+    );
+  }, [recurringDeductionsQuery.data, periodStart, periodEnd, salaryByEmployee]);
+
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback(
     (data: EmployeePayrollData): TLPayrollResult | null => {
@@ -382,6 +437,7 @@ export function usePayrollCalculator({
           ? data.employee.documents.residencyStatus !== "foreign_worker"
           : true);
       const ytd = ytdByEmployee[data.employee.id || ""];
+      const recurring = recurringInputsByEmployee[data.employee.id || ""];
 
       const input: TLPayrollInput = {
         employeeId: data.employee.id || "",
@@ -417,10 +473,12 @@ export function usePayrollCalculator({
           hasTaxExemption: isShareholder(data.employee),
           inssExempt: isShareholder(data.employee),
         },
-        loanRepayment: 0,
-        advanceRepayment: 0,
-        courtOrders: 0,
-        otherDeductions: 0,
+        // Deductions & Advances register; the engine applies the Lei 4/2012
+        // Art. 42(3) 30% cap (court orders exempt) to these.
+        loanRepayment: recurring?.loanRepayment ?? 0,
+        advanceRepayment: recurring?.advanceRepayment ?? 0,
+        courtOrders: recurring?.courtOrders ?? 0,
+        otherDeductions: recurring?.otherDeductions ?? 0,
         ytdGrossPay: ytd?.ytdGrossPay || 0,
         ytdIncomeTax: ytd?.ytdIncomeTax || 0,
         ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
@@ -452,6 +510,7 @@ export function usePayrollCalculator({
       ytdByEmployee,
       committedFinalPay,
       mtdWitByEmployee,
+      recurringInputsByEmployee,
       calculationConfig,
     ],
   );
@@ -869,6 +928,10 @@ export function usePayrollCalculator({
       // Hours worked on a public holiday, already reclassified out of regular/
       // overtime by the attendance summary — pay them the Art. 27 2× rate.
       const holidayHours = Number((summary.holidayHours ?? 0).toFixed(2));
+      // Hours worked on the weekly rest day (Sunday — Art. 30(2)), likewise
+      // reclassified by the summary and paid at the engine's 2× rest_day rate.
+      // Non-Sunday per-employee rest days stay manual (wizard row field).
+      const restDayHours = Number((summary.restDayHours ?? 0).toFixed(2));
       // Public holidays are paid non-working time — subtract them from the
       // expected baseline so a non-worked holiday is never docked as absence.
       // Only holidays inside THIS employee's employment window count: days
@@ -906,6 +969,7 @@ export function usePayrollCalculator({
         overtimeHours,
         nightShiftHours,
         holidayHours,
+        restDayHours,
         absenceHours,
         lateArrivalMinutes,
         sickDays,
@@ -993,8 +1057,16 @@ export function usePayrollCalculator({
       type: "wage" | "hours";
     }[] = [];
     const maxMonthlyOT = TL_WORKING_HOURS.maxOvertimePerWeek * 4;
+    // Per-day / per-ISO-week maxima from the attendance summary's
+    // classification pass, for the Art. 27(3)/(4) hour-cap warnings. Older
+    // cached summaries may predate these fields, hence the ?? 0 guards.
+    const summaryByEmployee = new Map(
+      (attendanceSummaryRows ?? []).map((row) => [row.employeeId, row]),
+    );
+    let includedCount = 0;
     for (const d of employeePayrollData) {
       if (excludedEmployees.has(d.employee.id || "")) continue;
+      includedCount += 1;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
       const salary = d.employee.compensation.monthlySalary || 0;
       const minimumWage = calculationConfig?.minimumWage ?? 115;
@@ -1030,9 +1102,65 @@ export function usePayrollCalculator({
           type: "hours",
         });
       }
+      const summary = summaryByEmployee.get(d.employee.id || "");
+      if (summary) {
+        // Art. 27(4): overtime is capped at 4h/day and 16h/week; exceeding it
+        // is lawful only for force majeure (Art. 27(5)) — warn, never block.
+        if (
+          (summary.maxDailyOvertimeHours ?? 0) >
+            TL_WORKING_HOURS.maxOvertimePerDay ||
+          (summary.maxWeeklyOvertimeHours ?? 0) >
+            TL_WORKING_HOURS.maxOvertimePerWeek
+        ) {
+          warnings.push({
+            employeeName: name,
+            message:
+              t("runPayroll.warningOTCapArt27") ||
+              `exceeded the Art. 27(4) overtime cap (${TL_WORKING_HOURS.maxOvertimePerDay}h/day / ${TL_WORKING_HOURS.maxOvertimePerWeek}h/week) in this period — allowed only for force majeure (Art. 27(5))`,
+            type: "hours",
+          });
+        }
+        // Art. 27(3): at most 8h of work on a rest day or public holiday.
+        if (
+          (summary.maxHolidayOrRestDayHours ?? 0) >
+          TL_WORKING_HOURS.standardDailyHours
+        ) {
+          warnings.push({
+            employeeName: name,
+            message:
+              t("runPayroll.warningRestDayCapArt27") ||
+              `worked more than ${TL_WORKING_HOURS.standardDailyHours}h on a rest day or public holiday — Art. 27(3) caps such work at ${TL_WORKING_HOURS.standardDailyHours} hours`,
+            type: "hours",
+          });
+        }
+      }
+    }
+    // DL 20/2017 Art. 86: the small-employer INSS discount requires ≤10
+    // workers; the right lapses while the headcount is above that.
+    if (
+      payrollConfig?.smallEmployerInssDiscount &&
+      includedCount > TL_SMALL_EMPLOYER_MAX_WORKERS
+    ) {
+      warnings.push({
+        employeeName: "DL 20/2017 Art. 86",
+        message:
+          t("runPayroll.warningArt86Headcount", {
+            max: String(TL_SMALL_EMPLOYER_MAX_WORKERS),
+            count: String(includedCount),
+          }) ||
+          `the Art. 86 INSS discount requires ${TL_SMALL_EMPLOYER_MAX_WORKERS} or fewer workers — this run has ${includedCount}; the discount right lapses while over ${TL_SMALL_EMPLOYER_MAX_WORKERS}`,
+        type: "wage",
+      });
     }
     return warnings;
-  }, [employeePayrollData, excludedEmployees, t, calculationConfig]);
+  }, [
+    employeePayrollData,
+    excludedEmployees,
+    t,
+    calculationConfig,
+    attendanceSummaryRows,
+    payrollConfig,
+  ]);
 
   // ─── Filtered data ──────────────────────────────────────────────
 
@@ -1109,6 +1237,7 @@ export function usePayrollCalculator({
             ? data.employee.documents.residencyStatus !== "foreign_worker"
             : true);
         const ytd = ytdByEmployee[data.employee.id || ""];
+        const recurring = recurringInputsByEmployee[data.employee.id || ""];
 
         const input: TLPayrollInput = {
           employeeId: data.employee.id || "",
@@ -1142,10 +1271,12 @@ export function usePayrollCalculator({
             hasTaxExemption: isShareholder(data.employee),
             inssExempt: isShareholder(data.employee),
           },
-          loanRepayment: 0,
-          advanceRepayment: 0,
-          courtOrders: 0,
-          otherDeductions: 0,
+          // Deductions & Advances register — must match calculateForEmployee
+          // so validation sees the same inputs the run will persist.
+          loanRepayment: recurring?.loanRepayment ?? 0,
+          advanceRepayment: recurring?.advanceRepayment ?? 0,
+          courtOrders: recurring?.courtOrders ?? 0,
+          otherDeductions: recurring?.otherDeductions ?? 0,
           ytdGrossPay: ytd?.ytdGrossPay || 0,
           ytdIncomeTax: ytd?.ytdIncomeTax || 0,
           ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
@@ -1169,6 +1300,7 @@ export function usePayrollCalculator({
       includeSubsidioAnual,
       ytdByEmployee,
       committedFinalPay,
+      recurringInputsByEmployee,
       calculationConfig,
     ],
   );
@@ -1334,23 +1466,29 @@ export function usePayrollCalculator({
     attendanceSyncPending,
     calculationsPending,
     // One gate for ALL money-critical aggregations (YTD, committed final pay,
-    // MTD WIT). If any is still loading or failed, computing anyway would
-    // silently fall back to the empty map — a fresh $500/month exemption or a
-    // re-paid severance — so the wizard must block persistence on these, not
-    // just on YTD. Disabled queries (weekly runs, no leavers) report false.
+    // MTD WIT, recurring deductions). If any is still loading or failed,
+    // computing anyway would silently fall back to the empty map — a fresh
+    // $500/month exemption, a re-paid severance, or a run that skips every
+    // advance repayment and court order — so the wizard must block persistence
+    // on these, not just on YTD. Disabled queries (weekly runs, no leavers)
+    // report false.
     isYtdLoading:
       ytdQuery.isLoading ||
       committedFinalPayQuery.isLoading ||
-      mtdWitQuery.isLoading,
+      mtdWitQuery.isLoading ||
+      recurringDeductionsQuery.isLoading,
     isYtdError:
       (ytdQuery.isError && ytdQuery.data === undefined) ||
       (committedFinalPayQuery.isError &&
         committedFinalPayQuery.data === undefined) ||
-      (mtdWitQuery.isError && mtdWitQuery.data === undefined),
+      (mtdWitQuery.isError && mtdWitQuery.data === undefined) ||
+      (recurringDeductionsQuery.isError &&
+        recurringDeductionsQuery.data === undefined),
     isYtdFetching:
       ytdQuery.isFetching ||
       committedFinalPayQuery.isFetching ||
-      mtdWitQuery.isFetching,
+      mtdWitQuery.isFetching ||
+      recurringDeductionsQuery.isFetching,
 
     // Actions
     handleInputChange,
@@ -1369,6 +1507,10 @@ export function usePayrollCalculator({
           : []),
         ...(mtdWitQuery.isError || mtdWitQuery.data !== undefined
           ? [mtdWitQuery.refetch()]
+          : []),
+        ...(recurringDeductionsQuery.isError ||
+        recurringDeductionsQuery.data !== undefined
+          ? [recurringDeductionsQuery.refetch()]
           : []),
       ]),
 

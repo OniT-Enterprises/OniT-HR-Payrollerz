@@ -254,6 +254,12 @@ function createFormSheet(wb: ExcelJS.Workbook, data: ATTLFormData): void {
   ws.addRow([]);
 
   // === SECTION 3: SERVICES TAX ===
+  // Law 8/2008 Secs. 5-9 + Annex I: only hotel, restaurant/bar, and telecom
+  // receipts are designated services; 0% below $500/month, 5% on the WHOLE
+  // amount once combined monthly receipts reach $500. The base is the
+  // consideration RECEIVED in the month (CASH basis, Sec. 9) — callers must
+  // pass customer payments received, not invoiced/accrued revenue. A monthly
+  // form (nil once ever liable) + payment is due by day 15.
   ws.addRow(["SECTION 3: SERVICES TAX"]);
   ws.addRow([]);
   ws.addRow(["Line", "Service Type", "Total Sales", "Rate", "Tax"]);

@@ -194,13 +194,29 @@ export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExpor
       });
 
     row.getCell(COL.employeeNo).value = employeeId;
+    // Worker NIF/TIN — Xefe's employee master has no TIN field yet, so this is
+    // blank unless a backfilled snapshot carries one.
+    row.getCell(COL.tin).value = emp.tinNumber || '';
     row.getCell(COL.niss).value = emp.inssNumber || '';
     row.getCell(COL.fullName).value = emp.fullName;
     row.getCell(COL.laborSituation).value = isResident ? 'Contratado nacional' : 'Contratado estrangeiro';
     row.getCell(COL.resident).value = isResident ? 'Sim' : 'Não';
     row.getCell(COL.contributesSS).value = 'Sim';
-    // Full contributory month by SS convention; adjust in the file if needed.
-    row.getCell(COL.contractDays).value = 30;
+    // DL 20/2017 Art. 12: declare the DAYS the remuneration covers — 30 only
+    // when the contract spans the whole month (SS convention), prorated for a
+    // mid-month hire/termination. Legacy snapshots without the computed value
+    // keep the previous full-month behavior.
+    row.getCell(COL.contractDays).value =
+      typeof emp.contractDays === 'number' && Number.isFinite(emp.contractDays) ? emp.contractDays : 30;
+    // Faltas Injustificadas declaradas / Dias Falta por parentalidade — a
+    // written 0 is a declaration of "no absences"; legacy snapshots without
+    // the fields leave the cells blank (unknown, not zero).
+    if (typeof emp.unjustifiedAbsenceDays === 'number' && Number.isFinite(emp.unjustifiedAbsenceDays)) {
+      row.getCell(COL.unjustifiedAbsences).value = emp.unjustifiedAbsenceDays;
+    }
+    if (typeof emp.parentalLeaveDays === 'number' && Number.isFinite(emp.parentalLeaveDays)) {
+      row.getCell(COL.parentalLeaveDays).value = emp.parentalLeaveDays;
+    }
     row.getCell(COL.baseSalary).value = subtractMoney(contributionBase, annualSubsidy);
     if (annualSubsidy > 0) row.getCell(COL.annualSubsidy).value = annualSubsidy;
     row.getCell(COL.totalDeclared).value = contributionBase;

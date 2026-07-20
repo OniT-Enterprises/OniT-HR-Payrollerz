@@ -1,4 +1,5 @@
 import { addDaysISO, getTodayTL, parseDateISO } from "@/lib/dateUtils";
+import { adjustToPreviousBusinessDayTL } from "@/lib/payroll/tl-holidays";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PaymentStructure } from "@/types/settings";
 
@@ -50,14 +51,39 @@ export function getConfiguredPayrollSchedule(
   };
 }
 
-/** Next configured payday in Timor-Leste calendar time, including today. */
+/**
+ * Next payday pair: the raw configured day-of-month date and its
+ * Art. 40(5)-adjusted payment date (a payday on a weekend/holiday moves BACK
+ * to the preceding working day). When the adjusted date has already passed —
+ * e.g. today is Saturday the 25th, so this cycle was legally payable Friday
+ * the 24th — the next cycle's payday is suggested instead.
+ */
+function getNextPaydayPair(
+  schedule: PayrollSchedule,
+  todayIso: string,
+): { raw: string; adjusted: string } {
+  const [year, month, day] = todayIso.split("-").map(Number);
+  const monthOffset = day > schedule.payDay ? 1 : 0;
+  let raw = isoDate(year, month + monthOffset, schedule.payDay);
+  let adjusted = adjustToPreviousBusinessDayTL(raw);
+  if (adjusted < todayIso) {
+    const [rawYear, rawMonth] = raw.split("-").map(Number);
+    raw = isoDate(rawYear, rawMonth + 1, schedule.payDay);
+    adjusted = adjustToPreviousBusinessDayTL(raw);
+  }
+  return { raw, adjusted };
+}
+
+/**
+ * Next configured payday in Timor-Leste calendar time, including today.
+ * Weekend/holiday paydays are shifted to the PRECEDING working day per
+ * Lei 4/2012 Art. 40(5).
+ */
 export function getNextPayDateIso(
   schedule: PayrollSchedule,
   todayIso = getTodayTL(),
 ): string {
-  const [year, month, day] = todayIso.split("-").map(Number);
-  const monthOffset = day > schedule.payDay ? 1 : 0;
-  return isoDate(year, month + monthOffset, schedule.payDay);
+  return getNextPaydayPair(schedule, todayIso).adjusted;
 }
 
 /**
@@ -69,10 +95,13 @@ export function getInitialPayrollDates(
   schedule: PayrollSchedule,
   todayIso = getTodayTL(),
 ): PayrollDates {
-  const payDate = getNextPayDateIso(schedule, todayIso);
+  const { raw, adjusted: payDate } = getNextPaydayPair(schedule, todayIso);
 
   if (schedule.frequency === "monthly") {
-    const [payYear, payMonth] = payDate.split("-").map(Number);
+    // Derive the covered month from the RAW configured payday: a payday on
+    // the 1st that shifts back over a weekend into the previous month must
+    // not also shift the covered period back a month.
+    const [payYear, payMonth] = raw.split("-").map(Number);
     const previousMonthEnd = isoDate(payYear, payMonth, 0);
     const [periodYear, periodMonth] = previousMonthEnd.split("-").map(Number);
     return {
@@ -99,4 +128,20 @@ export function getDaysUntilIso(
     (parseDateISO(targetIso).getTime() - parseDateISO(todayIso).getTime()) /
       DAY_MS,
   );
+}
+
+/**
+ * Lei 4/2012 Art. 40(3): the interval between wage payments must not exceed
+ * one month. True when more than one calendar month has passed since the last
+ * pay date — i.e. the next payment is legally overdue. Month-end overflow
+ * (e.g. Jan 31 + 1 month) rolls forward via UTC normalization, which only
+ * ever grants a few days of grace, never flags early.
+ */
+export function isPayIntervalExceeded(
+  lastPayDateIso: string,
+  todayIso = getTodayTL(),
+): boolean {
+  const [year, month, day] = lastPayDateIso.split("-").map(Number);
+  if (!year || !month || !day) return false;
+  return isoDate(year, month + 1, day) < todayIso;
 }

@@ -64,6 +64,24 @@ export interface Employee {
     hireDate: string;
     employmentType: string;
     contractEndDate?: string;  // For fixed-term contracts (YYYY-MM-DD)
+    /** Probation end date (Lei 4/2012 Art. 14) — YYYY-MM-DD */
+    probationEndDate?: string;
+    /**
+     * Art. 12(2): statutory motive justifying a fixed-term contract (see
+     * FIXED_TERM_MOTIVES in lib/probation.ts). A fixed-term contract without
+     * a stated motive is deemed permanent by operation of law.
+     */
+    fixedTermMotive?: string;
+    /**
+     * Renewal history (Art. 13): appended whenever contractEndDate moves
+     * forward on an employee-form save.
+     */
+    contractRenewals?: {
+      from: string;
+      to: string;
+      changedAt: string;
+      changedBy?: string;
+    }[];
     workLocation: string;
     manager: string;
     // NGO-specific: Funding source for donor reporting

@@ -425,6 +425,13 @@ export default function INSSMonthly() {
     [dueDates],
   );
 
+  // DL 20/2017 Art. 39: overdue INSS payments accrue 1% interest per
+  // month-or-fraction. Estimate surfaced as warning copy, never booked.
+  const overdueArrearsEntry = useMemo(
+    () => dueDates.find((d) => d.task === "payment" && d.isOverdue && d.arrears),
+    [dueDates],
+  );
+
   const upcomingDue = useMemo(() => {
     const upcoming = dueDates
       .filter((d) => d.status === "pending")
@@ -636,6 +643,23 @@ export default function INSSMonthly() {
                         dueDate: overdueFiling.dueDate,
                       })}
                     </p>
+                    {overdueArrearsEntry?.arrears && (
+                      <p className="mt-1 font-medium text-red-700 dark:text-red-300">
+                        {t("reports.inssMonthly.due.arrearsNotice") ||
+                          "Late payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39)."}
+                        {typeof overdueArrearsEntry.arrears.estimatedInterest ===
+                          "number" &&
+                          ` ${
+                            t("reports.inssMonthly.due.arrearsEstimate", {
+                              amount:
+                                overdueArrearsEntry.arrears.estimatedInterest.toFixed(2),
+                              period: formatPeriodLabel(overdueArrearsEntry.period),
+                              months: overdueArrearsEntry.arrears.monthsLate,
+                            }) ||
+                            `Estimated so far for ${formatPeriodLabel(overdueArrearsEntry.period)}: US$ ${overdueArrearsEntry.arrears.estimatedInterest.toFixed(2)} (${overdueArrearsEntry.arrears.monthsLate} × 1%).`
+                          }`}
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (

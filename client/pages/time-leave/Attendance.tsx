@@ -71,6 +71,7 @@ import { type Employee } from "@/services/employeeService";
 import {
   attendanceService,
   computeEntryHours,
+  needsBreakWarning,
   MAX_REASONABLE_ENTRY_HOURS,
   type AttendanceRecord,
   type AttendanceStatus,
@@ -527,9 +528,23 @@ export default function Attendance() {
       },
       {
         onSuccess: () => {
+          // Non-blocking Lei 4/2012 Art. 25(2) nudge: the entry spans more
+          // than 5h of continuous work without the 1h break entitlement (the
+          // dialog records no break, so this fires only on 5–6h spans, where
+          // the 60-min default-break assumption does not apply). Folded into
+          // the success toast because the toaster shows one toast at a time.
+          const breakWarning = needsBreakWarning(
+            formData.clockIn,
+            formData.clockOut,
+          );
           toast({
             title: t("timeLeave.attendance.toast.successTitle"),
-            description: t("timeLeave.attendance.toast.successDesc"),
+            description: breakWarning
+              ? `${t("timeLeave.attendance.toast.successDesc")} ${
+                  t("timeLeave.attendance.toast.breakEntitlement") ||
+                  "Art. 25(2): a worker is entitled to a 1-hour break after 5 hours of continuous work."
+                }`
+              : t("timeLeave.attendance.toast.successDesc"),
           });
           resetMarkForm(selectedDate);
           setShowMarkDialog(false);
@@ -887,10 +902,25 @@ export default function Attendance() {
           adjustedBy: user?.uid || "unknown",
         },
       });
+      // Non-blocking Art. 25(2) nudge (see handleSubmit). An adjusted record
+      // keeps its explicitly recorded break, if any, so pass it through:
+      // an explicit break under 60min on a >5h span also warns.
+      const breakWarning = needsBreakWarning(
+        editForm.clockIn,
+        editForm.clockOut,
+        editRecord.breakStart && editRecord.breakEnd
+          ? editRecord.breakMinutes
+          : undefined,
+      );
       setEditRecord(null);
       toast({
         title: t("timeLeave.attendance.toast.successTitle"),
-        description: t("timeLeave.timeTracking.edit.adjustSuccess"),
+        description: breakWarning
+          ? `${t("timeLeave.timeTracking.edit.adjustSuccess")} ${
+              t("timeLeave.attendance.toast.breakEntitlement") ||
+              "Art. 25(2): a worker is entitled to a 1-hour break after 5 hours of continuous work."
+            }`
+          : t("timeLeave.timeTracking.edit.adjustSuccess"),
       });
     } catch {
       toast({

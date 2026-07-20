@@ -104,6 +104,20 @@ function getFilingLabel(item: FilingDueDate, t: Translate) {
       period: item.period,
     });
   }
+  if (item.type === "services_tax") {
+    return (
+      t("moduleDashboards.reports.filings.servicesTax", {
+        period: item.period,
+      }) || `Services tax — ${item.period}`
+    );
+  }
+  if (item.type === "installment_tax") {
+    return (
+      t("moduleDashboards.reports.filings.installmentTax", {
+        period: item.period,
+      }) || `Income tax installment — ${item.period}`
+    );
+  }
   if (item.task === "payment") {
     return t("moduleDashboards.reports.filings.inssPayment", {
       period: item.period,

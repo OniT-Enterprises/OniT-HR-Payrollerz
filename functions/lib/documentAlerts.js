@@ -21,6 +21,7 @@ const DOCUMENT_LABELS = {
     electoral: "Electoral Card",
     inss: "INSS Card",
     contract: "Employment Contract",
+    probation: "Probation Period",
 };
 const BATCH_WRITE_LIMIT = 450;
 // ============================================================================
@@ -55,7 +56,7 @@ function calculateExpiryInfo(expiryDate) {
  * Extract document expiry alerts from an employee
  */
 function extractEmployeeAlerts(tenantId, employee, alertThresholdDays = 60) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v;
     const alerts = [];
     const employeeName = `${((_a = employee.personalInfo) === null || _a === void 0 ? void 0 : _a.firstName) || ""} ${((_b = employee.personalInfo) === null || _b === void 0 ? void 0 : _b.lastName) || ""}`.trim();
     const pushAlert = (alertKey, documentType, expiryDate, windowDays) => {
@@ -93,6 +94,9 @@ function extractEmployeeAlerts(tenantId, employee, alertThresholdDays = 60) {
     pushAlert("residence_permit", "residence_permit", (_r = (_q = employee.foreignWorker) === null || _q === void 0 ? void 0 : _q.residencePermit) === null || _r === void 0 ? void 0 : _r.expiryDate, 90);
     pushAlert("fw_work_permit", "work_permit", (_t = (_s = employee.foreignWorker) === null || _s === void 0 ? void 0 : _s.workPermit) === null || _t === void 0 ? void 0 : _t.expiryDate, 90);
     pushAlert("contract", "contract", (_u = employee.jobDetails) === null || _u === void 0 ? void 0 : _u.contractEndDate, 90);
+    // Probation end (Lei 4/2012 Art. 14) — 14 days ahead so the employer can
+    // decide on confirmation/termination while still inside the period.
+    pushAlert("probation", "probation", (_v = employee.jobDetails) === null || _v === void 0 ? void 0 : _v.probationEndDate, 14);
     return alerts;
 }
 function sortAlerts(alerts) {

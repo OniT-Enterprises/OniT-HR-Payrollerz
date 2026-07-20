@@ -287,6 +287,7 @@ const messages = {
     "removeError": "Falha hasai subsidiu"
   },
   "dashboard": {
+    "cardPayrollOverdue": "Saláriu atrazadu — Art. 40 ezije pagamentu pelu menus kada fulan",
     "payrollStatus": "Status Saláriu",
     "days": "loron",
     "untilPayDate": "to'o loron selu (25)",
@@ -2317,6 +2318,10 @@ const messages = {
       "importStartedDesc": "Prosesu {{count}} empregadu..."
     },
     "toast": {
+      "fixedTermMotiveTitle": "La deklara motivu kontratu ho prazu",
+      "fixedTermMotiveDesc": "Art. 12(2): kontratu ho prazu ne'ebé la deklara motivu konsidera nu'udar permanente.",
+      "minorWarningTitle": "Traballadór menór (Lei Trabálhu Art. 69)",
+      "minorWarningDesc": "Servisu ki'ik de'it: máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu.",
       "errorTitle": "Erru",
       "requiredFieldsTitle": "Kampu obrigatóriu sira falta",
       "requiredFieldsDesc": "Favor kompleta kampu obrigatóriu sira antes kontinua.",
@@ -2333,6 +2338,14 @@ const messages = {
       "uploadWarningDesc": "Empregadu rai ona, maibé la konsege upload: {files}"
     },
     "fields": {
+      "contractEndDate": "Data remata kontratu",
+      "contractEndDateHelp": "Ba kontratu ho prazu de'it — husik mamuk se permanente.",
+      "fixedTermMotive": "Motivu kontratu ho prazu",
+      "fixedTermMotivePlaceholder": "Hili motivu legál",
+      "fixedTermMotiveWarning": "Art. 12(2): kontratu ho prazu ne'ebé la deklara motivu konsidera nu'udar permanente.",
+      "minorLightWorkNote": "Tinan 15-16 iha admisaun: servisu ki'ik de'it — máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu (Lei Trabálhu Art. 69).",
+      "probationEndDate": "Remata períodu esperiénsia",
+      "probationEndDateHelp": "Art. 14: loron 8/15 ba kontratu ho prazu, loron 30-90 ba kontratu permanente.",
       "firstName": "Naran *",
       "lastName": "Apelidu *",
       "email": "Email *",
@@ -2715,6 +2728,23 @@ const messages = {
       }
     },
     "offboarding": {
+      "notice": {
+        "required": "Avizu préviu ezijidu",
+        "days": "loron",
+        "given": "kumpre",
+        "notRecorded": "Data avizu préviu la rejista",
+        "requiredForReason": "avizu préviu ezijidu ba motivu sai ida-ne'e mak",
+        "shortfallWorker": "Avizu préviu la to'o: traballadór selu ba empregadór",
+        "shortfallEmployer": "Avizu préviu la to'o: empregadór selu ba traballadór",
+        "daysPay": "loron pagamentu ne'ebé falta",
+      },
+      "disciplinary": {
+        "noConcludedWarning": "La iha prosesu disiplinár ne'ebé remata ona ba traballadór ida-ne'e. Despedimentu ho justa kauza sein prosesu hakerek tuir Art. 50(4) (akuzasaun, defeza, desizaun ho razaun) automatikamente ilegál (Art. 51) no fó risku ba ita atu selu indemnizasaun Art. 55 — konfirma ho ita-nia kontabilista.",
+      },
+      "certificate": {
+        "generate": "Halo sertifikadu (Art. 57)",
+        "mandatoryNote": "Sertifikadu Trabálhu (naran, data kontratu, funsaun ne'ebé halo) obrigatóriu iha kazu terminasaun hotu-hotu — Art. 57.",
+      },
       "title": "Saida Empregadu",
       "subtitle": "Jere saida no prosesu remata",
       "actions": {
@@ -2734,6 +2764,9 @@ const messages = {
         "reason": "Razao Saida",
         "reasonPlaceholder": "Hili razao...",
         "reasons": {
+          "mutualAgreement": "Akordu hamutuk",
+          "death": "Traballadór mate",
+          "other": "Seluk",
           "resignation": "Demisaun",
           "redundancy": "Redundansia",
           "termination": "Resizaun",
@@ -2781,6 +2814,9 @@ const messages = {
         "empty": "Hili empregadu atu hare checklist",
         "emptyPrompt": "Hili saida ne'ebe hela",
         "items": {
+          "inssCessation": "Deklara ona terminasaun ba INSS",
+          "inssCessationDeadline": "Prazu",
+          "inssCessationHint": "Deklara iha portál INSS to'o loron 10 fulan tuir loron servisu ikus — se seidauk deklara, INSS presume katak servisu la'o hela no kontribuisaun kontinua akumula.",
           "access": "Hasai asesu sistema",
           "equipment": "Fila ekipamentu",
           "documents": "Dokumentu saida asina",
@@ -2792,6 +2828,7 @@ const messages = {
         }
       },
       "finalPay": {
+        "deathHeirsNote": "Traballadór mate ona (Art. 47(1)(b)): pagamentu ida-ne'e selu ba erdeiru sira — konfirma benefisiáriu sira ho ita-nia kontabilista.",
         "title": "Kompensasaun servisu Artigu 56",
         "description": "Fulan ida nia saláriu ba kada períodu servisu tinan lima kompletu.",
         "includeSeverance": "Selu kompensasaun Art. 56 iha folla pagamentu finál",
@@ -3261,6 +3298,7 @@ const messages = {
         "notAvailable": "N/A"
       },
       "toast": {
+        "breakEntitlement": "Art. 25(2): traballadór iha direitu ba intervalu oras 1 hafoin servisu oras 5 tuir malu.",
         "errorTitle": "Erru",
         "loadFailed": "Falha karrega dadus prezensa.",
         "validationTitle": "Erru validasaun",
@@ -5256,6 +5294,7 @@ const messages = {
       "title": "Deklarasaun INSS Mensal",
       "subtitle": "Kria no akompaña submisaun kontribuisaun INSS mensal.",
       "due": {
+        "arrearsNotice": "Pagamentu atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
         "overdueTitle": "Tarde ona ba {{task}}",
         "overdueDescription": "{{task}} ba {{period}} tenke entrega iha {{dueDate}}.",
         "upcomingTitle": "{{task}} sei to'o data",
@@ -5671,6 +5710,10 @@ const messages = {
     },
     "profitLoss": {
       "etax": {
+        "baseExclusionsTitle": "Verifika baze molok submete (Lei 8/2008 Sec. 64.6)",
+        "baseExclusionsBody": "Baze prestasaun la inklui rendimentu izentu no reseita ne'ebé kliente retén ona impostu bainhira selu ba ita. Xefe la bele identifika automatikamente retensaun husi kliente, entaun se parte husi ita-nia reseita selu ho retensaun (ka izentu), hatama baze ki'ik iha kraik — númeru iha leten sei atualiza.",
+        "baseOverrideLabel": "Baze volume negósiu ajustadu (opsionál)",
+        "baseOverrideAboveRevenue": "Baze ajustadu boot liu reseita períodu ne'ebé Xefe kalkula — verifika fila fali molok submete.",
         "title": "Preenxe impostu prestasaun iha e-Tax (asistidu)",
         "description": "Prestasaun impostu mak 0,5% hosi volume negósiu: trimestrál se tinan kotuk la liu $1 millaun, no mensál se liu. Konfirma períodu no submete iha e-Tax — Xefe la submete hodi ita.",
         "account": "Impostu Prestasaun Doméstiku",
@@ -6547,6 +6590,8 @@ const messages = {
       }
     },
     "bills": {
+      "withholdingNotice": "Avizu retensaun",
+      "withholdingNoticeError": "La konsege halo avizu retensaun.",
       "title": "Fatura Selu",
       "subtitle": "Jere konta selu",
       "new": "Fatura Foun",
@@ -6742,6 +6787,7 @@ const messages = {
       "bills": "fatura"
     },
     "bankRecon": {
+      "alreadyImportedSkipped": "importa ona (la konta)",
       "title": "Rekonsiliasaun Banku",
       "subtitle": "Importa no kombina transasaun banku",
       "importCSV": "Importa CSV",
@@ -6782,6 +6828,14 @@ const messages = {
     }
   },
   "runPayroll": {
+    "advanceRepayment": "Selu Adiantamentu",
+    "loanRepayment": "Selu Empréstimu",
+    "courtOrder": "Ordem tribunál",
+    "otherDeductions": "Dedusaun seluk",
+    "payDateNonWorkingDay": "Data pagamentu ida-ne'e monu iha fim-de-semana ka feriadu. Art. 40(5): selu iha loron servisu ne'ebé antes.",
+    "payDateUseDate": "Uza {date}",
+    "warningOTCapArt27": "liu limite oras extraordináriu Art. 27(4) (oras 4/loron / oras 16/semana) iha períodu ida-ne'e — permite de'it iha kazu forsa maiór (Art. 27(5))",
+    "warningRestDayCapArt27": "servisu liu oras 8 iha loron deskansa ka feriadu — Art. 27(3) limita servisu ne'e ba oras 8",
     "title": "Prosesu Saláriu",
     "freePlanNotice": "Ita uza planu gratuitu. Bele prepara no reve saláriu livre — atu finaliza presiza subskrisaun.",
     "freePlanNoticeCta": "Haree planu",
@@ -7256,6 +7310,9 @@ const messages = {
     "company": "Empresa"
   },
   "taxReports": {
+    "inssArrearsMonth": "fulan",
+    "inssArrearsMonths": "fulan",
+    "inssArrearsNotice": "Pagamentu INSS atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
     "title": "Impostu Folha Pagamentu & INSS",
     "subtitle": "Sentru konformidade Timor-Leste ba WIT (ATTL) no INSS mensal.",
     "actionRequired": "Presiza asaun",
@@ -7542,6 +7599,7 @@ const messages = {
     }
   },
   "supplierRemittance": {
+    "deductionSuspended": "Retensaun ne'ebé seidauk entrega suspende dedusaun despeza ne'ebé relasiona (Lei 8/2008 Sec. 32.2) — entrega atu mantén dedusaun.",
     "errorTitle": "La konsege rejista pagamentu impostu",
     "proofRequired": "Hatama resibu banku, resibu BNU, ka prova pagamentu seluk.",
     "signInRequired": "Tenke tama konta molok rejista pagamentu impostu.",

@@ -41,16 +41,15 @@ import {
 } from '@/lib/payroll/leaver-final-pay';
 export { severanceDefaultForReason, type DepartureReason };
 
-export interface OffboardingChecklist {
-  accessRevoked: boolean;
-  equipmentReturned: boolean;
-  documentsSigned: boolean;
-  knowledgeTransfer: boolean;
-  finalPayCalculated: boolean;
-  benefitsCancelled: boolean;
-  exitInterviewCompleted: boolean;
-  referenceLetter: boolean;
-}
+// Checklist shape + progress math live in a pure module (Firebase-free,
+// unit-testable); re-exported here so existing import sites keep working.
+import {
+  DEFAULT_OFFBOARDING_CHECKLIST,
+  getChecklistProgress,
+  normalizeOffboardingChecklist,
+  type OffboardingChecklist,
+} from '@/lib/hiring/offboarding-checklist';
+export { getChecklistProgress, type OffboardingChecklist };
 
 export interface ExitInterview {
   overallSatisfaction: string;
@@ -164,19 +163,12 @@ export const DEPARTURE_REASONS: { id: DepartureReason; name: string }[] = [
   { id: 'retirement', name: 'Retirement' },
   { id: 'contract_end', name: 'Contract End' },
   { id: 'mutual_agreement', name: 'Mutual Agreement' },
+  // Art. 47(1)(b) caducidade — contract lapses on the worker's death.
+  { id: 'death', name: 'Death of Employee' },
   { id: 'other', name: 'Other' },
 ];
 
-const DEFAULT_CHECKLIST: OffboardingChecklist = {
-  accessRevoked: false,
-  equipmentReturned: false,
-  documentsSigned: false,
-  knowledgeTransfer: false,
-  finalPayCalculated: false,
-  benefitsCancelled: false,
-  exitInterviewCompleted: false,
-  referenceLetter: false,
-};
+const DEFAULT_CHECKLIST: OffboardingChecklist = DEFAULT_OFFBOARDING_CHECKLIST;
 
 const DEFAULT_EXIT_INTERVIEW: ExitInterview = {
   overallSatisfaction: '',
@@ -191,15 +183,6 @@ const DEFAULT_EXIT_INTERVIEW: ExitInterview = {
 // ============================================
 // Helper Functions
 // ============================================
-
-/**
- * Calculate progress percentage from checklist
- */
-export function getChecklistProgress(checklist: OffboardingChecklist): number {
-  const items = Object.values(checklist);
-  const completed = items.filter(Boolean).length;
-  return Math.round((completed / items.length) * 100);
-}
 
 /**
  * Calculate status based on checklist
@@ -556,8 +539,12 @@ class OffboardingService {
         calculatedBy: calculatedBy.trim(),
         calculatedAt: new Date(),
       };
-      const currentChecklist = caseData.checklist || DEFAULT_CHECKLIST;
-      const checklist = { ...currentChecklist, finalPayCalculated: true };
+      // Normalize so legacy cases (created before newer checklist keys, e.g.
+      // inssCessationDeclared) are written back with the full key set.
+      const checklist = {
+        ...normalizeOffboardingChecklist(caseData.checklist),
+        finalPayCalculated: true,
+      };
       const status = calculateStatus(checklist);
 
       transaction.update(caseRef, {
@@ -743,6 +730,7 @@ class OffboardingService {
         retirement: 0,
         contract_end: 0,
         mutual_agreement: 0,
+        death: 0,
         other: 0,
       });
 
@@ -786,7 +774,9 @@ class OffboardingService {
       noticeDate: data.noticeDate,
       notes: data.notes,
       status: data.status,
-      checklist: data.checklist || DEFAULT_CHECKLIST,
+      // Fill keys older docs don't have (absent = false) so progress math and
+      // the checklist UI always see the full current key set.
+      checklist: normalizeOffboardingChecklist(data.checklist),
       exitInterview: data.exitInterview || DEFAULT_EXIT_INTERVIEW,
       article56FinalPay: data.article56FinalPay
         ? {

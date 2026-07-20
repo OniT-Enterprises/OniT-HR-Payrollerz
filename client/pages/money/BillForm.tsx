@@ -47,19 +47,23 @@ import { paths } from '@/lib/paths';
 
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
-import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
+import type { BillFormData, BillPayment, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { addDaysISO, getTodayTL, formatDateTL } from '@/lib/dateUtils';
 import { calculateTaxedTotal } from '@/lib/accounting/calculations';
 import {
+  buildTLWithholdingNoticeData,
   calculateTLBillSettlement,
+  canIssueTLWithholdingNotice,
   type TLBillWithholdingCategory,
 } from '@/lib/tax/bill-withholding';
+import { useSettings } from '@/hooks/useSettings';
 import {
   ArrowLeft,
   Save,
   DollarSign,
   Calendar,
   Building2,
+  FileDown,
   FileText,
   ExternalLink,
 } from 'lucide-react';
@@ -125,6 +129,7 @@ export default function BillForm() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [noticeDownloadingId, setNoticeDownloadingId] = useState<string | null>(null);
   const writeInFlight = useRef(false);
 
   // React Query hooks
@@ -151,6 +156,8 @@ export default function BillForm() {
   const createBillMutation = useCreateBill();
   const updateBillMutation = useUpdateBill();
   const recordPaymentMutation = useRecordBillPayment();
+  // Payer company details for the Sec. 58.2 withholding notice (view mode only)
+  const { data: settings } = useSettings(!isNew);
 
   const needsVendors = isNew || isEdit;
   const loading = (!isNew && billLoading) || (needsVendors && vendorsLoading);
@@ -386,6 +393,38 @@ export default function BillForm() {
     } finally {
       writeInFlight.current = false;
       setSaving(false);
+    }
+  };
+
+  /**
+   * Law 8/2008 Sec. 58.2: issue the supplier a withholding tax notice for a
+   * payer-withheld payment. Built from the frozen payment snapshot.
+   */
+  const handleDownloadWithholdingNotice = async (payment: BillPayment) => {
+    if (!payment.withholding || noticeDownloadingId) return;
+    setNoticeDownloadingId(payment.id);
+    try {
+      const { downloadWithholdingNoticePDF } = await import(
+        '@/components/money/WithholdingNoticePDF'
+      );
+      await downloadWithholdingNoticePDF({
+        notice: buildTLWithholdingNoticeData(payment.withholding),
+        paymentDate: payment.date,
+        billNumber: bill?.billNumber,
+        billDescription: bill?.description,
+        company: settings?.companyDetails,
+      });
+    } catch (error) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: error instanceof Error
+          ? error.message
+          : t('money.bills.withholdingNoticeError')
+            || 'Failed to generate the withholding notice.',
+        variant: 'destructive',
+      });
+    } finally {
+      setNoticeDownloadingId(null);
     }
   };
 
@@ -718,7 +757,7 @@ export default function BillForm() {
                   {payments.map((payment) => (
                     <div
                       key={payment.id}
-                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                      className="flex flex-wrap items-center justify-between gap-2 p-3 bg-muted rounded-lg"
                     >
                       <div>
                         <p className="font-medium">
@@ -746,9 +785,22 @@ export default function BillForm() {
                             </p>
                           )}
                       </div>
-                      {payment.notes && (
-                        <p className="text-sm text-muted-foreground">{payment.notes}</p>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {payment.notes && (
+                          <p className="text-sm text-muted-foreground">{payment.notes}</p>
+                        )}
+                        {canIssueTLWithholdingNotice(payment.withholding) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={noticeDownloadingId !== null}
+                            onClick={() => void handleDownloadWithholdingNotice(payment)}
+                          >
+                            <FileDown className="h-4 w-4 mr-2" />
+                            {t('money.bills.withholdingNotice') || 'Withholding notice'}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

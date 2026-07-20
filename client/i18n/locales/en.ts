@@ -287,6 +287,7 @@ const messages = {
     "removeError": "Failed to remove allowance"
   },
   "dashboard": {
+    "cardPayrollOverdue": "Payroll overdue — Art. 40 requires payment at least monthly",
     "payrollStatus": "Payroll Status",
     "days": "days",
     "untilPayDate": "until pay date (25th)",
@@ -2317,6 +2318,10 @@ const messages = {
       "importStartedDesc": "Processing {{count}} employees..."
     },
     "toast": {
+      "fixedTermMotiveTitle": "No fixed-term motive stated",
+      "fixedTermMotiveDesc": "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
+      "minorWarningTitle": "Minor employee (Labour Law Art. 69)",
+      "minorWarningDesc": "Light work only: max 5h/day, 25h/week, no night or overtime work.",
       "errorTitle": "Error",
       "requiredFieldsTitle": "Missing required fields",
       "requiredFieldsDesc": "Please fill in all required fields before continuing.",
@@ -2333,6 +2338,14 @@ const messages = {
       "uploadWarningDesc": "Employee was saved, but failed to upload: {files}"
     },
     "fields": {
+      "contractEndDate": "Contract end date",
+      "contractEndDateHelp": "Fixed-term contracts only — leave empty for permanent.",
+      "fixedTermMotive": "Fixed-term motive",
+      "fixedTermMotivePlaceholder": "Select the statutory motive",
+      "fixedTermMotiveWarning": "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
+      "minorLightWorkNote": "Aged 15-16 at hire: light work only — max 5h/day, 25h/week, no night or overtime work (Labour Law Art. 69).",
+      "probationEndDate": "Probation ends",
+      "probationEndDateHelp": "Art. 14: 8/15 days for fixed-term, 30-90 days for permanent contracts.",
       "firstName": "First Name *",
       "lastName": "Last Name *",
       "email": "Email *",
@@ -2805,6 +2818,23 @@ const messages = {
       }
     },
     "offboarding": {
+      "notice": {
+        "required": "Required notice",
+        "days": "days",
+        "given": "given",
+        "notRecorded": "Notice date not recorded",
+        "requiredForReason": "required notice for this departure reason is",
+        "shortfallWorker": "Notice is short: the worker owes the employer the missing",
+        "shortfallEmployer": "Notice is short: the employer owes the worker the missing",
+        "daysPay": "days' pay",
+      },
+      "disciplinary": {
+        "noConcludedWarning": "No concluded disciplinary case is on file for this employee. Dismissal for cause without the Art. 50(4) written process (accusation, defence, reasoned decision) is automatically unlawful (Art. 51) and exposes you to Art. 55 indemnity — confirm with your accountant.",
+      },
+      "certificate": {
+        "generate": "Generate certificate (Art. 57)",
+        "mandatoryNote": "The Certificado de Trabalho (name, contract dates, functions performed) is mandatory on every cessation — Art. 57.",
+      },
       "title": "Employee Offboarding",
       "subtitle": "Manage employee departures and exit processes",
       "actions": {
@@ -2824,6 +2854,9 @@ const messages = {
         "reason": "Departure Reason",
         "reasonPlaceholder": "Select reason...",
         "reasons": {
+          "mutualAgreement": "Mutual agreement",
+          "death": "Death of employee",
+          "other": "Other",
           "resignation": "Resignation",
           "redundancy": "Redundancy",
           "termination": "Termination",
@@ -2871,6 +2904,9 @@ const messages = {
         "empty": "Select an employee to view their checklist",
         "emptyPrompt": "Select an ongoing departure to view checklist",
         "items": {
+          "inssCessation": "INSS cessation declared",
+          "inssCessationDeadline": "Deadline",
+          "inssCessationHint": "Declare at the INSS portal by day 10 of the month after the last working day — until declared, INSS presumes the employment continues and contributions keep accruing.",
           "access": "Revoke System Access",
           "equipment": "Equipment Return",
           "documents": "Exit Documents Signed",
@@ -2882,6 +2918,7 @@ const messages = {
         }
       },
       "finalPay": {
+        "deathHeirsNote": "Worker deceased (Art. 47(1)(b)): this payment is payable to the estate/heirs — confirm beneficiaries with your accountant.",
         "title": "Article 56 service compensation",
         "description": "One monthly salary for each completed five-year period of service.",
         "includeSeverance": "Pay Art. 56 severance in the final payroll run",
@@ -3261,6 +3298,7 @@ const messages = {
         "notAvailable": "N/A"
       },
       "toast": {
+        "breakEntitlement": "Art. 25(2): a worker is entitled to a 1-hour break after 5 hours of continuous work.",
         "errorTitle": "Error",
         "loadFailed": "Failed to load attendance data.",
         "validationTitle": "Validation Error",
@@ -4213,6 +4251,7 @@ const messages = {
       "title": "INSS Monthly Return",
       "subtitle": "Generate and track monthly INSS contribution submissions.",
       "due": {
+        "arrearsNotice": "Late payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
         "overdueTitle": "Overdue {{task}}",
         "overdueDescription": "{{task}} for {{period}} was due on {{dueDate}}.",
         "upcomingTitle": "Upcoming {{task}} due",
@@ -4628,6 +4667,10 @@ const messages = {
     },
     "profitLoss": {
       "etax": {
+        "baseExclusionsTitle": "Check the base before filing (Law 8/2008 Sec. 64.6)",
+        "baseExclusionsBody": "The installment base excludes exempt income and receipts a customer already withheld tax on when paying you. Xefe cannot identify customer-side withholding automatically, so if part of your revenue was paid under withholding (or is exempt), enter the reduced base below — the figures above update.",
+        "baseOverrideLabel": "Adjusted turnover base (optional)",
+        "baseOverrideAboveRevenue": "The adjusted base is higher than the period revenue Xefe derived — double-check before filing.",
         "title": "File installment tax on e-Tax (assisted)",
         "description": "Installment tax is 0.5% of turnover: quarterly when prior-year turnover is at most $1 million, monthly when it is higher. Check the period, then file in e-Tax — Xefe never files for you.",
         "account": "Domestic Installment Tax",
@@ -6547,6 +6590,8 @@ const messages = {
       }
     },
     "bills": {
+      "withholdingNotice": "Withholding notice",
+      "withholdingNoticeError": "Failed to generate the withholding notice.",
       "title": "Bills",
       "subtitle": "Manage accounts payable",
       "new": "New Bill",
@@ -6742,6 +6787,7 @@ const messages = {
       "bills": "bills"
     },
     "bankRecon": {
+      "alreadyImportedSkipped": "already imported (skipped)",
       "title": "Bank Reconciliation",
       "subtitle": "Import and match bank transactions",
       "importCSV": "Import CSV",
@@ -6782,6 +6828,14 @@ const messages = {
     }
   },
   "runPayroll": {
+    "advanceRepayment": "Advance Repayment",
+    "loanRepayment": "Loan Repayment",
+    "courtOrder": "Court Order",
+    "otherDeductions": "Other Deductions",
+    "payDateNonWorkingDay": "This pay date falls on a weekend or public holiday. Art. 40(5): pay on the preceding working day.",
+    "payDateUseDate": "Use {date}",
+    "warningOTCapArt27": "exceeded the Art. 27(4) overtime cap (4h/day / 16h/week) in this period — allowed only for force majeure (Art. 27(5))",
+    "warningRestDayCapArt27": "worked more than 8h on a rest day or public holiday — Art. 27(3) caps such work at 8 hours",
     "title": "Run Payroll",
     "freePlanNotice": "You're on the free plan. Build and review payroll freely — finalizing a run needs a subscription.",
     "freePlanNoticeCta": "View plan",
@@ -7256,6 +7310,9 @@ const messages = {
     "company": "Company"
   },
   "taxReports": {
+    "inssArrearsMonth": "month",
+    "inssArrearsMonths": "months",
+    "inssArrearsNotice": "Late INSS payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
     "title": "Payroll Taxes & INSS",
     "subtitle": "Timor-Leste compliance center for WIT (ATTL) and INSS monthly filings.",
     "actionRequired": "Action required",
@@ -7542,6 +7599,7 @@ const messages = {
     }
   },
   "supplierRemittance": {
+    "deductionSuspended": "Unremitted withholding suspends the deductibility of the underlying expense (Law 8/2008 Sec. 32.2) — remit to keep the deduction.",
     "errorTitle": "Could not record tax payment",
     "proofRequired": "Upload the bank slip, BNU receipt, or other payment proof.",
     "signInRequired": "Sign in before recording a tax payment.",

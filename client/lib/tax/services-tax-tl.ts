@@ -35,6 +35,53 @@ function validateReceipt(name: string, amount: number): number {
   return roundMoney(amount);
 }
 
+/**
+ * Business sectors (client/types/settings.ts BusinessSector) whose customer
+ * receipts are designated services under Law 8/2008 Annex I. Telecoms are a
+ * designated service too but are not Xefe's market, so they are deliberately
+ * not auto-derived — a telecom operator would enter Section 3 manually.
+ */
+export const TL_SERVICES_TAX_LIABLE_SECTORS = ['hotel', 'restaurant'] as const;
+
+export function isTLServicesTaxLiableSector(
+  sector: string | undefined | null,
+): sector is (typeof TL_SERVICES_TAX_LIABLE_SECTORS)[number] {
+  return (
+    typeof sector === 'string' &&
+    (TL_SERVICES_TAX_LIABLE_SECTORS as readonly string[]).includes(sector)
+  );
+}
+
+/**
+ * Map a liable tenant's monthly customer RECEIPTS total onto the designated-
+ * service bucket its sector indicates. Law 8/2008 Sec. 9 taxes consideration
+ * RECEIVED (cash basis) — callers must pass payments received in the month,
+ * not invoiced/accrued revenue. Non-liable sectors map to all zeros.
+ *
+ * Deliberately simple: the whole receipts total goes into the sector's bucket
+ * (a restaurant's receipts are restaurant/bar services, a hotel's are hotel
+ * services). No per-account mapping — a hotel with a significant separate
+ * non-designated line of business should review Section 3 before filing.
+ */
+export function mapSectorReceiptsToDesignatedServices(
+  sector: string | undefined | null,
+  monthlyReceiptsTotal: number,
+): TLDesignatedServiceReceipts {
+  const receipts: TLDesignatedServiceReceipts = {
+    hotelServices: 0,
+    restaurantBarServices: 0,
+    telecommunicationsServices: 0,
+  };
+  if (!isTLServicesTaxLiableSector(sector)) return receipts;
+  const total = validateReceipt('Designated-service', monthlyReceiptsTotal);
+  if (sector === 'hotel') {
+    receipts.hotelServices = total;
+  } else {
+    receipts.restaurantBarServices = total;
+  }
+  return receipts;
+}
+
 /** Calculate one month's domestic services tax without inferring service type. */
 export function calculateTLServicesTax(
   input: TLDesignatedServiceReceipts,

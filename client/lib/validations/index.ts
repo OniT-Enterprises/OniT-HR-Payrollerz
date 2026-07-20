@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { Timestamp } from 'firebase/firestore';
+import { ageAt, MINIMUM_WORKING_AGE } from '@/lib/payroll/minors';
 
 // ============================================
 // FIRESTORE DATA SCHEMAS (for incoming data)
@@ -47,7 +48,22 @@ export const firestoreEmployeeSchema = z.object({
     manager: z.string().default(''),
     fundingSource: z.string().optional(),
     projectCode: z.string().optional(),
-  }).default({}),
+    // Contract lifecycle (Lei 4/2012): end date for fixed-term contracts,
+    // probation end (Art. 14), fixed-term motive (Art. 12(2)) and renewal
+    // history (Art. 13). Optional — most records won't have them.
+    contractEndDate: z.string().optional(),
+    probationEndDate: z.string().optional(),
+    fixedTermMotive: z.string().optional(),
+    contractRenewals: z.array(z.object({
+      from: z.string(),
+      to: z.string(),
+      changedAt: z.string(),
+      changedBy: z.string().optional(),
+    }).passthrough()).optional(),
+    // passthrough: nested objects strip unlisted fields when validation
+    // succeeds (see invoice items note below) — keep unknown jobDetails
+    // fields intact rather than silently dropping them from mapped employees.
+  }).passthrough().default({}),
   compensation: z.object({
     monthlySalary: z.number().default(0),
     annualLeaveDays: z.number().default(25),
@@ -236,6 +252,10 @@ export const addEmployeeFormSchema = z.object({
     },
     z.enum(['Full-time', 'Part-time', 'Contractor', 'Shareholder']).default('Full-time'),
   ),
+  // Contract lifecycle (Lei 4/2012) — all optional
+  contractEndDate: z.string().optional().or(z.literal('')),
+  probationEndDate: z.string().optional().or(z.literal('')),
+  fixedTermMotive: z.string().optional().or(z.literal('')),
 
   // Step 3: Compensation
   salary: z.string().optional().or(z.literal('')),
@@ -243,6 +263,19 @@ export const addEmployeeFormSchema = z.object({
   benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
   payFrequency: z.enum(['weekly', 'monthly']).default('monthly'),
   isResident: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+  // Lei 4/2012 Art. 68 — minimum working age is 15. Hard block when a date of
+  // birth is provided and the person would be under 15 at the hire date
+  // (falls back to today while the start date is still empty).
+  if (!data.dateOfBirth) return;
+  const age = ageAt(data.dateOfBirth, data.startDate || new Date());
+  if (age !== null && age < MINIMUM_WORKING_AGE) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['dateOfBirth'],
+      message: `Labour Law Art. 68: minimum working age is 15 (age at hire date: ${age})`,
+    });
+  }
 });
 
 export type AddEmployeeFormData = z.infer<typeof addEmployeeFormSchema>;

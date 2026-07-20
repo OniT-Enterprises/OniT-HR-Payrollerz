@@ -371,6 +371,94 @@ export function aggregateTLBillWithholdingPayments(
   return totals;
 }
 
+// ---------------------------------------------------------------------------
+// Withholding tax notice (Law 8/2008 Sec. 58.2)
+// ---------------------------------------------------------------------------
+
+export interface TLWithholdingNoticeData {
+  recipientName: string;
+  recipientTin?: string;
+  category: TLBillWithholdingCategory;
+  /** Display-ready statutory rate, for example "10%" or "2.64%". */
+  ratePercentLabel: string;
+  legalBasis: string;
+  grossAmount: number;
+  withholdingTax: number;
+  netPayment: number;
+}
+
+function assertValidTLBillWithholdingSnapshot(
+  snapshot: TLBillWithholdingSnapshot,
+): void {
+  try {
+    assertValidTLBillWithholdingInstruction(snapshot);
+  } catch {
+    throw new Error('The payment contains an invalid withholding snapshot.');
+  }
+  if (
+    !Number.isFinite(snapshot.grossAmount)
+    || !Number.isFinite(snapshot.taxDue)
+    || !Number.isFinite(snapshot.withholdingTax)
+    || !Number.isFinite(snapshot.netPayment)
+    || compareMoney(snapshot.taxDue, applyRate(snapshot.grossAmount, snapshot.rate)) !== 0
+    || compareMoney(
+      snapshot.withholdingTax,
+      snapshot.collectionMethod === 'payer_withholding' ? snapshot.taxDue : 0,
+    ) !== 0
+    || compareMoney(
+      addMoney(snapshot.netPayment, snapshot.withholdingTax),
+      snapshot.grossAmount,
+    ) !== 0
+  ) {
+    throw new Error('The payment contains an invalid withholding snapshot.');
+  }
+}
+
+/**
+ * Law 8/2008 Sec. 58.2: at the time of payment the payer must issue the
+ * recipient a withholding tax notice setting out the payment made and the
+ * tax withheld. Derives the display-ready notice figures from a frozen
+ * payment snapshot. Only a payer-withheld settlement where tax was actually
+ * withheld yields a notice.
+ */
+export function buildTLWithholdingNoticeData(
+  snapshot: TLBillWithholdingSnapshot,
+): TLWithholdingNoticeData {
+  assertValidTLBillWithholdingSnapshot(snapshot);
+  if (
+    snapshot.collectionMethod !== 'payer_withholding'
+    || compareMoney(snapshot.withholdingTax, 0) <= 0
+  ) {
+    throw new Error(
+      'A withholding tax notice is only issued when the payer withheld tax from the payment.',
+    );
+  }
+  const ratePercent = toDecimal(snapshot.rate).times(100).toDecimalPlaces(4).toString();
+  return {
+    recipientName: snapshot.recipientName,
+    ...(snapshot.recipientTin ? { recipientTin: snapshot.recipientTin } : {}),
+    category: snapshot.category,
+    ratePercentLabel: `${ratePercent}%`,
+    legalBasis: snapshot.legalBasis,
+    grossAmount: snapshot.grossAmount,
+    withholdingTax: snapshot.withholdingTax,
+    netPayment: snapshot.netPayment,
+  };
+}
+
+/** True when a stored payment snapshot supports issuing a Sec. 58.2 notice. */
+export function canIssueTLWithholdingNotice(
+  snapshot: TLBillWithholdingSnapshot | null | undefined,
+): boolean {
+  if (!snapshot) return false;
+  try {
+    buildTLWithholdingNoticeData(snapshot);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Map supplier-payment totals onto the official consolidated monthly form fields. */
 export function mapTLBillWithholdingToATTL(totals: TLBillWithholdingTotals) {
   const include = (value: { payment: number; tax: number; rates: number[] }) => {
