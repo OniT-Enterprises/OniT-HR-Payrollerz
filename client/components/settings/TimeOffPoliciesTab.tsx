@@ -411,6 +411,9 @@ export function TimeOffPoliciesTab({
                 <Label>{t("settings.timeOff.allowCarryOver")}</Label>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.annualLeaveHint")}
+            </p>
           </div>
 
           {/* Sick Leave — the pay bands are statutory (12 days: 6 @ 100%,
@@ -516,6 +519,9 @@ export function TimeOffPoliciesTab({
                 </div>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.maternityHint")}
+            </p>
           </div>
 
           {/* Paternity Leave */}
@@ -572,6 +578,9 @@ export function TimeOffPoliciesTab({
                 </div>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.paternityHint")}
+            </p>
           </div>
 
           {/* Special Leave — Lei 4/2012 Art. 33(3) pooled justified absence */}

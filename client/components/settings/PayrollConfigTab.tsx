@@ -221,6 +221,9 @@ export function PayrollConfigTab({
                 />
                 <Percent className="h-4 w-4 text-muted-foreground" />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.employeeContributionHint')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t('settings.payroll.employerContribution')}</Label>
@@ -242,6 +245,9 @@ export function PayrollConfigTab({
                 />
                 <Percent className="h-4 w-4 text-muted-foreground" />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.employerContributionHint')}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-6">
@@ -276,6 +282,9 @@ export function PayrollConfigTab({
               <Label>{t('settings.payroll.excludePerDiem')}</Label>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground max-w-prose">
+            {t('settings.payroll.inssExclusionsHint')}
+          </p>
           {/* DL 20/2017 Art. 86 small-employer discount — reduces the employer
               INSS share (5.4% through Dec 2026, then 6%). Employee 4% unchanged. */}
           <div className="flex items-start gap-2 pt-1">
@@ -380,6 +389,9 @@ export function PayrollConfigTab({
                   })
                 }
               />
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.maxHoursWeekHint')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t('settings.payroll.first2HoursRate')}</Label>
@@ -425,6 +437,9 @@ export function PayrollConfigTab({
                 />
                 <span className="text-muted-foreground">&times;</span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.sundayHolidayHint')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t('settings.payroll.nightPremiumRate')}</Label>
