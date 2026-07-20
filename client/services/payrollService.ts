@@ -23,6 +23,12 @@ import {
 import { db } from '@/lib/firebase';
 import { chunkArray } from '@/lib/utils';
 import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
+import {
+  buildSettlementPlan,
+  periodMonthOf,
+  resolveScheduledDeductions,
+  withheldRecurringByEmployee,
+} from '@/lib/payroll/recurring-deductions';
 import { isTenantSubscribed } from '@/lib/packagePricing';
 import { addMoney } from '@/lib/currency';
 import { auditLogService } from './auditLogService';
@@ -566,13 +572,108 @@ class PayrollRunService {
       throw new Error(`Only approved payroll runs can be marked paid (current: ${payroll.status})`);
     }
 
+    // Atomic approved -> paid flip (mirrors approvePayrollRun): two tabs could
+    // both pass the pre-check above; the transaction lets exactly one win, so
+    // the recurring-deduction settlement below runs exactly once per run.
     const docRef = doc(db, 'payrollRuns', id);
-    await updateDoc(docRef, {
-      status: 'paid',
-      paidAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) {
+        throw new Error('Payroll run not found');
+      }
+      const current = snap.data().status;
+      if (current !== 'approved') {
+        throw new Error(`Only approved payroll runs can be marked paid (current: ${current})`);
+      }
+      transaction.update(docRef, {
+        status: 'paid',
+        paidAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
+
+    // Settle the Deductions & Advances register AFTER the flip (a paid run can
+    // no longer be cancelled, so a settled balance can't belong to a cancelled
+    // run). Errors here must surface — silently skipping would leave advance
+    // balances undecremented and the once-per-period-month stamp missing.
+    try {
+      await this.settleRecurringDeductions(payroll, id);
+    } catch (error) {
+      console.error(
+        'Recurring-deduction settlement failed after marking run paid:',
+        error,
+      );
+      throw new Error(
+        'The payroll run was marked paid, but updating the Deductions & Advances register failed. ' +
+          'Review advance balances on the Deductions page before running the next payroll.',
+      );
+    }
     return true;
+  }
+
+  /**
+   * After a run is marked paid: decrement each included recurring deduction's
+   * remainingBalance, stamp lastAppliedPeriod (the once-per-period-month
+   * guard), and complete advances whose balance reaches zero.
+   *
+   * INVARIANT — recompute, don't persist: the run's records don't store which
+   * register docs fed their deduction lines, so settlement RECOMPUTES the
+   * schedule with the exact rules usePayrollCalculator used at input-build
+   * time (resolveScheduledDeductions), then allocates the amounts the frozen
+   * records ACTUALLY withheld (post 30%-cap) back to those docs
+   * (buildSettlementPlan). This is safe against register edits between run
+   * creation and paid time because the records' withheld pool bounds every
+   * decrement: a doc added later can only absorb what the run truly withheld
+   * for its slot, a doc deleted later is simply not updated, and a doc's
+   * balance never drops by more than min(scheduled, withheld). Docs the cap
+   * squeezed to zero are not stamped and stay eligible next period month.
+   */
+  private async settleRecurringDeductions(
+    payroll: PayrollRun,
+    runId: string,
+  ): Promise<void> {
+    const tenantId = payroll.tenantId;
+    if (!tenantId) return;
+    const periodMonth = periodMonthOf(payroll.periodStart);
+    if (!/^\d{4}-\d{2}$/.test(periodMonth)) return;
+
+    const [records, deductions] = await Promise.all([
+      payrollRecordService.getPayrollRecordsByRunId(runId, tenantId),
+      recurringDeductionService.getActiveDeductionsForPayroll(tenantId),
+    ]);
+    if (deductions.length === 0 || records.length === 0) return;
+
+    // Percentage docs resolve unbounded here (no salary base at paid time) —
+    // the records' withheld amounts bound them instead.
+    const scheduled = resolveScheduledDeductions(deductions, {
+      periodStart: payroll.periodStart,
+      periodEnd: payroll.periodEnd,
+      unboundedPercentages: true,
+    });
+    const plan = buildSettlementPlan(
+      scheduled,
+      withheldRecurringByEmployee(records),
+      periodMonth,
+    );
+    if (plan.length === 0) return;
+
+    for (const chunk of chunkArray(plan, 450)) {
+      const batch = writeBatch(db);
+      for (const settlement of chunk) {
+        const updates: Record<string, unknown> = {
+          lastAppliedPeriod: settlement.lastAppliedPeriod,
+          updatedAt: serverTimestamp(),
+        };
+        if (settlement.remainingBalance !== undefined) {
+          updates.remainingBalance = settlement.remainingBalance;
+        }
+        if (settlement.status) {
+          updates.status = settlement.status;
+        }
+        batch.update(doc(db, 'recurringDeductions', settlement.id), updates);
+      }
+      await batch.commit();
+    }
   }
 
   async cancelPayrollRun(id: string): Promise<boolean> {
@@ -1142,6 +1243,31 @@ class RecurringDeductionService {
       this.collectionRef,
       where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
+      where('status', '==', 'active')
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as RecurringDeduction;
+    });
+  }
+
+  /**
+   * All ACTIVE deductions for the tenant — the payroll wizard's feed (and the
+   * paid-time settlement's). Equality-only filters, so no composite index is
+   * needed (CI does not deploy firestore.indexes.json).
+   */
+  async getActiveDeductionsForPayroll(tenantId: string): Promise<RecurringDeduction[]> {
+    const q = query(
+      this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('status', '==', 'active')
     );
 

@@ -2135,8 +2135,12 @@ router.post('/payroll/calculate', async (req, res) => {
       return res.status(400).json({ success: false, message: 'No active employees found' });
     }
 
-    // Fetch recurring deductions
-    const deductionsSnap = await tenantCol(tid, 'recurringDeductions')
+    // Fetch recurring deductions. NOTE: the client writes these to the
+    // TOP-LEVEL `recurringDeductions` collection with a tenantId field (see
+    // client/services/payrollService.ts RecurringDeductionService), NOT a
+    // tenant subcollection — querying tenants/{tid}/recurringDeductions
+    // always came back empty.
+    const deductionsSnap = await tenantTopCol(tid, 'recurringDeductions')
       .where('status', '==', 'active')
       .get();
     const recurringByEmployee = {};

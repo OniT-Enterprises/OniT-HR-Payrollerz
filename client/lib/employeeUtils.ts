@@ -1,6 +1,6 @@
 import type { Employee } from "@/services/employeeService";
 import { buildEmployeeComplianceSnapshot } from "@/lib/employeeCompliance";
-import { hasExceededFixedTermLimit } from "@/lib/probation";
+import { hasExceededFixedTermLimit, contractSpanExceedsFixedTermLimit } from "@/lib/probation";
 
 interface ProfileCompletenessResult {
   completionPercentage: number;
@@ -179,16 +179,25 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
       });
     }
 
-    // Fixed-term contract past 3 years — converts to permanent by operation of TL law
+    // Fixed-term contract past 3 years — converts to permanent by operation of
+    // TL law. Triggers on elapsed time since hire OR on the dated span
+    // (hireDate -> contractEndDate) already exceeding 3 years (Arts. 12(4)/13).
     const employmentType = emp.jobDetails?.employmentType || "";
     const looksFixedTerm =
       !!emp.jobDetails?.contractEndDate || /fixed|contract|temp/i.test(employmentType);
-    if (looksFixedTerm && hasExceededFixedTermLimit(emp.jobDetails?.hireDate)) {
+    const elapsedOverLimit = hasExceededFixedTermLimit(emp.jobDetails?.hireDate);
+    const spanOverLimit = contractSpanExceedsFixedTermLimit(
+      emp.jobDetails?.hireDate,
+      emp.jobDetails?.contractEndDate,
+    );
+    if (looksFixedTerm && (elapsedOverLimit || spanOverLimit)) {
       issues.push({
         employee: emp,
         field: "fixedTermOverLimit",
         severity: "warning",
-        issue: "Fixed-term over 3 years — convert to permanent",
+        issue: elapsedOverLimit
+          ? "Fixed-term over 3 years — convert to permanent"
+          : "Fixed-term contract spans over 3 years — convert to permanent",
         action: "Convert",
         path: `/people/employees?id=${id}`,
       });

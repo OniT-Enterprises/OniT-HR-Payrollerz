@@ -101,6 +101,12 @@ const TL_SMALL_EMPLOYER_REDUCTION_BY_YEAR: Record<number, number> = {
   // 2027+ → no reduction (returns the general employer rate).
 };
 
+/**
+ * Art. 86 eligibility headcount: the discount applies to employers with 10 or
+ * fewer workers — the right lapses while the headcount is above this.
+ */
+export const TL_SMALL_EMPLOYER_MAX_WORKERS = 10;
+
 /** Employer-share reduction fraction for a given wage year (0 outside 2017–2026). */
 export function tlSmallEmployerReductionFactor(year: number): number {
   return TL_SMALL_EMPLOYER_REDUCTION_BY_YEAR[year] ?? 0;
@@ -189,14 +195,15 @@ export const TL_SUBSIDIO_ANUAL = {
  * - Overtime must be compensated
  */
 export const TL_WORKING_HOURS = {
-  // Standard hours
+  // Standard hours — Art. 25(1): normal hours may not exceed 8/day AND 44/week
   standardWeeklyHours: 44,
   standardDailyHours: 8,
 
-  // Maximum overtime per day
+  // Maximum overtime per day — Art. 27(4); exceeding it is lawful only for
+  // force majeure (Art. 27(5)), so payroll warns and never blocks.
   maxOvertimePerDay: 4,
 
-  // Maximum overtime per week
+  // Maximum overtime per week — Art. 27(4)
   maxOvertimePerWeek: 16,
 };
 

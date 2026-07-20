@@ -1,6 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
 import {
   requireAuth,
@@ -28,6 +28,62 @@ function generateULID(): string {
  */
 function getISODateString(date: Date = new Date()): string {
   return date.toISOString().split("T")[0]; // YYYY-MM-DD
+}
+
+/**
+ * Normalizes an offer/job date value (Firestore Timestamp, Date, or string)
+ * to a Date. Returns null for missing/unparseable values.
+ */
+function toSafeDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Timestamp) return value.toDate();
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+/** Add whole days to a Date (UTC-based; input is not mutated). */
+function addDaysUTC(date: Date, days: number): Date {
+  const next = new Date(date.getTime());
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+/**
+ * Add calendar months to a Date, clamping day overflow
+ * (e.g. Jan 31 + 1 month -> Feb 28). Input is not mutated.
+ */
+function addMonthsUTC(date: Date, months: number): Date {
+  const next = new Date(date.getTime());
+  const day = next.getUTCDate();
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  const daysInTarget = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+  next.setUTCDate(Math.min(day, daysInTarget));
+  return next;
+}
+
+/**
+ * Statutory probation length in days (Lei 4/2012 Art. 14).
+ * KEEP IN SYNC with client/lib/probation.ts (deriveProbation):
+ * - Fixed-term <= 6 months  -> 8 days
+ * - Fixed-term  > 6 months  -> 15 days
+ * - Permanent               -> 30 days (90 when the job posting selected the
+ *                              extended manager/complex-role probation)
+ */
+function deriveProbationDays(
+  contractType: string,
+  contractDurationMonths: number | undefined,
+  permanentProbation: string | undefined,
+): number {
+  if (contractType === "Fixed-Term") {
+    const months = contractDurationMonths ?? 0;
+    return months > 6 ? 15 : 8;
+  }
+  return permanentProbation === "90_days" ? 90 : 30;
 }
 
 // ============================================================================
@@ -96,12 +152,72 @@ export const acceptOffer = onCall(async (request) => {
       const employeeRef = db.doc(`tenants/${tenantId}/employees/${employeeId}`);
       const employeeDoc = await tx.get(employeeRef);
 
+      // Contract terms captured on the job posting (F22 — Lei 4/2012 Art. 12):
+      // CreateJobLocal stores contractType/contractDurationMonths/probationDays
+      // in the top-level `jobPrivateDetails/{jobId}` doc. The offer may carry a
+      // jobId directly, or via the position it was made for. This read must
+      // stay with the other reads (Firestore: all reads before writes).
+      const positionData = positionDoc.data() as Record<string, unknown>;
+      const jobId =
+        (offer.jobId as string | undefined) ||
+        (offer.terms?.jobId as string | undefined) ||
+        (positionData?.jobId as string | undefined);
+      let jobContract: Record<string, unknown> | null = null;
+      if (jobId) {
+        const jobDetailsDoc = await tx.get(db.doc(`jobPrivateDetails/${jobId}`));
+        if (jobDetailsDoc.exists && jobDetailsDoc.data()?.tenantId === tenantId) {
+          jobContract = jobDetailsDoc.data() as Record<string, unknown>;
+        }
+      }
+
+      // Offer terms win over the job posting; default stays indefinite.
+      const contractType: string =
+        (offer.terms?.contractType as string) ||
+        (offer.contractType as string) ||
+        (jobContract?.contractType as string) ||
+        "Permanent";
+      const rawDuration =
+        offer.terms?.contractDurationMonths ??
+        offer.contractDurationMonths ??
+        jobContract?.contractDurationMonths;
+      const contractDurationMonths =
+        Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
+          ? Number(rawDuration)
+          : undefined;
+      const isFixedTerm = contractType === "Fixed-Term";
+
+      const startDate = toSafeDate(offer.terms?.startDate);
+      // Fixed-term with a known duration -> endDate = startDate + duration.
+      const endDate =
+        isFixedTerm && contractDurationMonths && startDate
+          ? addMonthsUTC(startDate, contractDurationMonths)
+          : null;
+
+      // Probation (Art. 14): prefer the days the job posting derived; else
+      // derive from the contract type (kept in sync with client/lib/probation.ts).
+      const probationDays =
+        Number.isFinite(Number(jobContract?.probationDays)) && Number(jobContract?.probationDays) > 0
+          ? Number(jobContract?.probationDays)
+          : deriveProbationDays(
+              contractType,
+              contractDurationMonths,
+              jobContract?.permanentProbation as string | undefined,
+            );
+      const probationEndDate = startDate
+        ? getISODateString(addDaysUTC(startDate, probationDays))
+        : null;
+
       // ── writes ──
       const contractData = {
         employeeId,
         positionId: offer.positionId,
         startDate: offer.terms.startDate,
-        endDate: null, // Indefinite contract
+        // Fixed-term contracts get a real end date; indefinite stays null.
+        endDate,
+        contractType,
+        contractDurationMonths: contractDurationMonths ?? null,
+        probationDays,
+        probationEndDate,
         weeklyHours: offer.terms.weeklyHours,
         overtimeRate: offer.terms.overtimeRate || 1.5,
         createdAt: FieldValue.serverTimestamp(),
@@ -109,7 +225,7 @@ export const acceptOffer = onCall(async (request) => {
       };
       tx.set(db.doc(`tenants/${tenantId}/contracts/${contractId}`), contractData);
 
-      const snapshotId = `${employeeId}_${getISODateString(offer.terms.startDate)}`;
+      const snapshotId = `${employeeId}_${getISODateString(startDate ?? new Date())}`;
       snapshotIdRef.value = snapshotId;
       tx.set(db.doc(`tenants/${tenantId}/employmentSnapshots/${snapshotId}`), {
         employeeId,
@@ -133,10 +249,19 @@ export const acceptOffer = onCall(async (request) => {
         });
       }
       if (employeeDoc.exists) {
-        tx.update(employeeRef, {
+        // Stamp contract-lifecycle fields on the employee record so the
+        // document-alert scheduler and profile view pick them up (F19/F22).
+        const employeeUpdates: Record<string, unknown> = {
           status: "active",
           updatedAt: FieldValue.serverTimestamp(),
-        });
+        };
+        if (probationEndDate) {
+          employeeUpdates["jobDetails.probationEndDate"] = probationEndDate;
+        }
+        if (isFixedTerm && endDate) {
+          employeeUpdates["jobDetails.contractEndDate"] = getISODateString(endDate);
+        }
+        tx.update(employeeRef, employeeUpdates);
       }
     });
 

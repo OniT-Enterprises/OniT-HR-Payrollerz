@@ -59,6 +59,38 @@ export default function TaxReports() {
   }, [dueDates]);
 
   const hasOverdue = useMemo(() => dueDates.some((d) => d.isOverdue), [dueDates]);
+
+  // DL 20/2017 Art. 39 — overdue INSS payments accrue 1% interest per
+  // month-or-fraction. Warning copy only; the estimate rides on the deadline.
+  const overdueInssArrears = useMemo(() => {
+    const overdue = dueDates
+      .filter((d) => d.type === "inss_monthly" && d.task === "payment" && d.isOverdue && d.arrears)
+      .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+    return overdue[0];
+  }, [dueDates]);
+
+  const arrearsText = useMemo(() => {
+    if (!overdueInssArrears?.arrears) return null;
+    const base =
+      t("taxReports.inssArrearsNotice") ||
+      "Late INSS payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).";
+    const { estimatedInterest, monthsLate } = overdueInssArrears.arrears;
+    if (typeof estimatedInterest === "number") {
+      const monthsLabel =
+        monthsLate === 1
+          ? t("taxReports.inssArrearsMonth") || "month"
+          : t("taxReports.inssArrearsMonths") || "months";
+      return `${base} ${
+        t("taxReports.inssArrearsEstimate", {
+          amount: estimatedInterest.toFixed(2),
+          period: overdueInssArrears.period,
+          months: monthsLate,
+        }) ||
+        `Estimated so far for ${overdueInssArrears.period}: US$ ${estimatedInterest.toFixed(2)} (${monthsLate} ${monthsLabel}).`
+      }`;
+    }
+    return base;
+  }, [overdueInssArrears, t]);
   const getInssTaskLabel = (task?: "statement" | "payment") =>
     task === "payment" ? t("taxReports.inssPaymentTask") : t("taxReports.inssStatementTask");
   const getDeadlineLabel = (deadline: (typeof dueDates)[number] | undefined) => {
@@ -210,6 +242,12 @@ export default function TaxReports() {
                     ? `${nextInss.period} • ${getInssTaskLabel(nextInss.task)} • ${t("taxReports.due")} ${formatDueDate(nextInss.dueDate)}`
                     : t("taxReports.noPeriodsFound")}
                 </p>
+                {arrearsText && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-2 flex items-start gap-1.5">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{arrearsText}</span>
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

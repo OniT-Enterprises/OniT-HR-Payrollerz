@@ -248,6 +248,14 @@ export interface RecurringDeduction {
   totalAmount?: number;       // Original amount for advances
   frequency: PayFrequency | 'per_paycheck';
   status: 'active' | 'paused' | 'completed';
+  /**
+   * 'YYYY-MM' period month of the last PAID payroll run that withheld this
+   * deduction — the once-per-period-month guard (see
+   * client/lib/payroll/recurring-deductions.ts). Stamped by
+   * markPayrollRunAsPaid; run input-building skips docs already stamped with
+   * the run's own period month.
+   */
+  lastAppliedPeriod?: string;
   createdAt?: FirestoreTimestamp;
   updatedAt?: FirestoreTimestamp;
 }

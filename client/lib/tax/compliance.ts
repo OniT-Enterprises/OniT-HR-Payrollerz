@@ -29,6 +29,29 @@ export function getMonthlyWITDueDateBase(period: string): string {
   return `${dueYear}-${pad2(dueMonth)}-15`;
 }
 
+/**
+ * Law 8/2008 Secs. 8-9: the monthly services-tax form and payment are due by
+ * day 15 of the following month (same consolidated monthly form as WIT).
+ */
+export function getMonthlyServicesTaxDueDateBase(period: string): string {
+  return getMonthlyWITDueDateBase(period);
+}
+
+/**
+ * Law 8/2008 Art. 64: income-tax installments are paid by day 15 after the
+ * period (month or quarter) ends. For quarterly payers pass the quarter-end
+ * month as the period (03, 06, 09, 12).
+ */
+export function getInstallmentTaxDueDateBase(period: string): string {
+  return getMonthlyWITDueDateBase(period);
+}
+
+/** True for the last month of a calendar quarter (03, 06, 09, 12). */
+export function isQuarterEndMonth(period: string): boolean {
+  const { month } = parseMonthlyTaxPeriod(period);
+  return month % 3 === 0;
+}
+
 /** Annual employer withholding return: 31 March following the tax year. */
 export function getAnnualWITDueDateBase(taxYear: number): string {
   if (!Number.isInteger(taxYear) || taxYear < 1900 || taxYear > 9998) {

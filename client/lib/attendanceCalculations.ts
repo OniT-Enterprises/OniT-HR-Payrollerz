@@ -183,3 +183,189 @@ export function calculateHoursBreakdown(totalHours: number): { regular: number; 
     overtime: totalHours - standardDailyHours,
   };
 }
+
+// ============================================
+// WEEKLY / HOLIDAY / REST-DAY CLASSIFICATION
+// (Lei 4/2012 Arts. 25(1), 27(2), 30)
+// ============================================
+
+/** One deduplicated attendance day as stored on the record (post daily split). */
+export interface WorkedDayHours {
+  /** 'YYYY-MM-DD' */
+  date: string;
+  /** Hours at 1× after the per-day 8h split (calculateHoursBreakdown). */
+  regularHours: number;
+  /** Hours beyond 8h/day, already split out by the per-day breakdown. */
+  overtimeHours: number;
+}
+
+/** Per-employee classified totals for a summary period. */
+export interface ClassifiedHoursTotals {
+  regularHours: number;
+  overtimeHours: number;
+  /** Hours worked on a public holiday — Art. 27(2) 2× time. */
+  holidayHours: number;
+  /** Hours worked on the weekly rest day (Sunday, Art. 30(2)) — 2× time. */
+  restDayHours: number;
+  /** Largest single-day overtime in the period — Art. 27(4) caps it at 4h. */
+  maxDailyOvertimeHours: number;
+  /** Largest single-ISO-week overtime (daily split + weekly top-up) — Art. 27(4) caps it at 16h. */
+  maxWeeklyOvertimeHours: number;
+  /** Largest single-day holiday or rest-day work — Art. 27(3) caps it at 8h. */
+  maxHolidayOrRestDayHours: number;
+}
+
+/**
+ * Monday of the ISO week (Mon–Sun) containing `date`. Pure string/UTC math so
+ * the bucket never shifts with the host timezone.
+ */
+export function isoWeekStart(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  if ([y, m, d].some((n) => Number.isNaN(n))) return date;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const day = dt.getUTCDay(); // 0=Sun … 6=Sat
+  dt.setUTCDate(dt.getUTCDate() - (day === 0 ? 6 : day - 1));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Day of week for a 'YYYY-MM-DD' string (0=Sunday), timezone-independent. */
+export function weekdayOf(date: string): number {
+  const [y, m, d] = date.split('-').map(Number);
+  if ([y, m, d].some((n) => Number.isNaN(n))) return NaN;
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+}
+
+const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+/**
+ * Classify one employee's deduplicated per-day worked hours for a summary
+ * period into regular / overtime / holiday / rest-day buckets, enforcing the
+ * Lei 4/2012 limits that the per-day split alone cannot see:
+ *
+ * 1. HOLIDAY (Art. 27(2)): all hours worked on a public-holiday date are 2×
+ *    time — reclassified out of regular AND overtime into `holidayHours`.
+ * 2. REST DAY (Arts. 30(2), 27(2)): Sunday is the default weekly rest day;
+ *    all hours worked on a non-holiday Sunday are 2× time — reclassified into
+ *    `restDayHours`. A Sunday that IS a public holiday counts as holiday only
+ *    (holiday wins; the pay rate is the same 2× and hours are never counted
+ *    twice). Per-employee NON-Sunday rest days (a tenant whose rest day is,
+ *    e.g., Friday for some staff) are deliberately out of scope — deferred;
+ *    those hours stay regular and can be entered manually in the payroll row.
+ * 3. WEEKLY 44h (Art. 25(1)): normal hours are capped at 8/day AND 44/week.
+ *    The per-day split already moved >8h/day into overtime, so after step 1–2
+ *    the week's `regularHours` contain only 1×-paid hours. Any of those beyond
+ *    44 in one ISO week (Mon–Sun) violate the weekly cap and are overtime:
+ *
+ *        weeklyTopUp = max(0, weekRegular − 44)
+ *
+ *    Hours already classified as overtime / holiday / rest-day are EXCLUDED
+ *    from `weekRegular` — they already left the regular bucket and are paid at
+ *    a premium (≥1.5×), so counting them again would double-book the excess.
+ *    E.g. 6×8h Mon–Sat: daily OT 0, weekRegular 48 → 4h reclassified to OT.
+ *    Mon–Sat 10h each: daily OT 12, weekRegular 48 → top-up 4 → 16h OT total.
+ *
+ * Boundary limitation (accepted): a week straddling the summary range only
+ * counts the days INSIDE the range — the caller clips to the pay period, and
+ * run periods start at month boundaries, so at most the first/last partial
+ * week of a month can under-detect weekly overtime that spans two runs.
+ *
+ * Also computes the per-day / per-week maxima used by the Art. 27(3)/(4)
+ * cap warnings. The weekly top-up cannot be attributed to a single day, so
+ * `maxDailyOvertimeHours` reflects the per-day split only, while
+ * `maxWeeklyOvertimeHours` includes the top-up.
+ *
+ * Assumes at most one entry per date (the attendance summary dedups upstream).
+ */
+export function classifyWorkedHours(
+  days: WorkedDayHours[],
+  holidayDates: ReadonlySet<string>,
+): ClassifiedHoursTotals {
+  let regularHours = 0;
+  let overtimeHours = 0;
+  let holidayHours = 0;
+  let restDayHours = 0;
+  let maxDailyOvertimeHours = 0;
+  let maxHolidayOrRestDayHours = 0;
+
+  // Per ISO week: [regular at 1×, overtime from the daily split]
+  const weeks = new Map<string, { regular: number; overtime: number }>();
+
+  for (const day of days) {
+    const worked = (day.regularHours || 0) + (day.overtimeHours || 0);
+    if (holidayDates.has(day.date)) {
+      // Holiday wins over Sunday: same 2× rate, no double-count.
+      holidayHours += worked;
+      maxHolidayOrRestDayHours = Math.max(maxHolidayOrRestDayHours, worked);
+      continue;
+    }
+    if (weekdayOf(day.date) === 0) {
+      restDayHours += worked;
+      maxHolidayOrRestDayHours = Math.max(maxHolidayOrRestDayHours, worked);
+      continue;
+    }
+
+    regularHours += day.regularHours || 0;
+    overtimeHours += day.overtimeHours || 0;
+    maxDailyOvertimeHours = Math.max(maxDailyOvertimeHours, day.overtimeHours || 0);
+
+    const weekKey = isoWeekStart(day.date);
+    const week = weeks.get(weekKey) ?? { regular: 0, overtime: 0 };
+    week.regular += day.regularHours || 0;
+    week.overtime += day.overtimeHours || 0;
+    weeks.set(weekKey, week);
+  }
+
+  // Weekly Art. 25(1) pass: reclassify regular hours beyond 44/week into OT.
+  let maxWeeklyOvertimeHours = 0;
+  for (const week of weeks.values()) {
+    const weeklyTopUp = Math.max(
+      0,
+      week.regular - TL_WORKING_HOURS.standardWeeklyHours,
+    );
+    regularHours -= weeklyTopUp;
+    overtimeHours += weeklyTopUp;
+    maxWeeklyOvertimeHours = Math.max(
+      maxWeeklyOvertimeHours,
+      week.overtime + weeklyTopUp,
+    );
+  }
+
+  return {
+    regularHours: round2(regularHours),
+    overtimeHours: round2(overtimeHours),
+    holidayHours: round2(holidayHours),
+    restDayHours: round2(restDayHours),
+    maxDailyOvertimeHours: round2(maxDailyOvertimeHours),
+    maxWeeklyOvertimeHours: round2(maxWeeklyOvertimeHours),
+    maxHolidayOrRestDayHours: round2(maxHolidayOrRestDayHours),
+  };
+}
+
+// ============================================
+// BREAK ENTITLEMENT (Lei 4/2012 Art. 25(2))
+// ============================================
+
+/** Art. 25(2): a worker is entitled to a ≥1h break after 5h continuous work. */
+export const MAX_CONTINUOUS_HOURS_BEFORE_BREAK = 5;
+
+/**
+ * Whether a saved attendance entry deserves the (non-blocking) Art. 25(2)
+ * warning. Precise, not noisy:
+ * - explicit recorded break under 60min on a >5h raw span → warn;
+ * - NO recorded break on a 5–6h raw span → warn (the 60-min default-break
+ *   assumption in computeEntryHours only applies from 6h raw, so these spans
+ *   really are >5h continuous);
+ * - NO recorded break on a ≥6h span → NOT warned: the default 60-min unpaid
+ *   break is already assumed, so we'd be second-guessing our own assumption.
+ */
+export function needsBreakWarning(
+  clockIn: string,
+  clockOut: string,
+  breakMinutes?: number,
+): boolean {
+  if (!clockIn || !clockOut) return false;
+  const rawHours = calculateHoursBetween(clockIn, clockOut);
+  if (rawHours <= MAX_CONTINUOUS_HOURS_BEFORE_BREAK) return false;
+  if (breakMinutes !== undefined) return breakMinutes < DEFAULT_BREAK_MINUTES;
+  return rawHours < 6;
+}

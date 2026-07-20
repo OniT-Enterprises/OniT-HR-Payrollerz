@@ -47,9 +47,26 @@ import { roundMoney, addMoney } from '@/lib/currency';
 import {
   getAnnualWITDueDateBase,
   getFilingStatusFromDays,
+  getInstallmentTaxDueDateBase,
+  getMonthlyServicesTaxDueDateBase,
   getMonthlyWITDueDateBase,
+  isQuarterEndMonth,
   resolveTaskStatus,
 } from '@/lib/tax/compliance';
+import {
+  calculateContractDaysInMonth,
+  calculateParentalLeaveDaysInMonth,
+  calculateUnjustifiedAbsenceDays,
+  deriveAbsenceHoursFromDeduction,
+  type ParentalLeaveInterval,
+} from '@/lib/tax/inss-declaration-days';
+import { calculateInssLateInterest } from '@/lib/tax/inss-late-interest';
+import {
+  calculateTLServicesTax,
+  isTLServicesTaxLiableSector,
+  mapSectorReceiptsToDesignatedServices,
+} from '@/lib/tax/services-tax-tl';
+import { getTLIncomeTaxInstallmentFrequency } from '@/lib/tax/income-tax-installment-tl';
 import {
   MissingStatutoryPayrollDataError,
   requireStatutoryEmployerIdentity,
@@ -108,6 +125,11 @@ interface TaxablePayrollRecord extends TLStatutoryPayrollRecord {
   id?: string;
   payrollRunId?: string;
   earnings?: { type?: string; amount?: number }[];
+  // Used to recover unpaid-absence hours for the INSS DR day declarations:
+  // the persisted record stores no absenceHours, only the 'absence' deduction
+  // amount (= hourlyRate × absenceHours) alongside the record's hourlyRate.
+  deductions?: { type?: string; amount?: number }[];
+  hourlyRate?: number;
 }
 
 /**
@@ -393,6 +415,7 @@ class TaxFilingService {
         annualSubsidy: number;
         netPay: number;
         isResident: boolean;
+        absenceHours: number;
       }
     >();
     periodRecords.forEach((rec) => {
@@ -432,6 +455,7 @@ class TaxFilingService {
         annualSubsidy: 0,
         netPay: 0,
         isResident,
+        absenceHours: 0,
       };
 
       const { wagesPaid, incomeTaxAmount, netPayAmount } = withStatutoryEmployeeContext(recLabel, () => ({
@@ -439,6 +463,18 @@ class TaxFilingService {
         incomeTaxAmount: requireStatutoryPayrollAmount(rec, 'incomeTax'),
         netPayAmount: requireStatutoryPayrollAmount(rec, 'netPay'),
       }));
+
+      // Unpaid-absence hours for the DR "Faltas Injustificadas" column.
+      // The saved record persists only the 'absence' deduction amount
+      // (= hourlyRate × absenceHours) plus hourlyRate, so hours are recovered
+      // by division. No absence line (or no usable rate) → 0 hours.
+      const absenceDeductionTotal = Array.isArray(rec.deductions)
+        ? rec.deductions
+            .filter((d) => d?.type === 'absence')
+            .reduce((sum, d) => addMoney(sum, typeof d.amount === 'number' ? d.amount : 0), 0)
+        : 0;
+      const recordAbsenceHours = deriveAbsenceHoursFromDeduction(absenceDeductionTotal, rec.hourlyRate);
+
       totalsByEmployee.set(employeeId, {
         grossWages: addMoney(accumulated.grossWages, wagesPaid),
         employeeINSS: addMoney(accumulated.employeeINSS, employeeINSS),
@@ -448,11 +484,31 @@ class TaxFilingService {
         annualSubsidy: addMoney(accumulated.annualSubsidy, annualSubsidy),
         netPay: addMoney(accumulated.netPay, netPayAmount),
         isResident,
+        absenceHours: accumulated.absenceHours + recordAbsenceHours,
       });
     });
 
     const employees = await employeeService.getEmployeesByIds(tenantId, Array.from(totalsByEmployee.keys()));
     assertEmployeeMasterCoverage(totalsByEmployee.keys(), employees);
+
+    const [year, month] = period.split('-').map(Number);
+    const periodStartDate = `${period}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const periodEndDate = `${period}-${lastDay}`;
+
+    // Approved maternity/paternity leave overlapping the DR month, for the
+    // "Dias Falta por parentalidade" column (DL 20/2017 Art. 12). One
+    // tenant-scoped query; read-only use of the leave module.
+    const { leaveService } = await import('./leaveService');
+    const approvedLeaves = await leaveService.getEmployeesOnLeave(tenantId, periodStartDate, periodEndDate);
+    const parentalLeavesByEmployee = new Map<string, ParentalLeaveInterval[]>();
+    for (const leave of approvedLeaves) {
+      if (leave.leaveType !== 'maternity' && leave.leaveType !== 'paternity') continue;
+      if (!leave.employeeId || !leave.startDate || !leave.endDate) continue;
+      const list = parentalLeavesByEmployee.get(leave.employeeId) || [];
+      list.push({ startDate: leave.startDate, endDate: leave.endDate });
+      parentalLeavesByEmployee.set(leave.employeeId, list);
+    }
 
     const employeeRecords: MonthlyINSSEmployeeRecord[] = [];
     let totalContributionBase = 0;
@@ -478,6 +534,22 @@ class TaxFilingService {
 
       const grossWages = roundMoney(totals.grossWages);
       const incomeTax = roundMoney(totals.incomeTax);
+
+      // DL 20/2017 Art. 12 day declarations: 30 only when the contract covers
+      // the whole month; prorated for a mid-month hire/termination. A lingering
+      // terminationDate on a rehired (non-terminated) employee is ignored —
+      // same guard the annual WIT return uses.
+      const contractDays = calculateContractDaysInMonth(
+        period,
+        employee.jobDetails?.hireDate,
+        employee.status === 'terminated' ? employee.terminationDate : undefined
+      );
+      const unjustifiedAbsenceDays = calculateUnjustifiedAbsenceDays(totals.absenceHours, contractDays);
+      const parentalLeaveDays = calculateParentalLeaveDaysInMonth(
+        period,
+        parentalLeavesByEmployee.get(employee.id) || []
+      );
+
       employeeRecords.push({
         employeeId: employee.id,
         fullName: `${requireStatutoryText(employee.personalInfo.firstName, 'employee first name')} ${requireStatutoryText(employee.personalInfo.lastName, 'employee last name')}`,
@@ -494,17 +566,17 @@ class TaxFilingService {
         incomeTax,
         netPay: roundMoney(totals.netPay),
         isResident: totals.isResident,
+        contractDays,
+        unjustifiedAbsenceDays,
+        parentalLeaveDays,
+        // Worker NIF/TIN: the employee master carries no TIN field, so the DR
+        // column stays blank rather than inventing a value.
       });
 
       totalContributionBase = addMoney(totalContributionBase, contributionBase);
       totalEmployeeContributions = addMoney(totalEmployeeContributions, employeeContribution);
       totalEmployerContributions = addMoney(totalEmployerContributions, employerContribution);
     }
-
-    const [year, month] = period.split('-').map(Number);
-    const periodStartDate = `${period}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const periodEndDate = `${period}-${lastDay}`;
 
     const totalContributions = addMoney(totalEmployeeContributions, totalEmployerContributions);
 
@@ -1080,6 +1152,17 @@ class TaxFilingService {
         legacyStatus: inssFiling?.status,
         daysUntilDue: inssPayDays,
       });
+      const inssPayOverdue = inssPayDays < 0 && inssPayStatus !== 'filed';
+      // DL 20/2017 Art. 39: 1% of the contribution owed per month-or-fraction
+      // of delay. Estimate only (warning copy, never a ledger entry); the
+      // base is known only when a generated filing carries the totals.
+      const arrearsBase =
+        typeof inssFiling?.totalINSSEmployee === 'number' && typeof inssFiling?.totalINSSEmployer === 'number'
+          ? addMoney(inssFiling.totalINSSEmployee, inssFiling.totalINSSEmployer)
+          : undefined;
+      const arrears = inssPayOverdue
+        ? calculateInssLateInterest(inssPaymentDueDate, getTodayTL(), arrearsBase) || undefined
+        : undefined;
       dueDates.push({
         type: 'inss_monthly',
         task: 'payment',
@@ -1087,9 +1170,22 @@ class TaxFilingService {
         dueDate: inssPaymentDueDate,
         status: inssPayStatus,
         daysUntilDue: inssPayDays,
-        isOverdue: inssPayDays < 0 && inssPayStatus !== 'filed',
+        isOverdue: inssPayOverdue,
         filing: inssFiling || undefined,
+        arrears,
       });
+    }
+
+    // Services tax + income-tax installment deadlines. Both are filed on the
+    // same ATTL consolidated monthly form as WIT (paper) or as sibling e-Tax
+    // declarations, so their filed/pending status follows the period's
+    // monthly-WIT filing record — Xefe keeps one "monthly form filed" fact.
+    // Derivation failures here must never break the core WIT/INSS deadlines.
+    try {
+      const extraDueDates = await this.buildTurnoverTaxDueDates(tenantId, periods, monthlyResults);
+      dueDates.push(...extraDueDates);
+    } catch (error) {
+      console.error('Failed to derive services-tax/installment deadlines:', error);
     }
 
     // Check annual WIT for previous year if we're in Q1
@@ -1114,6 +1210,122 @@ class TaxFilingService {
 
     dueDates.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     return dueDates;
+  }
+
+  /**
+   * Turnover-based ATTL deadlines:
+   *
+   * - Services tax (Law 8/2008 Secs. 5-9, Annex I): hotel/restaurant tenants
+   *   owe a monthly form + payment by day 15 of the following month. The rate
+   *   is 0% below $500/month and 5% on the WHOLE amount at/above $500, and a
+   *   nil return is still due once ever liable — so liable-sector tenants get
+   *   the deadline every month regardless of the amount. The base is
+   *   consideration RECEIVED in the month (cash basis, Sec. 9): customer
+   *   payments recorded in the month, NOT invoiced/accrued revenue.
+   * - Income-tax installment (Law 8/2008 Art. 64): 0.5% of period turnover,
+   *   due day 15 after the month (prior-year turnover > $1M) or quarter
+   *   (otherwise) ends. Surfaced only for tenants with accounting activity
+   *   (any prior-year or current-year revenue).
+   *
+   * Both are declared alongside WIT on the consolidated monthly form, so the
+   * period's monthly-WIT filing record drives filed/pending status.
+   */
+  private async buildTurnoverTaxDueDates(
+    tenantId: string,
+    periods: { year: number; month: number; period: string }[],
+    monthlyResults: { period: string; witFiling: TaxFiling | null }[]
+  ): Promise<FilingDueDate[]> {
+    const entries: FilingDueDate[] = [];
+    const todayIso = getTodayTL();
+    const currentPeriod = todayIso.slice(0, 7);
+    const witFilingByPeriod = new Map(monthlyResults.map((r) => [r.period, r.witFiling]));
+
+    // Heavy services are imported lazily: getFilingsDueSoon runs from the top
+    // bar on every module, and these must not join the initial bundle.
+    const { settingsService } = await import('./settingsService');
+    const { invoiceService } = await import('./invoiceService');
+    const settings = await settingsService.getSettings(tenantId);
+    const sector = settings?.companyStructure?.businessSector;
+
+    if (isTLServicesTaxLiableSector(sector)) {
+      for (const { year, month, period } of periods) {
+        const dueDate = await this.adjustDueDateTL(getMonthlyServicesTaxDueDateBase(period), tenantId);
+        const days = getDaysUntilDue(dueDate);
+        const witFiling = witFilingByPeriod.get(period) || null;
+        const status: TaxFilingStatus = witFiling?.status === 'filed' ? 'filed' : getFilingStatusFromDays(days);
+
+        // Amount only for months that have started; future months have no receipts.
+        let estimatedAmount: number | undefined;
+        if (period <= currentPeriod) {
+          const lastDay = new Date(year, month, 0).getDate();
+          const receipts = await invoiceService.getPaidInvoiceTotalByDateRange(
+            tenantId,
+            `${period}-01`,
+            `${period}-${String(lastDay).padStart(2, '0')}`
+          );
+          estimatedAmount = calculateTLServicesTax(mapSectorReceiptsToDesignatedServices(sector, receipts)).taxDue;
+        }
+
+        entries.push({
+          type: 'services_tax',
+          period,
+          dueDate,
+          status,
+          daysUntilDue: days,
+          isOverdue: days < 0 && status !== 'filed',
+          estimatedAmount,
+        });
+      }
+    }
+
+    // Income-tax installment. Turnover comes from the ledger when a chart of
+    // accounts exists, otherwise from issued invoices — the same dual path the
+    // Profit & Loss page uses.
+    const currentYear = Number(todayIso.slice(0, 4));
+    const priorTaxYear = currentYear - 1;
+    const { accountService, trialBalanceService } = await import('./accountingService');
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasLedger = accounts.length > 0;
+
+    const turnoverForRange = async (start: string, end: string, fiscalYear: number): Promise<number> => {
+      if (hasLedger) {
+        const statement = await trialBalanceService.generateIncomeStatement(tenantId, start, end, fiscalYear);
+        return statement.totalRevenue;
+      }
+      return invoiceService.getRevenueTotalByDateRange(tenantId, start, end);
+    };
+
+    const priorYearTurnover = await turnoverForRange(
+      `${priorTaxYear}-01-01`,
+      `${priorTaxYear}-12-31`,
+      priorTaxYear
+    );
+    let hasActivity = priorYearTurnover > 0;
+    if (!hasActivity) {
+      const ytdTurnover = await turnoverForRange(`${currentYear}-01-01`, todayIso, currentYear);
+      hasActivity = ytdTurnover > 0;
+    }
+
+    if (hasActivity) {
+      const frequency = getTLIncomeTaxInstallmentFrequency(priorYearTurnover);
+      for (const { period } of periods) {
+        if (frequency === 'quarterly' && !isQuarterEndMonth(period)) continue;
+        const dueDate = await this.adjustDueDateTL(getInstallmentTaxDueDateBase(period), tenantId);
+        const days = getDaysUntilDue(dueDate);
+        const witFiling = witFilingByPeriod.get(period) || null;
+        const status: TaxFilingStatus = witFiling?.status === 'filed' ? 'filed' : getFilingStatusFromDays(days);
+        entries.push({
+          type: 'installment_tax',
+          period,
+          dueDate,
+          status,
+          daysUntilDue: days,
+          isOverdue: days < 0 && status !== 'filed',
+        });
+      }
+    }
+
+    return entries;
   }
 
   /**

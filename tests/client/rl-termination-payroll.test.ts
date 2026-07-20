@@ -255,10 +255,12 @@ describe('resolveLeaverFinalPay: cause-aware Art. 56 decision (severanceEntitled
     expect(r.terminationDate).toBe(ABILIO_TERMINATION);
   });
 
-  it('severanceDefaultForReason: OFF only for resignation, ON for every employer-side cause', () => {
+  it('severanceDefaultForReason: OFF only for resignation, ON for every other cause', () => {
     expect(severanceDefaultForReason('resignation')).toBe(false);
+    // 'death' (Art. 47(1)(b) caducidade) defaults ON — statute-literal reading,
+    // payable to the estate/heirs (the offboarding UI carries that note).
     (
-      ['redundancy', 'termination', 'retirement', 'contract_end', 'mutual_agreement', 'other'] as const
+      ['redundancy', 'termination', 'retirement', 'contract_end', 'mutual_agreement', 'death', 'other'] as const
     ).forEach((reason) => expect(severanceDefaultForReason(reason)).toBe(true));
   });
 });

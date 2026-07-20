@@ -24,6 +24,57 @@ function generateULID() {
 function getISODateString(date = new Date()) {
     return date.toISOString().split("T")[0]; // YYYY-MM-DD
 }
+/**
+ * Normalizes an offer/job date value (Firestore Timestamp, Date, or string)
+ * to a Date. Returns null for missing/unparseable values.
+ */
+function toSafeDate(value) {
+    if (!value)
+        return null;
+    if (value instanceof firestore_2.Timestamp)
+        return value.toDate();
+    if (value instanceof Date)
+        return Number.isNaN(value.getTime()) ? null : value;
+    if (typeof value === "string" || typeof value === "number") {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    return null;
+}
+/** Add whole days to a Date (UTC-based; input is not mutated). */
+function addDaysUTC(date, days) {
+    const next = new Date(date.getTime());
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+}
+/**
+ * Add calendar months to a Date, clamping day overflow
+ * (e.g. Jan 31 + 1 month -> Feb 28). Input is not mutated.
+ */
+function addMonthsUTC(date, months) {
+    const next = new Date(date.getTime());
+    const day = next.getUTCDate();
+    next.setUTCDate(1);
+    next.setUTCMonth(next.getUTCMonth() + months);
+    const daysInTarget = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
+    next.setUTCDate(Math.min(day, daysInTarget));
+    return next;
+}
+/**
+ * Statutory probation length in days (Lei 4/2012 Art. 14).
+ * KEEP IN SYNC with client/lib/probation.ts (deriveProbation):
+ * - Fixed-term <= 6 months  -> 8 days
+ * - Fixed-term  > 6 months  -> 15 days
+ * - Permanent               -> 30 days (90 when the job posting selected the
+ *                              extended manager/complex-role probation)
+ */
+function deriveProbationDays(contractType, contractDurationMonths, permanentProbation) {
+    if (contractType === "Fixed-Term") {
+        const months = contractDurationMonths !== null && contractDurationMonths !== void 0 ? contractDurationMonths : 0;
+        return months > 6 ? 15 : 8;
+    }
+    return permanentProbation === "90_days" ? 90 : 30;
+}
 // ============================================================================
 // CALLABLE FUNCTIONS
 // ============================================================================
@@ -47,6 +98,7 @@ exports.acceptOffer = (0, https_1.onCall)(async (request) => {
     const snapshotIdRef = { value: "" };
     try {
         await db.runTransaction(async (tx) => {
+            var _a, _b, _c, _d, _e, _f, _g;
             const offerRef = db.doc(`tenants/${tenantId}/offers/${offerId}`);
             const offerDoc = await tx.get(offerRef);
             if (!offerDoc.exists) {
@@ -66,19 +118,63 @@ exports.acceptOffer = (0, https_1.onCall)(async (request) => {
             const candidateDoc = await tx.get(candidateRef);
             const employeeRef = db.doc(`tenants/${tenantId}/employees/${employeeId}`);
             const employeeDoc = await tx.get(employeeRef);
+            // Contract terms captured on the job posting (F22 — Lei 4/2012 Art. 12):
+            // CreateJobLocal stores contractType/contractDurationMonths/probationDays
+            // in the top-level `jobPrivateDetails/{jobId}` doc. The offer may carry a
+            // jobId directly, or via the position it was made for. This read must
+            // stay with the other reads (Firestore: all reads before writes).
+            const positionData = positionDoc.data();
+            const jobId = offer.jobId ||
+                ((_a = offer.terms) === null || _a === void 0 ? void 0 : _a.jobId) ||
+                (positionData === null || positionData === void 0 ? void 0 : positionData.jobId);
+            let jobContract = null;
+            if (jobId) {
+                const jobDetailsDoc = await tx.get(db.doc(`jobPrivateDetails/${jobId}`));
+                if (jobDetailsDoc.exists && ((_b = jobDetailsDoc.data()) === null || _b === void 0 ? void 0 : _b.tenantId) === tenantId) {
+                    jobContract = jobDetailsDoc.data();
+                }
+            }
+            // Offer terms win over the job posting; default stays indefinite.
+            const contractType = ((_c = offer.terms) === null || _c === void 0 ? void 0 : _c.contractType) ||
+                offer.contractType ||
+                (jobContract === null || jobContract === void 0 ? void 0 : jobContract.contractType) ||
+                "Permanent";
+            const rawDuration = (_f = (_e = (_d = offer.terms) === null || _d === void 0 ? void 0 : _d.contractDurationMonths) !== null && _e !== void 0 ? _e : offer.contractDurationMonths) !== null && _f !== void 0 ? _f : jobContract === null || jobContract === void 0 ? void 0 : jobContract.contractDurationMonths;
+            const contractDurationMonths = Number.isFinite(Number(rawDuration)) && Number(rawDuration) > 0
+                ? Number(rawDuration)
+                : undefined;
+            const isFixedTerm = contractType === "Fixed-Term";
+            const startDate = toSafeDate((_g = offer.terms) === null || _g === void 0 ? void 0 : _g.startDate);
+            // Fixed-term with a known duration -> endDate = startDate + duration.
+            const endDate = isFixedTerm && contractDurationMonths && startDate
+                ? addMonthsUTC(startDate, contractDurationMonths)
+                : null;
+            // Probation (Art. 14): prefer the days the job posting derived; else
+            // derive from the contract type (kept in sync with client/lib/probation.ts).
+            const probationDays = Number.isFinite(Number(jobContract === null || jobContract === void 0 ? void 0 : jobContract.probationDays)) && Number(jobContract === null || jobContract === void 0 ? void 0 : jobContract.probationDays) > 0
+                ? Number(jobContract === null || jobContract === void 0 ? void 0 : jobContract.probationDays)
+                : deriveProbationDays(contractType, contractDurationMonths, jobContract === null || jobContract === void 0 ? void 0 : jobContract.permanentProbation);
+            const probationEndDate = startDate
+                ? getISODateString(addDaysUTC(startDate, probationDays))
+                : null;
             // ── writes ──
             const contractData = {
                 employeeId,
                 positionId: offer.positionId,
                 startDate: offer.terms.startDate,
-                endDate: null, // Indefinite contract
+                // Fixed-term contracts get a real end date; indefinite stays null.
+                endDate,
+                contractType,
+                contractDurationMonths: contractDurationMonths !== null && contractDurationMonths !== void 0 ? contractDurationMonths : null,
+                probationDays,
+                probationEndDate,
                 weeklyHours: offer.terms.weeklyHours,
                 overtimeRate: offer.terms.overtimeRate || 1.5,
                 createdAt: firestore_2.FieldValue.serverTimestamp(),
                 updatedAt: firestore_2.FieldValue.serverTimestamp(),
             };
             tx.set(db.doc(`tenants/${tenantId}/contracts/${contractId}`), contractData);
-            const snapshotId = `${employeeId}_${getISODateString(offer.terms.startDate)}`;
+            const snapshotId = `${employeeId}_${getISODateString(startDate !== null && startDate !== void 0 ? startDate : new Date())}`;
             snapshotIdRef.value = snapshotId;
             tx.set(db.doc(`tenants/${tenantId}/employmentSnapshots/${snapshotId}`), {
                 employeeId,
@@ -100,10 +196,19 @@ exports.acceptOffer = (0, https_1.onCall)(async (request) => {
                 });
             }
             if (employeeDoc.exists) {
-                tx.update(employeeRef, {
+                // Stamp contract-lifecycle fields on the employee record so the
+                // document-alert scheduler and profile view pick them up (F19/F22).
+                const employeeUpdates = {
                     status: "active",
                     updatedAt: firestore_2.FieldValue.serverTimestamp(),
-                });
+                };
+                if (probationEndDate) {
+                    employeeUpdates["jobDetails.probationEndDate"] = probationEndDate;
+                }
+                if (isFixedTerm && endDate) {
+                    employeeUpdates["jobDetails.contractEndDate"] = getISODateString(endDate);
+                }
+                tx.update(employeeRef, employeeUpdates);
             }
         });
         const snapshotId = snapshotIdRef.value;

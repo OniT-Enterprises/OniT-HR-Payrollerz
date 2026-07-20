@@ -30,6 +30,11 @@ const ret: MonthlyINSSReturn = {
       incomeTax: 50,
       netPay: 910,
       isResident: true,
+      // DL 20/2017 Art. 12 day declarations (hired mid-month, 2 unpaid
+      // absence days, 5 days of approved parental leave).
+      contractDays: 16,
+      unjustifiedAbsenceDays: 2,
+      parentalLeaveDays: 5,
     },
     {
       employeeId: 'EMP-2',
@@ -72,12 +77,27 @@ describe('INSS DR Excel export', () => {
     expect(first.getCell(28).value).toBe(40); // 4% worker
     expect(first.getCell(29).value).toBe(910); // líquido
 
+    // DL 20/2017 Art. 12 day columns: declared days come from the snapshot,
+    // never a hardcoded 30 when the contract did not cover the whole month.
+    expect(first.getCell(17).value).toBe(16); // Dias Contrato (mid-month hire)
+    expect(first.getCell(18).value).toBe(2); // Faltas Injustificadas declaradas
+    expect(first.getCell(19).value).toBe(5); // Dias Falta por parentalidade
+    // Worker TIN: no TIN field exists on the employee master → blank column.
+    expect(first.getCell(5).value).toBe('');
+
     // Second worker: explicitly stored zero-tax values, foreign
     const second = dr.getRow(11);
     expect(second.getCell(8).value).toBe('Contratado estrangeiro');
     expect(second.getCell(14).value).toBe('Não');
     expect(second.getCell(25).value).toBe(500);
     expect(second.getCell(29).value).toBe(480); // 500 − 0 tax − 20 INSS
+
+    // Legacy snapshot without day fields: contract days keep the previous
+    // full-month behavior (30); absence/parental cells stay blank (unknown,
+    // not a declared zero).
+    expect(second.getCell(17).value).toBe(30);
+    expect(second.getCell(18).value ?? null).toBeNull();
+    expect(second.getCell(19).value ?? null).toBeNull();
 
     const resumo = wb.getWorksheet('Resumo')!;
     expect(resumo.getCell('D10').value).toBe(150); // total contributions row

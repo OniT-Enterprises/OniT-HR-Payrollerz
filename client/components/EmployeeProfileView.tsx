@@ -22,7 +22,7 @@ import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { formatDateTL } from "@/lib/dateUtils";
 import { getComplianceIssues } from "@/lib/employeeUtils";
-import { hasExceededFixedTermLimit } from "@/lib/probation";
+import { hasExceededFixedTermLimit, contractSpanExceedsFixedTermLimit } from "@/lib/probation";
 import { employeeKeys, useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 
@@ -152,12 +152,19 @@ function FixedTermConversionWarning({ employee }: { employee: Employee }) {
     setConverted(false);
   }, [employee.id]);
 
-  // Show only for fixed-term-looking contracts that have been active >= 3 years.
+  // Show for fixed-term-looking contracts that have been active >= 3 years,
+  // or whose dated span (hireDate -> contractEndDate) already exceeds 3 years
+  // (Arts. 12(4)/13 — renewals cannot take a fixed-term contract past 3 years).
   const isFixedTerm =
     !!employee.jobDetails.contractEndDate ||
     /fixed|contract|temp/i.test(employee.jobDetails.employmentType || "");
+  const elapsedOverLimit = hasExceededFixedTermLimit(employee.jobDetails.hireDate);
+  const spanOverLimit = contractSpanExceedsFixedTermLimit(
+    employee.jobDetails.hireDate,
+    employee.jobDetails.contractEndDate,
+  );
   if (!isFixedTerm) return null;
-  if (!hasExceededFixedTermLimit(employee.jobDetails.hireDate)) return null;
+  if (!elapsedOverLimit && !spanOverLimit) return null;
   if (converted) return null;
 
   const handleConvert = async () => {
@@ -199,9 +206,14 @@ function FixedTermConversionWarning({ employee }: { employee: Employee }) {
             Contract should be permanent
           </div>
           <p className="text-orange-700/90 dark:text-orange-300/90 mt-0.5">
-            Hired on {formatDateTL(employee.jobDetails.hireDate)} on a fixed-term contract. Under
-            the Timor-Leste Labour Code, continuous fixed-term employment past 3 years becomes
-            permanent by operation of law. Review and convert this contract.
+            {elapsedOverLimit
+              ? <>Hired on {formatDateTL(employee.jobDetails.hireDate)} on a fixed-term contract. Under
+                the Timor-Leste Labour Code, continuous fixed-term employment past 3 years becomes
+                permanent by operation of law. Review and convert this contract.</>
+              : <>This contract as dated ({formatDateTL(employee.jobDetails.hireDate)} to{" "}
+                {formatDateTL(employee.jobDetails.contractEndDate)}) spans more than 3 years. Under
+                the Timor-Leste Labour Code, fixed-term employment cannot exceed 3 years including
+                renewals — it becomes permanent by operation of law. Review and convert this contract.</>}
           </p>
         </div>
         </div>
@@ -294,6 +306,16 @@ interface JobInfoCardProps {
 }
 
 function JobInfoCard({ employee, managerName }: JobInfoCardProps) {
+  // Art. 14: surface the probation end date while it is still in the future.
+  const probationEndDate = employee.jobDetails.probationEndDate;
+  const probationInFuture = (() => {
+    if (!probationEndDate) return false;
+    const end = new Date(probationEndDate);
+    return !Number.isNaN(end.getTime()) && end.getTime() > Date.now();
+  })();
+  // Art. 13: renewal history recorded when the contract end date is extended.
+  const renewalCount = employee.jobDetails.contractRenewals?.length ?? 0;
+
   return (
     <Card>
       <CardHeader>
@@ -310,12 +332,28 @@ function JobInfoCard({ employee, managerName }: JobInfoCardProps) {
           value={employee.jobDetails.hireDate ? formatDateTL(employee.jobDetails.hireDate) : undefined}
           label="Hire Date"
         />
+        {probationInFuture && (
+          <InfoRow
+            icon={Calendar}
+            value={formatDateTL(probationEndDate)}
+            label="Probation ends"
+          />
+        )}
         <InfoRow icon={MapPin} value={employee.jobDetails.workLocation} label="Work Location" />
         {employee.jobDetails.manager && (
           <InfoRow icon={User} value={managerName} label="Manager" />
         )}
-        {employee.jobDetails.employmentType && (
-          <Badge variant="outline" className="ml-11">{employee.jobDetails.employmentType}</Badge>
+        {(employee.jobDetails.employmentType || renewalCount > 0) && (
+          <div className="ml-11 flex flex-wrap items-center gap-2">
+            {employee.jobDetails.employmentType && (
+              <Badge variant="outline">{employee.jobDetails.employmentType}</Badge>
+            )}
+            {renewalCount > 0 && (
+              <Badge variant="outline">
+                Renewed {renewalCount} time{renewalCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

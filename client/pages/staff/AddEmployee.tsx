@@ -62,6 +62,13 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import { toDateStringTL } from "@/lib/dateUtils";
 import {
+  ageAt,
+  isLightWorkOnlyAge,
+  LIGHT_WORK_MAX_HOURS_PER_DAY,
+  LIGHT_WORK_MAX_HOURS_PER_WEEK,
+} from "@/lib/payroll/minors";
+import { FIXED_TERM_MOTIVES, appendContractRenewal } from "@/lib/probation";
+import {
   UserPlus,
   User,
   Briefcase,
@@ -164,6 +171,9 @@ export default function AddEmployee() {
       manager: "",
       startDate: "",
       employmentType: "Full-time",
+      contractEndDate: "",
+      probationEndDate: "",
+      fixedTermMotive: "",
       salary: "",
       leaveDays: "12",
       benefits: "standard",
@@ -175,6 +185,17 @@ export default function AddEmployee() {
 
   // Watch form values for canProceed logic
   const formValues = watch();
+
+  // Lei 4/2012: light-work minor (15-16 at hire date — Art. 69 warning) and
+  // fixed-term detection (drives the Art. 12(2) motive select). The under-15
+  // hard block (Art. 68) lives in the zod schema.
+  const isLightWorkMinor = isLightWorkOnlyAge(
+    formValues.dateOfBirth || "",
+    formValues.startDate || new Date(),
+  );
+  const looksFixedTerm =
+    !!formValues.contractEndDate ||
+    /fixed|contract|temp/i.test(formValues.employmentType || "");
 
   // Document entry values stored by fieldKey (persists across nationality switches)
   const [docValues, setDocValues] = useState<Record<string, { number: string; expiryDate: string }>>({
@@ -283,6 +304,9 @@ export default function AddEmployee() {
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
+          contractEndDate: employee.jobDetails.contractEndDate || "",
+          probationEndDate: employee.jobDetails.probationEndDate || "",
+          fixedTermMotive: employee.jobDetails.fixedTermMotive || "",
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "12",
           benefits: ((employee.compensation.benefitsPackage || "standard").toLowerCase()) as "basic" | "standard" | "premium" | "executive",
@@ -408,7 +432,7 @@ export default function AddEmployee() {
 
   // Fields to validate per step
   const stepFields: Record<string, (keyof AddEmployeeFormData)[]> = {
-    basic: ["firstName", "lastName", "email"],
+    basic: ["firstName", "lastName", "email", "dateOfBirth"],
     job: ["department", "jobTitle", "startDate", "employmentType"],
     compensation: [],
     documents: [],
@@ -494,6 +518,22 @@ export default function AddEmployee() {
       const employeeId = primaryDocNumber || `TEMP${Date.now()}`;
       const currentDate = new Date();
 
+      // Compute from the submitted data (zod-normalized), not watched values.
+      const submitLooksFixedTerm =
+        !!data.contractEndDate || /fixed|contract|temp/i.test(data.employmentType || "");
+
+      // F20 (Art. 13): when the contract end date moves FORWARD on an edit,
+      // record the renewal. appendContractRenewal returns null when the
+      // change is not a renewal (first set / cleared / unchanged / backward),
+      // in which case the existing history is preserved via the spread below.
+      const previousJobDetails = isEditMode ? editingEmployee?.jobDetails : undefined;
+      const renewals = appendContractRenewal(
+        previousJobDetails?.contractRenewals,
+        previousJobDetails?.contractEndDate,
+        data.contractEndDate || "",
+        new Date().toISOString(),
+      );
+
       const newEmployee: Omit<Employee, "id"> = {
         personalInfo: {
           firstName: data.firstName,
@@ -509,12 +549,20 @@ export default function AddEmployee() {
           emergencyContactPhone: data.emergencyContactPhone || "",
         },
         jobDetails: {
+          // Preserve fields this form doesn't edit (fundingSource,
+          // projectCode, contractRenewals, ...) — updateEmployee replaces the
+          // whole jobDetails map, so dropping them here would wipe them.
+          ...(previousJobDetails ?? {}),
           employeeId,
           department: data.department,
           position: data.jobTitle,
           hireDate: data.startDate || toDateStringTL(currentDate),
           employmentType: data.employmentType,
-          workLocation: "Office",
+          contractEndDate: data.contractEndDate || "",
+          probationEndDate: data.probationEndDate || "",
+          fixedTermMotive: submitLooksFixedTerm ? data.fixedTermMotive || "" : "",
+          ...(renewals ? { contractRenewals: renewals } : {}),
+          workLocation: previousJobDetails?.workLocation || "Office",
           manager: data.manager || "",
         },
         compensation: {
@@ -635,6 +683,27 @@ export default function AddEmployee() {
           title: t("addEmployee.toast.uploadWarningTitle") || "Document upload failed",
           description: (t("addEmployee.toast.uploadWarningDesc") || "Employee was saved, but failed to upload: {files}").replace("{files}", failedUploads.join(", ")),
           variant: "destructive",
+        });
+      }
+
+      // Lei 4/2012 soft warnings (never block the save):
+      // Art. 69 — a 15-16 year old at the hire date is limited to light work.
+      const savedAgeAtHire = ageAt(data.dateOfBirth || "", data.startDate || currentDate);
+      if (savedAgeAtHire !== null && savedAgeAtHire >= 15 && savedAgeAtHire < 17) {
+        toast({
+          title: t("addEmployee.toast.minorWarningTitle") || "Minor employee (Labour Law Art. 69)",
+          description:
+            t("addEmployee.toast.minorWarningDesc") ||
+            `Light work only: max ${LIGHT_WORK_MAX_HOURS_PER_DAY}h/day, ${LIGHT_WORK_MAX_HOURS_PER_WEEK}h/week, no night or overtime work.`,
+        });
+      }
+      // Art. 12(2) — fixed-term without a stated motive is deemed permanent.
+      if (submitLooksFixedTerm && !data.fixedTermMotive) {
+        toast({
+          title: t("addEmployee.toast.fixedTermMotiveTitle") || "No fixed-term motive stated",
+          description:
+            t("addEmployee.toast.fixedTermMotiveDesc") ||
+            "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
         });
       }
 
@@ -838,8 +907,8 @@ export default function AddEmployee() {
           onStepChange={setCurrentStep}
           onComplete={handleSubmit(onFormSubmit, (validationErrors) => {
             // Navigate to the step with the first error and show toast
-            const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp"];
-            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager"];
+            const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp", "dateOfBirth"];
+            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "contractEndDate", "probationEndDate", "fixedTermMotive"];
             const errorKeys = Object.keys(validationErrors);
             if (errorKeys.some(k => basicFields.includes(k))) {
               setCurrentStep(0);
@@ -896,8 +965,18 @@ export default function AddEmployee() {
                     id="dateOfBirth"
                     type="date"
                     {...register("dateOfBirth")}
-                    className={fieldBorder(watch("dateOfBirth"))}
+                    className={errors.dateOfBirth ? "border-red-500" : fieldBorder(watch("dateOfBirth"))}
                   />
+                  {errors.dateOfBirth && (
+                    <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
+                  )}
+                  {!errors.dateOfBirth && isLightWorkMinor && (
+                    <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                      {t("addEmployee.fields.minorLightWorkNote") ||
+                        `Aged 15-16 at hire: light work only — max ${LIGHT_WORK_MAX_HOURS_PER_DAY}h/day, ${LIGHT_WORK_MAX_HOURS_PER_WEEK}h/week, no night or overtime work (Labour Law Art. 69).`}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="address">{t("addEmployee.fields.address")}</Label>
@@ -1096,6 +1175,68 @@ export default function AddEmployee() {
                     )}
                   />
                 </div>
+              </div>
+
+              {/* Contract dates & fixed-term motive (Lei 4/2012 Arts. 12-14) */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="contractEndDate">
+                    {t("addEmployee.fields.contractEndDate") || "Contract end date"}
+                  </Label>
+                  <Input
+                    id="contractEndDate"
+                    type="date"
+                    {...register("contractEndDate")}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("addEmployee.fields.contractEndDateHelp") || "Fixed-term contracts only — leave empty for permanent."}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="probationEndDate">
+                    {t("addEmployee.fields.probationEndDate") || "Probation ends"}
+                  </Label>
+                  <Input
+                    id="probationEndDate"
+                    type="date"
+                    {...register("probationEndDate")}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("addEmployee.fields.probationEndDateHelp") || "Art. 14: 8/15 days for fixed-term, 30-90 days for permanent contracts."}
+                  </p>
+                </div>
+                {looksFixedTerm && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fixedTermMotive">
+                      {t("addEmployee.fields.fixedTermMotive") || "Fixed-term motive"}
+                    </Label>
+                    <Controller
+                      name="fixedTermMotive"
+                      control={control}
+                      render={({ field }) => (
+                        <Select value={field.value || ""} onValueChange={field.onChange}>
+                          <SelectTrigger id="fixedTermMotive">
+                            <SelectValue placeholder={t("addEmployee.fields.fixedTermMotivePlaceholder") || "Select the statutory motive"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {FIXED_TERM_MOTIVES.map((m) => (
+                              <SelectItem key={m.value} value={m.value}>
+                                {t(`addEmployee.fields.fixedTermMotives.${m.value}`) || `${m.label} (${m.article})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {!formValues.fixedTermMotive && (
+                      <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                        {t("addEmployee.fields.fixedTermMotiveWarning") ||
+                          "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent."}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Work Contract Upload */}
