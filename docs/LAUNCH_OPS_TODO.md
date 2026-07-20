@@ -46,6 +46,14 @@ independence from GitHub, but the gap is closed.)
 
 ## Medium priority
 
+### 3b. ~~Firestore TTL policies for throttle/idempotency collections~~ — DONE July 20 2026
+`stripeWebhookEvents` and `passwordResetIpThrottle` both carry an `expiresAt`
+timestamp; TTL policies on that field were enabled the same day the
+collections shipped, so both garbage-collect automatically. If a new
+throttle-style collection is added later, mirror this: write `expiresAt` and
+run `gcloud firestore fields ttls update expiresAt --collection-group=<name>
+--enable-ttl --project=onit-hr-payroll`.
+
 ### 4. Spam protection on the public apply form
 `/apply/:jobId` now has a basic honeypot, validates the referenced open job in
 Firestore rules, and only accepts a CV path scoped to that job. CAPTCHA/rate limiting
