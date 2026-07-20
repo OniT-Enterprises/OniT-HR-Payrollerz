@@ -71,6 +71,11 @@ import {
   resolveScheduledDeductions,
   type EmployeeRecurringInputs,
 } from "@/lib/payroll/recurring-deductions";
+import {
+  aggregateAllowanceInputs,
+  perPeriodAllowances,
+  type EmployeeAllowanceInputs,
+} from "@/lib/payroll/allowance-enrollments";
 
 interface UsePayrollCalculatorOptions {
   activeEmployees: Employee[];
@@ -88,6 +93,7 @@ interface UsePayrollCalculatorOptions {
 }
 
 const EMPTY_YTD_BY_EMPLOYEE: Record<string, EmployeePayrollYTD> = {};
+const EMPTY_ALLOWANCE_INPUTS: Record<string, EmployeeAllowanceInputs> = {};
 const EMPTY_COMMITTED_FINAL_PAY: Record<
   string,
   { serviceCompensation: number; subsidioAnual: number }
@@ -385,6 +391,23 @@ export function usePayrollCalculator({
     );
   }, [recurringDeductionsQuery.data, periodStart, periodEnd, salaryByEmployee]);
 
+  // Allowances register (benefitEnrollments): active enrollments become
+  // recurring earning inputs, classified per DL 20/2017 Arts. 8-9 (see
+  // allowance-enrollments.ts). Additive model like the deductions register —
+  // a hand-typed row amount adds on top. No settlement: allowances recur
+  // until terminated on the register, nothing counts down.
+  const allowanceEnrollmentsQuery = useQuery({
+    queryKey: ["tenants", tenantId, "benefits", "activeForPayroll"],
+    queryFn: () => payrollService.benefits.getAllEnrollments(tenantId),
+    enabled: Boolean(tenantId) && activeEmployees.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const allowancesByEmployee = useMemo(() => {
+    const docs = allowanceEnrollmentsQuery.data;
+    if (!docs || docs.length === 0) return EMPTY_ALLOWANCE_INPUTS;
+    return aggregateAllowanceInputs(docs, { periodStart, periodEnd });
+  }, [allowanceEnrollmentsQuery.data, periodStart, periodEnd]);
+
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback(
     (data: EmployeePayrollData): TLPayrollResult | null => {
@@ -438,6 +461,12 @@ export function usePayrollCalculator({
           : true);
       const ytd = ytdByEmployee[data.employee.id || ""];
       const recurring = recurringInputsByEmployee[data.employee.id || ""];
+      // Allowances register, split to this run's period. Row fields stay
+      // hand-editable and ADD on top of enrolled amounts.
+      const enrolled = perPeriodAllowances(
+        allowancesByEmployee[data.employee.id || ""],
+        totalPeriodsInMonth,
+      );
 
       const input: TLPayrollInput = {
         employeeId: data.employee.id || "",
@@ -459,9 +488,10 @@ export function usePayrollCalculator({
         bonusINSSCategory: data.bonusINSSCategory,
         commission: 0,
         perDiem: data.perDiem,
-        foodAllowance: 0,
-        transportAllowance: data.allowances,
-        otherEarnings: 0,
+        foodAllowance: enrolled.foodAllowance,
+        transportAllowance: addMoney(data.allowances || 0, enrolled.transportAllowance),
+        otherEarnings: enrolled.otherEarnings,
+        regularAllowances: enrolled.regularAllowances,
         subsidioAnual,
         // Fires the engine's Art. 56 service-compensation earning for a leaver's
         // final run only, and only if not already committed in an earlier run.
@@ -511,6 +541,7 @@ export function usePayrollCalculator({
       committedFinalPay,
       mtdWitByEmployee,
       recurringInputsByEmployee,
+      allowancesByEmployee,
       calculationConfig,
     ],
   );
@@ -1238,6 +1269,12 @@ export function usePayrollCalculator({
             : true);
         const ytd = ytdByEmployee[data.employee.id || ""];
         const recurring = recurringInputsByEmployee[data.employee.id || ""];
+        // Must mirror calculateForEmployee so validation sees the same
+        // enrolled-allowance inputs the run will persist.
+        const enrolled = perPeriodAllowances(
+          allowancesByEmployee[data.employee.id || ""],
+          totalPeriodsInMonth,
+        );
 
         const input: TLPayrollInput = {
           employeeId: data.employee.id || "",
@@ -1259,9 +1296,10 @@ export function usePayrollCalculator({
           bonusINSSCategory: data.bonusINSSCategory,
           commission: 0,
           perDiem: data.perDiem,
-          foodAllowance: 0,
-          transportAllowance: data.allowances,
-          otherEarnings: 0,
+          foodAllowance: enrolled.foodAllowance,
+          transportAllowance: addMoney(data.allowances || 0, enrolled.transportAllowance),
+          otherEarnings: enrolled.otherEarnings,
+          regularAllowances: enrolled.regularAllowances,
           subsidioAnual,
           terminationDate: engineTerminationDate,
           nonCashBenefits: 0,
@@ -1301,6 +1339,7 @@ export function usePayrollCalculator({
       ytdByEmployee,
       committedFinalPay,
       recurringInputsByEmployee,
+      allowancesByEmployee,
       calculationConfig,
     ],
   );

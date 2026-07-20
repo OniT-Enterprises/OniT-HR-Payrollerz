@@ -226,7 +226,7 @@ const messages = {
   },
   "allowances": {
     "title": "Subsidiu",
-    "subtitle": "Jere subsidiu no benefisiu funsionariu",
+    "subtitle": "Jere subsidiu no benefisiu funsionariu — subsidiu ativu tama automatikamente iha kada folha",
     "add": "Tau Subsidiu",
     "addFirst": "Tau ita nia subsidiu primeiru",
     "addError": "Falha tau subsidiu",

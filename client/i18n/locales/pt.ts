@@ -226,7 +226,7 @@ const messages = {
   },
   "allowances": {
     "title": "Subsídios",
-    "subtitle": "Gerir subsídios e benefícios dos funcionários",
+    "subtitle": "Gerir subsídios e benefícios dos funcionários — os subsídios ativos entram automaticamente em cada folha",
     "add": "Adicionar Subsídio",
     "addFirst": "Adicione o seu primeiro subsídio",
     "addError": "Falha ao adicionar subsídio",
