@@ -54,9 +54,21 @@ export interface TLPayrollCalculationConfig {
     residentThreshold: number;
   };
   inss?: { employeeRate: number; employerRate: number };
+  /**
+   * Tenant classification of allowances vs the INSS contribution base
+   * (DL 20/2017 Arts. 8-9). Defaults to excluded (the statutory Art. 9
+   * treatment for true expense allowances); a tenant whose "food allowance" is
+   * really recurring remuneration can opt it back into the base.
+   */
+  inssBase?: {
+    excludeFoodAllowance?: boolean;
+    excludePerDiem?: boolean;
+  };
   overtime?: {
     standard: number;
     sundayHoliday: number;
+    /** Additive night-hours premium as a FRACTION (0.25 = +25%). */
+    nightShiftPremium?: number;
     /** Whether overtime categories round separately or once as a combined total. */
     rounding?: 'per_component' | 'aggregate';
   };
@@ -292,12 +304,13 @@ export function calculateOvertimePay(
 } {
   const standardRate = config?.standard ?? TL_OVERTIME_RATES.standard;
   const sundayHolidayRate = config?.sundayHoliday ?? TL_OVERTIME_RATES.publicHoliday;
+  const nightPremiumRate = config?.nightShiftPremium ?? TL_OVERTIME_RATES.nightShiftPremium;
 
   if (config?.rounding === 'aggregate') {
     const [overtime, nightShift, holiday, restDay] =
       multiplyMoneyPartsToRoundedTotal(hourlyRate, [
         [overtimeHours, standardRate],
-        [nightShiftHours, TL_OVERTIME_RATES.nightShiftPremium],
+        [nightShiftHours, nightPremiumRate],
         [holidayHours, sundayHolidayRate],
         [restDayHours, sundayHolidayRate],
       ]);
@@ -313,7 +326,7 @@ export function calculateOvertimePay(
     nightShift: multiplyMoneyByFactors(
       hourlyRate,
       nightShiftHours,
-      TL_OVERTIME_RATES.nightShiftPremium,
+      nightPremiumRate,
     ),
     holiday: multiplyMoneyByFactors(
       hourlyRate,
@@ -764,7 +777,10 @@ export function calculateTLPayroll(
       description: 'Night Shift Premium',
       descriptionTL: 'Prémiu Turnu Kalan',
       hours: input.nightShiftHours,
-      rate: multiplyMoney(hourlyRate, TL_OVERTIME_RATES.nightShiftPremium),
+      rate: multiplyMoney(
+        hourlyRate,
+        config?.overtime?.nightShiftPremium ?? TL_OVERTIME_RATES.nightShiftPremium,
+      ),
       amount: overtimePay.nightShift,
       isTaxable: true,
       isINSSBase: true,
@@ -863,7 +879,10 @@ export function calculateTLPayroll(
     });
   }
 
-  // Per diem / travel allowance (taxable wages per Taxes & Duties Act definition; excluded from INSS base)
+  // Per diem / travel allowance (taxable wages per Taxes & Duties Act
+  // definition). DL 20/2017 Art. 9 excludes true expense allowances from the
+  // INSS base — the tenant toggle exists for allowances that are really
+  // recurring remuneration (default stays excluded).
   if (input.perDiem > 0) {
     earnings.push({
       type: 'per_diem',
@@ -871,11 +890,12 @@ export function calculateTLPayroll(
       descriptionTL: 'Per Diem / Viajen',
       amount: input.perDiem,
       isTaxable: true,
-      isINSSBase: false,
+      isINSSBase: !(config?.inssBase?.excludePerDiem ?? true),
     });
   }
 
-  // Food allowance (taxable but NOT INSS)
+  // Food allowance (taxable; INSS treatment per the tenant classification,
+  // default excluded per DL 20/2017 Art. 9)
   if (input.foodAllowance > 0) {
     earnings.push({
       type: 'food_allowance',
@@ -883,7 +903,7 @@ export function calculateTLPayroll(
       descriptionTL: 'Subsidiu Ai-han',
       amount: input.foodAllowance,
       isTaxable: true,
-      isINSSBase: false,
+      isINSSBase: !(config?.inssBase?.excludeFoodAllowance ?? true),
     });
   }
 

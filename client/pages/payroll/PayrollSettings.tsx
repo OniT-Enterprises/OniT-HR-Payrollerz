@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { PayrollConfigTab } from "@/components/settings/PayrollConfigTab";
+import { StatutoryRatesCard } from "@/components/settings/StatutoryRatesCard";
 import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -182,6 +183,9 @@ export default function PayrollSettings() {
             initialData={settings.payrollConfig}
           />
         )}
+
+        {/* Statutory rules Xefe applies automatically — read-only by design */}
+        <StatutoryRatesCard t={t} />
 
       </div>
     </div>

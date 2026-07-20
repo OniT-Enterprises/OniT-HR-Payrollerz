@@ -12,6 +12,12 @@ import {
   requireTenantManagerOrAdmin,
   requireTenantMember,
 } from "./authz";
+import {
+  annualCarryOverPolicyFromConfig,
+  computeAnnualCarryOver,
+  firstTrackedAnnualYear,
+  probationEligibleFromDate,
+} from "./leave-logic";
 
 const db = getFirestore();
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -353,11 +359,6 @@ function entitlementsFromConfig(
   return entitlements;
 }
 
-async function loadEntitlements(tenantId: string): Promise<Record<string, number>> {
-  const config = await db.doc(`tenants/${tenantId}/settings/config`).get();
-  return entitlementsFromConfig(config.data());
-}
-
 async function resolveBalanceRef(
   tenantId: string,
   employeeId: string,
@@ -485,22 +486,36 @@ function entitlementBreachMessage(breaches: EntitlementBreach[]): string {
 }
 
 /**
- * Carry-over days per year for an employee, read from their stored leave
- * balance docs. Only annual leave uses carry-over, but the map is keyed by year
+ * Annual carry-over per year for an employee, derived purely from their
+ * tracked request history (pending + approved), never from previously stored
+ * carryOver values — so the entitlement guardrail, the stored balance, and
+ * retries all agree. Only annual leave carries over; the map is keyed by year
  * so callers can look up whichever years a request spans.
  */
-async function loadCarryOverByYear(
-  tenantId: string,
-  employeeId: string,
+function carryOverByYearFromRequests(
+  requests: LeaveRequestData[],
   years: number[],
-): Promise<Map<number, number>> {
+  configData: Record<string, unknown> | undefined,
+  entitlements: Record<string, number>,
+): Map<number, number> {
+  const policy = annualCarryOverPolicyFromConfig(configData);
+  const firstYear = firstTrackedAnnualYear(requests);
+  const committedInYear = (year: number) =>
+    requests.reduce((total, request) => {
+      if (request.leaveType !== "annual") return total;
+      if (request.status !== "pending" && request.status !== "approved") return total;
+      return total + requestDurationInYear(request, year);
+    }, 0);
   const map = new Map<number, number>();
-  await Promise.all(years.map(async (year) => {
-    const ref = await resolveBalanceRef(tenantId, employeeId, year);
-    const snapshot = await ref.get();
-    const carryOver = Number(snapshot.data()?.carryOver ?? 0);
-    map.set(year, Number.isFinite(carryOver) ? carryOver : 0);
-  }));
+  for (const year of years) {
+    map.set(year, computeAnnualCarryOver({
+      targetYear: year,
+      firstTrackedYear: firstYear,
+      annualEntitlement: Number(entitlements.annual ?? 0),
+      committedInYear,
+      policy,
+    }));
+  }
   return map;
 }
 
@@ -509,6 +524,10 @@ function leavePayFraction(
   config: Record<string, unknown> | undefined,
 ): number {
   if (!leaveType) return 0;
+  // Sick pay is statutory banding (12 days: 6 @ 100%, 6 @ 50%) applied by the
+  // payroll engine per YTD usage — a stored percentage must not scale the
+  // timesheet hours projection (the settings UI no longer edits it either).
+  if (leaveType === "sick") return 1;
   const policies = config?.timeOffPolicies as Record<string, unknown> | undefined;
   const configured = policies
     ? [
@@ -536,23 +555,28 @@ async function recomputeLeaveBalance(
   employeeId: string,
   year: number,
   fallbackDepartmentId?: string,
+  cascade = true,
 ): Promise<void> {
-  const [entitlements, balanceRef, requestSnapshot] = await Promise.all([
-    loadEntitlements(tenantId),
+  const [configSnapshot, balanceRef, requestSnapshot] = await Promise.all([
+    db.doc(`tenants/${tenantId}/settings/config`).get(),
     resolveBalanceRef(tenantId, employeeId, year),
     db.collection("leave_requests")
       .where("tenantId", "==", tenantId)
       .where("employeeId", "==", employeeId)
       .get(),
   ]);
+  const configData = configSnapshot.data();
+  const entitlements = entitlementsFromConfig(configData);
   const currentSnapshot = await balanceRef.get();
   const current = currentSnapshot.data() ?? {};
+  const requests = requestSnapshot.docs.map(
+    (document) => document.data() as LeaveRequestData,
+  );
   const totals = new Map<string, { pending: number; used: number }>();
   let employeeName = String(current.employeeName ?? "");
   let departmentId = fallbackDepartmentId ?? String(current.departmentId ?? "");
 
-  for (const document of requestSnapshot.docs) {
-    const request = document.data() as LeaveRequestData;
+  for (const request of requests) {
     if (!request.leaveType || !/^[a-zA-Z0-9_-]+$/.test(request.leaveType)) continue;
     if (request.status !== "pending" && request.status !== "approved") continue;
     const duration = requestDurationInYear(request, year);
@@ -565,7 +589,12 @@ async function recomputeLeaveBalance(
     if (request.departmentId) departmentId = request.departmentId;
   }
 
-  const carryOver = Number(current.carryOver ?? 0);
+  const carryOver = carryOverByYearFromRequests(
+    requests,
+    [year],
+    configData,
+    entitlements,
+  ).get(year) ?? 0;
   const leaveTypes = new Set([
     "annual",
     "sick",
@@ -598,6 +627,18 @@ async function recomputeLeaveBalance(
     carryOver,
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  // Editing this year's requests changes NEXT year's carry-in, so refresh any
+  // later years that already have a balance doc. Bounded walk: balance docs
+  // exist only for years with activity, and each hop recomputes without
+  // cascading further than the next missing doc.
+  if (!cascade) return;
+  for (let nextYear = year + 1; nextYear <= year + 5; nextYear += 1) {
+    const nextRef = await resolveBalanceRef(tenantId, employeeId, nextYear);
+    const nextSnapshot = await nextRef.get();
+    if (!nextSnapshot.exists) break;
+    await recomputeLeaveBalance(tenantId, employeeId, nextYear, fallbackDepartmentId, false);
+  }
 }
 
 async function syncLeaveBalance(
@@ -1115,11 +1156,23 @@ export const createLeaveRequest = onCall(async (request) => {
   const overrideBalance = data.overrideBalance === true
     && (role === "owner" || role === "hr-admin");
   const entitlements = entitlementsFromConfig(configSnapshot.data());
-  const carryOverByYear = await loadCarryOverByYear(
-    tenantId,
-    employeeId,
-    requestYears(candidate),
-  );
+
+  // Probation gate (tenant policy): annual leave cannot start before hire date
+  // + probationMonthsBeforeLeave. Statutorily protected absences (sick,
+  // maternity, special) are never blocked by probation, and owners/HR admins
+  // may knowingly override, same as the balance override.
+  if (leaveType === "annual" && !overrideBalance) {
+    const eligibleFrom = probationEligibleFromDate(
+      typeof jobDetails?.hireDate === "string" ? jobDetails.hireDate : undefined,
+      Number(policies?.probationMonthsBeforeLeave ?? 0),
+    );
+    if (eligibleFrom && data.startDate < eligibleFrom) {
+      throw new HttpsError(
+        "failed-precondition",
+        `Annual leave becomes available after the probation period (from ${eligibleFrom})`,
+      );
+    }
+  }
 
   const ref = db.collection("leave_requests").doc();
   // Overlap check + entitlement check + create run in one transaction so two
@@ -1145,6 +1198,15 @@ export const createLeaveRequest = onCall(async (request) => {
     }
 
     if (!overrideBalance) {
+      // Carry-over derives from the same request rows this transaction just
+      // locked (candidate included, so a year-spanning request counts against
+      // its own earlier-year usage).
+      const carryOverByYear = carryOverByYearFromRequests(
+        [...existing.map(({ data: leave }) => leave), candidate],
+        requestYears(candidate),
+        configSnapshot.data(),
+        entitlements,
+      );
       const breaches = findEntitlementBreaches(candidate, existing, entitlements, carryOverByYear);
       if (breaches.length > 0) {
         throw new HttpsError(
@@ -1285,12 +1347,11 @@ export const approveLeaveRequest = onCall(async (request) => {
     && data.overrideBalance === true
     && (member.role === "owner" || member.role === "hr-admin");
   let entitlements: Record<string, number> = {};
-  let carryOverByYear = new Map<number, number>();
+  let approvalConfigData: Record<string, unknown> | undefined;
   if (data.approved && !overrideBalance && initialLeave.employeeId) {
-    [entitlements, carryOverByYear] = await Promise.all([
-      loadEntitlements(data.tenantId),
-      loadCarryOverByYear(data.tenantId, initialLeave.employeeId, requestYears(initialLeave)),
-    ]);
+    const configSnapshot = await db.doc(`tenants/${data.tenantId}/settings/config`).get();
+    approvalConfigData = configSnapshot.data();
+    entitlements = entitlementsFromConfig(approvalConfigData);
   }
 
   await db.runTransaction(async (transaction) => {
@@ -1336,6 +1397,14 @@ export const approveLeaveRequest = onCall(async (request) => {
 
       if (!overrideBalance) {
         const candidate: LeaveRequestData = { ...leave, duration };
+        // Carry-over derives from the transaction-locked request rows (the
+        // candidate is among `others`, so its own earlier-year days count).
+        const carryOverByYear = carryOverByYearFromRequests(
+          others.map(({ data: other }) => other),
+          requestYears(candidate),
+          approvalConfigData,
+          entitlements,
+        );
         const breaches = findEntitlementBreaches(
           candidate,
           others,

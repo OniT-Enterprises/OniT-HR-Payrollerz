@@ -153,7 +153,9 @@ export function calculateProRataHours(
 // Approved leave days record zero attendance hours, so a naive
 // expected-minus-recorded absence calculation would dock pay for paid leave.
 // This classifies approved leave overlapping the pay period:
-//  - paid, non-sick types  → hours credited against absence
+//  - paid, non-sick types  → hours credited against absence, scaled by the
+//                            policy's paid fraction (a 50%-paid type credits
+//                            half the hours; the other half stays deducted)
 //  - sick                  → day count for TL sick-pay rules (100%/50%)
 //  - unpaid types          → left in absence (deducted), by design
 
@@ -175,7 +177,8 @@ export function computeLeaveCredits(
   periodStart: string,
   periodEnd: string,
   standardDailyHours: number,
-  isPaidLeaveType: (leaveType: string) => boolean,
+  /** Paid fraction (0..1) of the policy for a leave type; 0 = unpaid. */
+  payFractionForType: (leaveType: string) => number,
   workingDaysBetween: (start: string, end: string) => number,
 ): Map<string, LeaveCredit> {
   const credits = new Map<string, LeaveCredit>();
@@ -192,10 +195,11 @@ export function computeLeaveCredits(
     const credit = credits.get(req.employeeId) ?? { paidLeaveHours: 0, sickDays: 0 };
     if (req.leaveType === 'sick') {
       credit.sickDays += days;
-    } else if (isPaidLeaveType(req.leaveType)) {
-      credit.paidLeaveHours += days * standardDailyHours;
     } else {
-      continue; // unpaid leave: no credit entry — stays as absence deduction
+      const fraction = Math.min(1, Math.max(0, payFractionForType(req.leaveType)));
+      // unpaid (fraction 0): no credit entry — stays as absence deduction
+      if (fraction <= 0) continue;
+      credit.paidLeaveHours += days * standardDailyHours * fraction;
     }
     credits.set(req.employeeId, credit);
   }

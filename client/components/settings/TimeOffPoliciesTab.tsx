@@ -335,6 +335,9 @@ export function TimeOffPoliciesTab({
               {t("settings.timeOff.months")}
             </span>
           </div>
+          <p className="text-xs text-muted-foreground">
+            {t("settings.timeOff.probationHint")}
+          </p>
         </div>
 
         <Separator />
@@ -410,7 +413,9 @@ export function TimeOffPoliciesTab({
             </div>
           </div>
 
-          {/* Sick Leave */}
+          {/* Sick Leave — the pay bands are statutory (12 days: 6 @ 100%,
+              6 @ 50%) and the payroll engine applies them regardless of any
+              stored percentage, so no editable days/percentage inputs here. */}
           <div className="p-4 border rounded-lg space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -418,66 +423,40 @@ export function TimeOffPoliciesTab({
                 <span className="font-medium">
                   {t("settings.timeOff.sickLeave")}
                 </span>
+                <Badge
+                  variant="outline"
+                  className="border-transparent bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                >
+                  {t("settings.payroll.statutory.pending")}
+                </Badge>
               </div>
               <Badge variant="secondary">
                 {timeOffPolicies.sickLeave.daysPerYear}{" "}
                 {t("settings.timeOff.days")}
               </Badge>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>{t("settings.timeOff.daysPerYear")}</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={timeOffPolicies.sickLeave.daysPerYear}
-                  onChange={(e) =>
-                    setTimeOffPolicies({
-                      ...timeOffPolicies,
-                      sickLeave: {
-                        ...timeOffPolicies.sickLeave,
-                        daysPerYear: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("settings.timeOff.paidPercentage")}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={timeOffPolicies.sickLeave.paidPercentage}
-                    onChange={(e) =>
-                      setTimeOffPolicies({
-                        ...timeOffPolicies,
-                        sickLeave: {
-                          ...timeOffPolicies.sickLeave,
-                          paidPercentage: parseInt(e.target.value, 10) || 0,
-                        },
-                      })
-                    }
-                  />
-                  <Percent className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-6">
-                <Switch
-                  checked={timeOffPolicies.sickLeave.requiresCertificate}
-                  onCheckedChange={(checked) =>
-                    setTimeOffPolicies({
-                      ...timeOffPolicies,
-                      sickLeave: {
-                        ...timeOffPolicies.sickLeave,
-                        requiresCertificate: checked,
-                      },
-                    })
-                  }
-                />
-                <Label>{t("settings.timeOff.requiresMedicalCert")}</Label>
-              </div>
+            <div>
+              <p className="text-sm font-medium">
+                {t("settings.timeOff.sickPayBandsTitle")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("settings.timeOff.sickPayBandsText")}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={timeOffPolicies.sickLeave.requiresCertificate}
+                onCheckedChange={(checked) =>
+                  setTimeOffPolicies({
+                    ...timeOffPolicies,
+                    sickLeave: {
+                      ...timeOffPolicies.sickLeave,
+                      requiresCertificate: checked,
+                    },
+                  })
+                }
+              />
+              <Label>{t("settings.timeOff.requiresMedicalCert")}</Label>
             </div>
           </div>
 
