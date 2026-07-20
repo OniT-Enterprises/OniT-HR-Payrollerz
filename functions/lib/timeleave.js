@@ -420,7 +420,15 @@ function leavePayFraction(leaveType, config) {
         const percentage = Number((_a = configured.paidPercentage) !== null && _a !== void 0 ? _a : 100);
         return Number.isFinite(percentage) ? Math.min(1, Math.max(0, percentage / 100)) : 1;
     }
-    return leaveType === "unpaid" ? 0 : 1;
+    // Unconfigured fallback. Maternity/paternity default to UNPAID by the
+    // employer: since DL 18/2017 the INSS parental subsidy (100% of the
+    // reference wage, claimed by the worker directly) replaced employer-paid
+    // parental leave, and Art. 21(3) voids the subsidy for days the worker
+    // receives salary. A tenant that explicitly configures a paid percentage
+    // for these types keeps it (deliberate employer-paid option, above).
+    return leaveType === "unpaid" || leaveType === "maternity" || leaveType === "paternity"
+        ? 0
+        : 1;
 }
 async function recomputeLeaveBalance(tenantId, employeeId, year, fallbackDepartmentId, cascade = true) {
     var _a, _b, _c, _d, _e, _f, _g;

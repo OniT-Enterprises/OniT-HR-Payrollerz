@@ -545,6 +545,15 @@ export interface BankTransaction {
     type: 'invoice_payment' | 'bill_payment' | 'expense';
     id: string;
     description: string;
+    /** Payment doc created when the match itself recorded the payment. */
+    paymentId?: string;
+    /**
+     * True when matching this line recorded a real payment on the invoice/
+     * bill (settle-on-match). Unmatching is refused for these lines — the
+     * payment is the source of truth and is managed from the invoice/bill
+     * page, not from the bank statement.
+     */
+    paymentRecorded?: boolean;
   };
 
   createdAt: Date;

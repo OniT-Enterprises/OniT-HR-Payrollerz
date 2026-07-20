@@ -1,11 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildJournalEntry,
   getDefaultMappings,
+  getExportSettingsForTenant,
 } from "@/services/quickbooksExportService";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import type { TLPayrollRun, TLPayrollRecord } from "@/types/payroll-tl";
 import type { QBExportOptions } from "@/types/quickbooks";
+
+// The service lazily `import()`s these two modules inside its Firestore-touching
+// functions, so mocking them here keeps the settings tests Firebase-free (CI has
+// no VITE_FIREBASE_* env).
+vi.mock("firebase/firestore", () => ({
+  doc: vi.fn(() => ({})),
+  getDoc: vi.fn(),
+}));
+vi.mock("@/lib/firebase", () => ({ db: {} }));
+
+import { getDoc } from "firebase/firestore";
+const mockedGetDoc = vi.mocked(getDoc);
 
 const options: QBExportOptions = {
   format: "csv",
@@ -245,5 +258,65 @@ describe("quickbooks payroll journal export", () => {
     expect(entry.totalDebits).toBe(entry.totalCredits);
     // gross 1400 + employer INSS 84.
     expect(entry.totalDebits).toBe(1484);
+  });
+});
+
+describe("getExportSettingsForTenant settings shape", () => {
+  beforeEach(() => {
+    mockedGetDoc.mockReset();
+  });
+
+  it("returns the full default shape when no settings doc exists", async () => {
+    mockedGetDoc.mockResolvedValueOnce({
+      exists: () => false,
+    } as never);
+
+    const settings = await getExportSettingsForTenant("t1");
+
+    expect(settings.defaultFormat).toBe("csv");
+    expect(settings.includeEmployeeDetail).toBe(false);
+    expect(settings.groupByDepartment).toBe(false);
+    expect(settings.accountMappings).toEqual(getDefaultMappings());
+  });
+
+  it("returns the saved defaultFormat and custom mappings the export dialog relies on", async () => {
+    const customMappings = getDefaultMappings().map((m) => ({
+      ...m,
+      qbAccountName: `Custom:${m.qbAccountName}`,
+      isDefault: false,
+    }));
+    mockedGetDoc.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({
+        defaultFormat: "iif",
+        includeEmployeeDetail: false,
+        groupByDepartment: false,
+        accountMappings: customMappings,
+      }),
+    } as never);
+
+    const settings = await getExportSettingsForTenant("t1");
+
+    // The export dialog pre-selects this format and previews with these
+    // mappings — the same ones exportPayrollToQuickBooks writes to the file.
+    expect(settings.defaultFormat).toBe("iif");
+    expect(settings.accountMappings).toEqual(customMappings);
+  });
+
+  it("normalizes a legacy/partial doc (invalid format, empty mappings) to a safe shape", async () => {
+    mockedGetDoc.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({
+        defaultFormat: "xlsx",
+        accountMappings: [],
+      }),
+    } as never);
+
+    const settings = await getExportSettingsForTenant("t1");
+
+    expect(settings.defaultFormat).toBe("csv");
+    expect(settings.includeEmployeeDetail).toBe(false);
+    expect(settings.groupByDepartment).toBe(false);
+    expect(settings.accountMappings).toEqual(getDefaultMappings());
   });
 });

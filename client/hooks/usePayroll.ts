@@ -323,3 +323,21 @@ export function useCreateBankTransfer() {
     },
   });
 }
+
+/**
+ * Advance a bank transfer's status (pending/processing -> completed/failed).
+ * The transfer doc is Xefe-side bookkeeping — the bank executes from the
+ * emailed pack/file, so a human confirms the outcome here.
+ */
+export function useUpdateBankTransferStatus() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: BankTransfer['status'] }) =>
+      payrollService.transfers.updateTransferStatus(id, status),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: bankTransferKeys.all(tenantId) });
+    },
+  });
+}

@@ -504,7 +504,26 @@ function generateIIF(journalEntry: QBJournalEntry): string {
 // ============================================
 
 /**
- * Get QuickBooks export settings (tenant-scoped)
+ * Default export settings (used when no doc is saved yet, and to
+ * backfill fields missing from older saved docs).
+ */
+function defaultExportSettings(): QBExportSettings {
+  return {
+    defaultFormat: "csv",
+    includeEmployeeDetail: false,
+    groupByDepartment: false,
+    accountMappings: getDefaultMappings(),
+  };
+}
+
+/**
+ * Get QuickBooks export settings (tenant-scoped).
+ *
+ * Always resolves to a well-formed shape: `defaultFormat` is a valid
+ * 'csv' | 'iif' and `accountMappings` is non-empty (falling back to the
+ * defaults for anything a legacy/partial doc is missing). The export
+ * dialog and `exportPayrollToQuickBooks` both rely on this. No caching —
+ * every call reads Firestore.
  */
 export async function getExportSettingsForTenant(
   tenantId: string,
@@ -515,7 +534,18 @@ export async function getExportSettingsForTenant(
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return docSnap.data() as QBExportSettings;
+      const saved = docSnap.data() as Partial<QBExportSettings>;
+      const defaults = defaultExportSettings();
+      return {
+        ...defaults,
+        ...saved,
+        defaultFormat: saved.defaultFormat === "iif" ? "iif" : "csv",
+        accountMappings:
+          Array.isArray(saved.accountMappings) &&
+          saved.accountMappings.length > 0
+            ? saved.accountMappings
+            : defaults.accountMappings,
+      };
     }
   } catch (error) {
     console.error("Error loading QB export settings:", error);
@@ -523,12 +553,7 @@ export async function getExportSettingsForTenant(
   }
 
   // Return defaults
-  return {
-    defaultFormat: "csv",
-    includeEmployeeDetail: false,
-    groupByDepartment: false,
-    accountMappings: getDefaultMappings(),
-  };
+  return defaultExportSettings();
 }
 
 /**

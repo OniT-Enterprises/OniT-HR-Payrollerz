@@ -505,20 +505,39 @@ export function TimeOffPoliciesTab({
                     min={0}
                     max={100}
                     value={timeOffPolicies.maternityLeave.paidPercentage}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // A percentage > 0 is the deliberate employer-paid
+                      // option — keep isPaid in sync so the payroll engines
+                      // (which require isPaid === true) honor it.
+                      const paidPercentage = parseInt(e.target.value, 10) || 0;
                       setTimeOffPolicies({
                         ...timeOffPolicies,
                         maternityLeave: {
                           ...timeOffPolicies.maternityLeave,
-                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.parentalInssExplainer") ||
+                "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave."}
+            </p>
+            {timeOffPolicies.maternityLeave.isPaid &&
+              timeOffPolicies.maternityLeave.paidPercentage > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    {t("settings.timeOff.parentalPaidWarning") ||
+                      "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy."}
+                  </p>
+                </div>
+              )}
             <p className="text-xs text-muted-foreground">
               {t("settings.timeOff.maternityHint")}
             </p>
@@ -564,20 +583,38 @@ export function TimeOffPoliciesTab({
                     min={0}
                     max={100}
                     value={timeOffPolicies.paternityLeave.paidPercentage}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // Keep isPaid in sync with the deliberate employer-paid
+                      // choice (see maternity above).
+                      const paidPercentage = parseInt(e.target.value, 10) || 0;
                       setTimeOffPolicies({
                         ...timeOffPolicies,
                         paternityLeave: {
                           ...timeOffPolicies.paternityLeave,
-                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.parentalInssExplainer") ||
+                "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave."}
+            </p>
+            {timeOffPolicies.paternityLeave.isPaid &&
+              timeOffPolicies.paternityLeave.paidPercentage > 0 && (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    {t("settings.timeOff.parentalPaidWarning") ||
+                      "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy."}
+                  </p>
+                </div>
+              )}
             <p className="text-xs text-muted-foreground">
               {t("settings.timeOff.paternityHint")}
             </p>

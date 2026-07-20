@@ -23,6 +23,8 @@ import { formatDateISO } from '@/lib/dateUtils';
 import { paths } from '@/lib/paths';
 import { addMoney, roundMoney } from '@/lib/currency';
 import { parseBankAmount } from '@/lib/accounting/calculations';
+import { invoiceService } from './invoiceService';
+import { billService } from './billService';
 import type {
   BankTransaction,
   ReconciliationStatus,
@@ -350,11 +352,138 @@ class BankReconciliationService {
   }
 
   /**
-   * Unmatch a transaction
+   * Settle-matching records money, so it must start from an unmatched line —
+   * settling an already-matched line again would double-record the payment.
+   */
+  private async assertUnmatched(transactionId: string): Promise<void> {
+    const tenantId = this.ensureTenant();
+    const snapshot = await getDoc(doc(getCollection(tenantId), transactionId));
+    if (!snapshot.exists()) {
+      throw new Error('Bank transaction not found');
+    }
+    if (snapshot.data().status !== 'unmatched') {
+      throw new Error('This bank line is already matched');
+    }
+  }
+
+  /**
+   * Match a bank deposit to an OUTSTANDING invoice by first recording a real
+   * payment on it — the exact path the Invoices page uses (payment doc,
+   * invoice paid/partial status, receipt email on full settlement, GL journal
+   * when a chart of accounts exists) — then linking the bank line to it.
+   *
+   * Ordering is deliberate: payment first, link second. If the link write
+   * fails after the payment committed, the books are still honest (the
+   * invoice IS paid); the line just stays unmatched, and re-settling a fully
+   * paid invoice is rejected by recordPayment's own balance check.
+   *
+   * The caller validates amount-vs-outstanding with decideSettlement();
+   * recordPayment re-validates inside its transaction as the backstop.
+   */
+  async settleInvoiceMatch(params: {
+    transactionId: string;
+    invoiceId: string;
+    /** Positive payment amount (full or partial, never above balance due). */
+    amount: number;
+    /** Bank line date (YYYY-MM-DD) — the day the money actually moved. */
+    date: string;
+    /** Bank line description, kept as the payment reference. */
+    reference: string;
+    matchDescription: string;
+  }): Promise<{ paymentId: string }> {
+    const tenantId = this.ensureTenant();
+    await this.assertUnmatched(params.transactionId);
+
+    const paymentId = await invoiceService.recordPayment(
+      tenantId,
+      params.invoiceId,
+      {
+        date: params.date,
+        amount: params.amount,
+        method: 'bank_transfer',
+        reference: params.reference,
+        notes: 'Recorded from bank reconciliation',
+      },
+    );
+
+    await updateDoc(doc(getCollection(tenantId), params.transactionId), {
+      status: 'matched',
+      matchedTo: {
+        type: 'invoice_payment',
+        id: params.invoiceId,
+        description: params.matchDescription,
+        paymentId,
+        paymentRecorded: true,
+      },
+    });
+
+    return { paymentId };
+  }
+
+  /**
+   * Match a bank withdrawal to an UNPAID bill by recording a real payment
+   * through billService.recordPayment (payment doc, bill paid/partial status,
+   * GL journal when a chart of accounts exists), then linking the bank line.
+   * Bills with payer withholding are never offered for settle-on-match (see
+   * canSettleBillFromBank) because the bank line shows cash, not gross AP.
+   * Same payment-first ordering rationale as settleInvoiceMatch.
+   */
+  async settleBillMatch(params: {
+    transactionId: string;
+    billId: string;
+    amount: number;
+    date: string;
+    reference: string;
+    matchDescription: string;
+  }): Promise<{ paymentId: string }> {
+    const tenantId = this.ensureTenant();
+    await this.assertUnmatched(params.transactionId);
+
+    const paymentId = await billService.recordPayment(
+      tenantId,
+      params.billId,
+      {
+        date: params.date,
+        amount: params.amount,
+        method: 'bank_transfer',
+        reference: params.reference,
+        notes: 'Recorded from bank reconciliation',
+      },
+    );
+
+    await updateDoc(doc(getCollection(tenantId), params.transactionId), {
+      status: 'matched',
+      matchedTo: {
+        type: 'bill_payment',
+        id: params.billId,
+        description: params.matchDescription,
+        paymentId,
+        paymentRecorded: true,
+      },
+    });
+
+    return { paymentId };
+  }
+
+  /**
+   * Unmatch a transaction.
+   *
+   * Refused when the match itself recorded a payment: silently unlinking
+   * would leave the payment (and its GL posting) behind while the line goes
+   * back to "unmatched", inviting a second settlement of the same money.
+   * There is no client-side payment reversal path, so the honest route is
+   * managing the payment from the invoice/bill page.
    */
   async unmatchTransaction(transactionId: string): Promise<boolean> {
     const tenantId = this.ensureTenant();
     const docRef = doc(getCollection(tenantId), transactionId);
+
+    const snapshot = await getDoc(docRef);
+    if (snapshot.exists() && snapshot.data().matchedTo?.paymentRecorded) {
+      throw new Error(
+        'A payment was recorded when this line was matched. Manage the payment from the invoice or bill page.',
+      );
+    }
 
     await updateDoc(docRef, {
       status: 'unmatched',

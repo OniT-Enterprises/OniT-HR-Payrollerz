@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Check,
   Clock,
+  FileDown,
   Loader2,
   Plus,
   X,
@@ -603,6 +604,70 @@ export default function LeaveRequests() {
     }
   };
 
+  // DL 18/2017 Art. 25(1)(c): the worker's INSS parental-subsidy claim must
+  // attach an employer declaration (first day of the license, days with/
+  // without remuneration). Generated client-side for approved maternity/
+  // paternity requests; the dynamic import keeps @react-pdf out of the bundle.
+  const [declarationRequestId, setDeclarationRequestId] = useState<
+    string | null
+  >(null);
+  const downloadInssDeclaration = async (request: LeaveRequest) => {
+    if (!request.id) return;
+    try {
+      setDeclarationRequestId(request.id);
+      const [
+        {
+          downloadInssParentalDeclaration,
+          inclusiveLicenseDays,
+          parentalDaysWithRemuneration,
+        },
+        { employeeService },
+      ] = await Promise.all([
+        import("@/lib/pdf/inssParentalDeclaration"),
+        import("@/services/employeeService"),
+      ]);
+      // NISS is optional on the declaration — a missing employee record must
+      // not block generating it.
+      const employee = await employeeService
+        .getEmployeeById(tenantId, request.employeeId)
+        .catch(() => null);
+      const policy =
+        request.leaveType === "maternity"
+          ? policies?.maternityLeave
+          : policies?.paternityLeave;
+      await downloadInssParentalDeclaration({
+        companyDetails: settingsQuery.data?.companyDetails,
+        workerName: request.employeeName,
+        workerNiss:
+          employee?.documents?.socialSecurityNumber?.number ||
+          employee?.personalInfo?.socialSecurityNumber ||
+          undefined,
+        leaveKind:
+          request.leaveType === "maternity" ? "maternity" : "paternity",
+        startDate: request.startDate,
+        endDate: request.endDate,
+        totalDays: inclusiveLicenseDays(request.startDate, request.endDate),
+        // Employer-paid days during the license: only a policy the tenant
+        // explicitly made paid declares the request's working days; the TL
+        // default (INSS subsidy replaces salary) declares zero.
+        daysWithRemuneration: parentalDaysWithRemuneration(
+          policy,
+          request.duration,
+        ),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.leaveRequests.toast.errorTitle"),
+        description:
+          t("timeLeave.leaveRequests.toast.inssDeclarationFailed") ||
+          "Could not generate the INSS declaration.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeclarationRequestId(null);
+    }
+  };
+
   const canCreate = Boolean(currentEmployeeId || canSelectEmployee);
 
   if (loading) {
@@ -860,6 +925,33 @@ export default function LeaveRequests() {
                         )}
                       </div>
                     )}
+
+                    {/* Employer declaration for the worker's INSS parental-
+                        subsidy claim (DL 18/2017 Art. 25(1)(c)). */}
+                    {request.status === "approved" &&
+                      (request.leaveType === "maternity" ||
+                        request.leaveType === "paternity") &&
+                      canDecide &&
+                      (!isManager ||
+                        request.departmentId === managerDepartmentId) && (
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={declarationRequestId === request.id}
+                            onClick={() => void downloadInssDeclaration(request)}
+                          >
+                            {declarationRequestId === request.id ? (
+                              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                            ) : (
+                              <FileDown className="mr-1.5 h-4 w-4" />
+                            )}
+                            {t(
+                              "timeLeave.leaveRequests.actions.inssDeclaration",
+                            ) || "INSS declaration"}
+                          </Button>
+                        </div>
+                      )}
                   </div>
                 </article>
               );
@@ -977,6 +1069,28 @@ export default function LeaveRequests() {
                     {t("timeLeave.leaveRequests.dialog.specialLeaveHint") ||
                       "3 paid days per calendar year, pooled across marriage, family death, and community or religious events (Labour Law Art. 33.3). Need more days? Request them as annual or unpaid leave. The employer may ask for supporting proof."}
                   </p>
+                )}
+                {(form.leaveType === "maternity" ||
+                  form.leaveType === "paternity") && (
+                  <>
+                    <p className="mt-1 text-muted-foreground">
+                      {form.leaveType === "maternity"
+                        ? t(
+                            "timeLeave.leaveRequests.dialog.maternityInssHint",
+                          ) ||
+                          "The worker claims the maternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage monthly, for up to 90 days, when the worker has 6 months of contributions in the last 12 (DL 18/2017). The leave itself is a minimum of 12 weeks, at least 10 of them after the birth."
+                        : t(
+                            "timeLeave.leaveRequests.dialog.paternityInssHint",
+                          ) ||
+                          "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017)."}
+                    </p>
+                    <p className="mt-1 text-amber-700 dark:text-amber-300">
+                      {t(
+                        "timeLeave.leaveRequests.dialog.parentalInssFallbackHint",
+                      ) ||
+                        "If the worker does not meet the contribution condition, INSS pays nothing — whether the employer must pay instead is legally unsettled; confirm with your accountant."}
+                    </p>
+                  </>
                 )}
               </div>
             )}

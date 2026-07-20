@@ -33,6 +33,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -46,7 +56,6 @@ import {
   Clock,
   XCircle,
   AlertCircle,
-  Eye,
   Filter,
   Loader2,
   RefreshCw,
@@ -55,7 +64,14 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { useBankTransfers, usePayrollRuns, usePayrollRecordsByRun, useCreateBankTransfer } from "@/hooks/usePayroll";
+import {
+  useBankTransfers,
+  usePayrollRuns,
+  usePayrollRecordsByRun,
+  useCreateBankTransfer,
+  useUpdateBankTransferStatus,
+  useMarkPayrollRunAsPaid,
+} from "@/hooks/usePayroll";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BankTransfer } from "@/types/payroll";
@@ -96,6 +112,8 @@ export default function BankTransfers() {
   const loadingTransfers = transferQuery.isLoading;
   const loadingRuns = payrollRunsQuery.isLoading;
   const createTransferMutation = useCreateBankTransfer();
+  const updateTransferStatusMutation = useUpdateBankTransferStatus();
+  const markRunPaidMutation = useMarkPayrollRunAsPaid();
 
   const settingsQuery = useQuery({
     queryKey: ['tenants', tenantId, 'settings'],
@@ -132,6 +150,14 @@ export default function BankTransfers() {
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
+  // Row status actions (pending/processing -> completed/failed). The transfer
+  // doc is Xefe-side bookkeeping — the bank executes from the emailed
+  // pack/file, so a human confirms the outcome here.
+  const [statusAction, setStatusAction] = useState<{
+    transfer: BankTransfer;
+    to: "completed" | "failed";
+  } | null>(null);
+  const [alsoMarkRunPaid, setAlsoMarkRunPaid] = useState(true);
 
   // Bank file generation state
   const [showBankFileDialog, setShowBankFileDialog] = useState(false);
@@ -432,6 +458,95 @@ export default function BankTransfers() {
     }
   };
 
+  // ─── Transfer status actions ────────────────────────────────────
+  const statusActionRun = statusAction
+    ? payrollRuns.find((run) => run.id === statusAction.transfer.payrollRunId)
+    : undefined;
+  // Marking the transfer completed is the moment salaries actually left the
+  // bank — offer to flip the linked run to paid in the same confirmation
+  // (markPayrollRunAsPaid also settles the Deductions & Advances register).
+  const offerMarkRunPaid =
+    statusAction?.to === "completed" && statusActionRun?.status === "approved";
+  const statusActionPending =
+    updateTransferStatusMutation.isPending || markRunPaidMutation.isPending;
+
+  const openStatusAction = (
+    transfer: BankTransfer,
+    to: "completed" | "failed",
+  ) => {
+    setAlsoMarkRunPaid(true);
+    setStatusAction({ transfer, to });
+  };
+
+  const handleConfirmStatusAction = async () => {
+    const action = statusAction;
+    if (!action?.transfer.id || statusActionPending) return;
+    const linkedRun = payrollRuns.find(
+      (run) => run.id === action.transfer.payrollRunId,
+    );
+    const shouldMarkRunPaid =
+      action.to === "completed" &&
+      alsoMarkRunPaid &&
+      !!linkedRun?.id &&
+      linkedRun.status === "approved";
+
+    try {
+      await updateTransferStatusMutation.mutateAsync({
+        id: action.transfer.id,
+        status: action.to,
+      });
+    } catch (error) {
+      console.error("Failed to update transfer status:", error);
+      toast({
+        title: t("bankTransfers.toastErrorTitle"),
+        description:
+          t("bankTransfers.toastStatusUpdateError") ||
+          "Failed to update the transfer status. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: t("bankTransfers.toastTransferSuccess"),
+      description:
+        action.to === "completed"
+          ? t("bankTransfers.toastMarkedCompleted", {
+              reference: action.transfer.reference,
+            }) || `Transfer ${action.transfer.reference} marked completed.`
+          : t("bankTransfers.toastMarkedFailed", {
+              reference: action.transfer.reference,
+            }) || `Transfer ${action.transfer.reference} marked failed.`,
+    });
+
+    if (shouldMarkRunPaid) {
+      try {
+        await markRunPaidMutation.mutateAsync(linkedRun!.id!);
+        toast({
+          title: t("bankTransfers.toastTransferSuccess"),
+          description:
+            t("bankTransfers.toastRunMarkedPaid") ||
+            "Payroll run marked as paid.",
+        });
+      } catch (error) {
+        // The transfer status already changed; be explicit about what failed
+        // so the user finishes the job from Payroll History.
+        console.error("Failed to mark payroll run as paid:", error);
+        toast({
+          title: t("bankTransfers.toastErrorTitle"),
+          description:
+            t("bankTransfers.toastRunPaidError") ||
+            `The transfer was marked completed, but marking the payroll run as paid failed${
+              error instanceof Error ? `: ${error.message}` : "."
+            } You can mark it paid from Payroll History.`,
+          variant: "destructive",
+        });
+      }
+    }
+
+    setStatusAction(null);
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -502,7 +617,9 @@ export default function BankTransfers() {
         transferInFlight.current = false;
         toast({
           title: t("bankTransfers.toastTransferSuccess"),
-          description: t("bankTransfers.toastTransferSuccessDesc", { reference }),
+          description:
+            t("bankTransfers.toastTransferRecordedDesc", { reference }) ||
+            `Transfer ${reference} recorded as pending. Take or email the bank file/pack to your bank, then mark the transfer completed here.`,
         });
         setFormData({
           payrollRunId: "",
@@ -1001,9 +1118,13 @@ export default function BankTransfers() {
                     {/* New Transfer button moved to PageHeader */}
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>{t("bankTransfers.initiateBankTransfer")}</DialogTitle>
+                        <DialogTitle>
+                          {t("bankTransfers.recordBankTransfer") ||
+                            "Record Bank Transfer"}
+                        </DialogTitle>
                         <DialogDescription>
-                          {t("bankTransfers.initiateBankTransferDesc")}
+                          {t("bankTransfers.recordBankTransferDesc") ||
+                            "Records this payroll's transfer as pending in Xefe. No money is sent — generate the bank files, take or email them to your bank, then mark the transfer completed here."}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleSubmit} className="space-y-4">
@@ -1104,7 +1225,8 @@ export default function BankTransfers() {
                                 {t("bankTransfers.processing")}...
                               </>
                             ) : (
-                              t("bankTransfers.initiateTransfer")
+                              t("bankTransfers.recordTransfer") ||
+                              "Record Transfer"
                             )}
                           </Button>
                         </div>
@@ -1159,13 +1281,32 @@ export default function BankTransfers() {
                           {transfer.reference}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            title={t("bankTransfers.viewDetails")}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          {canManageTenant && transfer.status !== "completed" ? (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title={t("bankTransfers.markCompleted") || "Mark completed"}
+                                aria-label={t("bankTransfers.markCompleted") || "Mark completed"}
+                                onClick={() => openStatusAction(transfer, "completed")}
+                              >
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              </Button>
+                              {transfer.status !== "failed" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  title={t("bankTransfers.markFailed") || "Mark failed"}
+                                  aria-label={t("bankTransfers.markFailed") || "Mark failed"}
+                                  onClick={() => openStatusAction(transfer, "failed")}
+                                >
+                                  <XCircle className="h-4 w-4 text-red-500" />
+                                </Button>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1175,6 +1316,82 @@ export default function BankTransfers() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Confirm advancing a transfer's status. Xefe never talks to the
+            bank — a human confirms what the bank did with the emailed
+            pack/file, and (for completed) can flip the linked run to paid. */}
+        <AlertDialog
+          open={!!statusAction}
+          onOpenChange={(open) => {
+            if (!open) setStatusAction(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {statusAction?.to === "completed"
+                  ? t("bankTransfers.markCompletedTitle") ||
+                    "Mark transfer completed?"
+                  : t("bankTransfers.markFailedTitle") ||
+                    "Mark transfer failed?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {statusAction?.to === "completed"
+                  ? t("bankTransfers.markCompletedDesc") ||
+                    "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank."
+                  : t("bankTransfers.markFailedDesc") ||
+                    "Record that your bank rejected or did not execute this salary batch. This only updates the record in Xefe — you can mark it completed later if the bank processes a retry."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {statusAction && (
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-mono text-xs">{statusAction.transfer.reference}</p>
+                <p className="text-muted-foreground">
+                  {statusAction.transfer.payrollPeriod} &middot;{" "}
+                  {formatCurrency(statusAction.transfer.amount)} &middot;{" "}
+                  {statusAction.transfer.employeeCount} {t("bankTransfers.emp")}
+                </p>
+              </div>
+            )}
+            {offerMarkRunPaid && (
+              <label
+                htmlFor="also-mark-run-paid"
+                className="flex items-start gap-2 text-sm"
+              >
+                <Checkbox
+                  id="also-mark-run-paid"
+                  checked={alsoMarkRunPaid}
+                  onCheckedChange={(checked) =>
+                    setAlsoMarkRunPaid(checked === true)
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  {t("bankTransfers.alsoMarkRunPaid") ||
+                    "Also mark the payroll run as paid (updates advance and recurring-deduction balances)"}
+                </span>
+              </label>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={statusActionPending}>
+                {t("bankTransfers.cancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmStatusAction}
+                disabled={statusActionPending}
+                className={
+                  statusAction?.to === "failed"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }
+              >
+                {statusAction?.to === "completed"
+                  ? t("bankTransfers.markCompleted") || "Mark completed"
+                  : t("bankTransfers.markFailed") || "Mark failed"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* BNU/BNCTL run on emailed instructions — hand the user the exact
             message their branch already accepts, next to the downloaded pack. */}

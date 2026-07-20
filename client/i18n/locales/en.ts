@@ -1908,6 +1908,8 @@ const messages = {
       "save": "Save Payment Structure"
     },
     "timeOff": {
+      "parentalInssExplainer": "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave.",
+      "parentalPaidWarning": "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy.",
       "title": "Time Off Policies",
       "description": "Configure leave entitlements based on Timor-Leste labor law",
       "laborCodeTitle": "Timor-Leste Labor Code (Law 4/2012)",
@@ -2815,6 +2817,14 @@ const messages = {
       }
     },
     "offboarding": {
+      "exitInterviews": {
+        "title": "Exit interviews",
+        "description": "Answers recorded during offboarding for completed departures.",
+        "export": "Export CSV",
+        "exportedDesc": "Exit interview answers downloaded as a CSV file.",
+        "exportedTitle": "Export ready",
+        "recommendShort": "Would recommend",
+      },
       "notice": {
         "required": "Required notice",
         "days": "days",
@@ -3079,6 +3089,7 @@ const messages = {
       "subtitle": "Manage employee leave requests and approvals",
       "scopeMissing": "Your manager account is not linked to a department yet. You can still see your own requests, but HR must set your department before team approvals appear.",
       "actions": {
+        "inssDeclaration": "INSS declaration",
         "newRequest": "New Request",
         "cancel": "Cancel",
         "approve": "Approve",
@@ -3086,6 +3097,9 @@ const messages = {
         "submit": "Submit Request"
       },
       "dialog": {
+        "maternityInssHint": "The worker claims the maternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage monthly, for up to 90 days, when the worker has 6 months of contributions in the last 12 (DL 18/2017). The leave itself is a minimum of 12 weeks, at least 10 of them after the birth.",
+        "paternityInssHint": "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017).",
+        "parentalInssFallbackHint": "If the worker does not meet the contribution condition, INSS pays nothing — whether the employer must pay instead is legally unsettled; confirm with your accountant.",
         "title": "Submit Leave Request",
         "description": "Create a new leave request for an employee",
         "employee": "Employee *",
@@ -3181,6 +3195,7 @@ const messages = {
         "marriage": "Marriage Certificate"
       },
       "toast": {
+        "inssDeclarationFailed": "Could not generate the INSS declaration.",
         "errorTitle": "Error",
         "loadFailed": "Failed to load leave data. Please try again.",
         "validationTitle": "Validation Error",
@@ -3870,6 +3885,11 @@ const messages = {
       }
     },
     "custom": {
+      "builtIn": "Built-in",
+      "deleteDescription": "This removes the saved report for everyone in your company. It does not delete any employee or attendance data.",
+      "deleteReport": "Delete report",
+      "deleteTitle": "Delete this saved report?",
+      "savedReport": "Saved",
       "title": "Custom Reports",
       "subtitle": "Build and customize your own reports",
       "noDataTitle": "No report data is available",
@@ -3890,6 +3910,9 @@ const messages = {
       "noMatches": "No data matched your criteria",
       "showingLimited": "Showing 20 of {{count}} records. Export to see all.",
       "builder": {
+        "runOnce": "Run once",
+        "saveAndRun": "Save & run",
+        "saving": "Saving…",
         "title": "Create custom report",
         "description": "Choose a data source, the columns you need, and optional filters.",
         "name": "Report name",
@@ -3951,6 +3974,10 @@ const messages = {
         }
       },
       "toast": {
+        "deleteFailed": "Could not delete the report. Please try again.",
+        "deleted": "Report deleted",
+        "saveFailed": "Could not save the report. Please try again.",
+        "saved": "Report saved",
         "generated": "Report generated",
         "generatedDescription": "Found {{count}} records",
         "error": "Could not run report",
@@ -6784,6 +6811,26 @@ const messages = {
       "bills": "bills"
     },
     "bankRecon": {
+      "blockedGeneric": "Cannot record this payment",
+      "blockedOverpayment": "Bank amount is more than the balance due — cannot match",
+      "confirmBillPaid": "The bill becomes paid.",
+      "confirmFullA": "This records a payment of",
+      "confirmInvoicePaid": "The invoice becomes paid.",
+      "confirmOn": "on",
+      "confirmPartialA": "This records a partial payment of",
+      "confirmReceiptEmail": "If the customer has an email on file, they will receive a payment receipt.",
+      "confirmRemainsDue": "will remain due.",
+      "linkOnlyHint": "Already recorded — matching just links this bank line",
+      "nowPaid": "is now paid",
+      "partialRecordedOn": "Partial payment recorded on",
+      "paymentRecorded": "Payment recorded",
+      "paymentRecordedTag": "Payment recorded",
+      "recordAndMatch": "Record payment & match",
+      "remainsDue": "remains due",
+      "settleBlocked": "The bank amount is more than the balance due — record this payment from the invoice or bill page instead.",
+      "unmatchLocked": "Payment recorded — manage it from the invoice or bill page",
+      "willRecordFull": "Will record the payment — becomes paid",
+      "willRecordPartial": "Will record a partial payment",
       "alreadyImportedSkipped": "already imported (skipped)",
       "title": "Bank Reconciliation",
       "subtitle": "Import and match bank transactions",
@@ -7002,6 +7049,14 @@ const messages = {
     "stepReviewDesc": "Please review these numbers before submitting payroll."
   },
   "deductions": {
+    "edit": "Edit",
+    "editDialogDescription": "Update this deduction. Advance repayment progress is kept — the remaining balance only changes if you change the total amount.",
+    "editDialogTitle": "Edit Deduction",
+    "editTotalHint": "Changing the total keeps what has already been repaid — the remaining balance becomes the new total minus the amount repaid so far.",
+    "saveChanges": "Save Changes",
+    "totalAmountRequired": "An advance that tracks a balance needs a total amount greater than zero.",
+    "updateError": "Failed to update the deduction.",
+    "updateSuccess": "Deduction updated.",
     "title": "Deductions & Advances",
     "subtitle": "Manage recurring deductions and payroll advances",
     "addDeduction": "Add Deduction",
@@ -7013,6 +7068,9 @@ const messages = {
     "otherDeductions": "Other Deductions",
     "deductionsTableTitle": "Deductions",
     "deductionsTableDescription": "Manage employee deductions and advances",
+    "deductionTypes": "Deduction Types",
+    "clickToFilter": "Click a type to filter the table",
+    "active": "active",
     "searchPlaceholder": "Search...",
     "tabAll": "All",
     "tabAdvances": "Advances",
@@ -7218,6 +7276,19 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "alsoMarkRunPaid": "Also mark the payroll run as paid (updates advance and recurring-deduction balances)",
+    "markCompleted": "Mark completed",
+    "markCompletedDesc": "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank.",
+    "markCompletedTitle": "Mark transfer completed?",
+    "markFailed": "Mark failed",
+    "markFailedDesc": "Record that your bank rejected or did not execute this salary batch. This only updates the record in Xefe — you can mark it completed later if the bank processes a retry.",
+    "markFailedTitle": "Mark transfer failed?",
+    "recordBankTransfer": "Record Bank Transfer",
+    "recordBankTransferDesc": "Records this payroll's transfer as pending in Xefe. No money is sent — generate the bank files, take or email them to your bank, then mark the transfer completed here.",
+    "recordTransfer": "Record Transfer",
+    "toastRunMarkedPaid": "Payroll run marked as paid.",
+    "toastRunPaidError": "The transfer was marked completed, but marking the payroll run as paid failed. You can mark it paid from Payroll History.",
+    "toastStatusUpdateError": "Failed to update the transfer status. Please try again.",
     "title": "Bank Transfers",
     "subtitle": "Manage payroll bank transfers and transaction history",
     "coverEmail": {

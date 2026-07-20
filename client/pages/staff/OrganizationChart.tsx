@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PageHeader from "@/components/layout/PageHeader";
@@ -19,20 +16,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
-import {
   Users,
   Crown,
   User,
-  Grip,
   Database,
   Plus,
   Edit,
-  Move,
   Building2,
   UserCheck,
   GraduationCap,
@@ -64,7 +53,6 @@ export default function OrganizationChart() {
   const [loading, setLoading] = useState(true);
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
-  const [dragMode, setDragMode] = useState(false);
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
@@ -184,7 +172,9 @@ export default function OrganizationChart() {
         } else {
           // Create a placeholder head using department's assigned director/manager or a generic placeholder
           const assignedHead =
-            dept.director || dept.manager || t("orgChart.labels.noHeadAssigned");
+            dept.director ||
+            dept.manager ||
+            t("orgChart.labels.noHeadAssigned");
           headPerson = {
             id: `head-placeholder-${dept.id}`,
             name: assignedHead,
@@ -225,52 +215,52 @@ export default function OrganizationChart() {
     [t],
   );
 
-  const migrateMissingDepartments = useCallback(async (
-    employees: Employee[],
-    existingDepartments: Department[],
-  ) => {
-    try {
-      // Only run migration if NO departments exist but we have employees with department assignments
-      if (existingDepartments.length > 0 || employees.length === 0) {
-        return;
-      }
+  const migrateMissingDepartments = useCallback(
+    async (employees: Employee[], existingDepartments: Department[]) => {
+      try {
+        // Only run migration if NO departments exist but we have employees with department assignments
+        if (existingDepartments.length > 0 || employees.length === 0) {
+          return;
+        }
 
-      const employeeDepartments = [
-        ...new Set(employees.map((emp) => emp.jobDetails.department)),
-      ];
-      const validDepartments = employeeDepartments.filter(
-        (deptName) => deptName && deptName.trim(),
-      );
+        const employeeDepartments = [
+          ...new Set(employees.map((emp) => emp.jobDetails.department)),
+        ];
+        const validDepartments = employeeDepartments.filter(
+          (deptName) => deptName && deptName.trim(),
+        );
 
-      if (validDepartments.length > 0) {
-        // Add departments one by one with individual error handling
-        for (const deptName of validDepartments) {
+        if (validDepartments.length > 0) {
+          // Add departments one by one with individual error handling
+          for (const deptName of validDepartments) {
+            try {
+              await departmentService.addDepartment(tenantId, {
+                name: deptName,
+                icon: "building",
+                shape: "circle",
+                color: "#3B82F6",
+              });
+            } catch {
+              // Continue with other departments even if one fails
+            }
+          }
+
+          // Try to reload departments after migration
           try {
-            await departmentService.addDepartment(tenantId, {
-              name: deptName,
-              icon: "building",
-              shape: "circle",
-              color: "#3B82F6",
-            });
+            const updatedDepartments =
+              await departmentService.getAllDepartments(tenantId);
+            setDepartments(updatedDepartments);
+            buildAppleOrgChart(employees, updatedDepartments);
           } catch {
-            // Continue with other departments even if one fails
+            // Continue with existing data
           }
         }
-
-        // Try to reload departments after migration
-        try {
-          const updatedDepartments =
-            await departmentService.getAllDepartments(tenantId);
-          setDepartments(updatedDepartments);
-          buildAppleOrgChart(employees, updatedDepartments);
-        } catch {
-          // Continue with existing data
-        }
+      } catch {
+        // Don't throw the error - just continue
       }
-    } catch {
-      // Don't throw the error - just continue
-    }
-  }, [tenantId, buildAppleOrgChart]);
+    },
+    [tenantId, buildAppleOrgChart],
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -303,7 +293,6 @@ export default function OrganizationChart() {
 
       buildAppleOrgChart(employeesData, departmentsData);
     } catch (error) {
-
       // Provide user-friendly error message
       const errorMessage =
         error instanceof Error
@@ -331,14 +320,6 @@ export default function OrganizationChart() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    toast({
-      title: t("orgChart.toast.updatedTitle"),
-      description: t("orgChart.toast.updatedDesc"),
-    });
-  };
 
   const handleDepartmentChange = async () => {
     // Reload data when departments are changed
@@ -374,54 +355,57 @@ export default function OrganizationChart() {
 
           {/* Statistics skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="border-border/50 shadow-lg">
-                  <CardContent className="p-5">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-8 w-12" />
-                      </div>
-                      <Skeleton className="h-11 w-11 rounded-xl" />
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-border/50 shadow-lg">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-8 w-12" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <Skeleton className="h-11 w-11 rounded-xl" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           {/* Org chart skeleton */}
           <Card className="border-border/50 shadow-lg overflow-x-auto">
             <CardContent className="p-12 min-w-max">
-            <div className="flex flex-col items-center space-y-8">
-              {/* Executive chain skeleton */}
-              <div className="flex flex-col items-center space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex flex-col items-center">
-                    <Skeleton className="w-56 h-32 rounded-lg" />
-                    {i < 3 && <Skeleton className="w-0.5 h-6 mt-2" />}
-                  </div>
-                ))}
-              </div>
-
-              {/* Connector line */}
-              <Skeleton className="w-0.5 h-8" />
-
-              {/* Department heads skeleton */}
-              <div className="flex space-x-12">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex flex-col items-center space-y-4">
-                    <Skeleton className="w-0.5 h-6" />
-                    <Skeleton className="w-48 h-28 rounded-lg" />
-                    <Skeleton className="w-0.5 h-4" />
-                    <div className="grid grid-cols-2 gap-3">
-                      {[1, 2, 3, 4].map((j) => (
-                        <Skeleton key={j} className="w-36 h-24 rounded-lg" />
-                      ))}
+              <div className="flex flex-col items-center space-y-8">
+                {/* Executive chain skeleton */}
+                <div className="flex flex-col items-center space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex flex-col items-center">
+                      <Skeleton className="w-56 h-32 rounded-lg" />
+                      {i < 3 && <Skeleton className="w-0.5 h-6 mt-2" />}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                {/* Connector line */}
+                <Skeleton className="w-0.5 h-8" />
+
+                {/* Department heads skeleton */}
+                <div className="flex space-x-12">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col items-center space-y-4"
+                    >
+                      <Skeleton className="w-0.5 h-6" />
+                      <Skeleton className="w-48 h-28 rounded-lg" />
+                      <Skeleton className="w-0.5 h-4" />
+                      <div className="grid grid-cols-2 gap-3">
+                        {[1, 2, 3, 4].map((j) => (
+                          <Skeleton key={j} className="w-36 h-24 rounded-lg" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
         </div>
@@ -436,20 +420,13 @@ export default function OrganizationChart() {
       <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
         <PageHeader
           title={t("orgChart.title")}
-          subtitle={t("orgChart.subtitle") || "Visualize your company structure"}
+          subtitle={
+            t("orgChart.subtitle") || "Visualize your company structure"
+          }
           icon={Building2}
           iconColor="text-blue-500"
           actions={
             <>
-              <Button
-                variant={dragMode ? "secondary" : "outline"}
-                onClick={() => setDragMode(!dragMode)}
-              >
-                <Move className="mr-2 h-4 w-4" />
-                {dragMode
-                  ? t("orgChart.exitReorganize")
-                  : t("orgChart.reorganize")}
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -599,86 +576,47 @@ export default function OrganizationChart() {
             {/* Apple-Style Organization Chart */}
             <Card className="border-border/50 shadow-lg overflow-x-auto">
               <CardContent className="p-12 min-w-max">
-              <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex flex-col items-center space-y-8">
                   {/* 1. Executive Chain (Vertical) */}
                   {executives.length > 0 && (
-                    <Droppable droppableId="executives" type="executive">
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                          className="flex flex-col items-center space-y-4"
-                        >
-                          {executives.map((exec, index) => (
-                            <Draggable
-                              key={exec.id}
-                              draggableId={exec.id}
-                              index={index}
-                              isDragDisabled={!dragMode}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`relative ${
-                                    snapshot.isDragging
-                                      ? "rotate-1 shadow-2xl scale-105"
-                                      : ""
-                                  } transition-all duration-200`}
-                                >
-                                  {dragMode && (
-                                    <div
-                                      {...provided.dragHandleProps}
-                                      className="absolute top-2 right-2 z-10"
-                                    >
-                                      <Grip className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                  )}
+                    <div className="flex flex-col items-center space-y-4">
+                      {executives.map((exec, index) => (
+                        <div key={exec.id}>
+                          {/* Executive Card */}
+                          <div className="w-56 h-32 border-2 border-primary/50 rounded-lg bg-primary/5 shadow-md">
+                            <div className="p-4 text-center h-full flex flex-col justify-center">
+                              <div className="flex justify-center mb-2">
+                                <Avatar className="h-12 w-12 border-2 border-primary/60">
+                                  <AvatarImage src="" alt={exec.name} />
+                                  <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
+                                    {exec.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+                              <h3 className="font-bold text-sm text-foreground mb-1">
+                                {exec.name}
+                              </h3>
+                              <p className="text-xs text-primary font-medium">
+                                {exec.title}
+                              </p>
+                            </div>
+                          </div>
 
-                                  {/* Executive Card */}
-                                  <div className="w-56 h-32 border-2 border-primary/50 rounded-lg bg-primary/5 shadow-md">
-                                    <div className="p-4 text-center h-full flex flex-col justify-center">
-                                      <div className="flex justify-center mb-2">
-                                        <Avatar className="h-12 w-12 border-2 border-primary/60">
-                                          <AvatarImage
-                                            src=""
-                                            alt={exec.name}
-                                          />
-                                          <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
-                                            {exec.name
-                                              .split(" ")
-                                              .map((n) => n[0])
-                                              .join("")}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                      </div>
-                                      <h3 className="font-bold text-sm text-foreground mb-1">
-                                        {exec.name}
-                                      </h3>
-                                      <p className="text-xs text-primary font-medium">
-                                        {exec.title}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {/* Connecting line to next */}
-                                  {index < executives.length - 1 && (
-                                    <div className="w-0.5 h-6 bg-border mx-auto"></div>
-                                  )}
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-
-                          {/* Line to departments */}
-                          {departmentGroups.length > 0 && (
-                            <div className="w-0.5 h-8 bg-border"></div>
+                          {/* Connecting line to next */}
+                          {index < executives.length - 1 && (
+                            <div className="w-0.5 h-6 bg-border mx-auto"></div>
                           )}
                         </div>
+                      ))}
+
+                      {/* Line to departments */}
+                      {departmentGroups.length > 0 && (
+                        <div className="w-0.5 h-8 bg-border"></div>
                       )}
-                    </Droppable>
+                    </div>
                   )}
 
                   {/* 2. Department Heads Row (Horizontal) */}
@@ -693,132 +631,88 @@ export default function OrganizationChart() {
                       ></div>
 
                       {/* Department Heads */}
-                      <Droppable
-                        droppableId="department-heads"
-                        type="department"
-                        direction="horizontal"
-                      >
-                        {(provided) => (
+                      <div className="flex space-x-12">
+                        {departmentGroups.map((group) => (
                           <div
-                            ref={provided.innerRef}
-                            {...provided.droppableProps}
-                            className="flex space-x-12"
+                            key={group.head.id}
+                            className="flex flex-col items-center space-y-4"
                           >
-                            {departmentGroups.map((group, index) => (
-                              <Draggable
-                                key={group.head.id}
-                                draggableId={group.head.id}
-                                index={index}
-                                isDragDisabled={!dragMode}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className="flex flex-col items-center space-y-4"
-                                  >
-                                    {/* Line up to horizontal connector */}
-                                    <div className="w-0.5 h-6 bg-border"></div>
+                            {/* Line up to horizontal connector */}
+                            <div className="w-0.5 h-6 bg-border"></div>
 
-                                    {/* Department Head Card (Gray) */}
+                            {/* Department Head Card (Gray) */}
+                            <div className="w-48 h-28 border-2 border-border rounded-lg bg-muted/60 shadow-md">
+                              <div className="p-3 text-center h-full flex flex-col justify-center">
+                                <div className="flex justify-center mb-2">
+                                  <Avatar className="h-10 w-10 border border-border">
+                                    <AvatarImage src="" alt={group.head.name} />
+                                    <AvatarFallback className="bg-muted text-foreground font-semibold text-xs">
+                                      {group.head.name
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .join("")}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </div>
+                                <h3 className="font-bold text-xs text-foreground mb-1">
+                                  {group.head.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                  {group.head.title}
+                                </p>
+                                <div className="mt-1">
+                                  <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">
+                                    {group.name}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 3. Team Members Grid (Blue) */}
+                            {group.members.length > 0 && (
+                              <div className="flex flex-col items-center space-y-3">
+                                <div className="w-0.5 h-4 bg-border"></div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {group.members.map((member) => (
                                     <div
-                                      className={`relative ${
-                                        snapshot.isDragging
-                                          ? "rotate-1 shadow-2xl scale-105"
-                                          : ""
-                                      } transition-all duration-200`}
+                                      key={member.id}
+                                      className="w-36 h-24 border border-primary/30 rounded-lg bg-primary/5 shadow-sm"
                                     >
-                                      {dragMode && (
-                                        <div
-                                          {...provided.dragHandleProps}
-                                          className="absolute top-1 right-1 z-10"
-                                        >
-                                          <Grip className="h-3 w-3 text-muted-foreground" />
+                                      <div className="p-2 text-center h-full flex flex-col justify-center">
+                                        <div className="flex justify-center mb-1">
+                                          <Avatar className="h-8 w-8 border border-primary/40">
+                                            <AvatarImage
+                                              src=""
+                                              alt={member.name}
+                                            />
+                                            <AvatarFallback className="bg-primary/20 text-primary font-medium text-xs">
+                                              {member.name
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
+                                            </AvatarFallback>
+                                          </Avatar>
                                         </div>
-                                      )}
-
-                                      <div className="w-48 h-28 border-2 border-border rounded-lg bg-muted/60 shadow-md">
-                                        <div className="p-3 text-center h-full flex flex-col justify-center">
-                                          <div className="flex justify-center mb-2">
-                                            <Avatar className="h-10 w-10 border border-border">
-                                              <AvatarImage
-                                                src=""
-                                                alt={group.head.name}
-                                              />
-                                              <AvatarFallback className="bg-muted text-foreground font-semibold text-xs">
-                                                {group.head.name
-                                                  .split(" ")
-                                                  .map((n) => n[0])
-                                                  .join("")}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                          </div>
-                                          <h3 className="font-bold text-xs text-foreground mb-1">
-                                            {group.head.name}
-                                          </h3>
-                                          <p className="text-xs text-muted-foreground">
-                                            {group.head.title}
-                                          </p>
-                                          <div className="mt-1">
-                                            <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">
-                                              {group.name}
-                                            </span>
-                                          </div>
-                                        </div>
+                                        <h4 className="font-medium text-xs text-foreground mb-0.5 leading-tight">
+                                          {member.name}
+                                        </h4>
+                                        <p className="text-xs text-primary leading-tight">
+                                          {member.title.length > 20
+                                            ? `${member.title.substring(0, 17)}...`
+                                            : member.title}
+                                        </p>
                                       </div>
                                     </div>
-
-                                    {/* 3. Team Members Grid (Blue) */}
-                                    {group.members.length > 0 && (
-                                      <div className="flex flex-col items-center space-y-3">
-                                        <div className="w-0.5 h-4 bg-border"></div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                          {group.members.map((member) => (
-                                            <div
-                                              key={member.id}
-                                              className="w-36 h-24 border border-primary/30 rounded-lg bg-primary/5 shadow-sm"
-                                            >
-                                              <div className="p-2 text-center h-full flex flex-col justify-center">
-                                                <div className="flex justify-center mb-1">
-                                                  <Avatar className="h-8 w-8 border border-primary/40">
-                                                    <AvatarImage
-                                                      src=""
-                                                      alt={member.name}
-                                                    />
-                                                    <AvatarFallback className="bg-primary/20 text-primary font-medium text-xs">
-                                                      {member.name
-                                                        .split(" ")
-                                                        .map((n) => n[0])
-                                                        .join("")}
-                                                    </AvatarFallback>
-                                                  </Avatar>
-                                                </div>
-                                                <h4 className="font-medium text-xs text-foreground mb-0.5 leading-tight">
-                                                  {member.name}
-                                                </h4>
-                                                <p className="text-xs text-primary leading-tight">
-                                                  {member.title.length > 20
-                                                    ? `${member.title.substring(0, 17)}...`
-                                                    : member.title}
-                                                </p>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </Droppable>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
-              </DragDropContext>
               </CardContent>
             </Card>
           </div>

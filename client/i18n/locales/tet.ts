@@ -1908,6 +1908,8 @@ const messages = {
       "save": "Rai Estrutura Pagamentu"
     },
     "timeOff": {
+      "parentalInssExplainer": "INSS selu 100% diretamente ba traballadór bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017) — baibain empregadór la selu buat ida durante lisensa.",
+      "parentalPaidWarning": "INSS la selu subsídiu ba loron sira ne'ebé traballadór simu saláriu (DL 18/2017 Art. 21(3)) — maternidade/paternidade ne'ebé empregadór selu troka subsídiu INSS, la aumenta ba nia.",
       "title": "Politika Lisensa",
       "description": "Konfigura lisensa tuir lei Timor-Leste",
       "laborCodeTitle": "Kodigu Laboral Timor-Leste (Lei 4/2012)",
@@ -2725,6 +2727,14 @@ const messages = {
       }
     },
     "offboarding": {
+      "exitInterviews": {
+        "title": "Entrevista saida",
+        "description": "Resposta ne'ebé rejista durante prosesu saida, ba saida ne'ebé kompletu ona.",
+        "export": "Exporta CSV",
+        "exportedDesc": "Resposta entrevista saida download ona nu'udar ficheiro CSV.",
+        "exportedTitle": "Exportasaun prontu",
+        "recommendShort": "Sei rekomenda",
+      },
       "notice": {
         "required": "Avizu préviu ezijidu",
         "days": "loron",
@@ -3079,6 +3089,7 @@ const messages = {
       "subtitle": "Jere pedidos lisensa no aprovasaun",
       "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. Ita bele haree ita-nia pedidu rasik, maibé RH tenke define departamentu molok aprovasaun ekipa mosu.",
       "actions": {
+        "inssDeclaration": "Deklarasaun INSS",
         "newRequest": "Pedido Foun",
         "cancel": "Kansela",
         "approve": "Aprova",
@@ -3086,6 +3097,9 @@ const messages = {
         "submit": "Submete Pedido"
       },
       "dialog": {
+        "maternityInssHint": "Traballadora husu subsídiu maternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia kada fulan, to'o loron 90, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017). Lisensa rasik mínimu semana 12, pelu menus semana 10 depois bebé moris.",
+        "paternityInssHint": "Traballadór husu subsídiu paternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia iha pagamentu dala ida de'it ba loron servisu 5, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
+        "parentalInssFallbackHint": "Se traballadór la kumpre kondisaun kontribuisaun, INSS la selu buat ida — lei seidauk klaru se empregadór tenke selu fali ka lae; konfirma ho ita-nia kontabilista.",
         "title": "Submete Pedido Lisensa",
         "description": "Kria pedido lisensa ba empregadu",
         "employee": "Empregadu *",
@@ -3181,6 +3195,7 @@ const messages = {
         "marriage": "Sertidaun kazamentu"
       },
       "toast": {
+        "inssDeclarationFailed": "La bele kria deklarasaun INSS.",
         "errorTitle": "Erru",
         "loadFailed": "Falha karrega dadus lisensa. Koko fali.",
         "validationTitle": "Erru validasaun",
@@ -4913,6 +4928,11 @@ const messages = {
       }
     },
     "custom": {
+      "builtIn": "Padraun",
+      "deleteDescription": "Ida-ne'e hasai relatoriu ne'ebé rai tiha ba ema hotu iha Ita-nia kompañia. La hamoos dadus empregadu ka rejistu prezensa.",
+      "deleteReport": "Hamoos relatoriu",
+      "deleteTitle": "Hamoos relatoriu ne'ebé rai tiha ne'e?",
+      "savedReport": "Rai tiha",
       "title": "Relatoriu personalizadu",
       "subtitle": "Kria no personaliza relatoriu rasik",
       "noDataTitle": "Dadus ba relatoriu seidauk disponivel",
@@ -4933,6 +4953,9 @@ const messages = {
       "noMatches": "La iha dadus ne'ebé hanesan ho kritériu",
       "showingLimited": "Hatudu rejistu 20 husi {{count}}. Exporta atu haree hotu.",
       "builder": {
+        "runOnce": "Hala'o dala ida",
+        "saveAndRun": "Rai no hala'o",
+        "saving": "Rai hela…",
         "title": "Kria relatoriu personalizadu",
         "description": "Hili fonte dadus, koluna ne'ebé presiza no filtru opsionál.",
         "name": "Naran relatoriu",
@@ -4994,6 +5017,10 @@ const messages = {
         }
       },
       "toast": {
+        "deleteFailed": "La bele hamoos relatoriu. Koko fali.",
+        "deleted": "Relatoriu hamoos tiha",
+        "saveFailed": "La bele rai relatoriu. Koko fali.",
+        "saved": "Relatoriu rai tiha",
         "generated": "Relatoriu kria ona",
         "generatedDescription": "Hetan rejistu {{count}}",
         "error": "La bele hala'o relatoriu",
@@ -6784,6 +6811,26 @@ const messages = {
       "bills": "fatura"
     },
     "bankRecon": {
+      "blockedGeneric": "La bele rejista pagamentu ida-ne'e",
+      "blockedOverpayment": "Montante banku boot liu saldo divida — la bele kombina",
+      "confirmBillPaid": "Fatura selu ne'e sai selu tiha.",
+      "confirmFullA": "Ida-ne'e rejista pagamentu",
+      "confirmInvoicePaid": "Fatura ne'e sai selu tiha.",
+      "confirmOn": "iha",
+      "confirmPartialA": "Ida-ne'e rejista pagamentu parsiál",
+      "confirmReceiptEmail": "Se kliente iha email iha rejistu, nia sei simu resibu pagamentu.",
+      "confirmRemainsDue": "sei kontinua divida.",
+      "linkOnlyHint": "Rejista tiha ona — kombina liga de'it liña banku ida-ne'e",
+      "nowPaid": "agora selu tiha",
+      "partialRecordedOn": "Pagamentu parsiál rejista ona iha",
+      "paymentRecorded": "Pagamentu rejista ona",
+      "paymentRecordedTag": "Pagamentu rejista ona",
+      "recordAndMatch": "Rejista pagamentu no kombina",
+      "remainsDue": "kontinua divida",
+      "settleBlocked": "Montante banku boot liu saldo divida — rejista pagamentu ida-ne'e husi pájina fatura ka fatura selu.",
+      "unmatchLocked": "Pagamentu rejista ona — jere husi pájina fatura ka fatura selu",
+      "willRecordFull": "Sei rejista pagamentu — sai selu tiha",
+      "willRecordPartial": "Sei rejista pagamentu parsiál",
       "alreadyImportedSkipped": "importa ona (la konta)",
       "title": "Rekonsiliasaun Banku",
       "subtitle": "Importa no kombina transasaun banku",
@@ -7002,6 +7049,14 @@ const messages = {
     "stepReviewDesc": "Favór reviza numeru sira-ne'e molok submete saláriu."
   },
   "deductions": {
+    "edit": "Edita",
+    "editDialogDescription": "Atualiza dedusaun ida-ne'e. Progresu selu adiantamentu mantén nafatin — saldo restu muda de'it se Ita muda montante totál.",
+    "editDialogTitle": "Edita Dedusaun",
+    "editTotalHint": "Muda totál mantén saida ne'ebé selu tiha ona — saldo restu sai totál foun hasai montante ne'ebé selu tiha ona.",
+    "saveChanges": "Rai Mudansa",
+    "totalAmountRequired": "Adiantamentu ne'ebé akompaña saldo presiza montante totál boot liu zero.",
+    "updateError": "La konsege atualiza dedusaun.",
+    "updateSuccess": "Dedusaun atualiza tiha.",
     "title": "Dedusaun & Adianta",
     "subtitle": "Jere dedusaun rekorrente no adianta saláriu",
     "addDeduction": "Aumenta Dedusaun",
@@ -7013,6 +7068,9 @@ const messages = {
     "otherDeductions": "Dedusaun Seluk",
     "deductionsTableTitle": "Dedusaun",
     "deductionsTableDescription": "Jere dedusaun no adianta empregadu nian",
+    "deductionTypes": "Tipu Dedusaun",
+    "clickToFilter": "Klik tipu ida atu filtra tabela",
+    "active": "ativu",
     "searchPlaceholder": "Buka...",
     "tabAll": "Hotu",
     "tabAdvances": "Adianta",
@@ -7218,6 +7276,19 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "alsoMarkRunPaid": "Marka mós folha pagamentu nu'udar selu tiha (atualiza saldo adiantamentu no dedusaun rekorrente)",
+    "markCompleted": "Marka kompletu",
+    "markCompletedDesc": "Konfirma katak Ita-nia banku halo tiha ona transferensia saláriu ida-ne'e. Ida-ne'e atualiza de'it rejistu iha Xefe — la kontakta banku.",
+    "markCompletedTitle": "Marka transferensia kompletu?",
+    "markFailed": "Marka falha",
+    "markFailedDesc": "Rejista katak banku rejeita ka la halo transferensia saláriu ida-ne'e. Ida-ne'e atualiza de'it rejistu iha Xefe — Ita bele marka kompletu depois se banku prosesa fila fali.",
+    "markFailedTitle": "Marka transferensia falha?",
+    "recordBankTransfer": "Rejista Transferensia Banku",
+    "recordBankTransferDesc": "Rejista transferensia folha ida-ne'e nu'udar pendente iha Xefe. Osan la sai — kria ficheiro banku, lori ka haruka liu husi email ba Ita-nia banku, depois marka transferensia kompletu iha ne'e.",
+    "recordTransfer": "Rejista Transferensia",
+    "toastRunMarkedPaid": "Folha pagamentu marka ona nu'udar selu tiha.",
+    "toastRunPaidError": "Transferensia marka ona kompletu, maibé la konsege marka folha pagamentu nu'udar selu tiha. Ita bele marka selu tiha iha Istória Saláriu.",
+    "toastStatusUpdateError": "La konsege atualiza estadu transferensia. Favór koko fali.",
     "title": "Transferensia Banku",
     "subtitle": "Jere transferensia banku folha pagamentu no istória transasaun",
     "coverEmail": {

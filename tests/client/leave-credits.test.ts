@@ -2,11 +2,18 @@ import { describe, expect, it } from "vitest";
 import { computeLeaveCredits, type LeaveCreditInput } from "@/lib/payroll/run-payroll-helpers";
 
 // Mirror the production wiring: 8h days, weekday counting, annual/sick paid,
-// unpaid not, unknown types default to paid. The callback returns the policy's
-// paid FRACTION (1 = fully paid, 0 = unpaid, 0.5 = half pay).
+// unpaid not, unknown types default to paid. Maternity/paternity default to
+// EMPLOYER-UNPAID (DL 18/2017: the INSS parental subsidy replaces salary and
+// Art. 21(3) voids it for days the worker receives salary) — matching
+// TL_LEAVE_TYPES and the functions leavePayFraction fallback. The callback
+// returns the policy's paid FRACTION (1 = fully paid, 0 = unpaid, 0.5 = half
+// pay).
 const HOURS_PER_DAY = 8;
 
-const payFraction = (leaveType: string) => (leaveType === "unpaid" ? 0 : 1);
+const payFraction = (leaveType: string) =>
+  leaveType === "unpaid" || leaveType === "maternity" || leaveType === "paternity"
+    ? 0
+    : 1;
 
 // Simple weekday counter (inclusive) matching leaveService.calculateWorkingDays semantics
 const workingDays = (start: string, end: string): number => {
@@ -102,6 +109,30 @@ describe("computeLeaveCredits", () => {
   it("skips requests with no employeeId", () => {
     const credits = compute([req({ employeeId: "" })]);
     expect(credits.size).toBe(0);
+  });
+
+  it("docks default maternity leave as unpaid absence (INSS subsidy replaces salary)", () => {
+    // DL 18/2017 default: the employer pays nothing during the license, so
+    // the days get NO paid-leave credit — they stay in the absence deduction.
+    const credits = compute([req({ leaveType: "maternity" })]);
+    expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("docks default paternity leave as unpaid absence (INSS subsidy replaces salary)", () => {
+    const credits = compute([
+      req({ leaveType: "paternity", startDate: "2026-06-10", endDate: "2026-06-12" }),
+    ]);
+    expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("still credits maternity when the tenant explicitly configured 100% employer pay", () => {
+    // The deliberate employer-paid option (which voids the INSS subsidy for
+    // those days per Art. 21(3)) keeps working: configured fraction wins.
+    const credits = compute(
+      [req({ leaveType: "maternity" })],
+      (leaveType) => (leaveType === "maternity" ? 1 : 0),
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 40, sickDays: 0 });
   });
 
   it("credits a partially-paid policy by its fraction (50% maternity = half the hours)", () => {

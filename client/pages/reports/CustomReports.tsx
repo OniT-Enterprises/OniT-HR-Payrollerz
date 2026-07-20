@@ -24,14 +24,35 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ReportEmptyState,
   ReportPage,
   ReportSection,
 } from "@/components/reports/ReportLayout";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { attendanceService } from "@/services/attendanceService";
 import { useAllDepartments } from "@/hooks/useDepartments";
+import {
+  useCreateCustomReport,
+  useCustomReports,
+  useDeleteCustomReport,
+  useTouchCustomReportLastRun,
+} from "@/hooks/useCustomReports";
+import {
+  filterEmployeeRows,
+  getColumnValue,
+} from "@/lib/reports/customReportRows";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -40,6 +61,7 @@ import {
   Download,
   Plus,
   Play,
+  Save,
   Trash2,
   Eye,
   Clock,
@@ -258,30 +280,26 @@ const SAMPLE_REPORTS: ReportConfig[] = [
   },
 ];
 
-function getColumnValue(row: Record<string, unknown>, key: string): string {
-  const value = key
-    .split(".")
-    .reduce<unknown>(
-      (object, part) => (object as Record<string, unknown>)?.[part],
-      row,
-    );
-  return value !== undefined && value !== null ? String(value) : "-";
-}
-
 export default function CustomReports() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { user } = useAuth();
   const { hasModule } = useTenant();
   const hasStaff = hasModule("staff");
   const hasTimeleave = hasModule("timeleave");
   const hasAvailableSource = hasStaff || hasTimeleave;
 
-  const [savedReports, setSavedReports] = useState<ReportConfig[]>(() =>
-    SAMPLE_REPORTS.filter((report) =>
-      report.dataSource === "attendance" ? hasTimeleave : hasStaff,
-    ),
+  // Built-in templates never persist; their "last run" is session-only.
+  const [builtinLastRun, setBuiltinLastRun] = useState<Record<string, Date>>(
+    {},
   );
+  // User-built reports live in tenants/{tid}/customReports.
+  const savedReportsQuery = useCustomReports(hasAvailableSource);
+  const createReport = useCreateCustomReport();
+  const deleteReport = useDeleteCustomReport();
+  const touchLastRun = useTouchCustomReportLastRun();
+  const [deleteTarget, setDeleteTarget] = useState<ReportConfig | null>(null);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [previewData, setPreviewData] = useState<
     Record<string, unknown>[] | null
@@ -316,13 +334,31 @@ export default function CustomReports() {
   const canUseSource = (source: ReportConfig["dataSource"]) =>
     source === "attendance" ? hasTimeleave : hasStaff;
 
-  useEffect(() => {
-    setSavedReports(
-      SAMPLE_REPORTS.filter((report) =>
-        report.dataSource === "attendance" ? hasTimeleave : hasStaff,
-      ),
-    );
-  }, [hasStaff, hasTimeleave]);
+  // Built-in templates first, then the tenant's saved reports (hide any
+  // whose data source module is currently disabled).
+  const reportList: { report: ReportConfig; builtin: boolean }[] = [
+    ...SAMPLE_REPORTS.filter((report) => canUseSource(report.dataSource)).map(
+      (report) => ({
+        report: { ...report, lastRun: builtinLastRun[report.id] },
+        builtin: true,
+      }),
+    ),
+    ...(savedReportsQuery.data ?? [])
+      .filter((saved) => canUseSource(saved.dataSource))
+      .map((saved) => ({
+        report: {
+          id: saved.id,
+          name: saved.name,
+          description: saved.description,
+          dataSource: saved.dataSource,
+          columns: saved.columns,
+          filters: saved.filters,
+          createdAt: saved.createdAt,
+          lastRun: saved.lastRunAt,
+        },
+        builtin: false,
+      })),
+  ];
 
   useEffect(() => {
     if (
@@ -358,7 +394,10 @@ export default function CustomReports() {
     }
   };
 
-  const runReport = async (config: ReportConfig) => {
+  const runReport = async (
+    config: ReportConfig,
+    origin: "builtin" | "saved" | "adhoc" = "adhoc",
+  ) => {
     if (!canUseSource(config.dataSource)) return;
     setLoading(true);
     try {
@@ -367,16 +406,10 @@ export default function CustomReports() {
       if (config.dataSource === "employees") {
         const employees: Employee[] =
           await employeeService.getAllEmployees(tenantId);
-        data = employees.filter((e) => {
-          if (config.filters.status && e.status !== config.filters.status)
-            return false;
-          if (
-            config.filters.department &&
-            e.jobDetails?.department !== config.filters.department
-          )
-            return false;
-          return true;
-        }) as unknown as Record<string, unknown>[];
+        data = filterEmployeeRows(
+          employees,
+          config.filters,
+        ) as unknown as Record<string, unknown>[];
       } else if (config.dataSource === "attendance") {
         const endDateStr = getTodayTL();
         const startDateStr = addDaysISO(
@@ -409,12 +442,13 @@ export default function CustomReports() {
       setPreviewData(data);
       setPreviewColumns(columns);
 
-      // Update lastRun
-      setSavedReports((prev) =>
-        prev.map((r) =>
-          r.id === config.id ? { ...r, lastRun: new Date() } : r,
-        ),
-      );
+      // Update lastRun. For saved reports this is persisted bookkeeping —
+      // fire-and-forget so a write failure never breaks the run itself.
+      if (origin === "builtin") {
+        setBuiltinLastRun((prev) => ({ ...prev, [config.id]: new Date() }));
+      } else if (origin === "saved") {
+        touchLastRun.mutate(config.id);
+      }
 
       toast({
         title: t("reports.custom.toast.generated"),
@@ -436,18 +470,17 @@ export default function CustomReports() {
     }
   };
 
-  const runCustomReport = async () => {
-    if (!canUseSource(dataSource)) return;
+  const buildConfigFromForm = (): ReportConfig | null => {
+    if (!canUseSource(dataSource)) return null;
     if (!reportName || selectedColumns.length === 0) {
       toast({
         title: t("reports.custom.toast.validationError"),
         description: t("reports.custom.toast.validationDescription"),
         variant: "destructive",
       });
-      return;
+      return null;
     }
-
-    const newReport: ReportConfig = {
+    return {
       id: `custom-${Date.now()}`,
       name: reportName,
       description: reportDescription,
@@ -460,12 +493,72 @@ export default function CustomReports() {
       },
       createdAt: new Date(),
     };
+  };
 
-    const generated = await runReport(newReport);
+  /** Run the builder config once without saving it. */
+  const runCustomReport = async () => {
+    const newReport = buildConfigFromForm();
+    if (!newReport) return;
+
+    const generated = await runReport(newReport, "adhoc");
     if (generated) {
       setIsBuilderOpen(false);
       // Reset the form for next time without erasing the report the user just ran.
       resetBuilder(false);
+    }
+  };
+
+  /** Persist the builder config to Firestore, then run it. */
+  const saveAndRunCustomReport = async () => {
+    const newReport = buildConfigFromForm();
+    if (!newReport || !user) return;
+
+    let savedId: string;
+    try {
+      savedId = await createReport.mutateAsync({
+        config: {
+          name: newReport.name,
+          description: newReport.description,
+          dataSource: newReport.dataSource,
+          columns: newReport.columns,
+          filters: newReport.filters,
+        },
+        createdBy: user.uid,
+      });
+    } catch (error) {
+      console.error("Error saving report:", error);
+      toast({
+        title: t("reports.custom.toast.error"),
+        description:
+          t("reports.custom.toast.saveFailed") ||
+          "Could not save the report. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({ title: t("reports.custom.toast.saved") || "Report saved" });
+    setIsBuilderOpen(false);
+    resetBuilder(false);
+    await runReport({ ...newReport, id: savedId }, "saved");
+  };
+
+  const confirmDeleteReport = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteReport.mutateAsync(deleteTarget.id);
+      toast({ title: t("reports.custom.toast.deleted") || "Report deleted" });
+    } catch (error) {
+      console.error("Error deleting report:", error);
+      toast({
+        title: t("reports.custom.toast.error"),
+        description:
+          t("reports.custom.toast.deleteFailed") ||
+          "Could not delete the report. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -769,15 +862,27 @@ export default function CustomReports() {
                   {t("common.cancel")}
                 </Button>
                 <Button
+                  variant="outline"
                   onClick={() => {
                     void runCustomReport();
                   }}
-                  disabled={loading}
+                  disabled={loading || createReport.isPending}
                 >
                   <Play className="h-4 w-4 mr-2" />
                   {loading
                     ? t("reports.custom.builder.running")
-                    : t("reports.custom.builder.runReport")}
+                    : t("reports.custom.builder.runOnce") || "Run once"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    void saveAndRunCustomReport();
+                  }}
+                  disabled={loading || createReport.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {createReport.isPending
+                    ? t("reports.custom.builder.saving") || "Saving…"
+                    : t("reports.custom.builder.saveAndRun") || "Save & run"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -790,16 +895,16 @@ export default function CustomReports() {
           title={t("reports.custom.templatesTitle")}
           description={t("reports.custom.templatesDescription")}
         >
-          {savedReports.length === 0 ? (
+          {reportList.length === 0 ? (
             <ReportEmptyState
               icon={BarChart3}
               title={t("reports.custom.noTemplates")}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {savedReports.map((report) => (
+              {reportList.map(({ report, builtin }) => (
                 <Card
-                  key={report.id}
+                  key={`${builtin ? "builtin" : "saved"}-${report.id}`}
                   className="border-border/70 shadow-none transition-colors hover:border-violet-400/50"
                 >
                   <CardContent className="p-4">
@@ -820,7 +925,11 @@ export default function CustomReports() {
                       {getTemplateDescription(report)}
                     </p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                      <span>{t("reports.custom.template")}</span>
+                      <span>
+                        {builtin
+                          ? t("reports.custom.builtIn") || "Built-in"
+                          : t("reports.custom.savedReport") || "Saved"}
+                      </span>
                       {report.lastRun && (
                         <span>
                           {t("reports.custom.lastRun", {
@@ -834,12 +943,28 @@ export default function CustomReports() {
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => runReport(report)}
+                        onClick={() =>
+                          runReport(report, builtin ? "builtin" : "saved")
+                        }
                         disabled={loading}
                       >
                         <Play className="h-3 w-3 mr-1" />
                         {t("reports.custom.run")}
                       </Button>
+                      {!builtin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="shrink-0"
+                          onClick={() => setDeleteTarget(report)}
+                          disabled={loading || deleteReport.isPending}
+                          aria-label={
+                            t("reports.custom.deleteReport") || "Delete report"
+                          }
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -946,6 +1071,36 @@ export default function CustomReports() {
             )}
           </ReportSection>
         )}
+
+        {/* Delete saved report confirmation */}
+        <AlertDialog
+          open={!!deleteTarget}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("reports.custom.deleteTitle") || "Delete this saved report?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("reports.custom.deleteDescription") ||
+                  "This removes the saved report for everyone in your company. It does not delete any employee or attendance data."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  void confirmDeleteReport();
+                }}
+              >
+                {t("common.delete") || "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </ReportPage>
     </>
   );

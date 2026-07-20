@@ -40,10 +40,16 @@ import {
   useUnmatchTransaction,
   useReconcileTransactions,
   useDeleteBankTransaction,
+  useSettleTransaction,
+  type SettleMatchInput,
 } from '@/hooks/useBankReconciliation';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
+import {
+  decideSettlement,
+  canSettleBillFromBank,
+} from '@/lib/accounting/bank-reconciliation-settlement';
 import type { BankTransaction } from '@/types/money';
 import { addDays, formatDateISO } from '@/lib/dateUtils';
 import { BankReconciliationSummary } from '@/components/money/BankReconciliationSummary';
@@ -120,6 +126,7 @@ export default function BankReconciliation() {
   } } = useReconciliationSummary();
   const importMutation = useImportTransactions();
   const matchMutation = useMatchTransaction();
+  const settleMutation = useSettleTransaction();
   const unmatchMutation = useUnmatchTransaction();
   const reconcileMutation = useReconcileTransactions();
   const deleteMutation = useDeleteBankTransaction();
@@ -183,7 +190,27 @@ export default function BankReconciliation() {
       const endDate = formatDateISO(addDays(transaction.date, 45));
 
       if (transaction.type === 'deposit') {
-        const payments = await invoiceService.getPaymentCandidates(tenantId, startDate, endDate, 50);
+        // Outstanding invoices are settle options: choosing one RECORDS a
+        // payment (they're not date-windowed — an old invoice can be paid
+        // today). Recorded payments remain link-only options.
+        const [outstandingInvoices, payments] = await Promise.all([
+          invoiceService.getOutstandingInvoices(tenantId),
+          invoiceService.getPaymentCandidates(tenantId, startDate, endDate, 50),
+        ]);
+
+        outstandingInvoices.forEach((invoice) => {
+          if ((invoice.balanceDue || 0) <= 0) return;
+          options.push({
+            type: 'invoice',
+            id: invoice.id,
+            description: `${invoice.invoiceNumber} - ${invoice.customerName}`,
+            amount: invoice.balanceDue,
+            date: invoice.issueDate,
+            outstanding: invoice.balanceDue,
+            documentNumber: invoice.invoiceNumber,
+          });
+        });
+
         payments.forEach((payment) => {
           if (payment.amount <= 0) return;
             options.push({
@@ -195,7 +222,8 @@ export default function BankReconciliation() {
             });
           });
       } else {
-        const [billPayments, expenses] = await Promise.all([
+        const [unpaidBills, billPayments, expenses] = await Promise.all([
+          billService.getUnpaidBills(tenantId),
           billService.getPaymentCandidates(tenantId, startDate, endDate, 50),
           expenseService.getExpenses(tenantId, {
             startDate,
@@ -203,6 +231,23 @@ export default function BankReconciliation() {
             pageSize: 50,
           }),
         ]);
+
+        // Unpaid bills are settle options. Payer-withholding bills are
+        // excluded: the bank line shows the cash leg while recordPayment's
+        // amount is gross AP — those are paid from the Bills page.
+        unpaidBills.forEach((bill) => {
+          if ((bill.balanceDue || 0) <= 0) return;
+          if (!canSettleBillFromBank(bill.withholding)) return;
+          options.push({
+            type: 'bill',
+            id: bill.id,
+            description: `${bill.billNumber || bill.description} - ${bill.vendorName}`,
+            amount: -bill.balanceDue,
+            date: bill.dueDate,
+            outstanding: bill.balanceDue,
+            documentNumber: bill.billNumber || bill.description,
+          });
+        });
 
         billPayments.forEach((payment) => {
           const cashPaid = payment.cashPaid ?? payment.amount;
@@ -247,8 +292,10 @@ export default function BankReconciliation() {
     }
   };
 
+  /** Link-only match: the money is already recorded; this just links the line. */
   const handleMatch = async (option: MatchOption) => {
     if (!transactionToMatch) return;
+    if (option.type === 'invoice' || option.type === 'bill') return; // settle options go through handleSettle
 
     try {
       await matchMutation.mutateAsync({
@@ -275,15 +322,85 @@ export default function BankReconciliation() {
     }
   };
 
+  /**
+   * Settle-on-match: records a real payment on the outstanding invoice/bill
+   * (bank line's amount and date, method bank_transfer, reference = bank
+   * description) through the existing payment paths, then links the line.
+   */
+  const handleSettle = async (option: MatchOption) => {
+    if (!transactionToMatch) return;
+
+    const decision = decideSettlement(
+      transactionToMatch.amount,
+      option.outstanding ?? 0,
+    );
+    if (decision.kind === 'blocked') {
+      toast({
+        title: t('common.error') || 'Error',
+        description:
+          t('money.bankRecon.settleBlocked') ||
+          'The bank amount is more than the balance due — record this payment from the invoice or bill page instead.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const input: SettleMatchInput =
+      option.type === 'invoice'
+        ? {
+            kind: 'invoice',
+            transactionId: transactionToMatch.id,
+            invoiceId: option.id,
+            amount: decision.amount,
+            date: transactionToMatch.date,
+            reference: transactionToMatch.description,
+            matchDescription: option.description,
+          }
+        : {
+            kind: 'bill',
+            transactionId: transactionToMatch.id,
+            billId: option.id,
+            amount: decision.amount,
+            date: transactionToMatch.date,
+            reference: transactionToMatch.description,
+            matchDescription: option.description,
+          };
+
+    try {
+      await settleMutation.mutateAsync(input);
+      toast({
+        title: t('money.bankRecon.paymentRecorded') || 'Payment recorded',
+        description:
+          decision.kind === 'full'
+            ? `${option.documentNumber || option.description} ${t('money.bankRecon.nowPaid') || 'is now paid'}`
+            : `${t('money.bankRecon.partialRecordedOn') || 'Partial payment recorded on'} ${option.documentNumber || option.description} — ${formatCurrency(decision.remainingAfter)} ${t('money.bankRecon.remainsDue') || 'remains due'}`,
+      });
+      setMatchDialogOpen(false);
+    } catch (error) {
+      // The payment services validate for real (balance, dates, statuses) —
+      // surface their message instead of a generic failure.
+      toast({
+        title: t('common.error') || 'Error',
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : t('money.bankRecon.matchError') || 'Failed to match transaction',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleUnmatch = async (transactionId: string) => {
     try {
       await unmatchMutation.mutateAsync(transactionId);
       toast({
         title: t('money.bankRecon.unmatched') || 'Unmatched',
       });
-    } catch {
+    } catch (error) {
       toast({
         title: t('common.error') || 'Error',
+        description:
+          error instanceof Error && error.message ? error.message : undefined,
         variant: 'destructive',
       });
     }
@@ -633,7 +750,18 @@ export default function BankReconciliation() {
                         </TableCell>
                         <TableCell className="text-center">{getStatusBadge(tx.status)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {tx.matchedTo?.description || '-'}
+                          {tx.matchedTo ? (
+                            <span>
+                              {tx.matchedTo.description}
+                              {tx.matchedTo.paymentRecorded && (
+                                <span className="block text-xs text-muted-foreground/70">
+                                  {t('money.bankRecon.paymentRecordedTag') || 'Payment recorded'}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -649,10 +777,19 @@ export default function BankReconciliation() {
                                   {t('money.bankRecon.match') || 'Match'}
                                 </DropdownMenuItem>
                               )}
-                              {tx.status === 'matched' && (
+                              {tx.status === 'matched' && !tx.matchedTo?.paymentRecorded && (
                                 <DropdownMenuItem onClick={() => handleUnmatch(tx.id)} className="cursor-pointer">
                                   <Link2Off className="h-4 w-4 mr-2 text-amber-500" />
                                   {t('money.bankRecon.unmatch') || 'Unmatch'}
+                                </DropdownMenuItem>
+                              )}
+                              {tx.status === 'matched' && tx.matchedTo?.paymentRecorded && (
+                                // Matching recorded a real payment; unlinking here
+                                // would leave that payment behind. Managed from the
+                                // invoice/bill page instead (service enforces this too).
+                                <DropdownMenuItem disabled className="text-xs text-muted-foreground max-w-[240px] whitespace-normal">
+                                  <Link2Off className="h-4 w-4 mr-2 flex-shrink-0" />
+                                  {t('money.bankRecon.unmatchLocked') || 'Payment recorded — manage it from the invoice or bill page'}
                                 </DropdownMenuItem>
                               )}
                               {tx.status !== 'reconciled' && (
@@ -684,6 +821,8 @@ export default function BankReconciliation() {
           matchOptions={matchOptions}
           loading={loadingMatches}
           onMatch={handleMatch}
+          onSettle={handleSettle}
+          settling={settleMutation.isPending}
           formatCurrency={formatCurrency}
         />
 

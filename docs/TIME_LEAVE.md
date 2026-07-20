@@ -82,6 +82,38 @@ constraint so Firestore can prove the query is authorized.
 - Approval cancels overlapping non-cancelled shifts and recomputes affected
   weekly timesheets.
 
+### Maternity and paternity (INSS-funded, employer-unpaid by default)
+
+- Since DL 18/2017 (June 2017) the INSS parental subsidy replaced the
+  employer's Lei 4/2012 Art. 61 salary duty: a worker with 6 months of
+  contributions in the last 12 claims a subsidy of **100% of the reference
+  wage directly from INSS** (maternity paid monthly, up to 90 days; paternity
+  5 working days in one payment). The claim window is 6 months from the first
+  day of the license.
+- Defaults are therefore **employer-unpaid**: `TL_DEFAULT_LEAVE_POLICIES` and
+  `TL_LEAVE_TYPES` set maternity/paternity `isPaid: false, paidPercentage: 0`,
+  and the functions `leavePayFraction` fallback treats unconfigured
+  maternity/paternity as 0 (unpaid). In payroll the leave days become unpaid
+  absence (docked), matching real firm practice ($0 pay + "Dias de
+  parentalidade" on the DR).
+- **Voiding rule** (DL 18/2017 Art. 21(3)): the subsidy is non-cumulable with
+  salary — paying salary for license days voids the subsidy for those days. A
+  tenant may still explicitly configure a paid percentage (deliberate
+  employer-paid option, which replaces — not tops up — the subsidy); the
+  settings UI keeps `isPaid` in sync with the percentage and shows an amber
+  warning when it is > 0. **Existing tenants with persisted
+  `isPaid: true` policies keep employer-paid behavior unchanged** — only the
+  defaults moved.
+- **Employer declaration** (DL 18/2017 Art. 25(1)(c)): approved
+  maternity/paternity requests on the Leave page offer an "INSS declaration"
+  PDF (`client/lib/pdf/inssParentalDeclaration.tsx`, Xefe's own layout,
+  PT primary/EN secondary) stating the first day, total days, and days with
+  remuneration (zero by default, with the explicit no-payment sentence) for
+  the worker's subsidy claim.
+- **Non-qualified workers** (fail 6-in-12 contributions): INSS pays nothing
+  and whether the employer must pay instead is legally unsettled — the UI
+  says "confirm with your accountant" rather than deciding.
+
 ### Shifts and timesheets
 
 - Shift create/update goes through the `createOrUpdateShift` callable.

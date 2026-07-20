@@ -167,20 +167,30 @@ export const TL_LEAVE_TYPES = [
     certificateType: "Medical Certificate",
   },
   {
+    // Employer-unpaid since DL 18/2017: the worker with 6 months of INSS
+    // contributions in the last 12 claims the parental subsidy (100% of the
+    // reference wage, up to 90 days) directly from INSS. Art. 21(3) makes the
+    // subsidy non-cumulable with salary — paying salary voids it.
     id: "maternity",
     name: "Maternity Leave (Licença de Maternidade)",
     daysPerYear: 84, // 12 weeks
-    isPaid: true,
+    isPaid: false,
     requiresCertificate: true,
     certificateType: "Medical Certificate",
+    description:
+      "Unpaid by the employer: INSS pays the worker a subsidy of 100% of the reference wage directly (DL 18/2017) when they have 6 months of contributions in the last 12.",
   },
   {
+    // Same INSS-subsidy regime as maternity (DL 18/2017): 5 working days,
+    // paid by INSS in one payment, employer pays nothing by default.
     id: "paternity",
     name: "Paternity Leave (Licença de Paternidade)",
     daysPerYear: 5,
-    isPaid: true,
+    isPaid: false,
     requiresCertificate: true,
     certificateType: "Birth Certificate",
+    description:
+      "Unpaid by the employer: INSS pays the worker a subsidy of 100% of the reference wage directly (DL 18/2017) when they have 6 months of contributions in the last 12.",
   },
   {
     // Lei 4/2012 Art. 33(3): ONE pooled allotment of 3 paid days per calendar

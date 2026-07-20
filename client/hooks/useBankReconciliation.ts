@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import { bankReconciliationService } from '@/services/bankReconciliationService';
 import type { BankTransaction } from '@/services/bankReconciliationService';
+import { invoiceKeys } from '@/hooks/useInvoices';
+import { billKeys } from '@/hooks/useBills';
 
 const bankReconciliationKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'bankReconciliation'] as const,
@@ -60,6 +62,55 @@ export function useMatchTransaction() {
       bankReconciliationService.matchTransaction(transactionId, matchedTo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bankReconciliationKeys.all(tenantId) });
+    },
+  });
+}
+
+/**
+ * Input for settle-on-match: matching a bank line to an OUTSTANDING
+ * invoice/bill records a real payment (bank_transfer, bank line's date and
+ * amount) through the existing payment paths, then links the line to it.
+ */
+export type SettleMatchInput =
+  | {
+      kind: 'invoice';
+      transactionId: string;
+      invoiceId: string;
+      amount: number;
+      date: string;
+      reference: string;
+      matchDescription: string;
+    }
+  | {
+      kind: 'bill';
+      transactionId: string;
+      billId: string;
+      amount: number;
+      date: string;
+      reference: string;
+      matchDescription: string;
+    };
+
+/** Record a payment on an outstanding invoice/bill AND match the bank line */
+export function useSettleTransaction() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  bankReconciliationService.setTenantId(tenantId);
+  return useMutation({
+    mutationFn: (input: SettleMatchInput) =>
+      input.kind === 'invoice'
+        ? bankReconciliationService.settleInvoiceMatch(input)
+        : bankReconciliationService.settleBillMatch(input),
+    onSuccess: (_result, input) => {
+      queryClient.invalidateQueries({ queryKey: bankReconciliationKeys.all(tenantId) });
+      // The match recorded a real payment — refresh the invoice/bill caches
+      // so their pages show paid/partial without a manual reload.
+      queryClient.invalidateQueries({
+        queryKey:
+          input.kind === 'invoice'
+            ? invoiceKeys.all(tenantId)
+            : billKeys.all(tenantId),
+      });
     },
   });
 }

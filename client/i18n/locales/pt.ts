@@ -1908,6 +1908,8 @@ const messages = {
       "save": "Guardar Estrutura de Pagamento"
     },
     "timeOff": {
+      "parentalInssExplainer": "Pago a 100% pelo INSS diretamente ao trabalhador quando este tem 6 meses de contribuições nos últimos 12 (DL 18/2017) — normalmente o empregador não paga nada durante a licença.",
+      "parentalPaidWarning": "O INSS não paga o subsídio nos dias em que o trabalhador recebe salário (DL 18/2017, art. 21.º(3)) — a maternidade/paternidade paga pelo empregador substitui o subsídio do INSS, não acresce a ele.",
       "title": "Políticas de Licenças",
       "description": "Configure direitos de licença com base na lei laboral de Timor-Leste",
       "laborCodeTitle": "Código do Trabalho de Timor-Leste (Lei 4/2012)",
@@ -2815,6 +2817,14 @@ const messages = {
       }
     },
     "offboarding": {
+      "exitInterviews": {
+        "title": "Entrevistas de saída",
+        "description": "Respostas registadas durante a desvinculação, para saídas concluídas.",
+        "export": "Exportar CSV",
+        "exportedDesc": "Respostas das entrevistas de saída descarregadas como ficheiro CSV.",
+        "exportedTitle": "Exportação pronta",
+        "recommendShort": "Recomendaria",
+      },
       "notice": {
         "required": "Aviso prévio exigido",
         "days": "dias",
@@ -3079,6 +3089,7 @@ const messages = {
       "subtitle": "Gerir pedidos e aprovações de licença dos funcionários",
       "scopeMissing": "A sua conta de gestor ainda não está ligada a um departamento. Pode ver os seus próprios pedidos, mas os RH têm de definir o seu departamento antes de aparecerem as aprovações da equipa.",
       "actions": {
+        "inssDeclaration": "Declaração INSS",
         "newRequest": "Novo Pedido",
         "cancel": "Cancelar",
         "approve": "Aprovar",
@@ -3086,6 +3097,9 @@ const messages = {
         "submit": "Submeter Pedido"
       },
       "dialog": {
+        "maternityInssHint": "A trabalhadora pede o subsídio de maternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, mensalmente, até 90 dias, quando a trabalhadora tem 6 meses de contribuições nos últimos 12 (DL 18/2017). A licença em si é de, no mínimo, 12 semanas, das quais pelo menos 10 após o parto.",
+        "paternityInssHint": "O trabalhador pede o subsídio de paternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, num pagamento único, pelos 5 dias úteis, quando o trabalhador tem 6 meses de contribuições nos últimos 12 (DL 18/2017).",
+        "parentalInssFallbackHint": "Se o trabalhador não cumprir a condição de contribuições, o INSS não paga nada — se o empregador tem de pagar em substituição é juridicamente incerto; confirme com o seu contabilista.",
         "title": "Submeter Pedido de Licença",
         "description": "Criar um novo pedido de licença para um funcionário",
         "employee": "Funcionário *",
@@ -3181,6 +3195,7 @@ const messages = {
         "marriage": "Certidão de Casamento"
       },
       "toast": {
+        "inssDeclarationFailed": "Não foi possível gerar a declaração do INSS.",
         "errorTitle": "Erro",
         "loadFailed": "Falha ao carregar dados de licença. Por favor tente novamente.",
         "validationTitle": "Erro de Validação",
@@ -3870,6 +3885,11 @@ const messages = {
       }
     },
     "custom": {
+      "builtIn": "Predefinido",
+      "deleteDescription": "Isto remove o relatório guardado para todas as pessoas da sua empresa. Não elimina dados de funcionários nem registos de presença.",
+      "deleteReport": "Eliminar relatório",
+      "deleteTitle": "Eliminar este relatório guardado?",
+      "savedReport": "Guardado",
       "title": "Relatórios Personalizados",
       "subtitle": "Construa e personalize os seus próprios relatórios",
       "noDataTitle": "Não há dados disponíveis para relatórios",
@@ -3890,6 +3910,9 @@ const messages = {
       "noMatches": "Nenhum dado corresponde aos critérios",
       "showingLimited": "A mostrar 20 de {{count}} registos. Exporte para ver todos.",
       "builder": {
+        "runOnce": "Executar uma vez",
+        "saveAndRun": "Guardar e executar",
+        "saving": "A guardar…",
         "title": "Criar relatório personalizado",
         "description": "Escolha a fonte de dados, as colunas necessárias e filtros opcionais.",
         "name": "Nome do relatório",
@@ -3951,6 +3974,10 @@ const messages = {
         }
       },
       "toast": {
+        "deleteFailed": "Não foi possível eliminar o relatório. Tente novamente.",
+        "deleted": "Relatório eliminado",
+        "saveFailed": "Não foi possível guardar o relatório. Tente novamente.",
+        "saved": "Relatório guardado",
         "generated": "Relatório gerado",
         "generatedDescription": "{{count}} registos encontrados",
         "error": "Não foi possível executar o relatório",
@@ -6784,6 +6811,26 @@ const messages = {
       "bills": "contas"
     },
     "bankRecon": {
+      "blockedGeneric": "Não é possível registar este pagamento",
+      "blockedOverpayment": "O montante bancário é superior ao saldo em dívida — não é possível conciliar",
+      "confirmBillPaid": "A conta fica paga.",
+      "confirmFullA": "Isto regista um pagamento de",
+      "confirmInvoicePaid": "A fatura fica paga.",
+      "confirmOn": "em",
+      "confirmPartialA": "Isto regista um pagamento parcial de",
+      "confirmReceiptEmail": "Se o cliente tiver um email registado, receberá um recibo de pagamento.",
+      "confirmRemainsDue": "continuará em dívida.",
+      "linkOnlyHint": "Já registado — a conciliação apenas associa esta linha bancária",
+      "nowPaid": "está agora paga",
+      "partialRecordedOn": "Pagamento parcial registado em",
+      "paymentRecorded": "Pagamento registado",
+      "paymentRecordedTag": "Pagamento registado",
+      "recordAndMatch": "Registar pagamento e conciliar",
+      "remainsDue": "continua em dívida",
+      "settleBlocked": "O montante bancário é superior ao saldo em dívida — registe este pagamento a partir da página da fatura ou da conta.",
+      "unmatchLocked": "Pagamento registado — faça a gestão a partir da página da fatura ou da conta",
+      "willRecordFull": "Vai registar o pagamento — fica paga",
+      "willRecordPartial": "Vai registar um pagamento parcial",
       "alreadyImportedSkipped": "já importado (ignorado)",
       "title": "Reconciliação Bancária",
       "subtitle": "Importar e conciliar transações bancárias",
@@ -7002,6 +7049,14 @@ const messages = {
     "stepReviewDesc": "Por favor reveja estes números antes de submeter a folha."
   },
   "deductions": {
+    "edit": "Editar",
+    "editDialogDescription": "Atualize esta dedução. O progresso do reembolso do adiantamento é mantido — o saldo restante só muda se alterar o montante total.",
+    "editDialogTitle": "Editar Dedução",
+    "editTotalHint": "Alterar o total mantém o que já foi reembolsado — o saldo restante passa a ser o novo total menos o montante já reembolsado.",
+    "saveChanges": "Guardar Alterações",
+    "totalAmountRequired": "Um adiantamento que acompanha um saldo precisa de um montante total superior a zero.",
+    "updateError": "Falha ao atualizar a dedução.",
+    "updateSuccess": "Dedução atualizada.",
     "title": "Deduções e Adiantamentos",
     "subtitle": "Gerir deduções recorrentes e adiantamentos salariais",
     "addDeduction": "Adicionar Dedução",
@@ -7013,6 +7068,9 @@ const messages = {
     "otherDeductions": "Outras Deduções",
     "deductionsTableTitle": "Deduções",
     "deductionsTableDescription": "Gerir deduções e adiantamentos dos funcionários",
+    "deductionTypes": "Tipos de Dedução",
+    "clickToFilter": "Clique num tipo para filtrar a tabela",
+    "active": "ativas",
     "searchPlaceholder": "Pesquisar...",
     "tabAll": "Todos",
     "tabAdvances": "Adiantamentos",
@@ -7218,6 +7276,19 @@ const messages = {
     }
   },
   "bankTransfers": {
+    "alsoMarkRunPaid": "Marcar também a folha de pagamento como paga (atualiza os saldos de adiantamentos e deduções recorrentes)",
+    "markCompleted": "Marcar como concluída",
+    "markCompletedDesc": "Confirme que o seu banco executou este lote de salários. Isto apenas atualiza o registo no Xefe — não contacta o banco.",
+    "markCompletedTitle": "Marcar transferência como concluída?",
+    "markFailed": "Marcar como falhada",
+    "markFailedDesc": "Registe que o seu banco rejeitou ou não executou este lote de salários. Isto apenas atualiza o registo no Xefe — pode marcá-la como concluída mais tarde se o banco processar uma nova tentativa.",
+    "markFailedTitle": "Marcar transferência como falhada?",
+    "recordBankTransfer": "Registar Transferência Bancária",
+    "recordBankTransferDesc": "Regista a transferência desta folha como pendente no Xefe. Não é enviado dinheiro — gere os ficheiros bancários, entregue-os ou envie-os por email ao seu banco, e depois marque aqui a transferência como concluída.",
+    "recordTransfer": "Registar Transferência",
+    "toastRunMarkedPaid": "Folha de pagamento marcada como paga.",
+    "toastRunPaidError": "A transferência foi marcada como concluída, mas falhou a marcação da folha de pagamento como paga. Pode marcá-la como paga a partir do Histórico da Folha.",
+    "toastStatusUpdateError": "Falha ao atualizar o estado da transferência. Por favor tente novamente.",
     "title": "Transferências Bancárias",
     "subtitle": "Gerir transferências bancárias de folha e histórico de transações",
     "coverEmail": {

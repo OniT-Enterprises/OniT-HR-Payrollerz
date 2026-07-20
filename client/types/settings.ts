@@ -342,13 +342,19 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     carryOverAllowed: false,
     isActive: true,
   },
+  // Maternity/paternity are EMPLOYER-UNPAID by default: since DL 18/2017 the
+  // INSS parental subsidy (100% of the reference wage, paid directly to the
+  // worker who has 6-in-12-months contributions) replaced the employer's
+  // Art. 61 salary duty, and Art. 21(3) voids the subsidy for any day the
+  // worker receives salary. A tenant that explicitly sets isPaid/paidPercentage
+  // chooses employer-paid leave INSTEAD of the subsidy — that stays honored.
   maternityLeave: {
     id: 'maternity',
     name: 'Maternity Leave',
     code: 'ML',
     daysPerYear: 84, // 12 weeks
-    isPaid: true,
-    paidPercentage: 100,
+    isPaid: false, // INSS subsidy, not employer salary (DL 18/2017)
+    paidPercentage: 0,
     requiresCertificate: true,
     certificateType: 'Medical Certificate',
     carryOverAllowed: false,
@@ -359,8 +365,8 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     name: 'Paternity Leave',
     code: 'PL',
     daysPerYear: 5,
-    isPaid: true,
-    paidPercentage: 100,
+    isPaid: false, // INSS subsidy, not employer salary (DL 18/2017)
+    paidPercentage: 0,
     requiresCertificate: true,
     certificateType: 'Birth Certificate',
     carryOverAllowed: false,

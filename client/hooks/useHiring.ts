@@ -30,9 +30,10 @@ const jobKeys = {
   detail: (tenantId: string, id: string) => [...jobKeys.details(tenantId), id] as const,
 };
 
-// Exported so JobApplicationsReview shares ONE namespace with these hooks —
-// otherwise a verify/reject there (keyed ['jobApplications', ...]) left the
-// HiringWorkspace badge (keyed here) stale, and vice versa.
+// ONE query-key namespace for job applications: every consumer (list hook,
+// invalidator, HiringWorkspace badge) must key through here, or an update in
+// one place leaves the others stale. (Its former external consumer, the
+// JobApplicationsReview page, was superseded by HiringWorkspace and deleted.)
 export const applicationKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'job-applications'] as const,
   lists: (tenantId: string) => [...applicationKeys.all(tenantId), 'list'] as const,

@@ -1060,6 +1060,31 @@ service cloud.firestore {
         allow delete: if isSuperAdmin();
       }
 
+      // Saved custom report configs (Reports > Custom Reports). These are
+      // report DEFINITIONS only — name, data source, column keys, filter
+      // values — never employee data; the data itself is fetched live under
+      // its own collections' rules. Shared tenant assets: anyone who can use
+      // the Reports module (module members, managers, admins — mirrors the
+      // /reports/custom route gate) can manage them, strictly tenant-scoped.
+      match /customReports/{reportId} {
+        allow read: if isSuperAdmin() || isTenantManagerOrAdmin(tenantId) ||
+          hasTenantModule(tenantId, 'reports');
+        // createdBy must name the caller — a member cannot attribute a saved
+        // report to someone else.
+        allow create: if isSuperAdmin() || (
+          (isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'reports')) &&
+          request.resource.data.createdBy == request.auth.uid
+        );
+        // createdBy is immutable; otherwise the same group shares maintenance
+        // (rename, lastRunAt stamping) of the tenant's saved reports.
+        allow update: if isSuperAdmin() || (
+          (isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'reports')) &&
+          request.resource.data.createdBy == resource.data.createdBy
+        );
+        allow delete: if isSuperAdmin() || isTenantManagerOrAdmin(tenantId) ||
+          hasTenantModule(tenantId, 'reports');
+      }
+
       match /offers/{offerId} {
         allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);

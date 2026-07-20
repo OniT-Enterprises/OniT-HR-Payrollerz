@@ -3,7 +3,7 @@
  * Allows users to export payroll journal entries to QuickBooks format
  */
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -40,12 +40,17 @@ import {
 } from 'lucide-react';
 import type { PayrollRun, PayrollRecord } from '@/types/payroll';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
-import type { QBExportOptions, QBJournalEntry } from '@/types/quickbooks';
+import type {
+  QBAccountMapping,
+  QBExportOptions,
+  QBJournalEntry,
+} from '@/types/quickbooks';
 import {
   buildJournalEntry,
   exportPayrollToQuickBooks,
   downloadFile,
   getDefaultMappings,
+  getExportSettingsForTenant,
 } from '@/services/quickbooksExportService';
 
 interface QuickBooksExportDialogProps {
@@ -315,10 +320,36 @@ export function QuickBooksExportDialog({
   const [includeEmployeeDetail, setIncludeEmployeeDetail] = useState(false);
   const [groupByDepartment, setGroupByDepartment] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // Tenant's saved account mappings (null until loaded; preview falls back to defaults)
+  const [savedMappings, setSavedMappings] = useState<QBAccountMapping[] | null>(null);
 
-  // Build preview journal entry
+  // When the dialog opens, load the tenant's saved export settings so the
+  // pre-selected format honours Settings > QuickBooks (user can still override
+  // per-export) and the preview uses the same mappings the download will use.
+  useEffect(() => {
+    if (!open || !tenantId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const settings = await getExportSettingsForTenant(tenantId);
+        if (cancelled) return;
+        setFormat(settings.defaultFormat);
+        setSavedMappings(settings.accountMappings);
+      } catch (error) {
+        // Non-fatal: preview falls back to default mappings/format.
+        console.error('Error loading QuickBooks export settings:', error);
+        if (!cancelled) setSavedMappings(getDefaultMappings());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, tenantId]);
+
+  // Build preview journal entry with the same mappings the export will use
+  // (saved tenant mappings, falling back to defaults when none saved yet).
   const previewEntry = useMemo(() => {
-    const mappings = getDefaultMappings();
+    const mappings = savedMappings ?? getDefaultMappings();
     const options: QBExportOptions = {
       format,
       includeEmployeeDetail,
@@ -326,7 +357,7 @@ export function QuickBooksExportDialog({
       useCustomMappings: false,
     };
     return buildJournalEntry(payrollRun, records, mappings, options);
-  }, [payrollRun, records, format, includeEmployeeDetail, groupByDepartment]);
+  }, [payrollRun, records, format, includeEmployeeDetail, groupByDepartment, savedMappings]);
 
   // Handle export
   const handleExport = async () => {

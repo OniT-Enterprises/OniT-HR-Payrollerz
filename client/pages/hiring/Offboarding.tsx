@@ -52,7 +52,6 @@ import {
   Archive,
   Download,
   Search,
-  Save,
   Loader2,
   AlertTriangle,
   CalendarClock,
@@ -89,6 +88,14 @@ import {
   inssCessationDeadline,
 } from "@/lib/payroll/leaver-final-pay";
 import { useEmployeeById } from "@/hooks/useEmployees";
+import { exportToCSV } from "@/lib/csvExport";
+import {
+  EXIT_INTERVIEW_CSV_COLUMNS,
+  hasExitInterviewAnswers,
+  recommendLabel,
+  satisfactionLabel,
+  toExitInterviewRows,
+} from "@/lib/hiring/exit-interview-export";
 import { useSettings } from "@/hooks/useSettings";
 import { useTenantId } from "@/contexts/TenantContext";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
@@ -106,7 +113,7 @@ export default function Offboarding() {
 
   // Data via React Query
   const { data: activeCases = [], isLoading: activeCasesLoading } = useActiveCases();
-  const { isLoading: completedCasesLoading } = useCompletedCases();
+  const { data: completedCases = [], isLoading: completedCasesLoading } = useCompletedCases();
   const createOffboardingMutation = useCreateOffboardingCase();
   const updateChecklistMutation = useUpdateChecklistItem();
   const updateExitInterviewMutation = useUpdateExitInterviewField();
@@ -420,13 +427,6 @@ export default function Offboarding() {
     );
   };
 
-  const saveDraft = () => {
-    toast({
-      title: t("hiring.offboarding.toast.draftTitle"),
-      description: t("hiring.offboarding.toast.draftDesc"),
-    });
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
@@ -466,6 +466,42 @@ export default function Offboarding() {
       other: t("hiring.offboarding.dialog.reasons.other") || "Other",
     };
     return labels[reason] || reason;
+  };
+
+  // Exit-interview surfacing: answers are captured live on each case above;
+  // this is the read-only view + CSV export over the completed cases.
+  const completedWithInterviews = completedCases.filter(hasExitInterviewAnswers);
+
+  const getSatisfactionLabel = (value: string) => {
+    const keys: Record<string, string> = {
+      "very-satisfied": "verySatisfied",
+      satisfied: "satisfied",
+      neutral: "neutral",
+      dissatisfied: "dissatisfied",
+      "very-dissatisfied": "veryDissatisfied",
+    };
+    const key = keys[value];
+    return (
+      (key && t(`hiring.offboarding.exit.overallOptions.${key}`)) ||
+      satisfactionLabel(value)
+    );
+  };
+
+  const getRecommendLabel = (value: string) =>
+    t(`hiring.offboarding.exit.recommendOptions.${value}`) || recommendLabel(value);
+
+  const exportExitInterviews = () => {
+    const columns = EXIT_INTERVIEW_CSV_COLUMNS.map((col) => ({
+      key: col.key,
+      label: t(`hiring.offboarding.exitInterviews.csv.${col.key}`) || col.label,
+    }));
+    exportToCSV(toExitInterviewRows(completedCases), "exit_interviews", columns);
+    toast({
+      title: t("hiring.offboarding.exitInterviews.exportedTitle") || "Export ready",
+      description:
+        t("hiring.offboarding.exitInterviews.exportedDesc") ||
+        "Exit interview answers downloaded as a CSV file.",
+    });
   };
 
   if (loading || employeesLoading) {
@@ -1276,12 +1312,10 @@ export default function Offboarding() {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
+                      {/* Every field above persists as it is edited (checklist,
+                          exit interview, equipment, Art. 56 each have their own
+                          mutation) — there is no draft state to save. */}
                       <div className="flex gap-3">
-                        <Button variant="outline" onClick={saveDraft} className="flex-1 border-border/50">
-                          <Save className="mr-2 h-4 w-4" />
-                          {t("hiring.offboarding.actions.saveDraft")}
-                        </Button>
                         <Button
                           onClick={() =>
                             updateChecklist(selectedCase.id!, "exitInterviewCompleted", true)
@@ -1297,6 +1331,83 @@ export default function Offboarding() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Exit interviews — read-only surfacing of answers recorded on
+                completed cases, plus CSV export. Hidden until at least one
+                completed case has answers (nothing to surface = no card). */}
+            {completedWithInterviews.length > 0 && (
+              <Card className="border-border/50">
+                <CardHeader>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-blue-500/10">
+                          <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        {t("hiring.offboarding.exitInterviews.title") || "Exit interviews"}
+                      </CardTitle>
+                      <CardDescription className="mt-1.5">
+                        {t("hiring.offboarding.exitInterviews.description") ||
+                          "Answers recorded during offboarding for completed departures."}
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={exportExitInterviews}>
+                      <Download className="mr-2 h-4 w-4" />
+                      {t("hiring.offboarding.exitInterviews.export") || "Export CSV"}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {completedWithInterviews.map((case_) => (
+                      <div
+                        key={case_.id}
+                        className="rounded-lg border border-border/50 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <span className="text-sm font-medium">{case_.employeeName}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {" "}
+                              — {getDepartureReasonLabel(case_.departureReason)}
+                              {case_.lastWorkingDay
+                                ? ` · ${formatDateTL(case_.lastWorkingDay)}`
+                                : ""}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {case_.exitInterview.overallSatisfaction && (
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {getSatisfactionLabel(case_.exitInterview.overallSatisfaction)}
+                              </Badge>
+                            )}
+                            {case_.exitInterview.wouldRecommend && (
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {t("hiring.offboarding.exitInterviews.recommendShort") ||
+                                  "Would recommend"}
+                                {": "}
+                                {getRecommendLabel(case_.exitInterview.wouldRecommend)}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {(case_.exitInterview.primaryReason ||
+                          case_.exitInterview.additionalComments) && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {[
+                              case_.exitInterview.primaryReason,
+                              case_.exitInterview.additionalComments,
+                            ]
+                              .filter(Boolean)
+                              .join(" — ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </div>

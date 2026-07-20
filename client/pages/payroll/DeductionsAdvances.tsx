@@ -49,6 +49,8 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Percent,
+  Landmark,
+  Scale,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecurringDeductions, useCreateDeduction, useUpdateDeduction, usePauseDeduction, useDeleteDeduction } from "@/hooks/usePayroll";
@@ -56,9 +58,15 @@ import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { formatCurrency } from "@/lib/payroll/constants";
 import { TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
+import { buildDeductionEditUpdates } from "@/lib/payroll/deduction-edit";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the deductions table can be sorted by (Actions is not sortable)
+type DeductionSortKey = "employee" | "type" | "description" | "amount" | "frequency" | "status";
 
 export default function DeductionsAdvances() {
   const { toast } = useToast();
@@ -74,11 +82,14 @@ export default function DeductionsAdvances() {
   const updateDeduction = useUpdateDeduction();
   const pauseDeduction = usePauseDeduction();
   const deleteDeduction = useDeleteDeduction();
-  const saving = createDeduction.isPending;
+  const saving = createDeduction.isPending || updateDeduction.isPending;
 
   const [showAddDialog, setShowAddDialog] = useState(false);
+  // Non-null while the dialog is editing an existing register doc (the same
+  // dialog serves create and edit; employee/type are frozen when editing).
+  const [editingDeduction, setEditingDeduction] = useState<RecurringDeduction | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const [filterType, setFilterType] = useState<DeductionType | "all">("all");
 
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -108,13 +119,19 @@ export default function DeductionsAdvances() {
     { value: "monthly", label: t("deductions.freqMonthly") },
   ];
 
+  // Clickable type-filter cards (mirrors the Benefits page layout)
+  const DEDUCTION_TYPE_CARDS: { value: DeductionType; label: string; icon: React.ElementType }[] = [
+    { value: "advance_repayment", label: t("deductions.typeAdvance"), icon: ArrowUpCircle },
+    { value: "loan_repayment", label: t("deductions.typeLoanRepayment") || "Loan Repayment", icon: Landmark },
+    { value: "court_order", label: t("deductions.typeGarnishment"), icon: Scale },
+    { value: "other", label: t("deductions.typeOther"), icon: CreditCard },
+  ];
+
   // Filter deductions
   const filteredDeductions = useMemo(() => {
     return deductions.filter((deduction) => {
-      // Tab filter
-      if (activeTab === "advances" && deduction.type !== "advance_repayment") return false;
-      if (activeTab === "garnishments" && deduction.type !== "court_order") return false;
-      if (activeTab === "other" && ["advance_repayment", "court_order"].includes(deduction.type)) return false;
+      // Type filter (from the clickable type cards)
+      if (filterType !== "all" && deduction.type !== filterType) return false;
 
       // Search filter
       if (searchTerm) {
@@ -130,7 +147,7 @@ export default function DeductionsAdvances() {
 
       return true;
     });
-  }, [deductions, activeTab, searchTerm, employees]);
+  }, [deductions, filterType, searchTerm, employees]);
 
   // Get employee name
   const getEmployeeName = (employeeId: string) => {
@@ -182,6 +199,42 @@ export default function DeductionsAdvances() {
     );
   };
 
+  // Raw label used for the "Type" column sort (mirrors getTypeBadge's text)
+  const getTypeLabel = (type: DeductionType) =>
+    TL_DEDUCTION_TYPE_LABELS[type as keyof typeof TL_DEDUCTION_TYPE_LABELS]?.en ?? type;
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedDeductions, sort, toggleSort } = useTableSort<RecurringDeduction, DeductionSortKey>(
+    filteredDeductions,
+    {
+      employee: (d) => getEmployeeName(d.employeeId),
+      type: (d) => getTypeLabel(d.type),
+      description: (d) => d.description,
+      amount: (d) => (d.isPercentage ? d.percentage ?? 0 : d.amount),
+      frequency: (d) => FREQUENCY_OPTIONS.find((f) => f.value === d.frequency)?.label ?? "",
+      status: (d) => d.status,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: DeductionSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
   // Handle add deduction
   const handleAddDeduction = () => {
     if (!selectedEmployee || !description || (isPercentage ? percentage <= 0 : amount <= 0)) {
@@ -215,8 +268,7 @@ export default function DeductionsAdvances() {
           title: t("common.success"),
           description: t("deductions.createSuccess"),
         });
-        setShowAddDialog(false);
-        resetForm();
+        closeDialog();
       },
       onError: () => {
         toast({
@@ -226,6 +278,94 @@ export default function DeductionsAdvances() {
         });
       },
     });
+  };
+
+  // Open the dialog prefilled with an existing register doc
+  const openEditDialog = (deduction: RecurringDeduction) => {
+    setEditingDeduction(deduction);
+    setSelectedEmployee(deduction.employeeId);
+    setDeductionType(deduction.type);
+    setDescription(deduction.description);
+    setAmount(deduction.amount);
+    setIsPercentage(!!deduction.isPercentage);
+    setPercentage(deduction.percentage ?? 0);
+    setIsPreTax(!!deduction.isPreTax);
+    setStartDate(deduction.startDate || getTodayTL());
+    setEndDate(deduction.endDate || "");
+    setTotalAmount(deduction.totalAmount ?? 0);
+    setFrequency(deduction.frequency);
+    setShowAddDialog(true);
+  };
+
+  // Save an edit. Balance semantics live in buildDeductionEditUpdates:
+  // installment edits never touch remainingBalance/lastAppliedPeriod; a
+  // totalAmount change keeps what was already repaid
+  // (remaining = clamp(newTotal - alreadyRepaid, 0, newTotal)).
+  const handleSaveEdit = () => {
+    if (!editingDeduction?.id) return;
+    if (!description || (isPercentage ? percentage <= 0 : amount <= 0)) {
+      toast({
+        title: t("deductions.validationError"),
+        description: t("deductions.validationDescription"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let updates: Partial<RecurringDeduction>;
+    try {
+      updates = buildDeductionEditUpdates(
+        {
+          type: editingDeduction.type,
+          status: editingDeduction.status,
+          totalAmount: editingDeduction.totalAmount,
+          remainingBalance: editingDeduction.remainingBalance,
+        },
+        {
+          description,
+          amount,
+          isPercentage,
+          percentage,
+          isPreTax,
+          startDate,
+          endDate,
+          frequency,
+          totalAmount,
+        },
+      );
+    } catch {
+      // Dropping the total off a balance-tracked advance would turn it into
+      // an open-ended installment that deducts forever.
+      toast({
+        title: t("deductions.validationError"),
+        description:
+          t("deductions.totalAmountRequired") ||
+          "An advance that tracks a balance needs a total amount greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateDeduction.mutate(
+      { id: editingDeduction.id, updates },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("common.success"),
+            description: t("deductions.updateSuccess") || "Deduction updated.",
+          });
+          closeDialog();
+        },
+        onError: () => {
+          toast({
+            title: t("common.error"),
+            description:
+              t("deductions.updateError") || "Failed to update the deduction.",
+            variant: "destructive",
+          });
+        },
+      },
+    );
   };
 
   // Pause/resume deduction
@@ -287,6 +427,14 @@ export default function DeductionsAdvances() {
     setFrequency("per_paycheck");
   };
 
+  // Close the shared create/edit dialog and clear edit state so a stale
+  // prefill never leaks into the next "Add Deduction".
+  const closeDialog = () => {
+    setShowAddDialog(false);
+    setEditingDeduction(null);
+    resetForm();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -304,6 +452,24 @@ export default function DeductionsAdvances() {
             <Skeleton className="h-10 w-40" />
           </div>
 
+          <Card className="mb-6 border-border/50">
+            <CardHeader className="pb-3">
+              <Skeleton className="h-5 w-40 mb-2" />
+              <Skeleton className="h-4 w-56" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="p-3 border rounded-lg">
+                    <Skeleton className="h-5 w-5 mb-1.5" />
+                    <Skeleton className="h-3 w-16 mb-1.5" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -315,8 +481,6 @@ export default function DeductionsAdvances() {
               </div>
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-10 w-48 mb-4" />
-
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -389,17 +553,59 @@ export default function DeductionsAdvances() {
           }
         />
 
+          {/* Deduction Type Filter Cards */}
+          <Card className="mb-6 border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-primary" />
+                {t("deductions.deductionTypes")}
+              </CardTitle>
+              <CardDescription>{t("deductions.clickToFilter")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {DEDUCTION_TYPE_CARDS.map((type) => {
+                  const Icon = type.icon;
+                  const count = deductions.filter(
+                    (d) => d.type === type.value && d.status === "active"
+                  ).length;
+
+                  return (
+                    <button
+                      key={type.value}
+                      className={`p-3 border rounded-lg text-left transition-colors ${
+                        filterType === type.value
+                          ? "border-primary bg-primary/10"
+                          : "hover:border-primary/40"
+                      }`}
+                      onClick={() =>
+                        setFilterType(filterType === type.value ? "all" : type.value)
+                      }
+                    >
+                      <Icon className={`h-5 w-5 mb-1.5 ${
+                        filterType === type.value ? "text-primary" : "text-muted-foreground"
+                      }`} />
+                      <p className="text-xs font-medium truncate">{type.label}</p>
+                      <p className="text-xs text-muted-foreground">{count} {t("deductions.active")}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Deductions Table */}
           <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CreditCard className="h-5 w-5 text-primary" />
                     {t("deductions.deductionsTableTitle")}
                   </CardTitle>
                   <CardDescription>
-                    {t("deductions.deductionsTableDescription")}
+                    {filteredDeductions.length} {t("deductions.deductionsTableTitle").toLowerCase()}
+                    {filterType !== "all" && ` (${DEDUCTION_TYPE_CARDS.find((c) => c.value === filterType)?.label})`}
                   </CardDescription>
                 </div>
                 <div className="relative w-64">
@@ -414,20 +620,6 @@ export default function DeductionsAdvances() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 w-48">
-                <Select value={activeTab} onValueChange={setActiveTab}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("deductions.tabAll")}</SelectItem>
-                    <SelectItem value="advances">{t("deductions.tabAdvances")}</SelectItem>
-                    <SelectItem value="garnishments">{t("deductions.tabGarnishments")}</SelectItem>
-                    <SelectItem value="other">{t("deductions.tabOther")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
                   {filteredDeductions.length === 0 ? (
                     <div className="text-center py-12">
                       <CreditCard className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
@@ -442,17 +634,17 @@ export default function DeductionsAdvances() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>{t("deductions.employee")}</TableHead>
-                            <TableHead>{t("deductions.type")}</TableHead>
-                            <TableHead>{t("deductions.description")}</TableHead>
-                            <TableHead className="text-right">{t("deductions.amount")}</TableHead>
-                            <TableHead>{t("deductions.frequency")}</TableHead>
-                            <TableHead>{t("deductions.status")}</TableHead>
+                            {sortableHead("employee", t("deductions.employee"))}
+                            {sortableHead("type", t("deductions.type"))}
+                            {sortableHead("description", t("deductions.description"))}
+                            {sortableHead("amount", t("deductions.amount"), "right")}
+                            {sortableHead("frequency", t("deductions.frequency"))}
+                            {sortableHead("status", t("deductions.status"))}
                             <TableHead className="text-right">{t("deductions.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredDeductions.map((deduction) => (
+                          {sortedDeductions.map((deduction) => (
                             <TableRow key={deduction.id}>
                               <TableCell className="font-medium">
                                 {getEmployeeName(deduction.employeeId)}
@@ -492,7 +684,13 @@ export default function DeductionsAdvances() {
                                       <CheckCircle className="h-4 w-4" />
                                     )}
                                   </Button>
-                                  <Button variant="ghost" size="sm">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    title={t("deductions.edit") || "Edit"}
+                                    aria-label={t("deductions.edit") || "Edit"}
+                                    onClick={() => openEditDialog(deduction)}
+                                  >
                                     <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
@@ -514,50 +712,91 @@ export default function DeductionsAdvances() {
           </Card>
         </div>
 
-      {/* Add Deduction Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      {/* Add / Edit Deduction Dialog */}
+      <Dialog
+        open={showAddDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeDialog();
+          } else {
+            setShowAddDialog(true);
+          }
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t("deductions.addDialogTitle")}</DialogTitle>
+            <DialogTitle>
+              {editingDeduction
+                ? t("deductions.editDialogTitle") || "Edit Deduction"
+                : t("deductions.addDialogTitle")}
+            </DialogTitle>
             <DialogDescription>
-              {t("deductions.addDialogDescription")}
+              {editingDeduction
+                ? t("deductions.editDialogDescription") ||
+                  "Update this deduction. Advance repayment progress is kept — the remaining balance only changes if you change the total amount."
+                : t("deductions.addDialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="employee">{t("deductions.employeeLabel")}</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("deductions.selectEmployee")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.id} value={emp.id || ""}>
-                      {emp.personalInfo.firstName} {emp.personalInfo.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {editingDeduction ? (
+                // Identity field: an edited doc keeps its employee (its settled
+                // history is meaningless under someone else). Plain input so
+                // inactive employees still show a name.
+                <Input
+                  id="employee"
+                  value={getEmployeeName(editingDeduction.employeeId)}
+                  disabled
+                />
+              ) : (
+                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("deductions.selectEmployee")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id || ""}>
+                        {emp.personalInfo.firstName} {emp.personalInfo.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div>
               <Label htmlFor="deduction-type">{t("deductions.typeLabel")}</Label>
-              <Select
-                value={deductionType}
-                onValueChange={(v) => setDeductionType(v as DeductionType)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEDUCTION_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {editingDeduction ? (
+                // Identity field: type fixes the engine slot the doc feeds, so
+                // it cannot change after settlements. Plain input so types
+                // outside the create list still display.
+                <Input
+                  id="deduction-type"
+                  value={
+                    DEDUCTION_TYPES.find((tp) => tp.value === editingDeduction.type)
+                      ?.label || editingDeduction.type
+                  }
+                  disabled
+                />
+              ) : (
+                <Select
+                  value={deductionType}
+                  onValueChange={(v) => setDeductionType(v as DeductionType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEDUCTION_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div>
@@ -623,6 +862,12 @@ export default function DeductionsAdvances() {
                   step={100}
                   placeholder={t("deductions.totalAdvancePlaceholder")}
                 />
+                {editingDeduction && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t("deductions.editTotalHint") ||
+                      "Changing the total keeps what has already been repaid — the remaining balance becomes the new total minus the amount repaid so far."}
+                  </p>
+                )}
               </div>
             )}
 
@@ -677,14 +922,22 @@ export default function DeductionsAdvances() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+            <Button variant="outline" onClick={closeDialog}>
               {t("deductions.cancel")}
             </Button>
-            <Button onClick={handleAddDeduction} disabled={saving}>
+            <Button
+              onClick={editingDeduction ? handleSaveEdit : handleAddDeduction}
+              disabled={saving}
+            >
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t("deductions.saving")}
+                </>
+              ) : editingDeduction ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t("deductions.saveChanges") || "Save Changes"}
                 </>
               ) : (
                 <>

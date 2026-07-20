@@ -35,6 +35,9 @@ import { useToast } from "@/hooks/use-toast";
 import { getTodayTL } from "@/lib/dateUtils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useTableSort, type SortState } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 import {
   Users,
   Search,
@@ -83,6 +86,9 @@ import { useTenantId, useTenant } from "@/contexts/TenantContext";
 // Compliance filter types for URL params
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues" | "issues";
 
+// Sortable columns in the employee directory (Actions is not sortable)
+type EmployeeSortKey = "name" | "department" | "position" | "status" | "salary";
+
 /** Duplicate key: same non-TEMP employee ID or same normalized full name */
 function duplicateKeysFor(emp: Pick<Employee, "personalInfo" | "jobDetails">): string[] {
   const keys: string[] = [];
@@ -111,6 +117,8 @@ function DesktopEmployeeTable({
   onDeleteEmployee,
   duplicateIds,
   canManageTenant,
+  sort,
+  onToggleSort,
   t,
 }: {
   employees: Employee[];
@@ -123,6 +131,8 @@ function DesktopEmployeeTable({
   onDeleteEmployee: (emp: Employee) => void;
   duplicateIds: Set<string>;
   canManageTenant: boolean;
+  sort: SortState<EmployeeSortKey> | null;
+  onToggleSort: (key: EmployeeSortKey) => void;
   t: (key: string) => string;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -148,17 +158,35 @@ function DesktopEmployeeTable({
     : 'minmax(240px,2fr) minmax(130px,1.1fr) minmax(160px,1.4fr) 110px 72px';
 
   const headerCell = 'px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider';
+  const sortableHeader = (key: EmployeeSortKey, label: string, align: 'left' | 'right' = 'left') => {
+    const active = sort?.key === key;
+    return (
+      <div
+        role="columnheader"
+        aria-sort={active ? (sort!.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className={cn('px-4 py-3', align === 'right' && 'flex justify-end')}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : 'asc'}
+          onSort={() => onToggleSort(key)}
+          align={align}
+        />
+      </div>
+    );
+  };
   const headerRow = (
     <div
       role="row"
       className="sticky top-0 z-10 grid items-center border-b bg-background"
       style={{ gridTemplateColumns: gridTemplate, minWidth: 860 }}
     >
-      <div role="columnheader" className={headerCell}>{t("employees.table.employee")}</div>
-      <div role="columnheader" className={headerCell}>{t("employees.table.department")}</div>
-      <div role="columnheader" className={headerCell}>{t("employees.table.position")}</div>
-      <div role="columnheader" className={headerCell}>{t("employees.table.status")}</div>
-      {showSalary && <div role="columnheader" className={`${headerCell} text-right`}>{t("employees.table.salary")}</div>}
+      {sortableHeader('name', t("employees.table.employee"))}
+      {sortableHeader('department', t("employees.table.department"))}
+      {sortableHeader('position', t("employees.table.position"))}
+      {sortableHeader('status', t("employees.table.status"))}
+      {showSalary && sortableHeader('salary', t("employees.table.salary"), 'right')}
       <div role="columnheader" className={`${headerCell} text-right`}>{t("employees.table.actions")}</div>
     </div>
   );
@@ -516,6 +544,21 @@ export default function AllEmployees() {
     minSalary,
     maxSalary,
   ]);
+
+  // Column sorting (asc → desc → off). Empty/missing values sort last.
+  const { sorted: sortedEmployees, sort, toggleSort } = useTableSort<Employee, EmployeeSortKey>(
+    filteredEmployees,
+    {
+      name: (e) => `${e.personalInfo.firstName ?? ""} ${e.personalInfo.lastName ?? ""}`.trim(),
+      department: (e) => e.jobDetails.department,
+      position: (e) => e.jobDetails.position,
+      status: (e) => e.status,
+      salary: (e) =>
+        e.compensation.monthlySalary ||
+        Math.round((e.compensation.annualSalary ?? 0) / 12) ||
+        0,
+    },
+  );
 
   // Records sharing a non-TEMP employee ID or a full name with another record
   const duplicateIds = useMemo(() => {
@@ -1299,7 +1342,7 @@ export default function AllEmployees() {
           <CardContent className="p-0">
             {/* Mobile Card View */}
             <div className="md:hidden divide-y divide-border/50">
-              {filteredEmployees.map((employee) => (
+              {sortedEmployees.map((employee) => (
                 <div
                   key={employee.id}
                   className="p-4 hover:bg-muted/50 transition-colors cursor-pointer active:bg-muted"
@@ -1356,7 +1399,7 @@ export default function AllEmployees() {
 
             {/* Desktop Table View - Virtualized for large datasets */}
             <DesktopEmployeeTable
-              employees={filteredEmployees}
+              employees={sortedEmployees}
               showSalary={showSalary}
               getStatusLabel={getStatusLabel}
               formatSalary={formatSalary}
@@ -1366,6 +1409,8 @@ export default function AllEmployees() {
               onDeleteEmployee={handleDeleteEmployee}
               duplicateIds={duplicateIds}
               canManageTenant={canManageTenant}
+              sort={sort}
+              onToggleSort={toggleSort}
               t={t}
             />
 
