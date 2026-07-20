@@ -2,6 +2,11 @@
  * WIT Return PDF Generator
  * Creates downloadable PDF documents for ATTL Monthly WIT returns
  * Uses @react-pdf/renderer
+ *
+ * PROVENANCE: Xefe's own from-scratch @react-pdf summary of the WIT return
+ * figures (a working/reference document, not the ATTL form itself — the ATTL
+ * Consolidated Monthly Taxes Form is filed via e-Tax/paper). Section labels
+ * follow ONLY the official ATTL form; not modeled on any firm's workbook.
  */
 
 import {

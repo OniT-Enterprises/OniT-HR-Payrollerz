@@ -1,7 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 /**
  * PDF Payslip Generator
- * Uses @react-pdf/renderer to create downloadable payslip documents
+ * Uses @react-pdf/renderer to create downloadable payslip documents.
+ *
+ * PROVENANCE: this is Xefe's own from-scratch @react-pdf layout, branded with
+ * the TENANT's company (companyDetails). A payslip is not a government form, so
+ * it follows no official template — and it is deliberately NOT modeled on any
+ * accounting firm's or client's payslip/workbook design.
  */
 
 import {
