@@ -166,8 +166,8 @@ export default function SecurityPage() {
             </div>
             <p className="mx-auto mt-10 max-w-3xl text-center text-sm leading-7 text-zinc-500">
               {t("securityPage.privacy.disclosure")}{" "}
-              <a href="mailto:suporte@onit.tl" className="text-sky-300 hover:underline">
-                suporte@onit.tl
+              <a href="mailto:info@onit.tl" className="text-sky-300 hover:underline">
+                info@onit.tl
               </a>
             </p>
           </div>
