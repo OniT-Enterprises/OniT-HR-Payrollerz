@@ -38,6 +38,8 @@ import { OptionalTimestamp } from "@/types/firebase";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 
 const statusColors: Record<TenantStatus, string> = {
   active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
@@ -222,6 +224,17 @@ function TenantRowActions({
   );
 }
 
+// Columns the tenant table can be sorted by (Actions is not sortable; Modules
+// and Users render composite content, so they sort on a derived numeric proxy)
+type TenantSortKey =
+  | "tenant"
+  | "status"
+  | "modules"
+  | "users"
+  | "created"
+  | "paidUntil"
+  | "subscription";
+
 export default function TenantList() {
   const navigate = useNavigate();
   const { startImpersonation } = useTenant();
@@ -271,6 +284,49 @@ export default function TenantList() {
       minimumFractionDigits: 2,
     }).format(amount);
     return `${formatted}/${tenant.subscriptionBillingInterval === "year" ? "yr" : "mo"}`;
+  };
+
+  // Firestore Timestamp | Date | undefined -> Date | null, for sort accessors
+  const toSortableDate = (date: OptionalTimestamp): Date | null => {
+    if (!date) return null;
+    if (typeof date === "object" && "toDate" in date) return date.toDate();
+    if (date instanceof Date) return date;
+    return null;
+  };
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedTenants, sort, toggleSort } = useTableSort<TenantConfig, TenantSortKey>(
+    filteredTenants,
+    {
+      tenant: (tenant) => tenant.name,
+      status: (tenant) => tenant.status,
+      modules: (tenant) =>
+        MODULE_PILLS.filter((module) => tenant.features?.[module.key] !== false).length,
+      users: (tenant) => (tenant.currentAdminCount ?? 0) + (tenant.currentEmployeeCount ?? 0),
+      created: (tenant) => toSortableDate(tenant.createdAt),
+      paidUntil: (tenant) => toSortableDate(tenant.subscriptionPaidUntil),
+      subscription: (tenant) =>
+        tenant.subscriptionBillingAmount ?? tenant.monthlySubscriptionAmount,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: TenantSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
   };
 
   return (
@@ -484,18 +540,18 @@ export default function TenantList() {
                 <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("admin.tenantList.table.tenant")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.status")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.modules")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.users")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.created")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.paidUntil")}</TableHead>
-                      <TableHead>{t("admin.tenantList.table.monthlySubscription")}</TableHead>
+                      {sortableHead("tenant", t("admin.tenantList.table.tenant"))}
+                      {sortableHead("status", t("admin.tenantList.table.status"))}
+                      {sortableHead("modules", t("admin.tenantList.table.modules"))}
+                      {sortableHead("users", t("admin.tenantList.table.users"))}
+                      {sortableHead("created", t("admin.tenantList.table.created"))}
+                      {sortableHead("paidUntil", t("admin.tenantList.table.paidUntil"))}
+                      {sortableHead("subscription", t("admin.tenantList.table.monthlySubscription"))}
                       <TableHead className="text-right">{t("admin.tenantList.table.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTenants.map((tenant) => (
+                    {sortedTenants.map((tenant) => (
                       <TableRow key={tenant.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex items-center gap-3">

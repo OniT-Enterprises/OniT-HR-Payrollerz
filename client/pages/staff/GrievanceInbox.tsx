@@ -48,6 +48,9 @@ import PageHeader from "@/components/layout/PageHeader";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
+import { cn } from "@/lib/utils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -71,6 +74,9 @@ import {
 
 type GrievanceCategory = "harassment" | "wage_issue" | "safety_concern" | "discrimination" | "other";
 type GrievanceStatus = "submitted" | "reviewing" | "resolved" | "dismissed";
+
+// Columns the grievances table can be sorted by (expand/Actions are not sortable)
+type GrievanceSortKey = "ticketId" | "category" | "description" | "status" | "createdAt";
 
 interface Grievance {
   id: string;
@@ -281,6 +287,37 @@ export default function GrievanceInbox() {
     }
   });
 
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedGrievances, sort, toggleSort } = useTableSort<Grievance, GrievanceSortKey>(
+    filteredGrievances,
+    {
+      ticketId: (g) => g.ticketId,
+      category: (g) => CATEGORY_CONFIG[g.category]?.label || g.category,
+      description: (g) => g.description,
+      status: (g) => STATUS_CONFIG[g.status]?.label || g.status,
+      createdAt: (g) => g.createdAt,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: GrievanceSortKey, label: string, className?: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={cn(align === "right" && "text-right", className)}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
   // Loading skeleton
   if (loading) {
     return (
@@ -400,16 +437,16 @@ export default function GrievanceInbox() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]" />
-                  <TableHead className="w-[120px]">Ticket ID</TableHead>
-                  <TableHead className="w-[140px]">Category</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="w-[120px]">Status</TableHead>
-                  <TableHead className="w-[120px]">Submitted</TableHead>
+                  {sortableHead("ticketId", "Ticket ID", "w-[120px]")}
+                  {sortableHead("category", "Category", "w-[140px]")}
+                  {sortableHead("description", "Description")}
+                  {sortableHead("status", "Status", "w-[120px]")}
+                  {sortableHead("createdAt", "Submitted", "w-[120px]")}
                   <TableHead className="w-[220px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredGrievances.map((grievance) => (
+                {sortedGrievances.map((grievance) => (
                   <React.Fragment key={grievance.id}>
                     <TableRow
                       className="cursor-pointer hover:bg-muted/50"

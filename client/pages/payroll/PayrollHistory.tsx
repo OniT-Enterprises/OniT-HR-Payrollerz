@@ -107,6 +107,12 @@ import {
   summarizePayrollAllocations,
 } from "@/lib/reports/ngoReporting";
 import { summarizePayrollForAccounting } from "@/lib/payroll/accounting-summary";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+import { cn } from "@/lib/utils";
+
+// Columns the main payroll-run history table can be sorted by (Actions is not sortable)
+type PayrollHistorySortKey = "period" | "payDate" | "employees" | "grossPay" | "netPay" | "status";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
@@ -332,6 +338,43 @@ export default function PayrollHistory() {
       return true;
     });
   }, [payrollRuns, statusFilter, yearFilter, searchTerm]);
+
+  // Column sorting for the main "All Runs" history table (asc → desc → off)
+  const { sorted: sortedPayrollRuns, sort, toggleSort } = useTableSort<PayrollRun, PayrollHistorySortKey>(
+    filteredRuns,
+    {
+      period: (run) => getPayPeriodLabel(run.periodStart, run.periodEnd),
+      payDate: (run) => run.payDate,
+      employees: (run) => run.employeeCount,
+      grossPay: (run) => run.totalGrossPay,
+      netPay: (run) => run.totalNetPay,
+      status: (run) => run.status,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (
+    key: PayrollHistorySortKey,
+    label: string,
+    align: "left" | "right" = "left",
+    extraClassName?: string,
+  ) => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={cn(align === "right" ? "text-right" : undefined, extraClassName)}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
 
   // Get status badge
   const getStatusBadge = (status: PayrollStatus) => {
@@ -1117,7 +1160,7 @@ export default function PayrollHistory() {
                     <>
                     {/* Mobile Card View - All Runs */}
                     <div className="md:hidden divide-y divide-border/50">
-                      {filteredRuns.map((run) => (
+                      {sortedPayrollRuns.map((run) => (
                         <div key={run.id} className="p-4" onClick={() => handleViewDetails(run)}>
                           <div className="flex items-start justify-between gap-2 mb-2">
                             <div>
@@ -1171,17 +1214,17 @@ export default function PayrollHistory() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>{t("payrollHistory.period")}</TableHead>
-                            <TableHead className="whitespace-nowrap">{t("payrollHistory.payDate")}</TableHead>
-                            <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
-                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.grossPay")}</TableHead>
-                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.netPay")}</TableHead>
-                            <TableHead>{t("payrollHistory.status")}</TableHead>
+                            {sortableHead("period", t("payrollHistory.period"))}
+                            {sortableHead("payDate", t("payrollHistory.payDate"), "left", "whitespace-nowrap")}
+                            {sortableHead("employees", t("payrollHistory.employees"), "right")}
+                            {sortableHead("grossPay", t("payrollHistory.grossPay"), "right", "whitespace-nowrap")}
+                            {sortableHead("netPay", t("payrollHistory.netPay"), "right", "whitespace-nowrap")}
+                            {sortableHead("status", t("payrollHistory.status"))}
                             <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredRuns.map((run) => (
+                          {sortedPayrollRuns.map((run) => (
                             <TableRow key={run.id}>
                               <TableCell className="whitespace-nowrap">
                                 <p className="font-medium">

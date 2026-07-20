@@ -96,6 +96,18 @@ import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the transfers table can be sorted by (Actions is not sortable)
+type BankTransferSortKey =
+  | "payrollPeriod"
+  | "amount"
+  | "employees"
+  | "transferDate"
+  | "bankAccount"
+  | "status"
+  | "reference";
 
 export default function BankTransfers() {
   const { toast } = useToast();
@@ -717,6 +729,39 @@ export default function BankTransfers() {
     });
   }, [transfers, selectedStatus, selectedPeriod]);
 
+  // Column sorting for the transfers table (asc → desc → off)
+  const { sorted: sortedTransfers, sort, toggleSort } = useTableSort<BankTransfer, BankTransferSortKey>(
+    filteredTransfers,
+    {
+      payrollPeriod: (transfer) => transfer.payrollPeriod,
+      amount: (transfer) => transfer.amount,
+      employees: (transfer) => transfer.employeeCount,
+      transferDate: (transfer) => transfer.transferDate,
+      bankAccount: (transfer) => transfer.bankAccountName,
+      status: (transfer) => transfer.status,
+      reference: (transfer) => transfer.reference,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: BankTransferSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -1252,18 +1297,18 @@ export default function BankTransfers() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("bankTransfers.payrollPeriod")}</TableHead>
-                      <TableHead>{t("bankTransfers.amount")}</TableHead>
-                      <TableHead>{t("bankTransfers.employees")}</TableHead>
-                      <TableHead>{t("bankTransfers.transferDate")}</TableHead>
-                      <TableHead>{t("bankTransfers.bankAccount")}</TableHead>
-                      <TableHead>{t("bankTransfers.status")}</TableHead>
-                      <TableHead>{t("bankTransfers.reference")}</TableHead>
+                      {sortableHead("payrollPeriod", t("bankTransfers.payrollPeriod"))}
+                      {sortableHead("amount", t("bankTransfers.amount"))}
+                      {sortableHead("employees", t("bankTransfers.employees"))}
+                      {sortableHead("transferDate", t("bankTransfers.transferDate"))}
+                      {sortableHead("bankAccount", t("bankTransfers.bankAccount"))}
+                      {sortableHead("status", t("bankTransfers.status"))}
+                      {sortableHead("reference", t("bankTransfers.reference"))}
                       <TableHead>{t("bankTransfers.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransfers.map((transfer) => (
+                    {sortedTransfers.map((transfer) => (
                       <TableRow key={transfer.id}>
                         <TableCell className="font-medium">
                           {transfer.payrollPeriod}

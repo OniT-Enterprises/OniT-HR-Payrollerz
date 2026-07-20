@@ -65,8 +65,20 @@ import {
 } from "@/lib/accounting/depreciation";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+// Columns the fixed-asset register can be sorted by (Actions is not sortable)
+type FixedAssetSortKey =
+  | "name"
+  | "class"
+  | "acquired"
+  | "cost"
+  | "accumulated"
+  | "nbv"
+  | "status";
 
 const EMPTY_FORM = {
   name: "",
@@ -356,6 +368,46 @@ export default function FixedAssets() {
     );
   };
 
+  // Raw label used for the "Status" column sort (mirrors statusBadge's text)
+  const getAssetStatusLabel = (asset: FixedAsset) => {
+    if (asset.status === "disposed") return t("accounting.fixedAssets.statusDisposed");
+    if (asset.status === "fully_depreciated") return t("accounting.fixedAssets.statusFully");
+    return t("accounting.fixedAssets.statusActive");
+  };
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedAssets, sort, toggleSort } = useTableSort<FixedAsset, FixedAssetSortKey>(
+    assets,
+    {
+      name: (a) => a.name,
+      class: (a) => t(`accounting.fixedAssets.classes.${a.assetClass}`),
+      acquired: (a) => a.acquisitionDate,
+      cost: (a) => a.acquisitionCost,
+      accumulated: (a) => a.accumulatedDepreciation || 0,
+      nbv: (a) => round2(a.acquisitionCost - (a.accumulatedDepreciation || 0)),
+      status: (a) => getAssetStatusLabel(a),
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: FixedAssetSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.fixedAssets} />
@@ -463,34 +515,20 @@ export default function FixedAssets() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>
-                          {t("accounting.fixedAssets.colAsset")}
-                        </TableHead>
-                        <TableHead>
-                          {t("accounting.fixedAssets.colClass")}
-                        </TableHead>
-                        <TableHead>
-                          {t("accounting.fixedAssets.colAcquired")}
-                        </TableHead>
-                        <TableHead className="text-right">
-                          {t("accounting.fixedAssets.colCost")}
-                        </TableHead>
-                        <TableHead className="text-right">
-                          {t("accounting.fixedAssets.colAccumulated")}
-                        </TableHead>
-                        <TableHead className="text-right">
-                          {t("accounting.fixedAssets.colNbv")}
-                        </TableHead>
-                        <TableHead>
-                          {t("accounting.fixedAssets.colStatus")}
-                        </TableHead>
+                        {sortableHead("name", t("accounting.fixedAssets.colAsset"))}
+                        {sortableHead("class", t("accounting.fixedAssets.colClass"))}
+                        {sortableHead("acquired", t("accounting.fixedAssets.colAcquired"))}
+                        {sortableHead("cost", t("accounting.fixedAssets.colCost"), "right")}
+                        {sortableHead("accumulated", t("accounting.fixedAssets.colAccumulated"), "right")}
+                        {sortableHead("nbv", t("accounting.fixedAssets.colNbv"), "right")}
+                        {sortableHead("status", t("accounting.fixedAssets.colStatus"))}
                         <TableHead className="text-right">
                           {t("accounting.fixedAssets.colActions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assets.map((asset) => (
+                      {sortedAssets.map((asset) => (
                         <TableRow key={asset.id}>
                           <TableCell>
                             <div className="font-medium">{asset.name}</div>

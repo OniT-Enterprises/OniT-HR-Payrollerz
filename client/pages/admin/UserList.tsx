@@ -30,8 +30,11 @@ import {
   useSuperAdminRequests,
 } from "@/hooks/useAdmin";
 import { OptionalTimestamp } from "@/types/firebase";
+import type { UserProfile } from "@/types/user";
 import { Loader2, Mail, Plus, Shield, ShieldCheck, ShieldOff, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 
 function formatDateValue(value: OptionalTimestamp): string {
   if (!value) return "-";
@@ -43,6 +46,17 @@ function formatDateValue(value: OptionalTimestamp): string {
   }
   return "-";
 }
+
+// Firestore Timestamp | Date | undefined -> Date | null, for sort accessors
+function toSortableDate(value: OptionalTimestamp): Date | null {
+  if (!value) return null;
+  if (typeof value === "object" && "toDate" in value) return value.toDate();
+  if (value instanceof Date) return value;
+  return null;
+}
+
+// Columns the Current Super Admins table can be sorted by (Actions is not sortable)
+type SuperAdminSortKey = "name" | "tenants" | "created";
 
 export default function UserList() {
   const { user, userProfile } = useAuth();
@@ -58,6 +72,35 @@ export default function UserList() {
     () => requests.filter((request) => request.status !== "approved" && request.status !== "rejected"),
     [requests],
   );
+
+  // Column sorting (asc → desc → off) for the Current Super Admins table
+  const { sorted: sortedSuperAdmins, sort, toggleSort } = useTableSort<UserProfile, SuperAdminSortKey>(
+    superAdmins,
+    {
+      name: (admin) => admin.displayName || admin.email,
+      tenants: (admin) => admin.tenantIds?.length || 0,
+      created: (admin) => toSortableDate(admin.createdAt),
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: SuperAdminSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
 
   const handleRequestAdd = async () => {
     if (!user || !emailValue.trim()) return;
@@ -224,14 +267,14 @@ export default function UserList() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Super Admin</TableHead>
-                      <TableHead>Tenants</TableHead>
-                      <TableHead>Created</TableHead>
+                      {sortableHead("name", "Super Admin")}
+                      {sortableHead("tenants", "Tenants")}
+                      {sortableHead("created", "Created")}
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {superAdmins.map((superAdmin) => (
+                    {sortedSuperAdmins.map((superAdmin) => (
                       <TableRow key={superAdmin.uid}>
                         <TableCell>
                           <div className="font-medium">{superAdmin.displayName || superAdmin.email}</div>

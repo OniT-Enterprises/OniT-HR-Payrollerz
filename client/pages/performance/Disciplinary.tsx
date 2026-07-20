@@ -89,6 +89,11 @@ import {
   getStatusName,
 } from "@/services/disciplinaryService";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the disciplinary records table can be sorted by (Actions is not sortable)
+type DisciplinarySortKey = "employee" | "date" | "type" | "severity" | "status" | "summary";
 
 export default function Disciplinary() {
   const { toast } = useToast();
@@ -162,9 +167,41 @@ export default function Disciplinary() {
     });
   }, [records, selectedEmployee, selectedType, selectedStatus]);
 
-  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  // Column sorting (asc → desc → off); pagination below slices the sorted list
+  const { sorted: sortedRecords, sort, toggleSort } = useTableSort<DisciplinaryRecord, DisciplinarySortKey>(
+    filteredRecords,
+    {
+      employee: (r) => r.employeeName,
+      date: (r) => r.date,
+      type: (r) => getTypeName(r.type),
+      severity: (r) => getSeverityName(r.severity),
+      status: (r) => getStatusName(r.status),
+      summary: (r) => r.summary,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: DisciplinarySortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
+  const totalPages = Math.ceil(sortedRecords.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRecords = filteredRecords.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedRecords = sortedRecords.slice(startIndex, startIndex + itemsPerPage);
 
   // Reset page when filters change
   const filterKey = `${selectedEmployee}-${selectedType}-${selectedStatus}`;
@@ -722,12 +759,12 @@ export default function Disciplinary() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Summary</TableHead>
+                    {sortableHead("employee", "Employee")}
+                    {sortableHead("date", "Date")}
+                    {sortableHead("type", "Type")}
+                    {sortableHead("severity", "Severity")}
+                    {sortableHead("status", "Status")}
+                    {sortableHead("summary", "Summary")}
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>

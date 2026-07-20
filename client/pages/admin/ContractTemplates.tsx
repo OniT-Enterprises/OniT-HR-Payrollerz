@@ -81,6 +81,11 @@ import {
   type ContractTemplateLanguage,
 } from "@/services/contractTemplateService";
 import { CONTRACT_PLACEHOLDERS } from "@/lib/contractFill";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the templates table can be sorted by (Actions is not sortable)
+type ContractTemplateSortKey = "name" | "language" | "file" | "placeholders" | "active";
 
 const LANGUAGE_LABELS: Record<ContractTemplateLanguage, string> = {
   en: "English",
@@ -123,6 +128,37 @@ export default function ContractTemplates() {
     () => contractTemplateService.detectPlaceholders(form.bodyText),
     [form.bodyText],
   );
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedTemplates, sort, toggleSort } = useTableSort<ContractTemplate, ContractTemplateSortKey>(
+    templates,
+    {
+      name: (tpl) => tpl.name,
+      language: (tpl) => LANGUAGE_LABELS[tpl.language],
+      file: (tpl) => tpl.fileName || "",
+      placeholders: (tpl) => tpl.placeholders.length,
+      active: (tpl) => (tpl.active ? 1 : 0),
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: ContractTemplateSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
 
   const openCreate = () => {
     setEditingTemplate(null);
@@ -285,16 +321,16 @@ export default function ContractTemplates() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Language</TableHead>
-                    <TableHead>File</TableHead>
-                    <TableHead>Placeholders</TableHead>
-                    <TableHead>Active</TableHead>
+                    {sortableHead("name", "Name")}
+                    {sortableHead("language", "Language")}
+                    {sortableHead("file", "File")}
+                    {sortableHead("placeholders", "Placeholders")}
+                    {sortableHead("active", "Active")}
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates.map((template) => (
+                  {sortedTemplates.map((template) => (
                     <TableRow key={template.id}>
                       <TableCell>
                         <div className="font-medium">{template.name}</div>

@@ -64,6 +64,8 @@ import type { WorkPermitStatus } from "@/types/tax-filing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 
 // ============================================
 // TYPES
@@ -330,6 +332,15 @@ function ForeignWorkersSkeleton() {
 // MAIN COMPONENT
 // ============================================
 
+// Columns the foreign-worker registry table can be sorted by (Actions is not sortable)
+type ForeignWorkerSortKey =
+  | "employee"
+  | "nationality"
+  | "department"
+  | "visaStatus"
+  | "visaExpiry"
+  | "permitStatus";
+
 export default function ForeignWorkers() {
   const navigate = useNavigate();
   const { t } = useI18n();
@@ -445,6 +456,38 @@ export default function ForeignWorkers() {
       return true;
     });
   }, [foreignWorkers, searchQuery, statusFilter, nationalityFilter, activeTab]);
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedWorkers, sort, toggleSort } = useTableSort<
+    ForeignWorkerWithDetails,
+    ForeignWorkerSortKey
+  >(filteredWorkers, {
+    employee: (worker) => `${worker.personalInfo.firstName} ${worker.personalInfo.lastName}`,
+    nationality: (worker) => getNationality(worker),
+    department: (worker) => worker.jobDetails.department || "",
+    visaStatus: (worker) => worker.foreignWorker?.status || "not_required",
+    visaExpiry: (worker) => worker.daysUntilVisaExpiry,
+    permitStatus: (worker) => worker.daysUntilPermitExpiry,
+  });
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: ForeignWorkerSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
 
   // Format days remaining text
   const formatDaysRemaining = (days: number): string => {
@@ -774,17 +817,17 @@ export default function ForeignWorkers() {
                 <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("admin.foreignWorkers.employee")}</TableHead>
-                      <TableHead>{t("admin.foreignWorkers.nationality")}</TableHead>
-                      <TableHead>{t("admin.foreignWorkers.department")}</TableHead>
-                      <TableHead>{t("admin.foreignWorkers.visaStatus")}</TableHead>
-                      <TableHead>{t("admin.foreignWorkers.visaExpiry")}</TableHead>
-                      <TableHead>{t("admin.foreignWorkers.permitStatus")}</TableHead>
+                      {sortableHead("employee", t("admin.foreignWorkers.employee"))}
+                      {sortableHead("nationality", t("admin.foreignWorkers.nationality"))}
+                      {sortableHead("department", t("admin.foreignWorkers.department"))}
+                      {sortableHead("visaStatus", t("admin.foreignWorkers.visaStatus"))}
+                      {sortableHead("visaExpiry", t("admin.foreignWorkers.visaExpiry"))}
+                      {sortableHead("permitStatus", t("admin.foreignWorkers.permitStatus"))}
                       <TableHead className="text-right">{t("admin.foreignWorkers.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredWorkers.map((worker) => {
+                    {sortedWorkers.map((worker) => {
                       const status = worker.foreignWorker?.status || "not_required";
                       const statusConfig = STATUS_CONFIG[status];
                       const StatusIcon = statusConfig.icon;

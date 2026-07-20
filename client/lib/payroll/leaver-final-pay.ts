@@ -7,7 +7,7 @@
  * don't exist.
  */
 import { calculateSubsidioAnual } from "@/lib/payroll/calculations-tl";
-import { maxMoney, subtractMoney } from "@/lib/currency";
+import { maxMoney, multiplyMoney, subtractMoney } from "@/lib/currency";
 
 export type DepartureReason =
   | "resignation"
@@ -136,6 +136,103 @@ export function noticeShortfallDays(
   const given = noticeDaysGiven(noticeDate, lastWorkingDay);
   if (given === null) return null;
   return Math.max(0, requiredDays - given);
+}
+
+// ============================================
+// Art. 55 unlawful-dismissal indemnity — REFERENCE ONLY (Lei 4/2012)
+// ============================================
+
+/**
+ * Add whole calendar months to a UTC day timestamp, clamping the day-of-month
+ * to the target month's length (31 Jan + 1 month = 28/29 Feb, not 2/3 Mar) so
+ * contract anniversaries land where a human would put them.
+ */
+function addUtcMonthsClamped(t: number, months: number): number {
+  const d = new Date(t);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + months;
+  const lastDayOfTargetMonth = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return Date.UTC(y, m, Math.min(d.getUTCDate(), lastDayOfTargetMonth));
+}
+
+/**
+ * Lei 4/2012 Art. 55(3) unlawful-dismissal indemnity, in MONTHS of salary,
+ * banded by CONTRACT DURATION (hire → contract end).
+ *
+ * This is COURT-AWARDED money, never a payroll earning: it exists only when a
+ * court declares the dismissal unlawful (Art. 54(2)-(3), Art. 55(1)) AND
+ * reinstatement is expressly declined by the worker or refused by the court.
+ * Xefe surfaces it purely as a REFERENCE figure (exposure), never auto-pays it.
+ *
+ * Statute, official Portuguese text (Lei n.º 4/2012, Artigo 55.º
+ * "Reintegração e Indemnização", n.º 3):
+ *
+ *   "3. Sem prejuízo do disposto no número 1, se o trabalhador declarar
+ *    expressamente que não pretende a reintegração, ou se o tribunal
+ *    considerar, a requerimento fundamentado do empregador, que a
+ *    reintegração é prejudicial para o funcionamento da empresa, o
+ *    trabalhador tem direito ao pagamento da seguinte indemnização:
+ *    a) Metade de 1 mês de salário no caso em que a duração do contrato de
+ *       trabalho tenha sido superior a 1 mês mas inferior a 6 meses;
+ *    b) 1 mês de salário no caso em que a duração do contrato de trabalho
+ *       tenha sido superior a 6 meses mas inferior a 1 ano;
+ *    c) 2 meses de salário no caso em que a duração do contrato tenha sido
+ *       superior a 1 ano mas inferior a 2 anos;
+ *    d) 3 meses de salário no caso em que a duração do contrato tenha sido
+ *       superior a 2 anos mas inferior a 3 anos;
+ *    e) 4 meses de salário no caso em que a duração do contrato tenha sido
+ *       superior a 3 anos mas inferior a 4 anos;
+ *    f) 5 meses de salário no caso em que a duração do contrato de trabalho
+ *       tenha sido superior a 4 anos mas inferior a 5 anos;
+ *    g) 6 meses de salário no caso em que a duração do contrato tenha sido
+ *       superior a 5 anos."
+ *
+ * Boundary readings:
+ *  - duration ≤ 1 month → 0 (band (a) requires "superior a 1 mês");
+ *  - exactly 6 months / exactly 1..5 years sit in a literal statutory gap
+ *    ("superior a X mas inferior a Y", both strict) — we assign the exact
+ *    boundary to the HIGHER band (6mo → 1, 1yr → 2, ... 5yr → 6), the
+ *    pro-worker reading;
+ *  - invalid/missing dates, or end on/before hire → 0.
+ */
+export function art55IndemnityMonths(hireDate: string, endDate: string): number {
+  const hire = parseIsoDayUtc(hireDate);
+  const end = parseIsoDayUtc(endDate);
+  if (hire === null || end === null || end <= hire) return 0;
+  if (end >= addUtcMonthsClamped(hire, 60)) return 6; // (g) > 5 yr
+  if (end >= addUtcMonthsClamped(hire, 48)) return 5; // (f) 4 – 5 yr
+  if (end >= addUtcMonthsClamped(hire, 36)) return 4; // (e) 3 – 4 yr
+  if (end >= addUtcMonthsClamped(hire, 24)) return 3; // (d) 2 – 3 yr
+  if (end >= addUtcMonthsClamped(hire, 12)) return 2; // (c) 1 – 2 yr
+  if (end >= addUtcMonthsClamped(hire, 6)) return 1; //  (b) 6 mo – 1 yr
+  if (end > addUtcMonthsClamped(hire, 1)) return 0.5; // (a) > 1 mo – 6 mo
+  return 0; // ≤ 1 month: below band (a)'s "superior a 1 mês"
+}
+
+/**
+ * Art. 55(3) indemnity in dollars: months band × monthly salary, decimal
+ * money math (half-up to cents). REFERENCE ONLY — a court fixes the actual
+ * award; this is never payable through payroll.
+ *
+ * `doubled` = Lei 4/2012 Art. 49(5): when the WORKER rescinds for just cause
+ * grounded in Art. 49(3)(a)-(c) (culpable rights violation, unpaid wages,
+ * offenses to physical/moral integrity), the indemnity is TWICE the Art. 55
+ * values. Official Portuguese text (Artigo 49.º "Rescisão por iniciativa do
+ * trabalhador", n.º 5):
+ *
+ *   "5. A indemnização referida no número anterior é calculada nos termos do
+ *    disposto no artigo 55.º, tendo o trabalhador direito ao dobro dos
+ *    valores indicados naquele artigo."
+ */
+export function art55Indemnity(
+  monthlySalary: number,
+  hireDate: string,
+  endDate: string,
+  doubled = false,
+): number {
+  const months = art55IndemnityMonths(hireDate, endDate);
+  if (months === 0) return 0;
+  return multiplyMoney(monthlySalary, doubled ? months * 2 : months);
 }
 
 /**

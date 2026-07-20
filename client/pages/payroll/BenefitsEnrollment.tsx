@@ -81,6 +81,11 @@ import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the allowances table can be sorted by (Actions is not sortable)
+type AllowanceSortKey = "employee" | "type" | "amount" | "startDate" | "status";
 
 // Allowance type icons mapping
 const ALLOWANCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -212,6 +217,37 @@ export default function EmployeeAllowances() {
   // Get allowance type config
   const getAllowanceConfig = (type: string) => {
     return ALLOWANCE_TYPES.find((t) => t.value === type) || ALLOWANCE_TYPES[ALLOWANCE_TYPES.length - 1];
+  };
+
+  // Column sorting for the allowances table (asc → desc → off)
+  const { sorted: sortedAllowances, sort, toggleSort } = useTableSort<BenefitEnrollment, AllowanceSortKey>(
+    filteredAllowances,
+    {
+      employee: (allowance) => getEmployeeName(allowance.employeeId),
+      type: (allowance) => getAllowanceConfig(allowance.benefitType).label,
+      amount: (allowance) => allowance.employerContribution,
+      startDate: (allowance) => allowance.effectiveDate,
+      status: (allowance) => allowance.status,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: AllowanceSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
   };
 
   // Get status badge
@@ -557,16 +593,16 @@ export default function EmployeeAllowances() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("allowances.employee")}</TableHead>
-                      <TableHead>{t("allowances.type")}</TableHead>
-                      <TableHead className="text-right">{t("allowances.amountPerMonth")}</TableHead>
-                      <TableHead>{t("allowances.startDate")}</TableHead>
-                      <TableHead>{t("allowances.status")}</TableHead>
+                      {sortableHead("employee", t("allowances.employee"))}
+                      {sortableHead("type", t("allowances.type"))}
+                      {sortableHead("amount", t("allowances.amountPerMonth"), "right")}
+                      {sortableHead("startDate", t("allowances.startDate"))}
+                      {sortableHead("status", t("allowances.status"))}
                       <TableHead className="text-right">{t("allowances.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAllowances.map((allowance) => {
+                    {sortedAllowances.map((allowance) => {
                       const config = getAllowanceConfig(allowance.benefitType);
                       const Icon = config.icon;
 

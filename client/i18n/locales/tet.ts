@@ -2727,6 +2727,12 @@ const messages = {
       }
     },
     "offboarding": {
+      "art55": {
+        "title": "Referénsia Art. 55 (tribunál mak fó se despedimentu sai ilegál)",
+        "month": "fulan",
+        "months": "fulan",
+        "note": "La selu liu husi folla pagamentu — tribunál mak determina. Prosesu disiplinár hakerek tuir Art. 50(4) evita risku ida-ne'e.",
+      },
       "exitInterviews": {
         "title": "Entrevista saida",
         "description": "Resposta ne'ebé rejista durante prosesu saida, ba saida ne'ebé kompletu ona.",

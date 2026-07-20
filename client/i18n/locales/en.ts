@@ -2817,6 +2817,12 @@ const messages = {
       }
     },
     "offboarding": {
+      "art55": {
+        "title": "Art. 55 reference (court-awarded if dismissal is ruled unlawful)",
+        "month": "month",
+        "months": "months",
+        "note": "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure.",
+      },
       "exitInterviews": {
         "title": "Exit interviews",
         "description": "Answers recorded during offboarding for completed departures.",

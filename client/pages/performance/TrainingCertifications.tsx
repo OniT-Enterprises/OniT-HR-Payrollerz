@@ -86,6 +86,11 @@ import {
 } from "@/services/trainingService";
 // trainingService kept only for validateCertificateFile (sync utility)
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the training records table can be sorted by (Certificate/Actions are not sortable)
+type TrainingSortKey = "employee" | "course" | "provider" | "completion" | "expiry" | "status";
 
 export default function TrainingCertifications() {
   const { toast } = useToast();
@@ -167,9 +172,41 @@ export default function TrainingCertifications() {
     });
   }, [records, selectedEmployee, selectedStatus]);
 
-  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  // Column sorting (asc → desc → off); pagination below slices the sorted list
+  const { sorted: sortedRecords, sort, toggleSort } = useTableSort<TrainingRecord, TrainingSortKey>(
+    filteredRecords,
+    {
+      employee: (r) => r.employeeName,
+      course: (r) => r.courseTitle,
+      provider: (r) => r.provider,
+      completion: (r) => r.completionDate,
+      expiry: (r) => r.expiryDate,
+      status: (r) => r.status,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: TrainingSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
+  const totalPages = Math.ceil(sortedRecords.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRecords = filteredRecords.slice(
+  const paginatedRecords = sortedRecords.slice(
     startIndex,
     startIndex + itemsPerPage
   );
@@ -733,12 +770,12 @@ export default function TrainingCertifications() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Course</TableHead>
-                    <TableHead>Provider</TableHead>
-                    <TableHead>Completion</TableHead>
-                    <TableHead>Expiry</TableHead>
-                    <TableHead>Status</TableHead>
+                    {sortableHead("employee", "Employee")}
+                    {sortableHead("course", "Course")}
+                    {sortableHead("provider", "Provider")}
+                    {sortableHead("completion", "Completion")}
+                    {sortableHead("expiry", "Expiry")}
+                    {sortableHead("status", "Status")}
                     <TableHead>Certificate</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>

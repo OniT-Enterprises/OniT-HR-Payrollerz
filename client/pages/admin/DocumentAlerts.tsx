@@ -53,7 +53,12 @@ import { SEO } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
-import { documentAlertService } from "@/services/documentAlertService";
+import { documentAlertService, type DocumentAlertRecord } from "@/services/documentAlertService";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+
+// Columns the document alerts table can be sorted by
+type DocumentAlertSortKey = "employee" | "document" | "expiryDate" | "timeRemaining" | "status";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
@@ -133,6 +138,37 @@ export default function DocumentAlerts() {
       contract: t("documentAlerts.types.contract"),
     };
     return labels[documentType] || documentType;
+  };
+
+  // Column sorting (asc → desc → off)
+  const { sorted: sortedAlerts, sort, toggleSort } = useTableSort<DocumentAlertRecord, DocumentAlertSortKey>(
+    filteredAlerts,
+    {
+      employee: (a) => a.employeeName,
+      document: (a) => getDocumentLabel(a.documentType),
+      expiryDate: (a) => a.expiryDate,
+      timeRemaining: (a) => a.daysUntilExpiry,
+      status: (a) => a.severity,
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (key: DocumentAlertSortKey, label: string, align: "left" | "right" = "left") => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={align === "right" ? "text-right" : undefined}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
   };
 
   const handleExportCSV = () => {
@@ -446,7 +482,7 @@ export default function DocumentAlerts() {
             ) : (
               <>
                 <div className="space-y-3 md:hidden">
-                  {filteredAlerts.map((alert) => {
+                  {sortedAlerts.map((alert) => {
                     const config = SEVERITY_CONFIG[alert.severity];
                     return (
                       <div key={alert.id} className="rounded-lg border border-border/50 p-4 space-y-3">
@@ -478,15 +514,15 @@ export default function DocumentAlerts() {
                 <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("documentAlerts.table.employee")}</TableHead>
-                      <TableHead>{t("documentAlerts.table.document")}</TableHead>
-                      <TableHead>{t("documentAlerts.table.expiryDate")}</TableHead>
-                      <TableHead>{t("documentAlerts.table.timeRemaining")}</TableHead>
-                      <TableHead>{t("documentAlerts.table.status")}</TableHead>
+                      {sortableHead("employee", t("documentAlerts.table.employee"))}
+                      {sortableHead("document", t("documentAlerts.table.document"))}
+                      {sortableHead("expiryDate", t("documentAlerts.table.expiryDate"))}
+                      {sortableHead("timeRemaining", t("documentAlerts.table.timeRemaining"))}
+                      {sortableHead("status", t("documentAlerts.table.status"))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAlerts.map((alert) => {
+                    {sortedAlerts.map((alert) => {
                       const config = SEVERITY_CONFIG[alert.severity];
                       return (
                         <TableRow key={alert.id}>

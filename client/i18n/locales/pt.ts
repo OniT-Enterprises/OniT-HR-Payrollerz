@@ -2817,6 +2817,12 @@ const messages = {
       }
     },
     "offboarding": {
+      "art55": {
+        "title": "Referência art. 55.º (fixada pelo tribunal se o despedimento for julgado ilícito)",
+        "month": "mês",
+        "months": "meses",
+        "note": "Não é pago pela folha de salários — é fixado pelo tribunal. O processo disciplinar escrito do art. 50.º(4) evita esta exposição.",
+      },
       "exitInterviews": {
         "title": "Entrevistas de saída",
         "description": "Respostas registadas durante a desvinculação, para saídas concluídas.",

@@ -64,6 +64,9 @@ import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAc
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
+import { cn } from "@/lib/utils";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -72,6 +75,11 @@ const PAYROLL_LINKED_CODES = [
   '2200', '2210', '2220', '2230', '2240', '2250', // All Payroll Liabilities
   '5100', '5110', '5120', '5130', '5140', '5150', '5160', '5170', // Payroll Expenses
 ];
+
+// Columns the chart-of-accounts table can be sorted by (Edit is not sortable).
+// Only top-level accounts are reordered — nested sub-accounts stay grouped
+// under their parent via the existing expand/collapse hierarchy.
+type ChartOfAccountSortKey = "code" | "name" | "type" | "subType" | "status";
 
 export default function ChartOfAccounts() {
   const { toast } = useToast();
@@ -222,6 +230,48 @@ export default function ChartOfAccounts() {
   const formatSubType = (subType?: string) => {
     if (!subType) return "—";
     return t(`accounting.chartOfAccounts.subTypes.${subType}`) || subType.replace(/_/g, " ");
+  };
+
+  // Raw label used for the "Status" column sort (mirrors the system/custom badge text)
+  const getAccountStatusLabel = (account: Account) =>
+    account.isSystem
+      ? t("accounting.chartOfAccounts.system")
+      : t("accounting.chartOfAccounts.custom");
+
+  // Column sorting (asc → desc → off) — sorts only the top-level rows
+  const { sorted: sortedTopLevel, sort, toggleSort } = useTableSort<Account, ChartOfAccountSortKey>(
+    groupedAccounts.topLevel,
+    {
+      code: (a) => a.code,
+      name: (a) => a.name,
+      type: (a) => t(`accounting.chartOfAccounts.${a.type}`) || a.type,
+      subType: (a) => formatSubType(a.subType),
+      status: (a) => getAccountStatusLabel(a),
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above
+  const sortableHead = (
+    key: ChartOfAccountSortKey,
+    label: string,
+    opts?: { align?: "left" | "right"; className?: string },
+  ) => {
+    const align = opts?.align ?? "left";
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={cn(align === "right" && "text-right", opts?.className)}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
   };
 
   // Handle form submit
@@ -861,16 +911,16 @@ export default function ChartOfAccounts() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-40">{t("accounting.chartOfAccounts.code")}</TableHead>
-                        <TableHead>{t("accounting.chartOfAccounts.name")}</TableHead>
-                        <TableHead className="w-32">{t("accounting.chartOfAccounts.type")}</TableHead>
-                        <TableHead className="w-40">{t("accounting.chartOfAccounts.subType")}</TableHead>
-                        <TableHead className="w-32">{t("accounting.chartOfAccounts.status")}</TableHead>
+                        {sortableHead("code", t("accounting.chartOfAccounts.code"), { className: "w-40" })}
+                        {sortableHead("name", t("accounting.chartOfAccounts.name"))}
+                        {sortableHead("type", t("accounting.chartOfAccounts.type"), { className: "w-32" })}
+                        {sortableHead("subType", t("accounting.chartOfAccounts.subType"), { className: "w-40" })}
+                        {sortableHead("status", t("accounting.chartOfAccounts.status"), { className: "w-32" })}
                         <TableHead className="w-16">{t("accounting.chartOfAccounts.edit")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {groupedAccounts.topLevel.map((account) =>
+                      {sortedTopLevel.map((account) =>
                         renderAccountRow(account)
                       )}
                     </TableBody>

@@ -47,6 +47,9 @@ import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
 import { useI18n } from "@/i18n/I18nProvider";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { cn } from "@/lib/utils";
+import { useTableSort } from "@/hooks/useTableSort";
+import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -96,6 +99,9 @@ const EMPTY_FORM: AnnouncementFormData = {
   pinned: false,
   imageUrl: "",
 };
+
+// Columns the announcements table can be sorted by (Actions is not sortable)
+type AnnouncementSortKey = "title" | "body" | "pinned" | "created" | "readCount";
 
 export default function Announcements() {
   const { toast } = useToast();
@@ -351,6 +357,43 @@ export default function Announcements() {
     return text.substring(0, maxLength) + "...";
   };
 
+  // Column sorting (asc → desc → off) for the desktop table
+  const { sorted: sortedAnnouncements, sort, toggleSort } = useTableSort<Announcement, AnnouncementSortKey>(
+    announcements,
+    {
+      title: (a) => a.title,
+      body: (a) => a.body,
+      pinned: (a) => (a.pinned ? 1 : 0),
+      created: (a) => a.createdAt,
+      readCount: (a) => getReadCount(a),
+    },
+  );
+
+  // Renders a sortable shadcn <TableHead> wired to the sort state above.
+  // `extraClassName` preserves this table's per-column width/alignment classes.
+  const sortableHead = (
+    key: AnnouncementSortKey,
+    label: string,
+    align: "left" | "right" = "left",
+    extraClassName?: string,
+  ) => {
+    const active = sort?.key === key;
+    return (
+      <TableHead
+        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        className={cn(align === "right" && "text-right", extraClassName)}
+      >
+        <SortableColumnHeader
+          label={label}
+          active={active}
+          direction={active ? sort!.direction : "asc"}
+          onSort={() => toggleSort(key)}
+          align={align}
+        />
+      </TableHead>
+    );
+  };
+
   // Loading skeleton
   if (loading) {
     return (
@@ -539,16 +582,16 @@ export default function Announcements() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[250px]">{t("announcements.table.title")}</TableHead>
-                    <TableHead>{t("announcements.table.body")}</TableHead>
-                    <TableHead className="w-[100px]">{t("announcements.table.pinned")}</TableHead>
-                    <TableHead className="w-[150px]">{t("announcements.table.created")}</TableHead>
-                    <TableHead className="w-[120px] text-center">{t("announcements.table.readCount")}</TableHead>
+                    {sortableHead("title", t("announcements.table.title"), "left", "w-[250px]")}
+                    {sortableHead("body", t("announcements.table.body"))}
+                    {sortableHead("pinned", t("announcements.table.pinned"), "left", "w-[100px]")}
+                    {sortableHead("created", t("announcements.table.created"), "left", "w-[150px]")}
+                    {sortableHead("readCount", t("announcements.table.readCount"), "left", "w-[120px] text-center")}
                     <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {announcements.map((announcement) => (
+                  {sortedAnnouncements.map((announcement) => (
                     <TableRow key={announcement.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">

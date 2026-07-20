@@ -86,6 +86,8 @@ import {
   noticeDaysGiven,
   noticeShortfallDays,
   inssCessationDeadline,
+  art55IndemnityMonths,
+  art55Indemnity,
 } from "@/lib/payroll/leaver-final-pay";
 import { useEmployeeById } from "@/hooks/useEmployees";
 import { exportToCSV } from "@/lib/csvExport";
@@ -179,6 +181,27 @@ export default function Offboarding() {
   const inssDeadline = selectedCase?.lastWorkingDay
     ? inssCessationDeadline(selectedCase.lastWorkingDay)
     : null;
+
+  // Art. 55(3) unlawful-dismissal indemnity — REFERENCE figure only.
+  // COURT-AWARDED money: shown only on employer-initiated causes so the
+  // employer sees the exposure; never a payroll earning, never auto-paid.
+  const art55Applicable =
+    selectedCase?.departureReason === "redundancy" ||
+    selectedCase?.departureReason === "termination";
+  const art55Months =
+    art55Applicable && selectedCase?.lastWorkingDay
+      ? art55IndemnityMonths(selectedHireDate, selectedCase.lastWorkingDay)
+      : 0;
+  // Same salary source the Art. 56 card shows: the frozen case snapshot when
+  // one was calculated, else the live employee master record.
+  const art55MonthlySalary =
+    selectedCase?.article56FinalPay?.monthlySalary ??
+    selectedEmployeeQuery.data?.compensation?.monthlySalary ??
+    0;
+  const art55Amount =
+    art55Months > 0 && art55MonthlySalary > 0 && selectedCase?.lastWorkingDay
+      ? art55Indemnity(art55MonthlySalary, selectedHireDate, selectedCase.lastWorkingDay)
+      : 0;
 
   // F11 (Art. 57): bilingual work certificate, generated client-side.
   const [certGenerating, setCertGenerating] = useState(false);
@@ -895,6 +918,36 @@ export default function Offboarding() {
                               </span>
                             </p>
                           )}
+                        </div>
+                      )}
+
+                      {/* Art. 55(3) — unlawful-dismissal indemnity REFERENCE.
+                          COURT-AWARDED money only (a court must first rule the
+                          dismissal unlawful, Arts. 54(3)/55): never a payroll
+                          earning, never auto-paid. Employer-initiated causes
+                          only. Informational, never blocks the case. */}
+                      {art55Applicable && art55Months > 0 && (
+                        <div className="space-y-1.5 rounded-lg border border-border/50 bg-muted/20 p-3 text-xs text-muted-foreground">
+                          <div className="flex items-start gap-2">
+                            <Landmark className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                              {t("hiring.offboarding.art55.title")
+                                || "Art. 55 reference (court-awarded if dismissal is ruled unlawful)"}
+                              {": "}
+                              <span className="font-medium text-foreground">
+                                {art55Months}{" "}
+                                {art55Months === 1
+                                  ? (t("hiring.offboarding.art55.month") || "month")
+                                  : (t("hiring.offboarding.art55.months") || "months")}
+                                {art55Amount > 0 && <> = {formatCurrencyTL(art55Amount)}</>}
+                              </span>{" "}
+                              (Lei 4/2012 Art. 55(3)).
+                            </span>
+                          </div>
+                          <p className="pl-[22px]">
+                            {t("hiring.offboarding.art55.note")
+                              || "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure."}
+                          </p>
                         </div>
                       )}
 
