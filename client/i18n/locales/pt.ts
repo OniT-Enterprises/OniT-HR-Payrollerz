@@ -1982,10 +1982,6 @@ const messages = {
       "invalidValues": "Verifique taxas e horas. As percentagens devem ser 0–100.",
       "prorataHint": "Pro-rata para funcionários com menos de 12 meses",
       "save": "Guardar Configuração da Folha",
-      "benefitsCard": "Benefícios",
-      "benefitsCardDesc": "Saúde, seguros e outros benefícios dos funcionários",
-      "deductionsCard": "Descontos e Adiantamentos",
-      "deductionsCardDesc": "Descontos recorrentes, empréstimos e adiantamentos salariais",
       "statutory": {
         "title": "Fixado pela lei de Timor-Leste",
         "description": "O Xefe aplica estas regras legais automaticamente. São definidas por lei e não podem ser editadas.",

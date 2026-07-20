@@ -541,7 +541,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/settings/benefits"
+      path="/payroll/benefits"
       element={
         <FeatureRoute requiredModule="payroll" requireManage>
           <BenefitsEnrollment />
@@ -549,7 +549,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/settings/deductions"
+      path="/payroll/deductions"
       element={
         <FeatureRoute requiredModule="payroll" requireManage>
           <DeductionsAdvances />
@@ -1070,8 +1070,8 @@ export const legacyRedirects = (
     <Route path="/performance/disciplinary" element={<Navigate to="/people/disciplinary" replace />} />
 
     {/* Old Payroll routes */}
-    <Route path="/payroll/benefits" element={<Navigate to="/payroll/settings/benefits" replace />} />
-    <Route path="/payroll/deductions" element={<Navigate to="/payroll/settings/deductions" replace />} />
+    <Route path="/payroll/settings/benefits" element={<Navigate to="/payroll/benefits" replace />} />
+    <Route path="/payroll/settings/deductions" element={<Navigate to="/payroll/deductions" replace />} />
     <Route path="/payroll/transfers" element={<Navigate to="/payroll/payments" replace />} />
     <Route path="/payroll/taxes" element={<Navigate to="/payroll/tax" replace />} />
 

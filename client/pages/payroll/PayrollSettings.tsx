@@ -1,6 +1,7 @@
 /**
- * Payroll Settings — Dedicated page for all payroll configuration.
- * Tax/INSS/Overtime config inline, Benefits & Deductions as link cards.
+ * Payroll Settings — tenant payroll CONFIGURATION only (tax/INSS/overtime/
+ * 13th month + the statutory read-only card). The Benefits and Deductions &
+ * Advances registers are operational payroll pages in the module nav.
  */
 
 import React, { useState } from "react";
@@ -17,13 +18,7 @@ import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { settingsService } from "@/services/settingsService";
-import {
-  ArrowLeft,
-  ChevronRight,
-  Heart,
-  MinusCircle,
-  Settings,
-} from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 
 export default function PayrollSettings() {
   const tenantId = useTenantId();
@@ -181,46 +176,14 @@ export default function PayrollSettings() {
         </Link>
         <PageHeader
           title={t("settings.payroll.title") || "Payroll Settings"}
-          subtitle={t("settings.payroll.description") || "Tax, social security, overtime, benefits, and deductions"}
+          subtitle={t("settings.payroll.description") || "Tax, social security, and overtime settings"}
           icon={Settings}
           iconColor="text-primary"
         />
 
-        {/* Benefits & Deductions live on their own pages — link cards here
-            (module navs carry no settings entries; this page is their home) */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {[
-            {
-              path: "/payroll/settings/benefits",
-              icon: Heart,
-              label: t("settings.payroll.benefitsCard"),
-              description: t("settings.payroll.benefitsCardDesc"),
-            },
-            {
-              path: "/payroll/settings/deductions",
-              icon: MinusCircle,
-              label: t("settings.payroll.deductionsCard"),
-              description: t("settings.payroll.deductionsCardDesc"),
-            },
-          ].map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
-            >
-              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <link.icon className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{link.label}</p>
-                <p className="text-xs text-muted-foreground">{link.description}</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-            </Link>
-          ))}
-        </div>
-
-        {/* Tax / INSS / Overtime / 13th Month config */}
+        {/* Tax / INSS / Overtime / 13th Month config. (Benefits and
+            Deductions & Advances are payroll REGISTERS, not settings —
+            they live in the Payroll module nav.) */}
         {settings && (
           <PayrollConfigTab
             tenantId={tenantId}
