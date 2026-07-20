@@ -226,7 +226,7 @@ const messages = {
   },
   "allowances": {
     "title": "Allowances",
-    "subtitle": "Manage employee allowances and benefits",
+    "subtitle": "Manage employee allowances and benefits — active allowances are added to every payroll run automatically",
     "add": "Add Allowance",
     "addFirst": "Add your first allowance",
     "addError": "Failed to add allowance",

@@ -136,6 +136,12 @@ export interface TLPayrollInput {
   foodAllowance: number;         // Food subsidy (excluded from INSS base)
   transportAllowance: number;
   otherEarnings: number;
+  /**
+   * Recurring contractual supplements (e.g. hardship pay) — taxable AND
+   * contributable: DL 20/2017 Art. 8 includes regular supplements in the
+   * INSS base, unlike Art. 9 expense allowances.
+   */
+  regularAllowances?: number;
   subsidioAnual?: number;        // 13th month salary / annual subsidy (paid in a specific run)
   /** When present, Art. 56 service compensation is derived from salary and service dates. */
   terminationDate?: string;
@@ -916,6 +922,21 @@ export function calculateTLPayroll(
       amount: input.transportAllowance,
       isTaxable: true,
       isINSSBase: false,
+    });
+  }
+
+  // Recurring contractual supplements (e.g. hardship allowance) — unlike the
+  // Art. 9 expense allowances above, these are remuneracao contributiva
+  // (DL 20/2017 Art. 8), so they enter BOTH the WIT and INSS bases.
+  const regularAllowances = Math.max(0, input.regularAllowances ?? 0);
+  if (regularAllowances > 0) {
+    earnings.push({
+      type: 'regular_allowance',
+      description: 'Recurring Allowance',
+      descriptionTL: 'Subsidiu Regulár',
+      amount: regularAllowances,
+      isTaxable: true,
+      isINSSBase: true,
     });
   }
 
