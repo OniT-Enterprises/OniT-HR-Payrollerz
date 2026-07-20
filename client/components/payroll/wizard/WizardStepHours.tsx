@@ -1,22 +1,15 @@
 /**
  * Wizard Step 3 — "Adjust hours & pay"
- * The employee payroll table with inline editing.
- * Reuses PayrollEmployeeRow. Adds attendance sync + warnings.
- * Design: Table is unavoidable complexity, but we add a sticky total footer
- * and prominent sync button so users don't have to type everything manually.
+ * A responsive list of employee cards with inline editing.
+ * Reuses PayrollEmployeeCard. Adds attendance sync + warnings.
+ * Design: cards (not a wide table) keep Net Pay always visible and work on
+ * mobile for our non-accountant TL audience — see docs/DASHBOARD_DESIGN.md.
  */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { AlertCircle, RefreshCw, Search } from "lucide-react";
-import { PayrollEmployeeRow } from "@/components/payroll";
+import { PayrollEmployeeCard } from "@/components/payroll";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -128,48 +121,28 @@ export function WizardStepHours({
         </div>
       )}
 
-      {/* Employee Table */}
-      <div className="overflow-x-auto border rounded-xl">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="w-8"></TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.employee")}</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.department")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.hours")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.ot")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.night")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.holiday")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.restDay")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.bonus")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.gross")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.deductions")}</TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.netPay")}</TableHead>
-              <TableHead className="w-10"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((data) => (
-              <PayrollEmployeeRow
-                key={data.employee.id}
-                data={data}
-                isExpanded={expandedRows.has(data.employee.id || "")}
-                onToggleExpand={onToggleExpand}
-                onInputChange={onInputChange}
-                onBonusCategoryChange={onBonusCategoryChange}
-                onReset={onReset}
-              />
-            ))}
-          </TableBody>
-        </Table>
-        {filteredData.length === 0 && (
-          <div className="text-center py-12">
-            <Search className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
-            <p className="font-medium">{t("runPayroll.noEmployeesFound")}</p>
-            <p className="text-sm text-muted-foreground">{t("runPayroll.tryAdjustSearch")}</p>
-          </div>
-        )}
-      </div>
+      {/* Employee cards */}
+      {filteredData.length > 0 ? (
+        <div className="space-y-2">
+          {filteredData.map((data) => (
+            <PayrollEmployeeCard
+              key={data.employee.id}
+              data={data}
+              isExpanded={expandedRows.has(data.employee.id || "")}
+              onToggleExpand={onToggleExpand}
+              onInputChange={onInputChange}
+              onBonusCategoryChange={onBonusCategoryChange}
+              onReset={onReset}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border border-border/50 rounded-xl">
+          <Search className="h-7 w-7 text-muted-foreground mx-auto mb-2" />
+          <p className="font-medium">{t("runPayroll.noEmployeesFound")}</p>
+          <p className="text-sm text-muted-foreground">{t("runPayroll.tryAdjustSearch")}</p>
+        </div>
+      )}
 
       {/* Running Total Footer */}
       <div className="flex flex-wrap items-center justify-end gap-6 px-3 py-3 rounded-xl border border-border/50 bg-muted/20 text-sm">

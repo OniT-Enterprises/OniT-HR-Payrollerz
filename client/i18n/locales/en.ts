@@ -45,6 +45,7 @@ const messages = {
     }
   },
   "common": {
+    "reset": "Reset",
     "needsReviewTitle": "Needs review before filing",
     "needsReviewDesc": "A payroll record is missing or has an invalid {{field}}. Fix or re-run that payroll — Xefe never guesses compliance values. Ask your accountant if you are unsure.",
     "greetingMorning": "Good morning",
@@ -6824,6 +6825,9 @@ const messages = {
     }
   },
   "runPayroll": {
+    "absence": "Absence",
+    "lateArrival": "Late arrival",
+    "specialHours": "Special hours (2× pay)",
     "advanceRepayment": "Advance Repayment",
     "loanRepayment": "Loan Repayment",
     "courtOrder": "Court Order",

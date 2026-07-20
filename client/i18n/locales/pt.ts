@@ -45,6 +45,7 @@ const messages = {
     }
   },
   "common": {
+    "reset": "Repor",
     "needsReviewTitle": "Precisa de revisão antes de declarar",
     "needsReviewDesc": "Um registo de folha de pagamento não tem {{field}} válido. Corrija ou reprocesse essa folha — o Xefe nunca adivinha valores de conformidade. Em caso de dúvida, fale com o seu contabilista.",
     "greetingMorning": "Bom dia",
@@ -6824,6 +6825,9 @@ const messages = {
     }
   },
   "runPayroll": {
+    "absence": "Falta",
+    "lateArrival": "Atraso",
+    "specialHours": "Horas especiais (2×)",
     "advanceRepayment": "Reembolso de adiantamento",
     "loanRepayment": "Reembolso de empréstimo",
     "courtOrder": "Ordem judicial",

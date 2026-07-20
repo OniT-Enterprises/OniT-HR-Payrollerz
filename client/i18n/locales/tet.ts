@@ -45,6 +45,7 @@ const messages = {
     }
   },
   "common": {
+    "reset": "Fila ba orijinál",
     "needsReviewTitle": "Presiza revizaun molok deklara",
     "needsReviewDesc": "Rejistu folha-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folha ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
     "greetingMorning": "Bondia",
@@ -6824,6 +6825,9 @@ const messages = {
     }
   },
   "runPayroll": {
+    "absence": "Falta",
+    "lateArrival": "Tarde mai",
+    "specialHours": "Oras espesiál (2×)",
     "advanceRepayment": "Selu Adiantamentu",
     "loanRepayment": "Selu Empréstimu",
     "courtOrder": "Ordem tribunál",
