@@ -456,6 +456,10 @@ const EARNING_CODES: Record<string, string> = {
   tip: 'GOR',
   reimbursement: 'REM',
   allowance: 'SUB',
+  per_diem: 'P_D',
+  food_allowance: 'SB_AH',
+  transport_allowance: 'SB_T',
+  regular_allowance: 'SB_R',
   other: 'OUT',
 };
 
