@@ -41,6 +41,9 @@ export function PublicFooter() {
           <Link to={localized("/accountants")} className="transition-colors hover:text-white">
             {t("landing.footer.links.accountants")}
           </Link>
+          <Link to={localized("/security")} className="transition-colors hover:text-white">
+            {t("securityPage.nav.page")}
+          </Link>
           <Link to="/privacy" className="transition-colors hover:text-white">
             {t("landing.footer.links.privacy")}
           </Link>

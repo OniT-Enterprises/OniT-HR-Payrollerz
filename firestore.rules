@@ -712,6 +712,17 @@ service cloud.firestore {
         allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
       }
 
+      // One doc per (template, fiscal period) — the idempotency guard the
+      // recurring journal scheduler creates transactionally with each posting
+      // (doc id: {templateId}_{YYYY-MM}; the Admin SDK bypasses these rules).
+      // Clients only read them: reversing a posting is a manual journal task,
+      // so no client update/delete — mirrors fixedAssetPostings.
+      match /recurringJournalPostings/{postingId} {
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
+        allow create: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+        allow update, delete: if isSuperAdmin();
+      }
+
       // Fixed-asset register (the depreciation subledger).
       match /fixedAssets/{assetId} {
         allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);

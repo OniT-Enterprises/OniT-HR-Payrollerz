@@ -1354,7 +1354,7 @@ const messages = {
     "data": {
       "eyebrow": "Ita-nia dadus",
       "title": "Rai ho seguru, bele rekupera nafatin",
-      "description": "Xefe la'o iha Google Cloud (Firebase) — infraestrutura hanesan ne'ebé halo Gmail la'o — ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
+      "description": "Xefe la'o iha Google Cloud (Firebase), ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
       "note": "Ita-nia dadus Ita-nian. Esporta Ita-nia trabalhador, istória folha, lansamentu no relatóriu kualker momentu — la iha lock-in, la iha taxa esportasaun.",
       "points": {
         "encryption": {
@@ -3838,6 +3838,7 @@ const messages = {
       "sourceBill": "Kontas selu",
       "sourceAdjustment": "Ajustamentu",
       "sourceRecurring": "Rekorrente",
+      "sourceDepreciation": "Depresiasaun",
       "sourceClosing": "Taka",
       "sourceOpening": "Abertura",
       "sourceExpense": "Despeza",
@@ -3893,6 +3894,8 @@ const messages = {
       "fieldResidual": "Valor rezidual",
       "fieldLife": "Vida útil (fulan)",
       "fieldLifeHint": "Prienxe ona husi klase; bele muda kada ativu. Rai nunka depresiaun.",
+      "lifeRequired": "Hatama vida útil iha fulan — laiha ida ativu ne'e sei la depresia nunka.",
+      "invalidPeriod": "Hatama fulan válidu (AAAA-MM), la'ós iha futuru.",
       "fieldPeriod": "Períodu atu rejista",
       "fieldDisposeDate": "Data abate",
       "fieldProceeds": "Osan simu (USD)",

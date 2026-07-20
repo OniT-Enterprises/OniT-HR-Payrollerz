@@ -15,6 +15,11 @@
  * an Ordem de Pagamento sheet ready to print and sign, plus the Portuguese
  * cover email text. Bank-facing text is deliberately Portuguese regardless of
  * the app locale — that is the language the banks correspond in.
+  *
+ * PROVENANCE: the 4-column transfer list is the format BNU branches accept
+ * (a bank requirement, minimal by nature); the Ordem de Pagamento sheet and
+ * cover email are Xefe's own composition. No client or firm workbook layout
+ * is imitated.
  */
 import type { BankTransferSummary } from "./index";
 

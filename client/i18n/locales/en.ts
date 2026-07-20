@@ -1354,7 +1354,7 @@ const messages = {
     "data": {
       "eyebrow": "Your data",
       "title": "Stored safely, recoverable always",
-      "description": "Xefe runs on Google Cloud (Firebase) — the same infrastructure that runs Gmail — with your company's records isolated from every other tenant.",
+      "description": "Xefe runs on Google Cloud (Firebase), with your company's records isolated from every other tenant.",
       "note": "Your data is yours. Export your employees, payroll history, journals and reports at any time — no lock-in, no export fee.",
       "points": {
         "encryption": {
@@ -5211,6 +5211,7 @@ const messages = {
       "sourceBill": "Bill",
       "sourceAdjustment": "Adjustment",
       "sourceRecurring": "Recurring",
+      "sourceDepreciation": "Depreciation",
       "sourceClosing": "Closing",
       "sourceOpening": "Opening",
       "sourceExpense": "Expense",
@@ -5266,6 +5267,8 @@ const messages = {
       "fieldResidual": "Residual value",
       "fieldLife": "Useful life (months)",
       "fieldLifeHint": "Pre-filled from the class; adjust per asset. Land never depreciates.",
+      "lifeRequired": "Enter a useful life in months — without one this asset would never depreciate.",
+      "invalidPeriod": "Enter a valid month (YYYY-MM), not in the future.",
       "fieldPeriod": "Period to post",
       "fieldDisposeDate": "Disposal date",
       "fieldProceeds": "Proceeds (USD)",

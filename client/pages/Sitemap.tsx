@@ -4,14 +4,20 @@
  * with descriptions and easy navigation
  */
 
-import { Link } from 'react-router-dom';
-import MainNavigation from '@/components/layout/MainNavigation';
-import { SEO } from '@/components/SEO';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTenant } from '@/contexts/TenantContext';
-import { canUseDonorExport, canUseNgoReporting } from '@/lib/ngo/access';
+import { Link } from "react-router-dom";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { SEO } from "@/components/SEO";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import {
   Users,
   DollarSign,
@@ -25,7 +31,7 @@ import {
   Home,
   Map,
   ChevronRight,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface SitemapSection {
   title: string;
@@ -43,437 +49,481 @@ interface SitemapSection {
 
 const sitemapData: SitemapSection[] = [
   {
-    title: 'Dashboard',
-    description: 'Your central command center for Xefe',
+    title: "Dashboard",
+    description: "Your central command center for Xefe",
     icon: Home,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 dark:bg-blue-900',
+    color: "text-blue-600",
+    bgColor: "bg-blue-100 dark:bg-blue-900",
     pages: [
       {
-        name: 'Main Dashboard',
-        path: '/dashboard',
-        description: 'Overview of your organization with key metrics, recent activity, and quick actions',
+        name: "Main Dashboard",
+        path: "/dashboard",
+        description:
+          "Overview of your organization with key metrics, recent activity, and quick actions",
       },
       {
-        name: 'Settings',
-        path: '/settings',
-        description: 'Configure your account preferences, notifications, and system settings',
+        name: "Settings",
+        path: "/settings",
+        description:
+          "Configure your account preferences, notifications, and system settings",
       },
       {
-        name: 'Departments',
-        path: '/settings/departments',
-        description: 'Manage organizational departments, teams, and reporting structures',
+        name: "Departments",
+        path: "/settings/departments",
+        description:
+          "Manage organizational departments, teams, and reporting structures",
       },
       {
-        name: 'Organization Chart',
-        path: '/settings/org-chart',
-        description: 'Visual hierarchy showing reporting relationships across your organization',
+        name: "Organization Chart",
+        path: "/settings/org-chart",
+        description:
+          "Visual hierarchy showing reporting relationships across your organization",
       },
       {
-        name: 'Foreign Workers',
-        path: '/settings/foreign-workers',
-        description: 'Manage work permits and visa compliance for foreign employees',
-        badge: 'TL Compliance',
+        name: "Foreign Workers",
+        path: "/settings/foreign-workers",
+        description:
+          "Manage work permits and visa compliance for foreign employees",
+        badge: "TL Compliance",
       },
     ],
   },
   {
-    title: 'People',
-    description: 'Manage your workforce from hiring to retirement',
+    title: "People",
+    description: "Manage your workforce from hiring to retirement",
     icon: Users,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-100 dark:bg-emerald-900',
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-100 dark:bg-emerald-900",
     pages: [
       {
-        name: 'People Dashboard',
-        path: '/people',
-        description: 'Central dashboard for all people management activities',
+        name: "People Dashboard",
+        path: "/people",
+        description: "Central dashboard for all people management activities",
       },
       {
-        name: 'Staff Overview',
-        path: '/people/staff',
-        description: 'Staff hub — employee directory, announcements, and grievances',
+        name: "Staff Overview",
+        path: "/people/staff",
+        description:
+          "Staff hub — employee directory, announcements, and grievances",
       },
       {
-        name: 'All Employees',
-        path: '/people/employees',
-        description: 'Complete employee directory with search, filters, and detailed profiles',
+        name: "All Employees",
+        path: "/people/employees",
+        description:
+          "Complete employee directory with search, filters, and detailed profiles",
       },
       {
-        name: 'Add Employee',
-        path: '/people/add',
-        description: 'Register new employees with personal details, employment info, and documents',
+        name: "Add Employee",
+        path: "/people/add",
+        description:
+          "Register new employees with personal details, employment info, and documents",
       },
       {
-        name: 'Document Alerts',
-        path: '/admin/document-alerts',
-        description: 'Track expiring documents (passports, work permits, licenses)',
-        badge: 'Compliance',
+        name: "Document Alerts",
+        path: "/admin/document-alerts",
+        description:
+          "Track expiring documents (passports, work permits, licenses)",
+        badge: "Compliance",
       },
       {
-        name: 'Announcements',
-        path: '/people/announcements',
-        description: 'Broadcast company news, policy updates, and notices to all employees via Ekipa',
-        badge: 'Ekipa',
+        name: "Announcements",
+        path: "/people/announcements",
+        description:
+          "Broadcast company news, policy updates, and notices to all employees via Ekipa",
+        badge: "Ekipa",
       },
       {
-        name: 'Grievance Inbox',
-        path: '/people/grievances',
-        description: 'Review anonymous employee concerns and complaints submitted via Ekipa',
-        badge: 'Ekipa',
+        name: "Grievance Inbox",
+        path: "/people/grievances",
+        description:
+          "Review anonymous employee concerns and complaints submitted via Ekipa",
+        badge: "Ekipa",
       },
       {
-        name: 'Offboarding',
-        path: '/people/offboarding',
-        description: 'Manage employee departures, final pay tasks, and company equipment returns',
+        name: "Offboarding",
+        path: "/people/offboarding",
+        description:
+          "Manage employee departures, final pay tasks, and company equipment returns",
       },
     ],
   },
   {
-    title: 'Hiring & Recruitment',
-    description: 'Streamline your recruitment process from job posting to onboarding',
+    title: "Hiring & Recruitment",
+    description:
+      "Streamline your recruitment process from job posting to onboarding",
     icon: Briefcase,
-    color: 'text-violet-600',
-    bgColor: 'bg-violet-100 dark:bg-violet-900',
+    color: "text-violet-600",
+    bgColor: "bg-violet-100 dark:bg-violet-900",
     pages: [
       {
-        name: 'Jobs & Applicants',
-        path: '/people/jobs',
-        description: 'Post jobs, review applicants, and schedule interviews in one place',
+        name: "Jobs & Applicants",
+        path: "/people/jobs",
+        description:
+          "Post jobs, review applicants, and schedule interviews in one place",
       },
     ],
   },
   {
-    title: 'Time & Leave',
-    description: 'Record attendance, manage leave, and plan weekly shifts',
+    title: "Time & Leave",
+    description: "Record attendance, manage leave, and plan weekly shifts",
     icon: Clock,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-100 dark:bg-cyan-900',
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-100 dark:bg-cyan-900",
     pages: [
       {
-        name: 'Time & Leave Dashboard',
-        path: '/time-leave',
-        description: 'Overview of attendance, leave, and scheduling at a glance',
+        name: "Time & Leave Dashboard",
+        path: "/time-leave",
+        description:
+          "Overview of attendance, leave, and scheduling at a glance",
       },
       {
-        name: 'Attendance',
-        path: '/time-leave/attendance',
-        description: 'Clock times, hours, adjustments, imports, and daily attendance',
+        name: "Attendance",
+        path: "/time-leave/attendance",
+        description:
+          "Clock times, hours, adjustments, imports, and daily attendance",
       },
       {
-        name: 'Leave Requests',
-        path: '/time-leave/leave',
-        description: 'Submit, approve, and track vacation, sick leave, and other absences',
+        name: "Leave Requests",
+        path: "/time-leave/leave",
+        description:
+          "Submit, approve, and track vacation, sick leave, and other absences",
       },
       {
-        name: 'Shift Scheduling',
-        path: '/time-leave/shifts',
-        description: 'Create and manage work schedules, shifts, and rotations',
+        name: "Shift Scheduling",
+        path: "/time-leave/shifts",
+        description: "Create and manage work schedules, shifts, and rotations",
       },
     ],
   },
   {
-    title: 'Performance',
-    description: 'Develop your team with goals, reviews, and training',
+    title: "Performance",
+    description: "Develop your team with goals, reviews, and training",
     icon: Target,
-    color: 'text-pink-600',
-    bgColor: 'bg-pink-100 dark:bg-pink-900',
+    color: "text-pink-600",
+    bgColor: "bg-pink-100 dark:bg-pink-900",
     pages: [
       {
-        name: 'Performance Overview',
-        path: '/people/performance',
-        description: 'Performance hub — goals, reviews, training, and disciplinary management',
+        name: "Performance Overview",
+        path: "/people/performance",
+        description:
+          "Performance hub — goals, reviews, training, and disciplinary management",
       },
       {
-        name: 'Goals',
-        path: '/people/goals',
-        description: 'Set and track individual and team objectives with progress monitoring',
+        name: "Goals",
+        path: "/people/goals",
+        description:
+          "Set and track individual and team objectives with progress monitoring",
       },
       {
-        name: 'Reviews',
-        path: '/people/reviews',
-        description: 'Conduct performance evaluations with customizable review cycles',
+        name: "Reviews",
+        path: "/people/reviews",
+        description:
+          "Conduct performance evaluations with customizable review cycles",
       },
       {
-        name: 'Training & Certifications',
-        path: '/people/training',
-        description: 'Track employee skills, training programs, and certification renewals',
+        name: "Training & Certifications",
+        path: "/people/training",
+        description:
+          "Track employee skills, training programs, and certification renewals",
       },
       {
-        name: 'Disciplinary',
-        path: '/people/disciplinary',
-        description: 'Document warnings, incidents, and corrective actions',
+        name: "Disciplinary",
+        path: "/people/disciplinary",
+        description: "Document warnings, incidents, and corrective actions",
       },
     ],
   },
   {
-    title: 'Payroll',
-    description: 'Process payroll with Timor-Leste tax compliance (WIT, INSS)',
+    title: "Payroll",
+    description: "Process payroll with Timor-Leste tax compliance (WIT, INSS)",
     icon: Calculator,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-100 dark:bg-cyan-900',
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-100 dark:bg-cyan-900",
     pages: [
       {
-        name: 'Payroll Dashboard',
-        path: '/payroll',
-        description: 'Overview of payroll status, upcoming runs, and key metrics',
+        name: "Payroll Dashboard",
+        path: "/payroll",
+        description:
+          "Overview of payroll status, upcoming runs, and key metrics",
       },
       {
-        name: 'Run Payroll',
-        path: '/payroll/run',
-        description: 'Process payroll with automatic WIT and INSS calculations for TL compliance',
-        badge: 'TL Compliant',
+        name: "Run Payroll",
+        path: "/payroll/run",
+        description:
+          "Process payroll with automatic WIT and INSS calculations for TL compliance",
+        badge: "TL Compliant",
       },
       {
-        name: 'Payroll History',
-        path: '/payroll/history',
-        description: 'View past payroll runs with detailed breakdowns and pay slips',
+        name: "Payroll History",
+        path: "/payroll/history",
+        description:
+          "View past payroll runs with detailed breakdowns and pay slips",
       },
       {
-        name: 'Bank Transfers',
-        path: '/payroll/payments',
-        description: 'Generate bank transfer files for BNU, BNCTL, and other TL banks',
-        badge: 'TL Banks',
+        name: "Bank Transfers",
+        path: "/payroll/payments",
+        description:
+          "Generate bank transfer files for BNU, BNCTL, and other TL banks",
+        badge: "TL Banks",
       },
       {
-        name: 'Tax Reports',
-        path: '/payroll/tax',
-        description: 'Generate WIT and INSS reports for ATTL and government filings',
+        name: "Tax Reports",
+        path: "/payroll/tax",
+        description:
+          "Generate WIT and INSS reports for ATTL and government filings",
       },
       {
-        name: 'Benefits',
-        path: '/payroll/settings/benefits',
-        description: 'Manage employee benefits enrollment and deductions',
+        name: "Benefits",
+        path: "/payroll/settings/benefits",
+        description: "Manage employee benefits enrollment and deductions",
       },
       {
-        name: 'Deductions & Advances',
-        path: '/payroll/settings/deductions',
-        description: 'Configure loan repayments, salary advances, and custom deductions',
+        name: "Deductions & Advances",
+        path: "/payroll/settings/deductions",
+        description:
+          "Configure loan repayments, salary advances, and custom deductions",
       },
     ],
   },
   {
-    title: 'Money',
-    description: 'Invoicing, expenses, and financial operations',
+    title: "Money",
+    description: "Invoicing, expenses, and financial operations",
     icon: DollarSign,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-100 dark:bg-indigo-900',
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-100 dark:bg-indigo-900",
     pages: [
       {
-        name: 'Money Dashboard',
-        path: '/money',
-        description: 'Financial overview with receivables, payables, and cash flow',
+        name: "Money Dashboard",
+        path: "/money",
+        description:
+          "Financial overview with receivables, payables, and cash flow",
       },
       {
-        name: 'Customers',
-        path: '/money/customers',
-        description: 'Manage customer contacts, billing info, and payment history',
+        name: "Customers",
+        path: "/money/customers",
+        description:
+          "Manage customer contacts, billing info, and payment history",
       },
       {
-        name: 'Invoices',
-        path: '/money/invoices',
-        description: 'Create, send, and track customer invoices with payment status',
+        name: "Invoices",
+        path: "/money/invoices",
+        description:
+          "Create, send, and track customer invoices with payment status",
       },
       {
-        name: 'Recurring Invoices',
-        path: '/money/invoices/recurring',
-        description: 'Set up automatic recurring invoices for regular customers',
+        name: "Recurring Invoices",
+        path: "/money/invoices/recurring",
+        description:
+          "Set up automatic recurring invoices for regular customers",
       },
       {
-        name: 'Invoice Settings',
-        path: '/money/invoices/settings',
-        description: 'Configure company info, bank details, and invoice defaults',
+        name: "Invoice Settings",
+        path: "/money/invoices/settings",
+        description:
+          "Configure company info, bank details, and invoice defaults",
       },
       {
-        name: 'Payments Received',
-        path: '/money/payments',
-        description: 'Record and track customer payments against invoices',
+        name: "Payments Received",
+        path: "/money/payments",
+        description: "Record and track customer payments against invoices",
       },
       {
-        name: 'Vendors',
-        path: '/money/vendors',
-        description: 'Manage supplier contacts and payment terms',
+        name: "Vendors",
+        path: "/money/vendors",
+        description: "Manage supplier contacts and payment terms",
       },
       {
-        name: 'Bills',
-        path: '/money/bills',
-        description: 'Track vendor bills and accounts payable',
+        name: "Bills",
+        path: "/money/bills",
+        description: "Track vendor bills and accounts payable",
       },
       {
-        name: 'Expenses',
-        path: '/money/expenses',
-        description: 'Record and categorize business expenses with receipts',
+        name: "Expenses",
+        path: "/money/expenses",
+        description: "Record and categorize business expenses with receipts",
       },
       {
-        name: 'Profit & Loss',
-        path: '/money/financials/profit-loss',
-        description: 'Income statement showing revenue minus expenses',
+        name: "Profit & Loss",
+        path: "/money/financials/profit-loss",
+        description: "Income statement showing revenue minus expenses",
       },
       {
-        name: 'Balance Sheet',
-        path: '/money/financials/balance-sheet',
-        description: 'Assets, liabilities, and equity snapshot',
+        name: "Balance Sheet",
+        path: "/money/financials/balance-sheet",
+        description: "Assets, liabilities, and equity snapshot",
       },
       {
-        name: 'Cash Flow',
-        path: '/money/financials/cashflow',
-        description: 'Track money coming in and going out over time',
+        name: "Cash Flow",
+        path: "/money/financials/cashflow",
+        description: "Track money coming in and going out over time",
       },
       {
-        name: 'AR Aging Report',
-        path: '/money/financials/ar-aging',
-        description: 'Accounts receivable by age (Current, 30, 60, 90+ days)',
+        name: "AR Aging Report",
+        path: "/money/financials/ar-aging",
+        description: "Accounts receivable by age (Current, 30, 60, 90+ days)",
       },
       {
-        name: 'AP Aging Report',
-        path: '/money/financials/ap-aging',
-        description: 'Accounts payable by age to manage vendor payments',
+        name: "AP Aging Report",
+        path: "/money/financials/ap-aging",
+        description: "Accounts payable by age to manage vendor payments",
       },
       {
-        name: 'Bank Reconciliation',
-        path: '/money/financials/reconciliation',
-        description: 'Match bank statements with recorded transactions',
+        name: "Bank Reconciliation",
+        path: "/money/financials/reconciliation",
+        description: "Match bank statements with recorded transactions",
       },
     ],
   },
   {
-    title: 'Accounting',
-    description: 'Double-entry bookkeeping and financial statements',
+    title: "Accounting",
+    description: "Double-entry bookkeeping and financial statements",
     icon: BookOpen,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100 dark:bg-amber-900',
+    color: "text-amber-600",
+    bgColor: "bg-amber-100 dark:bg-amber-900",
     pages: [
       {
-        name: 'Accounting Dashboard',
-        path: '/accounting',
-        description: 'Overview of accounting status and quick access to key functions',
+        name: "Accounting Dashboard",
+        path: "/accounting",
+        description:
+          "Overview of accounting status and quick access to key functions",
       },
       {
-        name: 'Chart of Accounts',
-        path: '/accounting/chart',
-        description: 'Standard TL chart of accounts (Assets, Liabilities, Equity, Revenue, Expenses)',
-        badge: 'TL Standard',
+        name: "Chart of Accounts",
+        path: "/accounting/chart",
+        description:
+          "Standard TL chart of accounts (Assets, Liabilities, Equity, Revenue, Expenses)",
+        badge: "TL Standard",
       },
       {
-        name: 'Journal Entries',
-        path: '/accounting/journal',
-        description: 'View and create double-entry journal entries with auto-posting',
+        name: "Journal Entries",
+        path: "/accounting/journal",
+        description:
+          "View and create double-entry journal entries with auto-posting",
       },
       {
-        name: 'General Ledger',
-        path: '/accounting/ledger',
-        description: 'Complete transaction history by account with running balances',
+        name: "General Ledger",
+        path: "/accounting/ledger",
+        description:
+          "Complete transaction history by account with running balances",
       },
       {
-        name: 'Trial Balance',
-        path: '/accounting/statements/trial-balance',
-        description: 'Verify debits equal credits across all accounts',
+        name: "Trial Balance",
+        path: "/accounting/statements/trial-balance",
+        description: "Verify debits equal credits across all accounts",
+      },
+      {
+        name: "Fixed Assets",
+        path: "/accounting/fixed-assets",
+        description:
+          "Asset register with straight-line depreciation and disposals",
       },
     ],
   },
   {
-    title: 'Reports',
-    description: 'Analytics, compliance reports, and data exports',
+    title: "Reports",
+    description: "Analytics, compliance reports, and data exports",
     icon: BarChart3,
-    color: 'text-rose-600',
-    bgColor: 'bg-rose-100 dark:bg-rose-900',
+    color: "text-rose-600",
+    bgColor: "bg-rose-100 dark:bg-rose-900",
     pages: [
       {
-        name: 'Reports Dashboard',
-        path: '/reports',
-        description: 'Central hub for all reports with quick generation',
+        name: "Reports Dashboard",
+        path: "/reports",
+        description: "Central hub for all reports with quick generation",
       },
       {
-        name: 'Payroll Reports',
-        path: '/reports/payroll',
-        description: 'Payroll summaries, cost analysis, and tax breakdowns',
+        name: "Payroll Reports",
+        path: "/reports/payroll",
+        description: "Payroll summaries, cost analysis, and tax breakdowns",
       },
       {
-        name: 'Payroll Allocation Report',
-        path: '/reports/payroll-allocation',
-        description: 'NGO project/funding payroll allocation summary for donor reporting',
-        badge: 'NGO',
+        name: "Payroll Allocation Report",
+        path: "/reports/payroll-allocation",
+        description:
+          "NGO project/funding payroll allocation summary for donor reporting",
+        badge: "NGO",
       },
       {
-        name: 'Donor Export Pack',
-        path: '/reports/donor-export',
-        description: 'Exports donor-ready payroll summary and journal lines (CSV)',
-        badge: 'NGO',
+        name: "Donor Export Pack",
+        path: "/reports/donor-export",
+        description:
+          "Exports donor-ready payroll summary and journal lines (CSV)",
+        badge: "NGO",
       },
       {
-        name: 'Employee Reports',
-        path: '/reports/employees',
-        description: 'Headcount, demographics, turnover, and roster exports',
+        name: "Employee Reports",
+        path: "/reports/employees",
+        description: "Headcount, demographics, turnover, and roster exports",
       },
       {
-        name: 'Attendance Reports',
-        path: '/reports/attendance',
-        description: 'Attendance patterns, overtime analysis, and leave usage',
+        name: "Attendance Reports",
+        path: "/reports/attendance",
+        description: "Attendance patterns, overtime analysis, and leave usage",
       },
       {
-        name: 'Department Reports',
-        path: '/reports/departments',
-        description: 'Department-level metrics and cost center analysis',
+        name: "Department Reports",
+        path: "/reports/departments",
+        description: "Department-level metrics and cost center analysis",
       },
       {
-        name: 'ATTL Monthly WIT',
-        path: '/payroll/tax/monthly-wit',
-        description: 'Monthly Withholding Income Tax report for ATTL filing',
-        badge: 'Tax Filing',
+        name: "ATTL Monthly WIT",
+        path: "/payroll/tax/monthly-wit",
+        description: "Monthly Withholding Income Tax report for ATTL filing",
+        badge: "Tax Filing",
       },
       {
-        name: 'INSS Monthly',
-        path: '/payroll/tax/inss-monthly',
-        description: 'Monthly INSS contribution report for social security',
-        badge: 'Tax Filing',
+        name: "INSS Monthly",
+        path: "/payroll/tax/inss-monthly",
+        description: "Monthly INSS contribution report for social security",
+        badge: "Tax Filing",
       },
       {
-        name: 'Setup Reports',
-        path: '/reports/setup',
-        description: 'Configure report templates and scheduling',
+        name: "Setup Reports",
+        path: "/reports/setup",
+        description: "Configure report templates and scheduling",
       },
       {
-        name: 'Custom Reports',
-        path: '/reports/custom',
-        description: 'Build custom reports with flexible filters and fields',
+        name: "Custom Reports",
+        path: "/reports/custom",
+        description: "Build custom reports with flexible filters and fields",
       },
     ],
   },
   {
-    title: 'Administration',
-    description: 'System configuration and superadmin tools',
+    title: "Administration",
+    description: "System configuration and superadmin tools",
     icon: Shield,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-100 dark:bg-slate-900',
+    color: "text-slate-600",
+    bgColor: "bg-slate-100 dark:bg-slate-900",
     pages: [
       {
-        name: 'Initial Setup',
-        path: '/admin/setup',
-        description: 'First-time setup wizard for new organizations',
+        name: "Initial Setup",
+        path: "/admin/setup",
+        description: "First-time setup wizard for new organizations",
       },
       {
-        name: 'Tenants',
-        path: '/admin/tenants',
-        description: 'Manage organizations in the system (Superadmin only)',
-        badge: 'Superadmin',
+        name: "Tenants",
+        path: "/admin/tenants",
+        description: "Manage organizations in the system (Superadmin only)",
+        badge: "Superadmin",
       },
       {
-        name: 'Users',
-        path: '/admin/users',
-        description: 'Manage user accounts and permissions (Superadmin only)',
-        badge: 'Superadmin',
+        name: "Users",
+        path: "/admin/users",
+        description: "Manage user accounts and permissions (Superadmin only)",
+        badge: "Superadmin",
       },
       {
-        name: 'Audit Log',
-        path: '/admin/audit',
-        description: 'Complete audit trail of system actions (Superadmin only)',
-        badge: 'Superadmin',
+        name: "Audit Log",
+        path: "/admin/audit",
+        description: "Complete audit trail of system actions (Superadmin only)",
+        badge: "Superadmin",
       },
       {
-        name: 'Seed Database',
-        path: '/admin/seed',
-        description: 'Generate test data for development (Superadmin only)',
-        badge: 'Superadmin',
+        name: "Seed Database",
+        path: "/admin/seed",
+        description: "Generate test data for development (Superadmin only)",
+        badge: "Superadmin",
       },
     ],
   },
@@ -483,168 +533,168 @@ export default function Sitemap() {
   const { session, hasModule, canManage, showAdvancedTax } = useTenant();
   const { isSuperAdmin } = useAuth();
   const canManageTenant = canManage();
-  const canManageTeam = canManageTenant || session?.role === 'manager';
-  const ngoReportingEnabled = canUseNgoReporting(session, hasModule('reports'));
+  const canManageTeam = canManageTenant || session?.role === "manager";
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
     session,
-    hasModule('reports'),
-    canManageTenant
+    hasModule("reports"),
+    canManageTenant,
   );
   const canAccessPath = (path: string) => {
-    if (path === '/dashboard') {
+    if (path === "/dashboard") {
       return true;
     }
 
-    if (path === '/settings') {
+    if (path === "/settings") {
       return canManageTenant;
     }
 
     if (
-      path === '/settings/departments' ||
-      path === '/settings/org-chart' ||
-      path === '/settings/foreign-workers'
+      path === "/settings/departments" ||
+      path === "/settings/org-chart" ||
+      path === "/settings/foreign-workers"
     ) {
-      return hasModule('staff') && canManageTenant;
+      return hasModule("staff") && canManageTenant;
     }
 
-    if (path === '/people') {
-      return (['staff', 'hiring', 'performance'] as const).some((module) => hasModule(module));
+    if (path === "/people") {
+      return (["staff", "hiring", "performance"] as const).some((module) =>
+        hasModule(module),
+      );
     }
 
-    if (path === '/people/add') {
-      return hasModule('staff') && canManageTenant;
+    if (path === "/people/add") {
+      return hasModule("staff") && canManageTenant;
     }
 
     if (
-      path === '/people/staff' ||
-      path === '/people/employees' ||
-      path === '/people/announcements' ||
-      path === '/people/grievances' ||
-      path === '/admin/document-alerts'
+      path === "/people/staff" ||
+      path === "/people/employees" ||
+      path === "/people/announcements" ||
+      path === "/people/grievances" ||
+      path === "/admin/document-alerts"
     ) {
-      return hasModule('staff');
+      return hasModule("staff");
     }
 
-    if (path === '/people/onboarding' || path === '/people/offboarding') {
-      return hasModule('staff') && canManageTenant;
+    if (path === "/people/onboarding" || path === "/people/offboarding") {
+      return hasModule("staff") && canManageTenant;
+    }
+
+    if (path === "/people/hiring" || path === "/people/jobs") {
+      return hasModule("hiring");
     }
 
     if (
-      path === '/people/hiring' ||
-      path === '/people/jobs'
+      path === "/people/performance" ||
+      path === "/people/goals" ||
+      path === "/people/reviews" ||
+      path === "/people/training" ||
+      path === "/people/disciplinary"
     ) {
-      return hasModule('hiring');
+      return hasModule("performance");
+    }
+
+    if (path === "/time-leave/settings") {
+      return hasModule("timeleave") && canManageTenant;
+    }
+
+    if (path === "/time-leave/shifts") {
+      return hasModule("timeleave") && canManageTeam;
+    }
+
+    if (path.startsWith("/time-leave")) {
+      return hasModule("timeleave");
+    }
+
+    if (path.startsWith("/payroll/settings")) {
+      return hasModule("payroll") && canManageTenant;
     }
 
     if (
-      path === '/people/performance' ||
-      path === '/people/goals' ||
-      path === '/people/reviews' ||
-      path === '/people/training' ||
-      path === '/people/disciplinary'
+      path === "/payroll/tax/monthly-wit" ||
+      path === "/payroll/tax/clearance"
     ) {
-      return hasModule('performance');
+      return hasModule("payroll") && canManageTenant && showAdvancedTax;
     }
 
-    if (path === '/time-leave/settings') {
-      return hasModule('timeleave') && canManageTenant;
+    if (path.startsWith("/payroll/tax")) {
+      return hasModule("payroll") && canManageTenant;
     }
 
-    if (path === '/time-leave/shifts') {
-      return hasModule('timeleave') && canManageTeam;
+    if (path === "/payroll/run") {
+      return hasModule("payroll") && canManageTenant;
     }
 
-    if (path.startsWith('/time-leave')) {
-      return hasModule('timeleave');
+    if (path.startsWith("/payroll")) {
+      return hasModule("payroll");
     }
 
-    if (path.startsWith('/payroll/settings')) {
-      return hasModule('payroll') && canManageTenant;
+    if (path === "/reports/payroll-allocation") {
+      return ngoReportingEnabled && hasModule("payroll") && hasModule("staff");
     }
 
-    if (
-      path === '/payroll/tax/monthly-wit' ||
-      path === '/payroll/tax/clearance'
-    ) {
-      return hasModule('payroll') && canManageTenant && showAdvancedTax;
+    if (path === "/reports/donor-export") {
+      return donorExportEnabled && hasModule("payroll") && hasModule("staff");
     }
 
-    if (path.startsWith('/payroll/tax')) {
-      return hasModule('payroll') && canManageTenant;
-    }
-
-    if (path === '/payroll/run') {
-      return hasModule('payroll') && canManageTenant;
-    }
-
-    if (path.startsWith('/payroll')) {
-      return hasModule('payroll');
-    }
-
-    if (path === '/reports/payroll-allocation') {
-      return ngoReportingEnabled && hasModule('payroll') && hasModule('staff');
-    }
-
-    if (path === '/reports/donor-export') {
-      return donorExportEnabled && hasModule('payroll') && hasModule('staff');
-    }
-
-    if (path.startsWith('/reports')) {
-      if (path === '/reports/payroll') return hasModule('reports') && hasModule('payroll');
-      if (path === '/reports/employees' || path === '/reports/departments') {
-        return hasModule('reports') && hasModule('staff');
+    if (path.startsWith("/reports")) {
+      if (path === "/reports/payroll")
+        return hasModule("reports") && hasModule("payroll");
+      if (path === "/reports/employees" || path === "/reports/departments") {
+        return hasModule("reports") && hasModule("staff");
       }
-      if (path === '/reports/attendance') {
-        return hasModule('reports') && hasModule('timeleave');
+      if (path === "/reports/attendance") {
+        return hasModule("reports") && hasModule("timeleave");
       }
-      return hasModule('reports');
+      return hasModule("reports");
     }
 
-    if (path.startsWith('/money')) {
-      if (path === '/money/expenses') {
-        return hasModule('money') && canManageTeam;
+    if (path.startsWith("/money")) {
+      if (path === "/money/expenses") {
+        return hasModule("money") && canManageTeam;
       }
       if (
-        path === '/money/financials/profit-loss' ||
-        path === '/money/financials/balance-sheet' ||
-        path === '/money/financials/cashflow'
+        path === "/money/financials/profit-loss" ||
+        path === "/money/financials/balance-sheet" ||
+        path === "/money/financials/cashflow"
       ) {
-        return hasModule('money') && canManageTeam;
+        return hasModule("money") && canManageTeam;
       }
       if (
-        path === '/money/financials/vat-returns' ||
-        path === '/money/financials/vat-settings'
+        path === "/money/financials/vat-returns" ||
+        path === "/money/financials/vat-settings"
       ) {
-        return hasModule('money') && canManageTenant && showAdvancedTax;
+        return hasModule("money") && canManageTenant && showAdvancedTax;
       }
-      if (path === '/money/financials/reconciliation') {
-        return hasModule('money') && canManageTenant;
+      if (path === "/money/financials/reconciliation") {
+        return hasModule("money") && canManageTenant;
       }
       if (
-        path === '/money/invoices/settings' ||
-        path === '/money/invoices/recurring'
+        path === "/money/invoices/settings" ||
+        path === "/money/invoices/recurring"
       ) {
-        return hasModule('money') && canManageTenant;
+        return hasModule("money") && canManageTenant;
       }
-      return hasModule('money');
+      return hasModule("money");
     }
 
     if (
-      path === '/accounting/reconciliation' ||
-      path === '/accounting/statements/fiscal-periods'
+      path === "/accounting/reconciliation" ||
+      path === "/accounting/statements/fiscal-periods"
     ) {
-      return hasModule('accounting') && canManageTenant;
+      return hasModule("accounting") && canManageTenant;
     }
 
-    if (path.startsWith('/accounting')) {
-      return hasModule('accounting');
+    if (path.startsWith("/accounting")) {
+      return hasModule("accounting");
     }
 
-    if (path === '/admin/seed') {
+    if (path === "/admin/seed") {
       return import.meta.env.DEV && isSuperAdmin;
     }
 
-    if (path.startsWith('/admin')) {
+    if (path.startsWith("/admin")) {
       return isSuperAdmin;
     }
 
@@ -659,12 +709,15 @@ export default function Sitemap() {
     .filter((section) => section.pages.length > 0);
   const visiblePageCount = visibleSitemapData.reduce(
     (acc, section) => acc + section.pages.length,
-    0
+    0,
   );
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Sitemap - Xefe" description="Complete navigation guide for Xefe" />
+      <SEO
+        title="Sitemap - Xefe"
+        description="Complete navigation guide for Xefe"
+      />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
@@ -685,16 +738,24 @@ export default function Sitemap() {
           {/* Quick Stats */}
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">{visibleSitemapData.length}</span>
-              <span className="text-sm text-muted-foreground ml-2">Modules</span>
+              <span className="text-2xl font-bold text-primary">
+                {visibleSitemapData.length}
+              </span>
+              <span className="text-sm text-muted-foreground ml-2">
+                Modules
+              </span>
             </div>
             <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">{visiblePageCount}</span>
+              <span className="text-2xl font-bold text-primary">
+                {visiblePageCount}
+              </span>
               <span className="text-sm text-muted-foreground ml-2">Pages</span>
             </div>
             <div className="bg-muted/50 rounded-lg px-4 py-2">
               <span className="text-2xl font-bold text-emerald-600">TL</span>
-              <span className="text-sm text-muted-foreground ml-2">Timor-Leste Compliant</span>
+              <span className="text-sm text-muted-foreground ml-2">
+                Timor-Leste Compliant
+              </span>
             </div>
           </div>
         </div>
@@ -707,7 +768,9 @@ export default function Sitemap() {
               <Card key={section.title} className="overflow-hidden">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg ${section.bgColor} flex items-center justify-center`}>
+                    <div
+                      className={`h-10 w-10 rounded-lg ${section.bgColor} flex items-center justify-center`}
+                    >
                       <Icon className={`h-5 w-5 ${section.color}`} />
                     </div>
                     <div>
@@ -724,7 +787,9 @@ export default function Sitemap() {
                         to={page.path}
                         className="group flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/30 transition-all"
                       >
-                        <ChevronRight className={`h-4 w-4 mt-0.5 ${section.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                        <ChevronRight
+                          className={`h-4 w-4 mt-0.5 ${section.color} opacity-0 group-hover:opacity-100 transition-opacity`}
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium group-hover:text-primary transition-colors">
@@ -754,11 +819,10 @@ export default function Sitemap() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>
-            Xefe - Built for Timor-Leste businesses
-          </p>
+          <p>Xefe - Built for Timor-Leste businesses</p>
           <p className="mt-1">
-            Compliant with ATTL tax regulations, INSS social security, and TL labor law
+            Compliant with ATTL tax regulations, INSS social security, and TL
+            labor law
           </p>
         </div>
       </div>

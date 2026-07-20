@@ -44,15 +44,22 @@ export function advanceMonthlyRunDate(currentISO: string, dayOfMonth: number): s
   return iso(ny, nm, clampDayToMonth(ny, nm, dayOfMonth));
 }
 
-export function templateIsDue(
-  nextRunDate: string | undefined,
-  todayISO: string,
-  endDate?: string,
-): boolean {
-  if (!nextRunDate) return false;
-  if (nextRunDate > todayISO) return false;
-  if (endDate && nextRunDate > endDate) return false;
-  return true;
+/**
+ * Never reschedule a template back into (or before) the month it last
+ * posted: a rewound nextRunDate would re-accrue an already-posted fiscal
+ * period. The scheduler's per-(template, period) guard doc blocks the
+ * duplicate as a backstop; this keeps the pointer honest at edit time.
+ * Returns `candidateISO` unless it falls in `lastRunDateISO`'s month or
+ * earlier, in which case the next run is one month after the last posting.
+ */
+export function clampNextRunAfterLastPosting(
+  candidateISO: string,
+  lastRunDateISO: string | undefined,
+  dayOfMonth: number,
+): string {
+  if (!lastRunDateISO) return candidateISO;
+  if (candidateISO.slice(0, 7) > lastRunDateISO.slice(0, 7)) return candidateISO;
+  return advanceMonthlyRunDate(lastRunDateISO, dayOfMonth);
 }
 
 export interface RecurringTemplateValidationInput {

@@ -1358,7 +1358,7 @@ export const translations = {
       "data": {
         "eyebrow": "Your data",
         "title": "Stored safely, recoverable always",
-        "description": "Xefe runs on Google Cloud (Firebase) — the same infrastructure that runs Gmail — with your company's records isolated from every other tenant.",
+        "description": "Xefe runs on Google Cloud (Firebase), with your company's records isolated from every other tenant.",
         "note": "Your data is yours. Export your employees, payroll history, journals and reports at any time — no lock-in, no export fee.",
         "points": {
           "encryption": {
@@ -5215,6 +5215,7 @@ export const translations = {
         "sourceBill": "Bill",
         "sourceAdjustment": "Adjustment",
         "sourceRecurring": "Recurring",
+        "sourceDepreciation": "Depreciation",
         "sourceClosing": "Closing",
         "sourceOpening": "Opening",
         "sourceExpense": "Expense",
@@ -5270,6 +5271,8 @@ export const translations = {
         "fieldResidual": "Residual value",
         "fieldLife": "Useful life (months)",
         "fieldLifeHint": "Pre-filled from the class; adjust per asset. Land never depreciates.",
+        "lifeRequired": "Enter a useful life in months — without one this asset would never depreciate.",
+        "invalidPeriod": "Enter a valid month (YYYY-MM), not in the future.",
         "fieldPeriod": "Period to post",
         "fieldDisposeDate": "Disposal date",
         "fieldProceeds": "Proceeds (USD)",
@@ -9151,7 +9154,7 @@ export const translations = {
       "data": {
         "eyebrow": "Ita-nia dadus",
         "title": "Rai ho seguru, bele rekupera nafatin",
-        "description": "Xefe la'o iha Google Cloud (Firebase) — infraestrutura hanesan ne'ebé halo Gmail la'o — ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
+        "description": "Xefe la'o iha Google Cloud (Firebase), ho Ita-nia empreza nia rejistu izoladu husi tenant seluk hotu.",
         "note": "Ita-nia dadus Ita-nian. Esporta Ita-nia trabalhador, istória folha, lansamentu no relatóriu kualker momentu — la iha lock-in, la iha taxa esportasaun.",
         "points": {
           "encryption": {
@@ -11635,6 +11638,7 @@ export const translations = {
         "sourceBill": "Kontas selu",
         "sourceAdjustment": "Ajustamentu",
         "sourceRecurring": "Rekorrente",
+        "sourceDepreciation": "Depresiasaun",
         "sourceClosing": "Taka",
         "sourceOpening": "Abertura",
         "sourceExpense": "Despeza",
@@ -11690,6 +11694,8 @@ export const translations = {
         "fieldResidual": "Valor rezidual",
         "fieldLife": "Vida útil (fulan)",
         "fieldLifeHint": "Prienxe ona husi klase; bele muda kada ativu. Rai nunka depresiaun.",
+        "lifeRequired": "Hatama vida útil iha fulan — laiha ida ativu ne'e sei la depresia nunka.",
+        "invalidPeriod": "Hatama fulan válidu (AAAA-MM), la'ós iha futuru.",
         "fieldPeriod": "Períodu atu rejista",
         "fieldDisposeDate": "Data abate",
         "fieldProceeds": "Osan simu (USD)",
@@ -16944,7 +16950,7 @@ export const translations = {
       "data": {
         "eyebrow": "Os seus dados",
         "title": "Guardados em segurança, sempre recuperáveis",
-        "description": "O Xefe corre no Google Cloud (Firebase) — a mesma infraestrutura do Gmail — com os registos da sua empresa isolados de todos os outros clientes.",
+        "description": "O Xefe corre no Google Cloud (Firebase), com os registos da sua empresa isolados de todos os outros clientes.",
         "note": "Os dados são seus. Exporte trabalhadores, histórico de folha, lançamentos e relatórios a qualquer momento — sem aprisionamento, sem taxa de exportação.",
         "points": {
           "encryption": {
@@ -20801,6 +20807,7 @@ export const translations = {
         "sourceBill": "Conta a pagar",
         "sourceAdjustment": "Ajustamento",
         "sourceRecurring": "Recorrente",
+        "sourceDepreciation": "Depreciação",
         "sourceClosing": "Fecho",
         "sourceOpening": "Abertura",
         "sourceExpense": "Despesa",
@@ -20856,6 +20863,8 @@ export const translations = {
         "fieldResidual": "Valor residual",
         "fieldLife": "Vida útil (meses)",
         "fieldLifeHint": "Pré-preenchido pela classe; ajuste por ativo. Terrenos nunca depreciam.",
+        "lifeRequired": "Indique a vida útil em meses — sem ela este ativo nunca seria depreciado.",
+        "invalidPeriod": "Introduza um mês válido (AAAA-MM), não no futuro.",
         "fieldPeriod": "Período a registar",
         "fieldDisposeDate": "Data do abate",
         "fieldProceeds": "Valor recebido (USD)",

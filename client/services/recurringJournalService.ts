@@ -8,6 +8,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -19,6 +20,7 @@ import {
 import { db } from '@/lib/firebase';
 import type { JournalEntry, RecurringJournalTemplate } from '@/types/accounting';
 import {
+  clampNextRunAfterLastPosting,
   firstRunDate,
   validateRecurringTemplate,
 } from '@/lib/accounting/recurring';
@@ -99,9 +101,20 @@ export const recurringJournalService = {
     id: string,
     changes: { dayOfMonth: number; endDate?: string | null },
   ): Promise<void> {
-    await updateDoc(doc(colRef(tenantId), id), {
+    const ref = doc(colRef(tenantId), id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Recurring template not found.');
+    // Recomputing nextRunDate from today can land back in a month the
+    // scheduler already posted — clamp it forward past the last posting.
+    // (The scheduler's per-(template, period) guard doc is the backstop.)
+    const { lastRunDate } = snap.data() as Pick<RecurringJournalTemplate, 'lastRunDate'>;
+    await updateDoc(ref, {
       dayOfMonth: changes.dayOfMonth,
-      nextRunDate: firstRunDate(getTodayTL(), changes.dayOfMonth),
+      nextRunDate: clampNextRunAfterLastPosting(
+        firstRunDate(getTodayTL(), changes.dayOfMonth),
+        lastRunDate,
+        changes.dayOfMonth,
+      ),
       endDate: changes.endDate ?? null,
       updatedAt: serverTimestamp(),
     });

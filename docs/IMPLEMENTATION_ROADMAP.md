@@ -57,13 +57,19 @@ Sources: [Pinnacle Dili](https://pinnacledili.com/insight/social-security-scheme
 |------|------------|
 | Standard work day | 8 hours |
 | Maximum per week | **44 hours** |
-| Overtime (first 2 hrs) | +50% |
-| Overtime (beyond 2 hrs) | +100% |
-| Sunday/Holiday work | +100% (some sources say 200%) |
+| Overtime | ×1.5 (150%) — single standard rate, tenant-configurable |
+| Rest-day / public-holiday work | ×2.0 (200%) |
+| Night work (21:00–06:00) | +25% premium (night+overtime ×1.75) |
 | Max daily overtime | 4 hours |
 | Max weekly overtime | 16 hours |
 
 Sources: [Rivermate Working Hours](https://www.rivermate.com/guides/timor-leste/working-hours), [Global Expansion](https://www.globalexpansion.com/countrypedia/timor-leste)
+
+> **Source of truth:** the shipped engine (`client/lib/payroll/constants-tl.ts` /
+> `calculations-tl.ts`, citing Law 4/2012 Art. 27) implements the rates in the
+> table above. Earlier drafts of this doc described a tiered +50%/+100% overtime
+> model from secondary sources — the engine's ×1.5 / ×2.0 / +25% night model is
+> what ships and what the parity tests verify.
 
 ### Leave Entitlements
 
@@ -128,7 +134,15 @@ Dashboard
 | Leave requests UI | ✅ Working | Submission, approval, cancellation, balance projection |
 | Shift scheduling | ✅ Core flow | Simple weekly planning, validation, publish/copy/export |
 | Payroll run UI | ⚠️ Shell | **No calculations** |
-| Accounting module | ✅ Good | Chart of accounts, GL, TB |
+| Accounting module | ✅ Good | Chart of accounts, GL, TB, fixed-asset register + recurring journals |
+
+> **Open product decision — fixed-asset acquisition posting.** Registering an
+> asset posts NO acquisition journal (deliberate): auto-posting Dr asset /
+> Cr cash would double-book assets acquired via a recorded bill, which already
+> debits the asset account. When acquisition flows are designed, ask at
+> registration ("via a recorded bill" → GL-silent + link the bill; "direct
+> purchase" → post with a bank-account picker). Until then the register and
+> the GL asset accounts are reconciled manually.
 | Firebase integration | ✅ Working | Auth + Firestore |
 | Multi-tenant | ⚠️ Basic | Context exists |
 

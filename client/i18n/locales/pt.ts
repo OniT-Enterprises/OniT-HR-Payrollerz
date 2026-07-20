@@ -1354,7 +1354,7 @@ const messages = {
     "data": {
       "eyebrow": "Os seus dados",
       "title": "Guardados em segurança, sempre recuperáveis",
-      "description": "O Xefe corre no Google Cloud (Firebase) — a mesma infraestrutura do Gmail — com os registos da sua empresa isolados de todos os outros clientes.",
+      "description": "O Xefe corre no Google Cloud (Firebase), com os registos da sua empresa isolados de todos os outros clientes.",
       "note": "Os dados são seus. Exporte trabalhadores, histórico de folha, lançamentos e relatórios a qualquer momento — sem aprisionamento, sem taxa de exportação.",
       "points": {
         "encryption": {
@@ -5211,6 +5211,7 @@ const messages = {
       "sourceBill": "Conta a pagar",
       "sourceAdjustment": "Ajustamento",
       "sourceRecurring": "Recorrente",
+      "sourceDepreciation": "Depreciação",
       "sourceClosing": "Fecho",
       "sourceOpening": "Abertura",
       "sourceExpense": "Despesa",
@@ -5266,6 +5267,8 @@ const messages = {
       "fieldResidual": "Valor residual",
       "fieldLife": "Vida útil (meses)",
       "fieldLifeHint": "Pré-preenchido pela classe; ajuste por ativo. Terrenos nunca depreciam.",
+      "lifeRequired": "Indique a vida útil em meses — sem ela este ativo nunca seria depreciado.",
+      "invalidPeriod": "Introduza um mês válido (AAAA-MM), não no futuro.",
       "fieldPeriod": "Período a registar",
       "fieldDisposeDate": "Data do abate",
       "fieldProceeds": "Valor recebido (USD)",

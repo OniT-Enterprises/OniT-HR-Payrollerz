@@ -1,8 +1,15 @@
 /**
  * INSS Declaração de Remunerações (DR) Excel export.
  *
- * Mirrors the column layout of the official INSS template
- * (DR_global_VF.xlsx, segurancasocial.gov.tl → Formulários): employer
+ * PROVENANCE: the worker-row column layout mirrors ONLY the official INSS
+ * portal template (DR_global_VF.xlsx, published at segurancasocial.gov.tl →
+ * Formulários). It is deliberately NOT modeled on any client or accounting
+ * firm's internal workbook — matching the government's own template is a
+ * compliance requirement (portal upload), matching anyone else's would be
+ * copying. Everything outside the official column grid (the Resumo sheet,
+ * attribution) is Xefe's own presentation.
+ *
+ * Mirrors the column layout of the official INSS template: employer
  * identification block, reference period, then one row per worker in the
  * template's column positions (3–29). Public-function-only columns
  * (Cargo/Categoria/Grau/Escalão/Carreira) are left blank for private-sector
@@ -235,9 +242,16 @@ export function buildInssDrWorkbook(ret: MonthlyINSSReturn, options: InssDrExpor
   }
 
   // ---------- Sheet 2: Resumo ----------
+  // Xefe's own summary sheet (not part of the official template) — branded.
   const resumo = wb.addWorksheet('Resumo');
-  resumo.getCell('B1').value = 'DECLARAÇÃO DE REMUNERAÇÕES - RESUMO';
-  resumo.getCell('B1').font = { bold: true, size: 14 };
+  resumo.mergeCells('B1:E1');
+  resumo.getCell('B1').value = 'DECLARAÇÃO DE REMUNERAÇÕES — RESUMO';
+  resumo.getCell('B1').font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  resumo.getCell('B1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6A9C29' } };
+  resumo.getCell('B1').alignment = { vertical: 'middle', indent: 1 };
+  resumo.getRow(1).height = 24;
+  resumo.getCell('B2').value = 'Preparado por Xefe (xefe.tl) — formatu ofisiál portál INSS';
+  resumo.getCell('B2').font = { size: 9, color: { argb: 'FF6B7280' } };
 
   const summaryRows: Array<[string, number | string]> = [
     ['Entidade Empregadora', ret.employerName],

@@ -48,7 +48,9 @@ export const DISPOSAL_GAIN_CODE = '4300';   // Other Income
 export const DISPOSAL_LOSS_CODE = '5900';   // Other Expenses
 export const CASH_BANK_CODE = '1120';
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+// Money math uses the decimal.js currency helpers (roundMoney/addMoney/…) so
+// depreciation reconciles to the cent like the rest of accounting — native
+// Math.round misrounds half-cent cases and drifts when accumulated.
 
 // ── period helpers ('YYYY-MM') ──────────────────────────────────────────────
 
@@ -75,18 +77,32 @@ export function periodsBetween(from: string, to: string): number {
 // ── schedule math ───────────────────────────────────────────────────────────
 
 export function depreciableAmount(asset: Pick<FixedAsset, 'acquisitionCost' | 'residualValue'>): number {
-  return round2(Math.max(0, asset.acquisitionCost - (asset.residualValue || 0)));
+  return maxMoney(0, subtractMoney(asset.acquisitionCost, asset.residualValue || 0));
 }
 
 /** Standard monthly charge (before the final-period true-up). */
 export function monthlyCharge(asset: Pick<FixedAsset, 'acquisitionCost' | 'residualValue' | 'usefulLifeMonths'>): number {
   if (!asset.usefulLifeMonths || asset.usefulLifeMonths <= 0) return 0;
-  return round2(depreciableAmount(asset) / asset.usefulLifeMonths);
+  return divideMoney(depreciableAmount(asset), asset.usefulLifeMonths);
 }
 
 /**
- * Charge for the Nth period of the schedule (1-based). The last period
- * absorbs rounding drift so the total is cent-exact.
+ * Cumulative depreciation through the end of the Nth period (1-based), CAPPED
+ * at the depreciable base. Capping is what guarantees accumulated depreciation
+ * never exceeds (cost − residual) and net book value never dips below residual,
+ * even when the rounded monthly charge rounds UP (standard × life > base).
+ */
+function cumulativeThrough(total: number, standard: number, index: number): number {
+  if (index <= 0) return 0;
+  return Math.min(total, multiplyMoney(standard, index));
+}
+
+/**
+ * Charge for the Nth period of the schedule (1-based). Derived as the increment
+ * of the capped cumulative curve, so every charge is >= 0, accumulated is
+ * monotonic and never overshoots the base, and the schedule sums EXACTLY to
+ * (cost − residual). When rounding-up makes the asset reach the base before the
+ * final month, the remaining periods simply charge 0 (never a negative true-up).
  */
 export function chargeForScheduleIndex(
   asset: Pick<FixedAsset, 'acquisitionCost' | 'residualValue' | 'usefulLifeMonths'>,
@@ -96,8 +112,11 @@ export function chargeForScheduleIndex(
   if (!life || life <= 0 || index1 < 1 || index1 > life) return 0;
   const total = depreciableAmount(asset);
   const standard = monthlyCharge(asset);
-  if (index1 < life) return standard;
-  return round2(total - standard * (life - 1));
+  // The final scheduled period lands exactly on the base (absorbs any drift);
+  // earlier periods follow the capped cumulative curve.
+  const cumThis = index1 < life ? cumulativeThrough(total, standard, index1) : total;
+  const cumPrev = cumulativeThrough(total, standard, index1 - 1);
+  return subtractMoney(cumThis, cumPrev);
 }
 
 export interface ScheduleRow {
@@ -116,12 +135,12 @@ export function buildSchedule(
   let accumulated = 0;
   for (let i = 1; i <= life; i++) {
     const charge = chargeForScheduleIndex(asset, i);
-    accumulated = round2(accumulated + charge);
+    accumulated = addMoney(accumulated, charge);
     rows.push({
       period: addPeriods(asset.depreciationStartPeriod, i - 1),
       charge,
       accumulated,
-      netBookValue: round2(asset.acquisitionCost - accumulated),
+      netBookValue: subtractMoney(asset.acquisitionCost, accumulated),
     });
   }
   return rows;
@@ -160,7 +179,7 @@ export function chargeDueThroughPeriod(
 
   let charge = 0;
   for (let i = alreadyPosted + 1; i <= reachable; i++) {
-    charge = round2(charge + chargeForScheduleIndex(asset, i));
+    charge = addMoney(charge, chargeForScheduleIndex(asset, i));
   }
   return { charge, fromIndex: alreadyPosted + 1, toIndex: reachable };
 }
@@ -177,6 +196,6 @@ export function disposalResult(
   asset: Pick<FixedAsset, 'acquisitionCost' | 'accumulatedDepreciation'>,
   proceeds: number,
 ): DisposalResult {
-  const nbv = round2(asset.acquisitionCost - (asset.accumulatedDepreciation || 0));
-  return { netBookValue: nbv, gainOrLoss: round2((proceeds || 0) - nbv) };
+  const nbv = subtractMoney(asset.acquisitionCost, asset.accumulatedDepreciation || 0);
+  return { netBookValue: nbv, gainOrLoss: subtractMoney(proceeds || 0, nbv) };
 }

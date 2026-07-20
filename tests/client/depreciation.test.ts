@@ -58,6 +58,54 @@ describe('straight-line math', () => {
     expect(schedule[35].netBookValue).toBe(0);
   });
 
+  it('never over-depreciates when the monthly charge rounds UP (accumulated caps at the base)', () => {
+    // cost 10 / life 60 → 10/60 = 0.1667 → 0.17 rounded UP. Naive
+    // total − standard×(life−1) = 10 − 0.17×59 = −0.03 (negative, and
+    // accumulated 10.03 > cost). The capped curve must instead land exactly on
+    // the base with no negative charge and NBV never below residual.
+    const cheap = {
+      acquisitionCost: 10,
+      residualValue: 0,
+      usefulLifeMonths: 60,
+      depreciationStartPeriod: '2026-01',
+    };
+    expect(monthlyCharge(cheap)).toBe(0.17); // rounds up
+    const schedule = buildSchedule(cheap);
+    expect(schedule).toHaveLength(60);
+    // No period is ever negative; accumulated is monotonic and never exceeds base.
+    let prevAcc = 0;
+    for (const row of schedule) {
+      expect(row.charge).toBeGreaterThanOrEqual(0);
+      expect(row.accumulated).toBeGreaterThanOrEqual(prevAcc);
+      expect(row.accumulated).toBeLessThanOrEqual(10);
+      expect(row.netBookValue).toBeGreaterThanOrEqual(0); // never below residual (0)
+      prevAcc = row.accumulated;
+    }
+    // Lands exactly on the depreciable base, and the schedule sums to it.
+    expect(schedule[59].accumulated).toBe(10);
+    expect(schedule[59].netBookValue).toBe(0);
+    const sum = schedule.reduce((s, r) => s + r.charge, 0);
+    expect(Math.round(sum * 100) / 100).toBe(10);
+    // The final scheduled charge is 0 here (base reached early), never negative.
+    expect(chargeForScheduleIndex(cheap, 60)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('round-up case on a furniture-life asset also caps cleanly ($37 / 96mo)', () => {
+    const chair = {
+      acquisitionCost: 37,
+      residualValue: 0,
+      usefulLifeMonths: 96,
+      depreciationStartPeriod: '2026-01',
+    };
+    const schedule = buildSchedule(chair);
+    for (const row of schedule) {
+      expect(row.charge).toBeGreaterThanOrEqual(0);
+      expect(row.accumulated).toBeLessThanOrEqual(37);
+    }
+    expect(schedule[95].accumulated).toBe(37);
+    expect(schedule[95].netBookValue).toBe(0);
+  });
+
   it('never depreciates land (life 0)', () => {
     const land = { acquisitionCost: 50000, residualValue: 0, usefulLifeMonths: 0, depreciationStartPeriod: '2026-01' };
     expect(monthlyCharge(land)).toBe(0);

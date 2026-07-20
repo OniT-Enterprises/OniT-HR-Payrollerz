@@ -1,9 +1,10 @@
 # Xefe Marketing Design Language
 
 _Last updated: 2026-07-19. Scope: the PUBLIC pages — `/`, `/how-it-works`,
-`/pricing`, `/accountants`, legal pages. The authenticated app is governed by
-`STYLE_GUIDE.md` (calm, no gradients); this document covers the one place
-drama is allowed. Read both before touching public pages._
+`/engine`, `/pricing`, `/accountants`, legal pages. The authenticated app is
+governed by `STYLE_GUIDE.md` (calm, no gradients); this document covers the one
+place drama is allowed. Read both before touching public pages, and
+`docs/PUBLIC_SITE.md` for routing/locales/SEO plumbing._
 
 Format inspired by the design-md project
 (github.com/Khalidabdi1/design-ai); reference systems studied: Gusto, Mercury,
@@ -39,10 +40,11 @@ illustration — that stays our signature.
 | Panels | `white/[0.025–0.04]` | Cards; never pure gray fills |
 
 **The per-page accent system is load-bearing**: Home = gold, How-it-works =
-lime, For-accountants = sky, Pricing = gold-minimal. Accent drives the hero
-eyebrow chip, the H1 gradient line, the section-nav strip dot, and section
-eyebrows — nothing else. One accent per page; never mix two accents in one
-component.
+lime, The-engine = gold, For-accountants = sky, Security = sky,
+Pricing = gold-minimal. Accent
+drives the hero eyebrow chip, the H1 gradient line, the section-nav strip dot,
+and section eyebrows — nothing else. One accent per page; never mix two accents
+in one component.
 
 ## 3. Typography
 

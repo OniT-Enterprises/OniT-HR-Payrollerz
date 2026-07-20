@@ -43,6 +43,7 @@ const ROUTES: RouteMeta[] = [
   seoConfig.pricing,
   seoConfig.accountantPartners,
   seoConfig.engine,
+  seoConfig.security,
   seoConfig.signup,
   {
     title: "Privacy Policy",

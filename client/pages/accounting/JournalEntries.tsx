@@ -105,15 +105,24 @@ const JOURNAL_SOURCE_OPTIONS: Array<{
   { value: "bill", labelKey: "accounting.journalEntries.sourceBill" },
   { value: "payment", labelKey: "accounting.journalEntries.sourcePayment" },
   { value: "receipt", labelKey: "accounting.journalEntries.sourceReceipt" },
-  { value: "adjustment", labelKey: "accounting.journalEntries.sourceAdjustment" },
+  {
+    value: "adjustment",
+    labelKey: "accounting.journalEntries.sourceAdjustment",
+  },
   { value: "recurring", labelKey: "accounting.journalEntries.sourceRecurring" },
+  {
+    value: "depreciation",
+    labelKey: "accounting.journalEntries.sourceDepreciation",
+  },
   { value: "closing", labelKey: "accounting.journalEntries.sourceClosing" },
 ];
 const JOURNAL_SOURCE_FILTERS = new Set(
   JOURNAL_SOURCE_OPTIONS.map((option) => option.value),
 );
 
-const isJournalSourceFilter = (value: string | null): value is JournalEntrySource =>
+const isJournalSourceFilter = (
+  value: string | null,
+): value is JournalEntrySource =>
   value !== null && JOURNAL_SOURCE_FILTERS.has(value as JournalEntrySource);
 
 export default function JournalEntries() {
@@ -122,7 +131,8 @@ export default function JournalEntries() {
   const { user } = useAuth();
   const { canManage, session } = useTenant();
   const [showRecurringPanel, setShowRecurringPanel] = useState(false);
-  const [makeRecurringEntry, setMakeRecurringEntry] = useState<JournalEntry | null>(null);
+  const [makeRecurringEntry, setMakeRecurringEntry] =
+    useState<JournalEntry | null>(null);
   const canManageTenant = canManage();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -134,9 +144,12 @@ export default function JournalEntries() {
     (option) => option.value === sourceFilter,
   )?.labelKey;
   const [searchTerm, setSearchTerm] = useState("");
-  const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+  const [yearFilter, setYearFilter] = useState(
+    new Date().getFullYear().toString(),
+  );
   const fiscalYear = parseInt(yearFilter, 10);
-  const statusQuery = statusFilter !== "all" ? statusFilter as JournalEntryStatus : undefined;
+  const statusQuery =
+    statusFilter !== "all" ? (statusFilter as JournalEntryStatus) : undefined;
   const sourceQuery = sourceFilter !== "all" ? sourceFilter : undefined;
 
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -148,38 +161,63 @@ export default function JournalEntries() {
   const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(
     canManageTenant && showAddDialog,
   );
-  const activeAccounts = useMemo(() => accounts.filter(a => a.isActive), [accounts]);
-  const paginatedEntriesQuery = usePaginatedJournalEntries({
-    fiscalYear,
-    status: statusQuery,
-    source: sourceQuery,
-    pageSize: 100,
-  }, !isSearching);
-  const { data: searchEntries = [], isLoading: loadingSearchEntries } = useJournalEntries({
-    fiscalYear,
-    status: statusQuery,
-    source: sourceQuery,
-    maxResults: SEARCH_FETCH_LIMIT,
-  }, isSearching);
-  const { data: summary, isLoading: loadingSummary } = useJournalEntrySummary(fiscalYear);
+  const activeAccounts = useMemo(
+    () => accounts.filter((a) => a.isActive),
+    [accounts],
+  );
+  const paginatedEntriesQuery = usePaginatedJournalEntries(
+    {
+      fiscalYear,
+      status: statusQuery,
+      source: sourceQuery,
+      pageSize: 100,
+    },
+    !isSearching,
+  );
+  const { data: searchEntries = [], isLoading: loadingSearchEntries } =
+    useJournalEntries(
+      {
+        fiscalYear,
+        status: statusQuery,
+        source: sourceQuery,
+        maxResults: SEARCH_FETCH_LIMIT,
+      },
+      isSearching,
+    );
+  const { data: summary, isLoading: loadingSummary } =
+    useJournalEntrySummary(fiscalYear);
   const createEntryMutation = useCreateJournalEntry();
 
-  const entries = isSearching
-    ? searchEntries
-    : paginatedEntriesQuery.entries;
+  const entries = isSearching ? searchEntries : paginatedEntriesQuery.entries;
   const loadingEntries = isSearching
     ? loadingSearchEntries
     : paginatedEntriesQuery.isLoading;
 
   // Expanded entries state
-  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(
+    new Set(),
+  );
 
   // New entry form
   const [entryDate, setEntryDate] = useState(getTodayTL());
   const [entryDescription, setEntryDescription] = useState("");
   const [entryLines, setEntryLines] = useState<EntryLineForm[]>([
-    { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
-    { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+    {
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      debit: "",
+      credit: "",
+      description: "",
+    },
+    {
+      accountId: "",
+      accountCode: "",
+      accountName: "",
+      debit: "",
+      credit: "",
+      description: "",
+    },
   ]);
   const handledNewAction = useRef(false);
   const submitInFlight = useRef(false);
@@ -207,8 +245,22 @@ export default function JournalEntries() {
       setEntryDate(getTodayTL());
       setEntryDescription("");
       setEntryLines([
-        { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
-        { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+        {
+          accountId: "",
+          accountCode: "",
+          accountName: "",
+          debit: "",
+          credit: "",
+          description: "",
+        },
+        {
+          accountId: "",
+          accountCode: "",
+          accountName: "",
+          debit: "",
+          credit: "",
+          description: "",
+        },
       ]);
       setShowAddDialog(true);
 
@@ -266,11 +318,11 @@ export default function JournalEntries() {
   const formTotals = useMemo(() => {
     const totalDebit = entryLines.reduce(
       (sum, line) => sum + (parseFloat(line.debit) || 0),
-      0
+      0,
     );
     const totalCredit = entryLines.reduce(
       (sum, line) => sum + (parseFloat(line.credit) || 0),
-      0
+      0,
     );
     const difference = Math.abs(totalDebit - totalCredit);
     const isBalanced = difference < 0.01;
@@ -310,18 +362,33 @@ export default function JournalEntries() {
   // Source badge
   const getSourceBadge = (source: JournalEntry["source"] | undefined) => {
     if (!source) {
-      return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">{t("accounting.journalEntries.sourceManual")}</Badge>;
+      return (
+        <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+          {t("accounting.journalEntries.sourceManual")}
+        </Badge>
+      );
     }
     const colors: Record<string, string> = {
       manual: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-      payroll: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      invoice: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-      adjustment: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-      opening: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      payroll:
+        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      invoice:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+      adjustment:
+        "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+      opening:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      recurring:
+        "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
+      depreciation:
+        "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
       expense: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      revenue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-      receipt: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
-      payment: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+      revenue:
+        "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
+      receipt:
+        "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
+      payment:
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
     };
 
     const sourceLabels: Record<string, string> = {
@@ -334,11 +401,19 @@ export default function JournalEntries() {
       revenue: t("accounting.journalEntries.sourceRevenue"),
       receipt: t("accounting.journalEntries.sourceReceipt"),
       payment: t("accounting.journalEntries.sourcePayment"),
+      recurring: t("accounting.journalEntries.sourceRecurring"),
+      depreciation: t("accounting.journalEntries.sourceDepreciation"),
     };
 
     return (
-      <Badge className={colors[source] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"}>
-        {sourceLabels[source] || source.charAt(0).toUpperCase() + source.slice(1)}
+      <Badge
+        className={
+          colors[source] ||
+          "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+        }
+      >
+        {sourceLabels[source] ||
+          source.charAt(0).toUpperCase() + source.slice(1)}
       </Badge>
     );
   };
@@ -347,7 +422,14 @@ export default function JournalEntries() {
   const addLine = () => {
     setEntryLines([
       ...entryLines,
-      { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+      {
+        accountId: "",
+        accountCode: "",
+        accountName: "",
+        debit: "",
+        credit: "",
+        description: "",
+      },
     ]);
   };
 
@@ -365,7 +447,11 @@ export default function JournalEntries() {
   };
 
   // Update line
-  const updateLine = (index: number, field: keyof EntryLineForm, value: string) => {
+  const updateLine = (
+    index: number,
+    field: keyof EntryLineForm,
+    value: string,
+  ) => {
     const newLines = [...entryLines];
     newLines[index] = { ...newLines[index], [field]: value };
 
@@ -486,8 +572,22 @@ export default function JournalEntries() {
     setEntryDate(getTodayTL());
     setEntryDescription("");
     setEntryLines([
-      { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
-      { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
+      {
+        accountId: "",
+        accountCode: "",
+        accountName: "",
+        debit: "",
+        credit: "",
+        description: "",
+      },
+      {
+        accountId: "",
+        accountCode: "",
+        accountName: "",
+        debit: "",
+        credit: "",
+        description: "",
+      },
     ]);
   };
 
@@ -501,7 +601,9 @@ export default function JournalEntries() {
   const handleReverse = (entry: JournalEntry) => {
     if (!canManageTenant) return;
     setEntryDate(getTodayTL());
-    setEntryDescription(`Reversal of ${entry.entryNumber}: ${entry.description}`);
+    setEntryDescription(
+      `Reversal of ${entry.entryNumber}: ${entry.description}`,
+    );
     setEntryLines(
       entry.lines.map((line) => ({
         accountId: line.accountId,
@@ -510,7 +612,7 @@ export default function JournalEntries() {
         debit: line.credit > 0 ? line.credit.toString() : "",
         credit: line.debit > 0 ? line.debit.toString() : "",
         description: line.description || "",
-      }))
+      })),
     );
     setShowAddDialog(true);
   };
@@ -558,7 +660,10 @@ export default function JournalEntries() {
               <CardContent>
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="border rounded-lg overflow-hidden bg-card">
+                    <div
+                      key={i}
+                      className="border rounded-lg overflow-hidden bg-card"
+                    >
                       <div className="px-4 py-3 flex items-center gap-4">
                         <Skeleton className="h-4 w-4 shrink-0" />
                         <div className="flex-1 grid grid-cols-12 gap-4 items-center">
@@ -603,531 +708,691 @@ export default function JournalEntries() {
           subtitle={t("accounting.journalEntries.subtitle")}
           icon={SquarePen}
           iconColor="text-orange-500"
-          actions={canManageTenant ? (
-            <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowRecurringPanel(true)}
-            >
-              <Repeat className="h-4 w-4 mr-2" />
-              {t("accounting.recurring.title")}
-            </Button>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button onClick={resetForm} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("accounting.journalEntries.manualEntry")}
+          actions={
+            canManageTenant ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowRecurringPanel(true)}
+                >
+                  <Repeat className="h-4 w-4 mr-2" />
+                  {t("accounting.recurring.title")}
                 </Button>
-              </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{t("accounting.journalEntries.createEntry")}</DialogTitle>
-                    <DialogDescription>
-                      {t("accounting.journalEntries.createEntryDesc")}
-                    </DialogDescription>
-                  </DialogHeader>
+                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                  <DialogTrigger asChild>
+                    <Button onClick={resetForm} variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t("accounting.journalEntries.manualEntry")}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {t("accounting.journalEntries.createEntry")}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {t("accounting.journalEntries.createEntryDesc")}
+                      </DialogDescription>
+                    </DialogHeader>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="entry-date">
+                            {t("accounting.journalEntries.date")}
+                          </Label>
+                          <Input
+                            id="entry-date"
+                            type="date"
+                            value={entryDate}
+                            onChange={(e) => setEntryDate(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="description">
+                            {t("accounting.journalEntries.descriptionLabel")}
+                          </Label>
+                          <Input
+                            id="description"
+                            value={entryDescription}
+                            onChange={(e) =>
+                              setEntryDescription(e.target.value)
+                            }
+                            placeholder={t(
+                              "accounting.journalEntries.descriptionPlaceholder",
+                            )}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Entry Lines */}
                       <div>
-                        <Label htmlFor="entry-date">{t("accounting.journalEntries.date")}</Label>
-                        <Input
-                          id="entry-date"
-                          type="date"
-                          value={entryDate}
-                          onChange={(e) => setEntryDate(e.target.value)}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="description">{t("accounting.journalEntries.descriptionLabel")}</Label>
-                        <Input
-                          id="description"
-                          value={entryDescription}
-                          onChange={(e) => setEntryDescription(e.target.value)}
-                          placeholder={t("accounting.journalEntries.descriptionPlaceholder")}
-                          required
-                        />
-                      </div>
-                    </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <Label>
+                            {t("accounting.journalEntries.entryLines")}
+                          </Label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={addLine}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            {t("accounting.journalEntries.addLine")}
+                          </Button>
+                        </div>
 
-                    {/* Entry Lines */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Label>{t("accounting.journalEntries.entryLines")}</Label>
-                        <Button type="button" variant="outline" size="sm" onClick={addLine}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          {t("accounting.journalEntries.addLine")}
-                        </Button>
-                      </div>
-
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-64">{t("accounting.journalEntries.account")}</TableHead>
-                              <TableHead className="w-32">{t("accounting.journalEntries.debit")}</TableHead>
-                              <TableHead className="w-32">{t("accounting.journalEntries.credit")}</TableHead>
-                              <TableHead>{t("accounting.journalEntries.description")}</TableHead>
-                              <TableHead className="w-12"></TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {entryLines.map((line, index) => (
-                              <TableRow key={index}>
-                                <TableCell>
-                                  <Select
-                                    value={line.accountId}
-                                    onValueChange={(v) => updateLine(index, "accountId", v)}
-                                  >
-                                    <SelectTrigger className="w-full" disabled={loadingAccounts}>
-                                      <SelectValue placeholder={loadingAccounts ? t("common.loading") : t("accounting.journalEntries.selectAccount")} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {loadingAccounts && (
-                                        <div className="px-2 py-2 text-sm text-muted-foreground">
-                                          {t("common.loading")}
-                                        </div>
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-64">
+                                  {t("accounting.journalEntries.account")}
+                                </TableHead>
+                                <TableHead className="w-32">
+                                  {t("accounting.journalEntries.debit")}
+                                </TableHead>
+                                <TableHead className="w-32">
+                                  {t("accounting.journalEntries.credit")}
+                                </TableHead>
+                                <TableHead>
+                                  {t("accounting.journalEntries.description")}
+                                </TableHead>
+                                <TableHead className="w-12"></TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {entryLines.map((line, index) => (
+                                <TableRow key={index}>
+                                  <TableCell>
+                                    <Select
+                                      value={line.accountId}
+                                      onValueChange={(v) =>
+                                        updateLine(index, "accountId", v)
+                                      }
+                                    >
+                                      <SelectTrigger
+                                        className="w-full"
+                                        disabled={loadingAccounts}
+                                      >
+                                        <SelectValue
+                                          placeholder={
+                                            loadingAccounts
+                                              ? t("common.loading")
+                                              : t(
+                                                  "accounting.journalEntries.selectAccount",
+                                                )
+                                          }
+                                        />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {loadingAccounts && (
+                                          <div className="px-2 py-2 text-sm text-muted-foreground">
+                                            {t("common.loading")}
+                                          </div>
+                                        )}
+                                        {activeAccounts.map((acc) => (
+                                          <SelectItem
+                                            key={acc.id}
+                                            value={acc.id!}
+                                          >
+                                            {acc.code} - {acc.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={line.debit}
+                                      onChange={(e) =>
+                                        updateLine(
+                                          index,
+                                          "debit",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="0.00"
+                                      className="text-right"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={line.credit}
+                                      onChange={(e) =>
+                                        updateLine(
+                                          index,
+                                          "credit",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="0.00"
+                                      className="text-right"
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Input
+                                      value={line.description}
+                                      onChange={(e) =>
+                                        updateLine(
+                                          index,
+                                          "description",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={t("common.optional")}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeLine(index)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                              {/* Totals row */}
+                              <TableRow className="bg-card border-t font-semibold">
+                                <TableCell className="text-foreground">
+                                  {t("accounting.journalEntries.totals")}
+                                </TableCell>
+                                <TableCell className="text-right text-foreground">
+                                  {formatCurrencyTL(formTotals.totalDebit)}
+                                </TableCell>
+                                <TableCell className="text-right text-foreground">
+                                  {formatCurrencyTL(formTotals.totalCredit)}
+                                </TableCell>
+                                <TableCell colSpan={2}>
+                                  {formTotals.isBalanced ? (
+                                    <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                      <CheckCircle className="h-4 w-4" />
+                                      {t("accounting.journalEntries.balanced")}
+                                    </span>
+                                  ) : (
+                                    <span className="text-red-600 dark:text-red-400">
+                                      {t(
+                                        "accounting.journalEntries.difference",
+                                        {
+                                          amount: formatCurrencyTL(
+                                            formTotals.difference,
+                                          ),
+                                        },
                                       )}
-                                      {activeAccounts.map((acc) => (
-                                        <SelectItem key={acc.id} value={acc.id!}>
-                                          {acc.code} - {acc.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={line.debit}
-                                    onChange={(e) => updateLine(index, "debit", e.target.value)}
-                                    placeholder="0.00"
-                                    className="text-right"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={line.credit}
-                                    onChange={(e) => updateLine(index, "credit", e.target.value)}
-                                    placeholder="0.00"
-                                    className="text-right"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Input
-                                    value={line.description}
-                                    onChange={(e) =>
-                                      updateLine(index, "description", e.target.value)
-                                    }
-                                    placeholder={t("common.optional")}
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeLine(index)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
+                                    </span>
+                                  )}
                                 </TableCell>
                               </TableRow>
-                            ))}
-                            {/* Totals row */}
-                            <TableRow className="bg-card border-t font-semibold">
-                              <TableCell className="text-foreground">{t("accounting.journalEntries.totals")}</TableCell>
-                              <TableCell className="text-right text-foreground">
-                                {formatCurrencyTL(formTotals.totalDebit)}
-                              </TableCell>
-                              <TableCell className="text-right text-foreground">
-                                {formatCurrencyTL(formTotals.totalCredit)}
-                              </TableCell>
-                              <TableCell colSpan={2}>
-                                {formTotals.isBalanced ? (
-                                  <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                                    <CheckCircle className="h-4 w-4" />
-                                    {t("accounting.journalEntries.balanced")}
-                                  </span>
-                                ) : (
-                                  <span className="text-red-600 dark:text-red-400">
-                                    {t("accounting.journalEntries.difference", { amount: formatCurrencyTL(formTotals.difference) })}
-                                  </span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowAddDialog(false)}
+                          disabled={createEntryMutation.isPending}
+                        >
+                          {t("accounting.journalEntries.cancel")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => handleSubmit(true)}
+                          disabled={createEntryMutation.isPending}
+                        >
+                          {t("accounting.journalEntries.saveAsDraft")}
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleSubmit(false)}
+                          disabled={
+                            createEntryMutation.isPending ||
+                            !formTotals.isBalanced
+                          }
+                        >
+                          {createEntryMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              {t("accounting.journalEntries.posting")}
+                            </>
+                          ) : (
+                            t("accounting.journalEntries.postEntry")
+                          )}
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowAddDialog(false)}
-                        disabled={createEntryMutation.isPending}
-                      >
-                        {t("accounting.journalEntries.cancel")}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => handleSubmit(true)}
-                        disabled={createEntryMutation.isPending}
-                      >
-                        {t("accounting.journalEntries.saveAsDraft")}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => handleSubmit(false)}
-                        disabled={createEntryMutation.isPending || !formTotals.isBalanced}
-                      >
-                        {createEntryMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            {t("accounting.journalEntries.posting")}
-                          </>
-                        ) : (
-                          t("accounting.journalEntries.postEntry")
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-            </Dialog>
-            </div>
-          ) : undefined}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : undefined
+          }
         />
         <MoreDetailsSection className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{t("accounting.journalEntries.totalEntries")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("accounting.journalEntries.totalEntries")}
+                </p>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.forYear", { year: yearFilter })}</p>
+                <p className="text-xs text-muted-foreground/70">
+                  {t("accounting.journalEntries.forYear", { year: yearFilter })}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-green-600 dark:text-green-400">{t("accounting.journalEntries.posted")}</p>
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  {t("accounting.journalEntries.posted")}
+                </p>
                 <p className="text-2xl font-bold">{stats.posted}</p>
-                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.entriesFinalized")}</p>
+                <p className="text-xs text-muted-foreground/70">
+                  {t("accounting.journalEntries.entriesFinalized")}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">{t("accounting.journalEntries.drafts")}</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                  {t("accounting.journalEntries.drafts")}
+                </p>
                 <p className="text-2xl font-bold">{stats.drafts}</p>
-                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.pendingReview")}</p>
+                <p className="text-xs text-muted-foreground/70">
+                  {t("accounting.journalEntries.pendingReview")}
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">{t("accounting.journalEntries.totalDebits")}</p>
-                <p className="text-2xl font-bold">{formatCurrencyTL(stats.totalDebit)}</p>
-                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.postedEntriesFor", { year: yearFilter })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("accounting.journalEntries.totalDebits")}
+                </p>
+                <p className="text-2xl font-bold">
+                  {formatCurrencyTL(stats.totalDebit)}
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  {t("accounting.journalEntries.postedEntriesFor", {
+                    year: yearFilter,
+                  })}
+                </p>
               </CardContent>
             </Card>
           </div>
         </MoreDetailsSection>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder={t("accounting.journalEntries.searchPlaceholder")}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                <div className="w-36">
-                  <Select value={sourceFilter} onValueChange={handleSourceFilterChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("accounting.journalEntries.allSources")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("accounting.journalEntries.allSources")}</SelectItem>
-                      {JOURNAL_SOURCE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-32">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("accounting.journalEntries.allStatuses")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("accounting.journalEntries.allStatuses")}</SelectItem>
-                      <SelectItem value="posted">{t("accounting.journalEntries.statusPosted")}</SelectItem>
-                      <SelectItem value="draft">{t("accounting.journalEntries.statusDraft")}</SelectItem>
-                      <SelectItem value="void">{t("accounting.journalEntries.statusVoid")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="w-28">
-                  <Select value={yearFilter} onValueChange={setYearFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
-                        <SelectItem key={y} value={y.toString()}>
-                          {y}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t(
+                      "accounting.journalEntries.searchPlaceholder",
+                    )}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="w-36">
+                <Select
+                  value={sourceFilter}
+                  onValueChange={handleSourceFilterChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("accounting.journalEntries.allSources")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("accounting.journalEntries.allSources")}
+                    </SelectItem>
+                    {JOURNAL_SOURCE_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {t(option.labelKey)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-32">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("accounting.journalEntries.allStatuses")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("accounting.journalEntries.allStatuses")}
+                    </SelectItem>
+                    <SelectItem value="posted">
+                      {t("accounting.journalEntries.statusPosted")}
+                    </SelectItem>
+                    <SelectItem value="draft">
+                      {t("accounting.journalEntries.statusDraft")}
+                    </SelectItem>
+                    <SelectItem value="void">
+                      {t("accounting.journalEntries.statusVoid")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-28">
+                <Select value={yearFilter} onValueChange={setYearFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(
+                      { length: 5 },
+                      (_, i) => new Date().getFullYear() - i,
+                    ).map((y) => (
+                      <SelectItem key={y} value={y.toString()}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Entries Table - Grouped by Journal Entry */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("accounting.journalEntries.journalEntriesLabel")}</CardTitle>
-              <CardDescription>
-                {isSearching
-                  ? t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })
-                  : `${t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}${stats.total > filteredEntries.length ? ` • Loaded ${filteredEntries.length} of ${stats.total}` : ""}`}
-                {sourceFilterLabel && ` • ${t("accounting.journalEntries.source")}: ${t(sourceFilterLabel)}`}
-                {statusFilter !== "all" && ` • ${t("accounting.journalEntries.statusLabel")}: ${statusFilter}`}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {filteredEntries.length === 0 ? (
-                <div className="text-center py-12">
-                  <img src="/images/illustrations/xefe-card-accounting.webp" alt="No journal entries yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
-                  <p className="text-muted-foreground mb-2">{t("accounting.journalEntries.noEntriesFound")}</p>
-                  <p className="text-sm text-muted-foreground/70 mb-4">
-                    {t("accounting.journalEntries.noEntriesDesc")}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredEntries.map((entry) => {
-                    const isExpanded = expandedEntries.has(entry.id!);
-                    const isLocked = isLockedEntry(entry.source);
-                    const isBalanced = Math.abs(entry.totalDebit - entry.totalCredit) < 0.01;
+        {/* Entries Table - Grouped by Journal Entry */}
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {t("accounting.journalEntries.journalEntriesLabel")}
+            </CardTitle>
+            <CardDescription>
+              {isSearching
+                ? t("accounting.journalEntries.showingEntries", {
+                    count: filteredEntries.length,
+                    year: yearFilter,
+                  })
+                : `${t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}${stats.total > filteredEntries.length ? ` • Loaded ${filteredEntries.length} of ${stats.total}` : ""}`}
+              {sourceFilterLabel &&
+                ` • ${t("accounting.journalEntries.source")}: ${t(sourceFilterLabel)}`}
+              {statusFilter !== "all" &&
+                ` • ${t("accounting.journalEntries.statusLabel")}: ${statusFilter}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredEntries.length === 0 ? (
+              <div className="text-center py-12">
+                <img
+                  src="/images/illustrations/xefe-card-accounting.webp"
+                  alt="No journal entries yet"
+                  className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg"
+                />
+                <p className="text-muted-foreground mb-2">
+                  {t("accounting.journalEntries.noEntriesFound")}
+                </p>
+                <p className="text-sm text-muted-foreground/70 mb-4">
+                  {t("accounting.journalEntries.noEntriesDesc")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredEntries.map((entry) => {
+                  const isExpanded = expandedEntries.has(entry.id!);
+                  const isLocked = isLockedEntry(entry.source);
+                  const isBalanced =
+                    Math.abs(entry.totalDebit - entry.totalCredit) < 0.01;
 
-                    return (
-                      <Collapsible
-                        key={entry.id}
-                        open={isExpanded}
-                        onOpenChange={() => toggleExpanded(entry.id!)}
-                      >
-                        {/* Entry Header Row */}
-                        <div className="border rounded-lg overflow-hidden bg-card hover:bg-muted/30 transition-colors">
-                          <CollapsibleTrigger asChild>
-                            <button className="w-full px-4 py-3 flex items-center gap-4 text-left">
-                              <ChevronRight
-                                className={`h-4 w-4 text-muted-foreground transition-transform ${
-                                  isExpanded ? "rotate-90" : ""
-                                }`}
-                              />
-                              <div className="flex-1 grid grid-cols-12 gap-4 items-center">
-                                {/* Entry Number + Lock */}
-                                <div className="col-span-2 flex items-center gap-2">
-                                  <code className="font-mono text-sm font-medium">
-                                    {entry.entryNumber}
-                                  </code>
-                                  {isLocked && (
-                                    <span title={t("accounting.journalEntries.linkedPayroll")}>
-                                      <Lock className="h-3 w-3 text-blue-500" />
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Date */}
-                                <div className="col-span-1 text-sm text-muted-foreground">
-                                  {formatDateTL(entry.date)}
-                                </div>
-
-                                {/* Description */}
-                                <div className="col-span-4">
-                                  <span className="text-sm font-medium line-clamp-1">
-                                    {entry.description}
-                                  </span>
-                                </div>
-
-                                {/* Source */}
-                                <div className="col-span-1">
-                                  {getSourceBadge(entry.source)}
-                                </div>
-
-                                {/* Balanced Totals */}
-                                <div className="col-span-2 text-right">
-                                  <span className="font-mono text-sm font-semibold">
-                                    {formatCurrencyTL(entry.totalDebit)}
-                                  </span>
-                                  {isBalanced ? (
-                                    <CheckCircle className="h-3 w-3 text-green-500 inline ml-1" />
-                                  ) : (
-                                    <AlertCircle className="h-3 w-3 text-red-500 inline ml-1" />
-                                  )}
-                                </div>
-
-                                {/* Status */}
-                                <div className="col-span-2">
-                                  {getStatusBadge(entry.status)}
-                                </div>
-                              </div>
-                            </button>
-                          </CollapsibleTrigger>
-
-                          {/* Expanded Lines */}
-                          <CollapsibleContent>
-                            <div className="border-t bg-muted/20">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="hover:bg-transparent">
-                                    <TableHead className="w-16"></TableHead>
-                                    <TableHead>{t("accounting.journalEntries.account")}</TableHead>
-                                    <TableHead className="text-right w-32">{t("accounting.journalEntries.debit")}</TableHead>
-                                    <TableHead className="text-right w-32">{t("accounting.journalEntries.credit")}</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {entry.lines.map((line, index) => (
-                                    <TableRow key={index} className="hover:bg-muted/30">
-                                      <TableCell></TableCell>
-                                      <TableCell>
-                                        <div className="flex items-center gap-2">
-                                          <code className="text-xs text-muted-foreground">
-                                            {line.accountCode}
-                                          </code>
-                                          <span className="text-sm">{line.accountName}</span>
-                                        </div>
-                                        {line.description && (
-                                          <p className="text-xs text-muted-foreground mt-0.5 pl-12">
-                                            {line.description}
-                                          </p>
-                                        )}
-                                      </TableCell>
-                                      <TableCell className="text-right font-mono text-sm tabular-nums">
-                                        {line.debit > 0 ? formatCurrencyTL(line.debit) : "-"}
-                                      </TableCell>
-                                      <TableCell className="text-right font-mono text-sm tabular-nums">
-                                        {line.credit > 0 ? formatCurrencyTL(line.credit) : "-"}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                  {/* Totals Row */}
-                                  <TableRow className="bg-muted/50 font-semibold border-t">
-                                    <TableCell></TableCell>
-                                    <TableCell className="text-sm">{t("accounting.journalEntries.total")}</TableCell>
-                                    <TableCell className="text-right font-mono text-sm tabular-nums">
-                                      {formatCurrencyTL(entry.totalDebit)}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono text-sm tabular-nums">
-                                      {formatCurrencyTL(entry.totalCredit)}
-                                    </TableCell>
-                                  </TableRow>
-                                </TableBody>
-                              </Table>
-
-                              {/* Entry metadata footer */}
-                              <div className="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground border-t">
-                                <div className="flex items-center gap-4">
-                                  {isLocked && (
-                                    <span className="flex items-center gap-1">
-                                      <Lock className="h-3 w-3" />
-                                      {t("accounting.journalEntries.linkedPayroll")}
-                                    </span>
-                                  )}
-                                  {entry.sourceRef && (
-                                    <span>{t("accounting.journalEntries.reference", { ref: entry.sourceRef })}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {canManageTenant && entry.status === "posted" && !isLocked && (
-                                    <>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleReverse(entry);
-                                      }}
-                                      className="h-7 text-xs"
-                                    >
-                                      <RotateCcw className="h-3 w-3 mr-1" />
-                                      {t("accounting.journalEntries.reverseEntry")}
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setMakeRecurringEntry(entry);
-                                      }}
-                                      className="h-7 text-xs"
-                                    >
-                                      <Repeat className="h-3 w-3 mr-1" />
-                                      {t("accounting.recurring.makeRecurringAction")}
-                                    </Button>
-                                    </>
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      viewDetails(entry);
-                                    }}
-                                    className="h-7 text-xs"
+                  return (
+                    <Collapsible
+                      key={entry.id}
+                      open={isExpanded}
+                      onOpenChange={() => toggleExpanded(entry.id!)}
+                    >
+                      {/* Entry Header Row */}
+                      <div className="border rounded-lg overflow-hidden bg-card hover:bg-muted/30 transition-colors">
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full px-4 py-3 flex items-center gap-4 text-left">
+                            <ChevronRight
+                              className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                isExpanded ? "rotate-90" : ""
+                              }`}
+                            />
+                            <div className="flex-1 grid grid-cols-12 gap-4 items-center">
+                              {/* Entry Number + Lock */}
+                              <div className="col-span-2 flex items-center gap-2">
+                                <code className="font-mono text-sm font-medium">
+                                  {entry.entryNumber}
+                                </code>
+                                {isLocked && (
+                                  <span
+                                    title={t(
+                                      "accounting.journalEntries.linkedPayroll",
+                                    )}
                                   >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    {t("accounting.journalEntries.fullDetails")}
-                                  </Button>
-                                </div>
+                                    <Lock className="h-3 w-3 text-blue-500" />
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Date */}
+                              <div className="col-span-1 text-sm text-muted-foreground">
+                                {formatDateTL(entry.date)}
+                              </div>
+
+                              {/* Description */}
+                              <div className="col-span-4">
+                                <span className="text-sm font-medium line-clamp-1">
+                                  {entry.description}
+                                </span>
+                              </div>
+
+                              {/* Source */}
+                              <div className="col-span-1">
+                                {getSourceBadge(entry.source)}
+                              </div>
+
+                              {/* Balanced Totals */}
+                              <div className="col-span-2 text-right">
+                                <span className="font-mono text-sm font-semibold">
+                                  {formatCurrencyTL(entry.totalDebit)}
+                                </span>
+                                {isBalanced ? (
+                                  <CheckCircle className="h-3 w-3 text-green-500 inline ml-1" />
+                                ) : (
+                                  <AlertCircle className="h-3 w-3 text-red-500 inline ml-1" />
+                                )}
+                              </div>
+
+                              {/* Status */}
+                              <div className="col-span-2">
+                                {getStatusBadge(entry.status)}
                               </div>
                             </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    );
-                  })}
-                  {!isSearching && paginatedEntriesQuery.hasNextPage && (
-                    <div className="pt-4 flex justify-center">
-                      <Button
-                        variant="outline"
-                        onClick={() => paginatedEntriesQuery.fetchNextPage()}
-                        disabled={paginatedEntriesQuery.isFetchingNextPage}
-                      >
-                        {paginatedEntriesQuery.isFetchingNextPage ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Loading...
-                          </>
-                        ) : (
-                          "Load more"
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                          </button>
+                        </CollapsibleTrigger>
+
+                        {/* Expanded Lines */}
+                        <CollapsibleContent>
+                          <div className="border-t bg-muted/20">
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="hover:bg-transparent">
+                                  <TableHead className="w-16"></TableHead>
+                                  <TableHead>
+                                    {t("accounting.journalEntries.account")}
+                                  </TableHead>
+                                  <TableHead className="text-right w-32">
+                                    {t("accounting.journalEntries.debit")}
+                                  </TableHead>
+                                  <TableHead className="text-right w-32">
+                                    {t("accounting.journalEntries.credit")}
+                                  </TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {entry.lines.map((line, index) => (
+                                  <TableRow
+                                    key={index}
+                                    className="hover:bg-muted/30"
+                                  >
+                                    <TableCell></TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <code className="text-xs text-muted-foreground">
+                                          {line.accountCode}
+                                        </code>
+                                        <span className="text-sm">
+                                          {line.accountName}
+                                        </span>
+                                      </div>
+                                      {line.description && (
+                                        <p className="text-xs text-muted-foreground mt-0.5 pl-12">
+                                          {line.description}
+                                        </p>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                                      {line.debit > 0
+                                        ? formatCurrencyTL(line.debit)
+                                        : "-"}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                                      {line.credit > 0
+                                        ? formatCurrencyTL(line.credit)
+                                        : "-"}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                                {/* Totals Row */}
+                                <TableRow className="bg-muted/50 font-semibold border-t">
+                                  <TableCell></TableCell>
+                                  <TableCell className="text-sm">
+                                    {t("accounting.journalEntries.total")}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-sm tabular-nums">
+                                    {formatCurrencyTL(entry.totalDebit)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-sm tabular-nums">
+                                    {formatCurrencyTL(entry.totalCredit)}
+                                  </TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+
+                            {/* Entry metadata footer */}
+                            <div className="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground border-t">
+                              <div className="flex items-center gap-4">
+                                {isLocked && (
+                                  <span className="flex items-center gap-1">
+                                    <Lock className="h-3 w-3" />
+                                    {t(
+                                      "accounting.journalEntries.linkedPayroll",
+                                    )}
+                                  </span>
+                                )}
+                                {entry.sourceRef && (
+                                  <span>
+                                    {t("accounting.journalEntries.reference", {
+                                      ref: entry.sourceRef,
+                                    })}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {canManageTenant &&
+                                  entry.status === "posted" &&
+                                  !isLocked && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleReverse(entry);
+                                        }}
+                                        className="h-7 text-xs"
+                                      >
+                                        <RotateCcw className="h-3 w-3 mr-1" />
+                                        {t(
+                                          "accounting.journalEntries.reverseEntry",
+                                        )}
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMakeRecurringEntry(entry);
+                                        }}
+                                        className="h-7 text-xs"
+                                      >
+                                        <Repeat className="h-3 w-3 mr-1" />
+                                        {t(
+                                          "accounting.recurring.makeRecurringAction",
+                                        )}
+                                      </Button>
+                                    </>
+                                  )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    viewDetails(entry);
+                                  }}
+                                  className="h-7 text-xs"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  {t("accounting.journalEntries.fullDetails")}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                })}
+                {!isSearching && paginatedEntriesQuery.hasNextPage && (
+                  <div className="pt-4 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => paginatedEntriesQuery.fetchNextPage()}
+                      disabled={paginatedEntriesQuery.isFetchingNextPage}
+                    >
+                      {paginatedEntriesQuery.isFetchingNextPage ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        "Load more"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Details Dialog */}
@@ -1135,28 +1400,34 @@ export default function JournalEntries() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              {t("accounting.journalEntries.journalEntry", { number: selectedEntry?.entryNumber ?? "" })}
+              {t("accounting.journalEntries.journalEntry", {
+                number: selectedEntry?.entryNumber ?? "",
+              })}
             </DialogTitle>
-            <DialogDescription>
-              {selectedEntry?.description}
-            </DialogDescription>
+            <DialogDescription>{selectedEntry?.description}</DialogDescription>
           </DialogHeader>
 
           {selectedEntry && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.dateLabel")}</p>
+                  <p className="text-sm text-gray-500">
+                    {t("accounting.journalEntries.dateLabel")}
+                  </p>
                   <p className="font-medium">
                     {formatDateTL(selectedEntry.date)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.source")}</p>
+                  <p className="text-sm text-gray-500">
+                    {t("accounting.journalEntries.source")}
+                  </p>
                   <p>{getSourceBadge(selectedEntry.source)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.statusLabel")}</p>
+                  <p className="text-sm text-gray-500">
+                    {t("accounting.journalEntries.statusLabel")}
+                  </p>
                   <p>{getStatusBadge(selectedEntry.status)}</p>
                 </div>
               </div>
@@ -1165,9 +1436,15 @@ export default function JournalEntries() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("accounting.journalEntries.account")}</TableHead>
-                      <TableHead className="text-right">{t("accounting.journalEntries.debit")}</TableHead>
-                      <TableHead className="text-right">{t("accounting.journalEntries.credit")}</TableHead>
+                      <TableHead>
+                        {t("accounting.journalEntries.account")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("accounting.journalEntries.debit")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("accounting.journalEntries.credit")}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1179,19 +1456,25 @@ export default function JournalEntries() {
                             <span className="ml-2">{line.accountName}</span>
                           </div>
                           {line.description && (
-                            <p className="text-sm text-gray-500">{line.description}</p>
+                            <p className="text-sm text-gray-500">
+                              {line.description}
+                            </p>
                           )}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums">
                           {line.debit > 0 ? formatCurrencyTL(line.debit) : "-"}
                         </TableCell>
                         <TableCell className="text-right font-mono tabular-nums">
-                          {line.credit > 0 ? formatCurrencyTL(line.credit) : "-"}
+                          {line.credit > 0
+                            ? formatCurrencyTL(line.credit)
+                            : "-"}
                         </TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-muted/50 font-semibold">
-                      <TableCell>{t("accounting.journalEntries.total")}</TableCell>
+                      <TableCell>
+                        {t("accounting.journalEntries.total")}
+                      </TableCell>
                       <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(selectedEntry.totalDebit)}
                       </TableCell>
@@ -1205,7 +1488,9 @@ export default function JournalEntries() {
 
               {selectedEntry.sourceRef && (
                 <p className="text-sm text-gray-500">
-                  {t("accounting.journalEntries.reference", { ref: selectedEntry.sourceRef })}
+                  {t("accounting.journalEntries.reference", {
+                    ref: selectedEntry.sourceRef,
+                  })}
                 </p>
               )}
             </div>

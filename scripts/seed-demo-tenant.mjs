@@ -17,7 +17,7 @@ const db = getFirestore();
 const auth = getAuth();
 
 const TENANT_ID = 'demo-kafe-aroma';
-const COMPANY = 'Kafé Aroma Dili';
+const COMPANY = 'Kafé Knua Dili'; // fictional — never use a real Dili business name
 const OWNER_EMAIL = 'demo@xefe.tl';
 const OWNER_PASSWORD = 'XefeDemo2026!';
 const OWNER_NAME = 'Aderito Soares';
@@ -112,7 +112,7 @@ async function run() {
   // 6. Settings/config
   await db.doc(`tenants/${TENANT_ID}/settings/config`).set({
     companyDetails: {
-      legalName: COMPANY, tradingName: 'Kafé Aroma', tinNumber: '1009876-5',
+      legalName: COMPANY, tradingName: 'Kafé Knua', tinNumber: '1009876-5',
       registeredAddress: 'Rua de Lecidere, Dili', city: 'Dili', country: 'Timor-Leste',
       phone: '+670 7700 1234', email: OWNER_EMAIL,
     },
@@ -136,14 +136,14 @@ async function run() {
     await db.doc(`tenants/${TENANT_ID}/employees/${empId}`).set({
       personalInfo: {
         firstName: first, lastName: last,
-        email: `${first.toLowerCase()}.${last.toLowerCase().replace(/[^a-z]/g, '')}@kafearoma.tl`,
+        email: `${first.toLowerCase()}.${last.toLowerCase().replace(/[^a-z]/g, '')}@kafeknua.tl`,
         phone: `+670 77${10 + i} ${1000 + i * 7}`,
         address: 'Dili, Timor-Leste',
         nationality: 'Timorese',
       },
       jobDetails: {
         employeeId: empId, department: dept, position, hireDate: hire,
-        employmentType: 'Full-time', workLocation: 'Kafé Aroma, Lecidere', manager: i === 1 ? '' : 'EMP001',
+        employmentType: 'Full-time', workLocation: 'Kafé Knua, Lecidere', manager: i === 1 ? '' : 'EMP001',
       },
       compensation: { monthlySalary: salary, annualLeaveDays: 12, benefitsPackage: 'standard' },
       status: 'active',

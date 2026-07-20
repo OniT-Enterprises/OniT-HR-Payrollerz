@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, Repeat } from "lucide-react";
@@ -32,9 +34,9 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { recurringJournalService } from "@/services/recurringJournalService";
 import type { RecurringJournalTemplate } from "@/types/accounting";
 import { formatDateTL } from "@/lib/dateUtils";
+import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
-const money = (n: number) =>
-  `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (n: number) => formatCurrencyTL(n);
 
 export function RecurringJournalsPanel({
   tenantId,
@@ -51,7 +53,8 @@ export function RecurringJournalsPanel({
   const { toast } = useToast();
   const [templates, setTemplates] = useState<RecurringJournalTemplate[]>([]);
   const [loading, setLoading] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<RecurringJournalTemplate | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<RecurringJournalTemplate | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -73,16 +76,25 @@ export function RecurringJournalsPanel({
     if (open) void reload();
   }, [open, reload]);
 
-  const handleToggle = async (template: RecurringJournalTemplate, active: boolean) => {
+  const handleToggle = async (
+    template: RecurringJournalTemplate,
+    active: boolean,
+  ) => {
     if (!template.id) return;
     try {
       await recurringJournalService.setActive(tenantId, template.id, active);
       setTemplates((prev) =>
-        prev.map((item) => (item.id === template.id ? { ...item, active } : item)),
+        prev.map((item) =>
+          item.id === template.id ? { ...item, active } : item,
+        ),
       );
     } catch (error) {
       console.error("Failed to toggle recurring journal:", error);
-      toast({ title: t("common.error"), description: t("accounting.recurring.saveError"), variant: "destructive" });
+      toast({
+        title: t("common.error"),
+        description: t("accounting.recurring.saveError"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -90,11 +102,17 @@ export function RecurringJournalsPanel({
     if (!deleteTarget?.id) return;
     try {
       await recurringJournalService.remove(tenantId, deleteTarget.id);
-      setTemplates((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      setTemplates((prev) =>
+        prev.filter((item) => item.id !== deleteTarget.id),
+      );
       toast({ title: t("accounting.recurring.deletedTitle") });
     } catch (error) {
       console.error("Failed to delete recurring journal:", error);
-      toast({ title: t("common.error"), description: t("accounting.recurring.saveError"), variant: "destructive" });
+      toast({
+        title: t("common.error"),
+        description: t("accounting.recurring.saveError"),
+        variant: "destructive",
+      });
     } finally {
       setDeleteTarget(null);
     }
@@ -109,7 +127,9 @@ export function RecurringJournalsPanel({
               <Repeat className="h-5 w-5 text-orange-500" />
               {t("accounting.recurring.title")}
             </DialogTitle>
-            <DialogDescription>{t("accounting.recurring.description")}</DialogDescription>
+            <DialogDescription>
+              {t("accounting.recurring.description")}
+            </DialogDescription>
           </DialogHeader>
 
           {loading ? (
@@ -130,8 +150,13 @@ export function RecurringJournalsPanel({
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium">{template.name}</span>
-                      <Badge variant="outline" className="shrink-0 font-mono tabular-nums">
+                      <span className="truncate font-medium">
+                        {template.name}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 font-mono tabular-nums"
+                      >
                         {money(template.totalDebit)}
                       </Badge>
                       {!template.active && (
@@ -141,7 +166,9 @@ export function RecurringJournalsPanel({
                       )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t("accounting.recurring.schedule", { day: String(template.dayOfMonth) })}
+                      {t("accounting.recurring.schedule", {
+                        day: String(template.dayOfMonth),
+                      })}
                       {" · "}
                       {t("accounting.recurring.nextRun", {
                         date: formatDateTL(template.nextRunDate),
@@ -155,7 +182,9 @@ export function RecurringJournalsPanel({
                     <div className="flex shrink-0 items-center gap-2">
                       <Switch
                         checked={template.active}
-                        onCheckedChange={(checked) => void handleToggle(template, checked)}
+                        onCheckedChange={(checked) =>
+                          void handleToggle(template, checked)
+                        }
                         aria-label={t("accounting.recurring.activeToggle")}
                       />
                       <Button
@@ -175,12 +204,19 @@ export function RecurringJournalsPanel({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("accounting.recurring.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("accounting.recurring.deleteTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("accounting.recurring.deleteDescription", { name: deleteTarget?.name || "" })}
+              {t("accounting.recurring.deleteDescription", {
+                name: deleteTarget?.name || "",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -240,7 +276,11 @@ export function MakeRecurringDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to create recurring journal:", error);
-      toast({ title: t("common.error"), description: t("accounting.recurring.saveError"), variant: "destructive" });
+      toast({
+        title: t("common.error"),
+        description: t("accounting.recurring.saveError"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -250,7 +290,9 @@ export function MakeRecurringDialog({
     <Dialog open={!!entry} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("accounting.recurring.makeRecurringTitle")}</DialogTitle>
+          <DialogTitle>
+            {t("accounting.recurring.makeRecurringTitle")}
+          </DialogTitle>
           <DialogDescription>
             {t("accounting.recurring.makeRecurringDescription", {
               ref: entry?.entryNumber || "",
@@ -259,26 +301,25 @@ export function MakeRecurringDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="recurring-name">
+            <Label className="mb-1 block" htmlFor="recurring-name">
               {t("accounting.recurring.nameLabel")}
-            </label>
-            <input
+            </Label>
+            <Input
               id="recurring-name"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium" htmlFor="recurring-day">
+            <Label className="mb-1 block" htmlFor="recurring-day">
               {t("accounting.recurring.dayLabel")}
-            </label>
-            <input
+            </Label>
+            <Input
               id="recurring-day"
               type="number"
               min={1}
               max={31}
-              className="w-28 rounded-md border border-input bg-background px-3 py-2 text-sm tabular-nums"
+              className="w-28 tabular-nums"
               value={dayOfMonth}
               onChange={(e) => setDayOfMonth(Number(e.target.value))}
             />
@@ -291,8 +332,13 @@ export function MakeRecurringDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={() => void handleSave()} disabled={saving || !name.trim()}>
-            {saving ? t("common.saving") : t("accounting.recurring.createAction")}
+          <Button
+            onClick={() => void handleSave()}
+            disabled={saving || !name.trim()}
+          >
+            {saving
+              ? t("common.saving")
+              : t("accounting.recurring.createAction")}
           </Button>
         </div>
       </DialogContent>

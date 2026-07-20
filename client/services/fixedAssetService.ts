@@ -11,17 +11,22 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   getDocs,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import type { FixedAsset, FixedAssetPosting, JournalEntryLine } from '@/types/accounting';
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { addMoney, roundMoney, subtractMoney } from "@/lib/currency";
+import type {
+  FixedAsset,
+  FixedAssetPosting,
+  JournalEntryLine,
+} from "@/types/accounting";
 import {
   ACCUMULATED_DEPRECIATION_CODE,
   CASH_BANK_CODE,
@@ -31,19 +36,22 @@ import {
   chargeDueThroughPeriod,
   disposalResult,
   periodOf,
-} from '@/lib/accounting/depreciation';
-import { accountService, journalEntryService } from '@/services/accountingService';
-import { getTodayTL } from '@/lib/dateUtils';
+} from "@/lib/accounting/depreciation";
+import {
+  accountService,
+  journalEntryService,
+} from "@/services/accountingService";
+import { getTodayTL } from "@/lib/dateUtils";
 
-const assetsRef = (tenantId: string) => collection(db, `tenants/${tenantId}/fixedAssets`);
-const postingsRef = (tenantId: string) => collection(db, `tenants/${tenantId}/fixedAssetPostings`);
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
+const assetsRef = (tenantId: string) =>
+  collection(db, `tenants/${tenantId}/fixedAssets`);
+const postingsRef = (tenantId: string) =>
+  collection(db, `tenants/${tenantId}/fixedAssetPostings`);
 
 function mapAsset(id: string, data: Record<string, unknown>): FixedAsset {
   return {
     id,
-    ...(data as Omit<FixedAsset, 'id'>),
+    ...(data as Omit<FixedAsset, "id">),
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt : undefined,
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt : undefined,
   };
@@ -64,7 +72,9 @@ export interface DepreciationPreviewLine {
 
 export const fixedAssetService = {
   async list(tenantId: string): Promise<FixedAsset[]> {
-    const snap = await getDocs(query(assetsRef(tenantId), orderBy('acquisitionDate', 'desc')));
+    const snap = await getDocs(
+      query(assetsRef(tenantId), orderBy("acquisitionDate", "desc")),
+    );
     return snap.docs.map((d) => mapAsset(d.id, d.data()));
   },
 
@@ -72,19 +82,23 @@ export const fixedAssetService = {
     tenantId: string,
     asset: Omit<
       FixedAsset,
-      'id' | 'accumulatedDepreciation' | 'status' | 'createdAt' | 'updatedAt'
+      "id" | "accumulatedDepreciation" | "status" | "createdAt" | "updatedAt"
     >,
   ): Promise<string> {
-    if (asset.acquisitionCost <= 0) throw new Error('Acquisition cost must be positive.');
-    if ((asset.residualValue || 0) < 0 || asset.residualValue >= asset.acquisitionCost) {
-      throw new Error('Residual value must be ≥ 0 and below cost.');
+    if (asset.acquisitionCost <= 0)
+      throw new Error("Acquisition cost must be positive.");
+    if (
+      (asset.residualValue || 0) < 0 ||
+      asset.residualValue >= asset.acquisitionCost
+    ) {
+      throw new Error("Residual value must be ≥ 0 and below cost.");
     }
     const ref = doc(assetsRef(tenantId));
     await setDoc(ref, {
       ...asset,
       residualValue: asset.residualValue || 0,
       accumulatedDepreciation: 0,
-      status: 'active',
+      status: "active",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -94,7 +108,16 @@ export const fixedAssetService = {
   async update(
     tenantId: string,
     id: string,
-    changes: Partial<Pick<FixedAsset, 'name' | 'reference' | 'description' | 'residualValue' | 'usefulLifeMonths'>>,
+    changes: Partial<
+      Pick<
+        FixedAsset,
+        | "name"
+        | "reference"
+        | "description"
+        | "residualValue"
+        | "usefulLifeMonths"
+      >
+    >,
   ): Promise<void> {
     await updateDoc(doc(assetsRef(tenantId), id), {
       ...changes,
@@ -105,21 +128,37 @@ export const fixedAssetService = {
   /** Only assets that never depreciated can be deleted; others must be disposed. */
   async remove(tenantId: string, asset: FixedAsset): Promise<void> {
     if (!asset.id) return;
-    if ((asset.accumulatedDepreciation || 0) > 0 || asset.status === 'disposed') {
-      throw new Error('Assets with posted depreciation must be disposed, not deleted.');
+    if (
+      (asset.accumulatedDepreciation || 0) > 0 ||
+      asset.status === "disposed"
+    ) {
+      throw new Error(
+        "Assets with posted depreciation must be disposed, not deleted.",
+      );
     }
     await deleteDoc(doc(assetsRef(tenantId), asset.id));
   },
 
   async listPostings(tenantId: string): Promise<FixedAssetPosting[]> {
-    const snap = await getDocs(query(postingsRef(tenantId), orderBy('period', 'desc')));
-    return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<FixedAssetPosting, 'id'>) }));
+    const snap = await getDocs(
+      query(postingsRef(tenantId), orderBy("period", "desc")),
+    );
+    return snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Omit<FixedAssetPosting, "id">),
+    }));
   },
 
   /** What `postDepreciationForPeriod` would charge — shown before confirming. */
-  previewPeriod(assets: FixedAsset[], period: string): DepreciationPreviewLine[] {
+  previewPeriod(
+    assets: FixedAsset[],
+    period: string,
+  ): DepreciationPreviewLine[] {
     return assets
-      .map((asset) => ({ asset, charge: chargeDueThroughPeriod(asset, period).charge }))
+      .map((asset) => ({
+        asset,
+        charge: chargeDueThroughPeriod(asset, period).charge,
+      }))
       .filter((line) => line.charge > 0);
   },
 
@@ -133,89 +172,161 @@ export const fixedAssetService = {
     tenantId: string,
     period: string,
     postedBy: string,
-  ): Promise<{ journalEntryId: string; totalAmount: number; assetCount: number }> {
+  ): Promise<{
+    journalEntryId: string;
+    totalAmount: number;
+    assetCount: number;
+  }> {
+    // Never recognize depreciation for a future month (the native month picker
+    // caps this, but a typed value must be rejected here too).
+    if (period > periodOf(getTodayTL())) {
+      throw new Error("Cannot post depreciation for a future period.");
+    }
+
     const guardRef = doc(postingsRef(tenantId), period);
-    const existing = await getDoc(guardRef);
-    if (existing.exists()) {
-      throw new Error(`Depreciation for ${period} is already posted.`);
-    }
 
-    const assets = await this.list(tenantId);
-    const due = this.previewPeriod(assets, period);
-    if (!due.length) throw new Error('Nothing to depreciate for this period.');
-
-    const totalAmount = round2(due.reduce((sum, line) => sum + line.charge, 0));
+    // Resolve accounts up front (non-transactional reads).
     const expense = await resolveAccount(tenantId, DEPRECIATION_EXPENSE_CODE);
-    const accumulated = await resolveAccount(tenantId, ACCUMULATED_DEPRECIATION_CODE);
+    const accumulated = await resolveAccount(
+      tenantId,
+      ACCUMULATED_DEPRECIATION_CODE,
+    );
 
-    const [yearStr, monthStr] = period.split('-');
-    const lines: JournalEntryLine[] = [
-      {
-        lineNumber: 1,
-        accountId: expense.id,
-        accountCode: expense.code,
-        accountName: expense.name,
-        debit: totalAmount,
-        credit: 0,
-        description: `Depreciation ${period} — ${due.length} asset(s)`,
-      },
-      {
-        lineNumber: 2,
-        accountId: accumulated.id,
-        accountCode: accumulated.code,
-        accountName: accumulated.name,
-        debit: 0,
-        credit: totalAmount,
-        description: `Accumulated depreciation ${period}`,
-      },
-    ];
+    // Candidate assets (those with a charge due). This only bounds which docs
+    // the transaction re-reads; the authoritative charge is recomputed from
+    // fresh state inside the transaction.
+    const candidates = (await this.list(tenantId)).filter(
+      (a) => a.id && chargeDueThroughPeriod(a, period).charge > 0,
+    );
+    if (!candidates.length)
+      throw new Error("Nothing to depreciate for this period.");
 
-    const journalEntryId = await journalEntryService.createJournalEntry(tenantId, {
-      date: `${period}-28` <= getTodayTL() ? `${period}-28` : getTodayTL(),
-      description: `Depreciation for ${period}`,
-      source: 'depreciation',
-      sourceId: period,
-      sourceRef: `DEP-${period}`,
-      lines,
-      totalDebit: totalAmount,
-      totalCredit: totalAmount,
-      status: 'posted',
-      fiscalYear: Number(yearStr),
-      fiscalPeriod: Number(monthStr),
-      createdBy: postedBy,
-      postedBy,
-    });
+    const [yearStr, monthStr] = period.split("-");
+    const journalDate =
+      `${period}-28` <= getTodayTL() ? `${period}-28` : getTodayTL();
 
-    // Guard doc first, then per-asset state (idempotency anchor is the guard).
-    await setDoc(guardRef, {
-      period,
-      journalEntryId,
-      entryNumber: '',
-      totalAmount,
-      assetCount: due.length,
-      postedBy,
-      postedAt: serverTimestamp(),
-    });
+    // Everything atomic: claiming the period guard, posting the journal, and
+    // advancing every asset's subledger happen in ONE transaction. So two
+    // concurrent posts cannot both proceed (guard read+create is transactional),
+    // and a crash can never leave the guard/journal posted with assets only
+    // partially advanced (which would double-charge via next-period catch-up).
+    const result = await runTransaction(db, async (tx) => {
+      const g = await tx.get(guardRef);
+      if (g.exists())
+        throw new Error(`Depreciation for ${period} is already posted.`);
 
-    for (const { asset, charge } of due) {
-      if (!asset.id) continue;
-      const newAccumulated = round2((asset.accumulatedDepreciation || 0) + charge);
-      const fullyDepreciated =
-        newAccumulated >= round2(asset.acquisitionCost - (asset.residualValue || 0));
-      await updateDoc(doc(assetsRef(tenantId), asset.id), {
-        accumulatedDepreciation: newAccumulated,
-        depreciatedThroughPeriod: period,
-        status: fullyDepreciated ? 'fully_depreciated' : 'active',
-        updatedAt: serverTimestamp(),
+      // Re-read each candidate inside the transaction for fresh accumulated
+      // state (reads MUST precede writes — done before createJournalEntry).
+      const fresh: Array<{ asset: FixedAsset; charge: number }> = [];
+      for (const c of candidates) {
+        const snap = await tx.get(doc(assetsRef(tenantId), c.id!));
+        if (!snap.exists()) continue;
+        const asset = mapAsset(snap.id, snap.data());
+        const dueNow = chargeDueThroughPeriod(asset, period);
+        if (dueNow.charge > 0) fresh.push({ asset, charge: dueNow.charge });
+      }
+      if (!fresh.length)
+        throw new Error("Nothing to depreciate for this period.");
+
+      const totalAmount = roundMoney(
+        fresh.reduce((sum, line) => addMoney(sum, line.charge), 0),
+      );
+      const lines: JournalEntryLine[] = [
+        {
+          lineNumber: 1,
+          accountId: expense.id,
+          accountCode: expense.code,
+          accountName: expense.name,
+          debit: totalAmount,
+          credit: 0,
+          description: `Depreciation ${period} — ${fresh.length} asset(s)`,
+        },
+        {
+          lineNumber: 2,
+          accountId: accumulated.id,
+          accountCode: accumulated.code,
+          accountName: accumulated.name,
+          debit: 0,
+          credit: totalAmount,
+          description: `Accumulated depreciation ${period}`,
+        },
+      ];
+
+      const journalEntryId = await journalEntryService.createJournalEntry(
+        tenantId,
+        {
+          date: journalDate,
+          description: `Depreciation for ${period}`,
+          source: "depreciation",
+          sourceId: period,
+          sourceRef: `DEP-${period}`,
+          lines,
+          totalDebit: totalAmount,
+          totalCredit: totalAmount,
+          status: "posted",
+          fiscalYear: Number(yearStr),
+          fiscalPeriod: Number(monthStr),
+          createdBy: postedBy,
+          postedBy,
+        },
+        tx,
+      );
+
+      tx.set(guardRef, {
+        period,
+        journalEntryId,
+        entryNumber: "",
+        totalAmount,
+        assetCount: fresh.length,
+        postedBy,
+        postedAt: serverTimestamp(),
       });
+
+      for (const { asset, charge } of fresh) {
+        const newAccumulated = addMoney(
+          asset.accumulatedDepreciation || 0,
+          charge,
+        );
+        const fullyDepreciated =
+          newAccumulated >=
+          subtractMoney(asset.acquisitionCost, asset.residualValue || 0);
+        tx.update(doc(assetsRef(tenantId), asset.id!), {
+          accumulatedDepreciation: newAccumulated,
+          depreciatedThroughPeriod: period,
+          status: fullyDepreciated ? "fully_depreciated" : "active",
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      return { journalEntryId, totalAmount, assetCount: fresh.length };
+    });
+
+    // Backfill the guard's entryNumber (allocated inside createJournalEntry,
+    // which returns only the id). Non-fatal presentation detail.
+    try {
+      const posted = await journalEntryService.getJournalEntryBySource(
+        tenantId,
+        "depreciation",
+        period,
+      );
+      if (posted?.entryNumber)
+        await updateDoc(guardRef, { entryNumber: posted.entryNumber });
+    } catch {
+      /* entryNumber is cosmetic on the guard; ignore */
     }
 
-    return { journalEntryId, totalAmount, assetCount: due.length };
+    return result;
   },
 
   /**
    * Dispose an asset: removes cost and accumulated depreciation from the
    * books, books proceeds to cash, and posts the gain/loss.
+   *
+   * Policy (v1, deliberate): no catch-up depreciation is posted for the
+   * disposal month — NBV is taken as-posted, so any undepreciated remainder
+   * lands in the gain/loss line. The journal still balances exactly; run
+   * "Post depreciation" first if the charge-to-disposal-date treatment is
+   * wanted.
    */
   async dispose(
     tenantId: string,
@@ -223,88 +334,131 @@ export const fixedAssetService = {
     options: { date: string; proceeds: number },
     postedBy: string,
   ): Promise<{ journalEntryId: string; gainOrLoss: number }> {
-    if (!asset.id) throw new Error('Asset id missing.');
-    if (asset.status === 'disposed') throw new Error('Asset is already disposed.');
+    if (!asset.id) throw new Error("Asset id missing.");
+    if (asset.status === "disposed")
+      throw new Error("Asset is already disposed.");
 
-    const proceeds = round2(options.proceeds || 0);
-    const { gainOrLoss } = disposalResult(asset, proceeds);
+    const assetRef = doc(assetsRef(tenantId), asset.id);
+    const proceeds = roundMoney(options.proceeds || 0);
 
+    // Resolve every possibly-needed account up front (non-transactional reads).
     const assetAccount = await resolveAccount(tenantId, asset.assetAccountCode);
-    const accumulated = await resolveAccount(tenantId, ACCUMULATED_DEPRECIATION_CODE);
+    const accumulatedAcct = await resolveAccount(
+      tenantId,
+      ACCUMULATED_DEPRECIATION_CODE,
+    );
+    const cashAcct =
+      proceeds > 0 ? await resolveAccount(tenantId, CASH_BANK_CODE) : null;
+    const lossAcct = await resolveAccount(tenantId, DISPOSAL_LOSS_CODE);
+    const gainAcct = await resolveAccount(tenantId, DISPOSAL_GAIN_CODE);
 
-    const lines: JournalEntryLine[] = [];
-    let lineNumber = 1;
-    if (proceeds > 0) {
-      const cash = await resolveAccount(tenantId, CASH_BANK_CODE);
+    const [yearStr, monthStr] = options.date.split("-");
+
+    // Journal post + asset derecognition are atomic: a retry after a partial
+    // failure can't re-derecognize (a committed disposal flips status; the
+    // in-transaction status check then rejects the retry), and transaction
+    // contention on the asset doc serializes concurrent disposals.
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(assetRef);
+      if (!snap.exists()) throw new Error("Asset not found.");
+      const fresh = mapAsset(snap.id, snap.data());
+      if (fresh.status === "disposed")
+        throw new Error("Asset is already disposed.");
+
+      const { gainOrLoss } = disposalResult(fresh, proceeds);
+      const lines: JournalEntryLine[] = [];
+      let lineNumber = 1;
+      if (proceeds > 0 && cashAcct) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: cashAcct.id,
+          accountCode: cashAcct.code,
+          accountName: cashAcct.name,
+          debit: proceeds,
+          credit: 0,
+          description: `Disposal proceeds — ${fresh.name}`,
+        });
+      }
+      if ((fresh.accumulatedDepreciation || 0) > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: accumulatedAcct.id,
+          accountCode: accumulatedAcct.code,
+          accountName: accumulatedAcct.name,
+          debit: roundMoney(fresh.accumulatedDepreciation || 0),
+          credit: 0,
+          description: `Reverse accumulated depreciation — ${fresh.name}`,
+        });
+      }
+      if (gainOrLoss < 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: lossAcct.id,
+          accountCode: lossAcct.code,
+          accountName: lossAcct.name,
+          debit: roundMoney(-gainOrLoss),
+          credit: 0,
+          description: `Loss on disposal — ${fresh.name}`,
+        });
+      }
       lines.push({
         lineNumber: lineNumber++,
-        accountId: cash.id, accountCode: cash.code, accountName: cash.name,
-        debit: proceeds, credit: 0,
-        description: `Disposal proceeds — ${asset.name}`,
+        accountId: assetAccount.id,
+        accountCode: assetAccount.code,
+        accountName: assetAccount.name,
+        debit: 0,
+        credit: roundMoney(fresh.acquisitionCost),
+        description: `Derecognize asset — ${fresh.name}`,
       });
-    }
-    if ((asset.accumulatedDepreciation || 0) > 0) {
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: accumulated.id, accountCode: accumulated.code, accountName: accumulated.name,
-        debit: round2(asset.accumulatedDepreciation), credit: 0,
-        description: `Reverse accumulated depreciation — ${asset.name}`,
+      if (gainOrLoss > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: gainAcct.id,
+          accountCode: gainAcct.code,
+          accountName: gainAcct.name,
+          debit: 0,
+          credit: roundMoney(gainOrLoss),
+          description: `Gain on disposal — ${fresh.name}`,
+        });
+      }
+
+      const totalDebit = roundMoney(
+        lines.reduce((s, l) => addMoney(s, l.debit), 0),
+      );
+      const totalCredit = roundMoney(
+        lines.reduce((s, l) => addMoney(s, l.credit), 0),
+      );
+
+      const journalEntryId = await journalEntryService.createJournalEntry(
+        tenantId,
+        {
+          date: options.date,
+          description: `Disposal of ${fresh.name}`,
+          source: "depreciation",
+          sourceId: asset.id,
+          sourceRef: fresh.reference || fresh.name,
+          lines,
+          totalDebit,
+          totalCredit,
+          status: "posted",
+          fiscalYear: Number(yearStr),
+          fiscalPeriod: Number(monthStr),
+          createdBy: postedBy,
+          postedBy,
+        },
+        tx,
+      );
+
+      tx.update(assetRef, {
+        status: "disposed",
+        disposalDate: options.date,
+        disposalProceeds: proceeds,
+        disposalJournalEntryId: journalEntryId,
+        updatedAt: serverTimestamp(),
       });
-    }
-    if (gainOrLoss < 0) {
-      const loss = await resolveAccount(tenantId, DISPOSAL_LOSS_CODE);
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: loss.id, accountCode: loss.code, accountName: loss.name,
-        debit: round2(-gainOrLoss), credit: 0,
-        description: `Loss on disposal — ${asset.name}`,
-      });
-    }
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: assetAccount.id, accountCode: assetAccount.code, accountName: assetAccount.name,
-      debit: 0, credit: round2(asset.acquisitionCost),
-      description: `Derecognize asset — ${asset.name}`,
+
+      return { journalEntryId, gainOrLoss };
     });
-    if (gainOrLoss > 0) {
-      const gain = await resolveAccount(tenantId, DISPOSAL_GAIN_CODE);
-      lines.push({
-        lineNumber: lineNumber++,
-        accountId: gain.id, accountCode: gain.code, accountName: gain.name,
-        debit: 0, credit: round2(gainOrLoss),
-        description: `Gain on disposal — ${asset.name}`,
-      });
-    }
-
-    const totalDebit = round2(lines.reduce((s, l) => s + l.debit, 0));
-    const totalCredit = round2(lines.reduce((s, l) => s + l.credit, 0));
-
-    const [yearStr, monthStr] = options.date.split('-');
-    const journalEntryId = await journalEntryService.createJournalEntry(tenantId, {
-      date: options.date,
-      description: `Disposal of ${asset.name}`,
-      source: 'depreciation',
-      sourceId: asset.id,
-      sourceRef: asset.reference || asset.name,
-      lines,
-      totalDebit,
-      totalCredit,
-      status: 'posted',
-      fiscalYear: Number(yearStr),
-      fiscalPeriod: Number(monthStr),
-      createdBy: postedBy,
-      postedBy,
-    });
-
-    await updateDoc(doc(assetsRef(tenantId), asset.id), {
-      status: 'disposed',
-      disposalDate: options.date,
-      disposalProceeds: proceeds,
-      disposalJournalEntryId: journalEntryId,
-      updatedAt: serverTimestamp(),
-    });
-
-    return { journalEntryId, gainOrLoss };
   },
 
   /** Default posting period: the month of today (TL). */

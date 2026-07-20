@@ -5,6 +5,10 @@
  * Consolidated Monthly Taxes Form format.
  *
  * Based on: https://attl.gov.tl/wp-content/uploads/2021/03/Form_Pay_eng.xlsx
+  *
+ * PROVENANCE: section/line numbering follows ONLY the official ATTL
+ * "Consolidated Monthly Taxes Form" (attl.gov.tl, Form_Pay_eng.xlsx) — a
+ * compliance requirement. Not modeled on any client or firm workbook.
  */
 
 import type ExcelJS from "exceljs";
