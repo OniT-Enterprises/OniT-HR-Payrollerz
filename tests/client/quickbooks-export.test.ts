@@ -105,6 +105,99 @@ describe("quickbooks payroll journal export", () => {
     expect(credit("2230")).toBe(60); // employee INSS
   });
 
+  it("routes a wizard record (top-level incomeTax) down the generic branch, not TL", () => {
+    // The real wizard writes generic PayrollRecords with incomeTax/inssEmployee/
+    // inssEmployer set at the top level (for the statutory filing generators).
+    // The old discriminator ("incomeTax" in record) then misrouted them to the
+    // TL branch, which reads record.grossPay/monthlySalary (absent here) and
+    // dropped the whole wage-expense debit → an unbalanced import QB rejects.
+    const wizardRecord = {
+      ...genericRecord,
+      incomeTax: 100,
+      inssEmployee: 60,
+      inssEmployer: 90,
+      wagesPaid: 1500,
+    } as unknown as PayrollRecord;
+
+    const entry = buildJournalEntry(run, [wizardRecord], getDefaultMappings(), options);
+    const debit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.debit ?? 0;
+
+    expect(entry.totalDebits).toBe(entry.totalCredits);
+    expect(entry.totalDebits).toBe(1590); // gross 1500 + employer INSS 90
+    expect(debit("5110")).toBe(1000); // wage-expense debit present, not dropped
+  });
+
+  it("does not book an unpaid-absence reduction as a phantom 2260 payable", () => {
+    // Contractual gross 1500 but 100 unpaid absence → wagesPaid 1400. Only the
+    // real loan repayment (40) is a deduction payable; the 100 reduction is just
+    // less wage expense, never a liability.
+    const reducedRecord = {
+      ...genericRecord,
+      incomeTax: 90,
+      inssEmployee: 56,
+      inssEmployer: 84,
+      totalGrossPay: 1500,
+      wagesPaid: 1400,
+      deductions: [
+        { type: "income_tax", description: "WIT", amount: 90, isPreTax: false, isPercentage: false },
+        { type: "inss_employee", description: "INSS 4%", amount: 56, isPreTax: false, isPercentage: false },
+        { type: "loan_repayment", description: "Loan", amount: 40, isPreTax: false, isPercentage: false },
+      ],
+      netPay: 1214, // 1400 - 90 - 56 - 40
+      employerTaxes: [{ type: "inss_employer", description: "INSS 6%", amount: 84 }],
+      totalEmployerTaxes: 84,
+    } as unknown as PayrollRecord;
+
+    const entry = buildJournalEntry(run, [reducedRecord], getDefaultMappings(), options);
+    const debit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.debit ?? 0;
+    const credit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.credit ?? 0;
+
+    expect(entry.totalDebits).toBe(entry.totalCredits);
+    // Wage expense == wages actually paid (1400), NOT contractual gross (1500).
+    expect(entry.totalDebits).toBe(1484); // 1400 + employer INSS 84
+    // Only the loan (40) is a payable — the 100 absence reduction is NOT here.
+    expect(credit("2260")).toBe(40);
+    expect(credit("2210")).toBe(1214); // net pay
+    expect(debit("5110") + debit("5120") + debit("5160")).toBe(1400);
+  });
+
+  it("derives the legacy (no wagesPaid) wage base as gross less attendance reductions", () => {
+    // Pre-wagesPaid record: contractual gross 1500, 100 unpaid absence recorded
+    // only as a deduction line. The fallback must mirror accounting-summary.ts
+    // (totalGrossPay − absence/late reductions); the old full-gross fallback
+    // re-created the phantom 2260 payable for the 100.
+    const legacyRecord = {
+      ...genericRecord,
+      deductions: [
+        { type: "income_tax", description: "WIT", amount: 90, isPreTax: false, isPercentage: false },
+        { type: "inss_employee", description: "INSS 4%", amount: 56, isPreTax: false, isPercentage: false },
+        { type: "loan_repayment", description: "Loan", amount: 40, isPreTax: false, isPercentage: false },
+        { type: "absence", description: "Unpaid absence", amount: 100, isPreTax: false, isPercentage: false },
+      ],
+      totalDeductions: 286,
+      netPay: 1214, // 1500 - 286
+      employerTaxes: [{ type: "inss_employer", description: "INSS 6%", amount: 84 }],
+      totalEmployerTaxes: 84,
+    } as unknown as PayrollRecord;
+
+    const entry = buildJournalEntry(run, [legacyRecord], getDefaultMappings(), options);
+    const debit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.debit ?? 0;
+    const credit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.credit ?? 0;
+
+    expect(entry.totalDebits).toBe(entry.totalCredits);
+    // Wage expense 1400 (1500 − 100 absence) + employer INSS 84.
+    expect(entry.totalDebits).toBe(1484);
+    expect(debit("5110") + debit("5120") + debit("5160")).toBe(1400);
+    // Only the loan (40) is a payable — the absence reduction is NOT booked.
+    expect(credit("2260")).toBe(40);
+    expect(credit("2210")).toBe(1214); // net pay
+  });
+
   it("balances for TL records that carry earnings beyond salary and overtime", () => {
     const tlRun = { ...run } as unknown as TLPayrollRun;
     // monthlySalary 1000, overtime estimate 150 (10h * 10 * 1.5), plus a

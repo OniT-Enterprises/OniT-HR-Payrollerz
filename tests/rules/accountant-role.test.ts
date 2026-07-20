@@ -195,11 +195,38 @@ describe('Accountant role rules', () => {
     });
 
     it('accountant can queue mail for the tenant', async () => {
+      // Mirrors notificationService.queueEmail's shape (purpose tag + pending
+      // status + bounded recipient list), which the rules now require.
       await assertSucceeds(
         setDoc(doc(asAccountant(), 'mail/mail-1'), {
           tenantId: 'tenant-a',
           to: ['customer@example.com'],
-          message: { subject: 'Invoice', html: '<p>Invoice attached</p>' },
+          subject: 'Invoice',
+          html: '<p>Invoice attached</p>',
+          status: 'pending',
+          purpose: 'invoice-send',
+        }),
+      );
+    });
+
+    it('rejects a mail doc missing a purpose tag or non-pending status', async () => {
+      await assertFails(
+        setDoc(doc(asAccountant(), 'mail/mail-2'), {
+          tenantId: 'tenant-a',
+          to: ['customer@example.com'],
+          subject: 'x',
+          html: '<p>x</p>',
+          status: 'pending', // no purpose
+        }),
+      );
+      await assertFails(
+        setDoc(doc(asAccountant(), 'mail/mail-3'), {
+          tenantId: 'tenant-a',
+          to: ['customer@example.com'],
+          subject: 'x',
+          html: '<p>x</p>',
+          status: 'sent', // pre-sent injection
+          purpose: 'invoice-send',
         }),
       );
     });

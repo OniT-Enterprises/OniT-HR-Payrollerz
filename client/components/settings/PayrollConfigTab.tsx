@@ -287,6 +287,29 @@ export function PayrollConfigTab({
               <Label>{t('settings.payroll.excludePerDiem')}</Label>
             </div>
           </div>
+          {/* DL 20/2017 Art. 86 small-employer discount — reduces the employer
+              INSS share (5.4% through Dec 2026, then 6%). Employee 4% unchanged. */}
+          <div className="flex items-start gap-2 pt-1">
+            <Switch
+              checked={payrollConfig.smallEmployerInssDiscount ?? false}
+              onCheckedChange={(checked) =>
+                setPayrollConfig({
+                  ...payrollConfig,
+                  smallEmployerInssDiscount: checked,
+                })
+              }
+            />
+            <div>
+              <Label>Small-employer INSS discount (DL 20/2017 Art. 86)</Label>
+              <p className="text-xs text-muted-foreground max-w-prose">
+                Enable if you have 10 or fewer workers, at least 60% Timorese
+                nationals, and your contributions are up to date. Reduces the
+                employer contribution to 5.4% (through Dec 2026) to match the
+                INSS payment guide. The employee 4% is unchanged; the rate
+                returns to 6% from 2027.
+              </p>
+            </div>
+          </div>
         </div>
 
         <Separator />

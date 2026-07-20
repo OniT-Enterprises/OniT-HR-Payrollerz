@@ -29,11 +29,17 @@ export type LeaveType =
   | "sick"
   | "maternity"
   | "paternity"
-  | "bereavement"
+  // Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days/year covering
+  // marriage, family death, and community/religious events.
+  | "special"
   | "unpaid"
-  | "marriage"
   | "study"
-  | "custom";
+  | "custom"
+  // Legacy render-only: bereavement/marriage no longer exist as requestable
+  // types (they were never separate types in TL law — Art. 33(3) pools them
+  // into "special"). Kept so existing requests keep rendering.
+  | "bereavement"
+  | "marriage";
 
 export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 
@@ -177,20 +183,17 @@ export const TL_LEAVE_TYPES = [
     certificateType: "Birth Certificate",
   },
   {
-    id: "bereavement",
-    name: "Bereavement Leave (Licença por Falecimento)",
-    daysPerYear: 5,
+    // Lei 4/2012 Art. 33(3): ONE pooled allotment of 3 paid days per calendar
+    // year covering marriage, family death, and community/religious events.
+    // Replaces the former separate bereavement/marriage types (which do not
+    // exist in TL law). Overflow is taken as annual leave, then unpaid.
+    id: "special",
+    name: "Special Leave (Art. 33.3)",
+    daysPerYear: 3,
     isPaid: true,
-    requiresCertificate: true,
-    certificateType: "Death Certificate",
-  },
-  {
-    id: "marriage",
-    name: "Marriage Leave (Licença de Casamento)",
-    daysPerYear: 5,
-    isPaid: true,
-    requiresCertificate: true,
-    certificateType: "Marriage Certificate",
+    requiresCertificate: false,
+    description:
+      "3 paid days per year pooled across marriage, family death, and community/religious events. The employer may request supporting proof (Art. 33.7).",
   },
   {
     id: "unpaid",

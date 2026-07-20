@@ -93,18 +93,23 @@ describe('Lei 4/2012 Art. 42(3): 30% monthly wage-deduction cap', () => {
     expect(result.totalDeductions).toBeLessThanOrEqual(result.wagesPaid * 0.3 + MONEY_TOLERANCE);
   });
 
-  it('keeps the reported deduction total at or below 30% even with a court order in the mix', () => {
-    // Court order $250 + loan $100 = $350 requested; statutory $90 on top.
-    // The court order is a capped (non-protected) deduction under Xefe's model.
+  it('withholds a court order in full even past 30%, while still capping voluntary lines', () => {
+    // Court order $250 + loan $100 requested; statutory $90 on top. A court order
+    // is OUTSIDE the 30% cap (Art. 42(2) + CPC Arts. 702/737 — the judge fixes the
+    // amount, the employer just deposits it), so it is withheld in full. The
+    // voluntary loan still shares only what's left of the 30% ceiling.
     const result = calculateTLPayroll(
       baseInput({ courtOrders: 250, loanRepayment: 100 }),
     );
 
-    const cap = result.wagesPaid * 0.3;
-    expect(result.totalDeductions).toBeLessThanOrEqual(cap + MONEY_TOLERANCE);
-    expect(result.totalDeductions).toBeCloseTo(300, 2);
-    // $210 of discretionary room split across court order + loan.
-    expect(result.courtOrders + result.loanRepayment).toBeCloseTo(210, 2);
-    expect(result.warnings.some((w) => /30% cap/.test(w))).toBe(true);
+    // Court order untouched at its full $250.
+    expect(result.courtOrders).toBeCloseTo(250, 2);
+    // Protected = WIT $50 + INSS $40 + court $250 = $340, already past the $300
+    // (30%) ceiling, so the voluntary loan is squeezed to $0.
+    expect(result.loanRepayment).toBeCloseTo(0, 2);
+    // Total therefore lawfully exceeds 30% because of the court order.
+    expect(result.totalDeductions).toBeCloseTo(340, 2);
+    // A court-order notice fires (not the generic "reduced proportionally" one).
+    expect(result.warnings.some((w) => /court/i.test(w))).toBe(true);
   });
 });

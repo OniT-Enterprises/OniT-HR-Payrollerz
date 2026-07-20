@@ -54,6 +54,19 @@ describe("computeLeaveCredits", () => {
     expect(credits.get("emp-1")?.paidLeaveHours).toBe(40);
   });
 
+  it("credits special leave (Art. 33.3 pooled justified absence) as PAID hours", () => {
+    // TL_LEAVE_TYPES marks `special` isPaid: true (3 days/year pooled across
+    // marriage, family death, and community/religious events), so payroll
+    // must credit the hours, not dock them. Jun 10-12 2026 is Wed-Fri.
+    const credits = compute([
+      req({ leaveType: "special", startDate: "2026-06-10", endDate: "2026-06-12" }),
+    ]);
+    expect(credits.get("emp-1")).toEqual({
+      paidLeaveHours: 3 * HOURS_PER_DAY,
+      sickDays: 0,
+    });
+  });
+
   it("clamps leave spanning into the period to in-period working days", () => {
     // May 25 – Jun 5: only Jun 1-5 (Mon-Fri) falls inside June
     const credits = compute([req({ startDate: "2026-05-25", endDate: "2026-06-05" })]);

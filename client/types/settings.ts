@@ -158,6 +158,11 @@ export interface TimeOffPolicies {
   sickLeave: LeaveTypeConfig;
   maternityLeave: LeaveTypeConfig;
   paternityLeave: LeaveTypeConfig;
+  /**
+   * Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days per calendar
+   * year covering marriage, family death, and community/religious events.
+   */
+  specialLeave: LeaveTypeConfig;
   unpaidLeave: LeaveTypeConfig;
   customLeaveTypes: LeaveTypeConfig[];
   holidayCarryOver: boolean;
@@ -205,6 +210,14 @@ export interface PayrollConfig {
   // Solo-operator mode: lets the creator of a payroll run approve it themselves.
   // Default false = safer two-person approval (creator != approver).
   allowSelfApproval?: boolean;
+  /**
+   * Small-employer INSS discount — DL 20/2017 Art. 86. Enable when the tenant
+   * qualifies (≤10 workers, ≥60% Timorese nationals, contributions regularized);
+   * INSS's portal auto-applies it, so this keeps Xefe's employer INSS in step
+   * with the payment guide (5.4% instead of 6% through Dec 2026, then 6%). The
+   * employee 4% is never reduced. Default false.
+   */
+  smallEmployerInssDiscount?: boolean;
 }
 
 // ============================================
@@ -328,6 +341,20 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     paidPercentage: 100,
     requiresCertificate: true,
     certificateType: 'Birth Certificate',
+    carryOverAllowed: false,
+    isActive: true,
+  },
+  specialLeave: {
+    // Lei 4/2012 Art. 33(3): one pooled allotment covering marriage, family
+    // death, and community/religious events. Employer may request proof
+    // (Art. 33(7)); overflow is taken as annual leave, then unpaid.
+    id: 'special',
+    name: 'Special leave (Art. 33.3)',
+    code: 'SPL',
+    daysPerYear: 3,
+    isPaid: true,
+    paidPercentage: 100,
+    requiresCertificate: false,
     carryOverAllowed: false,
     isActive: true,
   },

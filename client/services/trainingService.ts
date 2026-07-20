@@ -142,12 +142,20 @@ function calculateTrainingStatus(
 export function isExpiringSoon(expiryDate?: string): boolean {
   if (!expiryDate) return false;
 
-  const today = new Date();
-  const expiry = new Date(expiryDate);
-  const diffTime = expiry.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  return diffDays > 0 && diffDays <= 30;
+  // Calendar-day difference, both anchored at UTC midnight so a local-time `now`
+  // can't shift the day boundary. Include TODAY (>= 0): a cert whose last valid
+  // day is today IS expiring soon — the old `> 0` with mixed local/UTC dates
+  // silently skipped the day-of-expiry. Already-expired (< 0) is handled by the
+  // 'expired' status, so it is not "expiring soon". Matches the >= today window
+  // used by the getTrainingRecords query below.
+  const utcMidnight = (d: string) => {
+    const [y, m, day] = d.split('-').map(Number);
+    return Date.UTC(y, m - 1, day);
+  };
+  const diffDays = Math.round(
+    (utcMidnight(expiryDate) - utcMidnight(getTodayTL())) / (1000 * 60 * 60 * 24),
+  );
+  return diffDays >= 0 && diffDays <= 30;
 }
 
 // ============================================
@@ -241,9 +249,14 @@ class TrainingService {
   ): Promise<TrainingRecord[]> {
     try {
       const today = getTodayTL();
-      const expiringCutoff = new Date(`${today}T00:00:00`);
-      expiringCutoff.setDate(expiringCutoff.getDate() + 30);
-      const expiringCutoffStr = expiringCutoff.toISOString().slice(0, 10);
+      // today + 30 days, calendar-safe: build the date in UTC so the
+      // .toISOString() round-trip can't shift it a day west of UTC (the old
+      // `new Date(`${today}T00:00:00`)` parsed as LOCAL midnight then formatted
+      // as UTC, losing a day and narrowing the window to 29 days).
+      const [cy, cm, cd] = today.split('-').map(Number);
+      const expiringCutoffStr = new Date(Date.UTC(cy, cm - 1, cd + 30))
+        .toISOString()
+        .slice(0, 10);
       const canQueryExpiringSoon =
         filters?.expiringSoon &&
         !filters.employeeId &&
@@ -441,9 +454,14 @@ class TrainingService {
   async getTrainingStats(tenantId: string): Promise<TrainingStats> {
     try {
       const today = getTodayTL();
-      const expiringCutoff = new Date(`${today}T00:00:00`);
-      expiringCutoff.setDate(expiringCutoff.getDate() + 30);
-      const expiringCutoffStr = expiringCutoff.toISOString().slice(0, 10);
+      // today + 30 days, calendar-safe: build the date in UTC so the
+      // .toISOString() round-trip can't shift it a day west of UTC (the old
+      // `new Date(`${today}T00:00:00`)` parsed as LOCAL midnight then formatted
+      // as UTC, losing a day and narrowing the window to 29 days).
+      const [cy, cm, cd] = today.split('-').map(Number);
+      const expiringCutoffStr = new Date(Date.UTC(cy, cm - 1, cd + 30))
+        .toISOString()
+        .slice(0, 10);
       const collectionRef = collection(db, TRAINING_COLLECTION);
 
       const snapshot = await getDocs(query(collectionRef, where('tenantId', '==', tenantId)));

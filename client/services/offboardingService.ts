@@ -33,14 +33,13 @@ import {
 
 export type OffboardingStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
-export type DepartureReason =
-  | 'resignation'
-  | 'redundancy'
-  | 'termination'
-  | 'retirement'
-  | 'contract_end'
-  | 'mutual_agreement'
-  | 'other';
+// Defined in the pure leaver-final-pay module (Firebase-free, unit-testable);
+// re-exported here so offboarding UI/service callers keep one import site.
+import {
+  severanceDefaultForReason,
+  type DepartureReason,
+} from '@/lib/payroll/leaver-final-pay';
+export { severanceDefaultForReason, type DepartureReason };
 
 export interface OffboardingChecklist {
   accessRevoked: boolean;
@@ -64,7 +63,7 @@ export interface ExitInterview {
 }
 
 export interface Article56FinalPaySnapshot {
-  version: 1 | 2;
+  version: 1 | 2 | 3;
   monthlySalary: number;
   hireDate: string;
   terminationDate: string;
@@ -86,6 +85,11 @@ export interface Article56FinalPaySnapshot {
   subsidioAnual?: number;
   subsidioAnualLegalBasis?: 'Labour Law 4/2012 Art. 44';
   subsidioAnualNote?: string;
+  // v3: the cause-aware decision. serviceCompensation above stays the
+  // computed statutory figure either way (the reference the accountant needs);
+  // severanceIncluded records whether the final payroll run will pay it.
+  severanceIncluded?: boolean;
+  departureReason?: DepartureReason;
   calculatedBy: string;
   calculatedAt: Date;
 }
@@ -103,6 +107,12 @@ export interface OffboardingCase {
   lastWorkingDay: string;
   noticeDate: string;
   notes?: string;
+  /**
+   * Editable Art. 56 decision for this case; absent = the cause-aware default
+   * (severanceDefaultForReason). Frozen into the snapshot and stamped on the
+   * employee (`severanceOnTermination`) at completion.
+   */
+  includeArt56Severance?: boolean;
 
   // Status
   status: OffboardingStatus;
@@ -371,10 +381,15 @@ class OffboardingService {
       // permissions failure here must not roll back the case completion.
       if (updates.status === 'completed' && existing.status !== 'completed' && existing.employeeId) {
         const { employeeService } = await import('./employeeService');
+        const severanceIncluded =
+          updates.includeArt56Severance ??
+          existing.includeArt56Severance ??
+          severanceDefaultForReason(existing.departureReason);
         await employeeService
           .updateEmployee(tenantId, existing.employeeId, {
             status: 'terminated',
             terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
+            severanceOnTermination: severanceIncluded,
           })
           .catch((err) => {
             console.error('Offboarding completed but employee could not be marked terminated:', err);
@@ -510,8 +525,15 @@ class OffboardingService {
         { terminationDate },
       );
 
+      const departureReason = (caseData.departureReason ||
+        'other') as DepartureReason;
+      const severanceIncluded =
+        typeof caseData.includeArt56Severance === 'boolean'
+          ? caseData.includeArt56Severance
+          : severanceDefaultForReason(departureReason);
+
       const snapshot: Article56FinalPaySnapshot = {
-        version: 2,
+        version: 3,
         monthlySalary: details.monthlySalary,
         hireDate: details.hireDate,
         terminationDate: details.terminationDate,
@@ -526,8 +548,11 @@ class OffboardingService {
         subsidioAnualMonths,
         subsidioAnual,
         subsidioAnualLegalBasis: 'Labour Law 4/2012 Art. 44',
-        subsidioAnualNote:
-          'Reference figures only. Once this employee is terminated, the next payroll run automatically pays their Art. 56 severance and the prorated Art. 44 subsídio (each net of anything already paid this year) — do NOT also settle these amounts manually.',
+        subsidioAnualNote: severanceIncluded
+          ? 'Reference figures only. Once this employee is terminated, the next payroll run automatically pays their Art. 56 severance and the prorated Art. 44 subsídio (each net of anything already paid this year) — do NOT also settle these amounts manually.'
+          : 'Reference figures only. Art. 56 severance is EXCLUDED for this case, so the next payroll run pays only the prorated Art. 44 subsídio (net of anything already paid this year) — do NOT also settle it manually.',
+        severanceIncluded,
+        departureReason,
         calculatedBy: calculatedBy.trim(),
         calculatedAt: new Date(),
       };
@@ -549,6 +574,9 @@ class OffboardingService {
         transaction.update(employeeRef, {
           status: 'terminated',
           terminationDate,
+          // The payroll run reads this to decide whether the final pay
+          // auto-includes Art. 56 (see resolveLeaverFinalPay).
+          severanceOnTermination: severanceIncluded,
           updatedAt: serverTimestamp(),
         });
       }

@@ -37,6 +37,8 @@ import {
   DEFAULT_EXPECTED_END,
   MAX_REASONABLE_ENTRY_HOURS,
 } from "@/lib/attendanceCalculations";
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+import { holidayService } from "@/services/holidayService";
 export {
   computeEntryHours,
   calculateHoursBetween,
@@ -171,6 +173,13 @@ export interface AttendanceEmployeeSummary {
   regularHours: number;
   overtimeHours: number;
   nightHours: number;
+  /**
+   * Hours actually WORKED on a mandatory national public holiday. Reclassified
+   * OUT of regularHours/overtimeHours so payroll pays them the Art. 27 2× rate
+   * instead of leaving holiday work at 1× (the old behaviour, which never
+   * auto-populated holiday hours at all).
+   */
+  holidayHours: number;
   lateMinutes: number;
   daysPresent: number;
   recordsCount: number;
@@ -336,6 +345,42 @@ class AttendanceService {
       }
     }
 
+    // Public holidays spanning the range. Hours worked on these dates are
+    // Art. 27(2) 2× time, so they must be reclassified out of regular/overtime
+    // into holidayHours — otherwise holiday work is silently paid at 1×.
+    // Tenant overrides MUST apply here, with the same effective set the payroll
+    // sync uses for its absence baseline: the variable Islamic dates ship as
+    // estimates that tenants are told to correct via overrides, so a removed
+    // date is (usually) "the government moved it", not "we don't observe it".
+    // If the two sets diverged, a worked removed-date would book phantom
+    // absence next to a bogus 2× premium.
+    const holidayDates = new Set<string>();
+    const startYear = Number(startDate.slice(0, 4));
+    const endYear = Number(endDate.slice(0, 4));
+    for (let y = startYear; y <= endYear; y++) {
+      for (const h of getTLPublicHolidays(y)) {
+        if (h.date >= startDate && h.date <= endDate) holidayDates.add(h.date);
+      }
+    }
+    try {
+      const overrides = (
+        await Promise.all(
+          Array.from({ length: endYear - startYear + 1 }, (_, i) =>
+            holidayService.listTenantHolidayOverrides(tenantId, startYear + i),
+          ),
+        )
+      ).flat();
+      for (const override of overrides) {
+        if (override.date < startDate || override.date > endDate) continue;
+        if (override.isHoliday) holidayDates.add(override.date);
+        else holidayDates.delete(override.date);
+      }
+    } catch (error) {
+      // Degrade to the national list rather than failing the whole summary —
+      // matches the payroll sync's fallback for the same lookup.
+      console.error("Failed to load tenant holiday overrides for attendance summary:", error);
+    }
+
     const byEmployee = new Map<string, AttendanceEmployeeSummary>();
     for (const record of byEmployeeDay.values()) {
       if (!record.employeeId) continue;
@@ -351,10 +396,19 @@ class AttendanceService {
           record.totalHours,
         );
 
+      // On a public holiday, the worked regular+overtime hours are all 2× time.
+      const workedOnHoliday = record.date ? holidayDates.has(record.date) : false;
+      const rawRegular = record.regularHours || 0;
+      const rawOvertime = record.overtimeHours || 0;
+      const holidayHours = workedOnHoliday ? rawRegular + rawOvertime : 0;
+      const regularHours = workedOnHoliday ? 0 : rawRegular;
+      const overtimeHours = workedOnHoliday ? 0 : rawOvertime;
+
       const existing = byEmployee.get(record.employeeId);
       if (existing) {
-        existing.regularHours += record.regularHours || 0;
-        existing.overtimeHours += record.overtimeHours || 0;
+        existing.regularHours += regularHours;
+        existing.overtimeHours += overtimeHours;
+        existing.holidayHours += holidayHours;
         existing.nightHours += nightHours;
         existing.lateMinutes += record.lateMinutes || 0;
         existing.recordsCount += 1;
@@ -372,8 +426,9 @@ class AttendanceService {
         employeeId: record.employeeId,
         employeeName: record.employeeName,
         department: record.department,
-        regularHours: record.regularHours || 0,
-        overtimeHours: record.overtimeHours || 0,
+        regularHours,
+        overtimeHours,
+        holidayHours,
         nightHours,
         lateMinutes: record.lateMinutes || 0,
         daysPresent:

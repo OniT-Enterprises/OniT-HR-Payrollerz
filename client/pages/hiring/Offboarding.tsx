@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -59,6 +60,7 @@ import {
   useCompletedCases,
   useCreateOffboardingCase,
   useSaveArticle56FinalPay,
+  useSetSeveranceIncluded,
   useUpdateChecklistItem,
   useUpdateExitInterviewField,
 } from "@/hooks/useHiring";
@@ -68,6 +70,7 @@ import {
   type DepartureReason,
   DEPARTURE_REASONS,
   getChecklistProgress,
+  severanceDefaultForReason,
 } from "@/services/offboardingService";
 import {
   onboardingService,
@@ -94,6 +97,7 @@ export default function Offboarding() {
   const updateChecklistMutation = useUpdateChecklistItem();
   const updateExitInterviewMutation = useUpdateExitInterviewField();
   const saveArticle56Mutation = useSaveArticle56FinalPay();
+  const setSeveranceMutation = useSetSeveranceIncluded();
 
   const loading = activeCasesLoading || completedCasesLoading;
 
@@ -782,7 +786,7 @@ export default function Offboarding() {
                             </h4>
                             <p className="mt-1 text-xs text-muted-foreground">
                               {t("hiring.offboarding.finalPay.description")
-                                || "One monthly salary for each completed five-year period of service, for every termination cause."}
+                                || "One monthly salary for each completed five-year period of service."}
                             </p>
                           </div>
                           {selectedCase.article56FinalPay ? (
@@ -791,6 +795,51 @@ export default function Offboarding() {
                               {t("hiring.offboarding.finalPay.saved") || "Calculated"}
                             </Badge>
                           ) : null}
+                        </div>
+
+                        {/* Cause-aware, editable Art. 56 decision. Defaults follow
+                            real TL practice (paid on employer-initiated endings,
+                            not on resignation); the statute's literal text is
+                            cause-independent, hence the confirm-with-accountant
+                            note when it is switched off. */}
+                        <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-3">
+                          <Switch
+                            checked={
+                              selectedCase.includeArt56Severance ??
+                              severanceDefaultForReason(selectedCase.departureReason)
+                            }
+                            disabled={setSeveranceMutation.isPending || selectedCase.status === "completed"}
+                            onCheckedChange={(checked) => {
+                              if (!selectedCase.id) return;
+                              setSeveranceMutation.mutate(
+                                { caseId: selectedCase.id, include: checked },
+                                {
+                                  onError: () =>
+                                    toast({
+                                      title: t("common.error"),
+                                      description: t("hiring.offboarding.finalPay.severanceToggleFailed")
+                                        || "Could not save the severance decision.",
+                                      variant: "destructive",
+                                    }),
+                                },
+                              );
+                              setSelectedCase({ ...selectedCase, includeArt56Severance: checked });
+                            }}
+                          />
+                          <div className="space-y-1">
+                            <Label className="text-xs font-medium">
+                              {t("hiring.offboarding.finalPay.includeSeverance")
+                                || "Pay Art. 56 severance in the final payroll run"}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {(selectedCase.includeArt56Severance ??
+                                severanceDefaultForReason(selectedCase.departureReason))
+                                ? (t("hiring.offboarding.finalPay.severanceOnNote")
+                                    || "Default for this departure reason. The next payroll run pays it automatically once the case completes.")
+                                : (t("hiring.offboarding.finalPay.severanceOffNote")
+                                    || "Not usually paid on this departure reason in TL practice — but the law's text is cause-independent, so the employee may still be entitled. Confirm with your accountant.")}
+                            </p>
+                          </div>
                         </div>
 
                         {selectedCase.article56FinalPay ? (
@@ -807,7 +856,14 @@ export default function Offboarding() {
                               </span>
                             </div>
                             <div className="flex justify-between gap-4 border-t border-border/70 pt-2">
-                              <span className="font-medium">{t("hiring.offboarding.finalPay.amount") || "Service compensation"}</span>
+                              <span className="font-medium">
+                                {t("hiring.offboarding.finalPay.amount") || "Service compensation"}
+                                {selectedCase.article56FinalPay.severanceIncluded === false && (
+                                  <span className="ml-1 font-normal text-muted-foreground">
+                                    {t("hiring.offboarding.finalPay.excludedTag") || "(excluded — reference only)"}
+                                  </span>
+                                )}
+                              </span>
                               <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.serviceCompensation)}</span>
                             </div>
                             {typeof selectedCase.article56FinalPay.subsidioAnual === "number" && (

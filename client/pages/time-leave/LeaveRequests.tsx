@@ -86,11 +86,14 @@ const KNOWN_LEAVE_TYPES = new Set([
   "sick",
   "maternity",
   "paternity",
-  "bereavement",
+  "special",
   "unpaid",
-  "marriage",
   "study",
   "custom",
+  // Legacy render-only: no longer requestable (pooled into "special" per
+  // Lei 4/2012 Art. 33(3)); kept so existing requests keep their labels.
+  "bereavement",
+  "marriage",
 ]);
 
 function policyOptions(policies: TimeOffPolicies): LeaveTypeConfig[] {
@@ -99,6 +102,7 @@ function policyOptions(policies: TimeOffPolicies): LeaveTypeConfig[] {
     policies.sickLeave,
     policies.maternityLeave,
     policies.paternityLeave,
+    policies.specialLeave,
     policies.unpaidLeave,
     ...policies.customLeaveTypes,
   ].filter((policy) => policy.isActive);
@@ -306,10 +310,14 @@ export default function LeaveRequests() {
     (!canReadAll && Boolean(currentEmployeeId) && ownRequestsQuery.isLoading);
 
   const leaveTypeLabel = (leaveType: string, fallback?: string) => {
-    if (KNOWN_LEAVE_TYPES.has(leaveType)) {
-      return t(`timeLeave.leaveRequests.leaveTypes.${leaveType}`);
-    }
+    // Missing locale keys resolve to "" (see I18nProvider), so a known type
+    // whose translation hasn't landed yet still falls through to the
+    // configured policy name rather than rendering an empty label.
+    const translated = KNOWN_LEAVE_TYPES.has(leaveType)
+      ? t(`timeLeave.leaveRequests.leaveTypes.${leaveType}`)
+      : "";
     return (
+      translated ||
       leaveTypes.find((policy) => policy.id === leaveType)?.name ||
       fallback ||
       leaveType
@@ -964,6 +972,12 @@ export default function LeaveRequests() {
                       })}
                     </p>
                   )}
+                {form.leaveType === "special" && (
+                  <p className="mt-1 text-muted-foreground">
+                    {t("timeLeave.leaveRequests.dialog.specialLeaveHint") ||
+                      "3 paid days per calendar year, pooled across marriage, family death, and community or religious events (Labour Law Art. 33.3). Need more days? Request them as annual or unpaid leave. The employer may ask for supporting proof."}
+                  </p>
+                )}
               </div>
             )}
 

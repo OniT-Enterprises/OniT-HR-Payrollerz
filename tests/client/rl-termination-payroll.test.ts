@@ -7,7 +7,7 @@ import {
 import { calculateProRataHours } from '@/lib/payroll/run-payroll-helpers';
 import { TL_WORKING_HOURS } from '@/lib/payroll/constants-tl';
 import { maxMoney, subtractMoney } from '@/lib/currency';
-import { resolveLeaverFinalPay } from '@/lib/payroll/leaver-final-pay';
+import { resolveLeaverFinalPay, severanceDefaultForReason } from '@/lib/payroll/leaver-final-pay';
 
 /**
  * REAL-LIFE SCENARIO: mid-period termination / final-pay run (KEY = termination-payroll)
@@ -224,5 +224,41 @@ describe('resolveLeaverFinalPay: exact-once idempotency', () => {
     });
     expect(on.terminationDate).toBeUndefined();
     expect(on.subsidioAnual).toBeCloseTo(600, 2); // full-year employee, full month
+  });
+});
+
+describe('resolveLeaverFinalPay: cause-aware Art. 56 decision (severanceEntitled)', () => {
+  const common = {
+    monthlySalary: 600,
+    hireDate: ABILIO_HIRE,
+    asOfDate: new Date('2026-09-30T00:00:00'),
+    includeSubsidioAnual: false,
+    subsidioConfig: { proRataForNewEmployees: true },
+    committed: { serviceCompensation: 0, subsidioAnual: 0 },
+  };
+
+  it('severanceEntitled:false (e.g. resignation) suppresses the Art. 56 line but NOT the subsidio', () => {
+    const r = resolveLeaverFinalPay({
+      ...common,
+      inPeriodTermination: ABILIO_TERMINATION,
+      severanceEntitled: false,
+    });
+    expect(r.terminationDate).toBeUndefined(); // no severance earning
+    expect(r.subsidioAnual).toBeCloseTo(450, 2); // Art. 44 still owed (9/12)
+  });
+
+  it('severanceEntitled omitted defaults to the statute-literal true', () => {
+    const r = resolveLeaverFinalPay({
+      ...common,
+      inPeriodTermination: ABILIO_TERMINATION,
+    });
+    expect(r.terminationDate).toBe(ABILIO_TERMINATION);
+  });
+
+  it('severanceDefaultForReason: OFF only for resignation, ON for every employer-side cause', () => {
+    expect(severanceDefaultForReason('resignation')).toBe(false);
+    (
+      ['redundancy', 'termination', 'retirement', 'contract_end', 'mutual_agreement', 'other'] as const
+    ).forEach((reason) => expect(severanceDefaultForReason(reason)).toBe(true));
   });
 });

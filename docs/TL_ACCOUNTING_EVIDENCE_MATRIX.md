@@ -199,8 +199,12 @@ rates as the authority's own arithmetic (`attl-assessment-parity.test.ts`):
 | construction consulting | 4% | assessment-verified (two taxpayers) |
 | non-resident wages | 10% flat | assessment-verified (authority corrected $0→$1,045) |
 | resident wages | 10% > $500/mo per employee | assessment-verified (per-employee) |
-| air/sea transport | 2.64% | UNVERIFIED — needs accountant sign-off |
-| mining / mining support | 4.5% | UNVERIFIED — needs accountant sign-off |
+| air/sea transport | 2.64% | statute-verified — Law 8/2008 Schedule VIII (EN full text, WTO accession docs); corpus corroboration (a shipping line self-assessed 2.64% on TL revenue). Recipient self-withholds (Sec. 53.3(b)). |
+| mining / mining support | 4.5% | statute-verified — Law 8/2008 Schedule VIII (EN full text). No real filing in the corpus, but the printed rate is unambiguous; "was 4%" was a confusion with construction consulting. |
 | royalty / prize | 10% | statute only |
 
-Only two rates remain unconfirmed; both are flagged in code and here.
+All specified-service rates are now confirmed against Law 8/2008 Schedule VIII
+(verified 2026-07-20, see docs/MINED_SIGNOFF_ANSWERS_JUL2026.md §7). Optional
+follow-up for the firm: does ATTL treat quarrying/gravel/sand extraction as
+"mining or mining support" (4.5%) in practice — no real filing exists to confirm
+the category boundary.

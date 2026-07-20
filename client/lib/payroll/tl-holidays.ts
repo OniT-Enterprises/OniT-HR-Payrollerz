@@ -11,10 +11,34 @@ export interface TLHoliday {
  * here; tenant overrides remain available for later government changes and
  * additional days off.
  */
+// Idul Fitri (1 Shawwal) and Idul Adha (10 Dhul-Hijjah) are set by moon
+// sighting and proclaimed by the Government each year, so future dates are
+// ASTRONOMICAL ESTIMATES (±1 day) until the official proclamation. They shift
+// ~11 days earlier per Gregorian year. Refresh the current + next year from the
+// Jornal da República each release; tenants can correct a specific year via a
+// holiday override. Extended through 2030 so payment-date shifting and holiday
+// pay don't silently miss these days in the meantime.
 const ANNOUNCED_VARIABLE_HOLIDAYS: Record<number, TLHoliday[]> = {
   2026: [
     { date: "2026-03-20", name: "Idul Fitri", nameTetun: "Idul Fitri", variable: true },
     { date: "2026-05-27", name: "Idul Adha", nameTetun: "Idul Adha", variable: true },
+  ],
+  // 2027–2030: estimated — confirm against the official proclamation each year.
+  2027: [
+    { date: "2027-03-10", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
+    { date: "2027-05-17", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+  ],
+  2028: [
+    { date: "2028-02-27", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
+    { date: "2028-05-05", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+  ],
+  2029: [
+    { date: "2029-02-15", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
+    { date: "2029-04-24", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+  ],
+  2030: [
+    { date: "2030-02-05", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
+    { date: "2030-04-13", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
   ],
 };
 

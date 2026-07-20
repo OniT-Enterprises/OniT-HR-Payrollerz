@@ -92,6 +92,25 @@ export async function generateATTLExcel(
   // Parse period
   const [year, month] = witReturn.reportingPeriod.split("-");
 
+  // Line 5 / Line 10 must equal the TOTAL row of the employee annex in the
+  // same workbook, which sums the whole-dollar per-employee rows. ATTL's own
+  // assessments work per employee, so summing the rounded rows is both the
+  // authority-matching figure and the only one that reconciles internally —
+  // rounding the precise totals instead can drift a few dollars from the
+  // annex on any real headcount.
+  const formGrossWages = witReturn.employees.length
+    ? witReturn.employees.reduce(
+        (sum, emp) => sum + roundWholeMoney(emp.grossWages),
+        0,
+      )
+    : roundWholeMoney(witReturn.totalGrossWages);
+  const formWITWithheld = witReturn.employees.length
+    ? witReturn.employees.reduce(
+        (sum, emp) => sum + roundWholeMoney(emp.witWithheld),
+        0,
+      )
+    : roundWholeMoney(witReturn.totalWITWithheld);
+
   // Build form data
   const formData: ATTLFormData = {
     month,
@@ -99,8 +118,8 @@ export async function generateATTLExcel(
     tin: company?.tinNumber || witReturn.employerTIN || "",
     taxpayerName: company?.legalName || witReturn.employerName || "",
     establishmentName: company?.tradingName,
-    totalGrossWages: roundWholeMoney(witReturn.totalGrossWages),
-    totalWITWithheld: roundWholeMoney(witReturn.totalWITWithheld),
+    totalGrossWages: formGrossWages,
+    totalWITWithheld: formWITWithheld,
     declarantName: additionalData?.declarantName,
     declarantPhone: additionalData?.declarantPhone,
     declarationDate: additionalData?.declarationDate || getTodayTL(),
@@ -354,32 +373,44 @@ function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITRe
     "Effective Rate",
   ]);
 
-  // Employee rows
+  // Employee rows. Total the ROUNDED per-row values (not the rounded sum of the
+  // precise values) so the whole-dollar rows always add up to the whole-dollar
+  // TOTAL on the page — otherwise cent rounding on each row could leave the
+  // column visibly off by a dollar from its own total.
+  let rowGross = 0;
+  let rowTaxable = 0;
+  let rowWit = 0;
   for (const emp of witReturn.employees) {
     const effectiveRate = emp.taxableWages > 0 ? ((emp.witWithheld / emp.taxableWages) * 100).toFixed(1) + "%" : "0%";
+    const gross = roundWholeMoney(emp.grossWages);
+    const taxable = roundWholeMoney(emp.taxableWages);
+    const wit = roundWholeMoney(emp.witWithheld);
+    rowGross += gross;
+    rowTaxable += taxable;
+    rowWit += wit;
 
     ws.addRow([
       emp.employeeId,
       emp.fullName,
       emp.tinNumber || "",
       emp.isResident ? "Yes" : "No",
-      roundWholeMoney(emp.grossWages),
-      roundWholeMoney(emp.taxableWages),
-      roundWholeMoney(emp.witWithheld),
+      gross,
+      taxable,
+      wit,
       effectiveRate,
     ]);
   }
 
-  // Totals row
+  // Totals row — reconciles exactly to the rounded rows above.
   ws.addRow([]);
   ws.addRow([
     "",
     "TOTAL",
     "",
     "",
-    roundWholeMoney(witReturn.totalGrossWages),
-    roundWholeMoney(witReturn.totalTaxableWages),
-    roundWholeMoney(witReturn.totalWITWithheld),
+    rowGross,
+    rowTaxable,
+    rowWit,
     "",
   ]);
 

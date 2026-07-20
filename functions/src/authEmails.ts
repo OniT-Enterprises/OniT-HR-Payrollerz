@@ -11,7 +11,7 @@
  * firebaseapp.com email — mirrors the invited-member flow in ./tenant.ts.
  */
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions";
 import { requireAuth } from "./authz";
@@ -201,11 +201,75 @@ export const sendWelcomeEmail = onCall(
 /** Per-email cool-down (ms) between branded reset emails to curb inbox spam. */
 const RESET_THROTTLE_MS = 60_000;
 
+/** Per-IP burst limit: at most N reset requests per source IP per window. The
+ *  per-email throttle alone does nothing against an attacker rotating target
+ *  addresses from one host to mass-send reset mail. */
+const RESET_IP_WINDOW_MS = 10 * 60_000;
+// TL mobile carriers put many subscribers behind one CGNAT address, so this
+// cap must leave headroom for legitimate neighbours sharing an IP (the
+// callable always reports success, so a starved user gets no signal). The
+// per-email throttle stays the abuse backstop for any single inbox.
+const RESET_IP_MAX = 20;
+
 /** Deterministic, path-safe doc id for the throttle record of an email. */
 function throttleId(email: string): string {
   return Buffer.from(email.toLowerCase())
     .toString("base64")
     .replace(/[^a-zA-Z0-9]/g, "");
+}
+
+/** Best-effort client IP from the onCall raw request. Every x-forwarded-for
+ *  entry is attacker-suppliable EXCEPT the one Google's front end APPENDS from
+ *  the actual connection, so only the LAST hop can key a rate limit — the
+ *  first hop would hand a spoofed header a fresh bucket per request. Falls
+ *  back to the socket ip when the header is absent. */
+function clientIp(request: { rawRequest?: { headers?: Record<string, unknown>; ip?: string } }): string {
+  const fwd = request.rawRequest?.headers?.["x-forwarded-for"];
+  const header = Array.isArray(fwd)
+    ? fwd.join(",")
+    : typeof fwd === "string"
+      ? fwd
+      : "";
+  const hops = header
+    .split(",")
+    .map((hop) => hop.trim())
+    .filter(Boolean);
+  return hops[hops.length - 1] || request.rawRequest?.ip || "unknown";
+}
+
+function ipThrottleId(ip: string): string {
+  return Buffer.from(ip).toString("base64").replace(/[^a-zA-Z0-9]/g, "");
+}
+
+/**
+ * Fixed-window per-IP limiter. Returns true if this request is WITHIN the limit
+ * (allowed), false if the IP has exceeded RESET_IP_MAX in the current window.
+ * Atomic so concurrent bursts can't all slip through.
+ */
+async function ipWithinResetLimit(
+  db: FirebaseFirestore.Firestore,
+  ip: string,
+): Promise<boolean> {
+  const ref = db.collection("passwordResetIpThrottle").doc(ipThrottleId(ip));
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+    // expiresAt drives the Firestore TTL policy that garbage-collects stale
+    // throttle docs (windowStart is a plain number, which TTL can't target).
+    // Kept well past the window so TTL deletion never races a live window.
+    const expiresAt = Timestamp.fromMillis(now + 24 * 60 * 60_000);
+    const windowStart = (snap.get("windowStart") as number | undefined) ?? 0;
+    const count = (snap.get("count") as number | undefined) ?? 0;
+    if (now - windowStart > RESET_IP_WINDOW_MS) {
+      tx.set(ref, { windowStart: now, count: 1, expiresAt });
+      return true;
+    }
+    if (count >= RESET_IP_MAX) {
+      return false;
+    }
+    tx.set(ref, { count: count + 1, expiresAt }, { merge: true });
+    return true;
+  });
 }
 
 interface PasswordResetResponse {
@@ -230,6 +294,14 @@ export const requestPasswordReset = onCall(
     }
 
     const db = getFirestore();
+
+    // Per-IP burst limit first (curbs email-bombing across rotating addresses).
+    // Over the limit → succeed silently, same as every other guard here, so we
+    // never leak rate-limit state or account existence.
+    if (!(await ipWithinResetLimit(db, clientIp(request)))) {
+      return { success: true };
+    }
+
     const throttleRef = db.collection("passwordResetThrottle").doc(throttleId(email));
 
     // Throttle: bail quietly if we sent to this address very recently.

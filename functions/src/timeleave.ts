@@ -73,14 +73,18 @@ interface ShiftInput {
   createdBy?: string;
 }
 
+// Doubles as the validity whitelist for new requests (createLeaveRequest):
+// bereavement/marriage are deliberately ABSENT so new requests of those types
+// are rejected — Lei 4/2012 Art. 33(3) pools them into "special" (3 paid
+// days/year for marriage + family death + community/religious events).
+// Existing bereavement/marriage requests remain valid data and still render.
 const DEFAULT_ENTITLEMENTS: Record<string, number> = {
   annual: 12,
   sick: 12,
   maternity: 84,
   paternity: 5,
   unpaid: 30,
-  bereavement: 5,
-  marriage: 5,
+  special: 3,
   study: 0,
   custom: 0,
 };
@@ -327,6 +331,7 @@ function entitlementsFromConfig(
     "sickLeave",
     "maternityLeave",
     "paternityLeave",
+    "specialLeave",
     "unpaidLeave",
   ];
   for (const key of policyKeys) {
@@ -511,6 +516,7 @@ function leavePayFraction(
         policies.sickLeave,
         policies.maternityLeave,
         policies.paternityLeave,
+        policies.specialLeave,
         policies.unpaidLeave,
         ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
       ]
@@ -1064,6 +1070,7 @@ export const createLeaveRequest = onCall(async (request) => {
         policies.sickLeave,
         policies.maternityLeave,
         policies.paternityLeave,
+        policies.specialLeave,
         policies.unpaidLeave,
         ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
       ].map((policy) => policy as Record<string, unknown> | undefined)

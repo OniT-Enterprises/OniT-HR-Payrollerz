@@ -30,9 +30,15 @@ const jobKeys = {
   detail: (tenantId: string, id: string) => [...jobKeys.details(tenantId), id] as const,
 };
 
-const applicationKeys = {
+// Exported so JobApplicationsReview shares ONE namespace with these hooks —
+// otherwise a verify/reject there (keyed ['jobApplications', ...]) left the
+// HiringWorkspace badge (keyed here) stale, and vice versa.
+export const applicationKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'job-applications'] as const,
   lists: (tenantId: string) => [...applicationKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, tab: string) =>
+    [...applicationKeys.all(tenantId), 'list', tab] as const,
+  stats: (tenantId: string) => [...applicationKeys.all(tenantId), 'stats'] as const,
 };
 
 const interviewKeys = {
@@ -343,6 +349,20 @@ export function useSaveArticle56FinalPay() {
   return useMutation({
     mutationFn: ({ caseId, calculatedBy }: { caseId: string; calculatedBy: string }) =>
       offboardingService.saveArticle56FinalPay(tenantId, caseId, calculatedBy),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
+    },
+  });
+}
+
+export function useSetSeveranceIncluded() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ caseId, include }: { caseId: string; include: boolean }) =>
+      offboardingService.updateCase(tenantId, caseId, {
+        includeArt56Severance: include,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
     },

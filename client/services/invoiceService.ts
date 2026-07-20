@@ -1699,19 +1699,24 @@ class InvoiceService {
    * Delete a draft invoice
    */
   async deleteInvoice(tenantId: string, id: string): Promise<boolean> {
-    const invoice = await this.getInvoiceById(tenantId, id);
-    if (!invoice) {
-      throw new Error("Invoice not found");
-    }
-
-    if (invoice.status !== "draft") {
-      throw new Error(
-        "Cannot delete invoice that has been sent. Cancel it instead.",
-      );
-    }
-
     const docRef = doc(db, paths.invoice(tenantId, id));
-    await deleteDoc(docRef);
+
+    // Re-read status inside the transaction and delete only while still 'draft'.
+    // A plain read-then-delete races a concurrent send: sendInvoice can move the
+    // invoice draft -> sent AND post its GL journal between the check and the
+    // delete, leaving the journal referencing a now-deleted invoice.
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) {
+        throw new Error("Invoice not found");
+      }
+      if (snap.data().status !== "draft") {
+        throw new Error(
+          "Cannot delete invoice that has been sent. Cancel it instead.",
+        );
+      }
+      transaction.delete(docRef);
+    });
     return true;
   }
 

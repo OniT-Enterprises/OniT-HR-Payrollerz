@@ -9,11 +9,16 @@ export type LeaveType =
   | 'sick'
   | 'maternity'
   | 'paternity'
-  | 'bereavement'
+  // Pooled justified absence — Lei 4/2012 Art. 33(3): 3 paid days/year covering
+  // marriage, family death, and community/religious events.
+  | 'special'
   | 'unpaid'
-  | 'marriage'
   | 'study'
-  | 'custom';
+  | 'custom'
+  // Legacy render-only: no longer requestable (pooled into 'special');
+  // kept so existing requests keep rendering.
+  | 'bereavement'
+  | 'marriage';
 
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 

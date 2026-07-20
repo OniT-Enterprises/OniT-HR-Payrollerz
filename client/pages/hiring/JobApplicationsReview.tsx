@@ -24,6 +24,7 @@ import {
 import PageHeader from "@/components/layout/PageHeader";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { notificationService } from "@/services/notificationService";
+import { applicationKeys } from "@/hooks/useHiring";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAddCandidate } from "@/hooks/useHiring";
@@ -64,7 +65,7 @@ export default function JobApplicationsReview() {
   const [rejectReason, setRejectReason] = useState("");
 
   const { data: applications = [], isLoading } = useQuery({
-    queryKey: ["jobApplications", tenantId, tab],
+    queryKey: applicationKeys.list(tenantId, tab),
     queryFn: () =>
       tab === "pending"
         ? jobApplicationService.getPending(tenantId)
@@ -74,7 +75,7 @@ export default function JobApplicationsReview() {
   });
 
   const { data: allApplications = [] } = useQuery({
-    queryKey: ["jobApplications", tenantId, "stats"],
+    queryKey: applicationKeys.stats(tenantId),
     queryFn: () => jobApplicationService.getAll(tenantId),
     enabled: !!tenantId,
     staleTime: 2 * 60 * 1000,
@@ -154,7 +155,7 @@ export default function JobApplicationsReview() {
       return candidateId;
     },
     onSuccess: (candidateId) => {
-      queryClient.invalidateQueries({ queryKey: ["jobApplications", tenantId] });
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all(tenantId) });
       toast({
         title: "Verified & candidate created",
         description: "Starting onboarding with the approved candidate.",
@@ -205,7 +206,7 @@ export default function JobApplicationsReview() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["jobApplications", tenantId] });
+      queryClient.invalidateQueries({ queryKey: applicationKeys.all(tenantId) });
       toast({ title: "Application rejected" });
       setRejectOpen(false);
       setRejectReason("");

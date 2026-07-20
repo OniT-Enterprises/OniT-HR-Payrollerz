@@ -2338,7 +2338,8 @@ export default function register(api: OpenclawPluginApi) {
       endDate: Type.String({ description: "Leave end date YYYY-MM-DD (inclusive)" }),
       leaveType: Type.String({
         description:
-          "Type: annual, sick, maternity, paternity, unpaid, compassionate, study, or other",
+          "Type: annual, sick, maternity, paternity, special, or unpaid. " +
+          "'special' is the pooled 3-day/year justified absence (marriage, family death, community/religious events — Labour Law Art. 33.3).",
       }),
       reason: Type.Optional(Type.String({ description: "Reason / notes" })),
       requestedBy: Type.Optional(Type.String({ description: "Who submitted the request (email)" })),

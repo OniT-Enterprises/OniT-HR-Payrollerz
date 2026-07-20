@@ -119,9 +119,42 @@ export const fixedAssetService = {
       >
     >,
   ): Promise<void> {
-    await updateDoc(doc(assetsRef(tenantId), id), {
-      ...changes,
-      updatedAt: serverTimestamp(),
+    const ref = doc(assetsRef(tenantId), id);
+
+    // create() validates residual/cost, but update() historically didn't — so a
+    // later edit could raise residualValue above the remaining net book value
+    // (cost − accumulated), driving NBV negative and breaking the cumulative-cap
+    // depreciation math. Re-validate against LIVE accumulated depreciation in a
+    // transaction (a concurrent depreciation posting moves that number).
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("Fixed asset not found.");
+      const asset = snap.data() as FixedAsset;
+
+      if (changes.residualValue !== undefined) {
+        const residual = changes.residualValue;
+        const nbv = subtractMoney(
+          asset.acquisitionCost,
+          asset.accumulatedDepreciation || 0,
+        );
+        if (residual < 0) throw new Error("Residual value must be ≥ 0.");
+        if (residual >= asset.acquisitionCost)
+          throw new Error("Residual value must be below cost.");
+        if (residual > nbv)
+          throw new Error(
+            "Residual value cannot exceed the asset's remaining net book value.",
+          );
+      }
+
+      if (
+        changes.usefulLifeMonths !== undefined &&
+        asset.assetClass !== "land" &&
+        !(changes.usefulLifeMonths > 0)
+      ) {
+        throw new Error("Useful life must be greater than zero.");
+      }
+
+      tx.update(ref, { ...changes, updatedAt: serverTimestamp() });
     });
   },
 

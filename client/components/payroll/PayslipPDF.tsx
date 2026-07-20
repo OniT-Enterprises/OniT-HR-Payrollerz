@@ -693,12 +693,29 @@ function EmployerContributionsSection({
 
 function SubsidioAnualSection({
   record,
+  payFrequency,
   s,
 }: {
   record: PayrollRecord;
+  payFrequency: PayrollRun['payFrequency'];
   s: PayslipStrings;
 }) {
   if (!(record.totalGrossPay > 0)) {
+    return null;
+  }
+  // Art. 44: the subsídio anual is BASE salary only — it excludes overtime,
+  // bonuses, allowances and the 13th month itself. The accrual estimate must
+  // divide the base (the 'regular' earning), not total gross, or it overstates
+  // what the employee is really accruing (and mismatches the engine, which
+  // prorates monthlySalary/12).
+  const baseSalary = record.earnings
+    .filter((e) => e.type === 'regular')
+    .reduce((sum, e) => sum + e.amount, 0);
+  // A run with no regular earning (e.g. a standalone 13th-month run) or a
+  // sub-monthly record (one week's pay is not a monthly base) has no
+  // meaningful monthly accrual — hide the section rather than print $0.00 or
+  // a week's salary divided by 12.
+  if (baseSalary <= 0 || payFrequency !== 'monthly') {
     return null;
   }
   return (
@@ -708,7 +725,7 @@ function SubsidioAnualSection({
       <View style={styles.employerRow}>
         <Text style={styles.employerLabel}>{s.subsidioAnualAccrual}</Text>
         <Text style={styles.employerValue}>
-          {formatCurrency(+(record.totalGrossPay / 12).toFixed(2))}{s.perMonth}
+          {formatCurrency(+(baseSalary / 12).toFixed(2))}{s.perMonth}
         </Text>
       </View>
     </View>
@@ -1008,7 +1025,11 @@ const PayslipDocument = ({
         <AuditTrailRow record={record} s={s} />
         <SignatureBlock record={record} s={s} />
         <EmployerContributionsSection record={record} s={s} />
-        <SubsidioAnualSection record={record} s={s} />
+        <SubsidioAnualSection
+          record={record}
+          payFrequency={payrollRun.payFrequency}
+          s={s}
+        />
         <YtdSection record={record} s={s} />
         <PayslipFooter companyEmail={companyEmail} s={s} />
       </Page>

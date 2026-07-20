@@ -3469,12 +3469,17 @@ router.post('/leave/requests', async (req, res) => {
       policies.sickLeave,
       policies.maternityLeave,
       policies.paternityLeave,
+      policies.specialLeave,
       policies.unpaidLeave,
       ...(Array.isArray(policies.customLeaveTypes) ? policies.customLeaveTypes : []),
     ].filter(Boolean) : [];
     const configuredPolicy = configuredPolicies.find((policy) => policy.id === leaveType);
+    // 'special' = pooled justified absence (Lei 4/2012 Art. 33(3), 3 paid
+    // days/year for marriage + family death + community/religious events).
+    // 'bereavement'/'marriage' are legacy render-only types kept so existing
+    // requests stay valid data — new requests should use 'special'.
     const builtInLeaveTypes = new Set([
-      'annual', 'sick', 'maternity', 'paternity', 'unpaid',
+      'annual', 'sick', 'maternity', 'paternity', 'special', 'unpaid',
       'bereavement', 'marriage', 'study', 'custom',
     ]);
     if (!builtInLeaveTypes.has(leaveType) && !configuredPolicy) {

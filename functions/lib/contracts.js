@@ -31,7 +31,7 @@ exports.contractQuickFill = (0, https_1.onCall)({
     timeoutSeconds: 120,
     enforceAppCheck: APP_CHECK_ENFORCED,
 }, async (request) => {
-    var _a, _b, _c;
+    var _a, _b;
     const auth = (0, authz_1.requireAuth)(request);
     const { tenantId, templateText, data } = request.data;
     if (!tenantId) {
@@ -98,19 +98,43 @@ exports.contractQuickFill = (0, https_1.onCall)({
             throw new https_1.HttpsError("internal", `AI request failed: ${response.statusText}`);
         }
         const result = await response.json();
-        const content = (_c = (_b = (_a = result === null || result === void 0 ? void 0 : result.choices) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.content;
+        const choice = (_a = result === null || result === void 0 ? void 0 : result.choices) === null || _a === void 0 ? void 0 : _a[0];
+        const finishReason = choice === null || choice === void 0 ? void 0 : choice.finish_reason;
+        const content = (_b = choice === null || choice === void 0 ? void 0 : choice.message) === null || _b === void 0 ? void 0 : _b.content;
+        // A truncated completion (finish_reason "length") yields partial or
+        // malformed JSON. Never fall back to persisting that as the legal
+        // contract — fail loudly so the caller sees a real error.
+        if (finishReason === "length") {
+            v2_1.logger.error("OpenAI response truncated (finish_reason=length)", {
+                tenantId,
+                templateChars: templateText.length,
+            });
+            throw new https_1.HttpsError("resource-exhausted", "The contract template is too large to fill in one pass. Please shorten the template or split it into sections and try again.");
+        }
         if (!content) {
-            v2_1.logger.error("No content in OpenAI response", { tenantId });
+            v2_1.logger.error("No content in OpenAI response", {
+                tenantId,
+                finishReason,
+            });
             throw new https_1.HttpsError("internal", "No response content from AI");
         }
+        // Parse strictly: on malformed JSON or a missing/non-string contract
+        // field, throw rather than persisting the raw (possibly partial) text.
         let contract;
         try {
             const parsed = JSON.parse(content);
-            contract =
-                typeof (parsed === null || parsed === void 0 ? void 0 : parsed.contract) === "string" ? parsed.contract : content;
+            if (typeof (parsed === null || parsed === void 0 ? void 0 : parsed.contract) !== "string") {
+                throw new Error("AI response missing a 'contract' string field");
+            }
+            contract = parsed.contract;
         }
-        catch (_d) {
-            contract = content;
+        catch (parseError) {
+            v2_1.logger.error("Failed to parse AI contract response", {
+                tenantId,
+                finishReason,
+                error: parseError instanceof Error ? parseError.message : "parse error",
+            });
+            throw new https_1.HttpsError("internal", "AI returned a malformed contract. Please try again.");
         }
         if (!contract.trim()) {
             throw new https_1.HttpsError("internal", "AI returned an empty contract");

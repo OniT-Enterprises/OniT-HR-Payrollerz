@@ -62,6 +62,18 @@ export class SubscriptionRequiredError extends Error {
   }
 }
 
+/**
+ * payDate query window wide enough for any plausible pay date of a wage
+ * period in `year`. YTD/MTD/final-pay aggregation is keyed on the wage
+ * period's civil month/year, but pay dates slip past the period boundary
+ * (a December run paid Jan 5), so the payDate-indexed query is widened —
+ * one month left, two right — and the precise membership test runs in
+ * memory on periodStart/periodEnd.
+ */
+function yearPayDateWindow(year: number): { start: string; end: string } {
+  return { start: `${year - 1}-12-01`, end: `${year + 1}-03-01` };
+}
+
 class PayrollRunService {
   private get collectionRef() {
     return collection(db, 'payrollRuns');
@@ -237,9 +249,13 @@ class PayrollRunService {
 
     // Step 3: All records written — finalize the run with the intended status.
     // This is the "commit point": only runs that reach this update are complete.
+    // committedAt marks when the run's records became visible to the MTD-WIT /
+    // final-pay aggregations (they count processing+); a draft gets it later,
+    // at approval, so staleness checks can compare against it.
     await updateDoc(runRef, {
       status: targetStatus,
       updatedAt: serverTimestamp(),
+      ...(targetStatus !== 'draft' ? { committedAt: serverTimestamp() } : {}),
     });
 
     // Log to audit trail if context provided
@@ -312,6 +328,72 @@ class PayrollRunService {
     return true;
   }
 
+  /**
+   * Throw if any run was committed after this draft was saved in a scope that
+   * overlaps its figures: the same period month always (the runs share the
+   * monthly $500 WIT threshold), widened to the same period year when the
+   * draft carries once-only final-pay lines (Art. 56 severance / Art. 44
+   * subsidio, deduped per year). Commit time is committedAt where stamped,
+   * falling back to approvedAt/createdAt for runs predating the stamp —
+   * approvedAt can over-block a legacy processing-then-approved run, which
+   * only costs the approver a re-run, never a double payment.
+   */
+  private async assertDraftFiguresFresh(
+    tenantId: string,
+    draftRunId: string,
+    draft: PayrollRun,
+  ): Promise<void> {
+    const draftSavedAt =
+      draft.createdAt instanceof Date ? draft.createdAt.getTime() : 0;
+    const periodMonth = (draft.periodStart || draft.payDate || '').slice(0, 7);
+    if (!draftSavedAt || periodMonth.length !== 7) return;
+
+    const records = await payrollRecordService.getPayrollRecordsByRunId(draftRunId, tenantId);
+    const hasFinalPay = records.some((record) =>
+      record.earnings?.some(
+        (earning) =>
+          earning.type === 'service_compensation' || earning.type === 'subsidio_anual',
+      ),
+    );
+
+    const year = Number.parseInt(periodMonth.slice(0, 4), 10);
+    const window = yearPayDateWindow(year);
+    const runsSnapshot = await getDocs(query(
+      collection(db, 'payrollRuns'),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['processing', 'approved', 'paid']),
+      where('payDate', '>=', window.start),
+      where('payDate', '<=', window.end),
+    ));
+    const stale = runsSnapshot.docs.some((runDoc) => {
+      if (runDoc.id === draftRunId) return false;
+      const data = runDoc.data() as {
+        periodStart?: string;
+        payDate?: string;
+        committedAt?: { toDate?: () => Date };
+        approvedAt?: { toDate?: () => Date };
+        createdAt?: { toDate?: () => Date };
+      };
+      const period = data.periodStart || data.payDate || '';
+      const scopeMatch = hasFinalPay
+        ? period.slice(0, 4) === String(year)
+        : period.slice(0, 7) === periodMonth;
+      if (!scopeMatch) return false;
+      const committed =
+        data.committedAt?.toDate?.() ??
+        data.approvedAt?.toDate?.() ??
+        data.createdAt?.toDate?.();
+      return committed ? committed.getTime() > draftSavedAt : false;
+    });
+    if (stale) {
+      throw new Error(
+        'Another payroll run for this period was finalized after this draft was saved, ' +
+        'so its tax-exemption and final-pay figures may be stale. Reject this draft and ' +
+        'run payroll again to recalculate.',
+      );
+    }
+  }
+
   async approvePayrollRun(
     id: string,
     approvedBy: string,
@@ -346,6 +428,15 @@ class PayrollRunService {
       throw new Error('Payroll cannot be approved by the same person who created it');
     }
 
+    // A draft's records were computed against the runs committed at SAVE time.
+    // The MTD-WIT ($500/employee-month) and once-only final-pay aggregations
+    // ignore drafts, so any run committed since then invalidates this draft's
+    // figures — approving it unchanged would double an exemption or a
+    // severance/13th-month payment. Force a re-run instead of a silent recompute.
+    if (payroll.status === 'draft' && tenantId) {
+      await this.assertDraftFiguresFresh(tenantId, id, payroll);
+    }
+
     // Atomic status transition: the pre-checks above read a snapshot, but two
     // approvers (or two tabs) could both pass them and both write 'approved',
     // double-posting the payroll journal downstream. The transaction re-reads
@@ -370,6 +461,9 @@ class PayrollRunService {
         approvedBy,
         approvedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        // A draft's records join the MTD/final-pay aggregations at approval;
+        // a processing run already carries its creation-time stamp.
+        ...(snap.data().committedAt ? {} : { committedAt: serverTimestamp() }),
       });
     });
 
@@ -410,13 +504,29 @@ class PayrollRunService {
       throw new Error(`Only processing payroll runs can be rejected (current: ${payroll.status})`);
     }
 
+    // Atomic status transition. The pre-check above reads a snapshot, but a
+    // concurrent approval could move the run processing -> approved (and post
+    // its GL journal) between that read and this write. A plain updateDoc would
+    // then stamp 'rejected' over an already-approved, already-posted run — wages
+    // on the books for a run the state machine now refuses to re-approve. The
+    // transaction re-reads and rejects ONLY while still 'processing'.
     const docRef = doc(db, 'payrollRuns', id);
-    await updateDoc(docRef, {
-      status: 'rejected',
-      rejectedBy,
-      rejectedAt: serverTimestamp(),
-      rejectionReason: reason,
-      updatedAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) {
+        throw new Error('Payroll run not found');
+      }
+      const current = snap.data().status;
+      if (current !== 'processing') {
+        throw new Error(`Only processing payroll runs can be rejected (current: ${current})`);
+      }
+      transaction.update(docRef, {
+        status: 'rejected',
+        rejectedBy,
+        rejectedAt: serverTimestamp(),
+        rejectionReason: reason,
+        updatedAt: serverTimestamp(),
+      });
     });
 
     if (audit) {
@@ -713,19 +823,49 @@ class PayrollRecordService {
     return totals;
   }
 
+  /**
+   * Run ids whose pay PERIOD matches `belongs`, queried through the existing
+   * (tenantId, status, payDate) composite. YTD/MTD/final-pay aggregation is
+   * keyed on the wage period's civil month/year, but pay dates slip past the
+   * period boundary (a December run paid Jan 5), so the payDate query window
+   * is widened — one month left, two right — and the precise membership test
+   * runs in memory on periodStart/periodEnd. Runs without periodStart
+   * (legacy) fall back to payDate membership via `belongs`.
+   */
+  private async getRunIdsByPeriod(
+    tenantId: string,
+    statuses: PayrollRun['status'][],
+    payDateWindow: { start: string; end: string },
+    belongs: (run: { periodStart?: string; periodEnd?: string; payDate?: string }) => boolean,
+  ): Promise<string[]> {
+    const runsSnapshot = await getDocs(query(
+      collection(db, 'payrollRuns'),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', statuses),
+      where('payDate', '>=', payDateWindow.start),
+      where('payDate', '<=', payDateWindow.end),
+    ));
+    return runsSnapshot.docs
+      .filter((runDoc) => belongs(runDoc.data() as {
+        periodStart?: string; periodEnd?: string; payDate?: string;
+      }))
+      .map((runDoc) => runDoc.id);
+  }
+
   /** Aggregate current-period values from paid records; never re-sum YTD snapshots. */
   async getTenantYTDTotals(
     tenantId: string,
     year: number,
   ): Promise<Record<string, EmployeePayrollYTD>> {
-    const runsSnapshot = await getDocs(query(
-      collection(db, 'payrollRuns'),
-      where('tenantId', '==', tenantId),
-      where('status', '==', 'paid'),
-      where('payDate', '>=', `${year}-01-01`),
-      where('payDate', '<=', `${year}-12-31`),
-    ));
-    const runIds = runsSnapshot.docs.map((runDoc) => runDoc.id);
+    const yearStr = String(year);
+    const runIds = await this.getRunIdsByPeriod(
+      tenantId,
+      ['paid'],
+      yearPayDateWindow(year),
+      // YTD follows the wage period's civil year (matches the hook's
+      // period-year keying), not the year the money happened to move.
+      (run) => (run.periodStart || run.payDate || '').slice(0, 4) === yearStr,
+    );
     const totals: Record<string, EmployeePayrollYTD> = {};
 
     for (const runIdChunk of chunkArray(runIds, 10)) {
@@ -789,14 +929,17 @@ class PayrollRecordService {
     tenantId: string,
     year: number,
   ): Promise<Record<string, { serviceCompensation: number; subsidioAnual: number }>> {
-    const runsSnapshot = await getDocs(query(
-      collection(db, 'payrollRuns'),
-      where('tenantId', '==', tenantId),
-      where('status', 'in', ['processing', 'approved', 'paid']),
-      where('payDate', '>=', `${year}-01-01`),
-      where('payDate', '<=', `${year}-12-31`),
-    ));
-    const runIds = runsSnapshot.docs.map((runDoc) => runDoc.id);
+    const yearStr = String(year);
+    const runIds = await this.getRunIdsByPeriod(
+      tenantId,
+      ['processing', 'approved', 'paid'],
+      yearPayDateWindow(year),
+      // Dedup is conservative: a period touching the year at EITHER end counts,
+      // so a New-Year-spanning weekly final run is found from both years.
+      (run) =>
+        (run.periodStart || run.payDate || '').slice(0, 4) === yearStr ||
+        (run.periodEnd || '').slice(0, 4) === yearStr,
+    );
     const totals: Record<string, { serviceCompensation: number; subsidioAnual: number }> = {};
 
     for (const runIdChunk of chunkArray(runIds, 10)) {
@@ -819,6 +962,80 @@ class PayrollRecordService {
           subsidioAnual: addMoney(
             current.subsidioAnual,
             record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0,
+          ),
+        };
+      }
+    }
+
+    return totals;
+  }
+
+  /**
+   * Per-employee WIT already assessed this CALENDAR MONTH (by pay-period month),
+   * so a new monthly run applies the resident $500/month exemption against the
+   * remaining threshold instead of granting a fresh one. Counts committed runs
+   * only (processing/approved/paid) — the draft being built is excluded. Keyed
+   * on `periodStart`'s YYYY-MM so a regular run and a same-month top-up run
+   * (e.g. a standalone 13th-month run) share one monthly threshold.
+   *
+   * `mtdWitTaxableIncome` is pre-threshold taxable income; `mtdIncomeTax` is WIT
+   * withheld — both are what calculateIncomeTaxWithBase's monthToDate expects.
+   */
+  async getMonthToDateWITByEmployee(
+    tenantId: string,
+    periodMonth: string, // 'YYYY-MM'
+  ): Promise<Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }>> {
+    // Bucket by the pay-PERIOD month, not the pay date: a December salary run and
+    // a December 13th-month run belong to the same WIT month even if paid in
+    // January — which is exactly why the payDate window must straddle the
+    // period month rather than stop at its calendar year.
+    const year = Number.parseInt(periodMonth.slice(0, 4), 10);
+    const month = Number.parseInt(periodMonth.slice(5, 7), 10);
+    const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+    const runIds = await this.getRunIdsByPeriod(
+      tenantId,
+      ['processing', 'approved', 'paid'],
+      {
+        start: isoDay(new Date(Date.UTC(year, month - 2, 1))),
+        end: isoDay(new Date(Date.UTC(year, month + 2, 0))),
+      },
+      (run) => (run.periodStart || run.payDate || '').slice(0, 7) === periodMonth,
+    );
+    const totals: Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }> = {};
+
+    for (const runIdChunk of chunkArray(runIds, 10)) {
+      if (runIdChunk.length === 0) continue;
+      // tenantId filter is load-bearing — see getTenantYTDTotals.
+      const recordsSnapshot = await getDocs(query(
+        this.collectionRef,
+        where('tenantId', '==', tenantId),
+        where('payrollRunId', 'in', runIdChunk),
+      ));
+      for (const recordDoc of recordsSnapshot.docs) {
+        const record = normalizeLegacyRecord({ ...recordDoc.data() }) as PayrollRecord;
+        if (!record.employeeId) continue;
+        const current = totals[record.employeeId] || {
+          mtdWitTaxableIncome: 0,
+          mtdIncomeTax: 0,
+        };
+        // Records written before taxableIncome existed would contribute 0
+        // income while their WIT still lands in mtdIncomeTax, which makes the
+        // engine's monthToDate gate treat the month as untouched and re-grant
+        // the full $500. Gross pay is the closest available proxy for their
+        // pre-threshold taxable income (it can only overstate, i.e. lean
+        // toward slight over-withholding, never a duplicate exemption).
+        const taxableIncome =
+          typeof record.taxableIncome === 'number'
+            ? record.taxableIncome
+            : record.totalGrossPay || 0;
+        totals[record.employeeId] = {
+          mtdWitTaxableIncome: addMoney(
+            current.mtdWitTaxableIncome,
+            taxableIncome,
+          ),
+          mtdIncomeTax: addMoney(
+            current.mtdIncomeTax,
+            record.deductions?.find((d) => d.type === 'income_tax')?.amount || 0,
           ),
         };
       }
