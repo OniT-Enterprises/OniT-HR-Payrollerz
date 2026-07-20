@@ -276,6 +276,7 @@ const messages = {
     "removeError": "Falha ao remover subsídio"
   },
   "dashboard": {
+    "cardPayrollOverdue": "Salários em atraso — o art. 40.º exige pagamento pelo menos mensal",
     "payrollStatus": "Estado da Folha de Pagamento",
     "days": "dias",
     "untilPayDate": "até à data de pagamento (dia 25)",
@@ -2265,6 +2266,10 @@ const messages = {
       "importStartedDesc": "A processar {{count}} funcionários..."
     },
     "toast": {
+      "fixedTermMotiveTitle": "Motivo do termo não declarado",
+      "fixedTermMotiveDesc": "Art. 12.º(2): um contrato a termo sem motivo declarado é considerado permanente.",
+      "minorWarningTitle": "Trabalhador menor (Lei do Trabalho, art. 69.º)",
+      "minorWarningDesc": "Apenas trabalho leve: máx. 5h/dia, 25h/semana, sem trabalho noturno nem horas extraordinárias.",
       "errorTitle": "Erro",
       "requiredFieldsTitle": "Faltam campos obrigatórios",
       "requiredFieldsDesc": "Preencha todos os campos obrigatórios antes de continuar.",
@@ -2281,6 +2286,14 @@ const messages = {
       "uploadWarningDesc": "Funcionário foi guardado, mas falhou o carregamento de: {files}"
     },
     "fields": {
+      "contractEndDate": "Data de fim do contrato",
+      "contractEndDateHelp": "Apenas para contratos a termo — deixe vazio se for permanente.",
+      "fixedTermMotive": "Motivo do termo",
+      "fixedTermMotivePlaceholder": "Selecione o motivo legal",
+      "fixedTermMotiveWarning": "Art. 12.º(2): um contrato a termo sem motivo declarado é considerado permanente.",
+      "minorLightWorkNote": "Com 15-16 anos à admissão: apenas trabalho leve — máx. 5h/dia, 25h/semana, sem trabalho noturno nem horas extraordinárias (Lei do Trabalho, art. 69.º).",
+      "probationEndDate": "Fim do período experimental",
+      "probationEndDateHelp": "Art. 14.º: 8/15 dias para contratos a termo, 30-90 dias para permanentes.",
       "firstName": "Primeiro Nome *",
       "lastName": "Apelido *",
       "email": "Email *",
@@ -2753,6 +2766,23 @@ const messages = {
       }
     },
     "offboarding": {
+      "notice": {
+        "required": "Aviso prévio exigido",
+        "days": "dias",
+        "given": "cumprido",
+        "notRecorded": "Data do aviso prévio não registada",
+        "requiredForReason": "o aviso prévio exigido para este motivo de saída é de",
+        "shortfallWorker": "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
+        "shortfallEmployer": "Aviso prévio insuficiente: o empregador deve ao trabalhador os",
+        "daysPay": "dias de remuneração em falta",
+      },
+      "disciplinary": {
+        "noConcludedWarning": "Não existe qualquer processo disciplinar concluído em arquivo para este trabalhador. O despedimento com justa causa sem o processo escrito do art. 50.º(4) (acusação, defesa, decisão fundamentada) é automaticamente ilícito (art. 51.º) e expõe-no à indemnização do art. 55.º — confirme com o seu contabilista.",
+      },
+      "certificate": {
+        "generate": "Gerar certificado (art. 57.º)",
+        "mandatoryNote": "O Certificado de Trabalho (nome, datas do contrato, funções desempenhadas) é obrigatório em qualquer cessação — art. 57.º.",
+      },
       "title": "Desvinculação de Funcionário",
       "subtitle": "Gerir saídas de funcionários e processos de saída",
       "actions": {
@@ -2772,6 +2802,9 @@ const messages = {
         "reason": "Motivo de Saída",
         "reasonPlaceholder": "Selecionar motivo...",
         "reasons": {
+          "mutualAgreement": "Acordo mútuo",
+          "death": "Falecimento do trabalhador",
+          "other": "Outro",
           "resignation": "Demissão",
           "redundancy": "Despedimento Coletivo",
           "termination": "Despedimento",
@@ -2819,6 +2852,9 @@ const messages = {
         "empty": "Selecione um funcionário para ver a lista",
         "emptyPrompt": "Selecione uma saída em curso para ver a lista",
         "items": {
+          "inssCessation": "Cessação declarada à Segurança Social",
+          "inssCessationDeadline": "Prazo",
+          "inssCessationHint": "Declare no portal da Segurança Social até ao dia 10 do mês seguinte ao último dia de trabalho — enquanto não for declarada, a Segurança Social presume que o vínculo continua e as contribuições continuam a vencer.",
           "access": "Revogar Acesso ao Sistema",
           "equipment": "Devolução de Equipamento",
           "documents": "Documentos de Saída Assinados",
@@ -2830,6 +2866,7 @@ const messages = {
         }
       },
       "finalPay": {
+        "deathHeirsNote": "Trabalhador falecido (art. 47.º(1)(b)): este pagamento é devido à herança/aos herdeiros — confirme os beneficiários com o seu contabilista.",
         "title": "Compensação de serviço do Artigo 56.º",
         "description": "Um mês de salário por cada período completo de cinco anos de serviço.",
         "includeSeverance": "Pagar a compensação do Art. 56.º na folha de pagamento final",
@@ -3209,6 +3246,7 @@ const messages = {
         "notAvailable": "N/D"
       },
       "toast": {
+        "breakEntitlement": "Art. 25.º(2): o trabalhador tem direito a uma pausa de 1 hora após 5 horas de trabalho contínuo.",
         "errorTitle": "Erro",
         "loadFailed": "Falha ao carregar dados de assiduidade.",
         "validationTitle": "Erro de Validação",
@@ -4161,6 +4199,7 @@ const messages = {
       "title": "Declaração Mensal do INSS",
       "subtitle": "Gerar e acompanhar as submissões mensais de contribuições do INSS.",
       "due": {
+        "arrearsNotice": "O pagamento em atraso vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
         "overdueTitle": "{{task}} em atraso",
         "overdueDescription": "{{task}} de {{period}} devia ser entregue em {{dueDate}}.",
         "upcomingTitle": "{{task}} com prazo próximo",
@@ -4576,6 +4615,10 @@ const messages = {
     },
     "profitLoss": {
       "etax": {
+        "baseExclusionsTitle": "Verifique a base antes de submeter (Lei 8/2008, Sec. 64.6)",
+        "baseExclusionsBody": "A base da prestação exclui rendimentos isentos e recebimentos sobre os quais um cliente já reteve imposto ao pagar-lhe. O Xefe não identifica automaticamente a retenção feita pelo cliente, por isso, se parte da sua receita foi paga com retenção (ou é isenta), introduza a base reduzida abaixo — os valores acima atualizam-se.",
+        "baseOverrideLabel": "Base de volume de negócios ajustada (opcional)",
+        "baseOverrideAboveRevenue": "A base ajustada é superior à receita do período calculada pelo Xefe — reveja antes de submeter.",
         "title": "Preencher imposto prestacional no e-Tax (assistido)",
         "description": "A prestação é 0,5% do volume de negócios: trimestral até $1 milhão no ano anterior e mensal acima disso. Confirme o período e submeta no e-Tax — o Xefe nunca submete por si.",
         "account": "Imposto Prestacional Doméstico",
@@ -6495,6 +6538,8 @@ const messages = {
       }
     },
     "bills": {
+      "withholdingNotice": "Aviso de retenção",
+      "withholdingNoticeError": "Não foi possível gerar o aviso de retenção.",
       "title": "Contas",
       "subtitle": "Gerir contas a pagar",
       "new": "Nova Conta",
@@ -6690,6 +6735,7 @@ const messages = {
       "bills": "contas"
     },
     "bankRecon": {
+      "alreadyImportedSkipped": "já importado (ignorado)",
       "title": "Reconciliação Bancária",
       "subtitle": "Importar e conciliar transações bancárias",
       "importCSV": "Importar CSV",
@@ -6730,6 +6776,14 @@ const messages = {
     }
   },
   "runPayroll": {
+    "advanceRepayment": "Reembolso de adiantamento",
+    "loanRepayment": "Reembolso de empréstimo",
+    "courtOrder": "Ordem judicial",
+    "otherDeductions": "Outras deduções",
+    "payDateNonWorkingDay": "Esta data de pagamento cai num fim de semana ou feriado. Art. 40.º(5): pague no dia útil anterior.",
+    "payDateUseDate": "Usar {date}",
+    "warningOTCapArt27": "excedeu o limite de horas extraordinárias do art. 27.º(4) (4h/dia / 16h/semana) neste período — só permitido em caso de força maior (art. 27.º(5))",
+    "warningRestDayCapArt27": "trabalhou mais de 8h num dia de descanso ou feriado — o art. 27.º(3) limita esse trabalho a 8 horas",
     "title": "Processar Folha",
     "freePlanNotice": "Está no plano gratuito. Prepare e reveja a folha à vontade — finalizar exige uma subscrição.",
     "freePlanNoticeCta": "Ver plano",
@@ -7204,6 +7258,9 @@ const messages = {
     "company": "Empresa"
   },
   "taxReports": {
+    "inssArrearsMonth": "mês",
+    "inssArrearsMonths": "meses",
+    "inssArrearsNotice": "O pagamento em atraso à Segurança Social vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
     "title": "Impostos e INSS da Folha",
     "subtitle": "Centro de conformidade de Timor-Leste para IRT (ATTL) e declarações mensais de INSS.",
     "actionRequired": "Ação necessária",
@@ -7490,6 +7547,7 @@ const messages = {
     }
   },
   "supplierRemittance": {
+    "deductionSuspended": "A retenção não entregue suspende a dedutibilidade da despesa subjacente (Lei 8/2008, Sec. 32.2) — entregue para manter a dedução.",
     "errorTitle": "Não foi possível registar o pagamento do imposto",
     "proofRequired": "Carregue o comprovativo bancário, recibo do BNU ou outro comprovativo de pagamento.",
     "signInRequired": "Inicie sessão antes de registar um pagamento de imposto.",
