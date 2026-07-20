@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { settingsService } from "@/services/settingsService";
-import { Settings } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 
 export default function PayrollSettings() {
   const tenantId = useTenantId();
@@ -165,6 +166,13 @@ export default function PayrollSettings() {
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <Link
+          to="/settings"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("nav.allSettings")}
+        </Link>
         <PageHeader
           title={t("settings.payroll.title") || "Payroll Settings"}
           subtitle={t("settings.payroll.description") || "Tax, social security, overtime, benefits, and deductions"}

@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { settingsService } from "@/services/settingsService";
 import { holidayService } from "@/services/holidayService";
-import { Settings } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 
 export default function TimeLeaveSettings() {
   const { user } = useAuth();
@@ -174,6 +175,13 @@ export default function TimeLeaveSettings() {
       />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+        <Link
+          to="/settings"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("nav.allSettings")}
+        </Link>
         <PageHeader
           title={t("settings.tabs.timeOff") || "Time Off Policies"}
           subtitle={t("settings.timeOff.description") || "Leave entitlements per Timor-Leste labor law"}

@@ -19,6 +19,8 @@ import {
   Settings as SettingsIcon,
   Building,
   Building2,
+  Calculator,
+  CalendarDays,
   CreditCard,
   Plug,
   ChevronRight,
@@ -54,9 +56,24 @@ export default function Settings() {
     requestedTab && VALID_TABS.includes(requestedTab)
       ? requestedTab
       : "company";
+  // Module settings stay contextual (canonical editors live in Payroll and
+  // Time & Leave — see docs/TIME_LEAVE.md); these cards make them findable
+  // from the one place people look for "settings".
   const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] =
     canManage()
       ? [
+          {
+            label: t("nav.payrollSettingsLink"),
+            path: "/payroll/settings",
+            icon: Calculator,
+            description: t("nav.payrollSettingsLinkDesc"),
+          },
+          {
+            label: t("nav.timeLeaveSettingsLink"),
+            path: "/time-leave/settings",
+            icon: CalendarDays,
+            description: t("nav.timeLeaveSettingsLinkDesc"),
+          },
           {
             label: t("nav.billingPlan"),
             path: "/billing",
