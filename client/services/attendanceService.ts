@@ -31,11 +31,13 @@ import {
   calculateLateMinutes,
   calculateEarlyDeparture,
   calculateNightHours,
+  classifyWorkedHours,
   determineStatus,
   calculateHoursBreakdown,
   DEFAULT_EXPECTED_START,
   DEFAULT_EXPECTED_END,
   MAX_REASONABLE_ENTRY_HOURS,
+  type WorkedDayHours,
 } from "@/lib/attendanceCalculations";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import { holidayService } from "@/services/holidayService";
@@ -45,6 +47,8 @@ export {
   calculateLateMinutes,
   calculateEarlyDeparture,
   calculateNightHours,
+  classifyWorkedHours,
+  needsBreakWarning,
   determineStatus,
   calculateHoursBreakdown,
   DEFAULT_EXPECTED_START,
@@ -171,6 +175,11 @@ export interface AttendanceEmployeeSummary {
   employeeName: string;
   department: string;
   regularHours: number;
+  /**
+   * Overtime = per-day >8h split PLUS the Art. 25(1) weekly top-up: regular
+   * (1×) hours beyond 44 in one ISO week are reclassified here, so a 6×8h
+   * week correctly yields 4h of overtime even though no single day passed 8h.
+   */
   overtimeHours: number;
   nightHours: number;
   /**
@@ -180,6 +189,20 @@ export interface AttendanceEmployeeSummary {
    * auto-populated holiday hours at all).
    */
   holidayHours: number;
+  /**
+   * Hours worked on the weekly rest day — Sunday by default (Art. 30(2)) —
+   * reclassified out of regular/overtime exactly like holidayHours so payroll
+   * pays the Art. 27(2) 2× rest-day rate. A Sunday that is also a public
+   * holiday counts as holiday only (never both). Per-employee non-Sunday rest
+   * days are out of scope (manual payroll-row entry covers them).
+   */
+  restDayHours: number;
+  /** Largest single-day overtime in the period — Art. 27(4) caps it at 4h. */
+  maxDailyOvertimeHours: number;
+  /** Largest single-ISO-week overtime in the period — Art. 27(4) caps it at 16h. */
+  maxWeeklyOvertimeHours: number;
+  /** Largest single holiday/rest-day worked stretch — Art. 27(3) caps it at 8h. */
+  maxHolidayOrRestDayHours: number;
   lateMinutes: number;
   daysPresent: number;
   recordsCount: number;
@@ -381,7 +404,21 @@ class AttendanceService {
       console.error("Failed to load tenant holiday overrides for attendance summary:", error);
     }
 
-    const byEmployee = new Map<string, AttendanceEmployeeSummary>();
+    // First pass: per-employee day list plus the additive counters. The
+    // per-day holiday/rest-day reclassification and the Art. 25(1) weekly
+    // 44h overtime top-up live in the pure, unit-tested classifyWorkedHours
+    // (client/lib/attendanceCalculations.ts).
+    interface EmployeeAccumulator {
+      employeeId: string;
+      employeeName: string;
+      department: string;
+      days: WorkedDayHours[];
+      nightHours: number;
+      lateMinutes: number;
+      daysPresent: number;
+      recordsCount: number;
+    }
+    const byEmployee = new Map<string, EmployeeAccumulator>();
     for (const record of byEmployeeDay.values()) {
       if (!record.employeeId) continue;
 
@@ -396,54 +433,64 @@ class AttendanceService {
           record.totalHours,
         );
 
-      // On a public holiday, the worked regular+overtime hours are all 2× time.
-      const workedOnHoliday = record.date ? holidayDates.has(record.date) : false;
-      const rawRegular = record.regularHours || 0;
-      const rawOvertime = record.overtimeHours || 0;
-      const holidayHours = workedOnHoliday ? rawRegular + rawOvertime : 0;
-      const regularHours = workedOnHoliday ? 0 : rawRegular;
-      const overtimeHours = workedOnHoliday ? 0 : rawOvertime;
-
-      const existing = byEmployee.get(record.employeeId);
-      if (existing) {
-        existing.regularHours += regularHours;
-        existing.overtimeHours += overtimeHours;
-        existing.holidayHours += holidayHours;
-        existing.nightHours += nightHours;
-        existing.lateMinutes += record.lateMinutes || 0;
-        existing.recordsCount += 1;
-        if (
-          (record.totalHours || 0) > 0 ||
-          record.status === "present" ||
-          record.status === "late"
-        ) {
-          existing.daysPresent += 1;
-        }
-        continue;
+      let accumulator = byEmployee.get(record.employeeId);
+      if (!accumulator) {
+        accumulator = {
+          employeeId: record.employeeId,
+          employeeName: record.employeeName,
+          department: record.department,
+          days: [],
+          nightHours: 0,
+          lateMinutes: 0,
+          daysPresent: 0,
+          recordsCount: 0,
+        };
+        byEmployee.set(record.employeeId, accumulator);
       }
-
-      byEmployee.set(record.employeeId, {
-        employeeId: record.employeeId,
-        employeeName: record.employeeName,
-        department: record.department,
-        regularHours,
-        overtimeHours,
-        holidayHours,
-        nightHours,
-        lateMinutes: record.lateMinutes || 0,
-        daysPresent:
-          (record.totalHours || 0) > 0 ||
-          record.status === "present" ||
-          record.status === "late"
-            ? 1
-            : 0,
-        recordsCount: 1,
+      accumulator.days.push({
+        date: record.date,
+        regularHours: record.regularHours || 0,
+        overtimeHours: record.overtimeHours || 0,
       });
+      accumulator.nightHours += nightHours;
+      accumulator.lateMinutes += record.lateMinutes || 0;
+      accumulator.recordsCount += 1;
+      if (
+        (record.totalHours || 0) > 0 ||
+        record.status === "present" ||
+        record.status === "late"
+      ) {
+        accumulator.daysPresent += 1;
+      }
     }
 
-    return Array.from(byEmployee.values()).sort((a, b) =>
-      a.employeeName.localeCompare(b.employeeName),
-    );
+    // Second pass: classify each employee's days — holiday (Art. 27(2) 2×),
+    // Sunday rest day (Arts. 30(2), 27(2) 2×, holiday wins on overlap), then
+    // the weekly pass reclassifying regular hours beyond 44/ISO-week into
+    // overtime (Art. 25(1)) and computing the Art. 27(3)/(4) cap maxima.
+    // Weeks straddling the range boundary only count in-range days (accepted:
+    // run periods start at month boundaries — see classifyWorkedHours docs).
+    return Array.from(byEmployee.values())
+      .map((accumulator): AttendanceEmployeeSummary => {
+        const classified = classifyWorkedHours(accumulator.days, holidayDates);
+        return {
+          employeeId: accumulator.employeeId,
+          employeeName: accumulator.employeeName,
+          department: accumulator.department,
+          regularHours: classified.regularHours,
+          overtimeHours: classified.overtimeHours,
+          holidayHours: classified.holidayHours,
+          restDayHours: classified.restDayHours,
+          maxDailyOvertimeHours: classified.maxDailyOvertimeHours,
+          maxWeeklyOvertimeHours: classified.maxWeeklyOvertimeHours,
+          maxHolidayOrRestDayHours: classified.maxHolidayOrRestDayHours,
+          nightHours: accumulator.nightHours,
+          lateMinutes: accumulator.lateMinutes,
+          daysPresent: accumulator.daysPresent,
+          recordsCount: accumulator.recordsCount,
+        };
+      })
+      .sort((a, b) => a.employeeName.localeCompare(b.employeeName));
   }
 
   /**

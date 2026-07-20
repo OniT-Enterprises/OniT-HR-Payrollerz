@@ -24,7 +24,8 @@ type DocumentType =
   | "residence_permit"
   | "electoral"
   | "inss"
-  | "contract";
+  | "contract"
+  | "probation";
 type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
 
 interface DocumentAlert {
@@ -66,6 +67,7 @@ const DOCUMENT_LABELS: Record<DocumentType, string> = {
   electoral: "Electoral Card",
   inss: "INSS Card",
   contract: "Employment Contract",
+  probation: "Probation Period",
 };
 
 const BATCH_WRITE_LIMIT = 450;
@@ -166,6 +168,9 @@ function extractEmployeeAlerts(
   );
   pushAlert("fw_work_permit", "work_permit", employee.foreignWorker?.workPermit?.expiryDate, 90);
   pushAlert("contract", "contract", employee.jobDetails?.contractEndDate, 90);
+  // Probation end (Lei 4/2012 Art. 14) — 14 days ahead so the employer can
+  // decide on confirmation/termination while still inside the period.
+  pushAlert("probation", "probation", employee.jobDetails?.probationEndDate, 14);
 
   return alerts;
 }

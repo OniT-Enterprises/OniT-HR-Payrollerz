@@ -127,8 +127,9 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
   return [...fixed, ...movable].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function adjustToNextBusinessDayTL(
+function adjustToBusinessDayTL(
   isoDate: string,
+  step: 1 | -1,
   overrides?: {
     additionalHolidays?: Iterable<string>;
     removedHolidays?: Iterable<string>;
@@ -157,9 +158,40 @@ export function adjustToNextBusinessDayTL(
       (baseHoliday && !removedHolidays.has(cursorIso)) || additionalHolidays.has(cursorIso);
 
     if (!isWeekend && !isHoliday) return cursorIso;
-    cursor = addDaysUTC(cursor, 1);
+    cursor = addDaysUTC(cursor, step);
   }
 
   // Fallback (should never happen)
   return normalizeISODate(isoDate);
+}
+
+/**
+ * Move a date FORWARD to the next working day (weekday, non-holiday).
+ * Used for statutory deadlines (tax/INSS due dates) that shift to the next
+ * business day when they land on a weekend or holiday.
+ */
+export function adjustToNextBusinessDayTL(
+  isoDate: string,
+  overrides?: {
+    additionalHolidays?: Iterable<string>;
+    removedHolidays?: Iterable<string>;
+  }
+): string {
+  return adjustToBusinessDayTL(isoDate, 1, overrides);
+}
+
+/**
+ * Move a date BACKWARD to the preceding working day (weekday, non-holiday).
+ * Lei 4/2012 Art. 40(5): when payday falls on a rest day or public holiday,
+ * wages must be paid on the immediately PRECEDING working day — the opposite
+ * direction from deadline shifting above.
+ */
+export function adjustToPreviousBusinessDayTL(
+  isoDate: string,
+  overrides?: {
+    additionalHolidays?: Iterable<string>;
+    removedHolidays?: Iterable<string>;
+  }
+): string {
+  return adjustToBusinessDayTL(isoDate, -1, overrides);
 }

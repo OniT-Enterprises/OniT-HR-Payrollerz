@@ -12,7 +12,16 @@
 // FILING TYPES
 // ============================================
 
-export type TaxFilingType = 'monthly_wit' | 'annual_wit' | 'inss_monthly';
+export type TaxFilingType =
+  | 'monthly_wit'
+  | 'annual_wit'
+  | 'inss_monthly'
+  // Law 8/2008 Secs. 5-9 domestic services tax (hotel/restaurant receipts),
+  // filed on the same consolidated monthly form as WIT, due day 15.
+  | 'services_tax'
+  // Law 8/2008 Art. 64 income-tax installment (0.5% of turnover), due day 15
+  // after the month/quarter ends.
+  | 'installment_tax';
 export type TaxFilingTask = 'statement' | 'payment';
 
 export type TaxFilingStatus = 'pending' | 'filed' | 'overdue' | 'draft';
@@ -106,6 +115,17 @@ export interface MonthlyINSSEmployeeRecord {
   incomeTax: number; // WIT withheld in the period
   netPay: number;
   isResident: boolean;
+
+  // DL 20/2017 Art. 12 day declarations. Optional so legacy snapshots keep
+  // exporting (the DR falls back to its previous full-month behavior).
+  /** Days the contract covered in the month — 30 for a full month (SS convention), prorated for mid-month hire/termination. */
+  contractDays?: number;
+  /** "Faltas Injustificadas declaradas" — unpaid-absence days derived from the committed absence deduction (8h = 1 day). */
+  unjustifiedAbsenceDays?: number;
+  /** "Dias Falta por parentalidade" — approved maternity/paternity leave days falling in the month. */
+  parentalLeaveDays?: number;
+  /** Worker NIF/TIN. Xefe's employee master has no TIN field yet, so this stays unset and the DR column is left blank. */
+  tinNumber?: string;
 }
 
 export interface MonthlyINSSReturn {
@@ -229,6 +249,21 @@ export interface FilingDueDate {
   daysUntilDue: number;
   isOverdue: boolean;
   filing?: TaxFiling;
+  /**
+   * Estimated amount payable for this deadline when Xefe can derive it (e.g.
+   * services tax from the month's customer receipts). Informational only.
+   */
+  estimatedAmount?: number;
+  /**
+   * DL 20/2017 Art. 39 late-payment interest estimate, set on overdue INSS
+   * payment deadlines. Warning-level copy only — never a ledger entry.
+   */
+  arrears?: {
+    monthsLate: number;
+    ratePerMonth: number;
+    estimatedInterest?: number;
+    legalBasis: string;
+  };
 }
 
 // ============================================

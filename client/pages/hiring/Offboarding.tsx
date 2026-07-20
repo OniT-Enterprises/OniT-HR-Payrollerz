@@ -54,6 +54,10 @@ import {
   Search,
   Save,
   Loader2,
+  AlertTriangle,
+  CalendarClock,
+  Landmark,
+  ShieldAlert,
 } from "lucide-react";
 import {
   useActiveCases,
@@ -77,8 +81,18 @@ import {
   type EquipmentAsset,
   type OnboardingCase,
 } from "@/services/onboardingService";
+import { disciplinaryService } from "@/services/disciplinaryService";
+import {
+  requiredNoticeDays,
+  noticeDaysGiven,
+  noticeShortfallDays,
+  inssCessationDeadline,
+} from "@/lib/payroll/leaver-final-pay";
+import { useEmployeeById } from "@/hooks/useEmployees";
+import { useSettings } from "@/hooks/useSettings";
 import { useTenantId } from "@/contexts/TenantContext";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { formatDateTL } from "@/lib/dateUtils";
 
 export default function Offboarding() {
   const navigate = useNavigate();
@@ -117,6 +131,74 @@ export default function Offboarding() {
   });
 
   const onboardingCase = onboardingQuery.data ?? null;
+
+  // Employee master record for the selected case (hire date for the notice
+  // computation and the Art. 57 certificate). Works even once terminated.
+  const selectedEmployeeQuery = useEmployeeById(selectedCase?.employeeId);
+  const { data: settings } = useSettings();
+
+  // E8 (Arts. 50(4), 51, 55): dismissal for cause without a concluded written
+  // disciplinary process is automatically unlawful — soft-gate warning only.
+  const caseDisciplinaryQuery = useQuery({
+    queryKey: ["disciplinary", "byEmployee", tenantId, selectedCase?.employeeId ?? ""],
+    queryFn: () => disciplinaryService.getEmployeeRecords(tenantId, selectedCase!.employeeId),
+    enabled:
+      !!tenantId && !!selectedCase?.employeeId && selectedCase?.departureReason === "termination",
+    staleTime: 60 * 1000,
+  });
+  const disciplinaryWarningText =
+    t("hiring.offboarding.disciplinary.noConcludedWarning") ||
+    "No concluded disciplinary case is on file for this employee. Dismissal for cause without the Art. 50(4) written process (accusation, defence, reasoned decision) is automatically unlawful (Art. 51) and exposes you to Art. 55 indemnity — confirm with your accountant.";
+  const showCaseDisciplinaryWarning =
+    selectedCase?.departureReason === "termination" &&
+    caseDisciplinaryQuery.isSuccess &&
+    !caseDisciplinaryQuery.data.some((r) => r.status === "closed");
+  // E7 (Arts. 49(8)-(9), 53(2)-(3)): statutory notice for the selected case.
+  const selectedHireDate = selectedEmployeeQuery.data?.jobDetails?.hireDate || "";
+  const noticeReq =
+    selectedCase?.lastWorkingDay
+      ? requiredNoticeDays(selectedCase.departureReason, selectedHireDate, selectedCase.lastWorkingDay)
+      : null;
+  const noticeGiven =
+    selectedCase?.noticeDate && selectedCase?.lastWorkingDay
+      ? noticeDaysGiven(selectedCase.noticeDate, selectedCase.lastWorkingDay)
+      : null;
+  const noticeShortfall =
+    noticeReq && selectedCase?.noticeDate && selectedCase?.lastWorkingDay
+      ? noticeShortfallDays(selectedCase.noticeDate, selectedCase.lastWorkingDay, noticeReq.days)
+      : null;
+
+  // F12 (DL 20/2017 Art. 5(2)-(3)): concrete INSS cessation deadline.
+  const inssDeadline = selectedCase?.lastWorkingDay
+    ? inssCessationDeadline(selectedCase.lastWorkingDay)
+    : null;
+
+  // F11 (Art. 57): bilingual work certificate, generated client-side.
+  const [certGenerating, setCertGenerating] = useState(false);
+  const generateWorkCertificate = async () => {
+    if (!selectedCase) return;
+    try {
+      setCertGenerating(true);
+      // Dynamic import keeps @react-pdf out of the page bundle.
+      const { downloadWorkCertificate } = await import("@/lib/pdf/workCertificate");
+      await downloadWorkCertificate({
+        companyDetails: settings?.companyDetails,
+        workerName: selectedCase.employeeName,
+        position: selectedCase.position || selectedEmployeeQuery.data?.jobDetails?.position || "",
+        department: selectedCase.department,
+        hireDate: selectedEmployeeQuery.data?.jobDetails?.hireDate || "",
+        lastWorkingDay: selectedCase.lastWorkingDay,
+      });
+    } catch (error) {
+      toast({
+        title: t("common.error") || "Error",
+        description: error instanceof Error ? error.message : "Could not generate the certificate",
+        variant: "destructive",
+      });
+    } finally {
+      setCertGenerating(false);
+    }
+  };
 
   const toggleAssetReturned = async (assetId: string, returned: boolean) => {
     if (!onboardingCase?.id) return;
@@ -159,6 +241,20 @@ export default function Offboarding() {
     department: "all",
     search: "",
   });
+
+  // E8 warning at CREATE time too: same soft gate for the dialog's selection.
+  const dialogDisciplinaryQuery = useQuery({
+    queryKey: ["disciplinary", "byEmployee", tenantId, newOffboarding.employeeId],
+    queryFn: () => disciplinaryService.getEmployeeRecords(tenantId, newOffboarding.employeeId),
+    enabled:
+      !!tenantId && !!newOffboarding.employeeId && newOffboarding.departureReason === "termination",
+    staleTime: 60 * 1000,
+  });
+  const showDialogDisciplinaryWarning =
+    newOffboarding.departureReason === "termination" &&
+    !!newOffboarding.employeeId &&
+    dialogDisciplinaryQuery.isSuccess &&
+    !dialogDisciplinaryQuery.data.some((r) => r.status === "closed");
 
   // Filter employees for selection
   const filteredEmployees = employees.filter((employee) => {
@@ -358,20 +454,18 @@ export default function Offboarding() {
   };
 
   const getDepartureReasonLabel = (reason: string) => {
-    switch (reason) {
-      case "resignation":
-        return t("hiring.offboarding.dialog.reasons.resignation");
-      case "redundancy":
-        return t("hiring.offboarding.dialog.reasons.redundancy");
-      case "termination":
-        return t("hiring.offboarding.dialog.reasons.termination");
-      case "retirement":
-        return t("hiring.offboarding.dialog.reasons.retirement");
-      case "contract_end":
-        return t("hiring.offboarding.dialog.reasons.contractEnd");
-      default:
-        return reason;
-    }
+    const labels: Record<string, string> = {
+      resignation: t("hiring.offboarding.dialog.reasons.resignation") || "Resignation",
+      redundancy: t("hiring.offboarding.dialog.reasons.redundancy") || "Redundancy",
+      termination: t("hiring.offboarding.dialog.reasons.termination") || "Termination",
+      retirement: t("hiring.offboarding.dialog.reasons.retirement") || "Retirement",
+      contract_end: t("hiring.offboarding.dialog.reasons.contractEnd") || "Contract end",
+      mutual_agreement:
+        t("hiring.offboarding.dialog.reasons.mutualAgreement") || "Mutual agreement",
+      death: t("hiring.offboarding.dialog.reasons.death") || "Death of employee",
+      other: t("hiring.offboarding.dialog.reasons.other") || "Other",
+    };
+    return labels[reason] || reason;
   };
 
   if (loading || employeesLoading) {
@@ -495,11 +589,19 @@ export default function Offboarding() {
                   <SelectContent>
                     {DEPARTURE_REASONS.map((reason) => (
                       <SelectItem key={reason.id} value={reason.id}>
-                        {reason.name}
+                        {getDepartureReasonLabel(reason.id) || reason.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {showDialogDisciplinaryWarning && (
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+                    <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <p className="text-xs text-amber-800 dark:text-amber-300">
+                      {disciplinaryWarningText}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -704,6 +806,62 @@ export default function Offboarding() {
                         </div>
                       </div>
 
+                      {/* E8 — Arts. 50(4), 51, 55: dismissal-without-process soft gate.
+                          Non-blocking: the staged disciplinary workflow is its own cycle. */}
+                      {showCaseDisciplinaryWarning && (
+                        <div className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3">
+                          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                          <p className="text-xs text-amber-800 dark:text-amber-300">
+                            {disciplinaryWarningText}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* E7 — Arts. 49(8)-(9), 53(2)-(3): statutory notice check.
+                          Informational only, never blocks the case. */}
+                      {noticeReq && noticeReq.days > 0 && (
+                        <div className="space-y-1.5 rounded-lg border border-border/50 bg-muted/20 p-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+                            {selectedCase.noticeDate && noticeGiven !== null ? (
+                              <span>
+                                {t("hiring.offboarding.notice.required") || "Required notice"}:{" "}
+                                {noticeReq.days} {t("hiring.offboarding.notice.days") || "days"} (
+                                {noticeReq.basis}) —{" "}
+                                {t("hiring.offboarding.notice.given") || "given"}: {noticeGiven}{" "}
+                                {t("hiring.offboarding.notice.days") || "days"}
+                              </span>
+                            ) : (
+                              <span>
+                                {t("hiring.offboarding.notice.notRecorded")
+                                  || "Notice date not recorded"}{" "}
+                                — {t("hiring.offboarding.notice.requiredForReason")
+                                  || "required notice for this departure reason is"}{" "}
+                                {noticeReq.days} {t("hiring.offboarding.notice.days") || "days"} (
+                                {noticeReq.basis})
+                              </span>
+                            )}
+                          </div>
+                          {noticeShortfall !== null && noticeShortfall > 0 && (
+                            <p className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+                              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span>
+                                {selectedCase.departureReason === "resignation"
+                                  ? (t("hiring.offboarding.notice.shortfallWorker")
+                                      || "Notice is short: the worker owes the employer the missing")
+                                  : (t("hiring.offboarding.notice.shortfallEmployer")
+                                      || "Notice is short: the employer owes the worker the missing")}{" "}
+                                {noticeShortfall} {t("hiring.offboarding.notice.daysPay") || "days' pay"} (
+                                {selectedCase.departureReason === "resignation"
+                                  ? "Lei 4/2012 Art. 53(3)"
+                                  : "Lei 4/2012 Art. 49(9)"}
+                                ).
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Equipment issued at onboarding */}
                       {onboardingCase && onboardingCase.equipment && onboardingCase.equipment.length > 0 && (
                         <div className="space-y-3 rounded-lg border border-border/50 p-4 bg-muted/20">
@@ -839,6 +997,12 @@ export default function Offboarding() {
                                 : (t("hiring.offboarding.finalPay.severanceOffNote")
                                     || "Not usually paid on this departure reason in TL practice — but the law's text is cause-independent, so the employee may still be entitled. Confirm with your accountant.")}
                             </p>
+                            {selectedCase.departureReason === "death" && (
+                              <p className="text-xs text-muted-foreground">
+                                {t("hiring.offboarding.finalPay.deathHeirsNote")
+                                  || "Worker deceased (Art. 47(1)(b)): this payment is payable to the estate/heirs — confirm beneficiaries with your accountant."}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -912,35 +1076,85 @@ export default function Offboarding() {
 
                       {/* Checklist Items */}
                       <div className="space-y-4">
-                        {[
-                          { id: "accessRevoked", label: t("hiring.offboarding.checklist.items.access"), icon: <Key className="h-4 w-4" /> },
-                          { id: "equipmentReturned", label: t("hiring.offboarding.checklist.items.equipment"), icon: <Building className="h-4 w-4" /> },
-                          { id: "documentsSigned", label: t("hiring.offboarding.checklist.items.documents"), icon: <FileText className="h-4 w-4" /> },
-                          { id: "knowledgeTransfer", label: t("hiring.offboarding.checklist.items.knowledge"), icon: <Archive className="h-4 w-4" /> },
-                          { id: "benefitsCancelled", label: t("hiring.offboarding.checklist.items.benefits"), icon: <CreditCard className="h-4 w-4" /> },
-                          { id: "exitInterviewCompleted", label: t("hiring.offboarding.checklist.items.exitInterview"), icon: <Mail className="h-4 w-4" /> },
-                          { id: "referenceLetter", label: t("hiring.offboarding.checklist.items.reference"), icon: <Download className="h-4 w-4" /> },
-                        ].map((item) => (
+                        {(
+                          [
+                            { id: "accessRevoked", label: t("hiring.offboarding.checklist.items.access"), icon: <Key className="h-4 w-4" /> },
+                            { id: "equipmentReturned", label: t("hiring.offboarding.checklist.items.equipment"), icon: <Building className="h-4 w-4" /> },
+                            { id: "documentsSigned", label: t("hiring.offboarding.checklist.items.documents"), icon: <FileText className="h-4 w-4" /> },
+                            { id: "knowledgeTransfer", label: t("hiring.offboarding.checklist.items.knowledge"), icon: <Archive className="h-4 w-4" /> },
+                            { id: "benefitsCancelled", label: t("hiring.offboarding.checklist.items.benefits"), icon: <CreditCard className="h-4 w-4" /> },
+                            {
+                              // F12 — DL 20/2017 Art. 5(2)-(3): cessation must be
+                              // declared to INSS by day 10 of the following month.
+                              id: "inssCessationDeclared",
+                              label: t("hiring.offboarding.checklist.items.inssCessation")
+                                || "INSS cessation declared",
+                              icon: <Landmark className="h-4 w-4" />,
+                              hint:
+                                (t("hiring.offboarding.checklist.items.inssCessationHint")
+                                  || "Declare at the INSS portal by day 10 of the month after the last working day — until declared, INSS presumes the employment continues and contributions keep accruing.")
+                                + (inssDeadline
+                                  ? ` ${t("hiring.offboarding.checklist.items.inssCessationDeadline") || "Deadline"}: ${formatDateTL(inssDeadline)}.`
+                                  : ""),
+                            },
+                            { id: "exitInterviewCompleted", label: t("hiring.offboarding.checklist.items.exitInterview"), icon: <Mail className="h-4 w-4" /> },
+                            { id: "referenceLetter", label: t("hiring.offboarding.checklist.items.reference"), icon: <Download className="h-4 w-4" /> },
+                          ] as {
+                            id: keyof OffboardingChecklist;
+                            label: string;
+                            icon: React.ReactNode;
+                            hint?: string;
+                          }[]
+                        ).map((item) => (
                           <div
                             key={item.id}
-                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
-                              selectedCase.checklist[item.id as keyof OffboardingChecklist]
+                            className={`flex items-start space-x-3 p-3 rounded-lg border transition-colors ${
+                              selectedCase.checklist[item.id]
                                 ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20"
                                 : "border-border/50 hover:bg-muted/30"
                             }`}
                           >
                             <Checkbox
-                              checked={selectedCase.checklist[item.id as keyof OffboardingChecklist]}
+                              checked={selectedCase.checklist[item.id]}
                               onCheckedChange={(checked) =>
-                                updateChecklist(selectedCase.id!, item.id as keyof OffboardingChecklist, checked as boolean)
+                                updateChecklist(selectedCase.id!, item.id, checked as boolean)
                               }
-                              className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                              className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                             />
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              {item.icon}
-                              <label className="text-sm font-medium text-foreground cursor-pointer">
-                                {item.label}
-                              </label>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                {item.icon}
+                                <label className="text-sm font-medium text-foreground cursor-pointer">
+                                  {item.label}
+                                </label>
+                              </div>
+                              {item.hint && (
+                                <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
+                              )}
+                              {item.id === "referenceLetter" && (
+                                <div className="mt-2 space-y-1.5">
+                                  {/* F11 — Art. 57: the work certificate is MANDATORY
+                                      on every cessation, unlike the optional reference. */}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={generateWorkCertificate}
+                                    disabled={certGenerating || selectedEmployeeQuery.isLoading}
+                                  >
+                                    {certGenerating ? (
+                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <FileText className="mr-2 h-3.5 w-3.5" />
+                                    )}
+                                    {t("hiring.offboarding.certificate.generate")
+                                      || "Generate certificate (Art. 57)"}
+                                  </Button>
+                                  <p className="text-xs text-muted-foreground">
+                                    {t("hiring.offboarding.certificate.mandatoryNote")
+                                      || "The Certificado de Trabalho (name, contract dates, functions performed) is mandatory on every cessation — Art. 57."}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}

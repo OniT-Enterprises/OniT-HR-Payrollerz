@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, ExternalLink, Landmark, Loader2, Upload } from 'lucide-react';
+import { AlertTriangle, CheckCircle, ExternalLink, Landmark, Loader2, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +28,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { getTodayTL } from '@/lib/dateUtils';
 import { formatCurrencyTL } from '@/lib/payroll/constants-tl';
-import type { SupplierWithholdingPaymentMethod } from '@/lib/tax/supplier-withholding-remittance';
+import {
+  isSupplierWithholdingRemittanceOverdue,
+  type SupplierWithholdingPaymentMethod,
+} from '@/lib/tax/supplier-withholding-remittance';
 import { fileUploadService } from '@/services/fileUploadService';
 import { supplierWithholdingRemittanceService } from '@/services/supplierWithholdingRemittanceService';
 
@@ -57,6 +60,18 @@ export function SupplierWithholdingRemittancePanel({ period }: { period: string 
   const [saving, setSaving] = useState(false);
 
   const position = data?.position;
+
+  // Law 8/2008 Sec. 32.2 — unremitted withholding past the due date suspends
+  // the payer's expense deduction. Non-blocking: never crashes the panel.
+  let deductionSuspended = false;
+  if (position) {
+    try {
+      deductionSuspended = isSupplierWithholdingRemittanceOverdue(position, getTodayTL());
+    } catch {
+      deductionSuspended = false;
+    }
+  }
+
   const openDialog = () => {
     const id = supplierWithholdingRemittanceService.createId(tenantId);
     setPaymentId(id);
@@ -175,6 +190,19 @@ export function SupplierWithholdingRemittancePanel({ period }: { period: string 
                   <span className="font-semibold">{formatCurrencyTL(position.outstanding)}</span>
                 </div>
               </div>
+
+              {deductionSuspended && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>
+                    {t('supplierRemittance.deductionSuspended')
+                      || 'Unremitted withholding suspends the deductibility of the underlying expense (Law 8/2008 Sec. 32.2) — remit to keep the deduction.'}
+                  </span>
+                </div>
+              )}
 
               {position.status === 'paid' && (
                 <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">

@@ -415,10 +415,12 @@ export default function ATTLMonthlyWIT() {
         { downloadATTLExcel },
         { billService },
         { mapTLBillWithholdingToATTL },
+        { isTLServicesTaxLiableSector, mapSectorReceiptsToDesignatedServices },
       ] = await Promise.all([
         import("@/lib/excel/attlExport"),
         import("@/services/billService"),
         import("@/lib/tax/bill-withholding"),
+        import("@/lib/tax/services-tax-tl"),
       ]);
       const [year, month] = selectedReturn.reportingPeriod.split("-");
       const yearNumber = Number(year);
@@ -433,16 +435,51 @@ export default function ATTLMonthlyWIT() {
         throw new Error("The return has an invalid reporting period.");
       }
       const lastDay = new Date(yearNumber, monthNumber, 0).getDate();
+      const periodStart = `${year}-${month}-01`;
+      const periodEnd = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
       const withholdingTotals = await billService.getWithholdingSummary(
         tenantId,
-        `${year}-${month}-01`,
-        `${year}-${month}-${String(lastDay).padStart(2, "0")}`,
+        periodStart,
+        periodEnd,
       );
+
+      // Section 3 (services tax, Law 8/2008 Secs. 5-9): for hotel/restaurant
+      // tenants the base is the consideration RECEIVED in the month (cash
+      // basis, Sec. 9) — customer payments recorded in the period, NOT
+      // invoiced/accrued revenue — mapped onto the sector's designated-service
+      // line. Other sectors leave Section 3 empty.
+      let servicesReceipts: {
+        hotelServices?: number;
+        restaurantBarServices?: number;
+        telecomServices?: number;
+      } = {};
+      const sector = settings?.companyStructure?.businessSector;
+      if (isTLServicesTaxLiableSector(sector)) {
+        const { invoiceService } = await import("@/services/invoiceService");
+        const receiptsTotal = await invoiceService.getPaidInvoiceTotalByDateRange(
+          tenantId,
+          periodStart,
+          periodEnd,
+        );
+        const designated = mapSectorReceiptsToDesignatedServices(
+          sector,
+          receiptsTotal,
+        );
+        servicesReceipts = {
+          hotelServices: designated.hotelServices,
+          restaurantBarServices: designated.restaurantBarServices,
+          telecomServices: designated.telecommunicationsServices,
+        };
+      }
+
       await downloadATTLExcel(
         selectedReturn,
         company || undefined,
         `ATTL_Monthly_Tax_${selectedReturn.reportingPeriod}.xlsx`,
-        mapTLBillWithholdingToATTL(withholdingTotals),
+        {
+          ...mapTLBillWithholdingToATTL(withholdingTotals),
+          ...servicesReceipts,
+        },
       );
 
       toast({

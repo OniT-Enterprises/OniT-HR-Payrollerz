@@ -6,9 +6,11 @@
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
-import { CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
+import { CalendarDays, CalendarRange, CalendarClock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
+import { adjustToPreviousBusinessDayTL } from "@/lib/payroll/tl-holidays";
+import { formatDateTL } from "@/lib/dateUtils";
 import { useI18n } from "@/i18n/I18nProvider";
 
 interface WizardStepPeriodProps {
@@ -45,6 +47,13 @@ export function WizardStepPeriod({
   subsidioEnabled = true,
 }: WizardStepPeriodProps) {
   const { t } = useI18n();
+
+  // Lei 4/2012 Art. 40(5): a payday on a weekend/public holiday must move to
+  // the PRECEDING working day. Non-blocking — the user can still keep it.
+  const precedingWorkingDay = /^\d{4}-\d{2}-\d{2}$/.test(payDate)
+    ? adjustToPreviousBusinessDayTL(payDate)
+    : payDate;
+  const payDateNeedsShift = precedingWorkingDay !== payDate;
 
   return (
     <div className="space-y-8">
@@ -129,6 +138,27 @@ export function WizardStepPeriod({
             />
           </div>
         </div>
+        {payDateNeedsShift && (
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <div className="text-sm text-amber-700 dark:text-amber-300">
+              <p>
+                {t("runPayroll.payDateNonWorkingDay") ||
+                  "This pay date falls on a weekend or public holiday. Art. 40(5): pay on the preceding working day."}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPayDate(precedingWorkingDay)}
+                className="mt-1 font-semibold underline underline-offset-2 hover:text-amber-800 dark:hover:text-amber-200"
+              >
+                {(t("runPayroll.payDateUseDate") || "Use {date}").replace(
+                  "{date}",
+                  formatDateTL(precedingWorkingDay),
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Subsidio Anual — simple toggle card */}

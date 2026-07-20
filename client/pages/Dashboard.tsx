@@ -22,6 +22,7 @@ import {
   getConfiguredPayrollSchedule,
   getDaysUntilIso,
   getNextPayDateIso,
+  isPayIntervalExceeded,
 } from "@/lib/payroll/payroll-schedule";
 import {
   getDaysUntilDueIso,
@@ -360,6 +361,26 @@ export default function Dashboard() {
       run.status !== "rejected"
   );
 
+  // Art. 40(3): the interval between wage payments must not exceed one month.
+  // Reuses the runs the dashboard already fetches — the latest finalized
+  // (approved/paid) run's payDate more than a month ago means staff are
+  // legally overdue to be paid, however far off the next configured payday is.
+  const lastFinalizedPayDate = payrollRuns.reduce<string | null>(
+    (latest, run) =>
+      (run.status === "approved" || run.status === "paid") &&
+      run.payDate &&
+      (!latest || run.payDate > latest)
+        ? run.payDate
+        : latest,
+    null,
+  );
+  const payrollOverdue = Boolean(
+    hasPayroll &&
+      activeEmployeeCount > 0 &&
+      lastFinalizedPayDate &&
+      isPayIntervalExceeded(lastFinalizedPayDate, todayIso),
+  );
+
   const urgentCompliance = compliance
     ? [
         { label: "WIT", ...compliance.wit },
@@ -488,24 +509,38 @@ export default function Dashboard() {
       // The payday countdown tile — shared signature with the Ekipa app's
       // greeting card (soft tinted square, number over a small DAYS label).
       big: (
-        <span className="inline-flex flex-col items-center rounded-xl bg-primary/10 px-3 py-1.5">
+        <span
+          className={`inline-flex flex-col items-center rounded-xl px-3 py-1.5 ${
+            payrollOverdue ? "bg-amber-500/10" : "bg-primary/10"
+          }`}
+        >
           <span className="text-2xl font-bold leading-7 tabular-nums">
             <AnimatedNumber value={daysUntilPayday} />
           </span>
-          <span className="text-[10px] font-semibold uppercase leading-3 tracking-wider text-primary">
+          <span
+            className={`text-[10px] font-semibold uppercase leading-3 tracking-wider ${
+              payrollOverdue
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-primary"
+            }`}
+          >
             {t("dashboard.days")}
           </span>
         </span>
       ),
       label: t("dashboard.untilPayday"),
-      context: payrollPrepared
-        ? t("dashboard.cardPayrollPrepared")
-        : activeEmployeeCount > 0
-          ? t("dashboard.cardPayrollContext", {
-              count: activeEmployeeCount,
-              amount: formatMoney(totalMonthlySalary),
-            })
-          : undefined,
+      context: payrollOverdue
+        ? t("dashboard.cardPayrollOverdue") ||
+          "Payroll overdue — Art. 40 requires payment at least monthly"
+        : payrollPrepared
+          ? t("dashboard.cardPayrollPrepared")
+          : activeEmployeeCount > 0
+            ? t("dashboard.cardPayrollContext", {
+                count: activeEmployeeCount,
+                amount: formatMoney(totalMonthlySalary),
+              })
+            : undefined,
+      contextTone: payrollOverdue ? "warn" : undefined,
       action: payrollPrepared
         ? t("dashboard.viewPayroll")
         : t("dashboard.preparePayroll"),

@@ -3,6 +3,11 @@ import {
   calculateTLPayroll,
   type TLPayrollInput,
 } from '@/lib/payroll/calculations-tl';
+import {
+  aggregateRecurringInputs,
+  resolveScheduledDeductions,
+  type RecurringDeductionLike,
+} from '@/lib/payroll/recurring-deductions';
 
 /**
  * Real-life regression: Lei 4/2012, Art. 42(3) — total monthly wage deductions
@@ -110,6 +115,75 @@ describe('Lei 4/2012 Art. 42(3): 30% monthly wage-deduction cap', () => {
     // Total therefore lawfully exceeds 30% because of the court order.
     expect(result.totalDeductions).toBeCloseTo(340, 2);
     // A court-order notice fires (not the generic "reduced proportionally" one).
+    expect(result.warnings.some((w) => /court/i.test(w))).toBe(true);
+  });
+
+  it('wired path: Deductions & Advances register docs flow through aggregation into the capped engine', () => {
+    // The exact pipeline usePayrollCalculator runs: register docs →
+    // resolveScheduledDeductions → aggregateRecurringInputs → TLPayrollInput.
+    const register: RecurringDeductionLike[] = [
+      {
+        id: 'court-1',
+        employeeId: 'emp-domingas',
+        type: 'court_order',
+        amount: 250,
+        status: 'active',
+        startDate: '2026-01-01',
+      },
+      {
+        id: 'loan-1',
+        employeeId: 'emp-domingas',
+        type: 'loan_repayment',
+        amount: 100,
+        status: 'active',
+        startDate: '2026-01-01',
+      },
+      {
+        // Advance nearly repaid: $75 installment but only $30 outstanding —
+        // min(installment, remainingBalance) must schedule $30.
+        id: 'adv-1',
+        employeeId: 'emp-domingas',
+        type: 'advance_repayment',
+        amount: 75,
+        totalAmount: 500,
+        remainingBalance: 30,
+        status: 'active',
+        startDate: '2026-01-01',
+      },
+      {
+        // Already taken this period month — must not double-take.
+        id: 'other-1',
+        employeeId: 'emp-domingas',
+        type: 'other',
+        amount: 40,
+        status: 'active',
+        lastAppliedPeriod: '2026-07',
+      },
+    ];
+
+    const inputs = aggregateRecurringInputs(
+      resolveScheduledDeductions(register, {
+        periodStart: '2026-07-01',
+        periodEnd: '2026-07-31',
+      }),
+    );
+    const wired = inputs['emp-domingas'];
+    expect(wired).toEqual({
+      loanRepayment: 100,
+      advanceRepayment: 30,
+      courtOrders: 250,
+      otherDeductions: 0,
+    });
+
+    const result = calculateTLPayroll(baseInput({ ...wired }));
+
+    // Court order exempt from the Art. 42(3) cap: withheld in full.
+    expect(result.courtOrders).toBeCloseTo(250, 2);
+    // Protected (WIT $50 + INSS $40 + court $250 = $340) already exceeds the
+    // $300 ceiling, so the voluntary loan and advance are squeezed to $0.
+    expect(result.loanRepayment).toBeCloseTo(0, 2);
+    expect(result.advanceRepayment).toBeCloseTo(0, 2);
+    expect(result.totalDeductions).toBeCloseTo(340, 2);
     expect(result.warnings.some((w) => /court/i.test(w))).toBe(true);
   });
 });

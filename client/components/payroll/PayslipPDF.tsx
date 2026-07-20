@@ -484,6 +484,12 @@ const formatDate = (dateString: string): string => {
   return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Dili' });
 };
 
+// Compact dd/mm/yyyy for the remuneration-period range (keeps the header box narrow)
+const formatShortDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Dili' });
+};
+
 // Format month label — "February 2026" / "Fulan Fevereiru 2026" / "Fevereiro 2026"
 const formatMonth = (dateString: string, language: PayslipLocale): string => {
   const date = new Date(dateString);
@@ -534,7 +540,13 @@ function PayslipHeader({
   language: PayslipLocale;
   isCopy?: boolean;
 }) {
-  const monthLabel = formatMonth(payrollRun.payDate, language);
+  // Lei 4/2012 Art. 40(4): the payslip must state the PERIOD the remuneration
+  // covers. Under the default schedule the pay date falls in the month AFTER
+  // the period, so the headline month comes from periodEnd, not payDate.
+  const monthLabel = formatMonth(
+    payrollRun.periodEnd || payrollRun.payDate,
+    language,
+  );
   return (
     <>
       {isCopy && <Text style={styles.copyMark}>{s.copyMark}</Text>}
@@ -547,7 +559,12 @@ function PayslipHeader({
         <View style={styles.monthBox}>
           <Text style={styles.monthLabel}>{s.monthOf}</Text>
           <Text style={styles.monthValue}>{monthLabel}</Text>
-          <Text style={[styles.payslipSubtitle, { marginTop: 4 }]}>
+          {payrollRun.periodStart && payrollRun.periodEnd && (
+            <Text style={[styles.payslipSubtitle, { marginTop: 4 }]}>
+              {s.period} {formatShortDate(payrollRun.periodStart)} – {formatShortDate(payrollRun.periodEnd)}
+            </Text>
+          )}
+          <Text style={[styles.payslipSubtitle, { marginTop: 2 }]}>
             {s.payDate} {formatDate(payrollRun.payDate)}
           </Text>
         </View>
@@ -1054,9 +1071,10 @@ export const downloadPayslip = async (
   const { downloadBlob } = await import("@/lib/downloadBlob");
   const blob = await generatePayslipBlob(record, payrollRun, companyInfo, language);
 
-  // Generate filename
-  const payDate = new Date(payrollRun.payDate);
-  const monthYear = payDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'Asia/Dili' }).replace(' ', '');
+  // Generate filename — named for the remuneration period (Art. 40(4)), which
+  // under the default schedule is the month BEFORE the pay date.
+  const periodDate = new Date(payrollRun.periodEnd || payrollRun.payDate);
+  const monthYear = periodDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'Asia/Dili' }).replace(' ', '');
   const safeName = record.employeeName
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
   downloadBlob(blob, `Payslip_${safeName}_${monthYear}.pdf`);

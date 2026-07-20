@@ -11,6 +11,7 @@ import {
   subtractMoney,
   sumMoney,
 } from '@/lib/currency';
+import { getMonthlyWITDueDate } from './compliance';
 import type { TLBillWithholdingTotals } from './bill-withholding';
 
 export type SupplierWithholdingPaymentMethod = 'bank_transfer' | 'cash_at_bnu';
@@ -165,4 +166,35 @@ export function addSupplierWithholdingLiability(current: number, addition: numbe
     throw new Error('Supplier withholding period liability cannot be negative.');
   }
   return next;
+}
+
+/**
+ * Withheld supplier tax follows the same monthly remittance cadence as WIT:
+ * day 15 of the month after the withholding period (Law 8/2008), shifted to
+ * the next Timor-Leste business day unless a custom adjuster is supplied.
+ */
+export function getSupplierWithholdingRemittanceDueDate(
+  period: string,
+  adjustDate?: (isoDate: string) => string,
+): string {
+  assertSupplierWithholdingPeriod(period);
+  return adjustDate ? getMonthlyWITDueDate(period, adjustDate) : getMonthlyWITDueDate(period);
+}
+
+/**
+ * Law 8/2008 Sec. 32.2: while withheld tax stays unremitted, the payer's
+ * deduction for the underlying expense is suspended. True when the period
+ * still has an outstanding balance after the remittance due date.
+ */
+export function isSupplierWithholdingRemittanceOverdue(
+  position: Pick<SupplierWithholdingPeriodPosition, 'period' | 'outstanding'>,
+  todayIso: string,
+  adjustDate?: (isoDate: string) => string,
+): boolean {
+  parseISODate(todayIso, 'Current date');
+  const outstanding = roundMoney(position.outstanding);
+  if (!Number.isFinite(position.outstanding) || outstanding <= 0) {
+    return false;
+  }
+  return todayIso > getSupplierWithholdingRemittanceDueDate(position.period, adjustDate);
 }
