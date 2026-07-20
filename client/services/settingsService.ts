@@ -190,6 +190,9 @@ function normalizeTenantSettings(
         sundayHoliday:
           legacyOvertimeRates?.sundayHoliday ??
           defaults.payrollConfig.overtimeRates.sundayHoliday,
+        nightShiftPremium:
+          legacyOvertimeRates?.nightShiftPremium ??
+          defaults.payrollConfig.overtimeRates.nightShiftPremium,
       },
       subsidioAnual: {
         ...defaults.payrollConfig.subsidioAnual,

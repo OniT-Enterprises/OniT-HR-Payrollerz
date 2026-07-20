@@ -1,84 +1,91 @@
 /**
- * Settings Page — Orchestrator
- * Loads TenantSettings, renders tab components
+ * Settings — pure hub / directory.
+ *
+ * One card per settings area; the editors live on their own pages
+ * (company, payments, integrations under /settings/*; payroll and time-off
+ * contextually at their module routes). Module navs carry NO settings
+ * entries — this hub, reached from the sidebar-footer Settings link, is the
+ * single way into configuration.
  */
-import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
-
-import { useTenant, useTenantId } from "@/contexts/TenantContext";
-
-import { useSettings, settingsKeys } from "@/hooks/useSettings";
+import { useSettings } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   Settings as SettingsIcon,
   Building,
-  Building2,
+  Calculator,
+  CalendarDays,
   CreditCard,
+  Landmark,
   Plug,
   ChevronRight,
 } from "lucide-react";
-import {
-  QuickBooksSettings,
-  SettingsSkeleton,
-  SetupProgress,
-  CompanyDetailsTab,
-  CompanyStructureTab,
-  PaymentStructureTab,
-  AdvancedTaxModeCard,
-  AccountantPartnerCard,
-} from "@/components/settings";
+import { SettingsSkeleton, SetupProgress } from "@/components/settings";
+
+/** Legacy tab deep-links → the split-out pages. */
+const TAB_REDIRECTS: Record<string, string> = {
+  company: "/settings/company",
+  structure: "/settings/company?tab=structure",
+  payment: "/settings/payments",
+  integrations: "/settings/integrations",
+};
 
 export default function Settings() {
   const navigate = useNavigate();
-  const tenantId = useTenantId();
-  const { canManage } = useTenant();
   const { t } = useI18n();
-
-  const queryClient = useQueryClient();
   const settingsQuery = useSettings();
-  const { data: settings, isLoading: settingsLoading } = settingsQuery;
+  const { data: settings, isLoading } = settingsQuery;
+  const [searchParams] = useSearchParams();
 
-  const loading = settingsLoading;
-
-  const [saving, setSaving] = useState(false);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const VALID_TABS = ["company", "structure", "payment", "integrations"];
   const requestedTab = searchParams.get("tab");
-  const activeTab =
-    requestedTab && VALID_TABS.includes(requestedTab)
-      ? requestedTab
-      : "company";
-  const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] =
-    canManage()
-      ? [
-          {
-            label: t("nav.billingPlan"),
-            path: "/billing",
-            icon: CreditCard,
-            description: t("nav.billingPlanDesc"),
-          },
-        ]
-      : [];
+  if (requestedTab && TAB_REDIRECTS[requestedTab]) {
+    return <Navigate to={TAB_REDIRECTS[requestedTab]} replace />;
+  }
 
-  const handleTabChange = (value: string) => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (value === "company") nextParams.delete("tab");
-    else nextParams.set("tab", value);
-    setSearchParams(nextParams, { replace: true });
-  };
+  const settingsLinks = [
+    {
+      label: t("nav.companySettingsLink"),
+      path: "/settings/company",
+      icon: Building,
+      description: t("nav.companySettingsLinkDesc"),
+    },
+    {
+      label: t("nav.paymentsSettingsLink"),
+      path: "/settings/payments",
+      icon: Landmark,
+      description: t("nav.paymentsSettingsLinkDesc"),
+    },
+    {
+      label: t("nav.payrollSettingsLink"),
+      path: "/payroll/settings",
+      icon: Calculator,
+      description: t("nav.payrollSettingsLinkDesc"),
+    },
+    {
+      label: t("nav.timeLeaveSettingsLink"),
+      path: "/time-leave/settings",
+      icon: CalendarDays,
+      description: t("nav.timeLeaveSettingsLinkDesc"),
+    },
+    {
+      label: t("nav.integrationsSettingsLink"),
+      path: "/settings/integrations",
+      icon: Plug,
+      description: t("nav.integrationsSettingsLinkDesc"),
+    },
+    {
+      label: t("nav.billingPlan"),
+      path: "/billing",
+      icon: CreditCard,
+      description: t("nav.billingPlanDesc"),
+    },
+  ];
 
-  // onReload for child tabs — invalidate queries so React Query refetches
-  const handleReload = () => {
-    queryClient.invalidateQueries({ queryKey: settingsKeys.all(tenantId) });
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <SettingsSkeleton />;
   }
 
@@ -111,107 +118,29 @@ export default function Settings() {
           iconColor="text-primary"
         />
 
-        {/* Quick links (billing & plan, etc.) */}
-        {organizationLinks.length > 0 && (
-          <div className="mb-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {organizationLinks.map((link) => (
-                <button
-                  key={link.path}
-                  onClick={() => navigate(link.path)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
-                >
-                  <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <link.icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{link.label}</p>
-                    <p className="text-xs text-muted-foreground">{link.description}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Setup Progress */}
-        {settings && !settings.setupComplete && (
+        {!settings.setupComplete && (
           <SetupProgress progress={settings.setupProgress} />
         )}
 
-        {/* Settings Tabs */}
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="mb-6 grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
-            <TabsTrigger value="company" className="gap-2" disabled={saving}>
-              <Building className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t("settings.tabs.company")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="structure" className="gap-2" disabled={saving}>
-              <Building2 className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t("settings.tabs.structure")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="gap-2" disabled={saving}>
-              <CreditCard className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t("settings.tabs.payment")}</span>
-            </TabsTrigger>
-            {/* Time Off moved to /time-leave/settings, Payroll to /payroll/settings */}
-            <TabsTrigger
-              value="integrations"
-              className="gap-2"
-              disabled={saving}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {settingsLinks.map((link) => (
+            <button
+              key={link.path}
+              onClick={() => navigate(link.path)}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
             >
-              <Plug className="h-4 w-4" />
-              <span className="text-xs sm:text-sm">{t("settings.tabs.integrations")}</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="company">
-            {settings && (
-              <CompanyDetailsTab
-                tenantId={tenantId}
-                saving={saving}
-                setSaving={setSaving}
-                onReload={handleReload}
-                t={t}
-                initialData={settings.companyDetails}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="structure">
-            {settings && (
-              <CompanyStructureTab
-                tenantId={tenantId}
-                saving={saving}
-                setSaving={setSaving}
-                onReload={handleReload}
-                t={t}
-                initialData={settings.companyStructure}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="payment">
-            {settings && (
-              <PaymentStructureTab
-                tenantId={tenantId}
-                saving={saving}
-                setSaving={setSaving}
-                onReload={handleReload}
-                t={t}
-                initialData={settings.paymentStructure}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="integrations">
-            {tenantId && <QuickBooksSettings tenantId={tenantId} />}
-          </TabsContent>
-        </Tabs>
-
-        <AdvancedTaxModeCard />
-        <AccountantPartnerCard />
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <link.icon className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{link.label}</p>
+                <p className="text-xs text-muted-foreground">{link.description}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

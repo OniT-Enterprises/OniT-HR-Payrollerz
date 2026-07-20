@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -11,11 +12,18 @@ import { Separator } from "@/components/ui/separator";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { PayrollConfigTab } from "@/components/settings/PayrollConfigTab";
+import { StatutoryRatesCard } from "@/components/settings/StatutoryRatesCard";
 import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { settingsService } from "@/services/settingsService";
-import { Settings } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Heart,
+  MinusCircle,
+  Settings,
+} from "lucide-react";
 
 export default function PayrollSettings() {
   const tenantId = useTenantId();
@@ -164,12 +172,53 @@ export default function PayrollSettings() {
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <Link
+          to="/settings"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("nav.allSettings")}
+        </Link>
         <PageHeader
           title={t("settings.payroll.title") || "Payroll Settings"}
           subtitle={t("settings.payroll.description") || "Tax, social security, overtime, benefits, and deductions"}
           icon={Settings}
           iconColor="text-primary"
         />
+
+        {/* Benefits & Deductions live on their own pages — link cards here
+            (module navs carry no settings entries; this page is their home) */}
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {[
+            {
+              path: "/payroll/settings/benefits",
+              icon: Heart,
+              label: t("settings.payroll.benefitsCard"),
+              description: t("settings.payroll.benefitsCardDesc"),
+            },
+            {
+              path: "/payroll/settings/deductions",
+              icon: MinusCircle,
+              label: t("settings.payroll.deductionsCard"),
+              description: t("settings.payroll.deductionsCardDesc"),
+            },
+          ].map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
+            >
+              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <link.icon className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{link.label}</p>
+                <p className="text-xs text-muted-foreground">{link.description}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Link>
+          ))}
+        </div>
 
         {/* Tax / INSS / Overtime / 13th Month config */}
         {settings && (
@@ -182,6 +231,9 @@ export default function PayrollSettings() {
             initialData={settings.payrollConfig}
           />
         )}
+
+        {/* Statutory rules Xefe applies automatically — read-only by design */}
+        <StatutoryRatesCard t={t} />
 
       </div>
     </div>

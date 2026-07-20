@@ -51,6 +51,9 @@ const Landing = lazyWithRetry(() => import("@/pages/Landing"));
 const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
 const Dashboard = lazyWithRetry(() => import("@/pages/Dashboard"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
+const CompanySettings = lazyWithRetry(() => import("@/pages/settings/CompanySettings"));
+const PaymentsSettings = lazyWithRetry(() => import("@/pages/settings/PaymentsSettings"));
+const IntegrationsSettings = lazyWithRetry(() => import("@/pages/settings/IntegrationsSettings"));
 const Billing = lazyWithRetry(() => import("@/pages/Billing"));
 const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
 const AuthOnboarding = lazyWithRetry(() => import("@/pages/auth/Onboarding"));
@@ -233,6 +236,30 @@ export const authRoutes = (
       element={
         <FeatureRoute requireManage>
           <Settings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/settings/company"
+      element={
+        <FeatureRoute requireManage>
+          <CompanySettings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/settings/payments"
+      element={
+        <FeatureRoute requireManage>
+          <PaymentsSettings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/settings/integrations"
+      element={
+        <FeatureRoute requireManage>
+          <IntegrationsSettings />
         </FeatureRoute>
       }
     />

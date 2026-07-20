@@ -36,7 +36,11 @@ import {
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
-import type { PayrollConfig } from "@/types/settings";
+import type {
+  LeaveTypeConfig,
+  PayrollConfig,
+  TimeOffPolicies,
+} from "@/types/settings";
 import { addMoney, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
@@ -76,6 +80,9 @@ interface UsePayrollCalculatorOptions {
   tenantId: string;
   userId: string;
   payrollConfig?: PayrollConfig;
+  /** Tenant leave policies — drive the paid fraction credited for approved
+   * leave during attendance sync. Without them, TL defaults apply. */
+  timeOffPolicies?: TimeOffPolicies;
   defaultPayFrequency?: TLPayFrequency;
   defaultPayDay?: number;
 }
@@ -125,6 +132,7 @@ export function usePayrollCalculator({
   tenantId,
   userId,
   payrollConfig,
+  timeOffPolicies,
   defaultPayFrequency,
   defaultPayDay,
 }: UsePayrollCalculatorOptions) {
@@ -199,9 +207,20 @@ export function usePayrollCalculator({
                   )
                 : payrollConfig.socialSecurity.employerRate / 100,
             },
+            // Allowance-vs-INSS-base classification (DL 20/2017 Arts. 8-9):
+            // the settings toggles decide whether food allowance / per diem
+            // count as remuneracao contributiva for this tenant.
+            inssBase: {
+              excludeFoodAllowance:
+                payrollConfig.socialSecurity.excludeFoodAllowance,
+              excludePerDiem: payrollConfig.socialSecurity.excludePerDiem,
+            },
             overtime: {
               standard: payrollConfig.overtimeRates.standard,
               sundayHoliday: payrollConfig.overtimeRates.sundayHoliday,
+              // Stored as a percent (25 = +25%); the engine takes a fraction.
+              nightShiftPremium:
+                (payrollConfig.overtimeRates.nightShiftPremium ?? 25) / 100,
               rounding:
                 payrollConfig.hourlyRateConvention === "fixed_190_round_up"
                   ? ("aggregate" as const)
@@ -846,11 +865,32 @@ export function usePayrollCalculator({
         periodStart,
         periodEnd,
         TL_WORKING_HOURS.standardDailyHours,
-        // Unknown/custom types default to paid: wrongly docking pay is worse
-        // than paying a day — admins can still adjust the row manually.
+        // Paid fraction from the tenant's configured policy (a 50%-paid type
+        // credits half the hours). Unknown/custom types default to fully
+        // paid: wrongly docking pay is worse than paying a day — admins can
+        // still adjust the row manually.
         (leaveType) => {
+          const policies: (LeaveTypeConfig | undefined)[] = timeOffPolicies
+            ? [
+                timeOffPolicies.annualLeave,
+                timeOffPolicies.sickLeave,
+                timeOffPolicies.maternityLeave,
+                timeOffPolicies.paternityLeave,
+                timeOffPolicies.specialLeave,
+                timeOffPolicies.unpaidLeave,
+                ...(timeOffPolicies.customLeaveTypes ?? []),
+              ]
+            : [];
+          const configured = policies.find((p) => p?.id === leaveType);
+          if (configured) {
+            if (!configured.isPaid) return 0;
+            const percentage = Number(configured.paidPercentage ?? 100);
+            return Number.isFinite(percentage)
+              ? Math.min(1, Math.max(0, percentage / 100))
+              : 1;
+          }
           const typeInfo = TL_LEAVE_TYPES.find((lt) => lt.id === leaveType);
-          return typeInfo ? typeInfo.isPaid : true;
+          return typeInfo ? (typeInfo.isPaid ? 1 : 0) : 1;
         },
         // Holiday-aware working-day count so leave duration (and sick banding)
         // matches the server's canonical, holiday-excluding calculation.
@@ -959,7 +999,7 @@ export function usePayrollCalculator({
             }),
     });
     finishSync();
-  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary]);
+  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary, timeOffPolicies]);
 
   // ─── Compliance issues ──────────────────────────────────────────
 

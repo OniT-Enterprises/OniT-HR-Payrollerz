@@ -46,30 +46,19 @@ function isInRange(value: number, minimum: number, maximum: number): boolean {
   return Number.isFinite(value) && value >= minimum && value <= maximum;
 }
 
-function isValidMonthDay(value: string): boolean {
-  const match = /^(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const month = Number(match[1]);
-  const day = Number(match[2]);
-  if (!isInRange(month, 1, 12)) return false;
-  return isInRange(day, 1, new Date(Date.UTC(2024, month, 0)).getUTCDate());
-}
-
 function isValidPayrollConfig(config: PayrollConfig): boolean {
   return (
     isInRange(config.tax.residentThreshold, 0, 1_000_000) &&
     isInRange(config.tax.residentRate, 0, 100) &&
     isInRange(config.tax.nonResidentRate, 0, 100) &&
-    isInRange(config.tax.paymentDueDay, 1, 28) &&
     isInRange(config.socialSecurity.employeeRate, 0, 100) &&
     isInRange(config.socialSecurity.employerRate, 0, 100) &&
-    isInRange(config.socialSecurity.paymentDueDay, 1, 28) &&
     isInRange(config.minimumWage, 0, 1_000_000) &&
     isInRange(config.maxWorkHoursPerWeek, 1, 168) &&
     ['weekly_average', 'fixed_190_round_up'].includes(config.hourlyRateConvention) &&
     isInRange(config.overtimeRates.standard, 1, 10) &&
     isInRange(config.overtimeRates.sundayHoliday, 1, 10) &&
-    (!config.subsidioAnual.enabled || isValidMonthDay(config.subsidioAnual.payByDate))
+    isInRange(config.overtimeRates.nightShiftPremium ?? 25, 0, 100)
   );
 }
 
@@ -232,6 +221,9 @@ export function PayrollConfigTab({
                 />
                 <Percent className="h-4 w-4 text-muted-foreground" />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.employeeContributionHint')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t('settings.payroll.employerContribution')}</Label>
@@ -253,6 +245,9 @@ export function PayrollConfigTab({
                 />
                 <Percent className="h-4 w-4 text-muted-foreground" />
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.employerContributionHint')}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-6">
@@ -287,6 +282,9 @@ export function PayrollConfigTab({
               <Label>{t('settings.payroll.excludePerDiem')}</Label>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground max-w-prose">
+            {t('settings.payroll.inssExclusionsHint')}
+          </p>
           {/* DL 20/2017 Art. 86 small-employer discount — reduces the employer
               INSS share (5.4% through Dec 2026, then 6%). Employee 4% unchanged. */}
           <div className="flex items-start gap-2 pt-1">
@@ -309,6 +307,36 @@ export function PayrollConfigTab({
                 returns to 6% from 2027.
               </p>
             </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Minimum wage — the field the below-minimum payroll warning reads */}
+        <div className="space-y-4">
+          <h3 className="font-medium flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            {t('settings.payroll.minimumWageSection')}
+          </h3>
+          <div className="max-w-md space-y-2">
+            <Label>{t('settings.payroll.minimumWageLabel')}</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">$</span>
+              <Input
+                type="number"
+                min={0}
+                value={payrollConfig.minimumWage}
+                onChange={(e) =>
+                  setPayrollConfig({
+                    ...payrollConfig,
+                    minimumWage: parseInt(e.target.value, 10) || 0,
+                  })
+                }
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t('settings.payroll.minimumWageHint')}
+            </p>
           </div>
         </div>
 
@@ -347,7 +375,7 @@ export function PayrollConfigTab({
               {t('settings.payroll.hourlyRateHint')}
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>{t('settings.payroll.maxHoursWeek')}</Label>
               <Input
@@ -361,6 +389,9 @@ export function PayrollConfigTab({
                   })
                 }
               />
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.maxHoursWeekHint')}
+              </p>
             </div>
             <div className="space-y-2">
               <Label>{t('settings.payroll.first2HoursRate')}</Label>
@@ -406,6 +437,34 @@ export function PayrollConfigTab({
                 />
                 <span className="text-muted-foreground">&times;</span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.sundayHolidayHint')}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('settings.payroll.nightPremiumRate')}</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">+</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={payrollConfig.overtimeRates.nightShiftPremium ?? 25}
+                  onChange={(e) =>
+                    setPayrollConfig({
+                      ...payrollConfig,
+                      overtimeRates: {
+                        ...payrollConfig.overtimeRates,
+                        nightShiftPremium: parseInt(e.target.value, 10) || 0,
+                      },
+                    })
+                  }
+                />
+                <Percent className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.nightPremiumHint')}
+              </p>
             </div>
           </div>
         </div>
@@ -434,27 +493,8 @@ export function PayrollConfigTab({
             <Label>{t('settings.payroll.enable13th')}</Label>
           </div>
           {payrollConfig.subsidioAnual.enabled && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="space-y-2">
-                <Label>{t('settings.payroll.paymentDeadline')}</Label>
-                <Input
-                  value={payrollConfig.subsidioAnual.payByDate}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      subsidioAnual: {
-                        ...payrollConfig.subsidioAnual,
-                        payByDate: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder={t('settings.payroll.paymentDeadlinePlaceholder')}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.payroll.paymentDeadlineHint')}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 pt-6">
+            <div className="space-y-3 mt-4">
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={payrollConfig.subsidioAnual.proRataForNewEmployees}
                   onCheckedChange={(checked) =>
@@ -469,6 +509,10 @@ export function PayrollConfigTab({
                 />
                 <Label>{t('settings.payroll.prorataHint')}</Label>
               </div>
+              {/* The deadline is statutory (Art. 44), not a tenant choice. */}
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.subsidioDeadlineNote')}
+              </p>
             </div>
           )}
         </div>

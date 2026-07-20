@@ -147,15 +147,16 @@ describe("accountant partner funnel", () => {
   it("keeps the partner connection and its status visible at the bottom of the dashboard", () => {
     const dashboard = read("client/pages/Dashboard.tsx");
     const connectionCard = read("client/components/settings/AccountantPartnerCard.tsx");
-    const settings = read("client/pages/Settings.tsx");
+    const integrationsSettings = read("client/pages/settings/IntegrationsSettings.tsx");
 
     // The dashboard shows the quiet one-line banner (name + status, no action
-    // buttons); the full interactive card stays on the Settings page.
+    // buttons); the full interactive card stays in the settings area — on the
+    // Accountant & Integrations page reached from the /settings hub.
     expect(dashboard).toContain("<AccountantPartnerBanner />");
     expect(dashboard.indexOf("<AccountantPartnerBanner />")).toBeGreaterThan(
       dashboard.indexOf('t("dashboard.thingsToDo")'),
     );
-    expect(settings).toContain("<AccountantPartnerCard />");
+    expect(integrationsSettings).toContain("<AccountantPartnerCard />");
     expect(connectionCard).toContain("PRIMOS_BOOT_PARTNER.name");
     expect(connectionCard).toContain('status === "connected"');
     expect(connectionCard).toContain("accountantPartners.connection.status.${status}");

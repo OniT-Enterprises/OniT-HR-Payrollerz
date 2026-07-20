@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { computeLeaveCredits, type LeaveCreditInput } from "@/lib/payroll/run-payroll-helpers";
 
 // Mirror the production wiring: 8h days, weekday counting, annual/sick paid,
-// unpaid not, unknown types default to paid.
+// unpaid not, unknown types default to paid. The callback returns the policy's
+// paid FRACTION (1 = fully paid, 0 = unpaid, 0.5 = half pay).
 const HOURS_PER_DAY = 8;
 
-const isPaid = (leaveType: string) => leaveType !== "unpaid";
+const payFraction = (leaveType: string) => (leaveType === "unpaid" ? 0 : 1);
 
 // Simple weekday counter (inclusive) matching leaveService.calculateWorkingDays semantics
 const workingDays = (start: string, end: string): number => {
@@ -30,8 +31,11 @@ const req = (overrides: Partial<LeaveCreditInput>): LeaveCreditInput => ({
   ...overrides,
 });
 
-const compute = (requests: LeaveCreditInput[]) =>
-  computeLeaveCredits(requests, PERIOD.start, PERIOD.end, HOURS_PER_DAY, isPaid, workingDays);
+const compute = (
+  requests: LeaveCreditInput[],
+  fraction: (leaveType: string) => number = payFraction,
+) =>
+  computeLeaveCredits(requests, PERIOD.start, PERIOD.end, HOURS_PER_DAY, fraction, workingDays);
 
 describe("computeLeaveCredits", () => {
   it("credits paid annual leave as hours (Mon-Fri week = 40h)", () => {
@@ -98,5 +102,33 @@ describe("computeLeaveCredits", () => {
   it("skips requests with no employeeId", () => {
     const credits = compute([req({ employeeId: "" })]);
     expect(credits.size).toBe(0);
+  });
+
+  it("credits a partially-paid policy by its fraction (50% maternity = half the hours)", () => {
+    // Jun 8-12 = 5 working days; at 50% pay only 20 of the 40 hours are
+    // credited — the other 20 stay in the absence deduction.
+    const credits = compute(
+      [req({ leaveType: "maternity" })],
+      (leaveType) => (leaveType === "maternity" ? 0.5 : 1),
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 20, sickDays: 0 });
+  });
+
+  it("treats a zero fraction like unpaid (no credit entry)", () => {
+    const credits = compute([req({})], () => 0);
+    expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("clamps out-of-range fractions to [0, 1]", () => {
+    const credits = compute([req({})], () => 7);
+    expect(credits.get("emp-1")?.paidLeaveHours).toBe(40);
+  });
+
+  it("sick days are never scaled by the fraction callback (banding owns sick pay)", () => {
+    const credits = compute(
+      [req({ leaveType: "sick" })],
+      () => 0.25,
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 0, sickDays: 5 });
   });
 });

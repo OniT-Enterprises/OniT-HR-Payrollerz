@@ -127,6 +127,7 @@ export default function RunPayrollWizard() {
     tenantId,
     userId: user?.uid || "current-user",
     payrollConfig: tenantSettings?.payrollConfig,
+    timeOffPolicies: tenantSettings?.timeOffPolicies,
     defaultPayFrequency: configuredSchedule?.frequency,
     defaultPayDay: configuredSchedule?.payDay,
   });

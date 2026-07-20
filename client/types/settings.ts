@@ -178,13 +178,23 @@ export interface TaxConfig {
   residentThreshold: number; // $500 in TL
   residentRate: number; // 10%
   nonResidentRate: number; // 10% flat
-  paymentDueDay: number; // 15th of following month
+  /**
+   * @deprecated Never read — the WIT deadline is statutory (day 15 of the
+   * following month, Law 8/2008 Art. 23) and lives in
+   * client/lib/tax/compliance.ts. Kept only for stored-document compatibility.
+   */
+  paymentDueDay: number;
 }
 
 export interface SocialSecurityConfig {
   employeeRate: number; // 4%
   employerRate: number; // 6%
-  paymentDueDay: number; // 20th of following month (payment window closes on day 20)
+  /**
+   * @deprecated Never read — INSS deadlines are statutory (statement day 10,
+   * payment day 20 of the following month) and live in
+   * client/services/taxFilingService.ts. Kept only for stored-document compatibility.
+   */
+  paymentDueDay: number;
   excludeFoodAllowance: boolean;
   excludePerDiem: boolean;
 }
@@ -199,12 +209,23 @@ export interface PayrollConfig {
   /** Workpaper method used for hourly-rate derivation and overtime rounding. */
   hourlyRateConvention: 'weekly_average' | 'fixed_190_round_up';
   overtimeRates: {
-    standard: number; // 1.5 (normal hourly pay + 50%)
-    sundayHoliday: number; // 2.0 (100% extra)
+    standard: number; // 1.5 (normal hourly pay + 50%) — multiplier
+    sundayHoliday: number; // 2.0 (100% extra) — multiplier
+    /**
+     * Additive premium for normal hours worked at night (21:00–06:00), as a
+     * PERCENT (25 = +25% on top of base pay). Statutory minimum is 25%.
+     * Optional because pre-existing tenant docs lack it; the settings mapper
+     * fills the default.
+     */
+    nightShiftPremium?: number;
   };
   subsidioAnual: {
     enabled: boolean;
-    payByDate: string; // "12-20" for December 20
+    /**
+     * @deprecated Never read — the 13th-month deadline is statutory (by 20
+     * December, Labour Law Art. 44). Kept only for stored-document compatibility.
+     */
+    payByDate: string;
     proRataForNewEmployees: boolean;
   };
   // Solo-operator mode: lets the creator of a payroll run approve it themselves.
@@ -285,6 +306,7 @@ export const TL_DEFAULT_PAYROLL_CONFIG: PayrollConfig = {
   overtimeRates: {
     standard: 1.5,
     sundayHoliday: 2.0,
+    nightShiftPremium: 25,
   },
   subsidioAnual: {
     enabled: true,

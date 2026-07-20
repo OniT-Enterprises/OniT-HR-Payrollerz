@@ -13,8 +13,11 @@ Time & Leave has three task-first destinations:
 | Request and decide leave | `/time-leave/leave` | Owner/HR: all; manager: their department; accountant: read-only; employee: self |
 | Plan weekly shifts | `/time-leave/shifts` | Owner/HR and department managers |
 
-Leave policy and holiday configuration is contextual at
-`/time-leave/settings` and is restricted to owners and HR admins.
+Leave policy and holiday configuration lives at `/time-leave/settings`,
+restricted to owners and HR admins. It is reached through the Settings area
+(sidebar-footer Settings → `/settings` hub → Time Off Policies card), NOT
+from the Time & Leave module nav — module navs are task-only and carry no
+settings entries.
 
 Old Time Tracking URLs redirect to Attendance. Do not add a second hours-entry
 screen: clock times, adjustments, imports, and payroll-ready hours all belong in

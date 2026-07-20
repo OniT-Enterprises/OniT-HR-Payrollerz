@@ -49,7 +49,9 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Percent,
+  ArrowLeft,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecurringDeductions, useCreateDeduction, useUpdateDeduction, usePauseDeduction, useDeleteDeduction } from "@/hooks/usePayroll";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
@@ -376,6 +378,13 @@ export default function DeductionsAdvances() {
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <Link
+          to="/payroll/settings"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("nav.payrollSettingsLink")}
+        </Link>
         <PageHeader
           title={t("deductions.title")}
           subtitle={t("deductions.subtitle")}
