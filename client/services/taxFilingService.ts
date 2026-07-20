@@ -31,11 +31,9 @@ import type {
   TaxFilingStatus,
   SubmissionMethod,
   MonthlyWITReturn,
-  MonthlyWITEmployeeRecord,
   AnnualWITReturn,
   AnnualWITEmployeeRecord,
   MonthlyINSSReturn,
-  MonthlyINSSEmployeeRecord,
   EmployeeWITCertificate,
   FilingDueDate,
 } from '@/types/tax-filing';
@@ -53,13 +51,7 @@ import {
   isQuarterEndMonth,
   resolveTaskStatus,
 } from '@/lib/tax/compliance';
-import {
-  calculateContractDaysInMonth,
-  calculateParentalLeaveDaysInMonth,
-  calculateUnjustifiedAbsenceDays,
-  deriveAbsenceHoursFromDeduction,
-  type ParentalLeaveInterval,
-} from '@/lib/tax/inss-declaration-days';
+import { type ParentalLeaveInterval } from '@/lib/tax/inss-declaration-days';
 import { calculateInssLateInterest } from '@/lib/tax/inss-late-interest';
 import {
   calculateTLServicesTax,
@@ -75,9 +67,12 @@ import {
   requireStatutoryPayrollEmployeeId,
   requireStatutoryPayrollResidency,
   requireStatutoryText,
-  withStatutoryEmployeeContext,
-  type TLStatutoryPayrollRecord,
 } from '@/lib/tax/statutory-payroll-record';
+import {
+  buildMonthlyINSSReturn,
+  buildMonthlyWITReturn,
+  type TaxablePayrollRecord,
+} from '@/lib/tax/statutory-returns';
 
 // ============================================
 // CONSTANTS
@@ -119,17 +114,6 @@ function getDaysUntilDue(dueDate: string): number {
   const today = parseDateISO(getTodayTL());
   const due = parseDateISO(dueDate);
   return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-interface TaxablePayrollRecord extends TLStatutoryPayrollRecord {
-  id?: string;
-  payrollRunId?: string;
-  earnings?: { type?: string; amount?: number }[];
-  // Used to recover unpaid-absence hours for the INSS DR day declarations:
-  // the persisted record stores no absenceHours, only the 'absence' deduction
-  // amount (= hourlyRate × absenceHours) alongside the record's hourlyRate.
-  deductions?: { type?: string; amount?: number }[];
-  hourlyRate?: number;
 }
 
 /**
@@ -177,17 +161,6 @@ async function bulkFetchPayrollRecordsByTenant(
   }
 
   return grouped;
-}
-
-function assertEmployeeMasterCoverage(expectedEmployeeIds: Iterable<string>, employees: Employee[]): void {
-  const found = new Set(
-    employees.map((employee) => employee.id).filter((id): id is string => typeof id === 'string' && id.length > 0)
-  );
-  for (const employeeId of expectedEmployeeIds) {
-    if (!found.has(employeeId)) {
-      throw new MissingStatutoryPayrollDataError('matching employee master data');
-    }
-  }
 }
 
 // ============================================
@@ -277,106 +250,13 @@ class TaxFilingService {
     const recordsByRun = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
     const periodRecords = Array.from(recordsByRun.values()).flat();
 
-    const totalsByEmployee = new Map<
-      string,
-      {
-        grossWages: number;
-        taxableWages: number;
-        witWithheld: number;
-        isResident: boolean;
-      }
-    >();
-    periodRecords.forEach((rec) => {
-      const recLabel = typeof rec.employeeId === 'string' ? rec.employeeId : undefined;
-      const { employeeId, isResident, wagesPaid, witTaxableAmount, witWithheld } =
-        withStatutoryEmployeeContext(recLabel, () => ({
-          employeeId: requireStatutoryPayrollEmployeeId(rec),
-          isResident: requireStatutoryPayrollResidency(rec),
-          wagesPaid: requireStatutoryPayrollAmount(rec, 'wagesPaid'),
-          witTaxableAmount: requireStatutoryPayrollAmount(rec, 'witTaxableAmount'),
-          witWithheld: requireStatutoryPayrollAmount(rec, 'incomeTax'),
-        }));
-      const existing = totalsByEmployee.get(employeeId);
-      if (existing && existing.isResident !== isResident) {
-        throw new MissingStatutoryPayrollDataError('a consistent isResident classification within the filing period');
-      }
-      const accumulated = existing || {
-        grossWages: 0,
-        taxableWages: 0,
-        witWithheld: 0,
-        isResident,
-      };
-      totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(accumulated.grossWages, wagesPaid),
-        taxableWages: addMoney(accumulated.taxableWages, witTaxableAmount),
-        witWithheld: addMoney(accumulated.witWithheld, witWithheld),
-        isResident,
-      });
-    });
+    // Resolve the employee master rows for the records' employees (distinct,
+    // first-seen order — the same order the pure builder keys totals by), then
+    // hand the Firestore-free aggregator the records + employees.
+    const employeeIds = Array.from(new Set(periodRecords.map((rec) => requireStatutoryPayrollEmployeeId(rec))));
+    const employees = await employeeService.getEmployeesByIds(tenantId, employeeIds);
 
-    const employees = await employeeService.getEmployeesByIds(tenantId, Array.from(totalsByEmployee.keys()));
-    assertEmployeeMasterCoverage(totalsByEmployee.keys(), employees);
-
-    // Build employee records
-    const employeeRecords: MonthlyWITEmployeeRecord[] = [];
-    let totalGrossWages = 0;
-    let totalTaxableWages = 0;
-    let totalWITWithheld = 0;
-    let residentCount = 0;
-    let nonResidentCount = 0;
-
-    for (const employee of employees) {
-      const totals = employee.id ? totalsByEmployee.get(employee.id) : null;
-      if (!totals) {
-        throw new MissingStatutoryPayrollDataError('matching employee master data');
-      }
-      const grossWages = totals.grossWages;
-      const witWithheld = totals.witWithheld;
-      if (grossWages === 0) continue; // Skip employees with no pay this period
-
-      const isResident = totals.isResident;
-      const taxableWages = totals.taxableWages;
-
-      employeeRecords.push({
-        employeeId: employee.id!,
-        fullName: `${requireStatutoryText(employee.personalInfo.firstName, 'employee first name')} ${requireStatutoryText(employee.personalInfo.lastName, 'employee last name')}`,
-        tinNumber: undefined, // TL employees typically don't have individual TINs
-        isResident,
-        grossWages: roundMoney(grossWages),
-        taxableWages,
-        witWithheld: roundMoney(witWithheld),
-      });
-
-      totalGrossWages = addMoney(totalGrossWages, grossWages);
-      totalTaxableWages = addMoney(totalTaxableWages, taxableWages);
-      totalWITWithheld = addMoney(totalWITWithheld, witWithheld);
-
-      if (isResident) {
-        residentCount++;
-      } else {
-        nonResidentCount++;
-      }
-    }
-
-    // Calculate period dates
-    const [year, month] = period.split('-').map(Number);
-    const periodStartDate = `${period}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const periodEndDate = `${period}-${lastDay}`;
-
-    return {
-      ...employer,
-      reportingPeriod: period,
-      periodStartDate,
-      periodEndDate,
-      totalEmployees: employeeRecords.length,
-      totalResidentEmployees: residentCount,
-      totalNonResidentEmployees: nonResidentCount,
-      totalGrossWages: roundMoney(totalGrossWages),
-      totalTaxableWages: roundMoney(totalTaxableWages),
-      totalWITWithheld: roundMoney(totalWITWithheld),
-      employees: employeeRecords,
-    };
+    return buildMonthlyWITReturn(periodRecords, employees, employer, period);
   }
 
   // ----------------------------------------
@@ -404,92 +284,10 @@ class TaxFilingService {
     const recordsByRunMap = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
     const periodRecords = Array.from(recordsByRunMap.values()).flat();
 
-    const totalsByEmployee = new Map<
-      string,
-      {
-        grossWages: number;
-        employeeINSS: number;
-        employerINSS: number;
-        contributionBase: number;
-        incomeTax: number;
-        annualSubsidy: number;
-        netPay: number;
-        isResident: boolean;
-        absenceHours: number;
-      }
-    >();
-    periodRecords.forEach((rec) => {
-      const recLabel = typeof rec.employeeId === 'string' ? rec.employeeId : undefined;
-      const { employeeId, isResident, employeeINSS, employerINSS, contributionBase, annualSubsidy } =
-        withStatutoryEmployeeContext(recLabel, () => {
-          if (!Array.isArray(rec.earnings)) {
-            throw new MissingStatutoryPayrollDataError('earnings');
-          }
-          return {
-            employeeId: requireStatutoryPayrollEmployeeId(rec),
-            isResident: requireStatutoryPayrollResidency(rec),
-            employeeINSS: requireStatutoryPayrollAmount(rec, 'inssEmployee'),
-            employerINSS: requireStatutoryPayrollAmount(rec, 'inssEmployer'),
-            contributionBase: requireStatutoryPayrollAmount(rec, 'inssBase'),
-            annualSubsidy: rec.earnings
-              .filter((e) => e?.type === 'subsidio_anual')
-              .reduce((sum, earning) => {
-                if (typeof earning.amount !== 'number' || !Number.isFinite(earning.amount) || earning.amount < 0) {
-                  throw new MissingStatutoryPayrollDataError('subsidio_anual earning amount');
-                }
-                return addMoney(sum, earning.amount);
-              }, 0),
-          };
-        });
-
-      const existing = totalsByEmployee.get(employeeId);
-      if (existing && existing.isResident !== isResident) {
-        throw new MissingStatutoryPayrollDataError('a consistent isResident classification within the filing period');
-      }
-      const accumulated = existing || {
-        grossWages: 0,
-        employeeINSS: 0,
-        employerINSS: 0,
-        contributionBase: 0,
-        incomeTax: 0,
-        annualSubsidy: 0,
-        netPay: 0,
-        isResident,
-        absenceHours: 0,
-      };
-
-      const { wagesPaid, incomeTaxAmount, netPayAmount } = withStatutoryEmployeeContext(recLabel, () => ({
-        wagesPaid: requireStatutoryPayrollAmount(rec, 'wagesPaid'),
-        incomeTaxAmount: requireStatutoryPayrollAmount(rec, 'incomeTax'),
-        netPayAmount: requireStatutoryPayrollAmount(rec, 'netPay'),
-      }));
-
-      // Unpaid-absence hours for the DR "Faltas Injustificadas" column.
-      // The saved record persists only the 'absence' deduction amount
-      // (= hourlyRate × absenceHours) plus hourlyRate, so hours are recovered
-      // by division. No absence line (or no usable rate) → 0 hours.
-      const absenceDeductionTotal = Array.isArray(rec.deductions)
-        ? rec.deductions
-            .filter((d) => d?.type === 'absence')
-            .reduce((sum, d) => addMoney(sum, typeof d.amount === 'number' ? d.amount : 0), 0)
-        : 0;
-      const recordAbsenceHours = deriveAbsenceHoursFromDeduction(absenceDeductionTotal, rec.hourlyRate);
-
-      totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(accumulated.grossWages, wagesPaid),
-        employeeINSS: addMoney(accumulated.employeeINSS, employeeINSS),
-        employerINSS: addMoney(accumulated.employerINSS, employerINSS),
-        contributionBase: addMoney(accumulated.contributionBase, contributionBase),
-        incomeTax: addMoney(accumulated.incomeTax, incomeTaxAmount),
-        annualSubsidy: addMoney(accumulated.annualSubsidy, annualSubsidy),
-        netPay: addMoney(accumulated.netPay, netPayAmount),
-        isResident,
-        absenceHours: accumulated.absenceHours + recordAbsenceHours,
-      });
-    });
-
-    const employees = await employeeService.getEmployeesByIds(tenantId, Array.from(totalsByEmployee.keys()));
-    assertEmployeeMasterCoverage(totalsByEmployee.keys(), employees);
+    // Resolve the employee master rows for the records' employees (distinct,
+    // first-seen order — the same order the pure builder keys totals by).
+    const employeeIds = Array.from(new Set(periodRecords.map((rec) => requireStatutoryPayrollEmployeeId(rec))));
+    const employees = await employeeService.getEmployeesByIds(tenantId, employeeIds);
 
     const [year, month] = period.split('-').map(Number);
     const periodStartDate = `${period}-01`;
@@ -510,88 +308,7 @@ class TaxFilingService {
       parentalLeavesByEmployee.set(leave.employeeId, list);
     }
 
-    const employeeRecords: MonthlyINSSEmployeeRecord[] = [];
-    let totalContributionBase = 0;
-    let totalEmployeeContributions = 0;
-    let totalEmployerContributions = 0;
-
-    for (const employee of employees) {
-      if (!employee.id) {
-        throw new MissingStatutoryPayrollDataError('matching employee master data');
-      }
-
-      const totals = totalsByEmployee.get(employee.id);
-      if (!totals) {
-        throw new MissingStatutoryPayrollDataError('matching employee payroll totals');
-      }
-
-      const employeeContribution = roundMoney(totals.employeeINSS);
-      const employerContribution = roundMoney(totals.employerINSS);
-      const contributionBase = roundMoney(totals.contributionBase);
-      const totalContribution = addMoney(employeeContribution, employerContribution);
-
-      if (employeeContribution === 0 && employerContribution === 0) continue;
-
-      const grossWages = roundMoney(totals.grossWages);
-      const incomeTax = roundMoney(totals.incomeTax);
-
-      // DL 20/2017 Art. 12 day declarations: 30 only when the contract covers
-      // the whole month; prorated for a mid-month hire/termination. A lingering
-      // terminationDate on a rehired (non-terminated) employee is ignored —
-      // same guard the annual WIT return uses.
-      const contractDays = calculateContractDaysInMonth(
-        period,
-        employee.jobDetails?.hireDate,
-        employee.status === 'terminated' ? employee.terminationDate : undefined
-      );
-      const unjustifiedAbsenceDays = calculateUnjustifiedAbsenceDays(totals.absenceHours, contractDays);
-      const parentalLeaveDays = calculateParentalLeaveDaysInMonth(
-        period,
-        parentalLeavesByEmployee.get(employee.id) || []
-      );
-
-      employeeRecords.push({
-        employeeId: employee.id,
-        fullName: `${requireStatutoryText(employee.personalInfo.firstName, 'employee first name')} ${requireStatutoryText(employee.personalInfo.lastName, 'employee last name')}`,
-        inssNumber: requireStatutoryText(
-          employee.documents?.socialSecurityNumber?.number,
-          'employee INSS/NISS number'
-        ),
-        contributionBase,
-        employeeContribution,
-        employerContribution,
-        totalContribution,
-        grossWages,
-        annualSubsidy: roundMoney(totals.annualSubsidy),
-        incomeTax,
-        netPay: roundMoney(totals.netPay),
-        isResident: totals.isResident,
-        contractDays,
-        unjustifiedAbsenceDays,
-        parentalLeaveDays,
-        // Worker NIF/TIN: the employee master carries no TIN field, so the DR
-        // column stays blank rather than inventing a value.
-      });
-
-      totalContributionBase = addMoney(totalContributionBase, contributionBase);
-      totalEmployeeContributions = addMoney(totalEmployeeContributions, employeeContribution);
-      totalEmployerContributions = addMoney(totalEmployerContributions, employerContribution);
-    }
-
-    const totalContributions = addMoney(totalEmployeeContributions, totalEmployerContributions);
-
-    return {
-      ...employer,
-      reportingPeriod: period,
-      periodStartDate,
-      periodEndDate,
-      totalEmployees: employeeRecords.length,
-      totalContributionBase: roundMoney(totalContributionBase),
-      totalEmployeeContributions: roundMoney(totalEmployeeContributions),
-      totalEmployerContributions: roundMoney(totalEmployerContributions),
-      totalContributions: roundMoney(totalContributions),
-      employees: employeeRecords,
-    };
+    return buildMonthlyINSSReturn(periodRecords, employees, parentalLeavesByEmployee, employer, period);
   }
 
   /**
