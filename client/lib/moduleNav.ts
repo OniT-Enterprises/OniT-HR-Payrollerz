@@ -39,8 +39,6 @@ import {
   Banknote,
   FileSpreadsheet,
   ClipboardCheck,
-  Heart,
-  MinusCircle,
   // Money
   FileText,
   Receipt,
@@ -186,7 +184,9 @@ export const peopleNavConfig: ModuleNavConfig = {
 };
 
 /* ─── Time & Leave ───
- * Three task-first destinations; Leave Settings stays contextual under Leave.
+ * Three task-first destinations. Leave Settings is NOT in the module tree —
+ * all configuration lives in the Settings area (/settings hub → module
+ * settings pages), keeping module navs task-only.
  */
 
 export const timeLeaveNavConfig: ModuleNavConfig = {
@@ -212,18 +212,8 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       labelKey: "leave",
       icon: CalendarDays,
       path: "/time-leave/leave",
-      matchPaths: ["/time-leave/leave", "/time-leave/settings"],
-      subPages: [
-        {
-          id: "settings",
-          label: "Leave Settings",
-          labelKey: "leaveSettings",
-          icon: Settings,
-          path: "/time-leave/settings",
-          matchPaths: ["/time-leave/settings"],
-          hrAdminOnly: true,
-        },
-      ],
+      matchPaths: ["/time-leave/leave"],
+      subPages: [],
     },
     {
       id: "shifts",
@@ -239,8 +229,10 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
 };
 
 /* ─── Payroll ───
- * Flat: Run, History, Payments are primary actions
- * Setup (Benefits/Deductions) and Reports are secondary
+ * Flat: Run, History, Payments are primary actions.
+ * Configuration (rates, benefits, deductions) is NOT in the module tree —
+ * it lives in the Settings area (/settings hub → /payroll/settings, which
+ * links Benefits and Deductions as cards).
  */
 
 export const payrollNavConfig: ModuleNavConfig = {
@@ -292,20 +284,6 @@ export const payrollNavConfig: ModuleNavConfig = {
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },
         { label: "Tax Clearance", labelKey: "taxClearance", path: "/payroll/tax/clearance", icon: ClipboardCheck, advancedTaxOnly: true },
-      ],
-      manageOnly: true,
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      labelKey: "payrollSettings",
-      icon: Settings,
-      path: "/payroll/settings",
-      matchPaths: ["/payroll/settings", "/payroll/settings/benefits", "/payroll/settings/deductions"],
-      subPages: [
-        { label: "Tax & Rates", labelKey: "taxRates", path: "/payroll/settings", icon: DollarSign },
-        { label: "Benefits", labelKey: "benefits", path: "/payroll/settings/benefits", icon: Heart },
-        { label: "Deductions", labelKey: "deductions", path: "/payroll/settings/deductions", icon: MinusCircle },
       ],
       manageOnly: true,
     },
