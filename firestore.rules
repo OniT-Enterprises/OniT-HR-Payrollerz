@@ -352,11 +352,15 @@ service cloud.firestore {
         allow update: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
         allow delete: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
 
-        // Users can update their own member record (limited fields)
-        // Blocks role, modules, AND permissions to prevent privilege escalation
+        // Users can update their own member record (allowlist ONLY).
+        // employeeId is the identity isSelfEmployee() resolves from — letting a
+        // member change it (or uid/email/departmentId/partner links) would let
+        // them impersonate a colleague and read their payslips/PII. Fail closed:
+        // anything not listed here is admin-managed.
         allow update: if isAuthenticated() &&
           request.auth.uid == memberId &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'modules', 'permissions']);
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['displayName', 'lastActiveAt']);
       }
 
       // ============================================
@@ -785,7 +789,12 @@ service cloud.firestore {
         allow create: if isSuperAdmin() ||
           isTenantManagerOrAdmin(tenantId) ||
           (request.resource.data.employeeId != null &&
-           isSelfEmployee(tenantId, request.resource.data.employeeId));
+           isSelfEmployee(tenantId, request.resource.data.employeeId) &&
+           // A staff member filing their own claim can only create it
+           // 'submitted' — creating it already 'approved' is self-approval
+           // (the update rule below already blocks the status change, so the
+           // create path must too). Managers/admins keep full authority above.
+           request.resource.data.get('status', 'submitted') == 'submitted');
 
         // Admins can approve/reject. Employees can update their own pending expenses
         // but CANNOT change status (prevents self-approval) or reassign employeeId
@@ -1437,8 +1446,18 @@ service cloud.firestore {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null &&
+        isTenantFinanceAdmin(request.resource.data.tenantId) &&
+        // Create only in a pre-approval state. The transition INTO 'approved'
+        // (and paid/cancelled/rejected) must go through the update rule so the
+        // two-person approval rule, finalize paywall, and state machine all
+        // apply — creating an already-'approved' run would bypass all three.
+        !(request.resource.data.get('status', 'draft') in ['approved', 'paid', 'cancelled', 'rejected']) &&
+        // Bind createdBy to the caller so the two-person rule
+        // (approvedBy != createdBy) can't be defeated by forging the creator.
+        request.resource.data.createdBy == request.auth.uid
+      );
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1748,11 +1767,23 @@ service cloud.firestore {
       // Tenant admins AND managers can queue emails for their tenant
       // (managers approve/reject leave, which emails the staff member).
       // Accountants queue invoice/payslip emails.
+      // Recipients can't be fully validated in rules (per-address cross-collection
+      // lookups aren't feasible), so instead pin the shape the ONLY sanctioned
+      // writer — notificationService.queueEmail — produces: a purpose tag, a
+      // 'pending' status, and a bounded recipient list. This blocks a manager
+      // from hand-rolling an arbitrary blast and from injecting a non-pending
+      // status; the app layer remains the real recipient control.
       allow create: if isSuperAdmin() || (
         isAuthenticated() &&
         request.resource.data.tenantId != null &&
         (isTenantManagerOrAdmin(request.resource.data.tenantId) ||
-         isTenantFinanceAdmin(request.resource.data.tenantId))
+         isTenantFinanceAdmin(request.resource.data.tenantId)) &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.purpose is string &&
+        request.resource.data.purpose.size() > 0 &&
+        request.resource.data.to is list &&
+        request.resource.data.to.size() > 0 &&
+        request.resource.data.to.size() <= 50
       );
 
       // Tenant admins can read email history for their tenant

@@ -2,6 +2,8 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
+  getCountFromServer,
   doc,
   updateDoc,
   deleteDoc,
@@ -12,6 +14,17 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
+
+/** Thrown by deleteDepartment when employees are still assigned. */
+export class DepartmentHasEmployeesError extends Error {
+  constructor(public readonly employeeCount: number) {
+    super(
+      `Cannot delete department: ${employeeCount} employee(s) are still assigned. Reassign them first.`,
+    );
+    this.name = "DepartmentHasEmployeesError";
+  }
+}
 
 export interface Department {
   id: string;
@@ -92,8 +105,27 @@ class DepartmentService {
   }
 
   async deleteDepartment(tenantId: string, id: string): Promise<void> {
-    // Note: In production, verify tenant ownership before delete
     const departmentRef = doc(db, "departments", id);
+
+    // Guard: employees reference their department by NAME (jobDetails.department).
+    // Hard-deleting a department with staff still assigned strands them with a
+    // dangling department, breaking roster/reporting filters. Block it and make
+    // the caller reassign first.
+    const deptSnap = await getDoc(departmentRef);
+    const departmentName = deptSnap.data()?.name as string | undefined;
+    if (departmentName) {
+      const assigned = await getCountFromServer(
+        query(
+          collection(db, paths.employees(tenantId)),
+          where("jobDetails.department", "==", departmentName),
+        ),
+      );
+      const count = assigned.data().count;
+      if (count > 0) {
+        throw new DepartmentHasEmployeesError(count);
+      }
+    }
+
     await deleteDoc(departmentRef);
   }
 }

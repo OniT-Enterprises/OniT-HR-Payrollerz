@@ -48,6 +48,32 @@ class BankReconciliationService {
   }
 
   /**
+   * Stable doc id derived from a statement line's own content, so re-importing
+   * the same CSV is a no-op instead of duplicating every row. The running
+   * balance (when the bank provides it) makes each line unique within a
+   * statement; date/amount/type/reference/description disambiguate otherwise.
+   * FNV-1a → hex keeps it a short, id-safe string.
+   */
+  private static importKey(
+    tx: Omit<BankTransaction, 'id' | 'createdAt' | 'status'>,
+  ): string {
+    const raw = [
+      tx.date,
+      tx.amount,
+      tx.type,
+      tx.reference ?? '',
+      tx.balance ?? '',
+      tx.description,
+    ].join('|');
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < raw.length; i++) {
+      hash ^= raw.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return `csv_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+  }
+
+  /**
    * Parse CSV file and return bank transactions
    * Uses papaparse for robust handling of edge cases like:
    * - Quoted fields containing commas
@@ -204,24 +230,39 @@ class BankReconciliationService {
     const errors: string[] = [];
     let imported = 0;
 
+    // Deterministic ids make re-importing the same statement idempotent. A row
+    // that collides in-file (identical date/amount/type/ref/balance/desc) is the
+    // same line twice, so keep one. Guard the write with a create-if-absent
+    // read so a re-import doesn't clobber a line already matched/reconciled.
+    const seen = new Set<string>();
     // Batch all writes (max 499 per batch)
     for (let i = 0; i < parsed.length; i += 499) {
-      const batch = writeBatch(db);
       const chunk = parsed.slice(i, i + 499);
-      for (const tx of chunk) {
-        const docRef = doc(getCollection(tenantId));
-        batch.set(docRef, {
+      const chunkRefs = chunk.map((tx) =>
+        doc(getCollection(tenantId), BankReconciliationService.importKey(tx)),
+      );
+      const existing = await Promise.all(chunkRefs.map((ref) => getDoc(ref)));
+
+      const batch = writeBatch(db);
+      let batchCount = 0;
+      chunk.forEach((tx, j) => {
+        const id = chunkRefs[j].id;
+        if (seen.has(id) || existing[j].exists()) return; // already imported
+        seen.add(id);
+        batch.set(chunkRefs[j], {
           ...tx,
           status: 'unmatched' as ReconciliationStatus,
           createdAt: Timestamp.now(),
         });
-        imported++;
-      }
+        batchCount++;
+      });
+
+      if (batchCount === 0) continue;
       try {
         await batch.commit();
+        imported += batchCount;
       } catch {
         errors.push(`Failed to import batch starting at row ${i + 1}`);
-        imported -= chunk.length;
       }
     }
 

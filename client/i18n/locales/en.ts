@@ -2354,7 +2354,7 @@ const messages = {
       },
       "taxInfoTitle": "Tax Information",
       "taxResidentLabel": "Tax resident of Timor-Leste",
-      "taxResidentHint": "WIT (10% income tax) applies to income above $500/month for residents",
+      "taxResidentHint": "Resident for tax (Lei 8/2008: present 183+ days in any 12 months, unless the permanent home is abroad). Residents pay 10% WIT above $500/month; non-residents pay 10% flat from the first dollar.",
       "incomeTaxTitle": "Income Tax (WIT)",
       "incomeTaxDesc": "10% on income above $500/month",
       "socialSecurityTitle": "Social Security (INSS)",

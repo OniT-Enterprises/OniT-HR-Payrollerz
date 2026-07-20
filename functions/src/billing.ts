@@ -186,6 +186,30 @@ export const createCheckoutSession = onCall(
     const db = getFirestore();
     const tenantRef = db.doc(`tenants/${tenantId}`);
 
+    // Self-heal a stale local subscription pointer before the guard below trips
+    // on it. If we think we're subscribed but Stripe says the subscription is
+    // gone/canceled (e.g. a past out-of-order webhook re-wrote the field, or the
+    // field simply lagged a cancel), clear it so the tenant can re-subscribe
+    // instead of being wedged on "already has an active subscription".
+    const preData = (await tenantRef.get()).data() as
+      | Record<string, unknown>
+      | undefined;
+    const localSubId = preData?.stripeSubscriptionId;
+    if (typeof localSubId === "string" && localSubId) {
+      const stripe = stripeClient();
+      let stillBlocking = false;
+      try {
+        const sub = await stripe.subscriptions.retrieve(localSubId);
+        stillBlocking = BLOCKING_SUBSCRIPTION_STATUSES.has(sub.status);
+      } catch {
+        // Not found in Stripe at all → definitely stale.
+        stillBlocking = false;
+      }
+      if (!stillBlocking) {
+        await revertTenantToFree(db, tenantId);
+      }
+    }
+
     // Atomically re-check the guards AND claim a short-lived checkout lock, so
     // two near-simultaneous callable invocations (double click / two admins)
     // cannot both create a session before the first webhook lands and end up
@@ -439,6 +463,113 @@ async function applySubscription(
     patch.subscriptionPaidUntil = Timestamp.fromMillis(periodEndSec * 1000);
 
   await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
+}
+
+/** Subscription statuses meaning the subscription is gone — revert to free. */
+const GONE_SUBSCRIPTION_STATUSES: ReadonlySet<Stripe.Subscription.Status> =
+  new Set(["canceled", "incomplete_expired"]);
+
+/**
+ * Revert a tenant to free usage: drop the payroll-unlock and zero the billing
+ * fields. Idempotent — safe to run on a redelivered/duplicate cancel.
+ */
+async function revertTenantToFree(
+  db: FirebaseFirestore.Firestore,
+  tenantId: string,
+): Promise<void> {
+  await db.doc(`tenants/${tenantId}`).set(
+    {
+      monthlySubscriptionAmount: 0,
+      subscriptionBillingAmount: 0,
+      subscriptionBillingInterval: FieldValue.delete(),
+      subscriptionBillingMonths: FieldValue.delete(),
+      subscriptionBilledSeats: FieldValue.delete(),
+      subscriptionAnnualMonthsCharged: FieldValue.delete(),
+      stripeSubscriptionId: FieldValue.delete(),
+      pendingCheckout: FieldValue.delete(),
+    },
+    { merge: true },
+  );
+}
+
+/**
+ * Reconcile a tenant's stored subscription state against LIVE Stripe state
+ * (re-fetched by id), independent of what any particular webhook payload said.
+ * Applies the live subscription when it still exists, reverts to free when it
+ * is canceled/expired. This is what makes out-of-order delivery safe.
+ */
+async function reconcileSubscription(
+  db: FirebaseFirestore.Firestore,
+  stripe: Stripe,
+  tenantId: string,
+  subId: string,
+): Promise<void> {
+  const sub = await stripe.subscriptions.retrieve(subId);
+  if (GONE_SUBSCRIPTION_STATUSES.has(sub.status)) {
+    await revertTenantToFree(db, tenantId);
+  } else {
+    await applySubscription(db, tenantId, sub);
+  }
+}
+
+/** Firestore collection of already-handled Stripe event ids (idempotency). */
+const WEBHOOK_EVENTS_COLLECTION = "stripeWebhookEvents";
+
+/**
+ * Idempotency guard. Atomically claims a Stripe event.id the first time it is
+ * seen and returns true; returns false if it was already handled (Stripe
+ * redelivers on any non-2xx, on its retry schedule, and occasionally
+ * at-least-once even after a 2xx). If the handler later throws, the caller
+ * releases the claim so the redelivery can reprocess.
+ */
+async function claimWebhookEvent(
+  db: FirebaseFirestore.Firestore,
+  event: Stripe.Event,
+): Promise<boolean> {
+  const ref = db.collection(WEBHOOK_EVENTS_COLLECTION).doc(event.id);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists) return false;
+    tx.set(ref, {
+      type: event.type,
+      created: event.created,
+      receivedAt: FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+}
+
+/**
+ * Ordering guard for a tenant's subscription events. Stripe does NOT guarantee
+ * delivery order, so a delayed `customer.subscription.updated` (carrying a
+ * pre-cancel "active" snapshot) can arrive AFTER the cancel and, if applied,
+ * resurrect the subscription — re-unlocking the paywall and wedging
+ * re-subscription. We record the newest event.created applied per tenant and
+ * refuse to apply an older one. `apply` re-fetches live state from Stripe, so
+ * same-timestamp or newer events converge on the truth regardless of order.
+ *
+ * The watermark advances inside the transaction before `apply` runs; on failure
+ * the event claim is released and the retry re-enters with
+ * event.created == watermark (not strictly less), so it reprocesses.
+ */
+async function applySubscriptionEventIfNewer(
+  db: FirebaseFirestore.Firestore,
+  tenantId: string,
+  eventCreated: number,
+  apply: () => Promise<void>,
+): Promise<boolean> {
+  const ref = db.doc(`tenants/${tenantId}`);
+  const proceed = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+    const last =
+      (snap.data()?.lastStripeSubscriptionEventAt as number | undefined) ?? 0;
+    if (eventCreated < last) return false;
+    tx.set(ref, { lastStripeSubscriptionEventAt: eventCreated }, { merge: true });
+    return true;
+  });
+  if (proceed) await apply();
+  return proceed;
 }
 
 /**
@@ -730,6 +861,14 @@ export const stripeWebhook = onRequest(
     }
 
     const db = getFirestore();
+
+    // Idempotency: skip an event.id we have already handled (Stripe redelivers).
+    const claimed = await claimWebhookEvent(db, event);
+    if (!claimed) {
+      res.json({ received: true, duplicate: true });
+      return;
+    }
+
     try {
       switch (event.type) {
         case "checkout.session.completed": {
@@ -740,34 +879,24 @@ export const stripeWebhook = onRequest(
               typeof session.subscription === "string"
                 ? session.subscription
                 : session.subscription.id;
-            const sub = await stripe.subscriptions.retrieve(subId);
-            await applySubscription(db, tenantId, sub);
+            await applySubscriptionEventIfNewer(db, tenantId, event.created, () =>
+              reconcileSubscription(db, stripe, tenantId, subId),
+            );
           }
           break;
         }
         case "customer.subscription.created":
-        case "customer.subscription.updated": {
-          const sub = event.data.object;
-          const tenantId = sub.metadata?.tenantId;
-          if (tenantId) await applySubscription(db, tenantId, sub);
-          break;
-        }
+        case "customer.subscription.updated":
         case "customer.subscription.deleted": {
-          const sub = event.data.object;
-          const tenantId = sub.metadata?.tenantId;
+          // event.data.object is a snapshot from when the event fired and can be
+          // stale on an out-of-order/redelivered event. reconcileSubscription
+          // re-fetches LIVE state by id, so a delayed "updated" carrying a
+          // pre-cancel "active" snapshot cannot resurrect a canceled sub.
+          const staleSub = event.data.object;
+          const tenantId = staleSub.metadata?.tenantId;
           if (tenantId) {
-            // Revert to free usage: drop the payroll-unlock, zero the amount.
-            await db.doc(`tenants/${tenantId}`).set(
-              {
-                monthlySubscriptionAmount: 0,
-                subscriptionBillingAmount: 0,
-                subscriptionBillingInterval: FieldValue.delete(),
-                subscriptionBillingMonths: FieldValue.delete(),
-                subscriptionBilledSeats: FieldValue.delete(),
-                subscriptionAnnualMonthsCharged: FieldValue.delete(),
-                stripeSubscriptionId: FieldValue.delete(),
-              },
-              { merge: true },
+            await applySubscriptionEventIfNewer(db, tenantId, event.created, () =>
+              reconcileSubscription(db, stripe, tenantId, staleSub.id),
             );
           }
           break;
@@ -777,6 +906,18 @@ export const stripeWebhook = onRequest(
       }
       res.json({ received: true });
     } catch (error) {
+      // Release the idempotency claim so Stripe's redelivery reprocesses this
+      // event instead of it being silently swallowed as a duplicate.
+      await db
+        .collection(WEBHOOK_EVENTS_COLLECTION)
+        .doc(event.id)
+        .delete()
+        .catch((cleanupError) =>
+          console.error(
+            "Failed to release webhook event claim after error:",
+            cleanupError,
+          ),
+        );
       console.error("Webhook handler error:", error);
       res.status(500).send("Webhook handler failed");
     }

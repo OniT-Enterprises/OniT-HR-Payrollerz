@@ -462,4 +462,72 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
       );
     });
   });
+
+  describe('create-path bypass (must not be born approved)', () => {
+    // Every approval guard lives on the update rule. If a run could be CREATED
+    // already 'approved', it would skip the two-person rule, the finalize
+    // paywall, and the state machine in one shot.
+    beforeEach(async () => {
+      await testEnv.clearFirestore();
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const adminDb = context.firestore();
+        await setDoc(doc(adminDb, 'tenants/tenant-a'), {
+          name: 'Tenant A',
+          stripeSubscriptionId: 'sub_active',
+        });
+        await setDoc(doc(adminDb, 'tenants/tenant-a/members/owner-a'), {
+          uid: 'owner-a', role: 'owner', modules: ['payroll'],
+        });
+      });
+    });
+
+    it('blocks creating a run already status:approved', async () => {
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertFails(
+        setDoc(doc(db, 'payrollRuns/forged-1'), {
+          tenantId: 'tenant-a',
+          status: 'approved',
+          approvedBy: 'owner-a',
+          createdBy: 'owner-a',
+          totalNetPay: 1000,
+        }),
+      );
+    });
+
+    it('blocks creating a run already status:paid', async () => {
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertFails(
+        setDoc(doc(db, 'payrollRuns/forged-2'), {
+          tenantId: 'tenant-a',
+          status: 'paid',
+          createdBy: 'owner-a',
+          totalNetPay: 1000,
+        }),
+      );
+    });
+
+    it('blocks creating a run with a forged createdBy (defeats two-person rule)', async () => {
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertFails(
+        setDoc(doc(db, 'payrollRuns/forged-3'), {
+          tenantId: 'tenant-a',
+          status: 'processing',
+          createdBy: 'someone-else',
+          totalNetPay: 1000,
+        }),
+      );
+    });
+
+    it('allows creating a normal draft/processing run for oneself', async () => {
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertSucceeds(
+        setDoc(doc(db, 'payrollRuns/ok-1'), {
+          tenantId: 'tenant-a',
+          status: 'processing',
+          createdBy: 'owner-a',
+          totalNetPay: 1000,
+        }),
+      );
+    });
+  });
 });

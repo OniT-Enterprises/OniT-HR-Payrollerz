@@ -201,11 +201,60 @@ export const sendWelcomeEmail = onCall(
 /** Per-email cool-down (ms) between branded reset emails to curb inbox spam. */
 const RESET_THROTTLE_MS = 60_000;
 
+/** Per-IP burst limit: at most N reset requests per source IP per window. The
+ *  per-email throttle alone does nothing against an attacker rotating target
+ *  addresses from one host to mass-send reset mail. */
+const RESET_IP_WINDOW_MS = 10 * 60_000;
+const RESET_IP_MAX = 5;
+
 /** Deterministic, path-safe doc id for the throttle record of an email. */
 function throttleId(email: string): string {
   return Buffer.from(email.toLowerCase())
     .toString("base64")
     .replace(/[^a-zA-Z0-9]/g, "");
+}
+
+/** Best-effort client IP from the onCall raw request (first x-forwarded-for
+ *  hop behind Google's LB, else the socket ip). */
+function clientIp(request: { rawRequest?: { headers?: Record<string, unknown>; ip?: string } }): string {
+  const fwd = request.rawRequest?.headers?.["x-forwarded-for"];
+  const first = Array.isArray(fwd)
+    ? fwd[0]
+    : typeof fwd === "string"
+      ? fwd.split(",")[0]
+      : undefined;
+  return (first || request.rawRequest?.ip || "unknown").trim();
+}
+
+function ipThrottleId(ip: string): string {
+  return Buffer.from(ip).toString("base64").replace(/[^a-zA-Z0-9]/g, "");
+}
+
+/**
+ * Fixed-window per-IP limiter. Returns true if this request is WITHIN the limit
+ * (allowed), false if the IP has exceeded RESET_IP_MAX in the current window.
+ * Atomic so concurrent bursts can't all slip through.
+ */
+async function ipWithinResetLimit(
+  db: FirebaseFirestore.Firestore,
+  ip: string,
+): Promise<boolean> {
+  const ref = db.collection("passwordResetIpThrottle").doc(ipThrottleId(ip));
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const now = Date.now();
+    const windowStart = (snap.get("windowStart") as number | undefined) ?? 0;
+    const count = (snap.get("count") as number | undefined) ?? 0;
+    if (now - windowStart > RESET_IP_WINDOW_MS) {
+      tx.set(ref, { windowStart: now, count: 1 });
+      return true;
+    }
+    if (count >= RESET_IP_MAX) {
+      return false;
+    }
+    tx.set(ref, { count: count + 1 }, { merge: true });
+    return true;
+  });
 }
 
 interface PasswordResetResponse {
@@ -230,6 +279,14 @@ export const requestPasswordReset = onCall(
     }
 
     const db = getFirestore();
+
+    // Per-IP burst limit first (curbs email-bombing across rotating addresses).
+    // Over the limit → succeed silently, same as every other guard here, so we
+    // never leak rate-limit state or account existence.
+    if (!(await ipWithinResetLimit(db, clientIp(request)))) {
+      return { success: true };
+    }
+
     const throttleRef = db.collection("passwordResetThrottle").doc(throttleId(email));
 
     // Throttle: bail quietly if we sent to this address very recently.

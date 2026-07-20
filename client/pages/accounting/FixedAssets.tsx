@@ -51,6 +51,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useInvalidateAccounting } from "@/hooks/useAccounting";
 import { fixedAssetService } from "@/services/fixedAssetService";
 import type { FixedAsset } from "@/types/accounting";
 import {
@@ -82,6 +83,7 @@ export default function FixedAssets() {
   const { toast } = useToast();
   const { canManage, session } = useTenant();
   const { user } = useAuth();
+  const invalidateAccounting = useInvalidateAccounting();
   const tenantId = session?.tid;
   const canManageTenant = canManage();
 
@@ -225,6 +227,9 @@ export default function FixedAssets() {
       });
       setShowPost(false);
       await reload();
+      // Depreciation posts a GL journal — refresh the ledger/trial-balance/
+      // dashboard caches or they show stale balances until a hard reload.
+      await invalidateAccounting();
     } catch (error) {
       console.error("Failed to post depreciation:", error);
       toast({
@@ -261,6 +266,8 @@ export default function FixedAssets() {
       });
       setDisposeAsset(null);
       await reload();
+      // Disposal posts a GL journal (removal + gain/loss) — refresh accounting.
+      await invalidateAccounting();
     } catch (error) {
       console.error("Failed to dispose asset:", error);
       toast({

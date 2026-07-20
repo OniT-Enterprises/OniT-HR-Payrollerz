@@ -213,6 +213,7 @@ firestore-debug.log
 # Confidential mail-corpus working docs — never commit (client identifiers)
 docs/HANDOFF.md
 docs/MINED_TL_ACCOUNTING_INTEL.md
+docs/MINED_SIGNOFF_ANSWERS_JUL2026.md
 
 # Playwright E2E artifacts
 test-results/

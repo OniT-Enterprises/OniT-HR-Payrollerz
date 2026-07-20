@@ -410,13 +410,29 @@ class PayrollRunService {
       throw new Error(`Only processing payroll runs can be rejected (current: ${payroll.status})`);
     }
 
+    // Atomic status transition. The pre-check above reads a snapshot, but a
+    // concurrent approval could move the run processing -> approved (and post
+    // its GL journal) between that read and this write. A plain updateDoc would
+    // then stamp 'rejected' over an already-approved, already-posted run — wages
+    // on the books for a run the state machine now refuses to re-approve. The
+    // transaction re-reads and rejects ONLY while still 'processing'.
     const docRef = doc(db, 'payrollRuns', id);
-    await updateDoc(docRef, {
-      status: 'rejected',
-      rejectedBy,
-      rejectedAt: serverTimestamp(),
-      rejectionReason: reason,
-      updatedAt: serverTimestamp(),
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(docRef);
+      if (!snap.exists()) {
+        throw new Error('Payroll run not found');
+      }
+      const current = snap.data().status;
+      if (current !== 'processing') {
+        throw new Error(`Only processing payroll runs can be rejected (current: ${current})`);
+      }
+      transaction.update(docRef, {
+        status: 'rejected',
+        rejectedBy,
+        rejectedAt: serverTimestamp(),
+        rejectionReason: reason,
+        updatedAt: serverTimestamp(),
+      });
     });
 
     if (audit) {
@@ -819,6 +835,71 @@ class PayrollRecordService {
           subsidioAnual: addMoney(
             current.subsidioAnual,
             record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0,
+          ),
+        };
+      }
+    }
+
+    return totals;
+  }
+
+  /**
+   * Per-employee WIT already assessed this CALENDAR MONTH (by pay-period month),
+   * so a new monthly run applies the resident $500/month exemption against the
+   * remaining threshold instead of granting a fresh one. Counts committed runs
+   * only (processing/approved/paid) — the draft being built is excluded. Keyed
+   * on `periodStart`'s YYYY-MM so a regular run and a same-month top-up run
+   * (e.g. a standalone 13th-month run) share one monthly threshold.
+   *
+   * `mtdWitTaxableIncome` is pre-threshold taxable income; `mtdIncomeTax` is WIT
+   * withheld — both are what calculateIncomeTaxWithBase's monthToDate expects.
+   */
+  async getMonthToDateWITByEmployee(
+    tenantId: string,
+    periodMonth: string, // 'YYYY-MM'
+  ): Promise<Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }>> {
+    const year = Number.parseInt(periodMonth.slice(0, 4), 10);
+    const runsSnapshot = await getDocs(query(
+      collection(db, 'payrollRuns'),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['processing', 'approved', 'paid']),
+      where('payDate', '>=', `${year}-01-01`),
+      where('payDate', '<=', `${year}-12-31`),
+    ));
+    // Bucket by the pay-PERIOD month, not the pay date: a December salary run and
+    // a December 13th-month run belong to the same WIT month even if paid in
+    // January.
+    const runIds = runsSnapshot.docs
+      .filter((runDoc) => {
+        const periodStart = (runDoc.data().periodStart as string | undefined) || '';
+        return periodStart.slice(0, 7) === periodMonth;
+      })
+      .map((runDoc) => runDoc.id);
+    const totals: Record<string, { mtdWitTaxableIncome: number; mtdIncomeTax: number }> = {};
+
+    for (const runIdChunk of chunkArray(runIds, 10)) {
+      if (runIdChunk.length === 0) continue;
+      // tenantId filter is load-bearing — see getTenantYTDTotals.
+      const recordsSnapshot = await getDocs(query(
+        this.collectionRef,
+        where('tenantId', '==', tenantId),
+        where('payrollRunId', 'in', runIdChunk),
+      ));
+      for (const recordDoc of recordsSnapshot.docs) {
+        const record = normalizeLegacyRecord({ ...recordDoc.data() }) as PayrollRecord;
+        if (!record.employeeId) continue;
+        const current = totals[record.employeeId] || {
+          mtdWitTaxableIncome: 0,
+          mtdIncomeTax: 0,
+        };
+        totals[record.employeeId] = {
+          mtdWitTaxableIncome: addMoney(
+            current.mtdWitTaxableIncome,
+            record.taxableIncome || 0,
+          ),
+          mtdIncomeTax: addMoney(
+            current.mtdIncomeTax,
+            record.deductions?.find((d) => d.type === 'income_tax')?.amount || 0,
           ),
         };
       }

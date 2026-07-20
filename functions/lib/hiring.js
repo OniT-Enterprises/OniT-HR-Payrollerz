@@ -38,78 +38,75 @@ exports.acceptOffer = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters: tenantId, offerId, employeeId");
     }
     await (0, authz_1.requireTenantRoles)(tenantId, auth.uid, ["owner", "hr-admin"], "Only tenant owners or HR admins can accept offers");
-    const batch = db.batch();
+    // Contract id is DETERMINISTIC per offer, and the whole accept runs in a
+    // transaction that re-reads the offer and only proceeds while it is still
+    // 'sent'. Together these make accept idempotent: a double-click / retry either
+    // hits the same contract doc or sees 'accepted' and stops — never two
+    // contracts (the old code generated a fresh ULID inside a non-atomic batch).
+    const contractId = `offer_${offerId}`;
+    const snapshotIdRef = { value: "" };
     try {
-        // Get the offer
-        const offerDoc = await db
-            .doc(`tenants/${tenantId}/offers/${offerId}`)
-            .get();
-        if (!offerDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Offer not found");
-        }
-        const offer = offerDoc.data();
-        if (offer.status !== "sent") {
-            throw new https_1.HttpsError("failed-precondition", 'Offer must be in "sent" status to be accepted');
-        }
-        // Get the position
-        const positionDoc = await db
-            .doc(`tenants/${tenantId}/positions/${offer.positionId}`)
-            .get();
-        if (!positionDoc.exists) {
-            throw new https_1.HttpsError("not-found", "Position not found");
-        }
-        const position = Object.assign({ id: positionDoc.id }, positionDoc.data());
-        // Create contract
-        const contractId = generateULID();
-        const contractData = {
-            employeeId,
-            positionId: offer.positionId,
-            startDate: offer.terms.startDate,
-            endDate: null, // Indefinite contract
-            weeklyHours: offer.terms.weeklyHours,
-            overtimeRate: offer.terms.overtimeRate || 1.5,
-            createdAt: firestore_2.FieldValue.serverTimestamp(),
-            updatedAt: firestore_2.FieldValue.serverTimestamp(),
-        };
-        batch.set(db.doc(`tenants/${tenantId}/contracts/${contractId}`), contractData);
-        // Create employment snapshot
-        const snapshotId = `${employeeId}_${getISODateString(offer.terms.startDate)}`;
-        const snapshotData = {
-            employeeId,
-            position,
-            contract: Object.assign({ id: contractId }, contractData),
-            asOf: offer.terms.startDate,
-            createdAt: firestore_2.FieldValue.serverTimestamp(),
-        };
-        batch.set(db.doc(`tenants/${tenantId}/employmentSnapshots/${snapshotId}`), snapshotData);
-        // Update offer status
-        batch.update(offerDoc.ref, {
-            status: "accepted",
-            acceptedAt: firestore_2.FieldValue.serverTimestamp(),
-            acceptedBy: auth.uid,
-            updatedAt: firestore_2.FieldValue.serverTimestamp(),
+        await db.runTransaction(async (tx) => {
+            const offerRef = db.doc(`tenants/${tenantId}/offers/${offerId}`);
+            const offerDoc = await tx.get(offerRef);
+            if (!offerDoc.exists) {
+                throw new https_1.HttpsError("not-found", "Offer not found");
+            }
+            const offer = offerDoc.data();
+            if (offer.status !== "sent") {
+                throw new https_1.HttpsError("failed-precondition", 'Offer must be in "sent" status to be accepted');
+            }
+            // ── all reads first (Firestore transaction requirement) ──
+            const positionDoc = await tx.get(db.doc(`tenants/${tenantId}/positions/${offer.positionId}`));
+            if (!positionDoc.exists) {
+                throw new https_1.HttpsError("not-found", "Position not found");
+            }
+            const position = Object.assign({ id: positionDoc.id }, positionDoc.data());
+            const candidateRef = db.doc(`tenants/${tenantId}/candidates/${offer.candidateId}`);
+            const candidateDoc = await tx.get(candidateRef);
+            const employeeRef = db.doc(`tenants/${tenantId}/employees/${employeeId}`);
+            const employeeDoc = await tx.get(employeeRef);
+            // ── writes ──
+            const contractData = {
+                employeeId,
+                positionId: offer.positionId,
+                startDate: offer.terms.startDate,
+                endDate: null, // Indefinite contract
+                weeklyHours: offer.terms.weeklyHours,
+                overtimeRate: offer.terms.overtimeRate || 1.5,
+                createdAt: firestore_2.FieldValue.serverTimestamp(),
+                updatedAt: firestore_2.FieldValue.serverTimestamp(),
+            };
+            tx.set(db.doc(`tenants/${tenantId}/contracts/${contractId}`), contractData);
+            const snapshotId = `${employeeId}_${getISODateString(offer.terms.startDate)}`;
+            snapshotIdRef.value = snapshotId;
+            tx.set(db.doc(`tenants/${tenantId}/employmentSnapshots/${snapshotId}`), {
+                employeeId,
+                position,
+                contract: Object.assign({ id: contractId }, contractData),
+                asOf: offer.terms.startDate,
+                createdAt: firestore_2.FieldValue.serverTimestamp(),
+            });
+            tx.update(offerRef, {
+                status: "accepted",
+                acceptedAt: firestore_2.FieldValue.serverTimestamp(),
+                acceptedBy: auth.uid,
+                updatedAt: firestore_2.FieldValue.serverTimestamp(),
+            });
+            if (candidateDoc.exists) {
+                tx.update(candidateRef, {
+                    stage: "hired",
+                    updatedAt: firestore_2.FieldValue.serverTimestamp(),
+                });
+            }
+            if (employeeDoc.exists) {
+                tx.update(employeeRef, {
+                    status: "active",
+                    updatedAt: firestore_2.FieldValue.serverTimestamp(),
+                });
+            }
         });
-        // Update candidate status to 'hired'
-        const candidateDoc = await db
-            .doc(`tenants/${tenantId}/candidates/${offer.candidateId}`)
-            .get();
-        if (candidateDoc.exists) {
-            batch.update(candidateDoc.ref, {
-                stage: "hired",
-                updatedAt: firestore_2.FieldValue.serverTimestamp(),
-            });
-        }
-        // Update employee status to 'active' if they exist
-        const employeeDoc = await db
-            .doc(`tenants/${tenantId}/employees/${employeeId}`)
-            .get();
-        if (employeeDoc.exists) {
-            batch.update(employeeDoc.ref, {
-                status: "active",
-                updatedAt: firestore_2.FieldValue.serverTimestamp(),
-            });
-        }
-        await batch.commit();
+        const snapshotId = snapshotIdRef.value;
         v2_1.logger.info(`Offer ${offerId} accepted, contract ${contractId} and snapshot ${snapshotId} created`, {
             tenantId,
             offerId,

@@ -122,23 +122,31 @@ export default function PeopleDashboard() {
   const recentEmployeesQuery = useAllEmployees(8, hasStaff);
   const leaveStatsQuery = useLeaveStats(hasTimeleave);
   const goalStatsQuery = useGoalStats(undefined, hasPerformance);
+  // These three "what needs attention" badge counts live under a bespoke
+  // `peopleHome` namespace that NO mutation invalidates — so with a long
+  // staleTime they showed counts up to 5 minutes out of date after the user
+  // resolved a disciplinary case, completed a training, or scheduled an
+  // interview. Refetch on every dashboard visit so the badges are current.
   const interviewStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "interviews"],
     queryFn: () => interviewService.getStats(tenantId),
     enabled: hasHiring,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const trainingStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "training"],
     queryFn: () => trainingService.getTrainingStats(tenantId),
     enabled: hasPerformance,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
   const disciplinaryStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "disciplinary"],
     queryFn: () => disciplinaryService.getStats(tenantId),
     enabled: hasPerformance,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const dashboardQueries = [

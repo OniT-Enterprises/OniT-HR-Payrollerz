@@ -82,6 +82,22 @@ async function invalidateAccountingDerivedData(queryClient: ReturnType<typeof us
   ]);
 }
 
+/**
+ * Refresh journal entries + every derived accounting report. For flows that post
+ * GL journals OUTSIDE the useCreateJournalEntry hook — e.g. FixedAssets posting
+ * depreciation or a disposal straight through fixedAssetService — so the ledger,
+ * trial balance and dashboards don't show stale numbers afterward.
+ */
+export function useInvalidateAccounting() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return async () => {
+    await queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
+    await queryClient.invalidateQueries({ queryKey: accountKeys.all(tenantId) });
+    await invalidateAccountingDerivedData(queryClient, tenantId);
+  };
+}
+
 // ─── Account hooks ───────────────────────────────────────────────
 
 /** Fetch all accounts */

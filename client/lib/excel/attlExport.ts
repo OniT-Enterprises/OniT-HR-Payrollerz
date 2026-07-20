@@ -354,32 +354,44 @@ function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITRe
     "Effective Rate",
   ]);
 
-  // Employee rows
+  // Employee rows. Total the ROUNDED per-row values (not the rounded sum of the
+  // precise values) so the whole-dollar rows always add up to the whole-dollar
+  // TOTAL on the page — otherwise cent rounding on each row could leave the
+  // column visibly off by a dollar from its own total.
+  let rowGross = 0;
+  let rowTaxable = 0;
+  let rowWit = 0;
   for (const emp of witReturn.employees) {
     const effectiveRate = emp.taxableWages > 0 ? ((emp.witWithheld / emp.taxableWages) * 100).toFixed(1) + "%" : "0%";
+    const gross = roundWholeMoney(emp.grossWages);
+    const taxable = roundWholeMoney(emp.taxableWages);
+    const wit = roundWholeMoney(emp.witWithheld);
+    rowGross += gross;
+    rowTaxable += taxable;
+    rowWit += wit;
 
     ws.addRow([
       emp.employeeId,
       emp.fullName,
       emp.tinNumber || "",
       emp.isResident ? "Yes" : "No",
-      roundWholeMoney(emp.grossWages),
-      roundWholeMoney(emp.taxableWages),
-      roundWholeMoney(emp.witWithheld),
+      gross,
+      taxable,
+      wit,
       effectiveRate,
     ]);
   }
 
-  // Totals row
+  // Totals row — reconciles exactly to the rounded rows above.
   ws.addRow([]);
   ws.addRow([
     "",
     "TOTAL",
     "",
     "",
-    roundWholeMoney(witReturn.totalGrossWages),
-    roundWholeMoney(witReturn.totalTaxableWages),
-    roundWholeMoney(witReturn.totalWITWithheld),
+    rowGross,
+    rowTaxable,
+    rowWit,
     "",
   ]);
 

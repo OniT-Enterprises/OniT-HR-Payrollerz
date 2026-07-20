@@ -2354,7 +2354,7 @@ const messages = {
       },
       "taxInfoTitle": "Informação Fiscal",
       "taxResidentLabel": "Residente fiscal de Timor-Leste",
-      "taxResidentHint": "IRT (10% imposto sobre rendimento) aplica-se ao rendimento acima de $500/mês para residentes",
+      "taxResidentHint": "Residente para efeitos fiscais (Lei 8/2008: presente 183+ dias em qualquer período de 12 meses, salvo se a habitação permanente estiver no estrangeiro). Residentes pagam 10% de IRT acima de $500/mês; não residentes pagam 10% desde o primeiro dólar.",
       "incomeTaxTitle": "Imposto sobre Rendimento (IRT)",
       "incomeTaxDesc": "10% sobre rendimento acima de $500/mês",
       "socialSecurityTitle": "Segurança Social (INSS)",

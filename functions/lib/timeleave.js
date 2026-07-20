@@ -12,6 +12,9 @@ const authz_1 = require("./authz");
 const db = (0, firestore_1.getFirestore)();
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+// How long a copy-week lock is trusted before a new run may take it over,
+// so a crashed invocation cannot block the week forever.
+const COPY_LOCK_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_ENTITLEMENTS = {
     annual: 12,
     sick: 12,
@@ -617,14 +620,22 @@ exports.createOrUpdateShift = (0, https_1.onCall)(async (request) => {
  * drafts, in server-side batches. Replaces the old client loop that fired one
  * createOrUpdateShift call per shift (minutes of latency for a large roster).
  *
- * Cloning validated source shifts, so the expensive pairwise overlap/rest
- * re-check is skipped; instead it prefetches the target week once and skips
- * (a) an employee+date+start already scheduled next week (idempotent re-copy)
- * and (b) any target date the employee is on approved leave. Returns how many
- * were created vs skipped.
+ * Source shifts were already validated on creation, so cloning re-checks only
+ * what the target week can newly violate. It prefetches the target window once
+ * and skips a source shift when
+ * (a) an employee+date+start is already scheduled next week (idempotent
+ *     re-copy),
+ * (b) the clone would overlap or break the 12-hour rest rule against a shift
+ *     already in the target week (or an earlier clone in this same run) — the
+ *     same guard createOrUpdateShift enforces, so Copy Week can no longer plant
+ *     a shift the normal create path would have rejected, or
+ * (c) the employee is on approved leave that day.
+ * A per-(tenant, target week, department) lock makes concurrent invocations
+ * safe: the second one is rejected instead of duplicating the whole week.
+ * Returns how many shifts were created vs skipped.
  */
 exports.copyWeekShifts = (0, https_1.onCall)(async (request) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const auth = (0, authz_1.requireAuth)(request);
     const data = request.data;
     const { tenantId, startDate, endDate } = data;
@@ -653,49 +664,139 @@ exports.copyWeekShifts = (0, https_1.onCall)(async (request) => {
         return { created: 0, skipped: 0 };
     const targetStart = addDaysISO(startDate, 7);
     const targetEnd = addDaysISO(endDate, 7);
-    const [existingSnap, leaveSnap] = await Promise.all([
-        db.collection(`tenants/${tenantId}/shifts`)
-            .where("date", ">=", targetStart)
-            .where("date", "<=", targetEnd)
-            .get(),
-        db.collection("leave_requests")
-            .where("tenantId", "==", tenantId)
-            .where("status", "==", "approved")
-            .get(),
-    ]);
-    const scheduledKeys = new Set(existingSnap.docs
-        .map((document) => document.data())
-        .filter((shift) => shift.status !== "cancelled")
-        .map((shift) => `${shift.employeeId}|${shift.date}|${shift.startTime}`));
-    const leaves = leaveSnap.docs.map((document) => document.data());
-    const onApprovedLeave = (employeeId, date) => leaves.some((leave) => leave.employeeId === employeeId &&
-        typeof leave.startDate === "string" && typeof leave.endDate === "string" &&
-        leave.startDate <= date && leave.endDate >= date);
-    let batch = db.batch();
-    let writes = 0;
-    let created = 0;
-    let skipped = 0;
-    for (const shift of source) {
-        const date = addDaysISO(String(shift.date), 7);
-        const key = `${shift.employeeId}|${date}|${shift.startTime}`;
-        if (scheduledKeys.has(key) || onApprovedLeave(String(shift.employeeId), date)) {
-            skipped += 1;
-            continue;
+    // Concurrency guard: only one copy may run per tenant + target week +
+    // department scope at a time, so two racing invocations cannot both prefetch
+    // an empty target week and each write the full clone (issue #14). Acquired
+    // transactionally before any prefetch; a stale lock from a crashed run is
+    // taken over after COPY_LOCK_TTL_MS. Released in `finally` so a failed run
+    // frees the week immediately — partial re-runs are safe because the
+    // exact-key dedup below skips already-written shifts.
+    const copyScope = member.role === "manager" ? (_a = member.departmentId) !== null && _a !== void 0 ? _a : "all" : "all";
+    const lockId = `${targetStart}_${copyScope}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const lockRef = db.doc(`tenants/${tenantId}/shiftCopyLocks/${lockId}`);
+    const lockAcquired = await db.runTransaction(async (transaction) => {
+        var _a;
+        const snapshot = await transaction.get(lockRef);
+        const startedAtMs = Number((_a = snapshot.data()) === null || _a === void 0 ? void 0 : _a.startedAtMs);
+        if (snapshot.exists && Number.isFinite(startedAtMs) && Date.now() - startedAtMs < COPY_LOCK_TTL_MS) {
+            return false;
         }
-        scheduledKeys.add(key); // guard against duplicate source rows in the same copy
-        const ref = db.collection(`tenants/${tenantId}/shifts`).doc();
-        batch.set(ref, Object.assign(Object.assign(Object.assign(Object.assign({ tenantId, employeeId: shift.employeeId, employeeName: (_a = shift.employeeName) !== null && _a !== void 0 ? _a : "", department: (_b = shift.department) !== null && _b !== void 0 ? _b : "" }, (shift.departmentId ? { departmentId: shift.departmentId } : {})), { position: (_c = shift.position) !== null && _c !== void 0 ? _c : "", date, startTime: shift.startTime, endTime: shift.endTime, hours: typeof shift.hours === "number" ? shift.hours : calculateHours(String(shift.startTime), String(shift.endTime)), status: "draft", location: (_d = shift.location) !== null && _d !== void 0 ? _d : "" }), (shift.slotId ? { slotId: shift.slotId } : {})), { notes: (_e = shift.notes) !== null && _e !== void 0 ? _e : "", createdBy: auth.uid, createdAt: firestore_1.FieldValue.serverTimestamp(), updatedAt: firestore_1.FieldValue.serverTimestamp() }));
-        created += 1;
-        writes += 1;
-        if (writes === 450) {
-            await batch.commit();
-            batch = db.batch();
-            writes = 0;
-        }
+        transaction.set(lockRef, {
+            tenantId,
+            scope: copyScope,
+            targetStart,
+            targetEnd,
+            startedAtMs: Date.now(),
+            startedBy: auth.uid,
+            startedAt: firestore_1.FieldValue.serverTimestamp(),
+        });
+        return true;
+    });
+    if (!lockAcquired) {
+        throw new https_1.HttpsError("aborted", "A copy for this week is already running. Try again in a moment.");
     }
-    if (writes > 0)
-        await batch.commit();
-    return { created, skipped };
+    try {
+        // Prefetch the target window once. Shifts are pulled ±1 day so the
+        // 12-hour-rest check can see shifts just outside the week (mirrors
+        // createOrUpdateShift's ±1 window). The leave query is bounded to leave
+        // that overlaps the target week — [startDate <= targetEnd, endDate >=
+        // targetStart] — served by the existing tenantId+status+startDate+endDate
+        // index, so it is O(target-week leave) instead of O(all tenant leave ever).
+        const [existingSnap, leaveSnap] = await Promise.all([
+            db.collection(`tenants/${tenantId}/shifts`)
+                .where("date", ">=", addDaysISO(targetStart, -1))
+                .where("date", "<=", addDaysISO(targetEnd, 1))
+                .get(),
+            db.collection("leave_requests")
+                .where("tenantId", "==", tenantId)
+                .where("status", "==", "approved")
+                .where("startDate", "<=", targetEnd)
+                .where("endDate", ">=", targetStart)
+                .get(),
+        ]);
+        const scheduledKeys = new Set();
+        // Existing non-cancelled target-window shifts indexed by employee, used both
+        // for exact-key dedup and for the overlap / 12-hour-rest guard.
+        const targetByEmployee = new Map();
+        for (const document of existingSnap.docs) {
+            const shift = document.data();
+            if (shift.status === "cancelled")
+                continue;
+            if (!shift.employeeId || !shift.date || !shift.startTime || !shift.endTime)
+                continue;
+            const employeeId = String(shift.employeeId);
+            scheduledKeys.add(`${employeeId}|${shift.date}|${shift.startTime}`);
+            const list = (_b = targetByEmployee.get(employeeId)) !== null && _b !== void 0 ? _b : [];
+            list.push({
+                date: String(shift.date),
+                startTime: String(shift.startTime),
+                endTime: String(shift.endTime),
+            });
+            targetByEmployee.set(employeeId, list);
+        }
+        // Approved leave overlapping the target week, indexed by employee for O(1)
+        // per-shift lookup instead of scanning all tenant leave per source shift.
+        const leavesByEmployee = new Map();
+        for (const document of leaveSnap.docs) {
+            const leave = document.data();
+            if (typeof leave.employeeId !== "string")
+                continue;
+            if (typeof leave.startDate !== "string" || typeof leave.endDate !== "string")
+                continue;
+            const list = (_c = leavesByEmployee.get(leave.employeeId)) !== null && _c !== void 0 ? _c : [];
+            list.push({ startDate: leave.startDate, endDate: leave.endDate });
+            leavesByEmployee.set(leave.employeeId, list);
+        }
+        const onApprovedLeave = (employeeId, date) => {
+            var _a;
+            return ((_a = leavesByEmployee.get(employeeId)) !== null && _a !== void 0 ? _a : []).some((leave) => leave.startDate <= date && leave.endDate >= date);
+        };
+        const conflictsWithTarget = (employeeId, proposed) => {
+            var _a;
+            return ((_a = targetByEmployee.get(employeeId)) !== null && _a !== void 0 ? _a : []).some((candidate) => shiftsOverlap(proposed, candidate) || !hasTwelveHoursRest(proposed, candidate));
+        };
+        let batch = db.batch();
+        let writes = 0;
+        let created = 0;
+        let skipped = 0;
+        for (const shift of source) {
+            const date = addDaysISO(String(shift.date), 7);
+            const employeeId = String(shift.employeeId);
+            const key = `${employeeId}|${date}|${shift.startTime}`;
+            const proposed = {
+                date,
+                startTime: String(shift.startTime),
+                endTime: String(shift.endTime),
+            };
+            if (scheduledKeys.has(key) ||
+                onApprovedLeave(employeeId, date) ||
+                conflictsWithTarget(employeeId, proposed)) {
+                skipped += 1;
+                continue;
+            }
+            scheduledKeys.add(key); // guard against duplicate source rows in the same copy
+            // Record the clone so later source rows are checked against it too.
+            const list = (_d = targetByEmployee.get(employeeId)) !== null && _d !== void 0 ? _d : [];
+            list.push(proposed);
+            targetByEmployee.set(employeeId, list);
+            const ref = db.collection(`tenants/${tenantId}/shifts`).doc();
+            batch.set(ref, Object.assign(Object.assign(Object.assign(Object.assign({ tenantId, employeeId: shift.employeeId, employeeName: (_e = shift.employeeName) !== null && _e !== void 0 ? _e : "", department: (_f = shift.department) !== null && _f !== void 0 ? _f : "" }, (shift.departmentId ? { departmentId: shift.departmentId } : {})), { position: (_g = shift.position) !== null && _g !== void 0 ? _g : "", date, startTime: shift.startTime, endTime: shift.endTime, hours: typeof shift.hours === "number" ? shift.hours : calculateHours(String(shift.startTime), String(shift.endTime)), status: "draft", location: (_h = shift.location) !== null && _h !== void 0 ? _h : "" }), (shift.slotId ? { slotId: shift.slotId } : {})), { notes: (_j = shift.notes) !== null && _j !== void 0 ? _j : "", createdBy: auth.uid, createdAt: firestore_1.FieldValue.serverTimestamp(), updatedAt: firestore_1.FieldValue.serverTimestamp() }));
+            created += 1;
+            writes += 1;
+            if (writes === 450) {
+                await batch.commit();
+                batch = db.batch();
+                writes = 0;
+            }
+        }
+        if (writes > 0)
+            await batch.commit();
+        return { created, skipped };
+    }
+    finally {
+        // Release the lock; TTL covers the case where this delete itself fails.
+        await lockRef.delete().catch(() => undefined);
+    }
 });
 exports.createLeaveRequest = (0, https_1.onCall)(async (request) => {
     var _a, _b, _c, _d;

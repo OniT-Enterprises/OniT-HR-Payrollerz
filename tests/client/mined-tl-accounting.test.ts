@@ -349,7 +349,7 @@ describe("verified payroll gaps", () => {
         payerIsIndividual: false,
         taxRegime: "petroleum",
       }),
-    ).toThrow(/petroleum-contractor tax regime is outside Xefe/i);
+    ).toThrow(/outside Xefe's domestic withholding calculator/i);
   });
 });
 

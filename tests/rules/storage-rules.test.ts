@@ -32,6 +32,11 @@ const STORAGE_EMULATOR_PORT = Number(process.env.STORAGE_EMULATOR_PORT || 9199);
 const OWNER_A = 'owner-a';
 const VIEWER_A = 'viewer-a';
 const OWNER_B = 'owner-b';
+// A member with no staff/hiring/payroll access and no linked employee — the
+// case the pre-fix rules leaked colleagues' IDs/medical/payslips to.
+const OUTSIDER_A = 'outsider-a';
+// A member linked to emp-1, used to prove self-access to own docs/payslips.
+const SELF_A = 'self-a';
 
 describe('Storage rules', () => {
   let testEnv: RulesTestEnvironment;
@@ -72,6 +77,17 @@ describe('Storage rules', () => {
         role: 'viewer',
         modules: ['staff'],
       });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${OUTSIDER_A}`), {
+        uid: OUTSIDER_A,
+        role: 'viewer',
+        modules: ['timeleave'],
+      });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${SELF_A}`), {
+        uid: SELF_A,
+        role: 'viewer',
+        modules: ['timeleave'],
+        employeeId: 'emp-1',
+      });
       await setDoc(doc(adminDb, 'tenants/tenant-b'), { id: 'tenant-b', name: 'Tenant B' });
       await setDoc(doc(adminDb, `tenants/tenant-b/members/${OWNER_B}`), {
         uid: OWNER_B,
@@ -88,6 +104,12 @@ describe('Storage rules', () => {
       await uploadString(
         ref(adminStorage, 'tenants/tenant-a/employees/emp-1/documents/contract.pdf'),
         'pdf-bytes',
+        undefined,
+        { contentType: 'application/pdf' },
+      );
+      await uploadString(
+        ref(adminStorage, 'tenants/tenant-a/payslips/run-1/emp-1_1700000000000.pdf'),
+        'payslip-bytes',
         undefined,
         { contentType: 'application/pdf' },
       );
@@ -110,22 +132,50 @@ describe('Storage rules', () => {
   const anonStorage = () => testEnv.unauthenticatedContext().storage();
 
   describe('tenant isolation on employee documents', () => {
-    it('tenant member can read own tenant files', async () => {
-      await assertSucceeds(
-        getBytes(ref(storageAs(OWNER_A), 'tenants/tenant-a/employees/emp-1/documents/contract.pdf')),
-      );
+    const contract = 'tenants/tenant-a/employees/emp-1/documents/contract.pdf';
+
+    it('staff/admin can read employee documents', async () => {
+      await assertSucceeds(getBytes(ref(storageAs(OWNER_A), contract))); // owner
+      await assertSucceeds(getBytes(ref(storageAs(VIEWER_A), contract))); // staff module
+    });
+
+    it('the employee can read their own documents', async () => {
+      await assertSucceeds(getBytes(ref(storageAs(SELF_A), contract)));
+    });
+
+    it('a member without staff/hiring access and not the employee cannot read them', async () => {
+      // Pre-fix this leaked IDs/medical certs to any signed-in colleague.
+      await assertFails(getBytes(ref(storageAs(OUTSIDER_A), contract)));
     });
 
     it('another tenant cannot read them', async () => {
-      await assertFails(
-        getBytes(ref(storageAs(OWNER_B), 'tenants/tenant-a/employees/emp-1/documents/contract.pdf')),
-      );
+      await assertFails(getBytes(ref(storageAs(OWNER_B), contract)));
     });
 
     it('unauthenticated users cannot read them', async () => {
-      await assertFails(
-        getBytes(ref(anonStorage(), 'tenants/tenant-a/employees/emp-1/documents/contract.pdf')),
-      );
+      await assertFails(getBytes(ref(anonStorage(), contract)));
+    });
+  });
+
+  describe('payslip PDF access', () => {
+    const payslip = 'tenants/tenant-a/payslips/run-1/emp-1_1700000000000.pdf';
+
+    it('the payroll set can read payslips', async () => {
+      await assertSucceeds(getBytes(ref(storageAs(OWNER_A), payslip))); // owner
+    });
+
+    it('the employee can read their own payslip (filename prefix)', async () => {
+      await assertSucceeds(getBytes(ref(storageAs(SELF_A), payslip)));
+    });
+
+    it('a member without payroll access and not the employee cannot read payslips', async () => {
+      // Pre-fix any tenant member could read every colleague's salary.
+      await assertFails(getBytes(ref(storageAs(OUTSIDER_A), payslip)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), payslip))); // staff, not payroll
+    });
+
+    it('another tenant cannot read payslips', async () => {
+      await assertFails(getBytes(ref(storageAs(OWNER_B), payslip)));
     });
   });
 
@@ -193,6 +243,25 @@ describe('Storage rules', () => {
           undefined,
           { contentType: 'image/png' },
         ),
+      );
+    });
+
+    it('rejects an image content-type even under the resume.pdf filename', async () => {
+      // Pre-fix isAllowedDocType permitted image/* so a 10MB image named
+      // resume.pdf slipped through; isResumeDocType now blocks it.
+      await assertFails(
+        uploadString(ref(anonStorage(), resumePath), 'image-bytes', undefined, {
+          contentType: 'image/png',
+        }),
+      );
+    });
+
+    it('rejects an anonymous upload over the 4 MB public cap', async () => {
+      const big = 'x'.repeat(4 * 1024 * 1024 + 1);
+      await assertFails(
+        uploadString(ref(anonStorage(), resumePath), big, undefined, {
+          contentType: 'application/pdf',
+        }),
       );
     });
   });

@@ -151,6 +151,13 @@ const TENANT_SUBCOLLECTIONS = [
   "holidays",
   "vatReturns",
   "face_embeddings",
+  // Accounting automations (fixed-asset register + recurring journals). The
+  // *Postings docs are the append-only exactly-once posting guards — they must
+  // be swept too, or a re-created tenant with the same id inherits stale guards.
+  "fixedAssets",
+  "fixedAssetPostings",
+  "recurringJournals",
+  "recurringJournalPostings",
 ];
 
 // (b) Top-level collections keyed by a `tenantId` FIELD. Mirrors ROOT_COLLECTIONS

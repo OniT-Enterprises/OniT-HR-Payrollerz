@@ -149,6 +149,13 @@ export interface TLPayrollInput {
   ytdIncomeTax: number;
   ytdINSSEmployee: number;
 
+  // Month-to-date WIT context (monthly runs only) so the resident $500/month
+  // exemption is granted per employee-month, not per run. Sum of this employee's
+  // taxable income (pre-threshold) and WIT already withheld from OTHER committed
+  // runs in the same calendar month. Absent/0 for the first run of the month.
+  mtdWitTaxableIncome?: number;
+  mtdIncomeTax?: number;
+
   // For Subsidio Anual
   monthsWorkedThisYear: number;
   hireDate: string;              // To calculate months for 13th month
@@ -386,7 +393,17 @@ export function calculateIncomeTaxWithBase(
     residentRate: number;
     nonResidentRate: number;
     residentThreshold: number;
-  }
+  },
+  /**
+   * Month-to-date context for MONTHLY runs, so the resident $500/month exemption
+   * is granted once per employee per calendar month — NOT once per run. Without
+   * it, a regular monthly run plus a separate same-month run (e.g. a standalone
+   * 13th-month run) would each subtract a fresh $500, under-withholding ~$50.
+   * `priorTaxableIncome` is this employee's taxable income already assessed in
+   * the month (pre-threshold); `priorTax` is the WIT already withheld. Ignored
+   * for non-monthly frequencies, which keep the per-period prorated threshold.
+   */
+  monthToDate?: { priorTaxableIncome: number; priorTax: number }
 ): { tax: number; taxableBase: number } {
   if (taxableIncome <= 0) return { tax: 0, taxableBase: 0 };
 
@@ -394,6 +411,37 @@ export function calculateIncomeTaxWithBase(
     ? configOverride?.residentRate ?? TL_INCOME_TAX.rate
     : configOverride?.nonResidentRate ?? TL_INCOME_TAX.rate;
   const residentThreshold = configOverride?.residentThreshold ?? TL_INCOME_TAX.residentThreshold;
+
+  // Non-residents pay on all income (no threshold), so month-to-date is moot.
+  if (!isResident) {
+    return { tax: applyRate(taxableIncome, rate), taxableBase: roundMoney(taxableIncome) };
+  }
+
+  // Resident month-to-date path: apply the FULL monthly threshold once across
+  // the calendar month's cumulative taxable income and charge only the increment
+  // this run adds. Only engaged for monthly frequency with real prior amounts;
+  // sub-monthly frequencies fall through to per-period proration below.
+  if (
+    payFrequency === 'monthly' &&
+    monthToDate &&
+    monthToDate.priorTaxableIncome > 0
+  ) {
+    const cumulativeAbove = Math.max(
+      0,
+      subtractMoney(
+        addMoney(monthToDate.priorTaxableIncome, taxableIncome),
+        residentThreshold,
+      ),
+    );
+    const priorAbove = Math.max(
+      0,
+      subtractMoney(monthToDate.priorTaxableIncome, residentThreshold),
+    );
+    const thisBase = Math.max(0, subtractMoney(cumulativeAbove, priorAbove));
+    const cumulativeTax = applyRate(cumulativeAbove, rate);
+    const thisTax = Math.max(0, subtractMoney(cumulativeTax, monthToDate.priorTax));
+    return { tax: thisTax, taxableBase: thisBase };
+  }
 
   // Convert the monthly threshold to the current pay period.
   // For weekly/biweekly runs we prefer the actual number of periods in the month when provided
@@ -405,14 +453,9 @@ export function calculateIncomeTaxWithBase(
       : periods.periodsPerMonth;
   const periodThreshold = divideMoney(residentThreshold, effectivePeriodsPerMonth);
 
-  if (isResident) {
-    // Only tax amount above threshold
-    const taxableAmount = Math.max(0, subtractMoney(taxableIncome, periodThreshold));
-    return { tax: applyRate(taxableAmount, rate), taxableBase: taxableAmount };
-  } else {
-    // Non-residents pay on all income
-    return { tax: applyRate(taxableIncome, rate), taxableBase: roundMoney(taxableIncome) };
-  }
+  // Only tax amount above threshold
+  const taxableAmount = Math.max(0, subtractMoney(taxableIncome, periodThreshold));
+  return { tax: applyRate(taxableAmount, rate), taxableBase: taxableAmount };
 }
 
 /**
@@ -984,6 +1027,10 @@ export function calculateTLPayroll(
         input.payFrequency,
         input.totalPeriodsInMonth,
         config?.incomeTax,
+        {
+          priorTaxableIncome: input.mtdWitTaxableIncome ?? 0,
+          priorTax: input.mtdIncomeTax ?? 0,
+        },
       );
 
   if (incomeTax > 0) {
@@ -1058,13 +1105,18 @@ export function calculateTLPayroll(
   //   "Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total
   //    da remuneração recebida pelo trabalhador."
   //   ("Deductions made may not exceed, per month, 30% of the total remuneration received.")
-  // WIT and INSS must be withheld at their statutory amounts. All remaining
-  // deductions (including court orders) share what remains of the 30% ceiling.
-  // Unpaid absence/late time is a loss of remuneration under Art. 33(5), not a
-  // retained amount awaiting remittance, so it sits outside this ceiling.
+  // WIT and INSS must be withheld at their statutory amounts. COURT ORDERS are
+  // also outside the 30% ceiling: Art. 42(2) authorises deductions "determined
+  // by law or by judicial decision", and the TL Código de Processo Civil
+  // (Arts. 702/737) has the JUDGE fix the garnishable slice (1/6–1/3 of wages)
+  // and the employer merely deposit it to the court — the employer has no power
+  // to shave it to fit Art. 42(3). Voluntary/employer deductions still share
+  // what remains of the ceiling. Unpaid absence/late time is a loss of
+  // remuneration under Art. 33(5), not a retained amount, so it too sits outside.
+  // See docs/MINED_SIGNOFF_ANSWERS_JUL2026.md §5.
   const DEDUCTION_CAP_RATIO = 0.30;
   const protectedDeductions = deductions.filter(
-    d => d.type === 'income_tax' || d.type === 'inss_employee',
+    d => d.type === 'income_tax' || d.type === 'inss_employee' || d.type === 'court_order',
   );
   const deductionsToCap = deductions.filter(
     d => !protectedDeductions.includes(d) && d.type !== 'absence' && d.type !== 'late_arrival',
@@ -1074,6 +1126,19 @@ export function calculateTLPayroll(
   const totalCap = multiplyMoney(wagesPaid, DEDUCTION_CAP_RATIO);
   const availableCap = maxMoney(0, subtractMoney(totalCap, protectedTotal));
   let finalDeductions = deductions;
+
+  // A court order may on its own carry total withholding past the 30% guideline.
+  // That is lawful (the tribunal fixed the amount) — surface it, don't reduce it.
+  const courtOrderTotal = sumMoney(
+    deductions.filter(d => d.type === 'court_order').map(d => d.amount),
+  );
+  if (courtOrderTotal > 0 && protectedTotal > totalCap) {
+    warnings.push(
+      'Court-ordered deductions bring total withholding above the Labour-Law ' +
+        '30% guideline (Art. 42(3)). The tribunal-fixed amount stands — keep the ' +
+        'court notification on file.',
+    );
+  }
 
   if (cappedTotal > availableCap && deductionsToCap.length > 0) {
     warnings.push(

@@ -80,6 +80,45 @@ export const TL_INSS = {
   ],
 };
 
+/**
+ * Small-employer contribution reduction — DL 20/2017 Art. 86 ("Dispensa
+ * contributiva"), kept verbatim by DL 30/2021. Private-law employers with 10 or
+ * fewer workers, of whom ≥60% are Timorese nationals, and whose contributions
+ * are regularized, get a REDUCTION of the EMPLOYER share only (never the
+ * employee 4%), on a fixed sunset schedule. INSS's own portal auto-applies it,
+ * so a flat 6% overstates employer cost and mismatches the payment guide for
+ * eligible small businesses through Dec 2026. From 2027 the general rate returns.
+ *
+ * NB: NOT "Lei 27/2017" — a different, lapsed support scheme the firm miscited.
+ * See docs/MINED_SIGNOFF_ANSWERS_JUL2026.md §3.
+ */
+const TL_SMALL_EMPLOYER_REDUCTION_BY_YEAR: Record<number, number> = {
+  2017: 0.7, 2018: 0.7,
+  2019: 0.5, 2020: 0.5,
+  2021: 0.3, 2022: 0.3,
+  2023: 0.2, 2024: 0.2,
+  2025: 0.1, 2026: 0.1,
+  // 2027+ → no reduction (returns the general employer rate).
+};
+
+/** Employer-share reduction fraction for a given wage year (0 outside 2017–2026). */
+export function tlSmallEmployerReductionFactor(year: number): number {
+  return TL_SMALL_EMPLOYER_REDUCTION_BY_YEAR[year] ?? 0;
+}
+
+/**
+ * Effective employer INSS rate for a small-employer that qualifies for the
+ * Art. 86 discount in the given wage year. 2025–26 → 5.4%; 2027+ → 6% (base).
+ */
+export function tlSmallEmployerEmployerRate(
+  year: number,
+  baseEmployerRate: number = TL_INSS.employerRate,
+): number {
+  const reduced = baseEmployerRate * (1 - tlSmallEmployerReductionFactor(year));
+  // Two-decimal rate (e.g. 0.054) — INSS applies whole-percentage-point steps.
+  return Math.round(reduced * 10000) / 10000;
+}
+
 const TL_SOCIAL_PENSION_USD = 60;
 
 /**

@@ -41,11 +41,15 @@ export const DEFAULT_TL_WITHHOLDING_CONFIG: TLWithholdingConfig = {
   rentRate: 0.10,
   prizeRate: 0.10,
   specifiedServiceRates: {
-    // 2% and 4% are corroborated by ATTL "Aviso de Avaliação" assessment
-    // notices (the tax authority's own computation) — see
-    // tests/client/attl-assessment-parity.test.ts. The 2.64% and 4.5% rates
-    // are NOT yet confirmed against a primary source or an assessment; a TL
-    // accountant must bless them (docs/TL_ACCOUNTING_EVIDENCE_MATRIX.md).
+    // All four rates are the printed Schedule VIII (PT: Anexo VIII) values of
+    // Law 8/2008 Sec. 53.1: construction 2%, construction consulting 4%, air or
+    // sea transport 2.64%, mining or mining support 4.5%. 2%/4% are additionally
+    // corroborated by ATTL "Aviso de Avaliação" assessment notices (see
+    // tests/client/attl-assessment-parity.test.ts); 2.64% is corroborated by a
+    // real shipping-line self-assessment in the mail corpus. Verified against
+    // the English full text of the Act (WTO accession docs) —
+    // docs/TL_ACCOUNTING_EVIDENCE_MATRIX.md. NB: air/sea transport is
+    // recipient-self-withheld (Sec. 53.3(b)) — handled below.
     construction: 0.02,
     construction_consulting: 0.04,
     air_or_sea_transport: 0.0264,
@@ -78,8 +82,18 @@ export interface TLWithholdingResult {
 
 export class UnsupportedTLPetroleumTaxRegimeError extends Error {
   constructor() {
+    // Petroleum is a wholly separate regime with its own rates, forms, filing
+    // desk and payment rail — not a rate tweak on the domestic calculator:
+    //  • Revised ToBUCA (Bayu-Undan / former JPDA): non-resident 18% flat, resident
+    //    annual bands 10/15/30%.
+    //  • TDA Art. 72.2 + Schedule IX (other petroleum): non-resident 20%, resident
+    //    10% to $550/mo then 30%.
+    // Filing goes to ATTL's petroleum-revenues directorate (DNRPM) by emailed
+    // forms with payment to the TL Petroleum Fund — outside Xefe's domestic
+    // e-Tax/INSS pipeline. See docs/MINED_SIGNOFF_ANSWERS_JUL2026.md §1.
     super(
-      'The petroleum-contractor tax regime is outside Xefe domestic withholding calculations.',
+      'Petroleum-sector tax is a separate regime (ToBUCA / TDA Schedule IX) filed to ' +
+        "ATTL's petroleum-revenues directorate — it is outside Xefe's domestic withholding calculator.",
     );
     this.name = 'UnsupportedTLPetroleumTaxRegimeError';
   }

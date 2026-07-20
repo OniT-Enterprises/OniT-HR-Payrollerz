@@ -73,6 +73,20 @@ superadmins set those fields.
 - `stripeWebhook`: signature-verified; syncs `stripeCustomerId`,
   `stripeSubscriptionId` (set while active/trialing, deleted otherwise), cycle,
   cycle amount, standard monthly value, billed seats and `subscriptionPaidUntil`.
+  Hardened against redelivery/reordering (Stripe guarantees neither):
+  1. **Idempotent** — every `event.id` is claimed once in `stripeWebhookEvents/{id}`
+     (transactional create); a duplicate returns 200 without reprocessing. A handler
+     that throws releases the claim so the retry reprocesses. (Consider a Firestore
+     TTL policy on `stripeWebhookEvents.receivedAt` to garbage-collect old ids.)
+  2. **Re-fetches live state** — subscription events never trust `event.data.object`
+     (a snapshot); `reconcileSubscription` retrieves the sub by id and applies THAT,
+     so a delayed `updated` carrying a pre-cancel "active" snapshot can't resurrect a
+     canceled sub. Canceled/expired → revert to free; otherwise apply.
+  3. **Ordering watermark** — `tenants/*.lastStripeSubscriptionEventAt` (event.created)
+     drops any subscription event older than the newest already applied.
+  `createCheckoutSession` **self-heals**: before the "already subscribed" guard it
+  verifies a stored `stripeSubscriptionId` against Stripe and clears it if the sub is
+  gone/canceled — so a tenant can never be permanently wedged out of re-subscribing.
 - `syncSubscriptionQuantities` (daily 03:00 Dili): true-up — sets each Stripe
   subscription to the current billed-seat count. Monthly changes apply on the
   next invoice without part-month charges. Added annual seats are prorated and

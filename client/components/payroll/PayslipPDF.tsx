@@ -701,6 +701,14 @@ function SubsidioAnualSection({
   if (!(record.totalGrossPay > 0)) {
     return null;
   }
+  // Art. 44: the subsídio anual is BASE salary only — it excludes overtime,
+  // bonuses, allowances and the 13th month itself. The accrual estimate must
+  // divide the base (the 'regular' earning), not total gross, or it overstates
+  // what the employee is really accruing (and mismatches the engine, which
+  // prorates monthlySalary/12).
+  const baseSalary = record.earnings
+    .filter((e) => e.type === 'regular')
+    .reduce((sum, e) => sum + e.amount, 0);
   return (
     <View style={styles.employerSection}>
       <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
@@ -708,7 +716,7 @@ function SubsidioAnualSection({
       <View style={styles.employerRow}>
         <Text style={styles.employerLabel}>{s.subsidioAnualAccrual}</Text>
         <Text style={styles.employerValue}>
-          {formatCurrency(+(record.totalGrossPay / 12).toFixed(2))}{s.perMonth}
+          {formatCurrency(+(baseSalary / 12).toFixed(2))}{s.perMonth}
         </Text>
       </View>
     </View>

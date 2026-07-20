@@ -78,23 +78,36 @@ function aggregatePayrollTotals(
   };
 
   for (const record of records) {
-    // Handle both generic PayrollRecord and TL-specific TLPayrollRecord
-    const isTLRecord = "incomeTax" in record;
+    // Discriminate generic PayrollRecord from TL-specific TLPayrollRecord by a
+    // field UNIQUE to the generic shape. `incomeTax` was added to the generic
+    // record for the statutory filing generators, so "incomeTax" in record is
+    // true for BOTH shapes now — using it routed every wizard-produced (generic)
+    // record down the TL branch, which reads record.grossPay/monthlySalary
+    // (absent on generic → undefined) and dropped the entire wage-expense debit.
+    // totalGrossPay exists only on the generic record; grossPay only on TL.
+    const isTLRecord = !("totalGrossPay" in record);
 
-    // Gross pay
+    // Gross pay (contractual, before unpaid-absence/late reductions).
     const grossPay = isTLRecord
       ? (record as TLPayrollRecord).grossPay
       : (record as PayrollRecord).totalGrossPay;
-    totals.grossPay = addMoney(totals.grossPay, grossPay);
 
-    // Split the FULL gross across base salary, overtime, and everything else so
-    // the wage-expense debit reconciles to gross wages, no matter which earning
-    // types a record carries (allowances, bonus, subsidio anual, night/holiday/
-    // rest premiums, service compensation, per diem, transport/food, ...).
-    // Whatever isn't plain regular or overtime pay falls into the allowances /
-    // other-earnings bucket, so base + overtime + allowances always equals
-    // gross. This mirrors buildPayrollJournalLines, which debits the full gross
-    // (client/lib/accounting/calculations.ts).
+    // The wage EXPENSE is the wages actually earned this period — gross less any
+    // unpaid-absence/late reduction (`wagesPaid`). Booking the full contractual
+    // gross instead overstates the expense and shunts the reduction into the
+    // "other deductions" residual, which gets credited to 2260 as a payable owed
+    // to no one. Fall back to grossPay for legacy records that don't track it.
+    const recordWagesPaid = (record as { wagesPaid?: number }).wagesPaid;
+    const wageBase =
+      typeof recordWagesPaid === "number" ? recordWagesPaid : grossPay;
+    totals.grossPay = addMoney(totals.grossPay, wageBase);
+
+    // Split the wage base across base salary, overtime, and everything else so
+    // the wage-expense debit reconciles, no matter which earning types a record
+    // carries (allowances, bonus, subsidio anual, night/holiday/rest premiums,
+    // service compensation, per diem, transport/food, ...). Whatever isn't plain
+    // regular or overtime pay falls into the allowances / other-earnings bucket,
+    // so base + overtime + allowances always equals the wage base.
     let baseSalary: number;
     let overtime: number;
     if (isTLRecord) {
@@ -111,15 +124,15 @@ function aggregatePayrollTotals(
       overtime =
         genRecord.earnings?.find((e) => e.type === "overtime")?.amount || 0;
     }
-    // Keep the split within gross so no component goes negative and the three
-    // always sum to gross (the raw base/overtime can exceed gross when e.g. a
-    // monthly salary is reduced by unpaid absence).
-    baseSalary = maxMoney(0, Math.min(baseSalary, grossPay));
+    // Keep the split within the wage base so no component goes negative and the
+    // three always sum to it (the raw base/overtime can exceed it when a monthly
+    // salary is reduced by unpaid absence).
+    baseSalary = maxMoney(0, Math.min(baseSalary, wageBase));
     overtime = maxMoney(
       0,
-      Math.min(overtime, subtractMoney(grossPay, baseSalary)),
+      Math.min(overtime, subtractMoney(wageBase, baseSalary)),
     );
-    const allowances = subtractMoney(grossPay, baseSalary, overtime);
+    const allowances = subtractMoney(wageBase, baseSalary, overtime);
     totals.baseSalary = addMoney(totals.baseSalary, baseSalary);
     totals.overtime = addMoney(totals.overtime, overtime);
     totals.allowances = addMoney(totals.allowances, allowances);
@@ -156,12 +169,12 @@ function aggregatePayrollTotals(
 
     // Every remaining reduction to take-home pay (loan/advance repayments, court
     // orders, benefit contributions, etc.) must still be credited or the journal
-    // will not balance. Derive it from the record's own gross and net so the
-    // credit side always equals gross wages by construction:
-    //   net + WIT + employee INSS + other == gross.
+    // will not balance. Derive it from the WAGE BASE (not contractual gross) so
+    // an unpaid-absence reduction does NOT masquerade as a deduction payable:
+    //   net + WIT + employee INSS + other == wages actually paid.
     const otherDeductions = maxMoney(
       0,
-      subtractMoney(grossPay, netPay, wit, inssEmployee),
+      subtractMoney(wageBase, netPay, wit, inssEmployee),
     );
     totals.otherDeductions = addMoney(totals.otherDeductions, otherDeductions);
 
@@ -183,7 +196,7 @@ function aggregatePayrollTotals(
         });
       }
       const deptTotals = totals.byDepartment.get(dept)!;
-      deptTotals.grossPay = addMoney(deptTotals.grossPay, grossPay);
+      deptTotals.grossPay = addMoney(deptTotals.grossPay, wageBase);
       deptTotals.netPay = addMoney(deptTotals.netPay, netPay);
       deptTotals.employeeCount += 1;
       // Add other fields as needed

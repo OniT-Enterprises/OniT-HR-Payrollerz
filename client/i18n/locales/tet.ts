@@ -2354,7 +2354,7 @@ const messages = {
       },
       "taxInfoTitle": "Informasaun Fiskal",
       "taxResidentLabel": "Residente fiskal Timor-Leste",
-      "taxResidentHint": "WIT (10%) ba rendimentu liu $500/fulan",
+      "taxResidentHint": "Residente ba impostu (Lei 8/2008: iha Timor-Leste loron 183+ iha fulan 12, se nia hela-fatin permanente la iha rai-liur). Residente selu WIT 10% ba rendimentu liu $500/fulan; la-residente selu 10% husi dolar dahuluk.",
       "incomeTaxTitle": "Impostu Rendimentu (WIT)",
       "incomeTaxDesc": "10% ba rendimentu liu $500/fulan",
       "socialSecurityTitle": "Seguransa Sosial (INSS)",

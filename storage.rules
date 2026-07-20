@@ -89,6 +89,30 @@ service firebase.storage {
       return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'staff');
     }
 
+    // Mirrors firestore.rules canAccessPayrollRecords — gates payslip PDFs to
+    // the payroll set (owner/hr-admin auto, plus anyone with the payroll
+    // module), NOT every tenant member.
+    function canAccessPayrollRecords(tenantId) {
+      return hasTenantModule(tenantId, 'payroll');
+    }
+
+    // The employeeId linked to the calling member (null if none / not a member).
+    // isSelfEmployee equivalent for Storage: lets a worker reach their own
+    // employee documents and payslips without opening them to colleagues.
+    function storageEmployeeId(tenantId) {
+      return isRealTenantMember(tenantId)
+        ? tenantMemberDoc(tenantId).data.get('employeeId', null)
+        : null;
+    }
+
+    // Payslip objects are named "<employeeId>_<timestamp>.pdf" (see
+    // emailService.uploadPayslipPdf), so a worker's own payslips are the files
+    // whose name is prefixed with their employeeId.
+    function isOwnPayslipFile(tenantId, fileName) {
+      return storageEmployeeId(tenantId) != null &&
+        fileName.matches('^' + storageEmployeeId(tenantId) + '_.*');
+    }
+
     // File size limit: 10 MB
     function isUnderSizeLimit() {
       return request.resource.size < 10 * 1024 * 1024;
@@ -106,6 +130,20 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
+    // Resume/CV documents only — no images. Used on the PUBLIC (unauthenticated)
+    // job-application path, so it is deliberately stricter than isAllowedDocType.
+    function isResumeDocType() {
+      return request.resource.contentType == 'application/pdf' ||
+        request.resource.contentType == 'application/msword' ||
+        request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    // Tighter cap for anonymous uploads (cost/spam control): 4 MB is ample for
+    // a CV and far below the 10 MB authenticated limit.
+    function isUnderPublicUploadLimit() {
+      return request.resource.size < 4 * 1024 * 1024;
+    }
+
     function isOpenJob(tenantId, jobId) {
       return firestore.exists(/databases/(default)/documents/jobs/$(jobId)) &&
         firestore.get(/databases/(default)/documents/jobs/$(jobId)).data.tenantId == tenantId &&
@@ -116,9 +154,14 @@ service firebase.storage {
     // TENANT-SCOPED RULES
     // ============================================
 
-    // Employee documents (work contracts, visas, IDs, medical certs)
+    // Employee documents (work contracts, visas, IDs, medical certs).
+    // Firestore gates the matching employee records to staff/hiring access or
+    // the employee themselves — Storage must match, or IDs and medical certs
+    // leak to any signed-in colleague.
     match /tenants/{tenantId}/employees/{employeeId}/documents/{document} {
-      allow read: if isTenantMember(tenantId);
+      allow read: if canAccessStaffRecords(tenantId) ||
+        canAccessHiringRecords(tenantId) ||
+        storageEmployeeId(tenantId) == employeeId;
       allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
     }
 
@@ -134,9 +177,11 @@ service firebase.storage {
     // Files are stored privately; only internal hiring/staff users can read them later.
     match /public/jobApplications/{tenantId}/{jobId}/{applicationId}/{fileName} {
       allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
+      // Unauthenticated write: keep it tight — 4 MB cap, CV document types only
+      // (no images, unlike the authenticated doc paths), single fixed filename.
       allow write: if isOpenJob(tenantId, jobId) &&
-        isUnderSizeLimit() &&
-        isAllowedDocType() &&
+        isUnderPublicUploadLimit() &&
+        isResumeDocType() &&
         fileName.matches('resume\\.(pdf|doc|docx)');
     }
 
@@ -173,15 +218,25 @@ service firebase.storage {
     // them through the tokenized download URL stored on invoice_links docs.
     // Writable by the finance set (owner/hr-admin/accountant) — accountants can
     // send invoices, so they must be able to freeze the as-sent PDF too.
+    // NOTE: NOT storage-level write-once on purpose. invoiceService.
+    // rotateFrozenPdfToken re-uploads the SAME bytes to this deterministic path
+    // to mint a fresh download token (a "revoke the old shared link" feature),
+    // which is an `update`. Rules can't tell an identical-bytes rotation from a
+    // malicious overwrite, so a deny-update would break that shipped flow. The
+    // as-sent content stays frozen at the app layer (the PDF is re-uploaded, never
+    // re-rendered — see docs/INVOICING.md).
     match /tenants/{tenantId}/invoices/{invoiceId}/{document} {
       allow read: if isTenantMember(tenantId);
       allow write: if isTenantFinanceAdmin(tenantId) && isUnderSizeLimit() &&
         request.resource.contentType == 'application/pdf';
     }
 
-    // Payslip PDFs
+    // Payslip PDFs — salary data. Readable by the payroll set or by the
+    // employee whose payslip it is (matched on the "<employeeId>_" filename
+    // prefix), NOT every tenant member (mirrors firestore payrollRecords).
     match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
-      allow read: if isTenantMember(tenantId);
+      allow read: if canAccessPayrollRecords(tenantId) ||
+        isOwnPayslipFile(tenantId, document);
       allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit();
     }
 

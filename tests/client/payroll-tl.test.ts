@@ -5,7 +5,11 @@ import {
   validateTLPayrollInput,
   type TLPayrollInput,
 } from "@/lib/payroll/calculations-tl";
-import { getDefaultTLInssOptionalContributionBase } from "@/lib/payroll/constants-tl";
+import {
+  getDefaultTLInssOptionalContributionBase,
+  tlSmallEmployerReductionFactor,
+  tlSmallEmployerEmployerRate,
+} from "@/lib/payroll/constants-tl";
 
 function makeBaseInput(overrides: Partial<TLPayrollInput> = {}): TLPayrollInput {
   return {
@@ -428,6 +432,115 @@ describe("Weekly/biweekly threshold pro-ration", () => {
 });
 
 // ============================================================
+// Small-employer INSS discount (DL 20/2017 Art. 86)
+// ============================================================
+
+describe("Small-employer INSS discount", () => {
+  it("returns the correct reduction factor per two-year band", () => {
+    expect(tlSmallEmployerReductionFactor(2024)).toBe(0.2);
+    expect(tlSmallEmployerReductionFactor(2025)).toBe(0.1);
+    expect(tlSmallEmployerReductionFactor(2026)).toBe(0.1);
+    expect(tlSmallEmployerReductionFactor(2027)).toBe(0); // sunset
+    expect(tlSmallEmployerReductionFactor(2016)).toBe(0); // before the scheme
+  });
+
+  it("reduces the employer rate to 5.4% in 2025–26 and 6% from 2027", () => {
+    expect(tlSmallEmployerEmployerRate(2025)).toBeCloseTo(0.054, 6);
+    expect(tlSmallEmployerEmployerRate(2026)).toBeCloseTo(0.054, 6);
+    expect(tlSmallEmployerEmployerRate(2024)).toBeCloseTo(0.048, 6);
+    expect(tlSmallEmployerEmployerRate(2027)).toBeCloseTo(0.06, 6);
+  });
+
+  it("applies the discount to a custom employer base rate", () => {
+    // A tenant with a hypothetical 5% base still gets a 10% reduction in 2025.
+    expect(tlSmallEmployerEmployerRate(2025, 0.05)).toBeCloseTo(0.045, 6);
+  });
+
+  it("flows the reduced employer rate through the payroll engine", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 1000 }),
+      { inss: { employeeRate: 0.04, employerRate: tlSmallEmployerEmployerRate(2025) } },
+    );
+    // Employer INSS on a $1000 base at 5.4% = $54 (not $60); employee still 4%.
+    expect(result.inssEmployer).toBeCloseTo(54, 2);
+    expect(result.inssEmployee).toBeCloseTo(40, 2);
+  });
+});
+
+// ============================================================
+// Month-to-date WIT exemption (per employee-month, not per run)
+// ============================================================
+
+describe("Month-to-date WIT exemption (monthly)", () => {
+  it("grants a fresh $500 exemption for the FIRST run of the month", () => {
+    // No prior month-to-date → full monthly threshold applies.
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 800 }),
+    );
+    expect(result.incomeTax).toBe(30); // 10% * (800 - 500)
+    expect(result.witTaxableAmount).toBe(300);
+  });
+
+  it("does NOT grant a second $500 on a same-month top-up run", () => {
+    // Regular Dec run already assessed $800 taxable and withheld $30 this month.
+    // A separate same-month 13th-month run of $800 must be taxed with the
+    // threshold ALREADY consumed: cumulative (800+800)=1600, above $500 = 1100,
+    // total tax $110, minus the $30 already withheld = $80 on this run.
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        mtdWitTaxableIncome: 800,
+        mtdIncomeTax: 30,
+      }),
+    );
+    expect(result.incomeTax).toBe(80); // NOT 30 (which the per-run bug produced)
+    expect(result.witTaxableAmount).toBe(800); // 1100 cumulative base - 300 prior
+  });
+
+  it("consumes only the remaining threshold when the first run was below $500", () => {
+    // First run taxable $300 (below $500, withheld $0). Second run $400:
+    // cumulative 700, above $500 = 200, total tax $20, minus $0 prior = $20.
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 400,
+        mtdWitTaxableIncome: 300,
+        mtdIncomeTax: 0,
+      }),
+    );
+    expect(result.incomeTax).toBe(20);
+  });
+
+  it("ignores month-to-date for non-residents (no threshold anyway)", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        taxInfo: { isResident: false, hasTaxExemption: false },
+        mtdWitTaxableIncome: 800,
+        mtdIncomeTax: 80,
+      }),
+    );
+    // Non-resident: flat 10% on all income, unaffected by MTD.
+    expect(result.incomeTax).toBe(80); // 10% * 800
+  });
+
+  it("does not apply month-to-date aggregation to weekly runs", () => {
+    // Sub-monthly frequencies keep per-period proration even if MTD is present.
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 800,
+        payFrequency: "weekly",
+        totalPeriodsInMonth: 4,
+        regularHours: 44,
+        mtdWitTaxableIncome: 200,
+        mtdIncomeTax: 7.5,
+      }),
+    );
+    // Still weekly per-period: 10% * (200 - 125) = 7.50, MTD ignored.
+    expect(result.incomeTax).toBeCloseTo(7.5, 1);
+  });
+});
+
+// ============================================================
 // #20: Overtime / Night / Holiday Rate Calculations
 // ============================================================
 
@@ -558,18 +671,30 @@ describe("Edge cases", () => {
     expect(result.warnings.some((w) => w.includes("30% cap"))).toBe(true);
   });
 
-  it("includes court orders in the remaining 30% deduction ceiling", () => {
+  it("does NOT cap a court order — the tribunal-fixed amount stands (Art. 42(2))", () => {
+    // $500 court order on $800 wages is well past the 30% guideline ($240), but
+    // a judge fixed it and the employer must deposit it in full; it is not
+    // proportionally reduced like a voluntary deduction.
     const result = calculateTLPayroll(
       makeBaseInput({ monthlySalary: 800, courtOrders: 500 })
     );
-    const attendanceReductions = result.deductions
-      .filter((deduction) => deduction.type === 'absence' || deduction.type === 'late_arrival')
-      .reduce((total, deduction) => total + deduction.amount, 0);
+    const courtOrder = result.deductions.find((d) => d.type === 'court_order');
+    expect(courtOrder?.amount).toBe(500); // withheld in full, not reduced
+    expect(result.courtOrders).toBe(500);
+    expect(
+      result.warnings.some((w) => w.toLowerCase().includes('court')),
+    ).toBe(true);
+  });
 
-    expect(result.totalDeductions - attendanceReductions).toBeLessThanOrEqual(
-      result.wagesPaid * 0.30 + 0.01,
+  it("keeps a court order outside the cap while still capping voluntary lines", () => {
+    // Court order 100 (exempt) + a voluntary loan 500 on $800 wages. WIT $30 +
+    // INSS $32 + court $100 = $162 protected; cap $240 leaves $78 for the loan.
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 800, courtOrders: 100, loanRepayment: 500 })
     );
-    expect(result.warnings.some((warning) => warning.includes('30% cap'))).toBe(true);
+    expect(result.courtOrders).toBe(100); // untouched
+    const loan = result.deductions.find((d) => d.type === 'loan_repayment');
+    expect(loan!.amount).toBeCloseTo(78, 2); // 240 - 30 - 32 - 100
   });
 
   it("reconciles proportional rounding exactly to the available deduction cap", () => {
@@ -578,17 +703,16 @@ describe("Edge cases", () => {
         monthlySalary: 0.07,
         loanRepayment: 1,
         advanceRepayment: 1,
-        courtOrders: 1,
         otherDeductions: 1,
         taxInfo: { isResident: true, hasTaxExemption: true, inssExempt: true },
       })
     );
     const cappedDeductions = result.deductions.filter((deduction) =>
-      ['loan_repayment', 'advance_repayment', 'court_order', 'other'].includes(deduction.type)
+      ['loan_repayment', 'advance_repayment', 'other'].includes(deduction.type)
     );
 
     expect(cappedDeductions.reduce((total, deduction) => total + deduction.amount, 0)).toBe(0.02);
-    expect(result.loanRepayment + result.advanceRepayment + result.courtOrders + result.otherDeductions).toBe(0.02);
+    expect(result.loanRepayment + result.advanceRepayment + result.otherDeductions).toBe(0.02);
     expect(result.totalDeductions).toBe(0.02);
     expect(result.netPay).toBe(0.05);
   });
@@ -601,7 +725,6 @@ describe("Edge cases", () => {
         monthlySalary: 44.57,
         loanRepayment: 8.9,
         advanceRepayment: 8.9,
-        courtOrders: 8.9,
         otherDeductions: 0.01,
         taxInfo: { isResident: true, hasTaxExemption: true, inssExempt: true },
       })

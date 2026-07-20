@@ -31,6 +31,7 @@ import {
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
   TL_DEDUCTION_TYPE_LABELS,
+  tlSmallEmployerEmployerRate,
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
@@ -77,6 +78,10 @@ const EMPTY_YTD_BY_EMPLOYEE: Record<string, EmployeePayrollYTD> = {};
 const EMPTY_COMMITTED_FINAL_PAY: Record<
   string,
   { serviceCompensation: number; subsidioAnual: number }
+> = {};
+const EMPTY_MTD_WIT: Record<
+  string,
+  { mtdWitTaxableIncome: number; mtdIncomeTax: number }
 > = {};
 
 // Shareholders receive profit distributions, not wages — exempt from WIT withholding and
@@ -177,7 +182,15 @@ export function usePayrollCalculator({
             },
             inss: {
               employeeRate: payrollConfig.socialSecurity.employeeRate / 100,
-              employerRate: payrollConfig.socialSecurity.employerRate / 100,
+              // Small-employer discount (DL 20/2017 Art. 86): reduce ONLY the
+              // employer share, keyed to the wage (period) year, when the tenant
+              // has opted in. Employee 4% is untouched. 2025–26 → 5.4%, 2027 → 6%.
+              employerRate: payrollConfig.smallEmployerInssDiscount
+                ? tlSmallEmployerEmployerRate(
+                    Number.parseInt((periodEnd || "").slice(0, 4), 10),
+                    payrollConfig.socialSecurity.employerRate / 100,
+                  )
+                : payrollConfig.socialSecurity.employerRate / 100,
             },
             overtime: {
               standard: payrollConfig.overtimeRates.standard,
@@ -198,9 +211,14 @@ export function usePayrollCalculator({
             },
           }
         : undefined,
-    [payrollConfig],
+    [payrollConfig, periodEnd],
   );
-  const payrollYear = Number.parseInt(payDate.slice(0, 4), 10);
+  // Key the civil-year windows (subsidio proration, severance/subsidio dedup,
+  // YTD) to the PERIOD the payroll is FOR, not the pay date. A December run paid
+  // in January belongs to the earlier civil year — paying it against the pay-date
+  // year mis-prorates the 13th month (Art. 44 "civil year") and looks up the
+  // once-per-year dedup in the wrong year, re-paying an already-committed subsidio.
+  const payrollYear = Number.parseInt((periodEnd || payDate).slice(0, 4), 10);
   const ytdQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
     queryFn: () =>
@@ -273,6 +291,26 @@ export function usePayrollCalculator({
   const committedFinalPay =
     committedFinalPayQuery.data ?? EMPTY_COMMITTED_FINAL_PAY;
 
+  // Month-to-date WIT already withheld this calendar month, so the resident
+  // $500/month exemption is applied per employee-month (not per run). Only
+  // needed for monthly runs; a same-month top-up run (e.g. a 13th-month run)
+  // then taxes against the remaining threshold. Keyed on the pay-period month.
+  const periodMonth = periodStart.slice(0, 7); // 'YYYY-MM'
+  const mtdWitQuery = useQuery({
+    // Under 'payrollRecords' so finalizing a run invalidates it immediately
+    // (same reasoning as committedFinalPay).
+    queryKey: ["tenants", tenantId, "payrollRecords", "mtdWit", periodMonth],
+    queryFn: () =>
+      payrollService.records.getMonthToDateWITByEmployee(tenantId, periodMonth),
+    enabled:
+      Boolean(tenantId) &&
+      payFrequency === "monthly" &&
+      /^\d{4}-\d{2}$/.test(periodMonth) &&
+      activeEmployees.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+  const mtdWitByEmployee = mtdWitQuery.data ?? EMPTY_MTD_WIT;
+
   // ─── Core calculation ───────────────────────────────────────────
   const calculateForEmployee = useCallback(
     (data: EmployeePayrollData): TLPayrollResult | null => {
@@ -281,7 +319,14 @@ export function usePayrollCalculator({
         monthlySalary,
         calculationConfig?.hourlyRate,
       );
-      const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+      // As-of the PERIOD end (the civil-year month the payroll covers), not the
+      // pay date — so a December period paid in January still prorates the 13th
+      // month against December of the correct civil year.
+      const asOfDate = periodEnd
+        ? new Date(`${periodEnd}T00:00:00`)
+        : payDate
+          ? new Date(`${payDate}T00:00:00`)
+          : new Date();
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
       const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
       // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
@@ -358,6 +403,10 @@ export function usePayrollCalculator({
         ytdGrossPay: ytd?.ytdGrossPay || 0,
         ytdIncomeTax: ytd?.ytdIncomeTax || 0,
         ytdINSSEmployee: ytd?.ytdINSSEmployee || 0,
+        mtdWitTaxableIncome:
+          mtdWitByEmployee[data.employee.id || ""]?.mtdWitTaxableIncome || 0,
+        mtdIncomeTax:
+          mtdWitByEmployee[data.employee.id || ""]?.mtdIncomeTax || 0,
         monthsWorkedThisYear,
         hireDate,
       };
@@ -381,6 +430,7 @@ export function usePayrollCalculator({
       includeSubsidioAnual,
       ytdByEmployee,
       committedFinalPay,
+      mtdWitByEmployee,
       calculationConfig,
     ],
   );
@@ -774,6 +824,9 @@ export function usePayrollCalculator({
       // Hours worked at night carry the +25% premium on top of base pay; they
       // are a subset of regular/overtime, so they are set, not added.
       const nightShiftHours = Number((summary.nightHours ?? 0).toFixed(2));
+      // Hours worked on a public holiday, already reclassified out of regular/
+      // overtime by the attendance summary — pay them the Art. 27 2× rate.
+      const holidayHours = Number((summary.holidayHours ?? 0).toFixed(2));
       // Public holidays are paid non-working time — subtract them from the
       // expected baseline so a non-worked holiday is never docked as absence.
       // Only holidays inside THIS employee's employment window count: days
@@ -810,6 +863,7 @@ export function usePayrollCalculator({
         regularHours,
         overtimeHours,
         nightShiftHours,
+        holidayHours,
         absenceHours,
         lateArrivalMinutes,
         sickDays,
@@ -973,7 +1027,13 @@ export function usePayrollCalculator({
           monthlySalary,
           calculationConfig?.hourlyRate,
         );
-        const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+        // Period-based as-of (matches calculateForEmployee) so subsidio proration
+        // and the leaver dedup use the civil year the payroll covers.
+        const asOfDate = periodEnd
+          ? new Date(`${periodEnd}T00:00:00`)
+          : payDate
+            ? new Date(`${payDate}T00:00:00`)
+            : new Date();
         const monthsWorkedThisYear = asOfDate.getMonth() + 1;
         const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
         // Same once-only leaver resolution as calculateForEmployee (shared helper).

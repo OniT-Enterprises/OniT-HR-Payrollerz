@@ -205,6 +205,15 @@ export interface PayrollConfig {
   // Solo-operator mode: lets the creator of a payroll run approve it themselves.
   // Default false = safer two-person approval (creator != approver).
   allowSelfApproval?: boolean;
+  /**
+   * Small-employer INSS discount — DL 20/2017 Art. 86. Enable when the tenant
+   * qualifies (≤10 workers, ≥60% Timorese nationals, contributions regularized);
+   * INSS's portal auto-applies it, so this keeps Xefe's employer INSS in step
+   * with the payment guide (5.4% instead of 6% through Dec 2026, then 6%). The
+   * employee 4% is never reduced. Default false. See docs/BILLING? no —
+   * docs/MINED_SIGNOFF_ANSWERS_JUL2026.md §3.
+   */
+  smallEmployerInssDiscount?: boolean;
 }
 
 // ============================================
