@@ -110,7 +110,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await expect(page).toHaveURL(/dashboard/, { timeout: 20_000 });
 
   // Registered address lives in Settings (needed for INSS statutory identity)
-  await page.goto("/settings");
+  await page.goto("/settings/company"); // company details moved off the /settings hub
   await page.getByLabel(/registered address/i).fill("Rua de Dili 1, Dili");
   await page.getByRole("button", { name: /save/i }).first().click();
   await expect(page.getByText(/saved/i).first()).toBeVisible({ timeout: 15_000 });
