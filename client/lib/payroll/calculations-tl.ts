@@ -771,6 +771,12 @@ export function calculateTLPayroll(
     });
   }
 
+  // Deliberately a FULL 2× line on top of the salary, not a "top-up to 2×
+  // total": Art. 31 makes the holiday itself paid rest (already inside a
+  // monthly salary) and Art. 27(2) separately remunerates work done on it at
+  // the normal hourly rate + 100%. Two distinct entitlements — a salaried
+  // worker who works the holiday ends the day at salary + 2×, and that is the
+  // statutory reading pinned by rl-holiday-restday.test.ts.
   if (input.holidayHours > 0) {
     earnings.push({
       type: 'holiday',

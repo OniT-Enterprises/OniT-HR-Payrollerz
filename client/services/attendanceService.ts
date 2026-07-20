@@ -38,6 +38,7 @@ import {
   MAX_REASONABLE_ENTRY_HOURS,
 } from "@/lib/attendanceCalculations";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+import { holidayService } from "@/services/holidayService";
 export {
   computeEntryHours,
   calculateHoursBetween,
@@ -344,13 +345,15 @@ class AttendanceService {
       }
     }
 
-    // Mandatory national public holidays spanning the range. Hours worked on
-    // these dates are Art. 27 2× time, so they must be reclassified out of
-    // regular/overtime into holidayHours — otherwise holiday work is silently
-    // paid at 1×. (National statutory holidays are 2× regardless of a tenant's
-    // calendar customization, so the national list is the correct basis here;
-    // non-worked-holiday absence handling stays in the payroll sync, which also
-    // applies tenant overrides.)
+    // Public holidays spanning the range. Hours worked on these dates are
+    // Art. 27(2) 2× time, so they must be reclassified out of regular/overtime
+    // into holidayHours — otherwise holiday work is silently paid at 1×.
+    // Tenant overrides MUST apply here, with the same effective set the payroll
+    // sync uses for its absence baseline: the variable Islamic dates ship as
+    // estimates that tenants are told to correct via overrides, so a removed
+    // date is (usually) "the government moved it", not "we don't observe it".
+    // If the two sets diverged, a worked removed-date would book phantom
+    // absence next to a bogus 2× premium.
     const holidayDates = new Set<string>();
     const startYear = Number(startDate.slice(0, 4));
     const endYear = Number(endDate.slice(0, 4));
@@ -358,6 +361,24 @@ class AttendanceService {
       for (const h of getTLPublicHolidays(y)) {
         if (h.date >= startDate && h.date <= endDate) holidayDates.add(h.date);
       }
+    }
+    try {
+      const overrides = (
+        await Promise.all(
+          Array.from({ length: endYear - startYear + 1 }, (_, i) =>
+            holidayService.listTenantHolidayOverrides(tenantId, startYear + i),
+          ),
+        )
+      ).flat();
+      for (const override of overrides) {
+        if (override.date < startDate || override.date > endDate) continue;
+        if (override.isHoliday) holidayDates.add(override.date);
+        else holidayDates.delete(override.date);
+      }
+    } catch (error) {
+      // Degrade to the national list rather than failing the whole summary —
+      // matches the payroll sync's fallback for the same lookup.
+      console.error("Failed to load tenant holiday overrides for attendance summary:", error);
     }
 
     const byEmployee = new Map<string, AttendanceEmployeeSummary>();

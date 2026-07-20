@@ -355,6 +355,20 @@ export function useSaveArticle56FinalPay() {
   });
 }
 
+export function useSetSeveranceIncluded() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ caseId, include }: { caseId: string; include: boolean }) =>
+      offboardingService.updateCase(tenantId, caseId, {
+        includeArt56Severance: include,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
+    },
+  });
+}
+
 export function useUpdateExitInterviewField() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();

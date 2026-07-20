@@ -161,6 +161,10 @@ function normalizeTenantSettings(
         ...defaults.timeOffPolicies.paternityLeave,
         ...(data.timeOffPolicies?.paternityLeave || {}),
       },
+      specialLeave: {
+        ...defaults.timeOffPolicies.specialLeave,
+        ...(data.timeOffPolicies?.specialLeave || {}),
+      },
       unpaidLeave: {
         ...defaults.timeOffPolicies.unpaidLeave,
         ...(data.timeOffPolicies?.unpaidLeave || {}),

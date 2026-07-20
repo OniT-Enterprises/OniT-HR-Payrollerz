@@ -164,6 +164,40 @@ describe("quickbooks payroll journal export", () => {
     expect(debit("5110") + debit("5120") + debit("5160")).toBe(1400);
   });
 
+  it("derives the legacy (no wagesPaid) wage base as gross less attendance reductions", () => {
+    // Pre-wagesPaid record: contractual gross 1500, 100 unpaid absence recorded
+    // only as a deduction line. The fallback must mirror accounting-summary.ts
+    // (totalGrossPay − absence/late reductions); the old full-gross fallback
+    // re-created the phantom 2260 payable for the 100.
+    const legacyRecord = {
+      ...genericRecord,
+      deductions: [
+        { type: "income_tax", description: "WIT", amount: 90, isPreTax: false, isPercentage: false },
+        { type: "inss_employee", description: "INSS 4%", amount: 56, isPreTax: false, isPercentage: false },
+        { type: "loan_repayment", description: "Loan", amount: 40, isPreTax: false, isPercentage: false },
+        { type: "absence", description: "Unpaid absence", amount: 100, isPreTax: false, isPercentage: false },
+      ],
+      totalDeductions: 286,
+      netPay: 1214, // 1500 - 286
+      employerTaxes: [{ type: "inss_employer", description: "INSS 6%", amount: 84 }],
+      totalEmployerTaxes: 84,
+    } as unknown as PayrollRecord;
+
+    const entry = buildJournalEntry(run, [legacyRecord], getDefaultMappings(), options);
+    const debit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.debit ?? 0;
+    const credit = (code: string) =>
+      entry.lines.find((l) => l.accountCode === code)?.credit ?? 0;
+
+    expect(entry.totalDebits).toBe(entry.totalCredits);
+    // Wage expense 1400 (1500 − 100 absence) + employer INSS 84.
+    expect(entry.totalDebits).toBe(1484);
+    expect(debit("5110") + debit("5120") + debit("5160")).toBe(1400);
+    // Only the loan (40) is a payable — the absence reduction is NOT booked.
+    expect(credit("2260")).toBe(40);
+    expect(credit("2210")).toBe(1214); // net pay
+  });
+
   it("balances for TL records that carry earnings beyond salary and overtime", () => {
     const tlRun = { ...run } as unknown as TLPayrollRun;
     // monthlySalary 1000, overtime estimate 150 (10h * 10 * 1.5), plus a

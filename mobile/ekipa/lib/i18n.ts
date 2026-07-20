@@ -144,6 +144,9 @@ const translations: Record<string, Record<Language, string>> = {
   'leave.maternity': { tet: 'Lisensa maternidade', en: 'Maternity leave', pt: 'Licença de maternidade', id: 'Cuti melahirkan' },
   'leave.paternity': { tet: 'Lisensa paternidade', en: 'Paternity leave', pt: 'Licença de paternidade', id: 'Cuti ayah' },
   'leave.unpaid': { tet: 'Lisensa la ho pagamentu', en: 'Unpaid leave', pt: 'Licença sem vencimento', id: 'Cuti tanpa gaji' },
+  // Pooled justified absence — Lei 4/2012 Art. 33(3): replaces bereavement/marriage as a requestable type.
+  'leave.special': { tet: 'Lisensa Espesiál', en: 'Special leave', pt: 'Licença especial', id: 'Cuti khusus' },
+  // Legacy render-only labels: existing bereavement/marriage requests still display.
   'leave.bereavement': { tet: 'Lisensa luto', en: 'Bereavement leave', pt: 'Licença por luto', id: 'Cuti berkabung' },
   'leave.marriage': { tet: 'Lisensa kazamentu', en: 'Marriage leave', pt: 'Licença por casamento', id: 'Cuti menikah' },
   'leave.used': { tet: 'Uza ona', en: 'Used', pt: 'Utilizado', id: 'Terpakai' },

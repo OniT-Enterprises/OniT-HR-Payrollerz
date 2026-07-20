@@ -201,12 +201,32 @@ export const createCheckoutSession = onCall(
       try {
         const sub = await stripe.subscriptions.retrieve(localSubId);
         stillBlocking = BLOCKING_SUBSCRIPTION_STATUSES.has(sub.status);
-      } catch {
-        // Not found in Stripe at all → definitely stale.
-        stillBlocking = false;
+      } catch (error) {
+        // Only Stripe's confirmed "no such subscription" may clear billing
+        // state. A transient outage / auth / rate-limit error must never
+        // revert a paying tenant to free — fail the checkout instead.
+        if (
+          !(
+            error instanceof Stripe.errors.StripeInvalidRequestError &&
+            error.code === "resource_missing"
+          )
+        ) {
+          console.error(
+            "Could not verify the stored subscription with Stripe:",
+            error,
+          );
+          throw new HttpsError(
+            "unavailable",
+            "Could not verify the existing subscription; no checkout session was created",
+          );
+        }
+        // resource_missing → the subscription id is definitely stale.
       }
       if (!stillBlocking) {
-        await revertTenantToFree(db, tenantId);
+        // This revert runs outside the lock transaction below, so it must not
+        // release pendingCheckout — a concurrent createCheckoutSession call
+        // may have just claimed it (two live sessions = double billing).
+        await revertTenantToFree(db, tenantId, { releaseCheckoutLock: false });
       }
     }
 
@@ -413,11 +433,14 @@ export const createBillingPortalSession = onCall(
   },
 );
 
-async function applySubscription(
-  db: FirebaseFirestore.Firestore,
-  tenantId: string,
+/**
+ * Tenant billing snapshot for a LIVE Stripe subscription. Pure — the caller
+ * writes it inside the watermark transaction so the ordering check and the
+ * tenant write cannot be separated by a concurrent event's write.
+ */
+function buildSubscriptionPatch(
   sub: Stripe.Subscription,
-): Promise<void> {
+): Record<string, unknown> {
   const item = sub.items.data[0];
   const quantity = item?.quantity ?? 1;
   const unitAmount = item?.price?.unit_amount ?? 0;
@@ -462,7 +485,7 @@ async function applySubscription(
   if (periodEndSec)
     patch.subscriptionPaidUntil = Timestamp.fromMillis(periodEndSec * 1000);
 
-  await db.doc(`tenants/${tenantId}`).set(patch, { merge: true });
+  return patch;
 }
 
 /** Subscription statuses meaning the subscription is gone — revert to free. */
@@ -470,106 +493,201 @@ const GONE_SUBSCRIPTION_STATUSES: ReadonlySet<Stripe.Subscription.Status> =
   new Set(["canceled", "incomplete_expired"]);
 
 /**
- * Revert a tenant to free usage: drop the payroll-unlock and zero the billing
- * fields. Idempotent — safe to run on a redelivered/duplicate cancel.
+ * Billing fields for a tenant on free usage: drop the payroll-unlock and zero
+ * the amounts. `releaseCheckoutLock` must be false on the checkout self-heal
+ * path — that revert runs outside the checkout-lock transaction, and deleting
+ * `pendingCheckout` there could destroy a lock a concurrent
+ * createCheckoutSession call had just claimed (two live Checkout Sessions,
+ * double billing). Webhook-driven reverts DO release the lock: a subscription
+ * outcome ends the checkout the lock was guarding.
+ */
+function freeTenantPatch(releaseCheckoutLock: boolean): Record<string, unknown> {
+  const patch: Record<string, unknown> = {
+    monthlySubscriptionAmount: 0,
+    subscriptionBillingAmount: 0,
+    subscriptionBillingInterval: FieldValue.delete(),
+    subscriptionBillingMonths: FieldValue.delete(),
+    subscriptionBilledSeats: FieldValue.delete(),
+    subscriptionAnnualMonthsCharged: FieldValue.delete(),
+    stripeSubscriptionId: FieldValue.delete(),
+  };
+  if (releaseCheckoutLock) patch.pendingCheckout = FieldValue.delete();
+  return patch;
+}
+
+/**
+ * Revert a tenant to free usage. Idempotent — safe to run on a
+ * redelivered/duplicate cancel.
  */
 async function revertTenantToFree(
   db: FirebaseFirestore.Firestore,
   tenantId: string,
+  opts: { releaseCheckoutLock: boolean },
 ): Promise<void> {
-  await db.doc(`tenants/${tenantId}`).set(
-    {
-      monthlySubscriptionAmount: 0,
-      subscriptionBillingAmount: 0,
-      subscriptionBillingInterval: FieldValue.delete(),
-      subscriptionBillingMonths: FieldValue.delete(),
-      subscriptionBilledSeats: FieldValue.delete(),
-      subscriptionAnnualMonthsCharged: FieldValue.delete(),
-      stripeSubscriptionId: FieldValue.delete(),
-      pendingCheckout: FieldValue.delete(),
-    },
-    { merge: true },
-  );
+  await db
+    .doc(`tenants/${tenantId}`)
+    .set(freeTenantPatch(opts.releaseCheckoutLock), { merge: true });
 }
 
+/** How a subscription event reached us — the completion of OUR OWN Checkout
+ * Session may activate a NEWER subscription than the one currently stored
+ * (re-subscribe takeover); plain subscription events may not. */
+type SubscriptionEventSource = "checkout" | "subscription";
+
 /**
- * Reconcile a tenant's stored subscription state against LIVE Stripe state
- * (re-fetched by id), independent of what any particular webhook payload said.
- * Applies the live subscription when it still exists, reverts to free when it
- * is canceled/expired. This is what makes out-of-order delivery safe.
+ * Reconcile a tenant's stored subscription state against LIVE Stripe state in
+ * response to one webhook event. Stripe guarantees neither ordering nor
+ * exactly-once delivery, so three guards make this safe to run for any event,
+ * any number of times, in any order:
+ *
+ * 1. Live re-fetch — event.data.object is a snapshot from when the event
+ *    fired; the subscription is re-fetched by id BEFORE the transaction and
+ *    only that live state is ever written.
+ * 2. Watermark — tenants/*.lastStripeSubscriptionEventAt records the newest
+ *    event.created applied. It is checked AND advanced in the SAME
+ *    transaction as the tenant write, so a slower handler holding a
+ *    pre-cancel "active" fetch can never land after a cancellation's revert.
+ * 3. Sub-id guard — a trailing event about an OLD subscription cannot
+ *    overwrite the live one after a re-subscribe.
+ *
+ * Decision table, evaluated inside the transaction ("activating" = live
+ * status is active/trialing, i.e. the write would set stripeSubscriptionId):
+ *
+ *   eventCreated <  watermark                  → drop (stale)
+ *   eventCreated == watermark AND activating   → drop — a tie can be a
+ *     concurrent handler's stale-active fetch racing a same-second cancel;
+ *     ties never resurrect. Deactivating ties DO apply, so a released claim
+ *     retried at eventCreated == watermark still reprocesses a cancellation.
+ *   stored sub id set and != event's sub id    → drop (trailing event about
+ *     an old subscription) — UNLESS source is "checkout" AND activating: our
+ *     own checkout flow activating a newer subscription replaces the stored
+ *     one.
+ *   stored sub id empty AND not activating     → drop — the tenant is already
+ *     free, and a dying old sub's late events must not advance the watermark
+ *     past a still-in-flight re-subscribe activation.
+ *   otherwise                                  → write the live state and
+ *     advance the watermark (activating → apply; gone/lapsed → revert or
+ *     deactivate).
+ *
+ * Dropped events never advance the watermark. A failure before commit leaves
+ * everything untouched; the released event claim lets the redelivery retry.
  */
-async function reconcileSubscription(
+async function reconcileSubscriptionEvent(
   db: FirebaseFirestore.Firestore,
   stripe: Stripe,
   tenantId: string,
   subId: string,
+  eventCreated: number,
+  source: SubscriptionEventSource,
 ): Promise<void> {
   const sub = await stripe.subscriptions.retrieve(subId);
-  if (GONE_SUBSCRIPTION_STATUSES.has(sub.status)) {
-    await revertTenantToFree(db, tenantId);
-  } else {
-    await applySubscription(db, tenantId, sub);
-  }
+  const gone = GONE_SUBSCRIPTION_STATUSES.has(sub.status);
+  const activating =
+    !gone && (sub.status === "active" || sub.status === "trialing");
+  const patch = gone ? freeTenantPatch(true) : buildSubscriptionPatch(sub);
+
+  const ref = db.doc(`tenants/${tenantId}`);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return;
+    const data = snap.data() as Record<string, unknown>;
+    const last =
+      (data.lastStripeSubscriptionEventAt as number | undefined) ?? 0;
+    if (eventCreated < last) return;
+    if (eventCreated === last && activating) return;
+    const storedSubId =
+      typeof data.stripeSubscriptionId === "string"
+        ? data.stripeSubscriptionId
+        : "";
+    if (
+      storedSubId &&
+      storedSubId !== subId &&
+      !(source === "checkout" && activating)
+    ) {
+      return;
+    }
+    if (!storedSubId && !activating) return;
+    tx.set(
+      ref,
+      { lastStripeSubscriptionEventAt: eventCreated, ...patch },
+      { merge: true },
+    );
+  });
 }
 
 /** Firestore collection of already-handled Stripe event ids (idempotency). */
 const WEBHOOK_EVENTS_COLLECTION = "stripeWebhookEvents";
 
 /**
- * Idempotency guard. Atomically claims a Stripe event.id the first time it is
- * seen and returns true; returns false if it was already handled (Stripe
- * redelivers on any non-2xx, on its retry schedule, and occasionally
- * at-least-once even after a 2xx). If the handler later throws, the caller
- * releases the claim so the redelivery can reprocess.
+ * A claim stuck in 'processing' longer than this was taken by an instance that
+ * died between claim and completion (timeout/OOM/deploy kill) — the function
+ * timeout is well under five minutes, so the holder cannot still be running.
+ * A redelivery may re-claim it; without this horizon a killed instance would
+ * ACK every future redelivery as a duplicate and e.g. a
+ * customer.subscription.deleted would be lost for good.
+ */
+const WEBHOOK_CLAIM_STALE_MS = 5 * 60 * 1000;
+
+/** Handled-event docs are kept (status 'done') and garbage-collected by a
+ * Firestore TTL policy on `expiresAt` — the policy is created out-of-band with
+ * gcloud; the field name matches the authEmails.ts throttle docs. */
+const WEBHOOK_EVENT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Outcome of a claim attempt. "in-flight" (a fresh 'processing' claim held by
+ * another instance) must be answered with a NON-2xx: Stripe stops redelivering
+ * after any 2xx, so ACKing it as a duplicate would lose the event for good if
+ * that holder dies — the retry must stay alive until the claim is done or
+ * stale. */
+type WebhookClaim = "claimed" | "duplicate" | "in-flight";
+
+/**
+ * Idempotency guard. Atomically claims a Stripe event.id (Stripe redelivers on
+ * any non-2xx, on its retry schedule, and occasionally at-least-once even
+ * after a 2xx). Claim lifecycle: 'processing' at claim → 'done' on success
+ * (markWebhookEventDone). An in-process failure deletes the claim so the
+ * redelivery reprocesses; a claim still 'processing' after
+ * WEBHOOK_CLAIM_STALE_MS is re-claimed in case the holder died without
+ * reaching either.
  */
 async function claimWebhookEvent(
   db: FirebaseFirestore.Firestore,
   event: Stripe.Event,
-): Promise<boolean> {
+): Promise<WebhookClaim> {
   const ref = db.collection(WEBHOOK_EVENTS_COLLECTION).doc(event.id);
-  return db.runTransaction(async (tx) => {
+  return db.runTransaction(async (tx): Promise<WebhookClaim> => {
     const snap = await tx.get(ref);
-    if (snap.exists) return false;
+    if (snap.exists) {
+      const data = snap.data() as Record<string, unknown>;
+      if (data.status !== "processing") return "duplicate"; // done — handled
+      const claimedAt = data.claimedAt as
+        | { toMillis?: () => number }
+        | undefined;
+      const claimedAtMs =
+        typeof claimedAt?.toMillis === "function" ? claimedAt.toMillis() : 0;
+      if (Date.now() - claimedAtMs < WEBHOOK_CLAIM_STALE_MS) return "in-flight";
+      // Stale 'processing' claim — the holder is dead; re-claim it.
+    }
     tx.set(ref, {
       type: event.type,
       created: event.created,
-      receivedAt: FieldValue.serverTimestamp(),
+      status: "processing",
+      claimedAt: FieldValue.serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + WEBHOOK_EVENT_TTL_MS),
     });
-    return true;
+    return "claimed";
   });
 }
 
-/**
- * Ordering guard for a tenant's subscription events. Stripe does NOT guarantee
- * delivery order, so a delayed `customer.subscription.updated` (carrying a
- * pre-cancel "active" snapshot) can arrive AFTER the cancel and, if applied,
- * resurrect the subscription — re-unlocking the paywall and wedging
- * re-subscription. We record the newest event.created applied per tenant and
- * refuse to apply an older one. `apply` re-fetches live state from Stripe, so
- * same-timestamp or newer events converge on the truth regardless of order.
- *
- * The watermark advances inside the transaction before `apply` runs; on failure
- * the event claim is released and the retry re-enters with
- * event.created == watermark (not strictly less), so it reprocesses.
- */
-async function applySubscriptionEventIfNewer(
+/** Successful handling keeps the claim doc (status 'done') so redeliveries
+ * stay duplicates until the TTL policy clears it. */
+async function markWebhookEventDone(
   db: FirebaseFirestore.Firestore,
-  tenantId: string,
-  eventCreated: number,
-  apply: () => Promise<void>,
-): Promise<boolean> {
-  const ref = db.doc(`tenants/${tenantId}`);
-  const proceed = await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) return false;
-    const last =
-      (snap.data()?.lastStripeSubscriptionEventAt as number | undefined) ?? 0;
-    if (eventCreated < last) return false;
-    tx.set(ref, { lastStripeSubscriptionEventAt: eventCreated }, { merge: true });
-    return true;
-  });
-  if (proceed) await apply();
-  return proceed;
+  eventId: string,
+): Promise<void> {
+  await db
+    .collection(WEBHOOK_EVENTS_COLLECTION)
+    .doc(eventId)
+    .set({ status: "done" }, { merge: true });
 }
 
 /**
@@ -863,9 +981,16 @@ export const stripeWebhook = onRequest(
     const db = getFirestore();
 
     // Idempotency: skip an event.id we have already handled (Stripe redelivers).
-    const claimed = await claimWebhookEvent(db, event);
-    if (!claimed) {
+    const claim = await claimWebhookEvent(db, event);
+    if (claim === "duplicate") {
       res.json({ received: true, duplicate: true });
+      return;
+    }
+    if (claim === "in-flight") {
+      // Another instance is mid-event. A 2xx would end Stripe's retries even
+      // if that instance dies before finishing; 409 keeps the redelivery
+      // schedule alive until the claim is marked done or goes stale.
+      res.status(409).send("Event is already being processed");
       return;
     }
 
@@ -879,8 +1004,15 @@ export const stripeWebhook = onRequest(
               typeof session.subscription === "string"
                 ? session.subscription
                 : session.subscription.id;
-            await applySubscriptionEventIfNewer(db, tenantId, event.created, () =>
-              reconcileSubscription(db, stripe, tenantId, subId),
+            // "checkout": completing OUR OWN session is the one signal allowed
+            // to activate a newer subscription than the stored one.
+            await reconcileSubscriptionEvent(
+              db,
+              stripe,
+              tenantId,
+              subId,
+              event.created,
+              "checkout",
             );
           }
           break;
@@ -889,14 +1021,19 @@ export const stripeWebhook = onRequest(
         case "customer.subscription.updated":
         case "customer.subscription.deleted": {
           // event.data.object is a snapshot from when the event fired and can be
-          // stale on an out-of-order/redelivered event. reconcileSubscription
+          // stale on an out-of-order/redelivered event. reconcileSubscriptionEvent
           // re-fetches LIVE state by id, so a delayed "updated" carrying a
           // pre-cancel "active" snapshot cannot resurrect a canceled sub.
           const staleSub = event.data.object;
           const tenantId = staleSub.metadata?.tenantId;
           if (tenantId) {
-            await applySubscriptionEventIfNewer(db, tenantId, event.created, () =>
-              reconcileSubscription(db, stripe, tenantId, staleSub.id),
+            await reconcileSubscriptionEvent(
+              db,
+              stripe,
+              tenantId,
+              staleSub.id,
+              event.created,
+              "subscription",
             );
           }
           break;
@@ -904,6 +1041,9 @@ export const stripeWebhook = onRequest(
         default:
           break;
       }
+      // A failure to mark done falls into the catch below, which releases the
+      // claim; reprocessing is safe because the handlers above are convergent.
+      await markWebhookEventDone(db, event.id);
       res.json({ received: true });
     } catch (error) {
       // Release the idempotency claim so Stripe's redelivery reprocesses this

@@ -11,7 +11,7 @@
  * firebaseapp.com email — mirrors the invited-member flow in ./tenant.ts.
  */
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions";
 import { requireAuth } from "./authz";
@@ -205,7 +205,11 @@ const RESET_THROTTLE_MS = 60_000;
  *  per-email throttle alone does nothing against an attacker rotating target
  *  addresses from one host to mass-send reset mail. */
 const RESET_IP_WINDOW_MS = 10 * 60_000;
-const RESET_IP_MAX = 5;
+// TL mobile carriers put many subscribers behind one CGNAT address, so this
+// cap must leave headroom for legitimate neighbours sharing an IP (the
+// callable always reports success, so a starved user gets no signal). The
+// per-email throttle stays the abuse backstop for any single inbox.
+const RESET_IP_MAX = 20;
 
 /** Deterministic, path-safe doc id for the throttle record of an email. */
 function throttleId(email: string): string {
@@ -214,16 +218,23 @@ function throttleId(email: string): string {
     .replace(/[^a-zA-Z0-9]/g, "");
 }
 
-/** Best-effort client IP from the onCall raw request (first x-forwarded-for
- *  hop behind Google's LB, else the socket ip). */
+/** Best-effort client IP from the onCall raw request. Every x-forwarded-for
+ *  entry is attacker-suppliable EXCEPT the one Google's front end APPENDS from
+ *  the actual connection, so only the LAST hop can key a rate limit — the
+ *  first hop would hand a spoofed header a fresh bucket per request. Falls
+ *  back to the socket ip when the header is absent. */
 function clientIp(request: { rawRequest?: { headers?: Record<string, unknown>; ip?: string } }): string {
   const fwd = request.rawRequest?.headers?.["x-forwarded-for"];
-  const first = Array.isArray(fwd)
-    ? fwd[0]
+  const header = Array.isArray(fwd)
+    ? fwd.join(",")
     : typeof fwd === "string"
-      ? fwd.split(",")[0]
-      : undefined;
-  return (first || request.rawRequest?.ip || "unknown").trim();
+      ? fwd
+      : "";
+  const hops = header
+    .split(",")
+    .map((hop) => hop.trim())
+    .filter(Boolean);
+  return hops[hops.length - 1] || request.rawRequest?.ip || "unknown";
 }
 
 function ipThrottleId(ip: string): string {
@@ -243,16 +254,20 @@ async function ipWithinResetLimit(
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const now = Date.now();
+    // expiresAt drives the Firestore TTL policy that garbage-collects stale
+    // throttle docs (windowStart is a plain number, which TTL can't target).
+    // Kept well past the window so TTL deletion never races a live window.
+    const expiresAt = Timestamp.fromMillis(now + 24 * 60 * 60_000);
     const windowStart = (snap.get("windowStart") as number | undefined) ?? 0;
     const count = (snap.get("count") as number | undefined) ?? 0;
     if (now - windowStart > RESET_IP_WINDOW_MS) {
-      tx.set(ref, { windowStart: now, count: 1 });
+      tx.set(ref, { windowStart: now, count: 1, expiresAt });
       return true;
     }
     if (count >= RESET_IP_MAX) {
       return false;
     }
-    tx.set(ref, { count: count + 1 }, { merge: true });
+    tx.set(ref, { count: count + 1, expiresAt }, { merge: true });
     return true;
   });
 }

@@ -693,9 +693,11 @@ function EmployerContributionsSection({
 
 function SubsidioAnualSection({
   record,
+  payFrequency,
   s,
 }: {
   record: PayrollRecord;
+  payFrequency: PayrollRun['payFrequency'];
   s: PayslipStrings;
 }) {
   if (!(record.totalGrossPay > 0)) {
@@ -709,6 +711,13 @@ function SubsidioAnualSection({
   const baseSalary = record.earnings
     .filter((e) => e.type === 'regular')
     .reduce((sum, e) => sum + e.amount, 0);
+  // A run with no regular earning (e.g. a standalone 13th-month run) or a
+  // sub-monthly record (one week's pay is not a monthly base) has no
+  // meaningful monthly accrual — hide the section rather than print $0.00 or
+  // a week's salary divided by 12.
+  if (baseSalary <= 0 || payFrequency !== 'monthly') {
+    return null;
+  }
   return (
     <View style={styles.employerSection}>
       <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
@@ -1016,7 +1025,11 @@ const PayslipDocument = ({
         <AuditTrailRow record={record} s={s} />
         <SignatureBlock record={record} s={s} />
         <EmployerContributionsSection record={record} s={s} />
-        <SubsidioAnualSection record={record} s={s} />
+        <SubsidioAnualSection
+          record={record}
+          payFrequency={payrollRun.payFrequency}
+          s={s}
+        />
         <YtdSection record={record} s={s} />
         <PayslipFooter companyEmail={companyEmail} s={s} />
       </Page>

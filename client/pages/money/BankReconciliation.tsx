@@ -145,9 +145,14 @@ export default function BankReconciliation() {
       const content = await file.text();
       const result = await importMutation.mutateAsync(content);
 
+      // Re-imported statements dedup silently; say so or the lower count
+      // reads as lost rows.
+      const skippedNote = result.skipped > 0
+        ? `, ${result.skipped} ${t('money.bankRecon.alreadyImportedSkipped') || 'already imported (skipped)'}`
+        : '';
       toast({
         title: t('money.bankRecon.importSuccess') || 'Import Complete',
-        description: `${result.imported} ${t('money.bankRecon.transactionsImported') || 'transactions imported'}`,
+        description: `${result.imported} ${t('money.bankRecon.transactionsImported') || 'transactions imported'}${skippedNote}`,
       });
 
       if (result.errors.length > 0) {

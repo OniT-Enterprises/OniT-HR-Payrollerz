@@ -36,8 +36,9 @@ const LEAVE_TYPES: { id: LeaveType; labelKey: string }[] = [
   { id: 'sick', labelKey: 'leave.sick' },
   { id: 'maternity', labelKey: 'leave.maternity' },
   { id: 'paternity', labelKey: 'leave.paternity' },
-  { id: 'bereavement', labelKey: 'leave.bereavement' },
-  { id: 'marriage', labelKey: 'leave.marriage' },
+  // Replaces the former bereavement + marriage chips — Lei 4/2012 Art. 33(3)
+  // pools them into one 3-day/year "special" allotment.
+  { id: 'special', labelKey: 'leave.special' },
   { id: 'unpaid', labelKey: 'leave.unpaid' },
 ];
 

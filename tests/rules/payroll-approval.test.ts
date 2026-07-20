@@ -374,6 +374,14 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
           subscriptionAnnualMonthsCharged: 10,
         }),
       );
+      // The webhook ordering watermark is CF-managed state: pushing it into
+      // the future would make Stripe cancellation events look "stale" and get
+      // dropped, so the paywall would never re-lock after a cancel.
+      await assertFails(
+        updateDoc(doc(db, 'tenants/tenant-a'), {
+          lastStripeSubscriptionEventAt: 99999999999,
+        }),
+      );
       // Benign config updates by the owner must still work
       await assertSucceeds(
         updateDoc(doc(db, 'tenants/tenant-a'), { name: 'Tenant A (renamed)' }),

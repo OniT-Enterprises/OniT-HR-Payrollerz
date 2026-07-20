@@ -92,6 +92,25 @@ export async function generateATTLExcel(
   // Parse period
   const [year, month] = witReturn.reportingPeriod.split("-");
 
+  // Line 5 / Line 10 must equal the TOTAL row of the employee annex in the
+  // same workbook, which sums the whole-dollar per-employee rows. ATTL's own
+  // assessments work per employee, so summing the rounded rows is both the
+  // authority-matching figure and the only one that reconciles internally —
+  // rounding the precise totals instead can drift a few dollars from the
+  // annex on any real headcount.
+  const formGrossWages = witReturn.employees.length
+    ? witReturn.employees.reduce(
+        (sum, emp) => sum + roundWholeMoney(emp.grossWages),
+        0,
+      )
+    : roundWholeMoney(witReturn.totalGrossWages);
+  const formWITWithheld = witReturn.employees.length
+    ? witReturn.employees.reduce(
+        (sum, emp) => sum + roundWholeMoney(emp.witWithheld),
+        0,
+      )
+    : roundWholeMoney(witReturn.totalWITWithheld);
+
   // Build form data
   const formData: ATTLFormData = {
     month,
@@ -99,8 +118,8 @@ export async function generateATTLExcel(
     tin: company?.tinNumber || witReturn.employerTIN || "",
     taxpayerName: company?.legalName || witReturn.employerName || "",
     establishmentName: company?.tradingName,
-    totalGrossWages: roundWholeMoney(witReturn.totalGrossWages),
-    totalWITWithheld: roundWholeMoney(witReturn.totalWITWithheld),
+    totalGrossWages: formGrossWages,
+    totalWITWithheld: formWITWithheld,
     declarantName: additionalData?.declarantName,
     declarantPhone: additionalData?.declarantPhone,
     declarationDate: additionalData?.declarationDate || getTodayTL(),

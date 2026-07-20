@@ -10,11 +10,10 @@
 import type { FixedAsset } from "@/types/accounting";
 import { buildSchedule, monthlyCharge } from "@/lib/accounting/depreciation";
 import { downloadBlob } from "@/lib/downloadBlob";
+import { subtractMoney, sumMoney } from "@/lib/currency";
 
 const XEFE_GREEN = "FF6A9C29";
 const HEADER_GREY = "FFF3F4F6";
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
 
 export interface RegisterLabels {
   /** assetClass enum key -> display label (falls back to a humanized key). */
@@ -102,8 +101,9 @@ export async function exportFixedAssetRegister(
   let rowIndex = 5;
   for (const asset of assets) {
     const row = ws.getRow(rowIndex++);
-    const nbv = round2(
-      asset.acquisitionCost - (asset.accumulatedDepreciation || 0),
+    const nbv = subtractMoney(
+      asset.acquisitionCost,
+      asset.accumulatedDepreciation || 0,
     );
     row.getCell(1).value = asset.reference || "";
     row.getCell(2).value = asset.name;
@@ -135,16 +135,13 @@ export async function exportFixedAssetRegister(
   const totalsRow = ws.getRow(rowIndex + 1);
   totalsRow.getCell(2).value = `Totals (${live.length} assets in service)`;
   totalsRow.getCell(2).font = { bold: true };
-  totalsRow.getCell(5).value = round2(
-    live.reduce((s, a) => s + a.acquisitionCost, 0),
+  totalsRow.getCell(5).value = sumMoney(live.map((a) => a.acquisitionCost));
+  totalsRow.getCell(9).value = sumMoney(
+    live.map((a) => a.accumulatedDepreciation || 0),
   );
-  totalsRow.getCell(9).value = round2(
-    live.reduce((s, a) => s + (a.accumulatedDepreciation || 0), 0),
-  );
-  totalsRow.getCell(10).value = round2(
-    live.reduce(
-      (s, a) => s + a.acquisitionCost - (a.accumulatedDepreciation || 0),
-      0,
+  totalsRow.getCell(10).value = sumMoney(
+    live.map((a) =>
+      subtractMoney(a.acquisitionCost, a.accumulatedDepreciation || 0),
     ),
   );
   [5, 9, 10].forEach((c) => {

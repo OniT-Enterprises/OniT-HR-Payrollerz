@@ -55,6 +55,7 @@ function isValidTimeOffPolicies(policies: TimeOffPolicies): boolean {
     policies.sickLeave,
     policies.maternityLeave,
     policies.paternityLeave,
+    policies.specialLeave,
     policies.unpaidLeave,
     ...policies.customLeaveTypes,
   ];
@@ -583,6 +584,67 @@ export function TimeOffPoliciesTab({
                         ...timeOffPolicies,
                         paternityLeave: {
                           ...timeOffPolicies.paternityLeave,
+                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                        },
+                      })
+                    }
+                  />
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Special Leave — Lei 4/2012 Art. 33(3) pooled justified absence */}
+          <div className="p-4 border rounded-lg space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-teal-500" />
+                <span className="font-medium">
+                  {t("settings.timeOff.specialLeave") ||
+                    "Special Leave (Art. 33.3)"}
+                </span>
+              </div>
+              <Badge variant="secondary">
+                {timeOffPolicies.specialLeave.daysPerYear}{" "}
+                {t("settings.timeOff.days")}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {t("settings.timeOff.specialLeaveHint") ||
+                "One pooled allotment of paid days per calendar year covering marriage, family death, and community or religious events (Labour Law Art. 33.3). The employer may ask for supporting proof."}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.daysPerYear")}</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={timeOffPolicies.specialLeave.daysPerYear}
+                  onChange={(e) =>
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      specialLeave: {
+                        ...timeOffPolicies.specialLeave,
+                        daysPerYear: parseInt(e.target.value, 10) || 0,
+                      },
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("settings.timeOff.paidPercentage")}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={timeOffPolicies.specialLeave.paidPercentage}
+                    onChange={(e) =>
+                      setTimeOffPolicies({
+                        ...timeOffPolicies,
+                        specialLeave: {
+                          ...timeOffPolicies.specialLeave,
                           paidPercentage: parseInt(e.target.value, 10) || 0,
                         },
                       })

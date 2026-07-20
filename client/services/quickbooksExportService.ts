@@ -33,7 +33,7 @@ import {
   addMoney,
   roundMoney,
   sumMoney,
-  multiplyMoney,
+  multiplyMoneyByFactors,
   subtractMoney,
   maxMoney,
 } from "@/lib/currency";
@@ -96,10 +96,23 @@ function aggregatePayrollTotals(
     // unpaid-absence/late reduction (`wagesPaid`). Booking the full contractual
     // gross instead overstates the expense and shunts the reduction into the
     // "other deductions" residual, which gets credited to 2260 as a payable owed
-    // to no one. Fall back to grossPay for legacy records that don't track it.
+    // to no one. Legacy records that don't track wagesPaid derive it the same
+    // way client/lib/payroll/accounting-summary.ts does — gross less the
+    // absence/late_arrival deduction lines — so their exports can't re-create
+    // that phantom payable either.
     const recordWagesPaid = (record as { wagesPaid?: number }).wagesPaid;
+    const attendanceReductions = sumMoney(
+      (
+        (record as { deductions?: { type?: string; amount?: number }[] })
+          .deductions || []
+      )
+        .filter((d) => d.type === "absence" || d.type === "late_arrival")
+        .map((d) => d.amount || 0),
+    );
     const wageBase =
-      typeof recordWagesPaid === "number" ? recordWagesPaid : grossPay;
+      typeof recordWagesPaid === "number"
+        ? recordWagesPaid
+        : maxMoney(0, subtractMoney(grossPay || 0, attendanceReductions));
     totals.grossPay = addMoney(totals.grossPay, wageBase);
 
     // Split the wage base across base salary, overtime, and everything else so
@@ -113,8 +126,9 @@ function aggregatePayrollTotals(
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
       baseSalary = tlRecord.monthlySalary || 0;
-      overtime = multiplyMoney(
-        (tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0),
+      overtime = multiplyMoneyByFactors(
+        tlRecord.hourlyRate || 0,
+        tlRecord.overtimeHours || 0,
         1.5,
       );
     } else {

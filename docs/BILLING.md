@@ -74,19 +74,42 @@ superadmins set those fields.
   `stripeSubscriptionId` (set while active/trialing, deleted otherwise), cycle,
   cycle amount, standard monthly value, billed seats and `subscriptionPaidUntil`.
   Hardened against redelivery/reordering (Stripe guarantees neither):
-  1. **Idempotent** — every `event.id` is claimed once in `stripeWebhookEvents/{id}`
-     (transactional create); a duplicate returns 200 without reprocessing. A handler
-     that throws releases the claim so the retry reprocesses. (Consider a Firestore
-     TTL policy on `stripeWebhookEvents.receivedAt` to garbage-collect old ids.)
+  1. **Idempotent with a claim lifecycle** — every `event.id` is claimed
+     transactionally in `stripeWebhookEvents/{id}` as `status: 'processing'`
+     (+ `claimedAt`); successful handling marks it `'done'` (doc kept). A
+     redelivery of a `'done'` claim returns 200 without reprocessing; one that
+     races a fresh in-flight claim gets 409 (a 2xx would end Stripe's retries
+     even if the holder then dies); a handler that throws in-process deletes
+     the claim so the retry reprocesses; and a claim stuck in `'processing'`
+     for 5+ minutes (instance died mid-event — longer than the function
+     timeout) is re-claimed by the next redelivery, so a killed instance can
+     never ACK a `customer.subscription.deleted` away forever. Claim docs carry
+     `expiresAt` (now + 30 days) for a Firestore TTL policy (created
+     out-of-band with gcloud; same field name as the authEmails throttle).
   2. **Re-fetches live state** — subscription events never trust `event.data.object`
-     (a snapshot); `reconcileSubscription` retrieves the sub by id and applies THAT,
-     so a delayed `updated` carrying a pre-cancel "active" snapshot can't resurrect a
-     canceled sub. Canceled/expired → revert to free; otherwise apply.
-  3. **Ordering watermark** — `tenants/*.lastStripeSubscriptionEventAt` (event.created)
-     drops any subscription event older than the newest already applied.
+     (a snapshot); the subscription is retrieved by id BEFORE the ordering
+     transaction and only that live state is ever written. Canceled/expired →
+     revert to free; otherwise apply.
+  3. **Transactional ordering watermark** — `tenants/*.lastStripeSubscriptionEventAt`
+     (event.created) is checked AND advanced in the same transaction that
+     writes the tenant billing state, so a slow handler holding a pre-cancel
+     "active" fetch cannot land after a cancellation's revert. Strictly older
+     events are dropped; an equal-timestamp event applies only if it
+     deactivates (ties never resurrect a canceled sub, but a retried
+     cancellation at the watermark still reprocesses). Dropped events never
+     advance the watermark.
+  4. **Subscription-id guard** — an event naming a subscription other than the
+     stored `stripeSubscriptionId` is ignored (a trailing event about an old
+     sub can't overwrite the live one after a re-subscribe) unless the stored
+     id is empty (first activation / post-revert re-subscribe) or a
+     `checkout.session.completed` is activating the newer subscription.
   `createCheckoutSession` **self-heals**: before the "already subscribed" guard it
-  verifies a stored `stripeSubscriptionId` against Stripe and clears it if the sub is
-  gone/canceled — so a tenant can never be permanently wedged out of re-subscribing.
+  verifies a stored `stripeSubscriptionId` against Stripe and clears it ONLY on
+  Stripe's say-so — `resource_missing` or a live non-blocking status. Any other
+  Stripe error (outage/auth/rate limit) fails the checkout with `unavailable`
+  instead of reverting a possibly-paying tenant, and the self-heal revert never
+  touches the `pendingCheckout` lock (a concurrent checkout call may have just
+  claimed it).
 - `syncSubscriptionQuantities` (daily 03:00 Dili): true-up — sets each Stripe
   subscription to the current billed-seat count. Monthly changes apply on the
   next invoice without part-month charges. Added annual seats are prorated and

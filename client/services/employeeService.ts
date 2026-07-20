@@ -135,6 +135,13 @@ export interface Employee {
   status: "active" | "inactive" | "terminated";
   /** Last working day captured by offboarding; required for terminated-worker filings. */
   terminationDate?: string;
+  /**
+   * Cause-aware Art. 56 decision stamped by offboarding: false = the final
+   * payroll run must NOT auto-pay service compensation (e.g. resignation —
+   * real TL practice pays Art. 56 on employer-initiated endings only).
+   * Absent/true = statute-literal default, severance auto-pays.
+   */
+  severanceOnTermination?: boolean;
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;
   compliance?: EmployeeComplianceSnapshot;

@@ -96,7 +96,8 @@ service cloud.firestore {
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
           'subscriptionAnnualMonthsCharged',
-          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout'
+          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout',
+          'lastStripeSubscriptionEventAt'
         ]);
     }
 
@@ -328,7 +329,11 @@ service cloud.firestore {
           'subscriptionBillingAmount', 'subscriptionBillingInterval',
           'subscriptionBillingMonths', 'subscriptionBilledSeats',
           'subscriptionAnnualMonthsCharged',
-          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout'
+          'subscriptionAnnualPaidSeats', 'subscriptionTermStart', 'pendingCheckout',
+          // Webhook ordering watermark (functions/src/billing.ts). If an owner
+          // could push it into the future, Stripe cancellation events would be
+          // dropped as "stale" and the paywall would stay unlocked unpaid.
+          'lastStripeSubscriptionEventAt'
         ]);
 
       // Creating new tenants requires authentication and self-ownership

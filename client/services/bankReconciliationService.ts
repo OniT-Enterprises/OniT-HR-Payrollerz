@@ -52,7 +52,10 @@ class BankReconciliationService {
    * the same CSV is a no-op instead of duplicating every row. The running
    * balance (when the bank provides it) makes each line unique within a
    * statement; date/amount/type/reference/description disambiguate otherwise.
-   * FNV-1a → hex keeps it a short, id-safe string.
+   * 64-bit FNV-1a → hex keeps it a short, id-safe string: across a tenant's
+   * lifetime of imports (~10k rows), 32 bits carried ~1% birthday-collision
+   * odds — a collision silently drops a real transaction — while 64 bits
+   * makes that negligible.
    */
   private static importKey(
     tx: Omit<BankTransaction, 'id' | 'createdAt' | 'status'>,
@@ -65,12 +68,12 @@ class BankReconciliationService {
       tx.balance ?? '',
       tx.description,
     ].join('|');
-    let hash = 0x811c9dc5;
+    let hash = 0xcbf29ce484222325n;
     for (let i = 0; i < raw.length; i++) {
-      hash ^= raw.charCodeAt(i);
-      hash = Math.imul(hash, 0x01000193);
+      hash ^= BigInt(raw.charCodeAt(i));
+      hash = (hash * 0x100000001b3n) & 0xffffffffffffffffn;
     }
-    return `csv_${(hash >>> 0).toString(16).padStart(8, '0')}`;
+    return `csv_${hash.toString(16).padStart(16, '0')}`;
   }
 
   /**
@@ -224,31 +227,43 @@ class BankReconciliationService {
    */
   async importTransactions(
     csvContent: string
-  ): Promise<{ imported: number; errors: string[] }> {
+  ): Promise<{ imported: number; skipped: number; errors: string[] }> {
     const tenantId = this.ensureTenant();
     const parsed = await this.parseCSV(csvContent);
     const errors: string[] = [];
     let imported = 0;
+    let skipped = 0;
 
-    // Deterministic ids make re-importing the same statement idempotent. A row
-    // that collides in-file (identical date/amount/type/ref/balance/desc) is the
-    // same line twice, so keep one. Guard the write with a create-if-absent
-    // read so a re-import doesn't clobber a line already matched/reconciled.
-    const seen = new Set<string>();
+    // Deterministic ids make re-importing the same statement idempotent, while
+    // an occurrence ordinal keeps genuinely identical rows within ONE file
+    // distinct (same day, same amount, no bank reference — e.g. two equal cash
+    // deposits): the first occurrence gets suffix 0, the second 1, and so on,
+    // so re-importing the same file maps back onto the same ids. Guard the
+    // write with a create-if-absent read so a re-import doesn't clobber a line
+    // already matched/reconciled.
+    const occurrences = new Map<string, number>();
+    const ids = parsed.map((tx) => {
+      const base = BankReconciliationService.importKey(tx);
+      const ordinal = occurrences.get(base) ?? 0;
+      occurrences.set(base, ordinal + 1);
+      return `${base}_${ordinal}`;
+    });
+
     // Batch all writes (max 499 per batch)
     for (let i = 0; i < parsed.length; i += 499) {
       const chunk = parsed.slice(i, i + 499);
-      const chunkRefs = chunk.map((tx) =>
-        doc(getCollection(tenantId), BankReconciliationService.importKey(tx)),
-      );
+      const chunkRefs = ids
+        .slice(i, i + 499)
+        .map((id) => doc(getCollection(tenantId), id));
       const existing = await Promise.all(chunkRefs.map((ref) => getDoc(ref)));
 
       const batch = writeBatch(db);
       let batchCount = 0;
       chunk.forEach((tx, j) => {
-        const id = chunkRefs[j].id;
-        if (seen.has(id) || existing[j].exists()) return; // already imported
-        seen.add(id);
+        if (existing[j].exists()) {
+          skipped++; // already imported by a previous run of this statement
+          return;
+        }
         batch.set(chunkRefs[j], {
           ...tx,
           status: 'unmatched' as ReconciliationStatus,
@@ -266,7 +281,7 @@ class BankReconciliationService {
       }
     }
 
-    return { imported, errors };
+    return { imported, skipped, errors };
   }
 
   /**

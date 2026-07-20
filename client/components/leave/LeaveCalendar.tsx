@@ -25,11 +25,14 @@ const LEAVE_TYPE_COLORS: Record<LeaveType | string, { bg: string; text: string; 
   sick: { bg: "bg-red-500/20", text: "text-red-700 dark:text-red-300", border: "border-red-500/40" },
   maternity: { bg: "bg-pink-500/20", text: "text-pink-700 dark:text-pink-300", border: "border-pink-500/40" },
   paternity: { bg: "bg-blue-500/20", text: "text-blue-700 dark:text-blue-300", border: "border-blue-500/40" },
-  bereavement: { bg: "bg-gray-500/20", text: "text-gray-700 dark:text-gray-300", border: "border-gray-500/40" },
+  // Pooled justified absence (Lei 4/2012 Art. 33(3)) — replaces bereavement/marriage.
+  special: { bg: "bg-teal-500/20", text: "text-teal-700 dark:text-teal-300", border: "border-teal-500/40" },
   unpaid: { bg: "bg-orange-500/20", text: "text-orange-700 dark:text-orange-300", border: "border-orange-500/40" },
-  marriage: { bg: "bg-rose-500/20", text: "text-rose-700 dark:text-rose-300", border: "border-rose-500/40" },
   study: { bg: "bg-violet-500/20", text: "text-violet-700 dark:text-violet-300", border: "border-violet-500/40" },
   custom: { bg: "bg-gray-400/20", text: "text-gray-600 dark:text-gray-400", border: "border-gray-400/40" },
+  // Legacy render-only: existing bereavement/marriage requests keep their colors.
+  bereavement: { bg: "bg-gray-500/20", text: "text-gray-700 dark:text-gray-300", border: "border-gray-500/40" },
+  marriage: { bg: "bg-rose-500/20", text: "text-rose-700 dark:text-rose-300", border: "border-rose-500/40" },
 };
 
 const PENDING_STYLES = "opacity-60 border-dashed";
@@ -168,7 +171,7 @@ const LEGEND_ITEMS = [
   { type: "sick", label: "Sick" },
   { type: "maternity", label: "Maternity" },
   { type: "paternity", label: "Paternity" },
-  { type: "marriage", label: "Marriage" },
+  { type: "special", label: "Special" },
   { type: "unpaid", label: "Unpaid" },
 ] as const;
 

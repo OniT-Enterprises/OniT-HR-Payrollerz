@@ -184,7 +184,7 @@ const CANDIDATES = [
   { firstName: "Lucia", lastName: "Correia", email: "lucia.c@email.com", phone: "+670-7755-0006", jobTitle: "HR Specialist", stage: "interview", rating: 4, source: "Indeed" },
 ];
 
-const _LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Maternity Leave", "Paternity Leave", "Unpaid Leave", "Bereavement Leave"];
+const _LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Maternity Leave", "Paternity Leave", "Unpaid Leave", "Special Leave"];
 
 const TRAINING_COURSES = [
   { name: "Lei Trabalho Timor-Leste", category: "Compliance", duration: 8, provider: "SEFOPE", mandatory: true },

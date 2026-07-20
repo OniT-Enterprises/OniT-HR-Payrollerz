@@ -330,7 +330,8 @@ export function usePayrollCalculator({
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
       const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
       // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
-      // once — resolveLeaverFinalPay nets both against what's already committed.
+      // once — resolveLeaverFinalPay nets both against what's already committed
+      // and honors offboarding's cause-aware severance decision.
       const { terminationDate: engineTerminationDate, subsidioAnual } =
         resolveLeaverFinalPay({
           inPeriodTermination: getInPeriodTermination(
@@ -347,6 +348,7 @@ export function usePayrollCalculator({
             serviceCompensation: 0,
             subsidioAnual: 0,
           },
+          severanceEntitled: data.employee.severanceOnTermination !== false,
         });
       // Per-employee frequency overrides the run-level selector
       const effectiveFrequency =
@@ -1053,6 +1055,7 @@ export function usePayrollCalculator({
               serviceCompensation: 0,
               subsidioAnual: 0,
             },
+            severanceEntitled: data.employee.severanceOnTermination !== false,
           });
         const effectiveFrequency =
           data.employee.compensation.payFrequency ?? payFrequency;
@@ -1290,9 +1293,24 @@ export function usePayrollCalculator({
     syncingAttendance: attendanceSummaryFetching || attendanceSyncPending,
     attendanceSyncPending,
     calculationsPending,
-    isYtdLoading: ytdQuery.isLoading,
-    isYtdError: ytdQuery.isError && ytdQuery.data === undefined,
-    isYtdFetching: ytdQuery.isFetching,
+    // One gate for ALL money-critical aggregations (YTD, committed final pay,
+    // MTD WIT). If any is still loading or failed, computing anyway would
+    // silently fall back to the empty map — a fresh $500/month exemption or a
+    // re-paid severance — so the wizard must block persistence on these, not
+    // just on YTD. Disabled queries (weekly runs, no leavers) report false.
+    isYtdLoading:
+      ytdQuery.isLoading ||
+      committedFinalPayQuery.isLoading ||
+      mtdWitQuery.isLoading,
+    isYtdError:
+      (ytdQuery.isError && ytdQuery.data === undefined) ||
+      (committedFinalPayQuery.isError &&
+        committedFinalPayQuery.data === undefined) ||
+      (mtdWitQuery.isError && mtdWitQuery.data === undefined),
+    isYtdFetching:
+      ytdQuery.isFetching ||
+      committedFinalPayQuery.isFetching ||
+      mtdWitQuery.isFetching,
 
     // Actions
     handleInputChange,
@@ -1300,7 +1318,19 @@ export function usePayrollCalculator({
     handleResetRow,
     toggleRowExpansion,
     handleSyncFromAttendance,
-    refetchYtd: ytdQuery.refetch,
+    refetchYtd: () =>
+      Promise.all([
+        ytdQuery.refetch(),
+        // refetch() bypasses `enabled`, so only retry queries that have
+        // actually run (errored or resolved) — never force a disabled one.
+        ...(committedFinalPayQuery.isError ||
+        committedFinalPayQuery.data !== undefined
+          ? [committedFinalPayQuery.refetch()]
+          : []),
+        ...(mtdWitQuery.isError || mtdWitQuery.data !== undefined
+          ? [mtdWitQuery.refetch()]
+          : []),
+      ]),
 
     // Submission helpers
     getIncludedData,
