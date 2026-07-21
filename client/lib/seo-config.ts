@@ -99,6 +99,38 @@ export const seoConfig = {
       },
     },
   },
+  docsIndex: {
+    title: 'Xefe Documentation — How Timor-Leste Payroll Really Works',
+    description: 'Plain-language documentation of Xefe: what happens to your payroll money, when statutory deadlines fall, and which guarantees the system itself enforces.',
+    keywords: 'Timor-Leste payroll documentation, payroll process Timor-Leste, INSS deadlines, WIT deadlines, payroll approval workflow, Xefe docs',
+    url: '/docs',
+    alternates: {
+      tet: {
+        title: 'Dokumentasaun Xefe — Oinsá Folha Pagamentu Timor-Leste Serbisu',
+        description: 'Dokumentasaun ho lian simples kona-ba Xefe: saida mak akontese ho ita-nia osan folha, bainhira prazu legál sira monu, no garantia sira-ne\'ebé sistema rasik impoin.',
+      },
+      pt: {
+        title: 'Documentação Xefe — Como Funciona a Folha em Timor-Leste',
+        description: 'Documentação em linguagem simples do Xefe: o que acontece ao dinheiro da folha, quando caem os prazos legais e que garantias o próprio sistema impõe.',
+      },
+    },
+  },
+  docsMoneyChain: {
+    title: 'The Payroll Money Chain — Xefe Documentation',
+    description: 'From a draft payroll run to closed books: approval steps, the three journals that move the money, every Timor-Leste statutory deadline, and seven system-enforced guarantees.',
+    keywords: 'payroll journal Timor-Leste, payroll approval, INSS payment deadline, WIT payment deadline, payroll accounting Timor-Leste, salary settlement journal',
+    url: '/docs/payroll-money-chain',
+    alternates: {
+      tet: {
+        title: 'Kadeia Osan Folha Pagamentu nian — Dokumentasaun Xefe',
+        description: 'Husi prosesamentu rascunho to\'o livru taka: pasu aprovasaun, lansamentu tolu ne\'ebé book osan, prazu legál Timor-Leste hotu, no garantia hitu ne\'ebé sistema impoin.',
+      },
+      pt: {
+        title: 'A Cadeia do Dinheiro da Folha — Documentação Xefe',
+        description: 'De um processamento em rascunho a livros fechados: passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais de Timor-Leste e sete garantias impostas pelo sistema.',
+      },
+    },
+  },
   accountantPortfolio: {
     title: 'Accountant Client Review',
     description: 'Review Xefe client connection requests and open approved client workspaces.',

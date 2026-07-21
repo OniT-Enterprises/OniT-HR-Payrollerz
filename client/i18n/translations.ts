@@ -1575,6 +1575,113 @@ export const translations = {
         "footnote": "The employee above is illustrative — the arithmetic is the engine's own."
       }
     },
+    "publicDocs": {
+      "eyebrow": "Documentation",
+      "hub": {
+        "titleTop": "How Xefe",
+        "titleAccent": "actually works",
+        "lede": "Plain-language documentation of the machinery under Xefe — what happens to your money, when the deadlines fall, and which guarantees are enforced by the system itself.",
+        "article1Tag": "Payroll & accounting",
+        "article1Title": "The payroll money chain",
+        "article1Desc": "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
+        "readArticle": "Read the article",
+        "more": "More articles are added as we document each part of the system. For the calculation rules themselves, see",
+        "moreEngine": "the Xefe engine"
+      },
+      "chain": {
+        "navLabel": "Docs · Money chain",
+        "nav": {
+          "lifecycle": "Lifecycle",
+          "journals": "Journals",
+          "deadlines": "Deadlines",
+          "guarantees": "Guarantees"
+        },
+        "titleTop": "The payroll",
+        "titleAccent": "money chain",
+        "lede": "How a payroll run becomes closed books — every state change, every journal, every statutory deadline, and the rules that make each step safe.",
+        "s1": {
+          "eyebrow": "1 · Run lifecycle",
+          "title": "A state machine the database enforces",
+          "body": "Every transition below is enforced by security rules at the database layer, not just by the screens — software that bypasses the app still cannot skip a step.",
+          "draft": "draft",
+          "draftNote": "anyone on your team with payroll access",
+          "processing": "processing",
+          "processingNote": "finalizing is the one step that needs an active subscription",
+          "approved": "approved",
+          "approvedNote": "a second person approves — never the same person who ran it",
+          "paid": "paid",
+          "paidNote": "only from approved, with full payment evidence",
+          "closed": "books closed",
+          "closedNote": "corrections happen by reversing journals, never by editing history",
+          "gate": "Marking a run paid requires the payment date, a bank reference, the person who paid, and the linked settlement journal — and once linked, that evidence can never be changed. A wrong payment is fixed with a reversing journal, never by rewriting the record."
+        },
+        "s2": {
+          "eyebrow": "2 · Money → journals",
+          "title": "Three journals move the money",
+          "body": "Every amount is computed with exact decimal arithmetic and posted exactly once — a retry returns the same journal, never a duplicate.",
+          "accrual": "Accrual",
+          "accrualWhen": "on approval",
+          "accrualFoot": "Your books recognize the full cost of the payroll — nothing has left the bank yet.",
+          "settlement": "Settlement",
+          "settlementWhen": "on payment",
+          "settlementFoot": "Salaries leave the bank through the bank's own salary-batch process, with a signed payment order.",
+          "clearing": "Statutory clearing",
+          "clearingWhen": "on remittance",
+          "clearingFoot": "Tax and social security are two separate payments, each with its own journal — the liability accounts return to zero for the period."
+        },
+        "acct": {
+          "salaries": "Salaries & wages (gross)",
+          "inssEmployer": "INSS employer contribution",
+          "netPayable": "Net salaries payable",
+          "witPayable": "Wage income tax payable",
+          "inssEmpPayable": "INSS employee payable",
+          "inssErPayable": "INSS employer payable",
+          "bank": "Cash / bank"
+        },
+        "s3": {
+          "eyebrow": "3 · Statutory deadlines",
+          "title": "A return and its payment are never the same obligation",
+          "body": "A filed return with unpaid tax stays visibly overdue in Xefe. Wage filings live in Payroll; the annual business return lives in Accounting.",
+          "d10Small": "following month",
+          "d10Title": "INSS statement",
+          "d10Body": "The remuneration statement, in the official template, submitted through the INSS employer portal.",
+          "d15Small": "following month",
+          "d15Title": "Wage income tax",
+          "d15Body": "The monthly ATTL return and its payment — both due on the 15th.",
+          "d20Small": "following month",
+          "d20Title": "INSS payment",
+          "d20Body": "Late payment accrues 1% per month or fraction (Decree-Law 20/2017, art. 39) — Xefe warns you with a live estimate.",
+          "d31Small": "following year",
+          "d31Title": "Annual returns",
+          "d31Body": "The employer wage-tax reconciliation and the annual income tax form — Xefe prepares the working figures for your accountant to review and file."
+        },
+        "s4": {
+          "eyebrow": "4 · Guarantees",
+          "title": "Enforced by the system, not by promises",
+          "body": "Each guarantee below is enforced in code and covered by automated tests — including full browser runs of the entire chain.",
+          "g1": "Finalizing payroll is the only step that requires a subscription.",
+          "g1By": "Everything else — records, reports, filings — stays available.",
+          "g2": "Two-person approval: the approver is never the person who ran the payroll.",
+          "g2By": "Enforced by database security rules, not by the screens.",
+          "g3": "A run can only become paid from approved, with permanent payment evidence.",
+          "g3By": "A write that skips the approval step is rejected by the database.",
+          "g4": "Every money movement is one balanced journal, posted exactly once.",
+          "g4By": "Retrying a payment returns the same journal — never a duplicate.",
+          "g5": "Corrections are reversing journals — history is never edited or deleted.",
+          "g5By": "Your audit trail stays complete and truthful.",
+          "g6": "Xefe never guesses a compliance value.",
+          "g6By": "If data needed for a statutory filing is missing, generation refuses and tells you what to fix.",
+          "g7": "Every step writes an audit event, recorded server-side.",
+          "g7By": "Who ran, approved, paid, and filed — with timestamps you can show an auditor."
+        },
+        "cta": {
+          "title": "Want the calculation rules themselves?",
+          "body": "The engine page walks through the tax and social-security arithmetic, statute by statute.",
+          "engine": "See the engine",
+          "signup": "Start free"
+        }
+      }
+    },
     "howItWorks": {
       "nav": {
         "workflow": "How work flows",
@@ -9851,6 +9958,113 @@ export const translations = {
         "footnote": "Trabalhador iha leten ilustrativu de'it — aritmétika mak motór nian rasik."
       }
     },
+    "publicDocs": {
+      "eyebrow": "Dokumentasaun",
+      "hub": {
+        "titleTop": "Oinsá Xefe",
+        "titleAccent": "serbisu loloos",
+        "lede": "Dokumentasaun ho lian simples kona-ba mákina iha Xefe nia okos — saida mak akontese ho ita-nia osan, bainhira prazu sira monu, no garantia sira-ne'ebé sistema rasik impoin.",
+        "article1Tag": "Folha pagamentu & kontabilidade",
+        "article1Title": "Kadeia osan folha pagamentu nian",
+        "article1Desc": "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
+        "readArticle": "Lee artigu",
+        "more": "Ami aumenta artigu sira bainhira ami dokumenta parte ida-idak husi sistema. Ba regra kálkulu sira rasik, haree",
+        "moreEngine": "motór Xefe"
+      },
+      "chain": {
+        "navLabel": "Docs · Kadeia osan",
+        "nav": {
+          "lifecycle": "Siklu vida",
+          "journals": "Lansamentu",
+          "deadlines": "Prazu",
+          "guarantees": "Garantia"
+        },
+        "titleTop": "Kadeia",
+        "titleAccent": "osan folha nian",
+        "lede": "Oinsá prosesamentu folha ida sai livru taka — mudansa estadu ida-idak, lansamentu ida-idak, prazu legál ida-idak, no regra sira-ne'ebé halo pasu ida-idak seguru.",
+        "s1": {
+          "eyebrow": "1 · Siklu vida",
+          "title": "Mákina estadu ne'ebé baze dadus impoin",
+          "body": "Tranzisaun ida-idak iha okos impoin husi regra seguransa iha baze dadus rasik, la'ós de'it iha ekrã sira — software ne'ebé kontorna aplikasaun mós la bele salta pasu ida.",
+          "draft": "rascunho",
+          "draftNote": "ema ruma iha ekipa ho asesu ba folha",
+          "processing": "prosesamentu",
+          "processingNote": "finaliza mak pasu úniku ne'ebé presiza subskrisaun ativu",
+          "approved": "aprovadu",
+          "approvedNote": "ema segundu ida aprova — nunka ema ne'ebé prosesa",
+          "paid": "selu ona",
+          "paidNote": "husi aprovadu de'it, ho evidénsia pagamentu kompletu",
+          "closed": "livru taka",
+          "closedNote": "koresaun liuhusi lansamentu estornu, nunka edita istória",
+          "gate": "Marka prosesamentu hanesan selu ona presiza data pagamentu, referénsia banku, ema ne'ebé selu, no lansamentu likidasaun ligadu — no bainhira liga tiha ona, evidénsia ne'e nunka bele muda. Pagamentu sala hadi'a ho estornu, nunka hakerek fila fali rejistu."
+        },
+        "s2": {
+          "eyebrow": "2 · Osan → lansamentu",
+          "title": "Lansamentu tolu book osan",
+          "body": "Valor ida-idak kalkula ho aritmétika desimál loloos no rejista dala ida de'it — repete fila fali fó lansamentu hanesan, nunka duplikadu.",
+          "accrual": "Akréssimu",
+          "accrualWhen": "iha aprovasaun",
+          "accrualFoot": "Livru sira rekoñese kustu totál folha nian — seidauk iha buat ida sai husi banku.",
+          "settlement": "Likidasaun",
+          "settlementWhen": "iha pagamentu",
+          "settlementFoot": "Saláriu sira sai husi banku liuhusi prosesu lote saláriu banku nian rasik, ho orden pagamentu asinadu.",
+          "clearing": "Regularizasaun legál",
+          "clearingWhen": "iha entrega",
+          "clearingFoot": "Impostu no seguransa sosiál mak pagamentu rua ketak, ida-idak ho nia lansamentu rasik — konta pasivu sira fila ba zero iha períodu."
+        },
+        "acct": {
+          "salaries": "Saláriu no vensimentu (brutu)",
+          "inssEmployer": "Kontribuisaun INSS empregadór",
+          "netPayable": "Saláriu líkidu atu selu",
+          "witPayable": "Impostu saláriu atu selu",
+          "inssEmpPayable": "INSS trabalhadór atu selu",
+          "inssErPayable": "INSS empregadór atu selu",
+          "bank": "Kaixa / banku"
+        },
+        "s3": {
+          "eyebrow": "3 · Prazu legál",
+          "title": "Deklarasaun ida no nia pagamentu nunka obrigasaun hanesan",
+          "body": "Deklarasaun ne'ebé entrega ona maibé impostu seidauk selu kontinua atrazadu ho klaru iha Xefe. Obrigasaun saláriu sira moris iha Folha; deklarasaun anuál empreza nian moris iha Kontabilidade.",
+          "d10Small": "fulan tuir mai",
+          "d10Title": "Deklarasaun INSS",
+          "d10Body": "Deklarasaun remunerasaun, iha modelu ofisiál, submete liuhusi portál empregadór INSS nian.",
+          "d15Small": "fulan tuir mai",
+          "d15Title": "Impostu saláriu",
+          "d15Body": "Deklarasaun mensál ba ATTL no nia pagamentu — rua-rua to'o loron 15.",
+          "d20Small": "fulan tuir mai",
+          "d20Title": "Pagamentu INSS",
+          "d20Body": "Atrazu akumula 1% kada fulan ka frasaun (Dekretu-Lei 20/2017, art. 39) — Xefe avizu ho estimativa moris.",
+          "d31Small": "tinan tuir mai",
+          "d31Title": "Deklarasaun anuál sira",
+          "d31Body": "Rekonsiliasaun anuál impostu saláriu no formuláriu anuál rendimentu — Xefe prepara valor servisu ba ita-nia kontabilista atu reviza no entrega."
+        },
+        "s4": {
+          "eyebrow": "4 · Garantia",
+          "title": "Sistema mak impoin, la'ós promesa",
+          "body": "Garantia ida-idak iha okos impoin iha kódigu no kobre husi teste automátiku sira — inklui percursu kompletu iha navegadór ba kadeia tomak.",
+          "g1": "Finaliza folha mak pasu úniku ne'ebé presiza subskrisaun.",
+          "g1By": "Buat seluk hotu — rejistu, relatóriu, deklarasaun — kontinua disponível.",
+          "g2": "Aprovasaun ema rua: ema ne'ebé aprova nunka ema ne'ebé prosesa.",
+          "g2By": "Impoin husi regra seguransa baze dadus, la'ós husi ekrã sira.",
+          "g3": "Prosesamentu bele sai selu ona husi aprovadu de'it, ho evidénsia permanente.",
+          "g3By": "Hakerek ne'ebé salta aprovasaun, baze dadus rejeita.",
+          "g4": "Movimentu osan ida-idak mak lansamentu ekilibradu ida, rejista dala ida de'it.",
+          "g4By": "Repete pagamentu fó lansamentu hanesan — nunka duplikadu.",
+          "g5": "Koresaun sira mak estornu — istória nunka edita ka hamoos.",
+          "g5By": "Ita-nia trillu auditoria mantein kompletu no loos.",
+          "g6": "Xefe nunka adivinha valor konformidade ida.",
+          "g6By": "Se falta informasaun ba deklarasaun legál, jerasaun rekuza no hatete saida mak atu hadi'a.",
+          "g7": "Pasu ida-idak hakerek eventu auditoria, rejista iha servidór.",
+          "g7By": "Sé mak prosesa, aprova, selu no entrega — ho data sira-ne'ebé ita bele hatudu ba auditór."
+        },
+        "cta": {
+          "title": "Hakarak regra kálkulu sira rasik?",
+          "body": "Pájina motór nian la'o liuhusi aritmétika impostu no seguransa sosiál, estatutu ba estatutu.",
+          "engine": "Haree motór",
+          "signup": "Hahu grátis"
+        }
+      }
+    },
     "howItWorks": {
       "nav": {
         "workflow": "Fluxu servisu",
@@ -18125,6 +18339,113 @@ export const translations = {
         "description": "Configurar é grátis: adicione a equipa, construa uma folha de rascunho e inspecione cada número desta página nos seus próprios livros. Só subscreve quando finalizar uma folha real.",
         "secondary": "Ver preços",
         "footnote": "O trabalhador acima é ilustrativo — a aritmética é a do próprio motor."
+      }
+    },
+    "publicDocs": {
+      "eyebrow": "Documentação",
+      "hub": {
+        "titleTop": "Como o Xefe",
+        "titleAccent": "funciona por dentro",
+        "lede": "Documentação em linguagem simples da maquinaria por baixo do Xefe — o que acontece ao seu dinheiro, quando caem os prazos e que garantias o próprio sistema impõe.",
+        "article1Tag": "Folha de pagamento & contabilidade",
+        "article1Title": "A cadeia do dinheiro da folha",
+        "article1Desc": "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
+        "readArticle": "Ler o artigo",
+        "more": "Vamos acrescentando artigos à medida que documentamos cada parte do sistema. Para as próprias regras de cálculo, veja",
+        "moreEngine": "o motor Xefe"
+      },
+      "chain": {
+        "navLabel": "Docs · Cadeia do dinheiro",
+        "nav": {
+          "lifecycle": "Ciclo de vida",
+          "journals": "Lançamentos",
+          "deadlines": "Prazos",
+          "guarantees": "Garantias"
+        },
+        "titleTop": "A cadeia do",
+        "titleAccent": "dinheiro da folha",
+        "lede": "Como um processamento de folha se torna livros fechados — cada mudança de estado, cada lançamento, cada prazo legal e as regras que tornam cada passo seguro.",
+        "s1": {
+          "eyebrow": "1 · Ciclo de vida",
+          "title": "Uma máquina de estados imposta pela base de dados",
+          "body": "Cada transição abaixo é imposta por regras de segurança na própria base de dados, não apenas nos ecrãs — software que contorne a aplicação continua sem poder saltar um passo.",
+          "draft": "rascunho",
+          "draftNote": "qualquer pessoa da equipa com acesso à folha",
+          "processing": "processamento",
+          "processingNote": "finalizar é o único passo que exige uma subscrição ativa",
+          "approved": "aprovado",
+          "approvedNote": "uma segunda pessoa aprova — nunca quem processou",
+          "paid": "pago",
+          "paidNote": "só a partir de aprovado, com evidência completa do pagamento",
+          "closed": "livros fechados",
+          "closedNote": "correções por lançamentos de estorno, nunca editando o histórico",
+          "gate": "Marcar um processamento como pago exige a data do pagamento, uma referência bancária, quem pagou e o lançamento de liquidação associado — e, uma vez ligada, essa evidência nunca pode ser alterada. Um pagamento errado corrige-se com um estorno, nunca reescrevendo o registo."
+        },
+        "s2": {
+          "eyebrow": "2 · Dinheiro → lançamentos",
+          "title": "Três lançamentos movem o dinheiro",
+          "body": "Cada valor é calculado com aritmética decimal exata e registado exatamente uma vez — uma repetição devolve o mesmo lançamento, nunca um duplicado.",
+          "accrual": "Acréscimo",
+          "accrualWhen": "na aprovação",
+          "accrualFoot": "Os livros reconhecem o custo total da folha — ainda nada saiu do banco.",
+          "settlement": "Liquidação",
+          "settlementWhen": "no pagamento",
+          "settlementFoot": "Os salários saem do banco pelo processo de lote salarial do próprio banco, com ordem de pagamento assinada.",
+          "clearing": "Regularização legal",
+          "clearingWhen": "na entrega",
+          "clearingFoot": "Imposto e segurança social são dois pagamentos separados, cada um com o seu lançamento — as contas de passivo voltam a zero no período."
+        },
+        "acct": {
+          "salaries": "Salários e vencimentos (bruto)",
+          "inssEmployer": "Contribuição INSS entidade patronal",
+          "netPayable": "Salários líquidos a pagar",
+          "witPayable": "Imposto sobre salários a pagar",
+          "inssEmpPayable": "INSS trabalhador a pagar",
+          "inssErPayable": "INSS entidade patronal a pagar",
+          "bank": "Caixa / banco"
+        },
+        "s3": {
+          "eyebrow": "3 · Prazos legais",
+          "title": "Uma declaração e o seu pagamento nunca são a mesma obrigação",
+          "body": "Uma declaração entregue com imposto por pagar continua visivelmente em atraso no Xefe. As obrigações salariais vivem na Folha; a declaração anual da empresa vive na Contabilidade.",
+          "d10Small": "mês seguinte",
+          "d10Title": "Declaração INSS",
+          "d10Body": "A declaração de remunerações, no modelo oficial, submetida pelo portal do empregador do INSS.",
+          "d15Small": "mês seguinte",
+          "d15Title": "Imposto sobre salários",
+          "d15Body": "A declaração mensal à ATTL e o respetivo pagamento — ambos até ao dia 15.",
+          "d20Small": "mês seguinte",
+          "d20Title": "Pagamento INSS",
+          "d20Body": "O atraso acumula 1% por mês ou fração (Decreto-Lei 20/2017, art. 39) — o Xefe avisa com uma estimativa ao vivo.",
+          "d31Small": "ano seguinte",
+          "d31Title": "Declarações anuais",
+          "d31Body": "A reconciliação anual do imposto sobre salários e o formulário anual de rendimentos — o Xefe prepara os valores de trabalho para o seu contabilista rever e entregar."
+        },
+        "s4": {
+          "eyebrow": "4 · Garantias",
+          "title": "Impostas pelo sistema, não por promessas",
+          "body": "Cada garantia abaixo está imposta no código e coberta por testes automáticos — incluindo percursos completos em navegador de toda a cadeia.",
+          "g1": "Finalizar a folha é o único passo que exige subscrição.",
+          "g1By": "Tudo o resto — registos, relatórios, declarações — continua disponível.",
+          "g2": "Aprovação a duas pessoas: quem aprova nunca é quem processou.",
+          "g2By": "Imposto por regras de segurança da base de dados, não pelos ecrãs.",
+          "g3": "Um processamento só passa a pago a partir de aprovado, com evidência permanente.",
+          "g3By": "Uma escrita que salte a aprovação é rejeitada pela base de dados.",
+          "g4": "Cada movimento de dinheiro é um lançamento equilibrado, registado exatamente uma vez.",
+          "g4By": "Repetir um pagamento devolve o mesmo lançamento — nunca um duplicado.",
+          "g5": "Correções são estornos — o histórico nunca é editado nem apagado.",
+          "g5By": "A sua trilha de auditoria mantém-se completa e verdadeira.",
+          "g6": "O Xefe nunca adivinha um valor de conformidade.",
+          "g6By": "Se faltar informação para uma declaração legal, a geração recusa e diz o que corrigir.",
+          "g7": "Cada passo escreve um evento de auditoria, registado no servidor.",
+          "g7By": "Quem processou, aprovou, pagou e entregou — com datas que pode mostrar a um auditor."
+        },
+        "cta": {
+          "title": "Quer as próprias regras de cálculo?",
+          "body": "A página do motor percorre a aritmética fiscal e da segurança social, estatuto a estatuto.",
+          "engine": "Ver o motor",
+          "signup": "Começar grátis"
+        }
       }
     },
     "howItWorks": {

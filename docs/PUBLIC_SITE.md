@@ -14,6 +14,15 @@ this doc is the plumbing._
 | Security | `/security` | `client/pages/SecurityPage.tsx` | sky |
 | Pricing | `/pricing` | `client/pages/Pricing.tsx` | gold-minimal |
 | For accountants | `/accountants` | `client/pages/AccountantPartners.tsx` | sky |
+| **Docs home** | `/docs` | `client/pages/DocsIndex.tsx` | lime |
+| Docs: money chain | `/docs/payroll-money-chain` | `client/pages/DocsMoneyChain.tsx` | lime |
+
+Docs articles share the lime accent and are footer-only in the nav (the menu
+stays short). Public docs content rule: statutes, deadlines, and Xefe's own
+product guarantees only — **never mention data sourcing** (the same rule as
+the /engine proof wording below). Internal file paths and sign-off status stay
+internal; the repo-side source of truth for the money-chain article is
+`docs/MONEY_CHAIN.md`.
 
 Shared chrome: `PublicNav` (pages-only menu), `PublicSectionNav` (in-page
 anchors + page accent), `SectionEyebrow`/`Crescent`, `PublicFooter`.

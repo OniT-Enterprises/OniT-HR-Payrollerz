@@ -13,6 +13,7 @@ export const PUBLIC_PATHS = [
   "/accountants",
   "/engine",
   "/security",
+  "/docs",
   "/features",
   "/unauthorized",
   "/apply/",

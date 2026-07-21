@@ -23,6 +23,8 @@ export const LOCALIZED_PUBLIC_PATHS = [
   "/accountants",
   "/engine",
   "/security",
+  "/docs",
+  "/docs/payroll-money-chain",
 ] as const;
 
 export function localeFromPath(pathname: string): PublicLocale {
