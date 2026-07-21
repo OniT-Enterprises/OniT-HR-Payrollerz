@@ -2,7 +2,7 @@
 
 _Started 2026-07-20 from an end-to-end audit of `main` at `aaef82f`._
 
-_Code-side checklist verified 2026-07-20. The unchecked items are external
+_Code-side checklist verified 2026-07-21. The unchecked items are external
 evidence, production-console, or professional sign-off gates and must remain
 open before a broad “ready for everyone” claim._
 
@@ -104,8 +104,8 @@ from code alone.
 
 ## Automated evidence
 
-- Unit suite: 81 files / 941 tests passed.
-- Rules suite: 20 files / 240 emulator tests passed.
+- Unit suite: 83 files / 970 tests passed.
+- Rules suite: 20 files / 241 emulator tests passed.
 - Browser suite: accounting lifecycle, full taxable payroll/statutory lifecycle,
   and real-month replay all passed. The full payroll journey also persists the
   Form C preparation hand-off and verifies its audit entry.
