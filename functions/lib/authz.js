@@ -25,14 +25,36 @@ async function requireTenantMember(tenantId, uid) {
         .doc(`tenants/${tenantId}/members/${uid}`)
         .get();
     if (!memberDoc.exists) {
+        // Superadmin parity with firestore.rules (see requireTenantRoles).
+        if (await isSuperAdmin(uid)) {
+            return { role: "owner" };
+        }
         throw new https_1.HttpsError("permission-denied", "User is not a member of this tenant");
     }
     return memberDoc.data();
 }
 async function requireTenantRoles(tenantId, uid, allowedRoles, errorMessage = "Insufficient permissions for this tenant operation") {
-    const member = await requireTenantMember(tenantId, uid);
+    // Superadmin parity with firestore.rules: rules let superadmins act on any
+    // tenant (the impersonation support tool), so callables must too —
+    // otherwise every requireTenant*-gated action silently fails with
+    // permission-denied while the surrounding page happily renders. A
+    // synthetic owner-shaped member keeps downstream role/department checks
+    // behaving as full-access.
+    const memberDoc = await (0, firestore_1.getFirestore)()
+        .doc(`tenants/${tenantId}/members/${uid}`)
+        .get();
+    if (!memberDoc.exists) {
+        if (await isSuperAdmin(uid)) {
+            return { role: "owner" };
+        }
+        throw new https_1.HttpsError("permission-denied", "User is not a member of this tenant");
+    }
+    const member = memberDoc.data();
     const role = member.role;
     if (typeof role !== "string" || !allowedRoles.includes(role)) {
+        if (await isSuperAdmin(uid)) {
+            return Object.assign(Object.assign({}, member), { role: "owner" });
+        }
         throw new https_1.HttpsError("permission-denied", errorMessage);
     }
     return member;

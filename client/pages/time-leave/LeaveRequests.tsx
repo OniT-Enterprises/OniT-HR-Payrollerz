@@ -582,10 +582,15 @@ export default function LeaveRequests() {
         }),
       });
       void notifyDecision(request, "rejected", reason);
-    } catch {
+    } catch (error) {
+      // Surface the server's reason (entitlement breach, permissions, …) —
+      // a generic message hides exactly the detail the approver needs.
       toast({
         title: t("timeLeave.leaveRequests.toast.errorTitle"),
-        description: t("timeLeave.leaveRequests.toast.rejectFailed"),
+        description:
+          error instanceof Error && error.message
+            ? error.message
+            : t("timeLeave.leaveRequests.toast.rejectFailed"),
         variant: "destructive",
       });
     }
