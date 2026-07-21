@@ -12,6 +12,7 @@ import { offboardingService } from '@/services/offboardingService';
 import { jobApplicationService } from '@/services/jobApplicationService';
 import type { Candidate } from '@/services/candidateService';
 import type { Job } from '@/services/jobService';
+import type { JobPrivateDetails } from '@/services/jobPrivateDetailsService';
 import type { JobApplication } from '@/services/jobApplicationService';
 import type { Interview, InterviewFeedback, InterviewDecision, InterviewFilters, PreInterviewCheck } from '@/services/interviewService';
 import type { OffboardingCase, OffboardingChecklist, ExitInterview } from '@/services/offboardingService';
@@ -105,8 +106,16 @@ export function useCreateJob() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: (job: Omit<Job, 'id' | 'tenantId'>) =>
-      jobService.createJob(tenantId, job),
+    mutationFn: ({
+      job,
+      privateDetails,
+    }: {
+      job: Omit<Job, 'id' | 'tenantId'>;
+      privateDetails: Omit<
+        JobPrivateDetails,
+        'id' | 'tenantId' | 'jobId' | 'createdAt' | 'updatedAt'
+      >;
+    }) => jobService.createJob(tenantId, job, privateDetails),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
     },
@@ -385,12 +394,12 @@ export function useSetSeveranceIncluded() {
   });
 }
 
-export function useUpdateExitInterviewField() {
+export function useCompleteExitInterview() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: ({ caseId, field, value }: { caseId: string; field: keyof ExitInterview; value: string | boolean }) =>
-      offboardingService.updateExitInterviewField(tenantId, caseId, field, value),
+    mutationFn: ({ caseId, exitInterview }: { caseId: string; exitInterview: ExitInterview }) =>
+      offboardingService.completeExitInterview(tenantId, caseId, exitInterview),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
     },

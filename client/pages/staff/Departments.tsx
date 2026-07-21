@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -49,14 +55,12 @@ import {
   Edit,
   Eye,
   MoreHorizontal,
+  AlertTriangle,
 } from "lucide-react";
 
 interface DepartmentStat {
   name: string;
   totalEmployees: number;
-  activeEmployees: number;
-  inactiveEmployees: number;
-  averageSalary: number;
   employees: Employee[];
   department: Department;
 }
@@ -72,13 +76,20 @@ export default function Departments() {
   const employeesQuery = useEmployeeDirectory({});
   const departmentsQuery = useDepartments(tenantId);
 
-  const employees = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data]);
-  const departments = useMemo(() => departmentsQuery.data ?? [], [departmentsQuery.data]);
+  const employees = useMemo(
+    () => employeesQuery.data ?? [],
+    [employeesQuery.data],
+  );
+  const departments = useMemo(
+    () => departmentsQuery.data ?? [],
+    [departmentsQuery.data],
+  );
   const loading = employeesQuery.isLoading || departmentsQuery.isLoading;
 
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
-  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentStat | null>(null);
+  const [selectedDepartment, setSelectedDepartment] =
+    useState<DepartmentStat | null>(null);
   const [showDepartmentEmployees, setShowDepartmentEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
@@ -102,51 +113,51 @@ export default function Departments() {
     });
   };
 
-  const migrateMissingDepartments = useCallback(async (
-    employeeList: Employee[],
-    existingDepartments: Department[],
-  ) => {
-    try {
-      // Only run migration on initial load, not during updates
-      if (existingDepartments.length > 0) {
-        return; // Skip migration if departments already exist
-      }
-
-      // Get unique department names from employees
-      const employeeDepartments = [
-        ...new Set(employeeList.map((emp) => emp.jobDetails.department)),
-      ];
-
-      // Filter out empty department names
-      const validDepartments = employeeDepartments.filter(
-        (deptName) => deptName && deptName.trim(),
-      );
-
-      // Create missing departments only if we have employees but no departments
-      if (validDepartments.length > 0 && existingDepartments.length === 0) {
-        for (const deptName of validDepartments) {
-          await departmentService.addDepartment(tenantId, {
-            name: deptName,
-            icon: "building",
-            shape: "circle",
-            color: "#3B82F6",
-          });
+  const migrateMissingDepartments = useCallback(
+    async (employeeList: Employee[], existingDepartments: Department[]) => {
+      try {
+        // Only run migration on initial load, not during updates
+        if (existingDepartments.length > 0) {
+          return; // Skip migration if departments already exist
         }
 
-        // Invalidate department queries to refetch after migration
-        await queryClient.invalidateQueries({ queryKey: departmentKeys.all });
+        // Get unique department names from employees
+        const employeeDepartments = [
+          ...new Set(employeeList.map((emp) => emp.jobDetails.department)),
+        ];
 
-        toast({
-          title: t("departments.toast.migratedTitle"),
-          description: t("departments.toast.migratedDesc", {
-            count: validDepartments.length,
-          }),
-        });
+        // Filter out empty department names
+        const validDepartments = employeeDepartments.filter(
+          (deptName) => deptName && deptName.trim(),
+        );
+
+        // Create missing departments only if we have employees but no departments
+        if (validDepartments.length > 0 && existingDepartments.length === 0) {
+          for (const deptName of validDepartments) {
+            await departmentService.addDepartment(tenantId, {
+              name: deptName,
+              icon: "building",
+              shape: "circle",
+              color: "#3B82F6",
+            });
+          }
+
+          // Invalidate department queries to refetch after migration
+          await queryClient.invalidateQueries({ queryKey: departmentKeys.all });
+
+          toast({
+            title: t("departments.toast.migratedTitle"),
+            description: t("departments.toast.migratedDesc", {
+              count: validDepartments.length,
+            }),
+          });
+        }
+      } catch (error) {
+        console.error("Error migrating departments:", error);
       }
-    } catch (error) {
-      console.error("Error migrating departments:", error);
-    }
-  }, [tenantId, queryClient, toast, t]);
+    },
+    [tenantId, queryClient, toast, t],
+  );
 
   // Auto-migrate departments that exist in employee records but not in departments collection
   useEffect(() => {
@@ -167,30 +178,9 @@ export default function Departments() {
       (emp) => emp.jobDetails.department === department.name,
     );
 
-    const activeCount = deptEmployees.filter(
-      (emp) => emp.status === "active",
-    ).length;
-    const inactiveCount = deptEmployees.filter(
-      (emp) => emp.status === "inactive",
-    ).length;
-    const averageMonthlySalary =
-      deptEmployees.length > 0
-        ? deptEmployees.reduce(
-            (sum, emp) =>
-              sum +
-              (emp.compensation.monthlySalary ||
-                Math.round((emp.compensation.annualSalary ?? 0) / 12) ||
-                0),
-            0,
-          ) / deptEmployees.length
-        : 0;
-
     return {
       name: department.name,
       totalEmployees: deptEmployees.length,
-      activeEmployees: activeCount,
-      inactiveEmployees: inactiveCount,
-      averageSalary: Math.round(averageMonthlySalary),
       employees: deptEmployees,
       department, // Include the full department object
     };
@@ -198,29 +188,6 @@ export default function Departments() {
 
   // Sort departments by employee count
   departmentStats.sort((a, b) => b.totalEmployees - a.totalEmployees);
-
-  const _getDepartmentColor = (index: number) => {
-    const colors = [
-      "bg-blue-50 border-blue-200",
-      "bg-green-50 border-green-200",
-      "bg-purple-50 border-purple-200",
-      "bg-orange-50 border-orange-200",
-      "bg-pink-50 border-pink-200",
-      "bg-indigo-50 border-indigo-200",
-      "bg-yellow-50 border-yellow-200",
-      "bg-red-50 border-red-200",
-    ];
-    return colors[index % colors.length];
-  };
-
-  const _formatSalary = (monthlySalary: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(monthlySalary);
-  };
 
   const handleViewDepartmentEmployees = (dept: DepartmentStat) => {
     setSelectedDepartment(dept);
@@ -340,6 +307,41 @@ export default function Departments() {
     );
   }
 
+  if (employeesQuery.isError || departmentsQuery.isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.departments} />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("departments.title")}
+            subtitle={t("departments.subtitle")}
+            icon={Building}
+            iconColor="text-blue-500"
+          />
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                {t("departments.toast.loadFailed")}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() =>
+                  void Promise.all([
+                    employeesQuery.refetch(),
+                    departmentsQuery.refetch(),
+                  ])
+                }
+              >
+                {t("common.retry")}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.departments} />
@@ -361,14 +363,18 @@ export default function Departments() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => {
-                    setManagerMode("add");
-                    setShowDepartmentManager(true);
-                  }}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setManagerMode("add");
+                      setShowDepartmentManager(true);
+                    }}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     {t("departments.addDepartment")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings/org-chart")}>
+                  <DropdownMenuItem
+                    onClick={() => navigate("/settings/org-chart")}
+                  >
                     <Users className="mr-2 h-4 w-4" />
                     {t("departments.organizationChart")}
                   </DropdownMenuItem>
@@ -702,7 +708,10 @@ export default function Departments() {
                     <p className="text-muted-foreground mb-4">
                       {t("departments.dialogEmptyDesc")}
                     </p>
-                    <Button variant="outline" onClick={() => navigate("/people/add")}>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/people/add")}
+                    >
                       <UserPlus className="h-4 w-4 mr-2" />
                       {t("employees.addEmployee")}
                     </Button>

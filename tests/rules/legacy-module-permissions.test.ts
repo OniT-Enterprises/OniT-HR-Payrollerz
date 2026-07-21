@@ -78,6 +78,13 @@ describe('Legacy Root Collection Permissions', () => {
         status: 'draft',
         createdAt: new Date(),
       });
+      await setDoc(doc(adminDb, 'reviews/review-a-submitted'), {
+        tenantId: 'tenant-a',
+        employeeId: 'emp-basic',
+        reviewerId: 'owner-a',
+        status: 'submitted',
+        createdAt: new Date(),
+      });
       await setDoc(doc(adminDb, 'okrs/okr-a-1'), {
         tenantId: 'tenant-a',
         ownerId: 'perf-viewer',
@@ -150,19 +157,23 @@ describe('Legacy Root Collection Permissions', () => {
     await assertSucceeds(getDoc(doc(basicDb, 'jobs/job-a-1')));
   });
 
-  it('allows performance module users to read performance records while blocking unrelated members', async () => {
+  it('keeps sensitive performance records with tenant HR admins', async () => {
     const perfDb = testEnv.authenticatedContext('perf-viewer').firestore();
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
     const basicDb = testEnv.authenticatedContext('basic-user').firestore();
 
-    await assertSucceeds(getDoc(doc(perfDb, 'okrs/okr-a-1')));
-    await assertSucceeds(getDoc(doc(perfDb, 'disciplinary/discipline-a-1')));
+    await assertFails(getDoc(doc(perfDb, 'okrs/okr-a-1')));
+    await assertFails(getDoc(doc(perfDb, 'disciplinary/discipline-a-1')));
     await assertFails(getDoc(doc(basicDb, 'disciplinary/discipline-a-1')));
+    await assertSucceeds(getDoc(doc(ownerDb, 'okrs/okr-a-1')));
+    await assertSucceeds(getDoc(doc(ownerDb, 'disciplinary/discipline-a-1')));
   });
 
-  it('allows employees to read their own review without the performance module', async () => {
+  it('allows employees to read a submitted own review but not an HR draft', async () => {
     const basicDb = testEnv.authenticatedContext('basic-user').firestore();
 
-    await assertSucceeds(getDoc(doc(basicDb, 'reviews/review-a-1')));
+    await assertFails(getDoc(doc(basicDb, 'reviews/review-a-1')));
+    await assertSucceeds(getDoc(doc(basicDb, 'reviews/review-a-submitted')));
   });
 
   it('allows self-service profile edits on legacy flat employee docs', async () => {
@@ -184,7 +195,7 @@ describe('Legacy Root Collection Permissions', () => {
     const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
     const path = 'offboarding/offboarding-a-1';
 
-    await assertSucceeds(updateDoc(doc(hiringDb, path), {
+    await assertFails(updateDoc(doc(hiringDb, path), {
       notes: 'Interview scheduled',
       updatedAt: new Date(),
     }));

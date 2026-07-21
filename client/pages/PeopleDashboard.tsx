@@ -109,8 +109,9 @@ export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { hasModule, canManage } = useTenant();
+  const { session, hasModule, canManage } = useTenant();
   const canManageTenant = canManage();
+  const isHrAdmin = session?.role === "owner" || session?.role === "hr-admin";
   const hasStaff = hasModule("staff");
   const hasHiring = hasModule("hiring");
   const hasPerformance = hasModule("performance");
@@ -121,7 +122,7 @@ export default function PeopleDashboard() {
   const employeeSummaryQuery = useActiveEmployeeSummary(hasStaff);
   const recentEmployeesQuery = useAllEmployees(8, hasStaff);
   const leaveStatsQuery = useLeaveStats(hasTimeleave);
-  const goalStatsQuery = useGoalStats(undefined, hasPerformance);
+  const goalStatsQuery = useGoalStats(undefined, hasPerformance && isHrAdmin);
   // These three "what needs attention" badge counts live under a bespoke
   // `peopleHome` namespace that NO mutation invalidates — so with a long
   // staleTime they showed counts up to 5 minutes out of date after the user
@@ -137,14 +138,14 @@ export default function PeopleDashboard() {
   const trainingStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "training"],
     queryFn: () => trainingService.getTrainingStats(tenantId),
-    enabled: hasPerformance,
+    enabled: hasPerformance && isHrAdmin,
     staleTime: 0,
     refetchOnMount: "always",
   });
   const disciplinaryStatsQuery = useQuery({
     queryKey: ["tenants", tenantId, "peopleHome", "disciplinary"],
     queryFn: () => disciplinaryService.getStats(tenantId),
-    enabled: hasPerformance,
+    enabled: hasPerformance && isHrAdmin,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -153,7 +154,9 @@ export default function PeopleDashboard() {
     ...(hasStaff ? [employeeSummaryQuery, recentEmployeesQuery] : []),
     ...(hasTimeleave ? [leaveStatsQuery] : []),
     ...(hasHiring ? [interviewStatsQuery] : []),
-    ...(hasPerformance ? [goalStatsQuery, trainingStatsQuery, disciplinaryStatsQuery] : []),
+    ...(hasPerformance && isHrAdmin
+      ? [goalStatsQuery, trainingStatsQuery, disciplinaryStatsQuery]
+      : []),
   ];
   const dashboardLoading = dashboardQueries.some((query) => query.isLoading);
   const dashboardError = dashboardQueries.some((query) => query.data === undefined);
@@ -187,8 +190,8 @@ export default function PeopleDashboard() {
   const activeEmployees = employeeSummary?.active ?? 0;
   const employeesWithIssues = employeeSummary?.employeesWithIssues ?? 0;
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
-  const trainingExpiring = hasPerformance ? trainingStats?.expiringSoon ?? 0 : 0;
-  const disciplinaryOpen = hasPerformance
+  const trainingExpiring = hasPerformance && isHrAdmin ? trainingStats?.expiringSoon ?? 0 : 0;
+  const disciplinaryOpen = hasPerformance && isHrAdmin
     ? (disciplinaryStats?.open ?? 0) + (disciplinaryStats?.inReview ?? 0)
     : 0;
 
@@ -225,7 +228,7 @@ export default function PeopleDashboard() {
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
-      show: hasPerformance && trainingExpiring > 0,
+      show: hasPerformance && isHrAdmin && trainingExpiring > 0,
       count: trainingExpiring,
       label: t(
         trainingExpiring === 1
@@ -237,7 +240,7 @@ export default function PeopleDashboard() {
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
     },
     {
-      show: hasPerformance && disciplinaryOpen > 0,
+      show: hasPerformance && isHrAdmin && disciplinaryOpen > 0,
       count: disciplinaryOpen,
       label: t(
         disciplinaryOpen === 1
@@ -278,11 +281,11 @@ export default function PeopleDashboard() {
       icon: CalendarClock,
     },
     {
-      show: hasPerformance,
+      show: hasPerformance && isHrAdmin,
       title: t("moduleDashboards.people.cards.performance"),
       purpose: t("moduleDashboards.people.cards.performancePurpose"),
       action: t("moduleDashboards.people.cards.performanceAction"),
-      path: "/people/reviews",
+      path: "/people/goals",
       icon: Target,
     },
   ].filter((card) => card.show);

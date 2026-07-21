@@ -5,11 +5,9 @@
  */
 import { create } from 'zustand';
 import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
+  doc,
+  getDoc,
+  writeBatch,
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -35,15 +33,16 @@ interface SubmitGrievanceParams {
 }
 
 /**
- * Generate a random 8-character alphanumeric ticket ID
+ * Generate a 16-character token (80 bits) so the ticket itself can safely act
+ * as the bearer secret for the read-only status document.
  * Uses crypto.getRandomValues for secure randomness
  */
 function generateTicketId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous: 0/O, 1/I
-  const bytes = new Uint8Array(8);
+  const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   let result = '';
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 16; i++) {
     result += chars[bytes[i] % chars.length];
   }
   return result;
@@ -60,7 +59,16 @@ export const useGrievanceStore = create<GrievanceState>((set) => ({
     try {
       const ticketId = generateTicketId();
 
-      await addDoc(collection(db, `tenants/${params.tenantId}/grievances`), {
+      const grievanceRef = doc(
+        db,
+        `tenants/${params.tenantId}/grievances/${ticketId}`,
+      );
+      const statusRef = doc(
+        db,
+        `tenants/${params.tenantId}/grievanceStatuses/${ticketId}`,
+      );
+      const batch = writeBatch(db);
+      batch.set(grievanceRef, {
         tenantId: params.tenantId,
         // NO userId — truly anonymous
         ticketId,
@@ -70,6 +78,15 @@ export const useGrievanceStore = create<GrievanceState>((set) => ({
         status: 'submitted',
         createdAt: serverTimestamp(),
       });
+      batch.set(statusRef, {
+        tenantId: params.tenantId,
+        ticketId,
+        category: params.category,
+        status: 'submitted',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      await batch.commit();
 
       set({ submitting: false });
       return ticketId;
@@ -82,26 +99,24 @@ export const useGrievanceStore = create<GrievanceState>((set) => ({
   checkStatus: async (tenantId: string, ticketId: string) => {
     set({ checking: true, error: null, trackedGrievance: null });
     try {
-      const q = query(
-        collection(db, `tenants/${tenantId}/grievances`),
-        where('ticketId', '==', ticketId)
+      const normalizedTicket = ticketId.trim().toUpperCase();
+      const snap = await getDoc(
+        doc(db, `tenants/${tenantId}/grievanceStatuses/${normalizedTicket}`),
       );
-      const snap = await getDocs(q);
 
-      if (snap.empty) {
+      if (!snap.exists()) {
         set({ checking: false, error: 'notFound' });
         return;
       }
 
-      const d = snap.docs[0];
-      const data = d.data();
+      const data = snap.data();
       const grievance: Grievance = {
-        id: d.id,
+        id: snap.id,
         tenantId: data.tenantId || tenantId,
         ticketId: data.ticketId,
         category: data.category || 'other',
-        description: data.description || '',
-        attachmentUrls: data.attachmentUrls || [],
+        description: '',
+        attachmentUrls: [],
         status: data.status || 'submitted',
         createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt || new Date(),
         resolvedAt: data.resolvedAt instanceof Timestamp ? data.resolvedAt.toDate() : data.resolvedAt,

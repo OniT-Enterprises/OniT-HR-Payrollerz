@@ -64,11 +64,12 @@ import {
   useSaveArticle56FinalPay,
   useSetSeveranceIncluded,
   useUpdateChecklistItem,
-  useUpdateExitInterviewField,
+  useCompleteExitInterview,
 } from "@/hooks/useHiring";
 import {
   type OffboardingCase,
   type OffboardingChecklist,
+  type ExitInterview,
   type DepartureReason,
   DEPARTURE_REASONS,
   getChecklistProgress,
@@ -78,7 +79,10 @@ import {
   type EquipmentAsset,
   type OnboardingCase,
 } from "@/services/onboardingService";
-import { disciplinaryService } from "@/services/disciplinaryService";
+import {
+  disciplinaryService,
+  isCompletedTerminationProcess,
+} from "@/services/disciplinaryService";
 import {
   requiredNoticeDays,
   noticeDaysGiven,
@@ -110,17 +114,17 @@ export default function Offboarding() {
   const { t } = useI18n();
   const { user } = useAuth();
   const tenantId = useTenantId();
-  const { data: employees = [], isLoading: employeesLoading } =
-    useEmployeeDirectory({ status: "active" });
+  const employeesQuery = useEmployeeDirectory({ status: "active" });
+  const { data: employees = [], isLoading: employeesLoading } = employeesQuery;
 
   // Data via React Query
-  const { data: activeCases = [], isLoading: activeCasesLoading } =
-    useActiveCases();
-  const { data: completedCases = [], isLoading: completedCasesLoading } =
-    useCompletedCases();
+  const activeCasesQuery = useActiveCases();
+  const completedCasesQuery = useCompletedCases();
+  const { data: activeCases = [], isLoading: activeCasesLoading } = activeCasesQuery;
+  const { data: completedCases = [], isLoading: completedCasesLoading } = completedCasesQuery;
   const createOffboardingMutation = useCreateOffboardingCase();
   const updateChecklistMutation = useUpdateChecklistItem();
-  const updateExitInterviewMutation = useUpdateExitInterviewField();
+  const completeExitInterviewMutation = useCompleteExitInterview();
   const saveArticle56Mutation = useSaveArticle56FinalPay();
   const setSeveranceMutation = useSetSeveranceIncluded();
 
@@ -129,6 +133,8 @@ export default function Offboarding() {
   const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(
     null,
   );
+  const [exitInterviewDraft, setExitInterviewDraft] =
+    useState<ExitInterview | null>(null);
   const [finalPayReviewAcknowledged, setFinalPayReviewAcknowledged] =
     useState(false);
   const [finalPayReviewNote, setFinalPayReviewNote] = useState("");
@@ -200,7 +206,7 @@ export default function Offboarding() {
   const showCaseDisciplinaryWarning =
     selectedCase?.departureReason === "termination" &&
     caseDisciplinaryQuery.isSuccess &&
-    !caseDisciplinaryQuery.data.some((r) => r.status === "closed");
+    !caseDisciplinaryQuery.data.some(isCompletedTerminationProcess);
   // E7 (Arts. 49(8)-(9), 53(2)-(3)): statutory notice for the selected case.
   const selectedHireDate =
     selectedEmployeeQuery.data?.jobDetails?.hireDate || "";
@@ -275,6 +281,19 @@ export default function Offboarding() {
         hireDate: selectedEmployeeQuery.data?.jobDetails?.hireDate || "",
         lastWorkingDay: selectedCase.lastWorkingDay,
       });
+      if (!selectedCase.checklist.referenceLetter) {
+        await updateChecklistMutation.mutateAsync({
+          caseId: selectedCase.id!,
+          item: "referenceLetter",
+          value: true,
+        });
+        const checklist = { ...selectedCase.checklist, referenceLetter: true };
+        if (getChecklistProgress(checklist) === 100) {
+          setSelectedCase(null);
+        } else {
+          setSelectedCase({ ...selectedCase, checklist, status: "in_progress" });
+        }
+      }
     } catch (error) {
       toast({
         title: t("common.error") || "Error",
@@ -365,10 +384,13 @@ export default function Offboarding() {
     newOffboarding.departureReason === "termination" &&
     !!newOffboarding.employeeId &&
     dialogDisciplinaryQuery.isSuccess &&
-    !dialogDisciplinaryQuery.data.some((r) => r.status === "closed");
+    !dialogDisciplinaryQuery.data.some(isCompletedTerminationProcess);
 
   // Filter employees for selection
   const filteredEmployees = employees.filter((employee) => {
+    if (activeCases.some((activeCase) => activeCase.employeeId === employee.id)) {
+      return false;
+    }
     const matchesDepartment =
       newOffboarding.department === "all" ||
       employee.jobDetails.department === newOffboarding.department;
@@ -436,10 +458,13 @@ export default function Offboarding() {
             search: "",
           });
         },
-        onError: () => {
+        onError: (error) => {
           toast({
             title: t("hiring.offboarding.toast.errorTitle"),
-            description: "Failed to start offboarding process",
+            description:
+              error instanceof Error
+                ? error.message
+                : "Failed to start offboarding process",
             variant: "destructive",
           });
         },
@@ -485,23 +510,46 @@ export default function Offboarding() {
     );
   };
 
-  const updateExitInterview = (
-    caseId: string,
-    field: string,
+  const updateExitInterviewDraft = (
+    field: keyof ExitInterview,
     value: string,
   ) => {
-    updateExitInterviewMutation.mutate(
-      { caseId, field: field as keyof OffboardingCase["exitInterview"], value },
+    setExitInterviewDraft((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
+  };
+
+  const completeExitInterview = () => {
+    if (!selectedCase?.id || !exitInterviewDraft) return;
+    completeExitInterviewMutation.mutate(
+      { caseId: selectedCase.id, exitInterview: exitInterviewDraft },
       {
         onSuccess: () => {
-          // Optimistically update selected case
-          if (selectedCase?.id === caseId) {
+          const checklist = {
+            ...selectedCase.checklist,
+            exitInterviewCompleted: true,
+          };
+          if (getChecklistProgress(checklist) === 100) {
+            setSelectedCase(null);
+          } else {
             setSelectedCase({
               ...selectedCase,
-              exitInterview: { ...selectedCase.exitInterview, [field]: value },
+              exitInterview: { ...exitInterviewDraft, completed: true },
+              checklist,
+              status: "in_progress",
             });
           }
+          toast({
+            title: t("common.saved") || "Saved",
+            description: "Exit interview completed.",
+          });
         },
+        onError: (error) =>
+          toast({
+            title: t("common.error") || "Error",
+            description: error instanceof Error ? error.message : "Could not save the exit interview.",
+            variant: "destructive",
+          }),
       },
     );
   };
@@ -666,6 +714,44 @@ export default function Offboarding() {
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    activeCasesQuery.isError ||
+    completedCasesQuery.isError ||
+    employeesQuery.isError
+  ) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.offboarding} />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("hiring.offboarding.title")}
+            subtitle={t("hiring.offboarding.subtitle")}
+            icon={UserMinus}
+            iconColor="text-blue-500"
+          />
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                Could not load offboarding records. No data has been changed.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void activeCasesQuery.refetch();
+                  void completedCasesQuery.refetch();
+                  void employeesQuery.refetch();
+                }}
+              >
+                {t("common.retry") || "Try again"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -939,7 +1025,10 @@ export default function Offboarding() {
                               ? "ring-2 ring-blue-500 shadow-lg"
                               : "hover:bg-muted/30 hover:shadow-md"
                           }`}
-                          onClick={() => setSelectedCase(case_)}
+                          onClick={() => {
+                            setSelectedCase(case_);
+                            setExitInterviewDraft({ ...case_.exitInterview });
+                          }}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between mb-3">
@@ -1628,6 +1717,10 @@ export default function Offboarding() {
                           >
                             <Checkbox
                               checked={selectedCase.checklist[item.id]}
+                              disabled={
+                                item.id === "exitInterviewCompleted" ||
+                                item.id === "referenceLetter"
+                              }
                               onCheckedChange={(checked) =>
                                 updateChecklist(
                                   selectedCase.id!,
@@ -1640,7 +1733,7 @@ export default function Offboarding() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 {item.icon}
-                                <label className="text-sm font-medium text-foreground cursor-pointer">
+                                <label className="text-sm font-medium text-foreground">
                                   {item.label}
                                 </label>
                               </div>
@@ -1697,15 +1790,9 @@ export default function Offboarding() {
                               {t("hiring.offboarding.exit.overall")}
                             </Label>
                             <Select
-                              value={
-                                selectedCase.exitInterview.overallSatisfaction
-                              }
+                              value={exitInterviewDraft?.overallSatisfaction || ""}
                               onValueChange={(value) =>
-                                updateExitInterview(
-                                  selectedCase.id!,
-                                  "overallSatisfaction",
-                                  value,
-                                )
+                                updateExitInterviewDraft("overallSatisfaction", value)
                               }
                             >
                               <SelectTrigger>
@@ -1750,15 +1837,9 @@ export default function Offboarding() {
                               {t("hiring.offboarding.exit.manager")}
                             </Label>
                             <Select
-                              value={
-                                selectedCase.exitInterview.managerRelationship
-                              }
+                              value={exitInterviewDraft?.managerRelationship || ""}
                               onValueChange={(value) =>
-                                updateExitInterview(
-                                  selectedCase.id!,
-                                  "managerRelationship",
-                                  value,
-                                )
+                                updateExitInterviewDraft("managerRelationship", value)
                               }
                             >
                               <SelectTrigger>
@@ -1799,13 +1880,9 @@ export default function Offboarding() {
                               placeholder={t(
                                 "hiring.offboarding.exit.reasonPlaceholder",
                               )}
-                              value={selectedCase.exitInterview.primaryReason}
+                              value={exitInterviewDraft?.primaryReason || ""}
                               onChange={(e) =>
-                                updateExitInterview(
-                                  selectedCase.id!,
-                                  "primaryReason",
-                                  e.target.value,
-                                )
+                                updateExitInterviewDraft("primaryReason", e.target.value)
                               }
                               rows={2}
                             />
@@ -1816,13 +1893,9 @@ export default function Offboarding() {
                               {t("hiring.offboarding.exit.recommend")}
                             </Label>
                             <Select
-                              value={selectedCase.exitInterview.wouldRecommend}
+                              value={exitInterviewDraft?.wouldRecommend || ""}
                               onValueChange={(value) =>
-                                updateExitInterview(
-                                  selectedCase.id!,
-                                  "wouldRecommend",
-                                  value,
-                                )
+                                updateExitInterviewDraft("wouldRecommend", value)
                               }
                             >
                               <SelectTrigger>
@@ -1860,15 +1933,9 @@ export default function Offboarding() {
                               placeholder={t(
                                 "hiring.offboarding.exit.commentsPlaceholder",
                               )}
-                              value={
-                                selectedCase.exitInterview.additionalComments
-                              }
+                              value={exitInterviewDraft?.additionalComments || ""}
                               onChange={(e) =>
-                                updateExitInterview(
-                                  selectedCase.id!,
-                                  "additionalComments",
-                                  e.target.value,
-                                )
+                                updateExitInterviewDraft("additionalComments", e.target.value)
                               }
                               rows={2}
                             />
@@ -1876,23 +1943,25 @@ export default function Offboarding() {
                         </div>
                       </div>
 
-                      {/* Every field above persists as it is edited (checklist,
-                          exit interview, equipment, Art. 56 each have their own
-                          mutation) — there is no draft state to save. */}
+                      <p className="text-xs text-muted-foreground">
+                        Complete the interview once. Draft answers stay on this device until you submit.
+                      </p>
                       <div className="flex gap-3">
                         <Button
-                          onClick={() =>
-                            updateChecklist(
-                              selectedCase.id!,
-                              "exitInterviewCompleted",
-                              true,
-                            )
-                          }
+                          onClick={completeExitInterview}
                           className="flex-1 disabled:opacity-50"
                           disabled={
-                            getChecklistProgress(selectedCase.checklist) === 100
+                            completeExitInterviewMutation.isPending ||
+                            selectedCase.checklist.exitInterviewCompleted ||
+                            !exitInterviewDraft ||
+                            (selectedCase.departureReason !== "death" &&
+                              (!exitInterviewDraft.overallSatisfaction.trim() ||
+                                !exitInterviewDraft.primaryReason.trim()))
                           }
                         >
+                          {completeExitInterviewMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
                           {t("hiring.offboarding.actions.completeExit")}
                         </Button>
                       </div>

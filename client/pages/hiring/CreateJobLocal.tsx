@@ -46,7 +46,7 @@ import {
   type PermanentProbationOption,
 } from "@/lib/probation";
 import { polishJobDescription } from "@/lib/aiAssist";
-import { jobPrivateDetailsService } from "@/services/jobPrivateDetailsService";
+import { compareMoney, roundMoney } from "@/lib/currency";
 
 interface CreateJobFormData {
   title: string;
@@ -59,6 +59,10 @@ interface CreateJobFormData {
   contractType: ContractType;
   contractDurationMonths: string;
   permanentProbation: PermanentProbationOption;
+}
+
+function parseSalary(value: string): number {
+  return value.trim() ? roundMoney(Number(value)) : 0;
 }
 
 export default function CreateJobLocal() {
@@ -117,6 +121,24 @@ export default function CreateJobLocal() {
       newErrors.contractDurationMonths = "Required for fixed-term contracts";
     }
 
+    const salaryMin = Number(formData.salaryMin);
+    const salaryMax = Number(formData.salaryMax);
+    if (formData.salaryMin && (!Number.isFinite(salaryMin) || salaryMin < 0)) {
+      newErrors.salaryMin = "Enter a valid minimum salary";
+    }
+    if (formData.salaryMax && (!Number.isFinite(salaryMax) || salaryMax < 0)) {
+      newErrors.salaryMax = "Enter a valid maximum salary";
+    }
+    if (
+      formData.salaryMin &&
+      formData.salaryMax &&
+      Number.isFinite(salaryMin) &&
+      Number.isFinite(salaryMax) &&
+      compareMoney(roundMoney(salaryMax), roundMoney(salaryMin)) < 0
+    ) {
+      newErrors.salaryMax = "Maximum salary must be at least the minimum";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -134,30 +156,42 @@ export default function CreateJobLocal() {
     }
 
     const months = parseFloat(formData.contractDurationMonths);
+    const selectedDepartment = departments.find(
+      (department) => department.id === formData.department,
+    );
+    if (!selectedDepartment) {
+      setErrors((current) => ({ ...current, department: "Choose a valid department" }));
+      return;
+    }
     const publicJobData = {
       title: formData.title,
       description: formData.description,
-      department: formData.department,
+      department: selectedDepartment.name,
+      departmentId: selectedDepartment.id,
       location: formData.location,
       employmentType: formData.employmentType,
       status: "open" as const,
-      salaryMin: formData.salaryMin ? parseInt(formData.salaryMin, 10) : 0,
-      salaryMax: formData.salaryMax ? parseInt(formData.salaryMax, 10) : 0,
+      salaryMin: parseSalary(formData.salaryMin),
+      salaryMax: parseSalary(formData.salaryMax),
     };
     try {
-      const jobId = await createJobMutation.mutateAsync(publicJobData);
-      await jobPrivateDetailsService.saveForJob(tenantId, jobId, {
-        contractType: formData.contractType,
-        contractDuration:
-          formData.contractType === "Fixed-Term" && formData.contractDurationMonths
-            ? `${formData.contractDurationMonths} months`
-            : "",
-        contractDurationMonths:
-          formData.contractType === "Fixed-Term" && Number.isFinite(months) ? months : undefined,
-        permanentProbation:
-          formData.contractType === "Permanent" ? formData.permanentProbation : undefined,
-        probationDays: probation.days,
-        probationPeriod: probation.label,
+      const jobId = await createJobMutation.mutateAsync({
+        job: publicJobData,
+        privateDetails: {
+          contractType: formData.contractType,
+          contractDuration:
+            formData.contractType === "Fixed-Term" && formData.contractDurationMonths
+              ? `${formData.contractDurationMonths} months`
+              : "",
+          contractDurationMonths:
+            formData.contractType === "Fixed-Term" && Number.isFinite(months)
+              ? months
+              : undefined,
+          permanentProbation:
+            formData.contractType === "Permanent" ? formData.permanentProbation : undefined,
+          probationDays: probation.days,
+          probationPeriod: probation.label,
+        },
       });
       setCreatedJobId(jobId);
       toast({
@@ -487,12 +521,17 @@ export default function CreateJobLocal() {
                         <Input
                           id="salaryMin"
                           type="number"
+                          min="0"
+                          step="0.01"
                           value={formData.salaryMin}
                           onChange={(e) => handleInputChange("salaryMin", e.target.value)}
                           placeholder="0"
                           className="pl-7"
                         />
                       </div>
+                      {errors.salaryMin && (
+                        <p className="text-sm text-destructive">{errors.salaryMin}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="salaryMax" className="text-sm font-medium">
@@ -505,12 +544,17 @@ export default function CreateJobLocal() {
                         <Input
                           id="salaryMax"
                           type="number"
+                          min="0"
+                          step="0.01"
                           value={formData.salaryMax}
                           onChange={(e) => handleInputChange("salaryMax", e.target.value)}
                           placeholder="0"
                           className="pl-7"
                         />
                       </div>
+                      {errors.salaryMax && (
+                        <p className="text-sm text-destructive">{errors.salaryMax}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -719,8 +763,8 @@ export default function CreateJobLocal() {
           title: formData.title,
           department: departments.find((d) => d.id === formData.department)?.name,
           location: formData.location,
-          salaryMin: formData.salaryMin ? parseInt(formData.salaryMin, 10) : undefined,
-          salaryMax: formData.salaryMax ? parseInt(formData.salaryMax, 10) : undefined,
+          salaryMin: formData.salaryMin ? parseSalary(formData.salaryMin) : undefined,
+          salaryMax: formData.salaryMax ? parseSalary(formData.salaryMax) : undefined,
           employmentType: formData.employmentType,
         }}
         companyName={companyName}

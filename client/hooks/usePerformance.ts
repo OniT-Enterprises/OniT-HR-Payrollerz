@@ -6,7 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import { reviewService, type PerformanceReview, type ReviewFilters } from '@/services/reviewService';
-import { goalsService, type OKR, type Goal, type OKRFilters, type GoalFilters } from '@/services/goalsService';
+import { goalsService, type OKR, type Goal, type OKRFilters, type GoalFilters, type MilestoneStatus } from '@/services/goalsService';
 import { disciplinaryService, type DisciplinaryRecord } from '@/services/disciplinaryService';
 import { trainingService, type TrainingRecord } from '@/services/trainingService';
 
@@ -223,6 +223,25 @@ export function useUpdateGoal() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Goal> }) =>
       goalsService.updateGoal(tenantId, id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: goalKeys.all(tenantId) });
+    },
+  });
+}
+
+export function useUpdateMilestone() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({
+      goalId,
+      milestoneId,
+      status,
+    }: {
+      goalId: string;
+      milestoneId: string;
+      status: MilestoneStatus;
+    }) => goalsService.updateMilestone(tenantId, goalId, milestoneId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: goalKeys.all(tenantId) });
     },

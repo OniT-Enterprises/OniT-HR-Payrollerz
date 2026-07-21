@@ -50,7 +50,6 @@ import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
-import { candidateService } from "@/services/candidateService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
@@ -106,6 +105,18 @@ const normalizeEmploymentType = (value: string): "Full-time" | "Part-time" | "Co
   return map[value.toLowerCase()] || 'Full-time';
 };
 
+function addCalendarDays(date: string, days: number): string {
+  const value = new Date(`${date}T12:00:00`);
+  value.setDate(value.getDate() + days);
+  return toDateStringTL(value);
+}
+
+function addCalendarMonths(date: string, months: number): string {
+  const value = new Date(`${date}T12:00:00`);
+  value.setMonth(value.getMonth() + months);
+  return toDateStringTL(value);
+}
+
 export default function AddEmployee() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -159,6 +170,7 @@ export default function AddEmployee() {
     handleSubmit,
     watch,
     reset,
+    setValue,
     trigger,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
@@ -172,20 +184,22 @@ export default function AddEmployee() {
       appEligible: false,
       emergencyContactName: "",
       emergencyContactPhone: "",
-      department: "",
+      department: searchParams.get("department") || "",
       jobTitle: searchParams.get("jobTitle") || "",
       manager: "",
       projectCode: "",
       fundingSource: "",
       startDate: "",
-      employmentType: "Full-time",
+      employmentType: normalizeEmploymentType(
+        searchParams.get("employmentType") || "Full-time",
+      ),
       contractedWeeklyHours: "",
       minimumWageTreatment: undefined,
       minimumWageReviewNote: "",
       contractEndDate: "",
       probationEndDate: "",
       fixedTermMotive: "",
-      salary: "",
+      salary: searchParams.get("salary") || "",
       leaveDays: "12",
       benefits: "standard",
       payFrequency: "monthly",
@@ -196,6 +210,39 @@ export default function AddEmployee() {
 
   // Watch form values for canProceed logic
   const formValues = watch();
+
+  useEffect(() => {
+    if (!isHiringHandoff || !formValues.startDate) return;
+    const probationDays = Number(searchParams.get("probationDays") || 0);
+    const durationMonths = Number(
+      searchParams.get("contractDurationMonths") || 0,
+    );
+    if (probationDays > 0 && !formValues.probationEndDate) {
+      setValue(
+        "probationEndDate",
+        addCalendarDays(formValues.startDate, probationDays),
+        { shouldValidate: true },
+      );
+    }
+    if (
+      searchParams.get("contractType") === "Fixed-Term" &&
+      durationMonths > 0 &&
+      !formValues.contractEndDate
+    ) {
+      setValue(
+        "contractEndDate",
+        addCalendarMonths(formValues.startDate, durationMonths),
+        { shouldValidate: true },
+      );
+    }
+  }, [
+    formValues.contractEndDate,
+    formValues.probationEndDate,
+    formValues.startDate,
+    isHiringHandoff,
+    searchParams,
+    setValue,
+  ]);
 
   // Lei 4/2012: light-work minor (15-16 at hire date — Art. 69 warning) and
   // fixed-term detection (drives the Art. 12(2) motive select). The under-15
@@ -535,6 +582,9 @@ export default function AddEmployee() {
   const onFormSubmit = async (data: AddEmployeeFormData) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    const uploadedThisSave: string[] = [];
+    const supersededAfterSave: string[] = [];
+    let employeeRecordSaved = false;
 
     try {
       let savedEmployeeId = editingEmployee?.id || "";
@@ -620,18 +670,25 @@ export default function AddEmployee() {
           electoralCard: { number: docValues.electoralCard?.number || "", expiryDate: docValues.electoralCard?.expiryDate || "", required: false },
           idCard: { number: "", expiryDate: "", required: false },
           passport: { number: docValues.passport?.number || "", expiryDate: docValues.passport?.expiryDate || "", required: !isTimorese },
-          workContract: { fileUrl: "", uploadDate: new Date().toISOString() },
+          workContract: {
+            fileUrl: editingEmployee?.documents.workContract.fileUrl || "",
+            uploadDate:
+              editingEmployee?.documents.workContract.uploadDate ||
+              new Date().toISOString(),
+          },
           nationality: additionalInfo.nationality,
           residencyStatus: additionalInfo.residencyStatus,
           workingVisaResidency: {
             number: additionalInfo.workingVisaNumber,
             expiryDate: additionalInfo.workingVisaExpiry,
-            fileUrl: "",
+            fileUrl:
+              editingEmployee?.documents.workingVisaResidency.fileUrl || "",
           },
           sefopeWorkPermit: !isTimorese ? {
             number: additionalInfo.sefopePermitNumber,
             expiryDate: additionalInfo.sefopePermitExpiry,
-            fileUrl: "",
+            fileUrl:
+              editingEmployee?.documents.sefopeWorkPermit?.fileUrl || "",
           } : undefined,
         },
         isForeignWorker: !isTimorese,
@@ -641,13 +698,20 @@ export default function AddEmployee() {
       };
 
       // Upload files if they exist
-      const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id! : doc(collection(db, paths.employees(tenantId))).id;
+      const employeeIdForUpload = isEditMode && editingEmployee
+        ? editingEmployee.id!
+        : hiringApplicationId || doc(collection(db, paths.employees(tenantId))).id;
       const failedUploads: string[] = [];
 
       if (additionalInfo.workContract) {
         try {
           const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workContract, tenantId, employeeIdForUpload, "workContract");
+          uploadedThisSave.push(url);
+          if (editingEmployee?.documents.workContract.fileUrl) {
+            supersededAfterSave.push(editingEmployee.documents.workContract.fileUrl);
+          }
           newEmployee.documents.workContract.fileUrl = url;
+          newEmployee.documents.workContract.uploadDate = new Date().toISOString();
         } catch (e) {
           console.error("Work contract upload failed:", e);
           failedUploads.push(t("addEmployee.documents.workContract") || "work contract");
@@ -657,6 +721,10 @@ export default function AddEmployee() {
       if (additionalInfo.workingVisaFile) {
         try {
           const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workingVisaFile, tenantId, employeeIdForUpload, "workingVisa");
+          uploadedThisSave.push(url);
+          if (editingEmployee?.documents.workingVisaResidency.fileUrl) {
+            supersededAfterSave.push(editingEmployee.documents.workingVisaResidency.fileUrl);
+          }
           newEmployee.documents.workingVisaResidency.fileUrl = url;
         } catch (e) {
           console.error("Visa upload failed:", e);
@@ -667,6 +735,10 @@ export default function AddEmployee() {
       if (additionalInfo.sefopePermitFile && newEmployee.documents.sefopeWorkPermit) {
         try {
           const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.sefopePermitFile, tenantId, employeeIdForUpload, "sefopePermit");
+          uploadedThisSave.push(url);
+          if (editingEmployee?.documents.sefopeWorkPermit?.fileUrl) {
+            supersededAfterSave.push(editingEmployee.documents.sefopeWorkPermit.fileUrl);
+          }
           newEmployee.documents.sefopeWorkPermit.fileUrl = url;
         } catch (e) {
           console.error("SEFOPE permit upload failed:", e);
@@ -710,6 +782,7 @@ export default function AddEmployee() {
           } : undefined,
         );
         savedEmployeeId = editingEmployee.id!;
+        employeeRecordSaved = true;
         toast({
           title: t("addEmployee.toast.updatedTitle"),
           description: t("addEmployee.toast.updatedDesc", {
@@ -727,9 +800,17 @@ export default function AddEmployee() {
             userName: user.displayName || undefined,
           } : undefined,
           employeeIdForUpload,
+          hiringApplicationId
+            ? {
+                applicationId: hiringApplicationId,
+                candidateId: hiringCandidateId || undefined,
+                jobId: hiringJobId || undefined,
+              }
+            : undefined,
         );
         if (!id) throw new Error("Failed to save");
         savedEmployeeId = id;
+        employeeRecordSaved = true;
         toast({
           title: t("addEmployee.toast.addedTitle"),
           description: t("addEmployee.toast.addedDesc", {
@@ -761,6 +842,16 @@ export default function AddEmployee() {
         }
       }
 
+      // Firestore now points at the replacement files, so old objects can be
+      // removed without risking a broken employee record if deletion fails.
+      await Promise.all(
+        supersededAfterSave.map((url) =>
+          fileUploadService.deleteFile(url).catch((cleanupError) => {
+            console.warn("Could not remove superseded employee document:", cleanupError);
+          }),
+        ),
+      );
+
       if (failedUploads.length > 0) {
         toast({
           title: t("addEmployee.toast.uploadWarningTitle") || "Document upload failed",
@@ -791,13 +882,6 @@ export default function AddEmployee() {
       }
 
       if (isHiringHandoff && savedEmployeeId) {
-        if (hiringCandidateId) {
-          try {
-            await candidateService.updateCandidate(tenantId, hiringCandidateId, { status: "Hired" });
-          } catch (candidateError) {
-            console.error("Candidate status update failed:", candidateError);
-          }
-        }
         const params = new URLSearchParams({ employeeId: savedEmployeeId });
         if (hiringCandidateId) params.set("candidateId", hiringCandidateId);
         if (hiringJobId) params.set("jobId", hiringJobId);
@@ -806,10 +890,20 @@ export default function AddEmployee() {
         navigate("/people/employees");
       }
     } catch (error) {
+      if (!employeeRecordSaved) {
+        await Promise.all(
+          uploadedThisSave.map((url) =>
+            fileUploadService.deleteFile(url).catch((cleanupError) => {
+              console.warn("Could not clean up an unlinked employee document:", cleanupError);
+            }),
+          ),
+        );
+      }
       console.error("Error saving employee:", error);
       toast({
         title: t("addEmployee.toast.errorTitle"),
-        description: t("addEmployee.toast.saveFailed"),
+        description:
+          error instanceof Error ? error.message : t("addEmployee.toast.saveFailed"),
         variant: "destructive",
       });
     } finally {

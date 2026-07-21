@@ -351,7 +351,7 @@ export const peopleRoutes = (
 
     {/* Hub redirects → straight to first sub-page */}
     <Route path="/people/hiring" element={<Navigate to="/people/jobs" replace />} />
-    <Route path="/people/performance" element={<Navigate to="/people/reviews" replace />} />
+    <Route path="/people/performance" element={<Navigate to="/people/goals" replace />} />
 
     {/* Staff */}
     <Route
@@ -381,7 +381,7 @@ export const peopleRoutes = (
     <Route
       path="/people/grievances"
       element={
-        <FeatureRoute requiredModule="staff">
+        <FeatureRoute requiredModule="staff" requireHrAdmin>
           <GrievanceInbox />
         </FeatureRoute>
       }
@@ -410,7 +410,7 @@ export const peopleRoutes = (
     <Route
       path="/people/onboarding"
       element={
-        <FeatureRoute requiredModule="staff" requireManage>
+        <FeatureRoute requiredModule="staff" requireHrAdmin>
           <Onboarding />
         </FeatureRoute>
       }
@@ -418,7 +418,7 @@ export const peopleRoutes = (
     <Route
       path="/people/offboarding"
       element={
-        <FeatureRoute requiredModule="staff" requireManage>
+        <FeatureRoute requiredModule="staff" requireHrAdmin>
           <Offboarding />
         </FeatureRoute>
       }
@@ -428,7 +428,7 @@ export const peopleRoutes = (
     <Route
       path="/people/goals"
       element={
-        <FeatureRoute requiredModule="performance">
+        <FeatureRoute requiredModule="performance" requireHrAdmin>
           <Goals />
         </FeatureRoute>
       }
@@ -436,7 +436,7 @@ export const peopleRoutes = (
     <Route
       path="/people/reviews"
       element={
-        <FeatureRoute requiredModule="performance">
+        <FeatureRoute requiredModule="performance" requireHrAdmin>
           <Reviews />
         </FeatureRoute>
       }
@@ -444,7 +444,7 @@ export const peopleRoutes = (
     <Route
       path="/people/training"
       element={
-        <FeatureRoute requiredModule="performance">
+        <FeatureRoute requiredModule="performance" requireHrAdmin>
           <TrainingCertifications />
         </FeatureRoute>
       }
@@ -452,7 +452,7 @@ export const peopleRoutes = (
     <Route
       path="/people/disciplinary"
       element={
-        <FeatureRoute requiredModule="performance">
+        <FeatureRoute requiredModule="performance" requireHrAdmin>
           <Disciplinary />
         </FeatureRoute>
       }

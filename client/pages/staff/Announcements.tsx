@@ -83,7 +83,7 @@ interface Announcement {
   createdAt: Date;
   createdBy: string;
   createdByName: string;
-  readBy?: Record<string, boolean>;
+  readBy?: Record<string, unknown>;
 }
 
 interface AnnouncementFormData {
@@ -109,10 +109,17 @@ export default function Announcements() {
   const tenantId = useTenantId();
   const { session } = useTenant();
   const { user } = useAuth();
+  const canAdminister = session?.role === "owner" || session?.role === "hr-admin";
 
   const queryClient = useQueryClient();
 
-  const { data: announcements = [], isLoading: loading } = useQuery({
+  const {
+    data: announcements = [],
+    isLoading: loading,
+    isError,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["announcements", tenantId],
     queryFn: async () => {
       const ref = collection(db, `tenants/${tenantId}/announcements`);
@@ -177,11 +184,13 @@ export default function Announcements() {
   };
 
   const openCreateDialog = () => {
+    if (!canAdminister) return;
     resetForm();
     setShowDialog(true);
   };
 
   const openEditDialog = (announcement: Announcement) => {
+    if (!canAdminister) return;
     setEditingAnnouncement(announcement);
     setFormData({
       title: announcement.title,
@@ -405,10 +414,10 @@ export default function Announcements() {
             icon={Megaphone}
             iconColor="text-blue-500"
             actions={
-              <Button size="lg" disabled>
+              canAdminister ? <Button size="lg" disabled>
                 <Plus className="h-5 w-5 mr-2" />
                 {t("announcements.new")}
-              </Button>
+              </Button> : undefined
             }
           />
 
@@ -447,7 +456,9 @@ export default function Announcements() {
                   <TableHead className="w-[100px]">{t("announcements.table.pinned")}</TableHead>
                   <TableHead className="w-[150px]">{t("announcements.table.created")}</TableHead>
                   <TableHead className="w-[120px] text-center">{t("announcements.table.readCount")}</TableHead>
-                  <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
+                  {canAdminister && (
+                    <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -469,17 +480,43 @@ export default function Announcements() {
                     <TableCell className="text-center">
                       <Skeleton className="h-5 w-8 rounded-full mx-auto" />
                     </TableCell>
-                    <TableCell className="text-right">
+                    {canAdminister && <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-8 w-16" />
                         <Skeleton className="h-8 w-16" />
                       </div>
-                    </TableCell>
+                    </TableCell>}
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("announcements.title")}
+            subtitle={t("announcements.subtitle")}
+            icon={Megaphone}
+            iconColor="text-blue-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium">Could not load announcements</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Check your connection and try again.
+              </p>
+              <Button className="mt-4" disabled={isFetching} onClick={() => void refetch()}>
+                {isFetching ? "Trying again…" : "Try again"}
+              </Button>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -497,10 +534,10 @@ export default function Announcements() {
           icon={Megaphone}
           iconColor="text-blue-500"
           actions={
-            <Button onClick={openCreateDialog} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+            canAdminister ? <Button onClick={openCreateDialog} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
               <Plus className="h-5 w-5 mr-2" />
               {t("announcements.new")}
-            </Button>
+            </Button> : undefined
           }
         />
 
@@ -513,10 +550,10 @@ export default function Announcements() {
               <p className="text-muted-foreground mb-4">
                 {t("announcements.empty.description")}
               </p>
-              <Button onClick={openCreateDialog} variant="outline">
+              {canAdminister && <Button onClick={openCreateDialog} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 {t("announcements.new")}
-              </Button>
+              </Button>}
             </CardContent>
           </Card>
         ) : (
@@ -550,7 +587,7 @@ export default function Announcements() {
                       <span>{announcement.createdByName}</span>
                       <span>{t("announcements.table.readCount")}: {getReadCount(announcement)}</span>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    {canAdminister && <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleTogglePin(announcement)}>
                         {announcement.pinned ? (
                           <PinOff className="h-4 w-4 mr-1.5" />
@@ -572,7 +609,7 @@ export default function Announcements() {
                         <Trash2 className="h-4 w-4 mr-1.5" />
                         {t("common.delete")}
                       </Button>
-                    </div>
+                    </div>}
                   </CardContent>
                 </Card>
               ))}
@@ -587,7 +624,9 @@ export default function Announcements() {
                     {sortableHead("pinned", t("announcements.table.pinned"), "left", "w-[100px]")}
                     {sortableHead("created", t("announcements.table.created"), "left", "w-[150px]")}
                     {sortableHead("readCount", t("announcements.table.readCount"), "left", "w-[120px] text-center")}
-                    <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
+                    {canAdminister && (
+                      <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -624,7 +663,7 @@ export default function Announcements() {
                       <TableCell className="text-center">
                         <Badge variant="secondary">{getReadCount(announcement)}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      {canAdminister && <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleTogglePin(announcement)}>
                             {announcement.pinned ? (
@@ -648,7 +687,7 @@ export default function Announcements() {
                             {t("common.delete")}
                           </Button>
                         </div>
-                      </TableCell>
+                      </TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>

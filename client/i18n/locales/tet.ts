@@ -90,6 +90,7 @@ const messages = {
     optional: "Opsional",
     phone: "Telefone",
     save: "Rai",
+    saved: "Rai ona",
     saving: "Rai hela...",
     success: "Susesu",
     view: "Hare",

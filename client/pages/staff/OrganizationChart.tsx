@@ -16,15 +16,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
-  Users,
-  Crown,
   User,
   Database,
   Plus,
   Edit,
   Building2,
-  UserCheck,
-  GraduationCap,
+  AlertTriangle,
 } from "lucide-react";
 
 interface OrgPerson {
@@ -40,17 +37,19 @@ interface DepartmentGroup {
   name: string;
   head: OrgPerson;
   members: OrgPerson[];
+  hiddenMembers: number;
 }
 
 export default function OrganizationChart() {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [_departments, setDepartments] = useState<Department[]>([]);
   const [executives, setExecutives] = useState<OrgPerson[]>([]);
   const [departmentGroups, setDepartmentGroups] = useState<DepartmentGroup[]>(
     [],
   );
+  const [departmentCount, setDepartmentCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
   const { toast } = useToast();
@@ -61,7 +60,7 @@ export default function OrganizationChart() {
     (employeesData: Employee[], departmentsData: Department[]) => {
       const employeesByDept = employeesData.reduce(
         (acc, emp) => {
-          const deptName = emp.jobDetails.department;
+          const deptName = emp.jobDetails.department?.trim() || "Unassigned";
           if (!acc[deptName]) acc[deptName] = [];
           acc[deptName].push(emp);
           return acc;
@@ -140,8 +139,27 @@ export default function OrganizationChart() {
 
       // 2. Build Department Groups (5 max, horizontal)
       const deptGroups: DepartmentGroup[] = [];
+      const configuredNames = new Set(
+        departmentsData.map((department) => department.name),
+      );
+      const inferredDepartments: Department[] = Object.keys(employeesByDept)
+        .filter((name) => !configuredNames.has(name))
+        .map((name) => ({
+          id: `inferred-${name}`,
+          tenantId,
+          name,
+          createdAt: new Date(0),
+          updatedAt: new Date(0),
+        }));
+      const allDepartments = [...departmentsData, ...inferredDepartments].sort(
+        (a, b) =>
+          (employeesByDept[b.name]?.length || 0) -
+            (employeesByDept[a.name]?.length || 0) ||
+          a.name.localeCompare(b.name),
+      );
+      setDepartmentCount(allDepartments.length);
 
-      departmentsData.slice(0, 5).forEach((dept) => {
+      allDepartments.slice(0, 5).forEach((dept) => {
         const deptEmployees = employeesByDept[dept.name] || [];
 
         // Find department head
@@ -188,112 +206,48 @@ export default function OrganizationChart() {
         }
 
         // Find team members (limit to 6 for clean layout)
-        const members = deptEmployees
-          .filter((emp) => !usedIds.has(emp.id!))
-          .slice(0, 6)
-          .map((emp) => {
-            usedIds.add(emp.id!);
-            return {
-              id: `member-${emp.id}`,
-              name: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-              title: emp.jobDetails.position,
-              department: dept.name,
-              employee: emp,
-            };
-          });
+        const availableMembers = deptEmployees.filter(
+          (emp) => !usedIds.has(emp.id!),
+        );
+        const members = availableMembers.slice(0, 6).map((emp) => {
+          usedIds.add(emp.id!);
+          return {
+            id: `member-${emp.id}`,
+            name: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+            title: emp.jobDetails.position,
+            department: dept.name,
+            employee: emp,
+          };
+        });
 
         deptGroups.push({
           id: dept.id,
           name: dept.name,
           head: headPerson,
           members,
+          hiddenMembers: Math.max(0, availableMembers.length - members.length),
         });
       });
 
       setDepartmentGroups(deptGroups);
     },
-    [t],
-  );
-
-  const migrateMissingDepartments = useCallback(
-    async (employees: Employee[], existingDepartments: Department[]) => {
-      try {
-        // Only run migration if NO departments exist but we have employees with department assignments
-        if (existingDepartments.length > 0 || employees.length === 0) {
-          return;
-        }
-
-        const employeeDepartments = [
-          ...new Set(employees.map((emp) => emp.jobDetails.department)),
-        ];
-        const validDepartments = employeeDepartments.filter(
-          (deptName) => deptName && deptName.trim(),
-        );
-
-        if (validDepartments.length > 0) {
-          // Add departments one by one with individual error handling
-          for (const deptName of validDepartments) {
-            try {
-              await departmentService.addDepartment(tenantId, {
-                name: deptName,
-                icon: "building",
-                shape: "circle",
-                color: "#3B82F6",
-              });
-            } catch {
-              // Continue with other departments even if one fails
-            }
-          }
-
-          // Try to reload departments after migration
-          try {
-            const updatedDepartments =
-              await departmentService.getAllDepartments(tenantId);
-            setDepartments(updatedDepartments);
-            buildAppleOrgChart(employees, updatedDepartments);
-          } catch {
-            // Continue with existing data
-          }
-        }
-      } catch {
-        // Don't throw the error - just continue
-      }
-    },
-    [tenantId, buildAppleOrgChart],
+    [t, tenantId],
   );
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Load data with individual error handling for better resilience
-      let employeesData: Employee[] = [];
-      let departmentsData: Department[] = [];
-
-      // Load from Firebase services
-      try {
-        employeesData = await employeeService.getAllEmployees(tenantId);
-        departmentsData = await departmentService.getAllDepartments(tenantId);
-      } catch {
-        employeesData = [];
-        departmentsData = [];
-      }
+      setLoadError(false);
+      const [employeesData, departmentsData] = await Promise.all([
+        employeeService.getAllEmployees(tenantId),
+        departmentService.getAllDepartments(tenantId),
+      ]);
 
       setEmployees(employeesData);
-      setDepartments(departmentsData);
-
-      // Only attempt migration if we have some data
-      if (employeesData.length > 0 || departmentsData.length > 0) {
-        try {
-          await migrateMissingDepartments(employeesData, departmentsData);
-        } catch {
-          // Migration failed, continue without it
-        }
-      }
-
       buildAppleOrgChart(employeesData, departmentsData);
+      return true;
     } catch (error) {
-      // Provide user-friendly error message
+      setLoadError(true);
       const errorMessage =
         error instanceof Error
           ? error.message.includes("network") || error.message.includes("fetch")
@@ -307,15 +261,11 @@ export default function OrganizationChart() {
         variant: "destructive",
         duration: 6000,
       });
-
-      // Set empty data so the component can still render
-      setEmployees([]);
-      setDepartments([]);
-      buildAppleOrgChart([], []);
+      return false;
     } finally {
       setLoading(false);
     }
-  }, [tenantId, toast, t, migrateMissingDepartments, buildAppleOrgChart]);
+  }, [tenantId, toast, t, buildAppleOrgChart]);
 
   useEffect(() => {
     loadData();
@@ -323,11 +273,12 @@ export default function OrganizationChart() {
 
   const handleDepartmentChange = async () => {
     // Reload data when departments are changed
-    await loadData();
-    toast({
-      title: t("orgChart.toast.refreshedTitle"),
-      description: t("orgChart.toast.refreshedDesc"),
-    });
+    if (await loadData()) {
+      toast({
+        title: t("orgChart.toast.refreshedTitle"),
+        description: t("orgChart.toast.refreshedDesc"),
+      });
+    }
   };
 
   if (loading) {
@@ -351,23 +302,6 @@ export default function OrganizationChart() {
               </div>
             </div>
             <Skeleton className="mt-3 h-0.5 w-full rounded-full" />
-          </div>
-
-          {/* Statistics skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="border-border/50 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-8 w-12" />
-                    </div>
-                    <Skeleton className="h-11 w-11 rounded-xl" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
 
           {/* Org chart skeleton */}
@@ -413,6 +347,35 @@ export default function OrganizationChart() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.orgChart} />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("orgChart.title")}
+            subtitle={
+              t("orgChart.subtitle") || "Visualize your company structure"
+            }
+            icon={Building2}
+            iconColor="text-blue-500"
+          />
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                {t("orgChart.toast.loadFailed")}
+              </p>
+              <Button variant="outline" onClick={() => void loadData()}>
+                {t("common.retry")}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.orgChart} />
@@ -450,106 +413,6 @@ export default function OrganizationChart() {
             </>
           }
         />
-        {/* Statistics Dashboard */}
-        {employees.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("orgChart.stats.executives")}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {executives.length}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-purple-500 rounded-xl">
-                    <Crown className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("orgChart.stats.managers")}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {
-                        employees.filter(
-                          (emp) =>
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("manager") ||
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("director") ||
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("head"),
-                        ).length
-                      }
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-blue-500 rounded-xl">
-                    <UserCheck className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("orgChart.stats.seniorStaff")}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {
-                        employees.filter(
-                          (emp) =>
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("senior") ||
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("lead") ||
-                            emp.jobDetails.position
-                              .toLowerCase()
-                              .includes("principal"),
-                        ).length
-                      }
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-cyan-600 rounded-xl">
-                    <GraduationCap className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("orgChart.stats.totalEmployees")}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {employees.length}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-indigo-500 rounded-xl">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         {employees.length === 0 ? (
           <Card className="border-border/50">
             <CardContent className="text-center py-16">
@@ -573,6 +436,15 @@ export default function OrganizationChart() {
           </Card>
         ) : (
           <div className="space-y-8">
+            {departmentCount > departmentGroups.length && (
+              <Button
+                variant="link"
+                className="h-auto w-fit px-0"
+                onClick={() => navigate("/people/employees")}
+              >
+                {t("employees.title")}
+              </Button>
+            )}
             {/* Apple-Style Organization Chart */}
             <Card className="border-border/50 shadow-lg overflow-x-auto">
               <CardContent className="p-12 min-w-max">
@@ -705,6 +577,18 @@ export default function OrganizationChart() {
                                     </div>
                                   ))}
                                 </div>
+                                {group.hiddenMembers > 0 && (
+                                  <Button
+                                    variant="link"
+                                    size="sm"
+                                    className="h-auto px-2 text-xs"
+                                    onClick={() =>
+                                      navigate("/people/employees")
+                                    }
+                                  >
+                                    {group.hiddenMembers} {t("common.more")}
+                                  </Button>
+                                )}
                               </div>
                             )}
                           </div>

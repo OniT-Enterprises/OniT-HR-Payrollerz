@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  runTransaction,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -464,7 +465,7 @@ class GoalsService {
         tenantId,
         milestones,
         progress,
-        status: 'active' as GoalStatus,
+        status: (progress === 100 ? 'completed' : 'active') as GoalStatus,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -575,7 +576,13 @@ class GoalsService {
           }))
         );
         finalUpdates.milestones = milestones;
-        finalUpdates.progress = calculateGoalProgress(milestones);
+        const progress = calculateGoalProgress(milestones);
+        finalUpdates.progress = progress;
+        finalUpdates.status = progress === 100
+          ? 'completed'
+          : updates.status === 'paused' || (!updates.status && existing.status === 'paused')
+            ? 'paused'
+            : 'active';
       }
 
       const docRef = doc(db, GOALS_COLLECTION, goalId);
@@ -598,19 +605,33 @@ class GoalsService {
     milestoneId: string,
     status: MilestoneStatus
   ): Promise<void> {
-    const goal = await this.getGoal(tenantId, goalId);
-    if (!goal) {
-      throw new Error('Goal not found');
-    }
-
-    const updatedMilestones = goal.milestones.map((m) => {
-      if (m.id === milestoneId) {
-        return { ...m, status };
+    const goalRef = doc(db, GOALS_COLLECTION, goalId);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(goalRef);
+      if (!snapshot.exists() || snapshot.data().tenantId !== tenantId) {
+        throw new Error('Goal not found');
       }
-      return m;
+      const goal = this.mapDocToGoal(snapshot.id, snapshot.data());
+      if (!goal.milestones.some((milestone) => milestone.id === milestoneId)) {
+        throw new Error('Milestone not found');
+      }
+      const milestones = updateMilestoneStatuses(
+        goal.milestones.map((milestone) =>
+          milestone.id === milestoneId ? { ...milestone, status } : milestone,
+        ),
+      );
+      const progress = calculateGoalProgress(milestones);
+      transaction.update(goalRef, {
+        milestones,
+        progress,
+        status: progress === 100
+          ? 'completed'
+          : goal.status === 'paused'
+            ? 'paused'
+            : 'active',
+        updatedAt: serverTimestamp(),
+      });
     });
-
-    await this.updateGoal(tenantId, goalId, { milestones: updatedMilestones });
   }
 
   /**
@@ -701,7 +722,7 @@ class GoalsService {
       createdByName: data.createdByName,
       assignedTeams: data.assignedTeams || [],
       linkedOKRs: data.linkedOKRs || [],
-      milestones: data.milestones || [],
+      milestones: updateMilestoneStatuses(data.milestones || []),
       createdAt: data.createdAt instanceof Timestamp
         ? data.createdAt.toDate()
         : data.createdAt,

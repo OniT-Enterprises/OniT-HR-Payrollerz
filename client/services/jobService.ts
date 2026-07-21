@@ -3,7 +3,7 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
+  writeBatch,
   updateDoc,
   deleteDoc,
   query,
@@ -17,6 +17,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import type { JobPrivateDetails } from "@/services/jobPrivateDetailsService";
 
 export type JobStatus = "draft" | "open" | "closed" | "filled";
 
@@ -26,6 +27,7 @@ export interface Job {
   title: string;
   description?: string;
   department: string;
+  departmentId?: string;
   location?: string;
   salaryMin?: number;
   salaryMax?: number;
@@ -196,14 +198,33 @@ class JobService {
     return job;
   }
 
-  async createJob(tenantId: string, job: Omit<Job, "id" | "tenantId">): Promise<string> {
-    const docRef = await addDoc(this.collectionRef, {
+  async createJob(
+    tenantId: string,
+    job: Omit<Job, "id" | "tenantId">,
+    privateDetails?: Omit<
+      JobPrivateDetails,
+      "id" | "tenantId" | "jobId" | "createdAt" | "updatedAt"
+    >,
+  ): Promise<string> {
+    const docRef = doc(this.collectionRef);
+    const batch = writeBatch(db);
+    batch.set(docRef, {
       ...job,
       tenantId,
       postedDate: new Date().toISOString(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    if (privateDetails) {
+      batch.set(doc(db, "jobPrivateDetails", docRef.id), {
+        ...privateDetails,
+        tenantId,
+        jobId: docRef.id,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    await batch.commit();
     return docRef.id;
   }
 

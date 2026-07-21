@@ -90,6 +90,7 @@ const messages = {
     optional: "Opcional",
     phone: "Telefone",
     save: "Guardar",
+    saved: "Guardado",
     saving: "A guardar...",
     success: "Sucesso",
     view: "Ver",

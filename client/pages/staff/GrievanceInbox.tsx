@@ -56,11 +56,11 @@ import {
   collection,
   doc,
   getDocs,
-  updateDoc,
   query,
   orderBy,
   Timestamp,
   serverTimestamp,
+  writeBatch,
 } from "firebase/firestore";
 import {
   ShieldAlert,
@@ -110,6 +110,7 @@ export default function GrievanceInbox() {
 
   const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
@@ -120,11 +121,13 @@ export default function GrievanceInbox() {
 
   // Dismiss dialog
   const [dismissingGrievance, setDismissingGrievance] = useState<Grievance | null>(null);
+  const [dismissReason, setDismissReason] = useState("");
 
   const fetchGrievances = useCallback(async () => {
     if (!tenantId) return;
     try {
       setLoading(true);
+      setLoadError(false);
       const ref = collection(db, `tenants/${tenantId}/grievances`);
       const q = query(ref, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
@@ -150,6 +153,7 @@ export default function GrievanceInbox() {
       setGrievances(items);
     } catch (error) {
       console.error("Error fetching grievances:", error);
+      setLoadError(true);
       toast({
         title: "Error",
         description: "Failed to load grievances",
@@ -159,6 +163,41 @@ export default function GrievanceInbox() {
       setLoading(false);
     }
   }, [tenantId, toast]);
+
+  const saveStatus = async (
+    grievance: Grievance,
+    status: GrievanceStatus,
+    resolution?: string,
+  ) => {
+    const grievanceRef = doc(db, `tenants/${tenantId}/grievances`, grievance.id);
+    const statusRef = doc(
+      db,
+      `tenants/${tenantId}/grievanceStatuses/${grievance.ticketId}`,
+    );
+    const resolved = status === "resolved" || status === "dismissed";
+    const batch = writeBatch(db);
+    batch.update(grievanceRef, {
+      status,
+      ...(resolution ? { resolution } : {}),
+      ...(resolved ? { resolvedAt: serverTimestamp() } : {}),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(
+      statusRef,
+      {
+        tenantId,
+        ticketId: grievance.ticketId,
+        category: grievance.category,
+        status,
+        createdAt: Timestamp.fromDate(grievance.createdAt),
+        updatedAt: serverTimestamp(),
+        ...(resolution ? { resolution } : {}),
+        ...(resolved ? { resolvedAt: serverTimestamp() } : {}),
+      },
+      { merge: true },
+    );
+    await batch.commit();
+  };
 
   useEffect(() => {
     if (tenantId) {
@@ -170,11 +209,7 @@ export default function GrievanceInbox() {
     if (!tenantId) return;
 
     try {
-      const docRef = doc(db, `tenants/${tenantId}/grievances`, grievance.id);
-      await updateDoc(docRef, {
-        status: "reviewing",
-        updatedAt: serverTimestamp(),
-      });
+      await saveStatus(grievance, "reviewing");
       toast({
         title: "Success",
         description: `Grievance ${grievance.ticketId} marked as reviewing`,
@@ -213,13 +248,7 @@ export default function GrievanceInbox() {
 
     setSaving(true);
     try {
-      const docRef = doc(db, `tenants/${tenantId}/grievances`, resolvingGrievance.id);
-      await updateDoc(docRef, {
-        status: "resolved",
-        resolution: resolutionText.trim(),
-        resolvedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await saveStatus(resolvingGrievance, "resolved", resolutionText.trim());
       toast({
         title: "Success",
         description: `Grievance ${resolvingGrievance.ticketId} resolved`,
@@ -241,18 +270,23 @@ export default function GrievanceInbox() {
 
   const handleDismiss = async () => {
     if (!tenantId || !dismissingGrievance) return;
+    if (dismissReason.trim().length < 10) {
+      toast({
+        title: "Dismissal reason required",
+        description: "Add at least 10 characters so the employee can understand the outcome.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const docRef = doc(db, `tenants/${tenantId}/grievances`, dismissingGrievance.id);
-      await updateDoc(docRef, {
-        status: "dismissed",
-        updatedAt: serverTimestamp(),
-      });
+      await saveStatus(dismissingGrievance, "dismissed", dismissReason.trim());
       toast({
         title: "Success",
         description: `Grievance ${dismissingGrievance.ticketId} dismissed`,
       });
       setDismissingGrievance(null);
+      setDismissReason("");
       await fetchGrievances();
     } catch (error) {
       console.error("Error dismissing grievance:", error);
@@ -378,6 +412,32 @@ export default function GrievanceInbox() {
                 ))}
               </TableBody>
             </Table>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Grievance Inbox"
+            subtitle="Anonymous employee concerns and complaints"
+            icon={ShieldAlert}
+            iconColor="text-blue-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium">Could not load grievances</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Check your connection and try again. No reports have been removed.
+              </p>
+              <Button className="mt-4" onClick={() => void fetchGrievances()}>
+                Try again
+              </Button>
+            </CardContent>
           </Card>
         </div>
       </div>
@@ -656,7 +716,10 @@ export default function GrievanceInbox() {
       <AlertDialog
         open={!!dismissingGrievance}
         onOpenChange={(open) => {
-          if (!open) setDismissingGrievance(null);
+          if (!open) {
+            setDismissingGrievance(null);
+            setDismissReason("");
+          }
         }}
       >
         <AlertDialogContent>
@@ -668,9 +731,24 @@ export default function GrievanceInbox() {
               can be reviewed later.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="dismiss-reason">Reason shared with the employee *</Label>
+            <Textarea
+              id="dismiss-reason"
+              value={dismissReason}
+              onChange={(event) => setDismissReason(event.target.value)}
+              placeholder="Explain why no further action will be taken..."
+              maxLength={2000}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDismiss}>Dismiss</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDismiss}
+              disabled={dismissReason.trim().length < 10}
+            >
+              Dismiss
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

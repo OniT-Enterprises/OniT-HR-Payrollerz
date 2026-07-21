@@ -14,6 +14,8 @@ import {
   Trash2,
   UserCheck,
   Users,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,15 +37,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAllEmployees, employeeKeys } from "@/hooks/useEmployees";
-import { candidateService } from "@/services/candidateService";
-import { employeeService, type Employee } from "@/services/employeeService";
+import { type Employee } from "@/services/employeeService";
 import {
   onboardingService,
   type EquipmentAsset,
   type EquipmentAssetType,
   type OnboardingChecklist,
+  type OnboardingAcknowledgements,
 } from "@/services/onboardingService";
-import { getTodayTL } from "@/lib/dateUtils";
 
 const EQUIPMENT_TYPES: { value: EquipmentAssetType; label: string }[] = [
   { value: "laptop", label: "Laptop" },
@@ -60,6 +61,15 @@ const EMPTY_CHECKLIST: OnboardingChecklist = {
   contractReady: false,
   policiesExplained: false,
   firstDayReady: false,
+};
+
+const EMPTY_ACKNOWLEDGEMENTS: OnboardingAcknowledgements = {
+  dressCode: false,
+  codeOfConduct: false,
+  leavePolicy: false,
+  safetyGuidelines: false,
+  dataProtection: false,
+  handbookRead: false,
 };
 
 function employeeName(employee: Employee) {
@@ -90,7 +100,15 @@ export default function Onboarding() {
   const candidateId = searchParams.get("candidateId") || "";
   const jobId = searchParams.get("jobId") || "";
   const requestedEmployeeId = searchParams.get("employeeId") || "";
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const employeesQuery = useAllEmployees();
+  const { data: employees = [], isLoading: employeesLoading } = employeesQuery;
+
+  const onboardingCasesQuery = useQuery({
+    queryKey: ["onboarding", tenantId, "in_progress"],
+    queryFn: () => onboardingService.getCases(tenantId, "in_progress"),
+    enabled: !!tenantId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   const activeEmployees = useMemo(
     () => employees.filter((employee) => employee.status !== "terminated"),
@@ -171,6 +189,14 @@ export default function Onboarding() {
   };
 
   const save = async (status: "in_progress" | "completed") => {
+    if (existingCaseQuery.isLoading || existingCaseQuery.isError) {
+      toast({
+        title: "Wait until the existing checklist is loaded",
+        description: existingCaseQuery.isError ? "Retry loading before saving." : undefined,
+        variant: "destructive",
+      });
+      return;
+    }
     if (!selectedEmployee?.id) {
       toast({ title: "Choose an employee", variant: "destructive" });
       return;
@@ -188,7 +214,6 @@ export default function Onboarding() {
     }
 
     const manager = managers.find((employee) => employee.id === managerId);
-    const policyConfirmed = checklist.policiesExplained;
     const existingCase = existingCaseQuery.data;
     const payload = {
       candidateId: candidateId || existingCase?.candidateId,
@@ -209,15 +234,11 @@ export default function Onboarding() {
       equipment,
       benefits: existingCase?.benefits || {},
       checklist,
-      acknowledgements: {
-        dressCode: policyConfirmed,
-        codeOfConduct: policyConfirmed,
-        leavePolicy: policyConfirmed,
-        safetyGuidelines: policyConfirmed,
-        dataProtection: policyConfirmed,
-        handbookRead: policyConfirmed,
-      },
-      handbookSignatureDate: policyConfirmed ? getTodayTL() : undefined,
+      // HR confirming that policies were explained is not an employee
+      // acknowledgement or signature. Preserve genuine acknowledgements only.
+      acknowledgements:
+        existingCase?.acknowledgements || EMPTY_ACKNOWLEDGEMENTS,
+      handbookSignatureDate: existingCase?.handbookSignatureDate,
       feedbackNotes: notes.trim() || undefined,
       status,
       completedAt: status === "completed" ? new Date() : undefined,
@@ -226,20 +247,7 @@ export default function Onboarding() {
 
     setSaving(true);
     try {
-      if (existingCase?.id) {
-        await onboardingService.updateCase(tenantId, existingCase.id, payload);
-      } else {
-        await onboardingService.createCase(tenantId, payload);
-      }
-
-      if (manager) {
-        await employeeService.updateEmployee(tenantId, selectedEmployee.id, {
-          jobDetails: { ...selectedEmployee.jobDetails, manager: employeeName(manager) },
-        });
-      }
-      if (candidateId) {
-        await candidateService.updateCandidate(tenantId, candidateId, { status: "Hired" });
-      }
+      await onboardingService.saveCase(tenantId, payload, existingCase?.id);
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["onboarding", tenantId] }),
@@ -271,7 +279,7 @@ export default function Onboarding() {
     checklist.firstDayReady,
   ].filter(Boolean).length;
 
-  if (employeesLoading) {
+  if (employeesLoading || onboardingCasesQuery.isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
@@ -381,6 +389,39 @@ export default function Onboarding() {
     );
   }
 
+  if (employeesQuery.isError || onboardingCasesQuery.isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.onboarding} />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Onboarding checklist"
+            subtitle="Get the employee ready for their first day."
+            icon={ClipboardCheck}
+            iconColor="text-blue-600"
+          />
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                Could not load onboarding records. No data has been changed.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void employeesQuery.refetch();
+                  void onboardingCasesQuery.refetch();
+                }}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.onboarding} />
@@ -397,6 +438,30 @@ export default function Onboarding() {
             </Button>
           }
         />
+
+        {(onboardingCasesQuery.data?.length || 0) > 0 && (
+          <Card className="mb-5">
+            <CardHeader>
+              <CardTitle className="text-base">Still in progress</CardTitle>
+              <CardDescription>Continue a saved first-day checklist.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {onboardingCasesQuery.data!.map((onboardingCase) => (
+                <button
+                  key={onboardingCase.id}
+                  type="button"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg border px-3 py-2 text-left hover:bg-muted/40"
+                  onClick={() =>
+                    onboardingCase.employeeId && chooseEmployee(onboardingCase.employeeId)
+                  }
+                >
+                  <span className="font-medium">{onboardingCase.fullName}</span>
+                  <span className="text-xs text-muted-foreground">Continue</span>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {activeEmployees.length === 0 ? (
           <Card className="border-dashed">
@@ -435,7 +500,25 @@ export default function Onboarding() {
               </CardContent>
             </Card>
 
-            {selectedEmployee && (
+            {selectedEmployee && existingCaseQuery.isLoading ? (
+              <Card>
+                <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Loading this employee's checklist…
+                </CardContent>
+              </Card>
+            ) : selectedEmployee && existingCaseQuery.isError ? (
+              <Card className="border-destructive/30">
+                <CardContent className="flex flex-col items-start gap-3 py-6">
+                  <p className="text-sm text-muted-foreground">
+                    Could not check for an existing onboarding record. Retry before editing so a duplicate is not created.
+                  </p>
+                  <Button variant="outline" onClick={() => void existingCaseQuery.refetch()}>
+                    Try again
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : selectedEmployee && (
               <>
                 <Card className="border bg-blue-50/50 dark:bg-blue-950/20">
                   <CardContent className="flex items-center justify-between gap-4 p-4">
@@ -592,11 +675,11 @@ export default function Onboarding() {
                 </Card>
 
                 <div className="flex flex-col-reverse gap-2 pb-8 sm:flex-row sm:justify-end">
-                  <Button variant="outline" onClick={() => save("in_progress")} disabled={saving} className="gap-2">
+                  <Button variant="outline" onClick={() => save("in_progress")} disabled={saving || existingCaseQuery.isFetching} className="gap-2">
                     <Save className="h-4 w-4" />
                     Save for later
                   </Button>
-                  <Button onClick={() => save("completed")} disabled={saving} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                  <Button onClick={() => save("completed")} disabled={saving || existingCaseQuery.isFetching} className="gap-2 bg-blue-600 text-white hover:bg-blue-700">
                     <CheckCircle2 className="h-4 w-4" />
                     {saving ? "Saving…" : "Complete onboarding"}
                   </Button>

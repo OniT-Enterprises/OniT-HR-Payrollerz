@@ -167,10 +167,29 @@ service firebase.storage {
 
     // Onboarding documents captured by HR during onboarding.
     match /tenants/{tenantId}/onboarding/{caseId}/documents/{document} {
-      allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
-      allow write: if (canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId)) &&
+      allow read: if isTenantAdmin(tenantId);
+      allow create, update: if isTenantAdmin(tenantId) &&
         isUnderSizeLimit() &&
         isAllowedDocType();
+      allow delete: if isTenantAdmin(tenantId);
+    }
+
+    // Training certificates may be read by HR or the employee they belong to.
+    match /tenants/{tenantId}/training/{employeeId}/{document} {
+      allow read: if isTenantAdmin(tenantId) || storageEmployeeId(tenantId) == employeeId;
+      allow create, update: if isTenantAdmin(tenantId) &&
+        isUnderSizeLimit() &&
+        (request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType == 'application/pdf');
+      allow delete: if isTenantAdmin(tenantId);
+    }
+
+    // Disciplinary evidence is confidential HR material.
+    match /tenants/{tenantId}/disciplinary/{employeeId}/{document} {
+      allow read: if isTenantAdmin(tenantId);
+      allow create, update: if isTenantAdmin(tenantId) &&
+        isUnderSizeLimit() && isAllowedDocType();
+      allow delete: if isTenantAdmin(tenantId);
     }
 
     // Public candidate application uploads.
@@ -179,10 +198,16 @@ service firebase.storage {
       allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
       // Unauthenticated write: keep it tight — 4 MB cap, CV document types only
       // (no images, unlike the authenticated doc paths), single fixed filename.
-      allow write: if isOpenJob(tenantId, jobId) &&
+      allow create: if isOpenJob(tenantId, jobId) &&
         isUnderPublicUploadLimit() &&
         isResumeDocType() &&
         fileName.matches('resume\\.(pdf|doc|docx)');
+      // Lets the submitting browser remove an upload only while the matching
+      // Firestore write has not succeeded. Once submitted, even the applicant
+      // holding the path cannot remove the CV; public updates stay denied.
+      allow delete: if !firestore.exists(
+        /databases/(default)/documents/jobApplications/$(applicationId)
+      );
     }
 
     // Expense receipts

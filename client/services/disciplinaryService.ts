@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  runTransaction,
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -60,6 +61,13 @@ export interface DisciplinaryRecord {
   // Status & workflow
   status: DisciplinaryStatus;
   actionTaken?: string;
+
+  // Lei 4/2012 Art. 50(4) written process. Required before a termination
+  // case can be closed and relied on by offboarding.
+  writtenAccusation?: string;
+  employeeDefence?: string;
+  reasonedDecision?: string;
+  decisionDeliveredDate?: string;
 
   // Audit trail
   createdBy: string;
@@ -140,6 +148,15 @@ export function getStatusName(status: DisciplinaryStatus): string {
   return STATUS_OPTIONS.find((s) => s.id === status)?.name || status;
 }
 
+export function isCompletedTerminationProcess(record: DisciplinaryRecord): boolean {
+  return record.type === 'termination' &&
+    record.status === 'closed' &&
+    Boolean(record.writtenAccusation?.trim()) &&
+    Boolean(record.employeeDefence?.trim()) &&
+    Boolean(record.reasonedDecision?.trim()) &&
+    Boolean(record.decisionDeliveredDate?.trim());
+}
+
 // ============================================
 // Disciplinary Service
 // ============================================
@@ -157,6 +174,7 @@ class DisciplinaryService {
     record: Omit<DisciplinaryRecord, 'id' | 'tenantId' | 'status' | 'createdAt' | 'updatedAt'>,
     evidenceFile?: File
   ): Promise<string> {
+    let uploadedEvidenceUrl: string | undefined;
     try {
       // Upload evidence if provided
       let evidenceUrl: string | undefined;
@@ -169,6 +187,7 @@ class DisciplinaryService {
           evidenceFile
         );
         evidenceUrl = uploadResult.url;
+        uploadedEvidenceUrl = uploadResult.url;
         evidenceFileName = uploadResult.fileName;
       }
 
@@ -184,6 +203,11 @@ class DisciplinaryService {
 
       return docRef.id;
     } catch (error) {
+      if (uploadedEvidenceUrl) {
+        await fileUploadService.deleteFile(uploadedEvidenceUrl).catch((cleanupError) => {
+          console.warn('Failed to clean up unlinked disciplinary evidence:', cleanupError);
+        });
+      }
       console.error('Error creating disciplinary record:', error);
       throw error;
     }
@@ -274,16 +298,8 @@ class DisciplinaryService {
 
       // Handle evidence update
       let evidenceUpdates: Partial<DisciplinaryRecord> = {};
+      let newEvidenceUrl: string | undefined;
       if (newEvidenceFile) {
-        // Delete old evidence if exists
-        if (existing.evidenceUrl) {
-          try {
-            await fileUploadService.deleteFile(existing.evidenceUrl);
-          } catch (e) {
-            console.warn('Failed to delete old evidence:', e);
-          }
-        }
-
         const uploadResult = await this.uploadEvidence(
           tenantId,
           existing.employeeId,
@@ -293,14 +309,30 @@ class DisciplinaryService {
           evidenceUrl: uploadResult.url,
           evidenceFileName: uploadResult.fileName,
         };
+        newEvidenceUrl = uploadResult.url;
       }
 
       const docRef = doc(db, DISCIPLINARY_COLLECTION, recordId);
-      await updateDoc(docRef, {
-        ...updates,
-        ...evidenceUpdates,
-        updatedAt: serverTimestamp(),
-      });
+      try {
+        await updateDoc(docRef, {
+          ...updates,
+          ...evidenceUpdates,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        if (newEvidenceUrl) {
+          await fileUploadService.deleteFile(newEvidenceUrl).catch((cleanupError) => {
+            console.warn('Failed to clean up replacement evidence:', cleanupError);
+          });
+        }
+        throw error;
+      }
+
+      if (newEvidenceUrl && existing.evidenceUrl) {
+        await fileUploadService.deleteFile(existing.evidenceUrl).catch((cleanupError) => {
+          console.warn('Failed to remove superseded evidence:', cleanupError);
+        });
+      }
     } catch (error) {
       console.error('Error updating disciplinary record:', error);
       throw error;
@@ -357,11 +389,31 @@ class DisciplinaryService {
     closedBy: string,
     actionTaken?: string
   ): Promise<void> {
-    await this.updateRecord(tenantId, recordId, {
-      status: 'closed',
-      closedDate: getTodayTL(),
-      closedBy,
-      ...(actionTaken && { actionTaken }),
+    const recordRef = doc(db, DISCIPLINARY_COLLECTION, recordId);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(recordRef);
+      if (!snapshot.exists() || snapshot.data().tenantId !== tenantId) {
+        throw new Error('Disciplinary record not found');
+      }
+      const existing = this.mapDocToRecord(snapshot.id, snapshot.data());
+      if (existing.status !== 'in_review') {
+        throw new Error('Move the case to review before closing it.');
+      }
+      if (existing.type === 'termination' && !isCompletedTerminationProcess({
+        ...existing,
+        status: 'closed',
+      })) {
+        throw new Error(
+          'A termination case needs the written accusation, employee defence, reasoned decision, and delivery date before it can be closed.',
+        );
+      }
+      transaction.update(recordRef, {
+        status: 'closed',
+        closedDate: getTodayTL(),
+        closedBy,
+        ...(actionTaken && { actionTaken }),
+        updatedAt: serverTimestamp(),
+      });
     });
   }
 
@@ -401,7 +453,7 @@ class DisciplinaryService {
    * Validate evidence file
    */
   validateEvidenceFile(file: File): { valid: boolean; error?: string } {
-    const maxSize = 15 * 1024 * 1024; // 15MB
+    const maxSize = 10 * 1024 * 1024; // Storage rules cap authenticated documents at 10MB
     const allowedTypes = [
       'application/pdf',
       'image/jpeg',
@@ -419,7 +471,7 @@ class DisciplinaryService {
     }
 
     if (file.size > maxSize) {
-      return { valid: false, error: 'File size must be under 15MB' };
+      return { valid: false, error: 'File size must be under 10MB' };
     }
 
     return { valid: true };
@@ -521,6 +573,10 @@ class DisciplinaryService {
       evidenceFileName: data.evidenceFileName,
       status: data.status,
       actionTaken: data.actionTaken,
+      writtenAccusation: data.writtenAccusation,
+      employeeDefence: data.employeeDefence,
+      reasonedDecision: data.reasonedDecision,
+      decisionDeliveredDate: data.decisionDeliveredDate,
       createdBy: data.createdBy,
       createdDate: data.createdDate,
       closedDate: data.closedDate,

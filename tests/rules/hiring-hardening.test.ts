@@ -61,7 +61,7 @@ describe("Hiring privacy and public-write rules", () => {
     name: "Ana Soares",
     email: "ana@example.com",
     phone: "+670 7000 0000",
-    resumePath: `public/jobApplications/${TENANT_ID}/open-job/upload-1/resume.pdf`,
+    resumePath: `public/jobApplications/${TENANT_ID}/open-job/valid/resume.pdf`,
     status: "pending",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -81,7 +81,7 @@ describe("Hiring privacy and public-write rules", () => {
         ...validApplication,
         jobId: "closed-job",
         jobTitle: "Closed Role",
-        resumePath: `public/jobApplications/${TENANT_ID}/closed-job/upload-1/resume.pdf`,
+        resumePath: `public/jobApplications/${TENANT_ID}/closed-job/closed/resume.pdf`,
       }),
     );
   });
@@ -91,6 +91,7 @@ describe("Hiring privacy and public-write rules", () => {
     await assertFails(
       setDoc(doc(db, "jobApplications/id-document"), {
         ...validApplication,
+        resumePath: `public/jobApplications/${TENANT_ID}/open-job/id-document/resume.pdf`,
         idDocumentPath: `public/jobApplications/${TENANT_ID}/open-job/upload-1/id_document.pdf`,
       }),
     );

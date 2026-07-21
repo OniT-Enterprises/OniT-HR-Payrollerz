@@ -1,10 +1,9 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   useTrainingRecords,
   useCreateTrainingRecord,
   useUpdateTrainingRecord,
   useDeleteTrainingRecord,
-  useRefreshTrainingStatuses,
 } from "@/hooks/usePerformance";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,7 +73,6 @@ import {
   ExternalLink,
   Loader2,
   AlertTriangle,
-  RefreshCw,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
@@ -95,14 +93,15 @@ type TrainingSortKey = "employee" | "course" | "provider" | "completion" | "expi
 export default function TrainingCertifications() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const employeesQuery = useAllEmployees();
+  const { data: employees = [], isLoading: employeesLoading } = employeesQuery;
 
   // Data via React Query
-  const { data: records = [], isLoading: loading } = useTrainingRecords();
+  const recordsQuery = useTrainingRecords();
+  const { data: records = [], isLoading: loading } = recordsQuery;
   const createMutation = useCreateTrainingRecord();
   const updateMutation = useUpdateTrainingRecord();
   const deleteMutation = useDeleteTrainingRecord();
-  const refreshMutation = useRefreshTrainingStatuses();
 
   // Filter state
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -140,18 +139,6 @@ export default function TrainingCertifications() {
     { id: "completed", name: "Completed" },
     { id: "expired", name: "Expired" },
   ];
-
-  // Refresh statuses (check for expired)
-  const handleRefreshStatuses = () => {
-    refreshMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast({
-          title: "Statuses Updated",
-          description: "Training record statuses have been refreshed",
-        });
-      },
-    });
-  };
 
   // Get employee name by ID
   const getEmployeeName = (employeeId: string): string => {
@@ -205,24 +192,12 @@ export default function TrainingCertifications() {
   };
 
   const totalPages = Math.ceil(sortedRecords.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const effectivePage = totalPages === 0 ? 1 : Math.min(currentPage, totalPages);
+  const startIndex = (effectivePage - 1) * itemsPerPage;
   const paginatedRecords = sortedRecords.slice(
     startIndex,
     startIndex + itemsPerPage
   );
-
-  // Reset page when filters change
-  const filterKey = `${selectedEmployee}-${selectedStatus}`;
-  const prevFilterKeyRef = useRef(filterKey);
-  if (filterKey !== prevFilterKeyRef.current) {
-    prevFilterKeyRef.current = filterKey;
-    setCurrentPage(1);
-  }
-
-  // Clamp page when items are deleted and current page becomes empty
-  if (totalPages > 0 && currentPage > totalPages) {
-    setCurrentPage(totalPages);
-  }
 
   const getStatusBadge = (status: TrainingStatus, expiryDate?: string) => {
     const expiring = isExpiringSoon(expiryDate);
@@ -460,6 +435,33 @@ export default function TrainingCertifications() {
     );
   }
 
+  if (recordsQuery.isError || employeesQuery.isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Training & Certifications"
+            subtitle="Manage employee training programs and certifications"
+            icon={Award}
+            iconColor="text-blue-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium">Could not load training records</p>
+              <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
+              <Button
+                className="mt-4"
+                onClick={() => void Promise.all([recordsQuery.refetch(), employeesQuery.refetch()])}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.training} />
@@ -486,12 +488,15 @@ export default function TrainingCertifications() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div>
                 <Label htmlFor="employee-filter">Employee</Label>
                 <Select
                   value={selectedEmployee}
-                  onValueChange={setSelectedEmployee}
+                  onValueChange={(value) => {
+                    setSelectedEmployee(value);
+                    setCurrentPage(1);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All employees" />
@@ -510,7 +515,10 @@ export default function TrainingCertifications() {
                 <Label htmlFor="status-filter">Status</Label>
                 <Select
                   value={selectedStatus}
-                  onValueChange={setSelectedStatus}
+                  onValueChange={(value) => {
+                    setSelectedStatus(value);
+                    setCurrentPage(1);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
@@ -527,24 +535,10 @@ export default function TrainingCertifications() {
               <div>
                 <Button
                   variant="outline"
-                  onClick={handleRefreshStatuses}
-                  disabled={refreshMutation.isPending}
-                  className="w-full"
-                >
-                  {refreshMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  )}
-                  Refresh Statuses
-                </Button>
-              </div>
-              <div>
-                <Button
-                  variant="outline"
                   onClick={() => {
                     setSelectedEmployee("");
                     setSelectedStatus("");
+                    setCurrentPage(1);
                   }}
                   className="w-full"
                 >
@@ -855,15 +849,15 @@ export default function TrainingCertifications() {
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        onClick={() => setCurrentPage(Math.max(1, effectivePage - 1))}
+                        className={effectivePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                     {[...Array(totalPages)].map((_, i) => (
                       <PaginationItem key={i + 1}>
                         <PaginationLink
                           onClick={() => setCurrentPage(i + 1)}
-                          isActive={currentPage === i + 1}
+                          isActive={effectivePage === i + 1}
                           className="cursor-pointer"
                         >
                           {i + 1}
@@ -872,8 +866,8 @@ export default function TrainingCertifications() {
                     ))}
                     <PaginationItem>
                       <PaginationNext
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        onClick={() => setCurrentPage(Math.min(totalPages, effectivePage + 1))}
+                        className={effectivePage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                   </PaginationContent>

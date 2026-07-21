@@ -7,7 +7,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  addDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -17,9 +16,11 @@ import {
   Timestamp,
   serverTimestamp,
   deleteField,
+  writeBatch,
   type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
 
 export type EquipmentAssetType =
   | "laptop"
@@ -173,13 +174,48 @@ class OnboardingService {
     tenantId: string,
     caseData: Omit<OnboardingCase, "id" | "tenantId" | "createdAt" | "updatedAt">,
   ): Promise<string> {
-    const docRef = await addDoc(collection(db, COLLECTION), {
-      ...caseData,
-      tenantId,
-      createdAt: serverTimestamp(),
+    return this.saveCase(tenantId, caseData);
+  }
+
+  /**
+   * Upsert the one onboarding record for an employee and keep the employee /
+   * candidate handoff in the same atomic batch.
+   */
+  async saveCase(
+    tenantId: string,
+    caseData: Omit<OnboardingCase, "id" | "tenantId" | "createdAt" | "updatedAt">,
+    existingCaseId?: string,
+  ): Promise<string> {
+    if (!caseData.employeeId) throw new Error("Onboarding requires an employee record.");
+    const discovered = existingCaseId
+      ? null
+      : await this.getCaseByEmployee(tenantId, caseData.employeeId);
+    const caseId = existingCaseId || discovered?.id || `${tenantId}__${caseData.employeeId}`;
+    const caseRef = doc(db, COLLECTION, caseId);
+    const batch = writeBatch(db);
+    batch.set(
+      caseRef,
+      {
+        ...caseData,
+        tenantId,
+        tempPassword: deleteField(),
+        ...(existingCaseId || discovered?.id ? {} : { createdAt: serverTimestamp() }),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    batch.update(doc(db, paths.employee(tenantId, caseData.employeeId)), {
+      "jobDetails.manager": caseData.managerName || deleteField(),
       updatedAt: serverTimestamp(),
     });
-    return docRef.id;
+    if (caseData.candidateId) {
+      batch.update(doc(db, "candidates", caseData.candidateId), {
+        status: "Hired",
+        updatedAt: serverTimestamp(),
+      });
+    }
+    await batch.commit();
+    return caseId;
   }
 
   async getCase(tenantId: string, caseId: string): Promise<OnboardingCase | null> {

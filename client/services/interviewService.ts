@@ -622,7 +622,9 @@ class InterviewService {
     opts?: { companyName?: string; replyTo?: string },
   ): Promise<boolean> {
     const emailed = await this.sendInvitationEmail(tenantId, interview, opts);
-    await this.markInvitationSent(tenantId, interview.id!);
+    if (emailed) {
+      await this.markInvitationSent(tenantId, interview.id!);
+    }
     return emailed;
   }
 

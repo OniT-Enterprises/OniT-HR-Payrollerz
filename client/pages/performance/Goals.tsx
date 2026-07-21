@@ -1,1280 +1,479 @@
-import React, { useState, useMemo } from "react";
+import { useState } from "react";
+import { AlertTriangle, CheckCircle2, Clock3, Pause, Pencil, Play, Plus, Target, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import PageHeader from "@/components/layout/PageHeader";
-import {
-  type OKR,
-  type Goal,
-  type GoalPriority,
-  type KeyResultStatus,
-  type MilestoneStatus,
-  DEFAULT_DEPARTMENTS,
-  QUARTERS,
-} from "@/services/goalsService";
-import {
-  useOKRs,
-  useOKRStats,
-  useGoals,
-  useGoalStats,
-  useCreateOKR,
-  useUpdateOKR,
-  useDeleteOKR,
-  useCreateGoal,
-  useUpdateGoal,
-  useDeleteGoal,
-} from "@/hooks/usePerformance";
-import { useAuth } from "@/contexts/AuthContext";
-import { useAllEmployees } from "@/hooks/useEmployees";
-import {
-  Target,
-  CheckSquare,
-  BarChart3,
-  TrendingUp,
-  Edit,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Clock,
-} from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
-import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
+import { useDepartments } from "@/hooks/useDepartments";
+import { useToast } from "@/hooks/use-toast";
+import {
+  useCreateGoal,
+  useDeleteGoal,
+  useGoals,
+  useUpdateGoal,
+  useUpdateMilestone,
+} from "@/hooks/usePerformance";
+import type { Goal, GoalPriority, Milestone } from "@/services/goalsService";
+import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
 
-// ============================================
-// Helper Components
-// ============================================
+interface GoalForm {
+  title: string;
+  description: string;
+  department: string;
+  priority: GoalPriority;
+  startDate: string;
+  endDate: string;
+  milestones: Milestone[];
+}
 
-const getStatusBadge = (status: string, type: "okr" | "goal" | "keyresult" | "milestone") => {
-  const statusConfig: Record<string, Record<string, string>> = {
-    okr: {
-      active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      at_risk: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-    },
-    keyresult: {
-      on_track: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      at_risk: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-      behind: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    },
-    goal: {
-      active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    },
-    milestone: {
-      pending: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-      overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    },
+function milestoneId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function blankMilestone(): Milestone {
+  return { id: milestoneId(), title: "", dueDate: "", status: "pending" };
+}
+
+function emptyForm(): GoalForm {
+  const today = getTodayTL();
+  return {
+    title: "",
+    description: "",
+    department: "",
+    priority: "medium",
+    startDate: today,
+    endDate: today,
+    milestones: [blankMilestone()],
   };
+}
 
-  const config = statusConfig[type] || {};
-  const className = config[status] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-  return <Badge className={className}>{status.replace("_", " ")}</Badge>;
+const statusStyle: Record<Goal["status"], string> = {
+  active: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200",
+  completed: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200",
+  paused: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
 };
-
-const getPriorityBadge = (priority: GoalPriority) => {
-  const priorityConfig = {
-    high: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-    medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  };
-  return <Badge className={priorityConfig[priority]}>{priority}</Badge>;
-};
-
-// ============================================
-// Main Component
-// ============================================
 
 export default function Goals() {
-  const { toast } = useToast();
+  const tenantId = useTenantId();
   const { user } = useAuth();
-  const { data: employees = [] } = useAllEmployees();
+  const { toast } = useToast();
+  const goalsQuery = useGoals();
+  const departmentsQuery = useDepartments(tenantId);
+  const createGoal = useCreateGoal();
+  const updateGoal = useUpdateGoal();
+  const updateMilestone = useUpdateMilestone();
+  const deleteGoal = useDeleteGoal();
 
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedQuarter, setSelectedQuarter] = useState(`Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`);
+  const goals = goalsQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Goal | null>(null);
+  const [form, setForm] = useState<GoalForm>(emptyForm);
+  const [busyMilestone, setBusyMilestone] = useState<string | null>(null);
+  const saving = createGoal.isPending || updateGoal.isPending;
 
-  // Parse quarter/year from selectedQuarter (e.g. "Q1 2026")
-  const { quarter, year } = useMemo(() => {
-    const [q, y] = selectedQuarter.split(" ");
-    return { quarter: q, year: parseInt(y, 10) };
-  }, [selectedQuarter]);
-
-  // Data queries
-  const { data: okrs = [], isLoading: okrsLoading } = useOKRs({ quarter, year });
-  const { data: goals = [], isLoading: goalsLoading } = useGoals({ year });
-  const { data: okrStats = null, isLoading: okrStatsLoading } = useOKRStats(quarter, year);
-  const { data: goalStats = null, isLoading: goalStatsLoading } = useGoalStats(year);
-  const loading = okrsLoading || goalsLoading || okrStatsLoading || goalStatsLoading;
-
-  // Mutations
-  const createOKRMutation = useCreateOKR();
-  const updateOKRMutation = useUpdateOKR();
-  const deleteOKRMutation = useDeleteOKR();
-  const createGoalMutation = useCreateGoal();
-  const updateGoalMutation = useUpdateGoal();
-  const deleteGoalMutation = useDeleteGoal();
-  const saving = createOKRMutation.isPending || updateOKRMutation.isPending ||
-    createGoalMutation.isPending || updateGoalMutation.isPending;
-
-  // Dialog states
-  const [showOKRDialog, setShowOKRDialog] = useState(false);
-  const [showGoalDialog, setShowGoalDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [selectedOKR, setSelectedOKR] = useState<OKR | null>(null);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [deleteType, setDeleteType] = useState<"okr" | "goal">("okr");
-
-  // Form states
-  const [okrFormData, setOkrFormData] = useState({
-    title: "",
-    description: "",
-    department: "",
-    ownerId: "",
-    quarter: selectedQuarter,
-    keyResults: [{ title: "", targetValue: 0, currentValue: 0, unit: "", dueDate: "" }],
-  });
-
-  const [goalFormData, setGoalFormData] = useState({
-    title: "",
-    description: "",
-    department: "",
-    priority: "medium" as GoalPriority,
-    startDate: getTodayTL(),
-    endDate: "",
-    milestones: [{ title: "", description: "", dueDate: "", assigneeId: "" }],
-  });
-
-  // Quarters list
-  const currentYear = new Date().getFullYear();
-  const quarters = [
-    ...QUARTERS.map((q) => `${q} ${currentYear}`),
-    ...QUARTERS.map((q) => `${q} ${currentYear + 1}`),
-  ];
-
-  // ----------------------------------------
-  // OKR Handlers
-  // ----------------------------------------
-
-  const openOKRDialog = (okr?: OKR) => {
-    if (okr) {
-      setSelectedOKR(okr);
-      setOkrFormData({
-        title: okr.title,
-        description: okr.description,
-        department: okr.department,
-        ownerId: okr.ownerId,
-        quarter: `${okr.quarter} ${okr.year}`,
-        keyResults: okr.keyResults.map((kr) => ({
-          title: kr.title,
-          targetValue: kr.targetValue,
-          currentValue: kr.currentValue,
-          unit: kr.unit,
-          dueDate: kr.dueDate,
-        })),
-      });
-    } else {
-      setSelectedOKR(null);
-      setOkrFormData({
-        title: "",
-        description: "",
-        department: "",
-        ownerId: "",
-        quarter: selectedQuarter,
-        keyResults: [{ title: "", targetValue: 0, currentValue: 0, unit: "", dueDate: "" }],
-      });
-    }
-    setShowOKRDialog(true);
-  };
-
-  const handleSaveOKR = async () => {
-    if (!okrFormData.title || !okrFormData.department) {
-      toast({
-        title: "Error",
-        description: "Please fill in required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const [formQuarter, yearStr] = okrFormData.quarter.split(" ");
-      const formYear = parseInt(yearStr, 10);
-      const owner = employees.find((e) => e.id === okrFormData.ownerId);
-
-      const okrData = {
-        title: okrFormData.title,
-        description: okrFormData.description,
-        department: okrFormData.department,
-        ownerId: okrFormData.ownerId || user?.uid || "",
-        ownerName: owner
-          ? `${owner.personalInfo.firstName} ${owner.personalInfo.lastName}`
-          : user?.displayName || "Manager",
-        quarter: formQuarter,
-        year: formYear,
-        keyResults: okrFormData.keyResults
-          .filter((kr) => kr.title)
-          .map((kr, index) => ({
-            id: `kr_${Date.now()}_${index}`,
-            title: kr.title,
-            description: "",
-            targetValue: kr.targetValue,
-            currentValue: kr.currentValue,
-            unit: kr.unit,
-            dueDate: kr.dueDate,
-            progress: 0,
-            status: "on_track" as KeyResultStatus,
-          })),
-      };
-
-      if (selectedOKR) {
-        await updateOKRMutation.mutateAsync({ id: selectedOKR.id!, updates: okrData });
-        toast({ title: "Success", description: "OKR updated successfully" });
-      } else {
-        await createOKRMutation.mutateAsync(okrData);
-        toast({ title: "Success", description: "OKR created successfully" });
-      }
-
-      setShowOKRDialog(false);
-    } catch (_error) {
-      toast({
-        title: "Error",
-        description: "Failed to save OKR",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // ----------------------------------------
-  // Goal Handlers
-  // ----------------------------------------
-
-  const openGoalDialog = (goal?: Goal) => {
-    if (goal) {
-      setSelectedGoal(goal);
-      setGoalFormData({
-        title: goal.title,
-        description: goal.description,
-        department: goal.department,
-        priority: goal.priority,
-        startDate: goal.startDate,
-        endDate: goal.endDate,
-        milestones: goal.milestones.map((m) => ({
-          title: m.title,
-          description: m.description || "",
-          dueDate: m.dueDate,
-          assigneeId: m.assigneeId || "",
-        })),
-      });
-    } else {
-      setSelectedGoal(null);
-      setGoalFormData({
-        title: "",
-        description: "",
-        department: "",
-        priority: "medium",
-        startDate: getTodayTL(),
-        endDate: "",
-        milestones: [{ title: "", description: "", dueDate: "", assigneeId: "" }],
-      });
-    }
-    setShowGoalDialog(true);
-  };
-
-  const handleSaveGoal = async () => {
-    if (!goalFormData.title || !goalFormData.department || !goalFormData.endDate) {
-      toast({
-        title: "Error",
-        description: "Please fill in required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const goalData = {
-        title: goalFormData.title,
-        description: goalFormData.description,
-        department: goalFormData.department,
-        priority: goalFormData.priority,
-        startDate: goalFormData.startDate,
-        endDate: goalFormData.endDate,
-        createdById: user?.uid || "",
-        createdByName: user?.displayName || user?.email || "Manager",
-        assignedTeams: [],
-        linkedOKRs: [],
-        milestones: (() => {
-          const empById = new Map(employees.map((e) => [e.id, e]));
-          return goalFormData.milestones
-            .filter((m) => m.title)
-            .map((m, index) => {
-              const assignee = empById.get(m.assigneeId);
-              return {
-                id: `m_${Date.now()}_${index}`,
-                title: m.title,
-                description: m.description,
-                dueDate: m.dueDate,
-                status: "pending" as MilestoneStatus,
-                assigneeId: m.assigneeId,
-                assigneeName: assignee
-                  ? `${assignee.personalInfo.firstName} ${assignee.personalInfo.lastName}`
-                  : undefined,
-              };
-            });
-        })(),
-      };
-
-      if (selectedGoal) {
-        await updateGoalMutation.mutateAsync({ id: selectedGoal.id!, updates: goalData });
-        toast({ title: "Success", description: "Goal updated successfully" });
-      } else {
-        await createGoalMutation.mutateAsync(goalData);
-        toast({ title: "Success", description: "Goal created successfully" });
-      }
-
-      setShowGoalDialog(false);
-    } catch (_error) {
-      toast({
-        title: "Error",
-        description: "Failed to save goal",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // ----------------------------------------
-  // Delete Handlers
-  // ----------------------------------------
-
-  const confirmDelete = (type: "okr" | "goal", item: OKR | Goal) => {
-    setDeleteType(type);
-    if (type === "okr") {
-      setSelectedOKR(item as OKR);
-    } else {
-      setSelectedGoal(item as Goal);
-    }
-    setShowDeleteDialog(true);
-  };
-
-  const handleDelete = async () => {
-    try {
-      if (deleteType === "okr" && selectedOKR) {
-        await deleteOKRMutation.mutateAsync(selectedOKR.id!);
-        toast({ title: "Success", description: "OKR deleted successfully" });
-      } else if (deleteType === "goal" && selectedGoal) {
-        await deleteGoalMutation.mutateAsync(selectedGoal.id!);
-        toast({ title: "Success", description: "Goal deleted successfully" });
-      }
-      setShowDeleteDialog(false);
-    } catch (_error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // ----------------------------------------
-  // Render
-  // ----------------------------------------
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SEO {...seoConfig.goals} />
-
-        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
-          <PageHeader
-            title="Performance & Goals Management"
-            subtitle="Strategic planning with OKRs and performance tracking"
-            icon={Target}
-            iconColor="text-blue-500"
-            actions={
-              <>
-                <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {quarters.map((quarter) => (
-                      <SelectItem key={quarter} value={quarter}>
-                        {quarter}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={() => openOKRDialog()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  New OKR
-                </Button>
-              </>
-            }
-          />
-
-          <div className="grid w-full grid-cols-3 gap-1 rounded-md bg-muted p-1 mb-6">
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-
-          <div className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="border-border/50 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-8 w-8 rounded-lg" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-16 mb-2" />
-                    <Skeleton className="h-3 w-28" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Quick Overview */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <Card key={i} className="border-border/50">
-                  <CardHeader>
-                    <Skeleton className="h-5 w-32" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((j) => (
-                        <div key={j} className="flex items-center justify-between">
-                          <div className="space-y-1 flex-1">
-                            <Skeleton className="h-4 w-40" />
-                            <div className="flex items-center gap-2">
-                              <Skeleton className="h-3 w-20" />
-                              <Skeleton className="h-5 w-16 rounded-full" />
-                            </div>
-                          </div>
-                          <div className="text-right space-y-1">
-                            <Skeleton className="h-3 w-8 ml-auto" />
-                            <Skeleton className="h-2 w-20" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+  const openGoal = (goal?: Goal) => {
+    setEditingGoal(goal ?? null);
+    setForm(
+      goal
+        ? {
+            title: goal.title,
+            description: goal.description,
+            department: goal.department,
+            priority: goal.priority,
+            startDate: goal.startDate,
+            endDate: goal.endDate,
+            milestones: goal.milestones.map((milestone) => ({ ...milestone })),
+          }
+        : emptyForm(),
     );
-  }
+    setDialogOpen(true);
+  };
+
+  const updateFormMilestone = (id: string, updates: Partial<Milestone>) => {
+    setForm((current) => ({
+      ...current,
+      milestones: current.milestones.map((milestone) =>
+        milestone.id === id ? { ...milestone, ...updates } : milestone,
+      ),
+    }));
+  };
+
+  const save = async () => {
+    const milestones = form.milestones.map((milestone) => ({
+      ...milestone,
+      title: milestone.title.trim(),
+    }));
+    if (!form.title.trim() || !form.department || !form.startDate || !form.endDate) {
+      toast({ title: "Complete the goal details", variant: "destructive" });
+      return;
+    }
+    if (form.endDate < form.startDate) {
+      toast({ title: "End date must be on or after the start date", variant: "destructive" });
+      return;
+    }
+    if (
+      milestones.length === 0 ||
+      milestones.some((milestone) => !milestone.title || !milestone.dueDate)
+    ) {
+      toast({
+        title: "Add at least one complete milestone",
+        description: "Each milestone needs a short name and due date.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (
+      milestones.some(
+        (milestone) =>
+          milestone.dueDate < form.startDate || milestone.dueDate > form.endDate,
+      )
+    ) {
+      toast({
+        title: "Milestone dates must fall inside the goal dates",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (editingGoal?.id) {
+        await updateGoal.mutateAsync({
+          id: editingGoal.id,
+          updates: {
+            title: form.title.trim(),
+            description: form.description.trim(),
+            department: form.department,
+            priority: form.priority,
+            startDate: form.startDate,
+            endDate: form.endDate,
+            milestones,
+          },
+        });
+      } else {
+        if (!user?.uid) throw new Error("A signed-in user is required.");
+        await createGoal.mutateAsync({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          department: form.department,
+          priority: form.priority,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          milestones,
+          createdById: user.uid,
+          createdByName: user.displayName || user.email || "HR",
+          assignedTeams: [],
+          linkedOKRs: [],
+        });
+      }
+      setDialogOpen(false);
+      toast({ title: editingGoal ? "Goal updated" : "Goal created" });
+    } catch (error) {
+      toast({
+        title: "Could not save the goal",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleMilestone = async (goal: Goal, milestone: Milestone) => {
+    if (!goal.id) return;
+    const key = `${goal.id}:${milestone.id}`;
+    setBusyMilestone(key);
+    try {
+      await updateMilestone.mutateAsync({
+        goalId: goal.id,
+        milestoneId: milestone.id,
+        status: milestone.status === "completed" ? "pending" : "completed",
+      });
+    } catch (error) {
+      toast({
+        title: "Could not update the milestone",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyMilestone(null);
+    }
+  };
+
+  const togglePaused = async (goal: Goal) => {
+    if (!goal.id) return;
+    try {
+      await updateGoal.mutateAsync({
+        id: goal.id,
+        updates: { status: goal.status === "paused" ? "active" : "paused" },
+      });
+    } catch (error) {
+      toast({
+        title: "Could not update the goal",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget?.id) return;
+    try {
+      await deleteGoal.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
+      toast({ title: "Goal deleted" });
+    } catch (error) {
+      toast({
+        title: "Could not delete the goal",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.goals} />
-
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
-          title="Performance & Goals Management"
-          subtitle="Strategic planning with OKRs and performance tracking"
+          title="Goals"
+          subtitle="Set a goal, add the few steps that matter, and tick them off."
           icon={Target}
-          iconColor="text-blue-500"
+          iconColor="text-blue-600"
           actions={
-            <>
-              <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {quarters.map((quarter) => (
-                    <SelectItem key={quarter} value={quarter}>
-                      {quarter}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={() => openOKRDialog()}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New OKR
-              </Button>
-            </>
+            <Button onClick={() => openGoal()} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New goal
+            </Button>
           }
         />
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="okrs">OKRs ({okrs.length})</TabsTrigger>
-            <TabsTrigger value="goals">Goals ({goals.length})</TabsTrigger>
-          </TabsList>
 
-          {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="mt-6">
-            <div className="space-y-6">
-              {/* Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="border-border/50 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active OKRs</CardTitle>
-                    <div className="p-2 bg-blue-500 rounded-lg">
-                      <Target className="h-4 w-4 text-white" />
+        {goalsQuery.isLoading || departmentsQuery.isLoading ? (
+          <div className="space-y-4">
+            {[0, 1].map((item) => (
+              <Card key={item}>
+                <CardContent className="space-y-3 p-5">
+                  <Skeleton className="h-5 w-56" />
+                  <Skeleton className="h-4 w-full max-w-xl" />
+                  <Skeleton className="h-2 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : goalsQuery.isError || departmentsQuery.isError ? (
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">Could not load all goal data.</p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void goalsQuery.refetch();
+                  void departmentsQuery.refetch();
+                }}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
+        ) : goals.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center px-6 py-12 text-center">
+              <Target className="mb-3 h-9 w-9 text-muted-foreground/50" />
+              <h2 className="font-semibold">No goals yet</h2>
+              <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                Start with one outcome and a short milestone checklist.
+              </p>
+              <Button className="mt-5 gap-2" onClick={() => openGoal()}>
+                <Plus className="h-4 w-4" />
+                Create a goal
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {goals.map((goal) => (
+              <Card key={goal.id} className="border-border/60">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CardTitle className="text-base">{goal.title}</CardTitle>
+                        <Badge variant="outline" className={statusStyle[goal.status]}>
+                          {goal.status}
+                        </Badge>
+                        <Badge variant="secondary">{goal.priority}</Badge>
+                      </div>
+                      {goal.description && (
+                        <CardDescription className="mt-2">{goal.description}</CardDescription>
+                      )}
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {okrStats?.active || 0}/{okrStats?.totalOKRs || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {okrStats?.atRisk ? `${okrStats.atRisk} at risk` : "All on track"}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="border-border/50 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-                    <div className="p-2 bg-blue-500 rounded-lg">
-                      <CheckSquare className="h-4 w-4 text-white" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">
-                      {goalStats?.active || 0}/{goalStats?.totalGoals || 0}
-                    </div>
-                    <p className="text-xs text-muted-foreground">Strategic objectives</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-border/50 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg. OKR Progress</CardTitle>
-                    <div className="p-2 bg-blue-500 rounded-lg">
-                      <TrendingUp className="h-4 w-4 text-white" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{okrStats?.avgProgress || 0}%</div>
-                    <Progress value={okrStats?.avgProgress || 0} className="mt-2" />
-                  </CardContent>
-                </Card>
-                <Card className="border-border/50 shadow-lg">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Avg. Goal Progress</CardTitle>
-                    <div className="p-2 bg-sky-500 rounded-lg">
-                      <BarChart3 className="h-4 w-4 text-white" />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{goalStats?.avgProgress || 0}%</div>
-                    <Progress value={goalStats?.avgProgress || 0} className="mt-2" />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Quick Overview */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      Recent OKRs
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {okrs.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No OKRs yet for {selectedQuarter}</p>
-                        <Button className="mt-4" onClick={() => openOKRDialog()}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create First OKR
+                    <div className="flex shrink-0 gap-1">
+                      {goal.status !== "completed" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={goal.status === "paused" ? "Resume goal" : "Pause goal"}
+                          onClick={() => void togglePaused(goal)}
+                        >
+                          {goal.status === "paused" ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                         </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {okrs.slice(0, 3).map((okr) => (
-                          <div key={okr.id} className="flex items-center justify-between">
-                            <div className="space-y-1 flex-1">
-                              <p className="font-medium">{okr.title}</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-muted-foreground">{okr.department}</p>
-                                {getStatusBadge(okr.status, "okr")}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">{okr.progress}%</p>
-                              <Progress value={okr.progress} className="w-20" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      Recent Goals
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {goals.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <CheckSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No goals yet</p>
-                        <Button className="mt-4" onClick={() => openGoalDialog()}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create First Goal
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {goals.slice(0, 3).map((goal) => (
-                          <div key={goal.id} className="flex items-center justify-between">
-                            <div className="space-y-1 flex-1">
-                              <p className="font-medium">{goal.title}</p>
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm text-muted-foreground">{goal.department}</p>
-                                {getStatusBadge(goal.status, "goal")}
-                                {getPriorityBadge(goal.priority)}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">{goal.progress}%</p>
-                              <Progress value={goal.progress} className="w-20" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* OKRs Tab */}
-          <TabsContent value="okrs" className="mt-6">
-            <Card className="border-border/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      Objectives & Key Results ({selectedQuarter})
-                    </CardTitle>
-                    <CardDescription>
-                      Quarterly objectives with measurable key results
-                    </CardDescription>
+                      )}
+                      <Button variant="ghost" size="icon" aria-label="Edit goal" onClick={() => openGoal(goal)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" aria-label="Delete goal" onClick={() => setDeleteTarget(goal)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button onClick={() => openOKRDialog()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create OKR
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {okrs.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Target className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">No OKRs Found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create your first OKR for {selectedQuarter}
-                    </p>
-                    <Button onClick={() => openOKRDialog()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create OKR
-                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+                    <span>{goal.department}</span>
+                    <span>{formatDateTL(goal.startDate)} – {formatDateTL(goal.endDate)}</span>
                   </div>
-                ) : (
-                  <div className="space-y-6">
-                    {okrs.map((okr) => (
-                      <Card key={okr.id} className="border-border/50">
-                        <CardContent className="pt-6">
-                          <div className="space-y-4">
-                            <div className="flex items-start justify-between">
-                              <div className="space-y-2 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-lg">{okr.title}</h3>
-                                  {getStatusBadge(okr.status, "okr")}
-                                  <Badge variant="outline">{okr.department}</Badge>
-                                </div>
-                                <p className="text-muted-foreground">{okr.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span>Owner: {okr.ownerName}</span>
-                                  <span>Quarter: {okr.quarter} {okr.year}</span>
-                                  <span>Progress: {okr.progress}%</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Progress value={okr.progress} className="flex-1" />
-                                  <span className="text-sm font-medium">{okr.progress}%</span>
-                                </div>
-                              </div>
-                              <div className="flex gap-2 ml-4">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openOKRDialog(okr)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="text-red-600 hover:text-red-700"
-                                  onClick={() => confirmDelete("okr", okr)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Key Results */}
-                            {okr.keyResults.length > 0 && (
-                              <div className="ml-4 space-y-3">
-                                <h4 className="font-medium">Key Results:</h4>
-                                {okr.keyResults.map((kr) => (
-                                  <div
-                                    key={kr.id}
-                                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                                  >
-                                    <div className="space-y-1">
-                                      <p className="font-medium text-sm">{kr.title}</p>
-                                      <div className="flex items-center gap-2">
-                                        {getStatusBadge(kr.status, "keyresult")}
-                                        <span className="text-xs text-muted-foreground">
-                                          Due: {formatDateTL(kr.dueDate)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="font-medium">
-                                        {kr.currentValue.toLocaleString()}
-                                        {kr.unit} / {kr.targetValue.toLocaleString()}
-                                        {kr.unit}
-                                      </p>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        <Progress value={kr.progress} className="w-16 h-2" />
-                                        <span className="text-xs font-medium">{kr.progress}%</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  <div className="flex items-center gap-3">
+                    <Progress value={goal.progress} className="h-2 flex-1" />
+                    <span className="w-10 text-right text-sm font-medium">{goal.progress}%</span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Goals Tab */}
-          <TabsContent value="goals" className="mt-6">
-            <Card className="border-border/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      Strategic Goals
-                    </CardTitle>
-                    <CardDescription>
-                      Long-term objectives with milestones
-                    </CardDescription>
-                  </div>
-                  <Button onClick={() => openGoalDialog()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Goal
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {goals.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CheckSquare className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">No Goals Found</h3>
-                    <p className="text-muted-foreground mb-4">Create your first strategic goal</p>
-                    <Button onClick={() => openGoalDialog()}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Goal
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {goals.map((goal) => (
-                      <Card key={goal.id} className="border-border/50">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-2 flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold">{goal.title}</h3>
-                                {getStatusBadge(goal.status, "goal")}
-                                {getPriorityBadge(goal.priority)}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{goal.description}</p>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span>Department: {goal.department}</span>
-                                <span>
-                                  Timeline: {formatDateTL(goal.startDate)} -{" "}
-                                  {formatDateTL(goal.endDate)}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Progress value={goal.progress} className="flex-1" />
-                                <span className="text-sm font-medium">{goal.progress}%</span>
-                              </div>
-
-                              {/* Milestones */}
-                              {goal.milestones.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-sm font-medium mb-2">Milestones:</p>
-                                  <div className="space-y-1">
-                                    {goal.milestones.map((milestone) => (
-                                      <div key={milestone.id} className="flex items-center gap-2 text-sm">
-                                        {milestone.status === "completed" ? (
-                                          <CheckCircle className="h-4 w-4 text-green-600" />
-                                        ) : milestone.status === "overdue" ? (
-                                          <XCircle className="h-4 w-4 text-red-600" />
-                                        ) : (
-                                          <Clock className="h-4 w-4 text-muted-foreground" />
-                                        )}
-                                        <span
-                                          className={
-                                            milestone.status === "completed"
-                                              ? "line-through text-muted-foreground"
-                                              : ""
-                                          }
-                                        >
-                                          {milestone.title}
-                                        </span>
-                                        <span className="text-muted-foreground">
-                                          (Due: {formatDateTL(milestone.dueDate)})
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
+                  <div className="space-y-2">
+                    {goal.milestones.map((milestone) => {
+                      const key = `${goal.id}:${milestone.id}`;
+                      return (
+                        <label key={milestone.id} className="flex min-h-11 items-start gap-3 rounded-lg border px-3 py-2.5">
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={milestone.status === "completed"}
+                            disabled={busyMilestone === key || goal.status === "paused"}
+                            onCheckedChange={() => void toggleMilestone(goal, milestone)}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className={milestone.status === "completed" ? "block text-sm line-through text-muted-foreground" : "block text-sm font-medium"}>
+                              {milestone.title}
+                            </span>
+                            <span className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                              {milestone.status === "completed" ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              ) : (
+                                <Clock3 className={milestone.status === "overdue" ? "h-3.5 w-3.5 text-destructive" : "h-3.5 w-3.5"} />
                               )}
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openGoalDialog(goal)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700"
-                                onClick={() => confirmDelete("goal", goal)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                              Due {formatDateTL(milestone.dueDate)}
+                              {milestone.status === "overdue" && " · overdue"}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
 
-        {/* OKR Dialog */}
-        <Dialog open={showOKRDialog} onOpenChange={setShowOKRDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedOKR ? "Edit OKR" : "Create OKR"}</DialogTitle>
-              <DialogDescription>
-                Define quarterly objectives with measurable key results
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Objective Title *</Label>
-                <Input
-                  value={okrFormData.title}
-                  onChange={(e) => setOkrFormData({ ...okrFormData, title: e.target.value })}
-                  placeholder="e.g., Improve Customer Experience"
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={okrFormData.description}
-                  onChange={(e) =>
-                    setOkrFormData({ ...okrFormData, description: e.target.value })
-                  }
-                  placeholder="Describe the objective"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Department *</Label>
-                  <Select
-                    value={okrFormData.department}
-                    onValueChange={(v) => setOkrFormData({ ...okrFormData, department: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DEFAULT_DEPARTMENTS.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Quarter *</Label>
-                  <Select
-                    value={okrFormData.quarter}
-                    onValueChange={(v) => setOkrFormData({ ...okrFormData, quarter: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {quarters.map((quarter) => (
-                        <SelectItem key={quarter} value={quarter}>
-                          {quarter}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label>Owner</Label>
-                <Select
-                  value={okrFormData.ownerId}
-                  onValueChange={(v) => setOkrFormData({ ...okrFormData, ownerId: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select owner" />
-                  </SelectTrigger>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingGoal ? "Edit goal" : "New goal"}</DialogTitle>
+            <DialogDescription>Keep it short. Milestones drive the progress automatically.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="goal-title">Goal</Label>
+              <Input id="goal-title" value={form.title} maxLength={160} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="What should be achieved?" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="goal-description">Notes</Label>
+              <Textarea id="goal-description" value={form.description} maxLength={1500} rows={3} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Optional context" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={form.department} onValueChange={(department) => setForm((current) => ({ ...current, department }))}>
+                  <SelectTrigger><SelectValue placeholder="Choose a department" /></SelectTrigger>
                   <SelectContent>
-                    {employees
-                      .filter((e) => e.status === "active")
-                      .map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id || ""}>
-                          {emp.personalInfo.firstName} {emp.personalInfo.lastName}
-                        </SelectItem>
-                      ))}
+                    {form.department && !departments.some((department) => department.name === form.department) && (
+                      <SelectItem value={form.department}>{form.department}</SelectItem>
+                    )}
+                    {departments.map((department) => <SelectItem key={department.id} value={department.name}>{department.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Key Results</Label>
-                {okrFormData.keyResults.map((kr, index) => (
-                  <div key={index} className="grid grid-cols-4 gap-2 mt-2">
-                    <Input
-                      placeholder="Key result title"
-                      value={kr.title}
-                      onChange={(e) => {
-                        const newKRs = [...okrFormData.keyResults];
-                        newKRs[index] = { ...newKRs[index], title: e.target.value };
-                        setOkrFormData({ ...okrFormData, keyResults: newKRs });
-                      }}
-                      className="col-span-2"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Target"
-                      value={kr.targetValue || ""}
-                      onChange={(e) => {
-                        const newKRs = [...okrFormData.keyResults];
-                        newKRs[index] = { ...newKRs[index], targetValue: Number(e.target.value) };
-                        setOkrFormData({ ...okrFormData, keyResults: newKRs });
-                      }}
-                    />
-                    <Input
-                      placeholder="Unit"
-                      value={kr.unit}
-                      onChange={(e) => {
-                        const newKRs = [...okrFormData.keyResults];
-                        newKRs[index] = { ...newKRs[index], unit: e.target.value };
-                        setOkrFormData({ ...okrFormData, keyResults: newKRs });
-                      }}
-                    />
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() =>
-                    setOkrFormData({
-                      ...okrFormData,
-                      keyResults: [
-                        ...okrFormData.keyResults,
-                        { title: "", targetValue: 0, currentValue: 0, unit: "", dueDate: "" },
-                      ],
-                    })
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Key Result
-                </Button>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={form.priority} onValueChange={(priority) => setForm((current) => ({ ...current, priority: priority as GoalPriority }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="goal-start">Start</Label>
+                <Input id="goal-start" type="date" value={form.startDate} onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="goal-end">End</Label>
+                <Input id="goal-end" type="date" min={form.startDate} value={form.endDate} onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))} />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowOKRDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveOKR} disabled={saving}>
-                {saving ? "Saving..." : selectedOKR ? "Update OKR" : "Create OKR"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Goal Dialog */}
-        <Dialog open={showGoalDialog} onOpenChange={setShowGoalDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedGoal ? "Edit Goal" : "Create Goal"}</DialogTitle>
-              <DialogDescription>Set strategic goals with milestones</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <Label>Goal Title *</Label>
-                <Input
-                  value={goalFormData.title}
-                  onChange={(e) => setGoalFormData({ ...goalFormData, title: e.target.value })}
-                  placeholder="e.g., Q4 Product Launch"
-                />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={goalFormData.description}
-                  onChange={(e) =>
-                    setGoalFormData({ ...goalFormData, description: e.target.value })
-                  }
-                  placeholder="Describe the goal"
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <Label>Department *</Label>
-                  <Select
-                    value={goalFormData.department}
-                    onValueChange={(v) => setGoalFormData({ ...goalFormData, department: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DEFAULT_DEPARTMENTS.map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Milestones</Label>
+                  <p className="text-xs text-muted-foreground">A few concrete steps are enough.</p>
                 </div>
-                <div>
-                  <Label>Priority *</Label>
-                  <Select
-                    value={goalFormData.priority}
-                    onValueChange={(v) =>
-                      setGoalFormData({ ...goalFormData, priority: v as GoalPriority })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Start Date *</Label>
-                  <Input
-                    type="date"
-                    value={goalFormData.startDate}
-                    onChange={(e) =>
-                      setGoalFormData({ ...goalFormData, startDate: e.target.value })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>End Date *</Label>
-                  <Input
-                    type="date"
-                    value={goalFormData.endDate}
-                    onChange={(e) => setGoalFormData({ ...goalFormData, endDate: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Milestones</Label>
-                {goalFormData.milestones.map((m, index) => (
-                  <div key={index} className="grid grid-cols-3 gap-2 mt-2">
-                    <Input
-                      placeholder="Milestone title"
-                      value={m.title}
-                      onChange={(e) => {
-                        const newMs = [...goalFormData.milestones];
-                        newMs[index] = { ...newMs[index], title: e.target.value };
-                        setGoalFormData({ ...goalFormData, milestones: newMs });
-                      }}
-                    />
-                    <Input
-                      type="date"
-                      placeholder="Due date"
-                      value={m.dueDate}
-                      onChange={(e) => {
-                        const newMs = [...goalFormData.milestones];
-                        newMs[index] = { ...newMs[index], dueDate: e.target.value };
-                        setGoalFormData({ ...goalFormData, milestones: newMs });
-                      }}
-                    />
-                    <Select
-                      value={m.assigneeId}
-                      onValueChange={(v) => {
-                        const newMs = [...goalFormData.milestones];
-                        newMs[index] = { ...newMs[index], assigneeId: v };
-                        setGoalFormData({ ...goalFormData, milestones: newMs });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Assignee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees
-                          .filter((e) => e.status === "active")
-                          .map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id || ""}>
-                              {emp.personalInfo.firstName} {emp.personalInfo.lastName}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={() =>
-                    setGoalFormData({
-                      ...goalFormData,
-                      milestones: [
-                        ...goalFormData.milestones,
-                        { title: "", description: "", dueDate: "", assigneeId: "" },
-                      ],
-                    })
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Milestone
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => setForm((current) => ({ ...current, milestones: [...current.milestones, blankMilestone()] }))}>
+                  <Plus className="h-4 w-4" /> Add step
                 </Button>
               </div>
+              {form.milestones.map((milestone) => (
+                <div key={milestone.id} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_auto]">
+                  <Input value={milestone.title} maxLength={160} aria-label="Milestone name" placeholder="Milestone" onChange={(event) => updateFormMilestone(milestone.id, { title: event.target.value })} />
+                  <Input type="date" value={milestone.dueDate} min={form.startDate} max={form.endDate} aria-label="Milestone due date" onChange={(event) => updateFormMilestone(milestone.id, { dueDate: event.target.value })} />
+                  <Button variant="ghost" size="icon" aria-label="Remove milestone" disabled={form.milestones.length === 1} onClick={() => setForm((current) => ({ ...current, milestones: current.milestones.filter((item) => item.id !== milestone.id) }))}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowGoalDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveGoal} disabled={saving}>
-                {saving ? "Saving..." : selectedGoal ? "Update Goal" : "Create Goal"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save goal"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete {deleteType === "okr" ? "OKR" : "Goal"}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete{" "}
-                <strong>
-                  {deleteType === "okr" ? selectedOKR?.title : selectedGoal?.title}
-                </strong>
-                . This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this goal?</AlertDialogTitle>
+            <AlertDialogDescription>This removes the goal and its milestone history.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmDelete()} disabled={deleteGoal.isPending}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

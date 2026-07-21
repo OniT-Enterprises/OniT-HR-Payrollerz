@@ -5,8 +5,8 @@ import {
   getDocs,
   getDoc,
   getCountFromServer,
-  addDoc,
   setDoc,
+  runTransaction,
   updateDoc,
   query,
   where,
@@ -37,6 +37,12 @@ export interface AuditContext {
   userEmail: string;
   userName?: string;
   tenantId: string; // Required for tenant-scoped audit logging
+}
+
+export interface HiringHandoff {
+  applicationId: string;
+  candidateId?: string;
+  jobId?: string;
 }
 
 // Timor-Leste specific residency status
@@ -512,12 +518,17 @@ class EmployeeService {
     employee: Omit<Employee, "id">,
     audit?: AuditContext,
     /** Pre-generated Firestore document ID (used when files were uploaded before save) */
-    preGeneratedId?: string
+    preGeneratedId?: string,
+    hiringHandoff?: HiringHandoff,
   ): Promise<string> {
     // Uniqueness check: prevent duplicate employeeId (National ID / BI number)
     const empId = employee.jobDetails?.employeeId;
     if (empId && !empId.startsWith("TEMP")) {
-      const existing = await this.findByEmployeeId(tenantId, empId);
+      // A hiring handoff uses the application id as the employee document id,
+      // making an ambiguous network retry converge on the same record.
+      const existing = (await this.findByEmployeeId(tenantId, empId)).filter(
+        (match) => match.id !== preGeneratedId,
+      );
       if (existing.length > 0) {
         const terminated = existing.find(e => e.status === "terminated");
         const active = existing.find(e => e.status === "active" || e.status === "inactive");
@@ -537,14 +548,80 @@ class EmployeeService {
       updatedAt: serverTimestamp(),
     };
 
-    let docId: string;
-    if (preGeneratedId) {
-      const docRef = doc(this.collectionRef(tenantId), preGeneratedId);
-      await setDoc(docRef, data);
-      docId = preGeneratedId;
+    const employeeRef = preGeneratedId
+      ? doc(this.collectionRef(tenantId), preGeneratedId)
+      : doc(this.collectionRef(tenantId));
+    const docId = employeeRef.id;
+    if (hiringHandoff?.applicationId) {
+      // Creating the employee and closing the hiring pipeline are one write:
+      // no half-hired candidate or duplicate retry can be left behind.
+      const applicationRef = doc(db, "jobApplications", hiringHandoff.applicationId);
+      await runTransaction(db, async (transaction) => {
+        const applicationDoc = await transaction.get(applicationRef);
+        if (!applicationDoc.exists() || applicationDoc.data().tenantId !== tenantId) {
+          throw new Error("The linked job application could not be found.");
+        }
+        const application = applicationDoc.data();
+        if (application.status === "rejected") {
+          throw new Error("A rejected application cannot be hired.");
+        }
+        if (
+          application.status === "hired" &&
+          application.hiredEmployeeId &&
+          application.hiredEmployeeId !== docId
+        ) {
+          throw new Error("This application has already been linked to another employee.");
+        }
+        if (
+          hiringHandoff.candidateId &&
+          hiringHandoff.candidateId !== application.candidateId
+        ) {
+          throw new Error("The candidate no longer matches this application.");
+        }
+        if (hiringHandoff.jobId && hiringHandoff.jobId !== application.jobId) {
+          throw new Error("The job no longer matches this application.");
+        }
+
+        const candidateRef = application.candidateId
+          ? doc(db, "candidates", application.candidateId)
+          : null;
+        const jobRef = application.jobId ? doc(db, "jobs", application.jobId) : null;
+        const candidateDoc = candidateRef ? await transaction.get(candidateRef) : null;
+        const jobDoc = jobRef ? await transaction.get(jobRef) : null;
+        if (candidateRef && (!candidateDoc?.exists() || candidateDoc.data().tenantId !== tenantId)) {
+          throw new Error("The linked candidate could not be found.");
+        }
+        if (!jobRef || !jobDoc?.exists() || jobDoc.data().tenantId !== tenantId) {
+          throw new Error("The linked job could not be found.");
+        }
+        if (
+          jobDoc.data().status === "filled" &&
+          jobDoc.data().filledByEmployeeId &&
+          jobDoc.data().filledByEmployeeId !== docId
+        ) {
+          throw new Error("This job has already been filled by another employee.");
+        }
+
+        transaction.set(employeeRef, data);
+        transaction.update(applicationRef, {
+          status: "hired",
+          hiredEmployeeId: docId,
+          updatedAt: serverTimestamp(),
+        });
+        if (candidateRef) {
+          transaction.update(candidateRef, {
+            status: "Hired",
+            updatedAt: serverTimestamp(),
+          });
+        }
+        transaction.update(jobRef, {
+          status: "filled",
+          filledByEmployeeId: docId,
+          updatedAt: serverTimestamp(),
+        });
+      });
     } else {
-      const docRef = await addDoc(this.collectionRef(tenantId), data);
-      docId = docRef.id;
+      await setDoc(employeeRef, data);
     }
 
     // Log to audit trail if context provided

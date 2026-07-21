@@ -28,6 +28,7 @@ import {
   FileText,
   Fingerprint,
   ShieldAlert,
+  ClipboardCheck,
 } from 'lucide-react-native';
 import { isBiometricAvailable, isBiometricEnabled, setBiometricEnabled } from '../../lib/biometricLock';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -282,6 +283,10 @@ export default function ProfileScreen() {
             <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/GrievanceReport')} activeOpacity={0.7}>
               <ChipIcon icon={ShieldAlert} tone="error" />
               <Text style={styles.quickLinkLabel}>{t('profile.reportConcern')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickLink} onPress={() => router.push('/screens/PerformanceReviews')} activeOpacity={0.7}>
+              <ChipIcon icon={ClipboardCheck} />
+              <Text style={styles.quickLinkLabel}>{t('profile.performanceReviews')}</Text>
             </TouchableOpacity>
           </View>
         </View>

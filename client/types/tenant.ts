@@ -166,7 +166,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, ModulePermission[]> = 
   // staff + timeleave are included so payroll runs can read the employee
   // directory and sync attendance/leave; writes there stay admin-only in rules
   accountant: ['staff', 'timeleave', 'payroll', 'money', 'accounting', 'reports'],
-  manager: ['staff', 'timeleave', 'performance'], // Limited to own team
+  // Performance records currently contain tenant-wide HR material. Managers
+  // keep team scheduling/leave access, but do not receive HR case access by
+  // default; a future team-scoped model can add it back safely.
+  manager: ['staff', 'timeleave'],
   viewer: [], // Read-only access, defined by explicit modules
 };
 

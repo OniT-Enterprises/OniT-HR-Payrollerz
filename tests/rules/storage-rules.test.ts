@@ -16,7 +16,7 @@ import {
   assertFails,
 } from '@firebase/rules-unit-testing';
 import { doc, setDoc } from 'firebase/firestore';
-import { getBytes, ref, uploadString } from 'firebase/storage';
+import { deleteObject, getBytes, ref, uploadString } from 'firebase/storage';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -263,6 +263,58 @@ describe('Storage rules', () => {
           contentType: 'application/pdf',
         }),
       );
+    });
+
+    it('lets the submitting browser clean up a failed application upload', async () => {
+      const target = ref(anonStorage(), resumePath);
+      await assertSucceeds(uploadString(target, 'pdf-bytes', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertSucceeds(deleteObject(target));
+    });
+
+    it('prevents public deletion after the matching application is submitted', async () => {
+      const target = ref(anonStorage(), resumePath);
+      await assertSucceeds(uploadString(target, 'pdf-bytes', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'jobApplications/application-1'), {
+          tenantId: 'tenant-a',
+          jobId: 'open-job',
+          resumePath,
+          status: 'pending',
+        });
+      });
+      await assertFails(deleteObject(target));
+    });
+  });
+
+  describe('People workflow documents', () => {
+    it('keeps onboarding and disciplinary documents HR-only', async () => {
+      const onboardingPath = 'tenants/tenant-a/onboarding/case-1/documents/id.pdf';
+      const disciplinePath = 'tenants/tenant-a/disciplinary/emp-1/evidence.pdf';
+      await assertSucceeds(uploadString(ref(storageAs(OWNER_A), onboardingPath), 'pdf', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertSucceeds(uploadString(ref(storageAs(OWNER_A), disciplinePath), 'pdf', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), onboardingPath)));
+      await assertFails(getBytes(ref(storageAs(SELF_A), disciplinePath)));
+      await assertFails(uploadString(ref(storageAs(VIEWER_A), disciplinePath), 'pdf', undefined, {
+        contentType: 'application/pdf',
+      }));
+    });
+
+    it('lets HR manage a training certificate and only that employee read it', async () => {
+      const trainingPath = 'tenants/tenant-a/training/emp-1/safety.pdf';
+      await assertSucceeds(uploadString(ref(storageAs(OWNER_A), trainingPath), 'pdf', undefined, {
+        contentType: 'application/pdf',
+      }));
+      await assertSucceeds(getBytes(ref(storageAs(SELF_A), trainingPath)));
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), trainingPath)));
+      await assertFails(getBytes(ref(storageAs(OWNER_B), trainingPath)));
     });
   });
 

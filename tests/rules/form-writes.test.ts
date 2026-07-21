@@ -108,7 +108,7 @@ describe('Form writes accepted by rules (tenant owner)', () => {
   const topLevel: Array<[string, Record<string, unknown>]> = [
     ['attendance',  { tenantId: TID, employeeId: 'emp-1', date: '2026-06-11', source: 'manual' }],
     ['onboarding',  { tenantId: TID, employeeId: 'emp-1' }],
-    ['offboarding', { tenantId: TID, employeeId: 'emp-1' }],
+    ['offboarding', { tenantId: TID, employeeId: 'emp-1', status: 'pending' }],
     ['payrollRuns', { tenantId: TID, createdBy: UID, status: 'draft' }],
   ];
   for (const [coll, payload] of topLevel) {

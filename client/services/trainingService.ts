@@ -176,6 +176,7 @@ class TrainingService {
     certificateFile?: File,
     createdBy?: string
   ): Promise<string> {
+    let uploadedCertificateUrl: string | undefined;
     try {
       // Calculate initial status
       const status = calculateTrainingStatus(
@@ -195,6 +196,7 @@ class TrainingService {
           certificateFile
         );
         certificateUrl = uploadResult.url;
+        uploadedCertificateUrl = uploadResult.url;
         certificateFileName = uploadResult.fileName;
       }
 
@@ -211,6 +213,11 @@ class TrainingService {
 
       return docRef.id;
     } catch (error) {
+      if (uploadedCertificateUrl) {
+        await fileUploadService.deleteFile(uploadedCertificateUrl).catch((cleanupError) => {
+          console.warn('Failed to clean up unlinked certificate:', cleanupError);
+        });
+      }
       console.error('Error creating training record:', error);
       throw error;
     }
@@ -248,47 +255,13 @@ class TrainingService {
     filters?: TrainingFilters
   ): Promise<TrainingRecord[]> {
     try {
-      const today = getTodayTL();
-      // today + 30 days, calendar-safe: build the date in UTC so the
-      // .toISOString() round-trip can't shift it a day west of UTC (the old
-      // `new Date(`${today}T00:00:00`)` parsed as LOCAL midnight then formatted
-      // as UTC, losing a day and narrowing the window to 29 days).
-      const [cy, cm, cd] = today.split('-').map(Number);
-      const expiringCutoffStr = new Date(Date.UTC(cy, cm - 1, cd + 30))
-        .toISOString()
-        .slice(0, 10);
-      const canQueryExpiringSoon =
-        filters?.expiringSoon &&
-        !filters.employeeId &&
-        !filters.category &&
-        (!filters.status || filters.status === 'completed');
-
-      let q = canQueryExpiringSoon
-        ? query(
-            collection(db, TRAINING_COLLECTION),
-            where('tenantId', '==', tenantId),
-            where('status', '==', 'completed'),
-            where('expiryDate', '>=', today),
-            where('expiryDate', '<=', expiringCutoffStr),
-            orderBy('expiryDate', 'asc')
-          )
-        : query(
-            collection(db, TRAINING_COLLECTION),
-            where('tenantId', '==', tenantId),
-            orderBy('createdAt', 'desc')
-          );
-
-      if (filters?.employeeId) {
-        q = query(q, where('employeeId', '==', filters.employeeId));
-      }
-
-      if (filters?.status && !canQueryExpiringSoon) {
-        q = query(q, where('status', '==', filters.status));
-      }
-
-      if (filters?.category) {
-        q = query(q, where('category', '==', filters.category));
-      }
+      // Status is derived from the dates below, so records must not be
+      // filtered by their potentially stale stored status.
+      const q = query(
+        collection(db, TRAINING_COLLECTION),
+        where('tenantId', '==', tenantId),
+        orderBy('createdAt', 'desc'),
+      );
 
       const querySnapshot = await getDocs(q);
       let records: TrainingRecord[] = [];
@@ -297,10 +270,10 @@ class TrainingService {
         records.push(this.mapDocToRecord(doc.id, doc.data()));
       });
 
-      // Client-side filter for expiring soon when using more complex query shapes.
-      if (filters?.expiringSoon && !canQueryExpiringSoon) {
-        records = records.filter((r) => isExpiringSoon(r.expiryDate));
-      }
+      if (filters?.employeeId) records = records.filter((r) => r.employeeId === filters.employeeId);
+      if (filters?.status) records = records.filter((r) => r.status === filters.status);
+      if (filters?.category) records = records.filter((r) => r.category === filters.category);
+      if (filters?.expiringSoon) records = records.filter((r) => isExpiringSoon(r.expiryDate));
 
       return records;
     } catch (error) {
@@ -338,16 +311,8 @@ class TrainingService {
 
       // Handle certificate update
       let certificateUpdates: Partial<TrainingRecord> = {};
+      let newCertificateUrl: string | undefined;
       if (newCertificateFile) {
-        // Delete old certificate if exists
-        if (existing.certificateUrl) {
-          try {
-            await fileUploadService.deleteFile(existing.certificateUrl);
-          } catch (e) {
-            console.warn('Failed to delete old certificate:', e);
-          }
-        }
-
         const uploadResult = await this.uploadCertificate(
           tenantId,
           existing.employeeId,
@@ -357,15 +322,31 @@ class TrainingService {
           certificateUrl: uploadResult.url,
           certificateFileName: uploadResult.fileName,
         };
+        newCertificateUrl = uploadResult.url;
       }
 
       const docRef = doc(db, TRAINING_COLLECTION, recordId);
-      await updateDoc(docRef, {
-        ...updates,
-        ...certificateUpdates,
-        status,
-        updatedAt: serverTimestamp(),
-      });
+      try {
+        await updateDoc(docRef, {
+          ...updates,
+          ...certificateUpdates,
+          status,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        if (newCertificateUrl) {
+          await fileUploadService.deleteFile(newCertificateUrl).catch((cleanupError) => {
+            console.warn('Failed to clean up replacement certificate:', cleanupError);
+          });
+        }
+        throw error;
+      }
+
+      if (newCertificateUrl && existing.certificateUrl) {
+        await fileUploadService.deleteFile(existing.certificateUrl).catch((cleanupError) => {
+          console.warn('Failed to remove superseded certificate:', cleanupError);
+        });
+      }
     } catch (error) {
       console.error('Error updating training record:', error);
       throw error;
@@ -383,17 +364,13 @@ class TrainingService {
         throw new Error('Training record not found');
       }
 
-      // Delete certificate file if exists
-      if (existing.certificateUrl) {
-        try {
-          await fileUploadService.deleteFile(existing.certificateUrl);
-        } catch (e) {
-          console.warn('Failed to delete certificate file:', e);
-        }
-      }
-
       const docRef = doc(db, TRAINING_COLLECTION, recordId);
       await deleteDoc(docRef);
+      if (existing.certificateUrl) {
+        await fileUploadService.deleteFile(existing.certificateUrl).catch((cleanupError) => {
+          console.warn('Training record deleted; certificate cleanup failed:', cleanupError);
+        });
+      }
     } catch (error) {
       console.error('Error deleting training record:', error);
       throw error;
@@ -475,16 +452,21 @@ class TrainingService {
 
       for (const doc of snapshot.docs) {
         const data = doc.data();
+        const currentStatus = calculateTrainingStatus(
+          data.startDate,
+          data.completionDate,
+          data.expiryDate,
+        );
         totalRecords++;
-        if (data.status === 'pending') pending++;
-        else if (data.status === 'in_progress') inProgress++;
-        else if (data.status === 'completed') {
+        if (currentStatus === 'pending') pending++;
+        else if (currentStatus === 'in_progress') inProgress++;
+        else if (currentStatus === 'completed') {
           completed++;
           if (data.expiryDate && data.expiryDate >= today && data.expiryDate <= expiringCutoffStr) {
             expiringSoon++;
           }
         }
-        else if (data.status === 'expired') expired++;
+        else if (currentStatus === 'expired') expired++;
       }
 
       return { totalRecords, pending, inProgress, completed, expired, expiringSoon };
@@ -541,7 +523,7 @@ class TrainingService {
       }
     } catch (error) {
       console.error('Error refreshing statuses:', error);
-      // Don't throw - this is a background operation
+      throw error;
     }
   }
 
@@ -569,7 +551,7 @@ class TrainingService {
       expiryDate: data.expiryDate,
       certificateUrl: data.certificateUrl,
       certificateFileName: data.certificateFileName,
-      status: data.status,
+      status: calculateTrainingStatus(data.startDate, data.completionDate, data.expiryDate),
       cost: data.cost,
       currency: data.currency,
       notes: data.notes,

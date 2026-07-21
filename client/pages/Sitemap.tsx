@@ -203,12 +203,6 @@ const sitemapData: SitemapSection[] = [
     bgColor: "bg-pink-100 dark:bg-pink-900",
     pages: [
       {
-        name: "Performance Overview",
-        path: "/people/performance",
-        description:
-          "Performance hub — goals, reviews, training, and disciplinary management",
-      },
-      {
         name: "Goals",
         path: "/people/goals",
         description:
@@ -614,14 +608,17 @@ export default function Sitemap() {
       path === "/people/staff" ||
       path === "/people/employees" ||
       path === "/people/announcements" ||
-      path === "/people/grievances" ||
       path === "/admin/document-alerts"
     ) {
       return hasModule("staff");
     }
 
-    if (path === "/people/onboarding" || path === "/people/offboarding") {
-      return hasModule("staff") && canManageTenant;
+    if (
+      path === "/people/grievances" ||
+      path === "/people/onboarding" ||
+      path === "/people/offboarding"
+    ) {
+      return hasModule("staff") && ["owner", "hr-admin"].includes(session?.role || "");
     }
 
     if (path === "/people/hiring" || path === "/people/jobs") {
@@ -635,7 +632,7 @@ export default function Sitemap() {
       path === "/people/training" ||
       path === "/people/disciplinary"
     ) {
-      return hasModule("performance");
+      return hasModule("performance") && ["owner", "hr-admin"].includes(session?.role || "");
     }
 
     if (path === "/time-leave/settings") {

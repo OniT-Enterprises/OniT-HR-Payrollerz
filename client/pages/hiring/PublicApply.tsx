@@ -111,6 +111,7 @@ export default function PublicApply() {
       return;
     }
     setSaving(true);
+    let uploadedResumePath: string | null = null;
     try {
       const resumeValidation = fileUploadService.validateDocumentFile(
         resume,
@@ -119,37 +120,46 @@ export default function PublicApply() {
           "application/msword",
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         ],
-        10,
+        4,
       );
       if (!resumeValidation.valid) {
         throw new Error(resumeValidation.error);
       }
 
-      const uid =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      // The upload directory and Firestore application use the same random
+      // id. Storage can then allow cleanup only while no application record
+      // exists, preventing a submitted applicant from deleting their CV.
+      const applicationId = jobApplicationService.createApplicationId();
       const resumeExt = (resume.name.split(".").pop() || "pdf").toLowerCase();
-      const basePath = `public/jobApplications/${job.tenantId}/${job.id}/${uid}`;
+      const basePath = `public/jobApplications/${job.tenantId}/${job.id}/${applicationId}`;
       const resumePath = await fileUploadService.uploadFileAndReturnPath(
         resume,
         `${basePath}/resume.${resumeExt}`,
       );
+      uploadedResumePath = resumePath;
 
-      await jobApplicationService.submitPublic({
-        tenantId: job.tenantId,
-        jobId: job.id,
-        jobTitle: job.title,
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
-        coverNote: form.coverNote.trim() || undefined,
-        linkedInUrl: form.linkedInUrl.trim() || undefined,
-        referredBy: form.referredBy.trim() || undefined,
-        resumePath,
-      });
+      await jobApplicationService.submitPublic(
+        {
+          tenantId: job.tenantId,
+          jobId: job.id,
+          jobTitle: job.title,
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          coverNote: form.coverNote.trim() || undefined,
+          linkedInUrl: form.linkedInUrl.trim() || undefined,
+          referredBy: form.referredBy.trim() || undefined,
+          resumePath,
+        },
+        applicationId,
+      );
       setSubmitted(true);
     } catch (err) {
+      if (uploadedResumePath) {
+        await fileUploadService.deleteFile(uploadedResumePath).catch((cleanupError) => {
+          console.error("Could not clean up failed application upload:", cleanupError);
+        });
+      }
       toast({
         title: "Submission failed",
         description: err instanceof Error ? err.message : "Please try again.",
@@ -423,7 +433,7 @@ export default function PublicApply() {
                   <p className="text-xs text-muted-foreground">{resume.name}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  We’ll ask for identity and employment documents only if you move forward.
+                  PDF, DOC, or DOCX up to 4 MB. We’ll ask for identity and employment documents only if you move forward.
                 </p>
               </div>
               <Button

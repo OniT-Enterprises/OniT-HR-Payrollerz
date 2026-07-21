@@ -9,8 +9,6 @@ import {
   getDoc,
   getDocs,
   getCountFromServer,
-  addDoc,
-  updateDoc,
   deleteDoc,
   query,
   where,
@@ -204,6 +202,66 @@ function calculateStatus(checklist: OffboardingChecklist): OffboardingStatus {
 // ============================================
 
 class OffboardingService {
+  private async applyCaseUpdate(
+    tenantId: string,
+    caseId: string,
+    buildUpdates: (
+      existing: OffboardingCase,
+    ) => Partial<Omit<OffboardingCase, 'id' | 'tenantId' | 'createdAt'>>,
+  ): Promise<void> {
+    const docRef = doc(db, OFFBOARDING_COLLECTION, caseId);
+    await runTransaction(db, async (transaction) => {
+      const caseDoc = await transaction.get(docRef);
+      if (!caseDoc.exists() || caseDoc.data().tenantId !== tenantId) {
+        throw new Error('Offboarding case not found');
+      }
+      const existing = this.mapDocToCase(caseDoc.id, caseDoc.data());
+      const updates = buildUpdates(existing);
+      const isCompleting =
+        updates.status === 'completed' && existing.status !== 'completed';
+      const reviewedSeverance =
+        updates.includeArt56Severance ?? existing.includeArt56Severance;
+      let employeeRef: ReturnType<typeof doc> | null = null;
+
+      if (isCompleting) {
+        const finalPaySnapshot = updates.article56FinalPay ?? existing.article56FinalPay;
+        if (
+          typeof reviewedSeverance !== 'boolean' ||
+          finalPaySnapshot?.reviewAcknowledged !== true ||
+          !finalPaySnapshot.reviewNote?.trim()
+        ) {
+          throw new Error(
+            'Final pay requires an explicit Art. 56 decision and accountant/legal review acknowledgement.',
+          );
+        }
+        if (getChecklistProgress(updates.checklist ?? existing.checklist) !== 100) {
+          throw new Error('Complete every offboarding checklist item before closing the case.');
+        }
+        if (!existing.employeeId) {
+          throw new Error('Offboarding case is missing its employee.');
+        }
+        employeeRef = doc(db, paths.employee(tenantId, existing.employeeId));
+        const employeeDoc = await transaction.get(employeeRef);
+        if (!employeeDoc.exists()) {
+          throw new Error('Employee master record not found.');
+        }
+      }
+
+      transaction.update(docRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      });
+      if (isCompleting && employeeRef) {
+        transaction.update(employeeRef, {
+          status: 'terminated',
+          terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
+          severanceOnTermination: reviewedSeverance,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    });
+  }
+
   // ----------------------------------------
   // CRUD Operations
   // ----------------------------------------
@@ -216,17 +274,33 @@ class OffboardingService {
     caseData: Omit<OffboardingCase, 'id' | 'tenantId' | 'status' | 'checklist' | 'exitInterview' | 'createdAt' | 'updatedAt'>
   ): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, OFFBOARDING_COLLECTION), {
-        ...caseData,
-        tenantId,
-        status: 'pending' as OffboardingStatus,
-        checklist: DEFAULT_CHECKLIST,
-        exitInterview: DEFAULT_EXIT_INTERVIEW,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      const activeCases = await this.getActiveCases(tenantId);
+      if (activeCases.some((existing) => existing.employeeId === caseData.employeeId)) {
+        throw new Error('This employee already has an active offboarding case.');
+      }
+
+      // A deterministic id prevents a double-click/retry from creating the
+      // same departure twice. The active-case check above also catches an
+      // existing case with a changed last-working-day.
+      const caseId = `${tenantId}__${caseData.employeeId}__${caseData.lastWorkingDay}`;
+      const docRef = doc(db, OFFBOARDING_COLLECTION, caseId);
+      await runTransaction(db, async (transaction) => {
+        const existing = await transaction.get(docRef);
+        if (existing.exists()) {
+          throw new Error('An offboarding case already exists for this departure.');
+        }
+        transaction.set(docRef, {
+          ...caseData,
+          tenantId,
+          status: 'pending' as OffboardingStatus,
+          checklist: DEFAULT_CHECKLIST,
+          exitInterview: DEFAULT_EXIT_INTERVIEW,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
       });
 
-      return docRef.id;
+      return caseId;
     } catch (error) {
       console.error('Error creating offboarding case:', error);
       throw error;
@@ -352,52 +426,7 @@ class OffboardingService {
     updates: Partial<Omit<OffboardingCase, 'id' | 'tenantId' | 'createdAt'>>
   ): Promise<void> {
     try {
-      // Verify ownership first
-      const existing = await this.getCase(tenantId, caseId);
-      if (!existing) {
-        throw new Error('Offboarding case not found');
-      }
-
-      const isCompleting =
-        updates.status === 'completed'
-        && existing.status !== 'completed'
-        && Boolean(existing.employeeId);
-      const reviewedSeverance =
-        updates.includeArt56Severance ?? existing.includeArt56Severance;
-      if (isCompleting) {
-        const finalPaySnapshot = updates.article56FinalPay ?? existing.article56FinalPay;
-        if (
-          typeof reviewedSeverance !== 'boolean'
-          || finalPaySnapshot?.reviewAcknowledged !== true
-          || !finalPaySnapshot.reviewNote?.trim()
-        ) {
-          throw new Error(
-            'Final pay requires an explicit Art. 56 decision and accountant/legal review acknowledgement.',
-          );
-        }
-      }
-
-      const docRef = doc(db, OFFBOARDING_COLLECTION, caseId);
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: serverTimestamp(),
-      });
-
-      // When offboarding finishes, terminate the employee record so they stop
-      // appearing in active lists and the next payroll run. Best-effort: a
-      // permissions failure here must not roll back the case completion.
-      if (isCompleting && existing.employeeId) {
-        const { employeeService } = await import('./employeeService');
-        await employeeService
-          .updateEmployee(tenantId, existing.employeeId, {
-            status: 'terminated',
-            terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
-            severanceOnTermination: reviewedSeverance!,
-          })
-          .catch((err) => {
-            console.error('Offboarding completed but employee could not be marked terminated:', err);
-          });
-      }
+      await this.applyCaseUpdate(tenantId, caseId, () => updates);
     } catch (error) {
       console.error('Error updating offboarding case:', error);
       throw error;
@@ -440,24 +469,17 @@ class OffboardingService {
         'Article 56 final pay must be calculated and saved from employee source data; it cannot be ticked manually.',
       );
     }
-    const existing = await this.getCase(tenantId, caseId);
-    if (!existing) {
-      throw new Error('Offboarding case not found');
-    }
-
-    const updatedChecklist = {
-      ...existing.checklist,
-      [item]: value,
-    };
-
-    const newStatus = calculateStatus(updatedChecklist);
-
-    await this.updateCase(tenantId, caseId, {
-      checklist: updatedChecklist,
-      status: newStatus,
-      ...(newStatus === 'completed' && {
-        completedAt: new Date(),
-      }),
+    await this.applyCaseUpdate(tenantId, caseId, (existing) => {
+      const updatedChecklist = {
+        ...existing.checklist,
+        [item]: value,
+      };
+      const newStatus = calculateStatus(updatedChecklist);
+      return {
+        checklist: updatedChecklist,
+        status: newStatus,
+        ...(newStatus === 'completed' && { completedAt: new Date() }),
+      };
     });
   }
 
@@ -667,26 +689,40 @@ class OffboardingService {
   /**
    * Mark exit interview as complete
    */
-  async completeExitInterview(tenantId: string, caseId: string): Promise<void> {
-    const existing = await this.getCase(tenantId, caseId);
-    if (!existing) {
-      throw new Error('Offboarding case not found');
-    }
-
-    const updatedInterview = {
-      ...existing.exitInterview,
+  async completeExitInterview(
+    tenantId: string,
+    caseId: string,
+    exitInterview: ExitInterview,
+  ): Promise<void> {
+    const updatedInterview: ExitInterview = {
+      ...exitInterview,
+      overallSatisfaction: exitInterview.overallSatisfaction.trim(),
+      managerRelationship: exitInterview.managerRelationship.trim(),
+      primaryReason: exitInterview.primaryReason.trim(),
+      suggestions: exitInterview.suggestions.trim(),
+      wouldRecommend: exitInterview.wouldRecommend.trim(),
+      additionalComments: exitInterview.additionalComments.trim(),
       completed: true,
     };
 
-    const updatedChecklist = {
-      ...existing.checklist,
-      exitInterviewCompleted: true,
-    };
-
-    await this.updateCase(tenantId, caseId, {
-      exitInterview: updatedInterview,
-      checklist: updatedChecklist,
-      status: calculateStatus(updatedChecklist),
+    await this.applyCaseUpdate(tenantId, caseId, (existing) => {
+      if (
+        existing.departureReason !== 'death' &&
+        (!updatedInterview.overallSatisfaction || !updatedInterview.primaryReason)
+      ) {
+        throw new Error('Overall satisfaction and the primary reason are required before completing the exit interview.');
+      }
+      const updatedChecklist = {
+        ...existing.checklist,
+        exitInterviewCompleted: true,
+      };
+      const status = calculateStatus(updatedChecklist);
+      return {
+        exitInterview: updatedInterview,
+        checklist: updatedChecklist,
+        status,
+        ...(status === 'completed' && { completedAt: new Date() }),
+      };
     });
   }
 

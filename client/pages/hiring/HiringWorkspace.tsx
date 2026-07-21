@@ -18,6 +18,7 @@ import {
   UserPlus,
   Users,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,21 +54,25 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useToast } from "@/hooks/use-toast";
 import {
-  useAddCandidate,
   useCandidates,
   useCreateInterview,
   useInterviews,
   useInvalidateJobApplications,
   useJobApplications,
   useJobs,
-  useUpdateCandidate,
   useUpdateInterview,
   useUpdateJob,
 } from "@/hooks/useHiring";
 import { fileUploadService } from "@/services/fileUploadService";
 import { jobApplicationService, type JobApplication } from "@/services/jobApplicationService";
 import { notificationService } from "@/services/notificationService";
-import { DEFAULT_PRE_CHECKS, type Interview, type InterviewType } from "@/services/interviewService";
+import { jobPrivateDetailsService } from "@/services/jobPrivateDetailsService";
+import {
+  DEFAULT_PRE_CHECKS,
+  interviewService,
+  type Interview,
+  type InterviewType,
+} from "@/services/interviewService";
 import type { Candidate } from "@/services/candidateService";
 import type { Job, JobStatus } from "@/services/jobService";
 import { getTodayTL } from "@/lib/dateUtils";
@@ -101,10 +106,14 @@ function applicantStage(
   if (application.status === "rejected" || candidate?.status === "Rejected" || interview?.decision === "reject") {
     return "rejected";
   }
-  if (candidate?.status === "Hired") return "hired";
+  if (application.status === "hired" || candidate?.status === "Hired") return "hired";
   if (interview?.decision === "hire") return "ready";
   if (interview) return "interview";
-  if (application.status === "verified" || candidate) return "shortlisted";
+  if (
+    application.status === "shortlisted" ||
+    application.status === "verified" ||
+    candidate
+  ) return "shortlisted";
   return "new";
 }
 
@@ -142,8 +151,6 @@ export default function HiringWorkspace() {
   const candidatesQuery = useCandidates();
   const interviewsQuery = useInterviews();
   const updateJob = useUpdateJob();
-  const addCandidate = useAddCandidate();
-  const updateCandidate = useUpdateCandidate();
   const createInterview = useCreateInterview();
   const updateInterview = useUpdateInterview();
   const invalidateApplications = useInvalidateJobApplications();
@@ -152,7 +159,11 @@ export default function HiringWorkspace() {
   const applications = useMemo(() => applicationsQuery.data ?? [], [applicationsQuery.data]);
   const candidates = useMemo(() => candidatesQuery.data ?? [], [candidatesQuery.data]);
   const interviews = useMemo(() => interviewsQuery.data ?? [], [interviewsQuery.data]);
-  const loading = jobsQuery.isLoading || applicationsQuery.isLoading;
+  const loading =
+    jobsQuery.isLoading ||
+    applicationsQuery.isLoading ||
+    candidatesQuery.isLoading ||
+    interviewsQuery.isLoading;
 
   const requestedJobId = searchParams.get("job");
   const selectedJob = useMemo(
@@ -294,7 +305,11 @@ export default function HiringWorkspace() {
   const ensureCandidate = async (application: JobApplication) => {
     if (application.candidateId) return application.candidateId;
     if (!application.id) throw new Error("Application id is missing");
-    const candidateId = await addCandidate.mutateAsync({
+    const candidateId = await jobApplicationService.shortlist(
+      tenantId,
+      application.id,
+      user?.email || user?.uid || "unknown",
+      {
       name: application.name,
       email: application.email,
       phone: application.phone,
@@ -321,15 +336,9 @@ export default function HiringWorkspace() {
       ]
         .filter(Boolean)
         .join("\n"),
-    });
-    await jobApplicationService.verify(tenantId, application.id, user?.email || user?.uid || "unknown", {
-      candidateId,
-      verificationChecklist: {
-        idVerified: false,
-        contactVerified: false,
-        eligibilityConfirmed: false,
       },
-    });
+    );
+    await candidatesQuery.refetch();
     await invalidateApplications();
     await sendOutcomeEmail(application, "shortlisted");
     return candidateId;
@@ -389,7 +398,7 @@ export default function HiringWorkspace() {
     const location = scheduleForm.type === "video" ? "" : scheduleForm.location.trim();
     const meetingLink = scheduleForm.type === "video" ? scheduleForm.location.trim() : "";
     try {
-      const interviewData = {
+      const scheduleData = {
         candidateId: scheduleCandidateId,
         candidateName: application.name,
         candidateEmail: application.email,
@@ -404,50 +413,74 @@ export default function HiringWorkspace() {
         meetingLink,
         interviewerIds: user?.uid ? [user.uid] : [],
         interviewerNames: [user?.displayName || user?.email || "Hiring manager"],
-        preChecks: DEFAULT_PRE_CHECKS,
-        invitationSent: false,
-        reminderSent: false,
-        candidateConfirmed: false,
-        followUpCall: false,
-        createdBy: user?.uid || "unknown",
       };
 
+      let savedInterviewId = scheduleInterviewId;
       if (scheduleInterviewId) {
-        await updateInterview.mutateAsync({ id: scheduleInterviewId, updates: interviewData });
+        // Editing the schedule must not erase pre-checks, confirmation,
+        // reminder history, feedback, or the original creator.
+        await updateInterview.mutateAsync({ id: scheduleInterviewId, updates: scheduleData });
       } else {
-        await createInterview.mutateAsync(interviewData);
+        savedInterviewId = await createInterview.mutateAsync({
+          ...scheduleData,
+          preChecks: DEFAULT_PRE_CHECKS,
+          invitationSent: false,
+          reminderSent: false,
+          candidateConfirmed: false,
+          followUpCall: false,
+          createdBy: user?.uid || "unknown",
+        });
       }
 
+      let invitationResult: "sent" | "not-requested" | "no-email" | "failed" =
+        "not-requested";
       if (scheduleForm.notify && application.email.trim()) {
-        const where = scheduleForm.location.trim()
-          ? `\nWhere: ${scheduleForm.location.trim()}`
-          : "";
+        const existingInterview = interviews.find(
+          (interview) => interview.id === savedInterviewId,
+        );
         try {
-          await notificationService.queueEmail({
+          const emailed = await interviewService.sendInvitation(
             tenantId,
-            to: application.email,
-            replyTo: user?.email || undefined,
-            subject: `Interview for ${application.jobTitle} at ${companyName}`,
-            text: [
-              `Dear ${application.name},`,
-              "",
-              `Your interview for ${application.jobTitle} is scheduled for ${formatDate(scheduleForm.date)} at ${scheduleForm.time}.${where}`,
-              "",
-              "Please reply to confirm that you can attend.",
-              "",
-              `— ${companyName}`,
-            ].join("\n"),
-            purpose: "interview-invitation",
-            relatedId: application.id,
-          });
+            {
+              ...existingInterview,
+              ...scheduleData,
+              id: savedInterviewId,
+              tenantId,
+              status: existingInterview?.status || "scheduled",
+              feedback: existingInterview?.feedback || [],
+              preChecks: existingInterview?.preChecks || DEFAULT_PRE_CHECKS,
+              invitationSent: existingInterview?.invitationSent || false,
+              reminderSent: existingInterview?.reminderSent || false,
+              candidateConfirmed: existingInterview?.candidateConfirmed || false,
+              followUpCall: existingInterview?.followUpCall || false,
+              createdBy: existingInterview?.createdBy || user?.uid || "unknown",
+            },
+            {
+              companyName,
+              replyTo: user?.email || undefined,
+            },
+          );
+          invitationResult = emailed ? "sent" : "no-email";
+          if (emailed) await interviewsQuery.refetch();
         } catch (error) {
+          invitationResult = "failed";
           console.error("Interview invitation email failed:", error);
         }
+      } else if (scheduleForm.notify) {
+        invitationResult = "no-email";
       }
 
       toast({
         title: scheduleInterviewId ? "Interview updated" : "Interview scheduled",
-        description: scheduleForm.notify ? "The applicant has been emailed." : undefined,
+        description:
+          invitationResult === "sent"
+            ? "The invitation email was queued."
+            : invitationResult === "failed"
+              ? "The interview was saved, but the invitation email failed. Contact the applicant directly or retry."
+              : invitationResult === "no-email"
+                ? "The interview was saved, but no invitation was sent because there is no email address."
+                : undefined,
+        variant: invitationResult === "failed" ? "destructive" : undefined,
       });
       setScheduleApplication(null);
       setScheduleCandidateId("");
@@ -494,18 +527,16 @@ export default function HiringWorkspace() {
         application.id,
         user?.email || user?.uid || "unknown",
         rejectReason.trim(),
+        {
+          candidateId: application.candidateId,
+          interviewId: latestInterviewFor(application)?.id,
+        },
       );
-      if (application.candidateId) {
-        await updateCandidate.mutateAsync({ id: application.candidateId, updates: { status: "Rejected" } });
-      }
-      const interview = latestInterviewFor(application);
-      if (interview?.id) {
-        await updateInterview.mutateAsync({
-          id: interview.id,
-          updates: { status: "completed", decision: "reject", decisionNotes: rejectReason.trim() },
-        });
-      }
-      await invalidateApplications();
+      await Promise.all([
+        invalidateApplications(),
+        candidatesQuery.refetch(),
+        interviewsQuery.refetch(),
+      ]);
       await sendOutcomeEmail(application, "rejected");
       toast({ title: "Applicant marked as not selected" });
       setRejectApplication(null);
@@ -536,19 +567,47 @@ export default function HiringWorkspace() {
     }
   };
 
-  const startEmployee = (application: JobApplication) => {
-    const name = splitName(application.name);
-    const params = new URLSearchParams({
-      candidateId: application.candidateId || "",
-      applicationId: application.id || "",
-      firstName: name.firstName,
-      lastName: name.lastName,
-      email: application.email,
-      phone: application.phone,
-      jobTitle: application.jobTitle,
-      jobId: application.jobId,
-    });
-    navigate(`/people/add?${params.toString()}`);
+  const startEmployee = async (application: JobApplication) => {
+    setBusyAction(`employee:${application.id}`);
+    try {
+      const job = jobs.find((item) => item.id === application.jobId);
+      if (!job) throw new Error("The linked job could not be found.");
+      const privateDetails = await jobPrivateDetailsService.getForJob(
+        tenantId,
+        application.jobId,
+      );
+      if (!privateDetails) {
+        throw new Error("The contract and probation details for this job are missing.");
+      }
+      const name = splitName(application.name);
+      const params = new URLSearchParams({
+        candidateId: application.candidateId || "",
+        applicationId: application.id || "",
+        firstName: name.firstName,
+        lastName: name.lastName,
+        email: application.email,
+        phone: application.phone,
+        jobTitle: application.jobTitle,
+        jobId: application.jobId,
+        department: job.department,
+        employmentType: job.employmentType || "Full-time",
+        salary: job.salaryMin ? String(job.salaryMin) : "",
+        contractType: privateDetails.contractType,
+        contractDurationMonths: privateDetails.contractDurationMonths
+          ? String(privateDetails.contractDurationMonths)
+          : "",
+        probationDays: String(privateDetails.probationDays),
+      });
+      navigate(`/people/add?${params.toString()}`);
+    } catch (error) {
+      toast({
+        title: "Could not start the employee record",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyAction(null);
+    }
   };
 
   const renderApplicantAction = (application: JobApplication) => {
@@ -569,6 +628,45 @@ export default function HiringWorkspace() {
   const selectedStage = selectedApplication
     ? applicantStage(selectedApplication, selectedCandidate, selectedInterview)
     : undefined;
+
+  if (
+    jobsQuery.isError ||
+    applicationsQuery.isError ||
+    candidatesQuery.isError ||
+    interviewsQuery.isError
+  ) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Hiring"
+            subtitle="Post a job, review applicants, and schedule the next step."
+            icon={Briefcase}
+            iconColor="text-blue-600"
+          />
+          <Card className="border-destructive/30">
+            <CardContent className="flex flex-col items-center gap-4 py-10 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-muted-foreground">
+                Could not load the complete hiring pipeline. No empty state is being assumed.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void jobsQuery.refetch();
+                  void applicationsQuery.refetch();
+                  void candidatesQuery.refetch();
+                  void interviewsQuery.refetch();
+                }}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -994,7 +1092,11 @@ export default function HiringWorkspace() {
                     </>
                   )}
                   {selectedStage === "ready" && canAddEmployee && (
-                    <Button className="gap-2 bg-blue-600 text-white hover:bg-blue-700" onClick={() => startEmployee(selectedApplication)}>
+                    <Button
+                      className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                      disabled={busyAction === `employee:${selectedApplication.id}`}
+                      onClick={() => void startEmployee(selectedApplication)}
+                    >
                       <UserPlus className="h-4 w-4" />
                       Add as employee
                     </Button>

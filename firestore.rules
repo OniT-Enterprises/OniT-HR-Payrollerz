@@ -127,10 +127,6 @@ service cloud.firestore {
       return hasTenantModule(tenantId, 'hiring');
     }
 
-    function canAccessPerformanceRecords(tenantId) {
-      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'performance');
-    }
-
     function canAccessTimeLeaveRecords(tenantId) {
       return isTenantFinanceAdmin(tenantId) ||
         (isTenantMember(tenantId) && getTenantRole(tenantId) == 'manager');
@@ -583,18 +579,7 @@ service cloud.firestore {
       // GOALS SUBCOLLECTION
       // ============================================
       match /goals/{goalId} {
-        allow read: if isSuperAdmin() ||
-          canAccessPerformanceRecords(tenantId) ||
-          resource.data.createdById == request.auth.uid;
-
-        // SECURITY: Employees can only create goals they own
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) && request.resource.data.createdById == request.auth.uid);
-
-        // Employees can only update their own goals
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) && resource.data.createdById == request.auth.uid);
-
+        allow read, create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -603,8 +588,9 @@ service cloud.firestore {
       // ============================================
       match /reviews/{reviewId} {
         allow read: if isSuperAdmin() ||
-          canAccessPerformanceRecords(tenantId) ||
+          isTenantAdmin(tenantId) ||
           (resource.data.employeeId != null &&
+           resource.data.status != 'draft' &&
            isSelfEmployee(tenantId, resource.data.employeeId));
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
@@ -614,7 +600,7 @@ service cloud.firestore {
       // ============================================
       match /trainings/{trainingId} {
         allow read: if isSuperAdmin() ||
-          canAccessPerformanceRecords(tenantId) ||
+          isTenantAdmin(tenantId) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(tenantId, resource.data.employeeId));
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
@@ -828,13 +814,126 @@ service cloud.firestore {
       // GRIEVANCES SUBCOLLECTION (Anonymous — Ekipa)
       // ============================================
       match /grievances/{grievanceId} {
-        // Only admins can read grievances (sensitive, anonymous)
+        // Only HR admins can list/read the confidential report body.
         allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
-        // Any tenant member can submit (anonymous — no userId stored)
-        allow create: if isSuperAdmin() || isTenantMember(tenantId);
-        // Only admins can update status (review, resolve, dismiss)
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Anonymous is enforced at the boundary: the employee client cannot
+        // smuggle a uid/name/email into the document or forge its status.
+        allow create: if isSuperAdmin() || (
+          isTenantMember(tenantId) &&
+          request.resource.data.keys().hasAll([
+            'tenantId', 'ticketId', 'category', 'description',
+            'attachmentUrls', 'status', 'createdAt'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'tenantId', 'ticketId', 'category', 'description',
+            'attachmentUrls', 'status', 'createdAt'
+          ]) &&
+          request.resource.data.tenantId == tenantId &&
+          grievanceId == request.resource.data.ticketId &&
+          request.resource.data.ticketId is string &&
+          request.resource.data.ticketId.size() == 16 &&
+          request.resource.data.category in [
+            'harassment', 'wage_issue', 'safety_concern',
+            'discrimination', 'other'
+          ] &&
+          request.resource.data.description is string &&
+          request.resource.data.description.size() >= 20 &&
+          request.resource.data.description.size() <= 5000 &&
+          request.resource.data.attachmentUrls is list &&
+          request.resource.data.attachmentUrls.size() <= 3 &&
+          request.resource.data.status == 'submitted' &&
+          request.resource.data.createdAt == request.time &&
+          existsAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)) &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)).data.ticketId == grievanceId &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)).data.status == 'submitted'
+        );
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.tenantId == resource.data.tenantId &&
+          request.resource.data.ticketId == resource.data.ticketId &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'resolution', 'resolvedAt', 'updatedAt'
+          ]) &&
+          request.resource.data.updatedAt == request.time &&
+          existsAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)) &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)).data.status == request.resource.data.status &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievanceStatuses/$(grievanceId)).data.get('resolution', '') == request.resource.data.get('resolution', '') &&
+          (
+            (resource.data.status == 'submitted' && request.resource.data.status == 'reviewing') ||
+            (
+              resource.data.status in ['submitted', 'reviewing'] &&
+              request.resource.data.status in ['resolved', 'dismissed'] &&
+              request.resource.data.resolution is string &&
+              request.resource.data.resolution.size() >= 10 &&
+              request.resource.data.resolution.size() <= 2000 &&
+              request.resource.data.resolvedAt == request.time
+            )
+          )
+        );
         // Grievances should not be deleted
+        allow delete: if isSuperAdmin();
+      }
+
+      // Token-bearer status mirror for Ekipa. Employees can get one exact,
+      // unguessable ticket document but cannot list tickets or read grievance
+      // descriptions. HR keeps this mirror in the same batch as status edits.
+      match /grievanceStatuses/{ticketId} {
+        allow get: if isSuperAdmin() || isTenantMember(tenantId);
+        allow list: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || (
+          request.resource.data.keys().hasAll([
+            'tenantId', 'ticketId', 'category', 'status', 'createdAt', 'updatedAt'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'tenantId', 'ticketId', 'category', 'status', 'createdAt',
+            'updatedAt', 'resolvedAt', 'resolution'
+          ]) &&
+          request.resource.data.tenantId == tenantId &&
+          request.resource.data.ticketId == ticketId &&
+          request.resource.data.ticketId is string &&
+          request.resource.data.ticketId.size() == 16 &&
+          request.resource.data.category in [
+            'harassment', 'wage_issue', 'safety_concern',
+            'discrimination', 'other'
+          ] &&
+          existsAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)) &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)).data.ticketId == ticketId &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)).data.category == request.resource.data.category &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)).data.status == request.resource.data.status &&
+          (
+            isTenantAdmin(tenantId) || (
+            isTenantMember(tenantId) &&
+              request.resource.data.status == 'submitted' &&
+              request.resource.data.createdAt == request.time &&
+              request.resource.data.updatedAt == request.time &&
+              !request.resource.data.keys().hasAny(['resolvedAt', 'resolution'])
+            )
+          )
+        );
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.tenantId == resource.data.tenantId &&
+          request.resource.data.ticketId == resource.data.ticketId &&
+          request.resource.data.category == resource.data.category &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'resolution', 'resolvedAt', 'updatedAt'
+          ]) &&
+          request.resource.data.updatedAt == request.time &&
+          existsAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)) &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)).data.status == request.resource.data.status &&
+          getAfter(/databases/$(database)/documents/tenants/$(tenantId)/grievances/$(ticketId)).data.get('resolution', '') == request.resource.data.get('resolution', '') &&
+          (
+            (resource.data.status == 'submitted' && request.resource.data.status == 'reviewing') ||
+            (
+              resource.data.status in ['submitted', 'reviewing'] &&
+              request.resource.data.status in ['resolved', 'dismissed'] &&
+              request.resource.data.resolution is string &&
+              request.resource.data.resolution.size() >= 10 &&
+              request.resource.data.resolution.size() <= 2000 &&
+              request.resource.data.resolvedAt == request.time
+            )
+          )
+        );
         allow delete: if isSuperAdmin();
       }
 
@@ -1309,30 +1408,14 @@ service cloud.firestore {
     }
 
     match /okrs/{docId} {
-      allow read: if isSuperAdmin() || (
-        resource.data.tenantId != null && (
-          canAccessPerformanceRecords(resource.data.tenantId) ||
-          resource.data.ownerId == request.auth.uid
-        )
-      );
-      allow create: if isSuperAdmin() || (
-        request.resource.data.tenantId != null && (
-          isTenantAdmin(request.resource.data.tenantId) ||
-          (
-            isTenantMember(request.resource.data.tenantId) &&
-            request.resource.data.ownerId == request.auth.uid
-          )
-        )
-      );
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId && (
-          isTenantAdmin(resource.data.tenantId) ||
-          (
-            isTenantMember(resource.data.tenantId) &&
-            resource.data.ownerId == request.auth.uid
-          )
-        )
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
       );
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1341,30 +1424,14 @@ service cloud.firestore {
     }
 
     match /goals/{docId} {
-      allow read: if isSuperAdmin() || (
-        resource.data.tenantId != null && (
-          canAccessPerformanceRecords(resource.data.tenantId) ||
-          resource.data.createdById == request.auth.uid
-        )
-      );
-      allow create: if isSuperAdmin() || (
-        request.resource.data.tenantId != null && (
-          isTenantAdmin(request.resource.data.tenantId) ||
-          (
-            isTenantMember(request.resource.data.tenantId) &&
-            request.resource.data.createdById == request.auth.uid
-          )
-        )
-      );
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId && (
-          isTenantAdmin(resource.data.tenantId) ||
-          (
-            isTenantMember(resource.data.tenantId) &&
-            resource.data.createdById == request.auth.uid
-          )
-        )
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
       );
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1375,16 +1442,31 @@ service cloud.firestore {
     match /reviews/{docId} {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && (
-          canAccessPerformanceRecords(resource.data.tenantId) ||
+          isTenantAdmin(resource.data.tenantId) ||
           (resource.data.employeeId != null &&
+           resource.data.status != 'draft' &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         ));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        request.resource.data.tenantId == resource.data.tenantId && (
+          isTenantAdmin(resource.data.tenantId) || (
+            resource.data.employeeId != null &&
+            isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
+            resource.data.status == 'submitted' &&
+            request.resource.data.status == 'acknowledged' &&
+            request.resource.data.employeeId == resource.data.employeeId &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'employeeComments', 'acknowledgedAt', 'updatedAt'
+            ]) &&
+            request.resource.data.employeeComments is string &&
+            request.resource.data.employeeComments.size() <= 2000 &&
+            request.resource.data.acknowledgedAt == request.time &&
+            request.resource.data.updatedAt == request.time
+          )
+        )
       );
       // Deletes have no request.resource — a combined update/delete rule
       // referencing it rejects every non-superadmin delete.
@@ -1395,7 +1477,7 @@ service cloud.firestore {
     match /trainings/{docId} {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && (
-          canAccessPerformanceRecords(resource.data.tenantId) ||
+          isTenantAdmin(resource.data.tenantId) ||
           (resource.data.employeeId != null &&
            isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
         ));
@@ -1414,18 +1496,44 @@ service cloud.firestore {
 
     match /disciplinary/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessPerformanceRecords(resource.data.tenantId));
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && canAccessPerformanceRecords(request.resource.data.tenantId));
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null &&
+        isTenantAdmin(request.resource.data.tenantId) &&
+        request.resource.data.status == 'open'
+      );
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        canAccessPerformanceRecords(resource.data.tenantId)
+        isTenantAdmin(resource.data.tenantId) &&
+        resource.data.status != 'closed' &&
+        (
+          request.resource.data.status == resource.data.status ||
+          (resource.data.status == 'open' && request.resource.data.status == 'in_review') ||
+          (
+            resource.data.status == 'in_review' &&
+            request.resource.data.status == 'closed' &&
+            request.resource.data.closedBy is string &&
+            request.resource.data.closedBy.size() > 0 &&
+            request.resource.data.closedDate is string &&
+            (
+              request.resource.data.type != 'termination' ||
+              (
+                request.resource.data.writtenAccusation is string &&
+                request.resource.data.writtenAccusation.size() > 0 &&
+                request.resource.data.employeeDefence is string &&
+                request.resource.data.employeeDefence.size() > 0 &&
+                request.resource.data.reasonedDecision is string &&
+                request.resource.data.reasonedDecision.size() > 0 &&
+                request.resource.data.decisionDeliveredDate is string &&
+                request.resource.data.decisionDeliveredDate.size() > 0
+              )
+            )
+          )
+        )
       );
-      allow delete: if isSuperAdmin() || (
-        resource.data.tenantId != null &&
-        isTenantAdmin(resource.data.tenantId)
-      );
+      // HR case records are retained as an audit trail.
+      allow delete: if isSuperAdmin();
     }
 
     match /payruns/{docId} {
@@ -1982,7 +2090,10 @@ service cloud.firestore {
         (!request.resource.data.keys().hasAny(['referredBy']) || (request.resource.data.referredBy is string && request.resource.data.referredBy.size() < 200)) &&
         request.resource.data.resumePath is string &&
         request.resource.data.resumePath.size() < 1000 &&
-        request.resource.data.resumePath.matches('public/jobApplications/' + request.resource.data.tenantId + '/' + request.resource.data.jobId + '/.*');
+        request.resource.data.resumePath.matches(
+          'public/jobApplications/' + request.resource.data.tenantId + '/' +
+          request.resource.data.jobId + '/' + docId + '/resume\\.(pdf|doc|docx)'
+        );
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -2001,24 +2112,20 @@ service cloud.firestore {
     // ============================================
     match /onboarding/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null &&
-          (canAccessStaffRecords(resource.data.tenantId) ||
-           canAccessHiringRecords(resource.data.tenantId)));
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
 
       allow create: if
         !request.resource.data.keys().hasAny(['tempPassword']) &&
         (isSuperAdmin() ||
           (request.resource.data.tenantId != null &&
-            (canAccessStaffRecords(request.resource.data.tenantId) ||
-             canAccessHiringRecords(request.resource.data.tenantId))));
+            isTenantAdmin(request.resource.data.tenantId)));
 
       allow update: if
         !request.resource.data.keys().hasAny(['tempPassword']) &&
         (isSuperAdmin() || (
           resource.data.tenantId != null &&
           request.resource.data.tenantId == resource.data.tenantId &&
-          (canAccessStaffRecords(resource.data.tenantId) ||
-           canAccessHiringRecords(resource.data.tenantId))
+          isTenantAdmin(resource.data.tenantId)
         ));
 
       allow delete: if isSuperAdmin() || (
@@ -2032,35 +2139,47 @@ service cloud.firestore {
     // ============================================
     match /offboarding/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null &&
-          (canAccessStaffRecords(resource.data.tenantId) ||
-           canAccessHiringRecords(resource.data.tenantId)));
+        (resource.data.tenantId != null && isTenantAdmin(resource.data.tenantId));
 
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null &&
-          (canAccessStaffRecords(request.resource.data.tenantId) ||
-           canAccessHiringRecords(request.resource.data.tenantId)));
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null &&
+        isTenantAdmin(request.resource.data.tenantId) &&
+        request.resource.data.status == 'pending'
+      );
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        (canAccessStaffRecords(resource.data.tenantId) ||
-         canAccessHiringRecords(resource.data.tenantId)) &&
+        isTenantAdmin(resource.data.tenantId) &&
+        resource.data.status in ['pending', 'in_progress'] &&
         (
-          isTenantAdmin(resource.data.tenantId) ||
+          request.resource.data.status in ['pending', 'in_progress', 'cancelled'] ||
           (
-            !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['article56FinalPay']) &&
-            request.resource.data.get('checklist', {}).get('finalPayCalculated', false) ==
-              resource.data.get('checklist', {}).get('finalPayCalculated', false)
+            request.resource.data.status == 'completed' &&
+            request.resource.data.checklist.accessRevoked == true &&
+            request.resource.data.checklist.equipmentReturned == true &&
+            request.resource.data.checklist.documentsSigned == true &&
+            request.resource.data.checklist.knowledgeTransfer == true &&
+            request.resource.data.checklist.finalPayCalculated == true &&
+            request.resource.data.checklist.benefitsCancelled == true &&
+            request.resource.data.checklist.exitInterviewCompleted == true &&
+            request.resource.data.checklist.referenceLetter == true &&
+            request.resource.data.checklist.inssCessationDeclared == true &&
+            request.resource.data.exitInterview.completed == true &&
+            request.resource.data.includeArt56Severance is bool &&
+            request.resource.data.article56FinalPay.reviewAcknowledged == true &&
+            request.resource.data.article56FinalPay.reviewNote is string &&
+            request.resource.data.article56FinalPay.reviewNote.size() > 0 &&
+            existsAfter(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/employees/$(resource.data.employeeId)) &&
+            getAfter(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/employees/$(resource.data.employeeId)).data.status == 'terminated' &&
+            getAfter(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/employees/$(resource.data.employeeId)).data.terminationDate == request.resource.data.lastWorkingDay &&
+            getAfter(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/employees/$(resource.data.employeeId)).data.severanceOnTermination == request.resource.data.includeArt56Severance
           )
         )
       );
 
-      allow delete: if isSuperAdmin() || (
-        resource.data.tenantId != null &&
-        isTenantAdmin(resource.data.tenantId)
-      );
+      // Completed/cancelled leaver records are retained as an audit trail.
+      allow delete: if isSuperAdmin();
     }
 
     // ============================================

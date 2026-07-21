@@ -1,9 +1,8 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   useDisciplinaryRecords,
   useCreateDisciplinaryRecord,
   useUpdateDisciplinaryRecord,
-  useDeleteDisciplinaryRecord,
   useCloseDisciplinaryCase,
 } from "@/hooks/usePerformance";
 import { Button } from "@/components/ui/button";
@@ -70,7 +69,6 @@ import {
   Eye,
   Edit,
   Shield,
-  Trash2,
   CheckCircle,
   ExternalLink,
   Loader2,
@@ -98,11 +96,12 @@ type DisciplinarySortKey = "employee" | "date" | "type" | "severity" | "status" 
 export default function Disciplinary() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
-  const { data: records = [], isLoading: loading } = useDisciplinaryRecords();
+  const employeesQuery = useAllEmployees();
+  const { data: employees = [], isLoading: employeesLoading } = employeesQuery;
+  const recordsQuery = useDisciplinaryRecords();
+  const { data: records = [], isLoading: loading } = recordsQuery;
   const createMutation = useCreateDisciplinaryRecord();
   const updateMutation = useUpdateDisciplinaryRecord();
-  const deleteMutation = useDeleteDisciplinaryRecord();
   const closeMutation = useCloseDisciplinaryCase();
 
   // Filter state
@@ -116,11 +115,9 @@ export default function Disciplinary() {
   const [showRecordDialog, setShowRecordDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DisciplinaryRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<DisciplinaryRecord | null>(null);
-  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -137,10 +134,13 @@ export default function Disciplinary() {
   const [editFormData, setEditFormData] = useState({
     type: "" as DisciplinaryType | "",
     severity: "" as SeverityLevel | "",
-    status: "" as DisciplinaryStatus | "",
     summary: "",
     fullDetails: "",
     actionTaken: "",
+    writtenAccusation: "",
+    employeeDefence: "",
+    reasonedDecision: "",
+    decisionDeliveredDate: "",
   });
 
   // Get employee name by ID
@@ -200,21 +200,9 @@ export default function Disciplinary() {
   };
 
   const totalPages = Math.ceil(sortedRecords.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const effectivePage = totalPages === 0 ? 1 : Math.min(currentPage, totalPages);
+  const startIndex = (effectivePage - 1) * itemsPerPage;
   const paginatedRecords = sortedRecords.slice(startIndex, startIndex + itemsPerPage);
-
-  // Reset page when filters change
-  const filterKey = `${selectedEmployee}-${selectedType}-${selectedStatus}`;
-  const prevFilterKeyRef = useRef(filterKey);
-  if (filterKey !== prevFilterKeyRef.current) {
-    prevFilterKeyRef.current = filterKey;
-    setCurrentPage(1);
-  }
-
-  // Clamp page when items are deleted and current page becomes empty
-  if (totalPages > 0 && currentPage > totalPages) {
-    setCurrentPage(totalPages);
-  }
 
   const getStatusBadge = (status: DisciplinaryStatus) => {
     switch (status) {
@@ -341,10 +329,13 @@ export default function Disciplinary() {
     setEditFormData({
       type: record.type,
       severity: record.severity,
-      status: record.status,
       summary: record.summary,
       fullDetails: record.fullDetails || "",
       actionTaken: record.actionTaken || "",
+      writtenAccusation: record.writtenAccusation || "",
+      employeeDefence: record.employeeDefence || "",
+      reasonedDecision: record.reasonedDecision || "",
+      decisionDeliveredDate: record.decisionDeliveredDate || "",
     });
     setShowEditDialog(true);
   };
@@ -371,10 +362,13 @@ export default function Disciplinary() {
         updates: {
           type: editFormData.type as DisciplinaryType,
           severity: editFormData.severity as SeverityLevel,
-          status: editFormData.status as DisciplinaryStatus,
           summary: editFormData.summary,
           fullDetails: editFormData.fullDetails || "",
           actionTaken: editFormData.actionTaken || "",
+          writtenAccusation: editFormData.writtenAccusation.trim() || undefined,
+          employeeDefence: editFormData.employeeDefence.trim() || undefined,
+          reasonedDecision: editFormData.reasonedDecision.trim() || undefined,
+          decisionDeliveredDate: editFormData.decisionDeliveredDate || undefined,
         },
       });
 
@@ -389,7 +383,7 @@ export default function Disciplinary() {
       console.error("Error updating incident:", error);
       toast({
         title: "Error",
-        description: "Failed to update incident. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update incident. Please try again.",
         variant: "destructive",
       });
     }
@@ -421,28 +415,24 @@ export default function Disciplinary() {
       console.error("Error closing case:", error);
       toast({
         title: "Error",
-        description: "Failed to close case. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to close case. Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async () => {
-    if (!deletingRecordId) return;
-
+  const handleStartReview = async (record: DisciplinaryRecord) => {
     try {
-      await deleteMutation.mutateAsync(deletingRecordId);
-      toast({
-        title: "Success",
-        description: "Record deleted successfully.",
+      await updateMutation.mutateAsync({ id: record.id!, updates: { status: "in_review" } });
+      setSelectedRecord((current) => {
+        if (!current || current.id !== record.id) return current;
+        return { ...current, status: "in_review" };
       });
-      setShowDeleteDialog(false);
-      setDeletingRecordId(null);
+      toast({ title: "Case moved to review" });
     } catch (error) {
-      console.error("Error deleting record:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete record.",
+        title: "Could not update case",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     }
@@ -496,6 +486,33 @@ export default function Disciplinary() {
     );
   }
 
+  if (recordsQuery.isError || employeesQuery.isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Disciplinary"
+            subtitle="Confidential HR incident and written-process records"
+            icon={Shield}
+            iconColor="text-blue-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium">Could not load disciplinary records</p>
+              <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
+              <Button
+                className="mt-4"
+                onClick={() => void Promise.all([recordsQuery.refetch(), employeesQuery.refetch()])}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.disciplinary} />
@@ -503,7 +520,7 @@ export default function Disciplinary() {
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Disciplinary"
-          subtitle="Manage disciplinary actions and incident reports"
+          subtitle="Confidential HR incident and written-process records"
           icon={Shield}
           iconColor="text-blue-500"
           actions={
@@ -525,7 +542,10 @@ export default function Disciplinary() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div>
                 <Label htmlFor="employee-filter">Employee</Label>
-                <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <Select value={selectedEmployee} onValueChange={(value) => {
+                  setSelectedEmployee(value);
+                  setCurrentPage(1);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="All employees" />
                   </SelectTrigger>
@@ -541,7 +561,10 @@ export default function Disciplinary() {
               </div>
               <div>
                 <Label htmlFor="type-filter">Type</Label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedType} onValueChange={(value) => {
+                  setSelectedType(value);
+                  setCurrentPage(1);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
@@ -557,7 +580,10 @@ export default function Disciplinary() {
               </div>
               <div>
                 <Label htmlFor="status-filter">Status</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <Select value={selectedStatus} onValueChange={(value) => {
+                  setSelectedStatus(value);
+                  setCurrentPage(1);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
@@ -576,6 +602,7 @@ export default function Disciplinary() {
                     setSelectedEmployee("");
                     setSelectedType("");
                     setSelectedStatus("");
+                    setCurrentPage(1);
                   }}
                   className="w-full"
                 >
@@ -717,7 +744,7 @@ export default function Disciplinary() {
                           className="cursor-pointer"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          PDF, images, or Word documents (max 15MB)
+                          PDF, images, or Word documents (max 10MB)
                         </p>
                       </div>
                       <DialogFooter className="gap-2">
@@ -789,26 +816,16 @@ export default function Disciplinary() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleOpenEditDialog(record)}
-                            title="Edit record"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => {
-                              setDeletingRecordId(record.id!);
-                              setShowDeleteDialog(true);
-                            }}
-                            title="Delete record"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {record.status !== "closed" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleOpenEditDialog(record)}
+                              title="Edit record"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -824,15 +841,15 @@ export default function Disciplinary() {
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        onClick={() => setCurrentPage(Math.max(1, effectivePage - 1))}
+                        className={effectivePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                     {[...Array(totalPages)].map((_, i) => (
                       <PaginationItem key={i + 1}>
                         <PaginationLink
                           onClick={() => setCurrentPage(i + 1)}
-                          isActive={currentPage === i + 1}
+                          isActive={effectivePage === i + 1}
                           className="cursor-pointer"
                         >
                           {i + 1}
@@ -841,8 +858,8 @@ export default function Disciplinary() {
                     ))}
                     <PaginationItem>
                       <PaginationNext
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        onClick={() => setCurrentPage(Math.min(totalPages, effectivePage + 1))}
+                        className={effectivePage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                   </PaginationContent>
@@ -858,7 +875,7 @@ export default function Disciplinary() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Disciplinary Record</DialogTitle>
-            <DialogDescription>Update the incident details and status</DialogDescription>
+            <DialogDescription>Update the incident details and written process</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -900,22 +917,6 @@ export default function Disciplinary() {
               </div>
             </div>
             <div>
-              <Label htmlFor="edit-status">Status</Label>
-              <Select
-                value={editFormData.status}
-                onValueChange={(value) => handleEditInputChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_review">In Review</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label htmlFor="edit-summary">Summary *</Label>
               <Textarea
                 id="edit-summary"
@@ -943,6 +944,55 @@ export default function Disciplinary() {
                 rows={2}
               />
             </div>
+            {editFormData.type === "termination" && (
+              <div className="space-y-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+                <div>
+                  <p className="font-medium">Written process · Art. 50(4)</p>
+                  <p className="text-xs text-muted-foreground">
+                    All four fields are required before this termination case can be closed.
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="written-accusation">Written accusation *</Label>
+                  <Textarea
+                    id="written-accusation"
+                    value={editFormData.writtenAccusation}
+                    onChange={(event) => handleEditInputChange("writtenAccusation", event.target.value)}
+                    placeholder="State the allegation and facts given to the employee."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="employee-defence">Employee defence / response *</Label>
+                  <Textarea
+                    id="employee-defence"
+                    value={editFormData.employeeDefence}
+                    onChange={(event) => handleEditInputChange("employeeDefence", event.target.value)}
+                    placeholder="Record the response, or that the employee declined to respond."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reasoned-decision">Reasoned decision *</Label>
+                  <Textarea
+                    id="reasoned-decision"
+                    value={editFormData.reasonedDecision}
+                    onChange={(event) => handleEditInputChange("reasonedDecision", event.target.value)}
+                    placeholder="Explain the evidence considered and the decision reached."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="decision-delivered">Decision delivered *</Label>
+                  <Input
+                    id="decision-delivered"
+                    type="date"
+                    value={editFormData.decisionDeliveredDate}
+                    onChange={(event) => handleEditInputChange("decisionDeliveredDate", event.target.value)}
+                  />
+                </div>
+              </div>
+            )}
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
@@ -1013,6 +1063,27 @@ export default function Disciplinary() {
                   <p className="mt-1 text-sm">{selectedRecord.actionTaken}</p>
                 </div>
               )}
+              {selectedRecord.type === "termination" && (
+                <div className="space-y-3 rounded-lg border p-4">
+                  <p className="font-medium">Written process · Art. 50(4)</p>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Written accusation</Label>
+                    <p className="text-sm">{selectedRecord.writtenAccusation || "Not recorded"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Employee defence / response</Label>
+                    <p className="text-sm">{selectedRecord.employeeDefence || "Not recorded"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Reasoned decision</Label>
+                    <p className="text-sm">{selectedRecord.reasonedDecision || "Not recorded"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Decision delivered</Label>
+                    <p className="text-sm">{formatDate(selectedRecord.decisionDeliveredDate)}</p>
+                  </div>
+                </div>
+              )}
               {selectedRecord.evidenceUrl && (
                 <div>
                   <Label className="text-muted-foreground text-xs">Evidence</Label>
@@ -1032,7 +1103,16 @@ export default function Disciplinary() {
                 <Button variant="outline" onClick={() => setShowViewDialog(false)} className="flex-1">
                   Close
                 </Button>
-                {selectedRecord.status !== "closed" && (
+                {selectedRecord.status === "open" && (
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    onClick={() => void handleStartReview(selectedRecord)}
+                  >
+                    Start Review
+                  </Button>
+                )}
+                {selectedRecord.status === "in_review" && (
                   <Button
                     className="flex-1"
                     onClick={() => setShowCloseDialog(true)}
@@ -1072,35 +1152,6 @@ export default function Disciplinary() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Record</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this disciplinary record? This action cannot be undone.
-              Any uploaded evidence will also be removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
