@@ -30,19 +30,17 @@ version retention), **delete protection**, and a **daily backup schedule** with 
 retention (schedule id `688b3702-fa98-4867-bebd-91192429b9f6`). Verify anytime with:
 `gcloud firestore backups schedules list --database='(default)' --project=onit-hr-payroll`
 
-### 2. Sentry error tracking — ONE manual step left (~2 min)
+### 2. ~~Sentry error tracking~~ — DONE July 21 2026 (live + verified)
 
 Everything is wired and hardened (2026-07-21): `client/main.tsx` init with
 console.error capture (the swallowed-toast class), per-host environments
 (production-app / production-marketing), release = commit SHA, session
 replay permanently OFF (payroll screens must never be recorded), CI build
 env passthrough incl. `VITE_COMMIT_SHA`, and the nginx CSP connect-src
-already allows the Sentry ingest domains. Errors are invisible ONLY because
-no DSN exists:
-
-- Create a free project at sentry.io (platform: React) — needs Tony's email
-- `gh secret set VITE_SENTRY_DSN --body "<the dsn>"`
-- Next push to main activates it; verify with a test error from the console
+already allows the Sentry ingest domains. DSN set 2026-07-21 (project javascript-react, org o4511773334241280,
+account info@naroman.tl); entry budget raised 314→340 KiB for the SDK's
+real weight. Verified live with test errors on both hosts (uncaught +
+console.error paths) — beacons confirmed reaching the ingest endpoint.
 
 ### 3. ~~Uptime monitoring~~ — DONE July 5 2026 (GitHub Actions)
 
