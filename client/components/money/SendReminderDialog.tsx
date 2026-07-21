@@ -137,6 +137,7 @@ export function SendReminderDialog({
       const recorded = await invoiceService.sendReminder(
         session.tid,
         invoice.id,
+        session.member.uid,
       );
       if (!recorded) {
         toast({

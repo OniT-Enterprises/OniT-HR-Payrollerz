@@ -87,7 +87,7 @@ export default function InvoiceForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { canManage } = useTenant();
+  const { canManage, session } = useTenant();
   const tenantId = useTenantId();
   const canManageTenant = canManage();
 
@@ -342,6 +342,9 @@ export default function InvoiceForm() {
         quantity: Number(item.quantity) || 0,
         unitPrice: Number(item.unitPrice) || 0,
         ...(item.discount ? { discount: Number(item.discount) } : {}),
+        ...(item.vatRate !== undefined && item.vatRate !== null
+          ? { vatRate: Number(item.vatRate) }
+          : {}),
       })),
       projectName: formData.projectName || undefined,
       poNumber: formData.poNumber || undefined,
@@ -351,7 +354,20 @@ export default function InvoiceForm() {
       taxAmount,
       total,
       amountPaid: invoice?.amountPaid || 0,
-      balanceDue: subtractMoney(total, invoice?.amountPaid || 0),
+      creditedAmount: invoice?.creditedAmount || 0,
+      balanceDue: subtractMoney(
+        total,
+        invoice?.amountPaid || 0,
+        invoice?.creditedAmount || 0,
+      ),
+      isVATInvoice:
+        invoice?.isVATInvoice ||
+        (invoiceSettings.vatEnabled === true && invoiceSettings.vatRegistered === true),
+      supplierVatId:
+        invoice?.supplierVatId ||
+        invoiceSettings.vatRegistrationNumber ||
+        invoiceSettings.companyTin,
+      customerVatId: invoice?.customerVatId || _selectedCustomer?.tin,
       notes: formData.notes,
       terms: formData.terms,
       templateId: formData.templateId,
@@ -431,40 +447,74 @@ export default function InvoiceForm() {
       };
 
       let invoiceId: string;
-
-      if (isNew || duplicateId) {
-        invoiceId = await createInvoiceMutation.mutateAsync(dataToSave);
+      try {
+        if (isNew || duplicateId) {
+          invoiceId = await createInvoiceMutation.mutateAsync(dataToSave);
+        } else if (invoice) {
+          await updateInvoiceMutation.mutateAsync({ id: invoice.id, data: dataToSave });
+          invoiceId = invoice.id;
+        } else {
+          return;
+        }
+      } catch (error) {
+        console.error('Error saving invoice:', error);
         toast({
-          title: t('common.success') || 'Success',
-          description: t('money.invoices.created') || 'Invoice created',
+          title: t('common.error') || 'Error',
+          description: t('money.invoices.saveError') || 'Failed to save invoice',
+          variant: 'destructive',
         });
-      } else if (invoice) {
-        await updateInvoiceMutation.mutateAsync({ id: invoice.id, data: dataToSave });
-        invoiceId = invoice.id;
-        toast({
-          title: t('common.success') || 'Success',
-          description: t('money.invoices.updated') || 'Invoice updated',
-        });
-      } else {
         return;
       }
 
-      if (sendAfter) {
-        await invoiceService.markAsSent(tenantId, invoiceId);
-        const customerEmail = customers.find((c) => c.id === data.customerId)?.email;
+      if (!sendAfter) {
         toast({
           title: t('common.success') || 'Success',
-          description: customerEmail
-            ? (t('money.invoices.sentToEmail') || 'Invoice emailed to {{email}}').replace('{{email}}', customerEmail)
-            : t('money.invoices.sentSuccess') || 'Invoice sent',
+          description: isNew || duplicateId
+            ? t('money.invoices.created') || 'Invoice created'
+            : t('money.invoices.updated') || 'Invoice updated',
         });
+        navigate('/money/invoices');
+        return;
       }
 
-      navigate('/money/invoices');
-    } catch (_error) {
+      try {
+        const delivery = await invoiceService.markAsSent(
+          tenantId,
+          invoiceId,
+          session?.member.uid,
+        );
+        const customerEmail = customers.find((c) => c.id === data.customerId)?.email;
+        if (delivery.error) {
+          toast({
+            title: 'Invoice issued',
+            description: `${delivery.error} Open the invoice to retry delivery.`,
+          });
+          navigate(`/money/invoices/${invoiceId}`);
+        } else {
+          toast({
+            title: 'Invoice issued',
+            description: delivery.email === 'queued' && customerEmail
+              ? `Email queued for ${customerEmail}`
+              : 'The invoice is ready to share.',
+          });
+          navigate('/money/invoices');
+        }
+      } catch (error) {
+        console.error('Error issuing invoice:', error);
+        toast({
+          title: 'Draft saved — not issued',
+          description: error instanceof Error
+            ? error.message
+            : 'Open the saved draft and try issuing it again.',
+          variant: 'destructive',
+        });
+        navigate(`/money/invoices/${invoiceId}/edit`);
+      }
+    } catch (error) {
+      console.error('Unexpected invoice error:', error);
       toast({
         title: t('common.error') || 'Error',
-        description: t('money.invoices.saveError') || 'Failed to save invoice',
+        description: 'Something unexpected happened. Your saved invoice has not been duplicated.',
         variant: 'destructive',
       });
     } finally {

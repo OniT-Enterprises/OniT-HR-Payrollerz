@@ -88,6 +88,7 @@ export default function Cashflow() {
 
   const { data = {
     customerPayments: 0,
+    customerRefunds: 0,
     otherInflows: 0,
     totalInflows: 0,
     vendorPayments: 0,
@@ -107,7 +108,7 @@ export default function Cashflow() {
       ));
 
       if (cashAccounts.length > 0) {
-        const [entries, openingBalances, customerPayments, vendorPayments, expenseTotal] = await Promise.all([
+        const [entries, openingBalances, customerActivity, vendorPayments, expenseTotal] = await Promise.all([
           balanceSnapshotService.queryGLRange(tenantId, startStr, endStr),
           Promise.all(cashAccounts.map((account) => generalLedgerService.getAccountBalance(
             tenantId,
@@ -115,7 +116,7 @@ export default function Cashflow() {
             account.code,
             openingCutoff,
           ))),
-          invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+          invoiceService.getInvoiceCashActivityByDateRange(tenantId, startStr, endStr),
           billService.getCashPaidByDateRange(tenantId, startStr, endStr),
           expenseService.getTotalExpenses(tenantId, startStr, endStr),
         ]);
@@ -134,7 +135,8 @@ export default function Cashflow() {
         );
 
         return buildCashflowData({
-          customerPayments,
+          customerPayments: customerActivity.receipts,
+          customerRefunds: customerActivity.refunds,
           vendorPayments,
           expenses: expenseTotal,
           totalInflows,
@@ -144,14 +146,14 @@ export default function Cashflow() {
       }
 
       const [
-        customerPayments,
+        customerActivity,
         vendorPayments,
         expenseTotal,
         priorCustomerPayments,
         priorVendorPayments,
         priorExpenses,
       ] = await Promise.all([
-        invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+        invoiceService.getInvoiceCashActivityByDateRange(tenantId, startStr, endStr),
         billService.getCashPaidByDateRange(tenantId, startStr, endStr),
         expenseService.getTotalExpenses(tenantId, startStr, endStr),
         invoiceService.getPaidInvoiceTotalAsOf(tenantId, openingCutoff),
@@ -159,8 +161,8 @@ export default function Cashflow() {
         expenseService.getTotalExpensesAsOf(tenantId, openingCutoff),
       ]);
 
-      const totalInflows = customerPayments;
-      const totalOutflows = addMoney(vendorPayments, expenseTotal);
+      const totalInflows = customerActivity.receipts;
+      const totalOutflows = addMoney(customerActivity.refunds, vendorPayments, expenseTotal);
       const openingBalance = subtractMoney(
         priorCustomerPayments,
         priorVendorPayments,
@@ -168,7 +170,8 @@ export default function Cashflow() {
       );
 
       return buildCashflowData({
-        customerPayments,
+        customerPayments: customerActivity.receipts,
+        customerRefunds: customerActivity.refunds,
         vendorPayments,
         expenses: expenseTotal,
         totalInflows,
@@ -441,6 +444,14 @@ export default function Cashflow() {
                   </span>
                   <span className="font-medium">{formatCurrency(data.vendorPayments)}</span>
                 </div>
+                {data.customerRefunds !== 0 && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-muted-foreground">
+                      {t('money.cashflow.customerRefunds') || 'Customer Refunds'}
+                    </span>
+                    <span className="font-medium">{formatCurrency(data.customerRefunds)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1">
                   <span className="text-muted-foreground">
                     {t('money.cashflow.operatingExpenses') || 'Operating Expenses'}

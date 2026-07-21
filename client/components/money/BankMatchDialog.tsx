@@ -6,7 +6,7 @@
  *    payment (bank line's amount and date) through the existing payment paths
  *    and settles the document — a confirm step states exactly what will
  *    happen. Bank amounts above the balance due are blocked, never guessed.
- *  - 'invoice_payment' / 'bill_payment' / 'expense': money already recorded
+ *  - 'invoice_payment' / 'invoice_refund' / 'bill_payment' / 'expense': money already recorded
  *    in Xefe. Choosing one only links the bank line to it.
  */
 
@@ -29,9 +29,10 @@ import {
 } from '@/lib/accounting/bank-reconciliation-settlement';
 import { FileText, Receipt, CreditCard, Link2, ArrowDownLeft, ArrowUpRight, Loader2 } from 'lucide-react';
 import type { BankTransaction } from '@/types/money';
+import { absoluteMoney } from '@/lib/currency';
 
 interface MatchOption {
-  type: 'invoice' | 'bill' | 'invoice_payment' | 'bill_payment' | 'expense';
+  type: 'invoice' | 'bill' | 'invoice_payment' | 'invoice_refund' | 'bill_payment' | 'expense';
   id: string;
   description: string;
   amount: number;
@@ -79,6 +80,12 @@ const typeConfig = {
     icon: FileText,
     className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20',
   },
+  invoice_refund: {
+    labelKey: 'money.bankRecon.optRecordedRefund',
+    labelFallback: 'Recorded refund',
+    icon: ArrowUpRight,
+    className: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20',
+  },
   bill_payment: {
     labelKey: 'money.bankRecon.optRecordedPayment',
     labelFallback: 'Recorded payment',
@@ -111,7 +118,7 @@ function TransactionSummary({ transaction, formatCurrency }: { transaction: Bank
               <ArrowUpRight className="h-4 w-4 text-red-500" />
             )}
             <p className={`text-xl font-bold ${isDeposit ? 'text-green-600' : 'text-red-600'}`}>
-              {isDeposit ? '+' : '-'}{formatCurrency(transaction.amount)}
+              {isDeposit ? '+' : '-'}{formatCurrency(absoluteMoney(transaction.amount))}
             </p>
           </div>
           <Badge variant="outline" className="text-[10px] mt-1">
@@ -246,7 +253,7 @@ function MatchOptionsList({ matchOptions, transaction, onSelect, formatCurrency 
                 </div>
               </div>
               <p className={`font-semibold flex-shrink-0 ${option.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {option.amount >= 0 ? '+' : '-'}{formatCurrency(option.amount)}
+                {option.amount >= 0 ? '+' : '-'}{formatCurrency(absoluteMoney(option.amount))}
               </p>
             </div>
             <OptionCaption option={option} decision={decision} formatCurrency={formatCurrency} />

@@ -4,14 +4,12 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { DocumentSnapshot } from 'firebase/firestore';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import {
   invoiceService,
   type InvoiceFilters,
-  type PaginatedResult,
 } from '@/services/invoiceService';
-import type { Invoice, InvoiceFormData, InvoiceSettings, InvoiceTemplateId } from '@/types/money';
-import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
+import type { InvoiceFormData, InvoiceSettings, InvoiceTemplateId } from '@/types/money';
 
 export const invoiceKeys = {
   all: (tenantId: string) => ['invoices', tenantId] as const,
@@ -23,19 +21,17 @@ export const invoiceKeys = {
 };
 
 function useAllInvoices(
-  maxResults: number = SEARCH_FETCH_LIMIT,
   enabled: boolean = true,
   filters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc'> = {},
 ) {
   const tenantId = useTenantId();
-  const queryFilters = { ...filters, pageSize: maxResults };
+  const { searchTerm: _searchTerm, ...serverFilters } = filters;
   return useQuery({
-    queryKey: invoiceKeys.list(tenantId, queryFilters),
-    queryFn: () => invoiceService.getInvoices(tenantId, queryFilters),
+    queryKey: [...invoiceKeys.lists(tenantId), 'complete-search', serverFilters] as const,
+    queryFn: () => invoiceService.getAllInvoices(tenantId, serverFilters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
-    select: (data: PaginatedResult<Invoice>) => data.data,
   });
 }
 
@@ -46,15 +42,21 @@ export function useInvoice(id: string | undefined) {
     queryFn: () => invoiceService.getInvoiceById(tenantId, id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: (query) =>
+      ['preparing', 'queued'].includes(query.state.data?.deliveryStatus || '')
+        ? 4_000
+        : false,
   });
 }
 
 export function useCreateInvoice() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
+  const { session } = useTenant();
 
   return useMutation({
-    mutationFn: (data: InvoiceFormData) => invoiceService.createInvoice(tenantId, data),
+    mutationFn: (data: InvoiceFormData) =>
+      invoiceService.createInvoice(tenantId, data, session?.member.uid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },
@@ -64,10 +66,11 @@ export function useCreateInvoice() {
 export function useUpdateInvoice() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
+  const { session } = useTenant();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InvoiceFormData> }) =>
-      invoiceService.updateInvoice(tenantId, id, data),
+      invoiceService.updateInvoice(tenantId, id, data, session?.member.uid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },
@@ -78,10 +81,11 @@ export function useUpdateInvoice() {
 export function useUpdateInvoiceTemplate() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
+  const { session } = useTenant();
 
   return useMutation({
     mutationFn: ({ id, templateId }: { id: string; templateId: InvoiceTemplateId }) =>
-      invoiceService.updateInvoiceTemplate(tenantId, id, templateId),
+      invoiceService.updateInvoiceTemplate(tenantId, id, templateId, session?.member.uid),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, id) });
     },
@@ -94,6 +98,17 @@ export function useInvoicePayments(invoiceId: string | undefined) {
   return useQuery({
     queryKey: [...invoiceKeys.detail(tenantId, invoiceId!), 'payments'] as const,
     queryFn: () => invoiceService.getPaymentsForInvoice(tenantId, invoiceId!),
+    enabled: !!invoiceId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Immutable credit notes issued against one invoice. */
+export function useInvoiceCreditNotes(invoiceId: string | undefined) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: [...invoiceKeys.detail(tenantId, invoiceId!), 'creditNotes'] as const,
+    queryFn: () => invoiceService.getCreditNotesForInvoice(tenantId, invoiceId!),
     enabled: !!invoiceId,
     staleTime: 5 * 60 * 1000,
   });
@@ -181,7 +196,7 @@ export function useSmartInvoices(
   filters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc'> = {},
 ) {
   const paginatedQuery = useFlattenedPaginatedInvoices(filters, !isSearching);
-  const allQuery = useAllInvoices(SEARCH_FETCH_LIMIT, isSearching, filters);
+  const allQuery = useAllInvoices(isSearching, filters);
 
   return {
     invoices: isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices,
@@ -192,6 +207,6 @@ export function useSmartInvoices(
     fetchNextPage: paginatedQuery.fetchNextPage,
     hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
     isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
-    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
+    searchLimitReached: false,
   };
 }

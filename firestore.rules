@@ -163,6 +163,13 @@ service cloud.firestore {
       return hasTenantModule(tenantId, 'accounting');
     }
 
+    // Firestore numbers are doubles. Monetary values are stored to cents by
+    // the client, but transaction arithmetic in rules can retain a tiny binary
+    // fraction; compare with a sub-cent tolerance rather than exact equality.
+    function moneyClose(left, right) {
+      return left >= right - 0.00001 && left <= right + 0.00001;
+    }
+
     function isSelfEmployee(tenantId, employeeId) {
       return isAuthenticated() &&
         isTenantMember(tenantId) &&
@@ -1006,12 +1013,300 @@ service cloud.firestore {
 
       match /invoices/{invoiceId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+
+        function validDraftCreate() {
+          return request.resource.data.keys().hasAll([
+              'invoiceNumber', 'customerId', 'customerName', 'issueDate',
+              'dueDate', 'items', 'subtotal', 'taxRate', 'taxAmount', 'total',
+              'status', 'amountPaid', 'balanceDue', 'currency', 'createdBy',
+              'updatedBy', 'createdAt', 'updatedAt'
+            ]) &&
+            request.resource.data.status == 'draft' &&
+            request.resource.data.currency == 'USD' &&
+            request.resource.data.items is list &&
+            request.resource.data.total is number &&
+            request.resource.data.total >= 0 &&
+            request.resource.data.amountPaid == 0 &&
+            request.resource.data.get('creditedAmount', 0) == 0 &&
+            moneyClose(request.resource.data.balanceDue, request.resource.data.total) &&
+            request.resource.data.createdBy == request.auth.uid &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.createdAt is timestamp &&
+            request.resource.data.updatedAt is timestamp;
+        }
+
+        function validDraftEdit() {
+          return resource.data.status == 'draft' &&
+            request.resource.data.status == 'draft' &&
+            request.resource.data.createdBy == resource.data.createdBy &&
+            request.resource.data.createdAt == resource.data.createdAt &&
+            request.resource.data.amountPaid == 0 &&
+            request.resource.data.get('creditedAmount', 0) == 0 &&
+            moneyClose(request.resource.data.balanceDue, request.resource.data.total) &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'customerId', 'customerName', 'customerEmail', 'customerPhone',
+              'customerAddress', 'customerVatId', 'issueDate', 'dueDate',
+              'items', 'projectName', 'poNumber', 'subtotal', 'discountTotal',
+              'taxRate', 'taxAmount', 'total', 'balanceDue', 'vatBreakdown',
+              'isVATInvoice', 'supplierVatId', 'notes', 'terms', 'templateId',
+              'accentColor', 'paymentTermsDays', 'paymentMethods',
+              'paymentAccount', 'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validIssue() {
+          return resource.data.status == 'draft' &&
+            request.resource.data.status == 'sent' &&
+            request.resource.data.amountPaid == resource.data.amountPaid &&
+            request.resource.data.get('creditedAmount', 0) == resource.data.get('creditedAmount', 0) &&
+            request.resource.data.balanceDue == resource.data.balanceDue &&
+            request.resource.data.sentAt == request.time &&
+            request.resource.data.deliveryStatus == 'preparing' &&
+            request.resource.data.deliveryAttemptedBy == request.auth.uid &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'sentAt', 'deliveryStatus', 'deliveryAttemptedBy',
+              'deliveryUpdatedAt', 'journalEntryId', 'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validMetadataUpdate() {
+          return request.resource.data.status == resource.data.status &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.get('deliveryStatus', 'not_requested') in [
+              'not_requested', 'preparing', 'queued', 'sent', 'failed', 'no_email'
+            ] &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'templateId', 'accentColor', 'shareToken', 'sentPdfUrl',
+              'deliveryStatus', 'deliveryError', 'deliveryUpdatedAt',
+              'emailQueuedAt', 'emailSentAt', 'deliveryAttemptedBy',
+              'deliveryAttemptId', 'lastReminderAt', 'reminderCount',
+              'journalEntryId', 'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validOverdueUpdate() {
+          return resource.data.status in ['sent', 'viewed', 'partial'] &&
+            request.resource.data.status == 'overdue' &&
+            request.resource.data.balanceDue > 0 &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validPaymentUpdate() {
+          let paymentId = request.resource.data.get('lastPaymentId', '');
+          let payment = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/payments_received/$(paymentId)).data;
+          return resource.data.status in ['sent', 'viewed', 'partial', 'overdue'] &&
+            paymentId != '' &&
+            payment.kind == 'payment' &&
+            payment.invoiceId == invoiceId &&
+            payment.createdBy == request.auth.uid &&
+            payment.amount > 0 &&
+            payment.amount <= resource.data.balanceDue + 0.00001 &&
+            request.resource.data.get('creditedAmount', 0) == resource.data.get('creditedAmount', 0) &&
+            moneyClose(request.resource.data.amountPaid, resource.data.amountPaid + payment.amount) &&
+            moneyClose(request.resource.data.balanceDue, resource.data.balanceDue - payment.amount) &&
+            request.resource.data.balanceDue >= 0 &&
+            ((moneyClose(request.resource.data.balanceDue, 0) && request.resource.data.status == 'paid') ||
+             (request.resource.data.balanceDue > 0 && request.resource.data.status == 'partial')) &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'amountPaid', 'balanceDue', 'status', 'paidAt', 'lastPaymentId',
+              'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validRefundUpdate() {
+          let refundId = request.resource.data.get('lastRefundId', '');
+          let refund = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/payments_received/$(refundId)).data;
+          return resource.data.status in ['sent', 'viewed', 'paid', 'partial', 'overdue'] &&
+            refundId != '' &&
+            refund.kind == 'refund' &&
+            refund.invoiceId == invoiceId &&
+            refund.createdBy == request.auth.uid &&
+            refund.amount < 0 &&
+            request.resource.data.get('creditedAmount', 0) == resource.data.get('creditedAmount', 0) &&
+            moneyClose(request.resource.data.amountPaid, resource.data.amountPaid + refund.amount) &&
+            moneyClose(request.resource.data.balanceDue, resource.data.balanceDue - refund.amount) &&
+            request.resource.data.amountPaid >= 0 &&
+            request.resource.data.balanceDue > 0 &&
+            request.resource.data.status in ['sent', 'viewed', 'partial', 'overdue'] &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'amountPaid', 'balanceDue', 'status', 'paidAt', 'lastRefundId',
+              'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        function validCreditUpdate() {
+          let creditId = request.resource.data.get('lastCreditNoteId', '');
+          let credit = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/credit_notes/$(creditId)).data;
+          let newCreditTotal = resource.data.get('creditedAmount', 0) + credit.amount;
+          return resource.data.status in ['sent', 'viewed', 'paid', 'partial', 'overdue'] &&
+            creditId != '' &&
+            credit.invoiceId == invoiceId &&
+            credit.status == 'issued' &&
+            credit.createdBy == request.auth.uid &&
+            credit.amount > 0 &&
+            credit.amount <= resource.data.balanceDue + 0.00001 &&
+            request.resource.data.amountPaid == resource.data.amountPaid &&
+            moneyClose(request.resource.data.creditedAmount, newCreditTotal) &&
+            moneyClose(request.resource.data.get('creditedTaxAmount', 0), resource.data.get('creditedTaxAmount', 0) + credit.taxAmount) &&
+            moneyClose(request.resource.data.balanceDue, resource.data.balanceDue - credit.amount) &&
+            request.resource.data.creditNoteCount == resource.data.get('creditNoteCount', 0) + 1 &&
+            request.resource.data.balanceDue >= 0 &&
+            ((moneyClose(request.resource.data.balanceDue, 0) && resource.data.amountPaid > 0 && request.resource.data.status == 'paid') ||
+             (moneyClose(request.resource.data.balanceDue, 0) && resource.data.amountPaid == 0 && request.resource.data.status == 'credited') ||
+             (request.resource.data.balanceDue > 0 && request.resource.data.status == 'partial')) &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'creditedAmount', 'creditedTaxAmount', 'balanceDue', 'status',
+              'paidAt', 'creditNoteCount', 'lastCreditNoteId', 'updatedBy',
+              'updatedAt'
+            ]);
+        }
+
+        function validCancellation() {
+          return resource.data.status in ['sent', 'viewed', 'partial', 'overdue'] &&
+            resource.data.amountPaid == 0 &&
+            resource.data.get('creditedAmount', 0) == 0 &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.cancelReason is string &&
+            request.resource.data.cancelReason.size() > 0 &&
+            request.resource.data.cancelledAt == request.time &&
+            request.resource.data.updatedBy == request.auth.uid &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'status', 'cancelledAt', 'cancelReason',
+              'cancellationAdjustmentEntryId', 'updatedBy', 'updatedAt'
+            ]);
+        }
+
+        allow create: if isSuperAdmin() ||
+          (isTenantFinanceAdmin(tenantId) && validDraftCreate());
+        allow update: if isSuperAdmin() || (
+          isTenantFinanceAdmin(tenantId) && (
+            validDraftEdit() || validIssue() || validMetadataUpdate() ||
+            validOverdueUpdate() || validPaymentUpdate() ||
+            validRefundUpdate() || validCreditUpdate() || validCancellation()
+          )
+        );
+        allow delete: if isSuperAdmin() ||
+          (isTenantFinanceAdmin(tenantId) && resource.data.status == 'draft');
       }
 
       match /payments_received/{paymentId} {
         allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
+
+        function validReceiptCreate() {
+          let invoiceId = request.resource.data.get('invoiceId', '');
+          let invoice = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/invoices/$(invoiceId)).data;
+          return request.resource.data.kind == 'payment' &&
+            invoiceId != '' &&
+            request.resource.data.amount is number &&
+            request.resource.data.amount > 0 &&
+            request.resource.data.date is string &&
+            request.resource.data.createdBy == request.auth.uid &&
+            request.resource.data.createdAt is timestamp &&
+            request.resource.data.get('refundedAmount', 0) == 0 &&
+            request.resource.data.get('refundStatus', 'none') == 'none' &&
+            invoice.lastPaymentId == paymentId &&
+            invoice.customerId == request.resource.data.customerId &&
+            invoice.invoiceNumber == request.resource.data.invoiceNumber;
+        }
+
+        function validRefundCreate() {
+          let invoiceId = request.resource.data.get('invoiceId', '');
+          let originalId = request.resource.data.get('relatedPaymentId', '');
+          let original = get(/databases/$(database)/documents/tenants/$(tenantId)/payments_received/$(originalId)).data;
+          let originalAfter = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/payments_received/$(originalId)).data;
+          let invoiceAfter = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/invoices/$(invoiceId)).data;
+          return request.resource.data.kind == 'refund' &&
+            invoiceId != '' && originalId != '' &&
+            original.kind == 'payment' &&
+            original.invoiceId == invoiceId &&
+            request.resource.data.amount is number &&
+            request.resource.data.amount < 0 &&
+            0 - request.resource.data.amount <= original.amount - original.get('refundedAmount', 0) + 0.00001 &&
+            request.resource.data.date is string &&
+            request.resource.data.notes is string &&
+            request.resource.data.notes.size() > 0 &&
+            request.resource.data.createdBy == request.auth.uid &&
+            request.resource.data.createdAt is timestamp &&
+            originalAfter.lastRefundId == paymentId &&
+            moneyClose(originalAfter.refundedAmount, original.get('refundedAmount', 0) - request.resource.data.amount) &&
+            invoiceAfter.lastRefundId == paymentId;
+        }
+
+        function validReceiptRefundMetadata() {
+          let refundId = request.resource.data.get('lastRefundId', '');
+          let refund = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/payments_received/$(refundId)).data;
+          return resource.data.kind == 'payment' &&
+            refundId != '' &&
+            refund.kind == 'refund' &&
+            refund.relatedPaymentId == paymentId &&
+            refund.invoiceId == resource.data.invoiceId &&
+            refund.createdBy == request.auth.uid &&
+            moneyClose(request.resource.data.refundedAmount, resource.data.get('refundedAmount', 0) - refund.amount) &&
+            request.resource.data.refundedAmount <= resource.data.amount + 0.00001 &&
+            ((moneyClose(request.resource.data.refundedAmount, resource.data.amount) && request.resource.data.refundStatus == 'refunded') ||
+             (request.resource.data.refundedAmount < resource.data.amount && request.resource.data.refundStatus == 'partial')) &&
+            request.resource.data.updatedAt == request.time &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'refundedAmount', 'refundStatus', 'lastRefundId', 'updatedAt'
+            ]);
+        }
+
+        allow create: if isSuperAdmin() || (
+          isTenantFinanceAdmin(tenantId) &&
+          (validReceiptCreate() || validRefundCreate())
+        );
+        allow update: if isSuperAdmin() ||
+          (isTenantFinanceAdmin(tenantId) && validReceiptRefundMetadata());
+        allow delete: if false;
+      }
+
+      match /credit_notes/{creditNoteId} {
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
+
+        function validCreditNoteCreate() {
+          let invoiceId = request.resource.data.get('invoiceId', '');
+          let invoiceBefore = get(/databases/$(database)/documents/tenants/$(tenantId)/invoices/$(invoiceId)).data;
+          let invoiceAfter = getAfter(/databases/$(database)/documents/tenants/$(tenantId)/invoices/$(invoiceId)).data;
+          return invoiceId != '' &&
+            request.resource.data.creditNoteNumber is string &&
+            request.resource.data.creditNoteNumber.size() > 0 &&
+            request.resource.data.invoiceNumber == invoiceBefore.invoiceNumber &&
+            request.resource.data.customerId == invoiceBefore.customerId &&
+            request.resource.data.amount is number &&
+            request.resource.data.amount > 0 &&
+            request.resource.data.amount <= invoiceBefore.balanceDue + 0.00001 &&
+            request.resource.data.netAmount is number &&
+            request.resource.data.netAmount >= 0 &&
+            request.resource.data.taxAmount is number &&
+            request.resource.data.taxAmount >= 0 &&
+            moneyClose(request.resource.data.netAmount + request.resource.data.taxAmount, request.resource.data.amount) &&
+            request.resource.data.reason is string &&
+            request.resource.data.reason.size() > 0 &&
+            request.resource.data.status == 'issued' &&
+            request.resource.data.createdBy == request.auth.uid &&
+            request.resource.data.createdAt is timestamp &&
+            invoiceAfter.lastCreditNoteId == creditNoteId;
+        }
+
+        allow create: if isSuperAdmin() ||
+          (isTenantFinanceAdmin(tenantId) && validCreditNoteCreate());
+        allow update, delete: if false;
       }
 
       match /recurring_invoices/{recurringId} {

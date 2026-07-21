@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { InvoicePaper } from '@/components/money/InvoicePaper';
 import { formatInvoiceDate, formatInvoiceMoney } from '@/lib/invoiceTemplates';
 import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
+import { compareMoney } from '@/lib/currency';
 import type { Invoice, InvoiceSettings } from '@/types/money';
 import { Download, FileText, Loader2 } from 'lucide-react';
 
@@ -81,7 +82,11 @@ export default function PublicInvoice() {
     const displayInvoice = withEffectiveStatus(link.invoice);
     // The frozen as-sent PDF is the canonical document; once paid, render
     // fresh so the customer's copy carries the PAID stamp.
-    if (link.pdfUrl && displayInvoice.status !== 'paid') {
+    if (
+      link.pdfUrl &&
+      compareMoney(displayInvoice.amountPaid || 0, 0) === 0 &&
+      compareMoney(displayInvoice.creditedAmount || 0, 0) === 0
+    ) {
       window.open(link.pdfUrl, '_blank', 'noopener');
       return;
     }
@@ -210,7 +215,24 @@ function StatusBanner({ invoice, companyName }: { invoice: Invoice; companyName:
           Selu tiha ona — Obrigadu!
         </p>
         <p className="mt-1 text-sm text-green-700/80 dark:text-green-300/80">
-          Paid — thank you! {formatInvoiceMoney(invoice.total)} received in full.
+          Settled — thank you! {formatInvoiceMoney(invoice.amountPaid || 0)} received
+          {(invoice.creditedAmount || 0) > 0
+            ? ` and ${formatInvoiceMoney(invoice.creditedAmount || 0)} credited.`
+            : ' in full.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (invoice.status === 'credited') {
+    return (
+      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-center dark:border-blue-900 dark:bg-blue-950">
+        <p className="text-sm text-blue-700 dark:text-blue-300">{fromLine}</p>
+        <p className="mt-1 text-2xl font-bold text-blue-700 dark:text-blue-300">
+          Nota kréditu fó tiha ona
+        </p>
+        <p className="mt-1 text-sm text-blue-700/80 dark:text-blue-300/80">
+          Credited in full. Nothing remains to pay.
         </p>
       </div>
     );
@@ -230,7 +252,7 @@ function StatusBanner({ invoice, companyName }: { invoice: Invoice; companyName:
       <p className={`text-xs ${overdue ? 'text-red-600/80' : 'text-muted-foreground'}`}>
         {overdue ? 'was due' : 'due'} {dueDate}
         {invoice.status === 'partial'
-          ? ` · ${formatInvoiceMoney(invoice.amountPaid || 0)} simu tiha ona (already received)`
+          ? ` · ${formatInvoiceMoney(invoice.amountPaid || 0)} received${(invoice.creditedAmount || 0) > 0 ? ` · ${formatInvoiceMoney(invoice.creditedAmount || 0)} credited` : ''}`
           : ''}
       </p>
     </div>

@@ -55,6 +55,7 @@ describe("cash-flow report calculations", () => {
     expect(
       buildCashflowData({
         customerPayments: 80.05,
+        customerRefunds: 3.01,
         vendorPayments: 25.01,
         expenses: 10.02,
         totalInflows: 100.1,
@@ -63,11 +64,12 @@ describe("cash-flow report calculations", () => {
       }),
     ).toEqual({
       customerPayments: 80.05,
+      customerRefunds: 3.01,
       otherInflows: 20.05,
       totalInflows: 100.1,
       vendorPayments: 25.01,
       expenses: 10.02,
-      otherOutflows: 5.02,
+      otherOutflows: 2.01,
       totalOutflows: 40.05,
       netCashflow: 60.05,
       openingBalance: 12.34,

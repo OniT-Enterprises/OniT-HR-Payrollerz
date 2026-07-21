@@ -7152,6 +7152,7 @@ const messages = {
       paid: "Paid",
       partial: "Partial",
       overdue: "Overdue",
+      credited: "Credited",
       cancelled: "Cancelled",
     },
     vendors: {
@@ -7491,6 +7492,7 @@ const messages = {
       inflows: "Cash Inflows",
       outflows: "Cash Outflows",
       customerPayments: "Customer Payments",
+      customerRefunds: "Customer Refunds",
       vendorPayments: "Vendor Payments",
       operatingExpenses: "Operating Expenses",
       totalInflows: "Total Inflows",
@@ -7537,6 +7539,11 @@ const messages = {
       bills: "bills",
     },
     bankRecon: {
+      optUnpaidInvoice: "Unpaid invoice",
+      optUnpaidBill: "Unpaid bill",
+      optRecordedPayment: "Recorded payment",
+      optRecordedRefund: "Recorded refund",
+      optExpense: "Expense",
       blockedGeneric: "Cannot record this payment",
       blockedOverpayment:
         "Bank amount is more than the balance due — cannot match",

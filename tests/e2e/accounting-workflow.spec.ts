@@ -2,7 +2,7 @@
  * Browser evidence for the non-payroll accounting chains that must agree with
  * the ledger before launch:
  *
- *   invoice → issue journal → receipt journal → bank match → reconciliation
+ *   invoice → issue → receipt → refund → credit note → bank reconciliation
  *   bill → supplier withholding settlement → payment journal
  *   fixed-asset acquisition → depreciation journal → fiscal-period close
  *
@@ -52,7 +52,9 @@ test.afterAll(async () => {
 });
 
 async function signUpOwner(page: Page) {
-  await page.addInitScript(() => window.localStorage.setItem("onit:locale", "en"));
+  await page.addInitScript(() =>
+    window.localStorage.setItem("onit:locale", "en"),
+  );
   await page.goto("/auth/signup");
   await page.getByLabel(/full name/i).fill(OWNER.name);
   await page.getByLabel(/work email/i).fill(OWNER.email);
@@ -61,7 +63,9 @@ async function signUpOwner(page: Page) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByLabel(/company name/i).fill(COMPANY);
   await page.getByRole("button", { name: /create/i }).click();
-  await expect(page.getByText(COMPANY).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(COMPANY).first()).toBeVisible({
+    timeout: 30_000,
+  });
 }
 
 test("invoice, bill, asset, depreciation, reconciliation, and close reach balanced books", async ({
@@ -71,6 +75,7 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   // the resulting statements. Firebase emulator startup and serial journal
   // polling make four minutes too tight on slower development machines.
   test.setTimeout(480_000);
+  page.setDefaultTimeout(30_000);
   page.on("pageerror", (error) => console.log("[pageerror]", error.message));
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -87,13 +92,17 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   // provision it already; otherwise use the same empty-state action a
   // first-time customer sees.
   await page.goto("/accounting/chart");
-  const initialize = page.getByRole("button", { name: /initialize.*default/i }).first();
+  const initialize = page
+    .getByRole("button", { name: /initialize.*default/i })
+    .first();
   if (await initialize.isVisible({ timeout: 10_000 }).catch(() => false)) {
     await initialize.click();
   }
   // The chart renders its top-level groups collapsed. Seeing the 1000 group
   // proves initialization completed; its 1110 child still exists for posting.
-  await expect(page.getByText("1000", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("1000", { exact: true }).first()).toBeVisible({
+    timeout: 30_000,
+  });
 
   // ── Invoice → issue journal → receipt journal ───────────────────────────
   await page.goto("/money/invoices/new");
@@ -104,12 +113,14 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   await expect(customerDialog).toBeHidden({ timeout: 30_000 });
   await expect(page.getByRole("combobox").first()).toContainText(CUSTOMER);
 
-  await page.getByPlaceholder(/description of service or product/i).fill("Accounting support");
+  await page
+    .getByPlaceholder(/description of service or product/i)
+    .fill("Accounting support");
   await page.locator('input[name="items.0.quantity"]').fill("1");
   await page.locator('input[name="items.0.unitPrice"]').fill("120");
-  await expect(page.getByPlaceholder(/description of service or product/i)).toHaveValue(
-    "Accounting support",
-  );
+  await expect(
+    page.getByPlaceholder(/description of service or product/i),
+  ).toHaveValue("Accounting support");
   await page.getByRole("button", { name: /save & send/i }).click();
   await expect(page).toHaveURL(/\/money\/invoices$/, { timeout: 30_000 });
   await expect(page.getByText(CUSTOMER).first()).toBeVisible();
@@ -125,22 +136,69 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   const customerAgingRow = page.getByRole("row").filter({ hasText: CUSTOMER });
   await expect(customerAgingRow).toBeVisible({ timeout: 30_000 });
   await expect(customerAgingRow.getByText("$120").first()).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "61-90" }).last()).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "90+" }).last()).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "61-90" }).last(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "90+" }).last(),
+  ).toBeVisible();
 
   await page.goto("/money/invoices");
   await page.getByText(CUSTOMER).first().click();
-  await page.getByRole("button", { name: /record payment/i }).first().click();
+  await page
+    .getByRole("button", { name: /record payment/i })
+    .first()
+    .click();
   const receiptDialog = page.getByRole("dialog", { name: /record payment/i });
   await receiptDialog.getByLabel(/reference/i).fill(`INV-RECEIPT-${stamp}`);
   await receiptDialog.getByRole("button", { name: /record payment/i }).click();
   await expect(receiptDialog).toBeHidden({ timeout: 30_000 });
   await expect(page.getByText(/paid/i).first()).toBeVisible();
 
-  const receiptJournal = await waitForJournalBySource(tenantId, "payment", "1210");
+  const receiptJournal = await waitForJournalBySource(
+    tenantId,
+    "payment",
+    "1210",
+  );
   expect(receiptJournal.byCode["1120"]?.debit ?? 0).toBeCloseTo(120, 2);
   expect(receiptJournal.byCode["1210"]?.credit ?? 0).toBeCloseTo(120, 2);
   expect(receiptJournal.totalDebit).toBeCloseTo(receiptJournal.totalCredit, 2);
+
+  // Return part of the receipt, then clear the reopened receivable with a
+  // formal credit note. Both adjustments must be visible and post balanced
+  // reversals; the invoice finishes settled by $100 net cash + $20 credit.
+  await page.getByRole("button", { name: "Refund", exact: true }).click();
+  const refundDialog = page.getByRole("dialog", { name: /refund payment/i });
+  await refundDialog.getByLabel(/refund amount/i).fill("20");
+  await refundDialog.getByLabel(/^reason$/i).fill("Service scope reduced");
+  await refundDialog.getByRole("button", { name: /record refund/i }).click();
+  await expect(refundDialog).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByText("$20.00 refunded")).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.getByRole("button", { name: /more actions/i }).click();
+  await page.getByRole("menuitem", { name: /issue credit note/i }).click();
+  const creditDialog = page.getByRole("dialog", { name: /issue credit note/i });
+  await creditDialog.getByLabel(/credit amount/i).fill("20");
+  await creditDialog
+    .getByLabel(/^reason$/i)
+    .fill("Credit for reduced service scope");
+  await creditDialog
+    .getByRole("button", { name: /issue credit note/i })
+    .click();
+  await expect(creditDialog).toBeHidden({ timeout: 30_000 });
+  await expect(page.getByText(/-CN-01$/)).toBeVisible({ timeout: 30_000 });
+
+  const refundJournal = await waitForJournalBySource(tenantId, "refund");
+  expect(refundJournal.byCode["1210"]?.debit ?? 0).toBeCloseTo(20, 2);
+  expect(refundJournal.byCode["1120"]?.credit ?? 0).toBeCloseTo(20, 2);
+  expect(refundJournal.totalDebit).toBeCloseTo(refundJournal.totalCredit, 2);
+
+  const creditJournal = await waitForJournalBySource(tenantId, "credit_note");
+  expect(creditJournal.byCode["4100"]?.debit ?? 0).toBeCloseTo(20, 2);
+  expect(creditJournal.byCode["1210"]?.credit ?? 0).toBeCloseTo(20, 2);
+  expect(creditJournal.totalDebit).toBeCloseTo(creditJournal.totalCredit, 2);
 
   // Import the real bank line, link it to the receipt already recorded above,
   // then reconcile it. Linking must not create a second cash journal.
@@ -149,29 +207,63 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
     name: "statement.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(
-      `Date,Description,Amount\n${TODAY},E2E customer receipt ${stamp},120.00\n`,
+      `Date,Description,Amount\n${TODAY},E2E customer receipt ${stamp},120.00\n${TODAY},E2E customer refund ${stamp},-20.00\n`,
     ),
   });
-  const bankRow = page.getByRole("row").filter({ hasText: `E2E customer receipt ${stamp}` });
+  const bankRow = page
+    .getByRole("row")
+    .filter({ hasText: `E2E customer receipt ${stamp}` });
   await expect(bankRow).toBeVisible({ timeout: 30_000 });
   await bankRow.hover();
   await bankRow.getByRole("button", { name: /actions for/i }).click();
   await page.getByRole("menuitem", { name: /^match$/i }).click();
   const matchDialog = page.getByRole("dialog", { name: /match transaction/i });
-  const recordedReceipt = matchDialog.getByRole("button").filter({ hasText: CUSTOMER }).first();
+  const recordedReceipt = matchDialog
+    .getByRole("button")
+    .filter({ hasText: CUSTOMER })
+    .first();
   await expect(recordedReceipt).toBeVisible({ timeout: 30_000 });
   await recordedReceipt.click();
   await expect(matchDialog).toBeHidden({ timeout: 30_000 });
   await expect(bankRow.getByText(/^matched$/i)).toBeVisible();
   await bankRow.getByRole("checkbox").click();
   await page.getByRole("button", { name: /mark reconciled/i }).click();
-  await expect(bankRow.getByText(/^reconciled$/i)).toBeVisible({ timeout: 30_000 });
+  await expect(bankRow.getByText(/^reconciled$/i)).toBeVisible({
+    timeout: 30_000,
+  });
+
+  const refundBankRow = page
+    .getByRole("row")
+    .filter({ hasText: `E2E customer refund ${stamp}` });
+  await expect(refundBankRow).toBeVisible({ timeout: 30_000 });
+  await refundBankRow.hover();
+  await refundBankRow.getByRole("button", { name: /actions for/i }).click();
+  await page.getByRole("menuitem", { name: /^match$/i }).click();
+  const refundMatchDialog = page.getByRole("dialog", {
+    name: /match transaction/i,
+  });
+  const recordedRefund = refundMatchDialog
+    .getByRole("button")
+    .filter({ hasText: /recorded refund/i })
+    .filter({ hasText: CUSTOMER })
+    .first();
+  await expect(recordedRefund).toBeVisible({ timeout: 30_000 });
+  await recordedRefund.click();
+  await expect(refundMatchDialog).toBeHidden({ timeout: 30_000 });
+  await expect(refundBankRow.getByText(/^matched$/i)).toBeVisible();
+  await refundBankRow.getByRole("checkbox").click();
+  await page.getByRole("button", { name: /mark reconciled/i }).click();
+  await expect(refundBankRow.getByText(/^reconciled$/i)).toBeVisible({
+    timeout: 30_000,
+  });
 
   // ── Bill → payer withholding → supplier payment journal ────────────────
   await page.goto("/money/bills/new");
   await page.getByRole("combobox").first().click();
   await page.getByRole("option", { name: vendor.name }).click();
-  await page.getByPlaceholder(/what is this bill for/i).fill("Construction services");
+  await page
+    .getByPlaceholder(/what is this bill for/i)
+    .fill("Construction services");
   await page.locator('input[name="amount"]').fill("1000");
   await page.getByRole("button", { name: /more details/i }).click();
   const withholdingBlock = page
@@ -193,12 +285,21 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   const vendorAgingRow = page.getByRole("row").filter({ hasText: vendor.name });
   await expect(vendorAgingRow).toBeVisible({ timeout: 30_000 });
   await expect(vendorAgingRow.getByText("$1,000").first()).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "61-90" }).last()).toBeVisible();
-  await expect(page.getByRole("columnheader", { name: "90+" }).last()).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "61-90" }).last(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "90+" }).last(),
+  ).toBeVisible();
 
   await page.goto(billDetailUrl);
-  await page.getByRole("button", { name: /record payment/i }).first().click();
-  const billPaymentDialog = page.getByRole("dialog", { name: /record payment/i });
+  await page
+    .getByRole("button", { name: /record payment/i })
+    .first()
+    .click();
+  const billPaymentDialog = page.getByRole("dialog", {
+    name: /record payment/i,
+  });
   await billPaymentDialog.locator('input[type="number"]').fill("1000");
   await billPaymentDialog.getByRole("combobox").click();
   await page.getByRole("option", { name: /bank transfer/i }).click();
@@ -217,7 +318,10 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   expect(billPaymentJournal.byCode["2110"]?.debit ?? 0).toBeCloseTo(1000, 2);
   expect(billPaymentJournal.byCode["1120"]?.credit ?? 0).toBeCloseTo(980, 2);
   expect(billPaymentJournal.byCode["2320"]?.credit ?? 0).toBeCloseTo(20, 2);
-  expect(billPaymentJournal.totalDebit).toBeCloseTo(billPaymentJournal.totalCredit, 2);
+  expect(billPaymentJournal.totalDebit).toBeCloseTo(
+    billPaymentJournal.totalCredit,
+    2,
+  );
 
   // ── Asset acquisition → monthly depreciation ───────────────────────────
   await page.goto("/accounting/fixed-assets");
@@ -241,18 +345,29 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   );
   expect(acquisitionJournal.byCode["1530"]?.debit ?? 0).toBeCloseTo(1200, 2);
   expect(acquisitionJournal.byCode["1120"]?.credit ?? 0).toBeCloseTo(1200, 2);
-  expect(acquisitionJournal.totalDebit).toBeCloseTo(acquisitionJournal.totalCredit, 2);
+  expect(acquisitionJournal.totalDebit).toBeCloseTo(
+    acquisitionJournal.totalCredit,
+    2,
+  );
 
   await page.getByRole("button", { name: /post depreciation/i }).click();
-  const depreciationDialog = page.getByRole("dialog", { name: /post depreciation/i });
+  const depreciationDialog = page.getByRole("dialog", {
+    name: /post depreciation/i,
+  });
   await expect(depreciationDialog.getByText("$100.00").first()).toBeVisible();
   await depreciationDialog.getByRole("button", { name: /^post /i }).click();
   await expect(depreciationDialog).toBeHidden({ timeout: 30_000 });
 
-  const depreciationJournal = await waitForJournalBySource(tenantId, "depreciation");
+  const depreciationJournal = await waitForJournalBySource(
+    tenantId,
+    "depreciation",
+  );
   expect(depreciationJournal.byCode["5800"]?.debit ?? 0).toBeCloseTo(100, 2);
   expect(depreciationJournal.byCode["1590"]?.credit ?? 0).toBeCloseTo(100, 2);
-  expect(depreciationJournal.totalDebit).toBeCloseTo(depreciationJournal.totalCredit, 2);
+  expect(depreciationJournal.totalDebit).toBeCloseTo(
+    depreciationJournal.totalCredit,
+    2,
+  );
 
   // ── Posted journals → statements, filters, exports, cash reconciliation ─
   const yearStart = `${TODAY.slice(0, 4)}-01-01`;
@@ -261,7 +376,9 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   await page.locator('input[type="date"]').nth(0).fill(yearStart);
   await page.locator('input[type="date"]').nth(1).fill(TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
-  await expect(page.getByText("4100", { exact: true }).last()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("4100", { exact: true }).last()).toBeVisible({
+    timeout: 30_000,
+  });
   await page.getByRole("button", { name: /more details/i }).click();
   await expect(page.getByText(/books are balanced/i)).toBeVisible();
   const trialDownloadPromise = page.waitForEvent("download");
@@ -276,7 +393,7 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   await page.getByRole("button", { name: /^generate$/i }).click();
   const revenueRow = page.getByRole("row").filter({ hasText: "4100" });
   await expect(revenueRow).toBeVisible({ timeout: 30_000 });
-  await expect(revenueRow.getByText("$120.00")).toBeVisible();
+  await expect(revenueRow.getByText("$100.00")).toBeVisible();
   const incomeDownloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: /export csv/i }).click();
   expect((await incomeDownloadPromise).suggestedFilename()).toBe(
@@ -286,7 +403,9 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   await page.goto("/accounting/statements/balance-sheet");
   await page.locator('input[type="date"]').fill(TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
-  await expect(page.getByText(/total assets/i).last()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/total assets/i).last()).toBeVisible({
+    timeout: 30_000,
+  });
   await page.getByRole("button", { name: /more details/i }).click();
   await expect(page.getByText(/balance sheet is balanced/i)).toBeVisible();
   const balanceDownloadPromise = page.waitForEvent("download");
@@ -296,13 +415,27 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   );
 
   await page.goto("/accounting/statements/cash-flow");
-  await expect(page.getByText(/cash flow statement/i)).toBeVisible({ timeout: 30_000 });
-  const customerPaymentsRow = page.getByText(/customer payments/i).locator("..");
-  await expect(customerPaymentsRow.getByText("$120", { exact: true })).toBeVisible();
+  await expect(page.getByText(/cash flow statement/i)).toBeVisible({
+    timeout: 30_000,
+  });
+  const customerPaymentsRow = page
+    .getByText(/customer payments/i)
+    .locator("..");
+  await expect(
+    customerPaymentsRow.getByText("$120", { exact: true }),
+  ).toBeVisible();
+  const customerRefundsRow = page.getByText(/customer refunds/i).locator("..");
+  await expect(
+    customerRefundsRow.getByText("$20", { exact: true }),
+  ).toBeVisible();
   const vendorPaymentsRow = page.getByText(/vendor payments/i).locator("..");
-  await expect(vendorPaymentsRow.getByText("$980", { exact: true })).toBeVisible();
+  await expect(
+    vendorPaymentsRow.getByText("$980", { exact: true }),
+  ).toBeVisible();
   const otherOutflowsRow = page.getByText(/other outflows/i).locator("..");
-  await expect(otherOutflowsRow.getByText("$1,200", { exact: true })).toBeVisible();
+  await expect(
+    otherOutflowsRow.getByText("$1,200", { exact: true }),
+  ).toBeVisible();
 
   // ── Close the period only after every posting above is complete ─────────
   await page.goto("/accounting/statements/fiscal-periods");
@@ -315,18 +448,24 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   await expect(currentMonthCell).toBeVisible({ timeout: 30_000 });
   const currentPeriodRow = currentMonthCell.locator("..");
   await currentPeriodRow.getByRole("button", { name: /close period/i }).click();
-  const closeDialog = page.getByRole("alertdialog", { name: /close this period/i });
+  const closeDialog = page.getByRole("alertdialog", {
+    name: /close this period/i,
+  });
   await closeDialog.getByRole("button", { name: /close period/i }).click();
-  await expect(currentPeriodRow.getByText(/^closed$/i)).toBeVisible({ timeout: 30_000 });
+  await expect(currentPeriodRow.getByText(/^closed$/i)).toBeVisible({
+    timeout: 30_000,
+  });
 
   const auditActions = await waitForAuditActions(tenantId, [
     "accounting.journal_post",
     "accounting.period_create_year",
     "accounting.period_close",
   ]);
-  expect(auditActions).toEqual(expect.arrayContaining([
-    "accounting.journal_post",
-    "accounting.period_create_year",
-    "accounting.period_close",
-  ]));
+  expect(auditActions).toEqual(
+    expect.arrayContaining([
+      "accounting.journal_post",
+      "accounting.period_create_year",
+      "accounting.period_close",
+    ]),
+  );
 });

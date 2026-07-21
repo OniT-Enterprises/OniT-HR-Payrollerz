@@ -54,7 +54,16 @@ export type InvoiceStatus =
   | 'paid'
   | 'partial'
   | 'overdue'
+  | 'credited'
   | 'cancelled';
+
+export type InvoiceDeliveryStatus =
+  | 'not_requested'
+  | 'preparing'
+  | 'queued'
+  | 'sent'
+  | 'failed'
+  | 'no_email';
 
 /** Visual template used to render/print an invoice */
 export type InvoiceTemplateId = 'classic' | 'modern' | 'minimal';
@@ -119,6 +128,8 @@ export interface Invoice {
   // Payment tracking
   status: InvoiceStatus;
   amountPaid: number;
+  creditedAmount?: number;
+  creditedTaxAmount?: number;
   balanceDue: number;
 
   // VAT (optional — populated when vatEnabled)
@@ -157,6 +168,14 @@ export interface Invoice {
   cancelReason?: string;
   cancellationAdjustmentEntryId?: string;
   journalEntryId?: string;          // Active source journal (for idempotent posting)
+  lastPaymentId?: string;
+  lastRefundId?: string;
+  lastCreditNoteId?: string;
+  creditNoteCount?: number;
+
+  // Audit trail
+  createdBy?: string;
+  updatedBy?: string;
 
   // Reminders
   lastReminderAt?: Date;
@@ -165,6 +184,16 @@ export interface Invoice {
   // For sharing
   shareToken?: string;             // Random token for public link
   sentPdfUrl?: string;             // As-sent PDF frozen to Storage on first send
+
+  // Customer delivery is separate from accounting issuance. "queued" means
+  // accepted by Xefe's mail queue; the Cloud Function later records sent/failed.
+  deliveryStatus?: InvoiceDeliveryStatus;
+  deliveryError?: string;
+  deliveryUpdatedAt?: Date;
+  emailQueuedAt?: Date;
+  emailSentAt?: Date;
+  deliveryAttemptedBy?: string;
+  deliveryAttemptId?: string;
 
   // Payments received (populated by service)
   payments?: PaymentReceived[];
@@ -231,9 +260,21 @@ export interface PaymentReceived {
   invoiceNumber?: string;
 
   amount: number;
+  kind?: 'payment' | 'refund';
   method: PaymentMethod;
   reference?: string;              // Check number, transfer ref, etc.
   notes?: string;
+
+  depositAccountId?: string;
+  depositAccountCode?: string;
+  depositAccountName?: string;
+  journalEntryId?: string;
+  relatedPaymentId?: string;
+  refundedAmount?: number;
+  refundStatus?: 'none' | 'partial' | 'refunded';
+  lastRefundId?: string;
+  createdBy?: string;
+  updatedAt?: Date;
 
   createdAt: Date;
 }
@@ -246,6 +287,38 @@ export interface PaymentFormData {
   method: PaymentMethod;
   reference?: string;
   notes?: string;
+  depositAccountId?: string;
+}
+
+export interface PaymentRefundFormData {
+  date: string;
+  amount: number;
+  reason: string;
+  reference?: string;
+}
+
+export interface CreditNote {
+  id: string;
+  creditNoteNumber: string;
+  invoiceId: string;
+  invoiceNumber: string;
+  customerId: string;
+  customerName: string;
+  date: string;
+  amount: number;
+  netAmount: number;
+  taxAmount: number;
+  reason: string;
+  status: 'issued';
+  journalEntryId?: string;
+  createdBy: string;
+  createdAt: Date;
+}
+
+export interface CreditNoteFormData {
+  date: string;
+  amount: number;
+  reason: string;
 }
 
 // ============================================
@@ -521,6 +594,8 @@ export interface InvoiceSettings {
   // VAT (populated when vatEnabled)
   vatRegistrationNumber?: string;  // Business VAT ID / TIN
   pricesIncludeVAT?: boolean;      // true = shelf prices are VAT-inclusive
+  vatEnabled?: boolean;
+  vatRegistered?: boolean;
 }
 
 // ============================================
@@ -542,7 +617,7 @@ export interface BankTransaction {
   // Matching
   status: ReconciliationStatus;
   matchedTo?: {
-    type: 'invoice_payment' | 'bill_payment' | 'expense';
+    type: 'invoice_payment' | 'invoice_refund' | 'bill_payment' | 'expense';
     id: string;
     description: string;
     /** Payment doc created when the match itself recorded the payment. */

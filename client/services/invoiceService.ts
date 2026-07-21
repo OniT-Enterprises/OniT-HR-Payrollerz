@@ -19,20 +19,33 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  deleteField,
   writeBatch,
   runTransaction,
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { notificationService } from "@/services/notificationService";
 import { formatDateISO, getTodayTL, parseDateISO } from "@/lib/dateUtils";
-import { addMoney, maxMoney, subtractMoney, sumMoney } from "@/lib/currency";
+import {
+  absoluteMoney,
+  addMoney,
+  compareMoney,
+  maxMoney,
+  roundMoney,
+  subtractMoney,
+  sumMoney,
+  toDecimal,
+  toMoney,
+} from "@/lib/currency";
 import {
   calculateInvoiceAmounts,
+  calculateInvoiceCreditState,
   calculateInvoicePaymentState,
+  calculateInvoiceRefundState,
   getFiscalDateParts,
 } from "@/lib/accounting/calculations";
 import type {
@@ -45,6 +58,9 @@ import type {
   PaymentAccount,
   PaymentReceived,
   PaymentFormData,
+  PaymentRefundFormData,
+  CreditNote,
+  CreditNoteFormData,
   MoneyStats,
 } from "@/types/money";
 import type { JournalEntry } from "@/types/accounting";
@@ -97,6 +113,14 @@ export interface PaginatedResult<T> {
   totalFetched: number;
 }
 
+export interface InvoiceDeliveryResult {
+  issuedNow: boolean;
+  publicLinkReady: boolean;
+  pdfReady: boolean;
+  email: "queued" | "not_requested" | "failed";
+  error?: string;
+}
+
 const PAYMENT_EPSILON = 0.00001;
 const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = [
   "sent",
@@ -145,6 +169,18 @@ function mapInvoice(docSnap: DocumentSnapshot): Invoice {
       data.cancelledAt instanceof Timestamp
         ? data.cancelledAt.toDate()
         : data.cancelledAt || undefined,
+    deliveryUpdatedAt:
+      data.deliveryUpdatedAt instanceof Timestamp
+        ? data.deliveryUpdatedAt.toDate()
+        : data.deliveryUpdatedAt || undefined,
+    emailQueuedAt:
+      data.emailQueuedAt instanceof Timestamp
+        ? data.emailQueuedAt.toDate()
+        : data.emailQueuedAt || undefined,
+    emailSentAt:
+      data.emailSentAt instanceof Timestamp
+        ? data.emailSentAt.toDate()
+        : data.emailSentAt || undefined,
   } as Invoice;
 }
 
@@ -159,7 +195,24 @@ function mapPayment(docSnap: DocumentSnapshot): PaymentReceived {
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate()
         : data.createdAt || new Date(),
+    updatedAt:
+      data.updatedAt instanceof Timestamp
+        ? data.updatedAt.toDate()
+        : data.updatedAt || undefined,
   } as PaymentReceived;
+}
+
+function mapCreditNote(docSnap: DocumentSnapshot): CreditNote {
+  const data = docSnap.data();
+  if (!data) throw new Error("Document data is undefined");
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt:
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : data.createdAt || new Date(),
+  } as CreditNote;
 }
 
 function addDaysISO(dateISO: string, days: number): string {
@@ -201,8 +254,128 @@ class InvoiceService {
     return collection(db, paths.paymentsReceived(tenantId));
   }
 
+  private creditNotesRef(tenantId: string) {
+    return collection(db, paths.creditNotes(tenantId));
+  }
+
   private settingsRef(tenantId: string) {
     return doc(db, paths.invoiceSettings(tenantId));
+  }
+
+  private actorId(userId?: string): string {
+    const actor = userId || auth.currentUser?.uid;
+    if (!actor)
+      throw new Error(
+        "Your session expired. Sign in again before changing invoices.",
+      );
+    return actor;
+  }
+
+  private invoiceFallbackStatus(
+    invoice: Pick<Invoice, "dueDate" | "viewedAt">,
+  ): "sent" | "viewed" | "overdue" {
+    if (invoice.dueDate < getTodayTL()) return "overdue";
+    return invoice.viewedAt ? "viewed" : "sent";
+  }
+
+  /**
+   * A cancelled invoice remains an accounting event when it was issued first.
+   * Legacy cancelled drafts have neither an issue timestamp nor a source
+   * journal and must not leak into revenue/VAT reports.
+   */
+  private invoiceWasIssued(
+    invoice: Pick<Invoice, "status" | "sentAt" | "journalEntryId">,
+  ): boolean {
+    if (invoice.status === "draft") return false;
+    return (
+      invoice.status !== "cancelled" ||
+      Boolean(invoice.sentAt || invoice.journalEntryId)
+    );
+  }
+
+  /** Cancellation is a dated reversal event, not a rewrite of the issue date. */
+  private async getCancelledInvoicesByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<Invoice[]> {
+    const start = Timestamp.fromDate(
+      new Date(`${startDate}T00:00:00.000+09:00`),
+    );
+    const end = Timestamp.fromDate(new Date(`${endDate}T23:59:59.999+09:00`));
+    const snapshot = await getDocs(
+      query(
+        this.collectionRef(tenantId),
+        where("cancelledAt", ">=", start),
+        where("cancelledAt", "<=", end),
+      ),
+    );
+    return snapshot.docs
+      .map(mapInvoice)
+      .filter((invoice) => this.invoiceWasIssued(invoice));
+  }
+
+  private buildVatFields(
+    items: InvoiceItem[],
+    defaultRate: number,
+    settings: Partial<InvoiceSettings>,
+    customerVatId?: string,
+  ): Pick<
+    Invoice,
+    | "items"
+    | "isVATInvoice"
+    | "supplierVatId"
+    | "customerVatId"
+    | "vatBreakdown"
+  > {
+    const isVATInvoice =
+      settings.vatEnabled === true && settings.vatRegistered === true;
+    if (!isVATInvoice) return { items, isVATInvoice: false };
+
+    const vatItems = items.map((item) => {
+      const rate = Number.isFinite(item.vatRate as number)
+        ? Number(item.vatRate)
+        : defaultRate;
+      const category =
+        item.vatCategory ||
+        (rate <= 0
+          ? "zero"
+          : rate === settings.defaultTaxRate
+            ? "standard"
+            : "reduced");
+      return { ...item, vatRate: rate, vatCategory: category };
+    });
+    const byRate = new Map<
+      string,
+      NonNullable<Invoice["vatBreakdown"]>[number]
+    >();
+    for (const item of vatItems) {
+      const rate = item.vatRate || 0;
+      const category = item.vatCategory || "none";
+      const key = `${rate}:${category}`;
+      const current = byRate.get(key) || {
+        rate,
+        category,
+        netAmount: 0,
+        vatAmount: 0,
+      };
+      current.netAmount = addMoney(
+        current.netAmount,
+        item.netAmount || item.amount,
+      );
+      current.vatAmount = addMoney(current.vatAmount, item.vatAmount || 0);
+      byRate.set(key, current);
+    }
+
+    const supplierVatId =
+      settings.vatRegistrationNumber || settings.companyTin || undefined;
+    return {
+      items: vatItems,
+      isVATInvoice: true,
+      ...(supplierVatId ? { supplierVatId } : {}),
+      ...(customerVatId ? { customerVatId } : {}),
+      vatBreakdown: Array.from(byRate.values()).sort((a, b) => a.rate - b.rate),
+    };
   }
 
   // ----------------------------------------
@@ -309,7 +482,13 @@ class InvoiceService {
   /**
    * Get all invoices (fetches every page via getInvoices pagination loop)
    */
-  async getAllInvoices(tenantId: string): Promise<Invoice[]> {
+  async getAllInvoices(
+    tenantId: string,
+    filters: Omit<
+      InvoiceFilters,
+      "pageSize" | "startAfterDoc" | "searchTerm"
+    > = {},
+  ): Promise<Invoice[]> {
     const MAX_PAGES = 100;
     const all: Invoice[] = [];
     let lastDoc: DocumentSnapshot | undefined;
@@ -324,6 +503,7 @@ class InvoiceService {
         break;
       }
       const result = await this.getInvoices(tenantId, {
+        ...filters,
         pageSize: 500,
         startAfterDoc: lastDoc,
       });
@@ -406,12 +586,21 @@ class InvoiceService {
     tenantId: string,
     asOfDate: string,
   ): Promise<number> {
-    const [invoiceSnapshot, paymentSnapshot] = await Promise.all([
-      getDocs(
-        query(this.collectionRef(tenantId), where("issueDate", "<=", asOfDate)),
-      ),
-      getDocs(query(this.paymentsRef(tenantId), where("date", "<=", asOfDate))),
-    ]);
+    const [invoiceSnapshot, paymentSnapshot, creditSnapshot] =
+      await Promise.all([
+        getDocs(
+          query(
+            this.collectionRef(tenantId),
+            where("issueDate", "<=", asOfDate),
+          ),
+        ),
+        getDocs(
+          query(this.paymentsRef(tenantId), where("date", "<=", asOfDate)),
+        ),
+        getDocs(
+          query(this.creditNotesRef(tenantId), where("date", "<=", asOfDate)),
+        ),
+      ]);
 
     const paidByInvoice = new Map<string, number>();
     for (const paymentDoc of paymentSnapshot.docs) {
@@ -421,6 +610,18 @@ class InvoiceService {
         data.invoiceId,
         addMoney(
           paidByInvoice.get(data.invoiceId) || 0,
+          Number(data.amount) || 0,
+        ),
+      );
+    }
+    const creditedByInvoice = new Map<string, number>();
+    for (const creditDoc of creditSnapshot.docs) {
+      const data = creditDoc.data();
+      if (typeof data.invoiceId !== "string") continue;
+      creditedByInvoice.set(
+        data.invoiceId,
+        addMoney(
+          creditedByInvoice.get(data.invoiceId) || 0,
           Number(data.amount) || 0,
         ),
       );
@@ -451,6 +652,7 @@ class InvoiceService {
         subtractMoney(
           Number(data.total) || 0,
           paidByInvoice.get(invoiceDoc.id) || 0,
+          creditedByInvoice.get(invoiceDoc.id) || 0,
         ),
       );
       total = addMoney(total, historicalBalance);
@@ -463,9 +665,10 @@ class InvoiceService {
     startDate: string,
     endDate: string,
   ): Promise<number> {
-    // Cash flow follows each payment's transaction date. Looking at only the
-    // invoice's final paidAt timestamp drops partial payments and moves all cash
-    // to the date of the last payment.
+    // Cash-basis reporting follows each transaction date. Looking only at the
+    // invoice's final paidAt timestamp drops partial receipts and moves all cash
+    // to the date of the last payment. Refund rows are negative, so this is the
+    // net receipt amount used by cash-basis tax estimates.
     const snapshot = await getDocs(
       query(
         this.paymentsRef(tenantId),
@@ -477,6 +680,38 @@ class InvoiceService {
       (total, paymentDoc) =>
         addMoney(total, Number(paymentDoc.data().amount) || 0),
       0,
+    );
+  }
+
+  /**
+   * Split invoice cash into gross receipts and refunds for cash-flow
+   * presentation. Tax reports intentionally use the net helper above, while a
+   * cash-flow statement must show the actual money-in and money-out legs.
+   */
+  async getInvoiceCashActivityByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<{ receipts: number; refunds: number }> {
+    const snapshot = await getDocs(
+      query(
+        this.paymentsRef(tenantId),
+        where("date", ">=", startDate),
+        where("date", "<=", endDate),
+      ),
+    );
+    return snapshot.docs.reduce(
+      (activity, paymentDoc) => {
+        const payment = paymentDoc.data();
+        const amount = Number(payment.amount) || 0;
+        if (payment.kind === "refund" || amount < 0) {
+          activity.refunds = addMoney(activity.refunds, absoluteMoney(amount));
+        } else {
+          activity.receipts = addMoney(activity.receipts, amount);
+        }
+        return activity;
+      },
+      { receipts: 0, refunds: 0 },
     );
   }
 
@@ -498,19 +733,29 @@ class InvoiceService {
     tenantId: string,
     startDate: string,
     endDate: string,
-  ): Promise<{ outputVAT: number; salesCount: number }> {
-    const invoices = await this.getInvoicesByDateRange(
-      tenantId,
-      startDate,
-      endDate,
-    );
+  ): Promise<{
+    outputVAT: number;
+    salesCount: number;
+    adjustmentCount: number;
+  }> {
+    const [invoices, cancelledInvoices, creditSnapshot] = await Promise.all([
+      this.getInvoicesByDateRange(tenantId, startDate, endDate),
+      this.getCancelledInvoicesByDateRange(tenantId, startDate, endDate),
+      getDocs(
+        query(
+          this.creditNotesRef(tenantId),
+          where("date", ">=", startDate),
+          where("date", "<=", endDate),
+        ),
+      ),
+    ]);
 
     let outputVAT = 0;
     let salesCount = 0;
+    let adjustmentCount = 0;
 
     for (const invoice of invoices) {
-      if (invoice.status === "draft" || invoice.status === "cancelled")
-        continue;
+      if (!this.invoiceWasIssued(invoice)) continue;
       const taxAmount = Number(invoice.taxAmount) || 0;
       if (taxAmount > 0) {
         outputVAT = addMoney(outputVAT, taxAmount);
@@ -518,7 +763,23 @@ class InvoiceService {
       }
     }
 
-    return { outputVAT, salesCount };
+    // Voiding later creates a reversal in the void period. It must not erase
+    // the original sale from a previously filed period.
+    for (const invoice of cancelledInvoices) {
+      const taxCredit = Number(invoice.taxAmount) || 0;
+      if (taxCredit <= 0) continue;
+      outputVAT = subtractMoney(outputVAT, taxCredit);
+      adjustmentCount += 1;
+    }
+
+    for (const creditDoc of creditSnapshot.docs) {
+      const taxCredit = Number(creditDoc.data().taxAmount) || 0;
+      if (taxCredit <= 0) continue;
+      outputVAT = subtractMoney(outputVAT, taxCredit);
+      adjustmentCount += 1;
+    }
+
+    return { outputVAT, salesCount, adjustmentCount };
   }
 
   /** Accrual-basis net revenue for issued invoices in a period. */
@@ -527,23 +788,39 @@ class InvoiceService {
     startDate: string,
     endDate: string,
   ): Promise<number> {
-    const invoices = await this.getInvoicesByDateRange(
-      tenantId,
-      startDate,
-      endDate,
-    );
-    return sumMoney(
+    const [invoices, cancelledInvoices, creditSnapshot] = await Promise.all([
+      this.getInvoicesByDateRange(tenantId, startDate, endDate),
+      this.getCancelledInvoicesByDateRange(tenantId, startDate, endDate),
+      getDocs(
+        query(
+          this.creditNotesRef(tenantId),
+          where("date", ">=", startDate),
+          where("date", "<=", endDate),
+        ),
+      ),
+    ]);
+    const invoicedRevenue = sumMoney(
       invoices
-        .filter(
-          (invoice) =>
-            invoice.status !== "draft" && invoice.status !== "cancelled",
-        )
+        .filter((invoice) => this.invoiceWasIssued(invoice))
         .map(
           (invoice) =>
             invoice.subtotal ??
             subtractMoney(invoice.total, invoice.taxAmount || 0),
         ),
     );
+    const creditedRevenue = sumMoney(
+      creditSnapshot.docs.map(
+        (creditDoc) => Number(creditDoc.data().netAmount) || 0,
+      ),
+    );
+    const cancelledRevenue = sumMoney(
+      cancelledInvoices.map(
+        (invoice) =>
+          invoice.subtotal ??
+          subtractMoney(invoice.total, invoice.taxAmount || 0),
+      ),
+    );
+    return subtractMoney(invoicedRevenue, creditedRevenue, cancelledRevenue);
   }
 
   /**
@@ -713,6 +990,8 @@ class InvoiceService {
       total: invoice.total,
       status: invoice.status,
       amountPaid: invoice.amountPaid,
+      creditedAmount: invoice.creditedAmount,
+      creditedTaxAmount: invoice.creditedTaxAmount,
       balanceDue: invoice.balanceDue,
       vatBreakdown: invoice.vatBreakdown,
       isVATInvoice: invoice.isVATInvoice,
@@ -763,9 +1042,11 @@ class InvoiceService {
   ): Promise<{ token: string; url: string }> {
     let token = invoice.shareToken;
     if (!token) {
+      const actor = this.actorId();
       token = this.generateShareToken();
       await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
         shareToken: token,
+        updatedBy: actor,
         updatedAt: serverTimestamp(),
       });
     }
@@ -879,6 +1160,7 @@ class InvoiceService {
     tenantId: string,
     invoiceId: string,
   ): Promise<{ token: string; url: string }> {
+    const actor = this.actorId();
     const invoice = await this.getInvoiceById(tenantId, invoiceId);
     if (!invoice) throw new Error("Invoice not found");
 
@@ -894,6 +1176,7 @@ class InvoiceService {
     await updateDoc(doc(db, paths.invoice(tenantId, invoiceId)), {
       shareToken: token,
       ...(rotatedPdfUrl ? { sentPdfUrl: rotatedPdfUrl } : {}),
+      updatedBy: actor,
       updatedAt: serverTimestamp(),
     });
 
@@ -913,6 +1196,7 @@ class InvoiceService {
     tenantId: string,
     invoice: Invoice,
     settings: Partial<InvoiceSettings>,
+    actor: string,
     token?: string,
   ): Promise<string | undefined> {
     try {
@@ -931,6 +1215,7 @@ class InvoiceService {
 
       await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
         sentPdfUrl: pdfUrl,
+        updatedBy: actor,
         updatedAt: serverTimestamp(),
       });
       if (token) {
@@ -972,7 +1257,9 @@ class InvoiceService {
   async createInvoice(
     tenantId: string,
     data: InvoiceFormData,
+    userId?: string,
   ): Promise<string> {
+    const actor = this.actorId(userId);
     // Get customer info + settings (for presentation/payment defaults)
     const [customer, settings] = await Promise.all([
       customerService.getCustomerById(tenantId, data.customerId),
@@ -989,10 +1276,16 @@ class InvoiceService {
     // preview (net of per-line discounts; per-line VAT rate wins over the
     // invoice-level rate).
     const calculated = calculateInvoiceAmounts(data.items, data.taxRate);
-    const items: InvoiceItem[] = calculated.items.map((item, index) => ({
+    const baseItems: InvoiceItem[] = calculated.items.map((item, index) => ({
       ...item,
       id: `item_${Date.now()}_${index}`,
     }));
+    const vatFields = this.buildVatFields(
+      baseItems,
+      data.taxRate,
+      settings,
+      customer.tin,
+    );
     const { subtotal, discountTotal, taxAmount, total } = calculated;
 
     // Generate share token
@@ -1007,7 +1300,6 @@ class InvoiceService {
       customerAddress: customer.address,
       issueDate: data.issueDate,
       dueDate: data.dueDate,
-      items,
       ...(data.projectName ? { projectName: data.projectName } : {}),
       ...(data.poNumber ? { poNumber: data.poNumber } : {}),
       subtotal,
@@ -1017,7 +1309,9 @@ class InvoiceService {
       total,
       status: "draft",
       amountPaid: 0,
+      creditedAmount: 0,
       balanceDue: total,
+      ...vatFields,
       notes: data.notes,
       terms: data.terms,
       templateId:
@@ -1032,6 +1326,9 @@ class InvoiceService {
       ),
       currency: "USD",
       shareToken,
+      deliveryStatus: "not_requested",
+      createdBy: actor,
+      updatedBy: actor,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -1052,7 +1349,9 @@ class InvoiceService {
     tenantId: string,
     id: string,
     data: Partial<InvoiceFormData>,
+    userId?: string,
   ): Promise<boolean> {
+    const actor = this.actorId(userId);
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error("Invoice not found");
@@ -1062,8 +1361,14 @@ class InvoiceService {
       throw new Error("Cannot edit invoice that has been sent");
     }
 
+    const targetCustomerId = data.customerId || invoice.customerId;
+    const [settings, targetCustomer] = await Promise.all([
+      this.getSettings(tenantId).catch(() => ({}) as Partial<InvoiceSettings>),
+      customerService.getCustomerById(tenantId, targetCustomerId),
+    ]);
+
     // Build updates object
-    const updates: Partial<Invoice> = {};
+    const updates: Record<string, unknown> = {};
 
     // Copy simple fields
     if (data.issueDate) updates.issueDate = data.issueDate;
@@ -1078,9 +1383,6 @@ class InvoiceService {
     if (data.paymentMethods !== undefined)
       updates.paymentMethods = data.paymentMethods;
     if (data.paymentAccountId !== undefined) {
-      const settings = await this.getSettings(tenantId).catch(
-        () => ({}) as Partial<InvoiceSettings>,
-      );
       updates.paymentAccount = this.resolvePaymentAccountSnapshot(
         data.paymentAccountId,
         settings,
@@ -1093,20 +1395,35 @@ class InvoiceService {
       const sourceItems = data.items ?? invoice.items;
       const taxRate = data.taxRate ?? invoice.taxRate;
       const calculated = calculateInvoiceAmounts(sourceItems, taxRate);
-      const items: InvoiceItem[] = calculated.items.map((item, index) => ({
+      const baseItems: InvoiceItem[] = calculated.items.map((item, index) => ({
         ...item,
         id: item.id || `item_${Date.now()}_${index}`,
       }));
+      const vatFields = this.buildVatFields(
+        baseItems,
+        taxRate,
+        settings,
+        targetCustomer?.tin,
+      );
 
-      updates.items = items;
+      updates.items = vatFields.items;
+      updates.isVATInvoice = vatFields.isVATInvoice;
+      updates.supplierVatId = vatFields.supplierVatId ?? deleteField();
+      updates.customerVatId = vatFields.customerVatId ?? deleteField();
+      updates.vatBreakdown = vatFields.vatBreakdown ?? deleteField();
       updates.subtotal = calculated.subtotal;
       updates.discountTotal = calculated.discountTotal;
       updates.taxRate = taxRate;
       updates.taxAmount = calculated.taxAmount;
       updates.total = calculated.total;
-      updates.balanceDue = subtractMoney(calculated.total, invoice.amountPaid);
+      const nextBalanceDue = subtractMoney(
+        calculated.total,
+        invoice.amountPaid,
+        invoice.creditedAmount || 0,
+      );
+      updates.balanceDue = nextBalanceDue;
 
-      if (updates.balanceDue < -PAYMENT_EPSILON) {
+      if (nextBalanceDue < -PAYMENT_EPSILON) {
         throw new Error(
           "Cannot reduce invoice total below amount already paid",
         );
@@ -1115,22 +1432,21 @@ class InvoiceService {
 
     // If customer changed, update customer info
     if (data.customerId && data.customerId !== invoice.customerId) {
-      const customer = await customerService.getCustomerById(
-        tenantId,
-        data.customerId,
-      );
+      const customer = targetCustomer;
       if (customer) {
         updates.customerId = data.customerId;
         updates.customerName = customer.name;
         updates.customerEmail = customer.email;
         updates.customerPhone = customer.phone;
         updates.customerAddress = customer.address;
+        updates.customerVatId = customer.tin || deleteField();
       }
     }
 
     const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       ...updates,
+      updatedBy: actor,
       updatedAt: serverTimestamp(),
     });
 
@@ -1146,7 +1462,8 @@ class InvoiceService {
     tenantId: string,
     id: string,
     userId?: string,
-  ): Promise<boolean> {
+  ): Promise<InvoiceDeliveryResult> {
+    const actor = this.actorId(userId);
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error("Invoice not found");
@@ -1226,7 +1543,7 @@ class InvoiceService {
         journalEntryId = await journalEntryService.createFromInvoice(
           tenantId,
           currentInvoice,
-          userId || "system",
+          actor,
           transaction,
           resolvedAccounts,
         );
@@ -1237,6 +1554,9 @@ class InvoiceService {
       if (isFirstSend) {
         updates.status = "sent";
         updates.sentAt = serverTimestamp();
+        updates.deliveryStatus = "preparing";
+        updates.deliveryAttemptedBy = actor;
+        updates.deliveryUpdatedAt = serverTimestamp();
       }
       if (journalEntryId && currentInvoice.journalEntryId !== journalEntryId) {
         updates.journalEntryId = journalEntryId;
@@ -1244,54 +1564,168 @@ class InvoiceService {
       if (Object.keys(updates).length > 0) {
         transaction.update(invoiceRef, {
           ...updates,
+          updatedBy: actor,
           updatedAt: serverTimestamp(),
         });
       }
       return isFirstSend;
     });
 
-    // First send (draft -> sent): publish the hosted page, freeze the as-sent
-    // PDF, and email the customer. None of these may fail the send itself.
-    if (sentNow) {
-      const sentInvoice: Invoice = { ...invoice, status: "sent" };
-      const settings = await this.getSettings(tenantId).catch(
-        () => ({}) as Partial<InvoiceSettings>,
-      );
+    if (!sentNow) {
+      return {
+        issuedNow: false,
+        publicLinkReady: Boolean(invoice.shareToken),
+        pdfReady: Boolean(invoice.sentPdfUrl),
+        email:
+          invoice.deliveryStatus === "queued" ||
+          invoice.deliveryStatus === "sent"
+            ? "queued"
+            : invoice.customerEmail
+              ? "failed"
+              : "not_requested",
+        ...(invoice.deliveryError ? { error: invoice.deliveryError } : {}),
+      };
+    }
 
-      let publicUrl: string | undefined;
-      let token: string | undefined;
-      try {
-        const link = await this.ensureShareLink(
-          tenantId,
-          sentInvoice,
-          settings,
-        );
-        publicUrl = link.url;
-        token = link.token;
-      } catch (error) {
-        console.error("Failed to create public invoice link:", error);
-      }
+    // Accounting issuance is committed above. Customer delivery is tracked
+    // separately so a slow connection cannot turn a valid issued invoice into
+    // another draft (or tempt the operator to create a duplicate).
+    // Re-read after the transaction so the customer link, frozen PDF, and
+    // email all use the exact version that was issued. A concurrent draft edit
+    // can make the pre-transaction snapshot stale even though Firestore safely
+    // retries the accounting transaction itself.
+    const issuedInvoice = await this.getInvoiceById(tenantId, id);
+    if (!issuedInvoice) throw new Error("Invoice not found after issue");
+    return this.deliverInvoice(tenantId, issuedInvoice, actor, true);
+  }
 
-      const pdfUrl = await this.freezeSentPdf(
+  async retryInvoiceDelivery(
+    tenantId: string,
+    invoiceId: string,
+    userId?: string,
+  ): Promise<InvoiceDeliveryResult> {
+    const actor = this.actorId(userId);
+    const invoice = await this.getInvoiceById(tenantId, invoiceId);
+    if (!invoice) throw new Error("Invoice not found");
+    if (invoice.status === "draft" || invoice.status === "cancelled") {
+      throw new Error("Only an active issued invoice can be delivered");
+    }
+    await updateDoc(doc(db, paths.invoice(tenantId, invoiceId)), {
+      deliveryStatus: "preparing",
+      deliveryAttemptedBy: actor,
+      deliveryUpdatedAt: serverTimestamp(),
+      deliveryError: deleteField(),
+      updatedBy: actor,
+      updatedAt: serverTimestamp(),
+    });
+    return this.deliverInvoice(tenantId, invoice, actor, false);
+  }
+
+  private async deliverInvoice(
+    tenantId: string,
+    invoice: Invoice,
+    actor: string,
+    issuedNow: boolean,
+  ): Promise<InvoiceDeliveryResult> {
+    const settings = await this.getSettings(tenantId).catch(
+      () => ({}) as Partial<InvoiceSettings>,
+    );
+    let publicUrl: string | undefined;
+    let token: string | undefined;
+    let pdfUrl = invoice.sentPdfUrl;
+    let errorMessage: string | undefined;
+
+    try {
+      const link = await this.ensureShareLink(tenantId, invoice, settings);
+      publicUrl = link.url;
+      token = link.token;
+    } catch (error) {
+      console.error("Failed to create public invoice link:", error);
+      errorMessage = "The customer link could not be created.";
+    }
+
+    if (!errorMessage && !pdfUrl) {
+      pdfUrl = await this.freezeSentPdf(
         tenantId,
-        sentInvoice,
+        invoice,
         settings,
+        actor,
         token,
       );
+      if (!pdfUrl) errorMessage = "The invoice PDF could not be prepared.";
+    }
 
-      if (invoice.customerEmail) {
-        try {
-          await this.queueInvoiceEmail(tenantId, sentInvoice, settings, {
-            publicUrl,
-            pdfUrl,
-          });
-        } catch (error) {
-          console.error("Failed to queue invoice email:", error);
-        }
+    let email: InvoiceDeliveryResult["email"] = invoice.customerEmail
+      ? "failed"
+      : "not_requested";
+    let deliveryAttemptId: string | undefined;
+    if (!errorMessage && invoice.customerEmail) {
+      try {
+        deliveryAttemptId = this.generateShareToken();
+        // Establish the attempt before creating the mail doc. The delivery
+        // trigger can run immediately; this ordering prevents its SENT result
+        // from being overwritten by a later client-side "queued" update.
+        await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
+          deliveryStatus: "queued",
+          deliveryAttemptId,
+          deliveryAttemptedBy: actor,
+          deliveryUpdatedAt: serverTimestamp(),
+          emailQueuedAt: serverTimestamp(),
+          deliveryError: deleteField(),
+          updatedBy: actor,
+          updatedAt: serverTimestamp(),
+        });
+        await this.queueInvoiceEmail(tenantId, invoice, settings, {
+          publicUrl,
+          pdfUrl,
+          actor,
+          deliveryAttemptId,
+        });
+        email = "queued";
+      } catch (error) {
+        console.error("Failed to queue invoice email:", error);
+        errorMessage = "The email could not be queued.";
       }
     }
 
-    return true;
+    const deliveryStatus = errorMessage
+      ? "failed"
+      : email === "queued"
+        ? "queued"
+        : "no_email";
+    try {
+      // The queued state was written before the mail document. Do not write it
+      // again here: the Cloud Function may already have advanced it to SENT.
+      if (email === "queued") {
+        return {
+          issuedNow,
+          publicLinkReady: Boolean(publicUrl),
+          pdfReady: Boolean(pdfUrl),
+          email,
+        };
+      }
+      await updateDoc(doc(db, paths.invoice(tenantId, invoice.id)), {
+        deliveryStatus,
+        deliveryAttemptedBy: actor,
+        deliveryUpdatedAt: serverTimestamp(),
+        ...(deliveryAttemptId ? { deliveryAttemptId } : {}),
+        ...(errorMessage
+          ? { deliveryError: errorMessage }
+          : { deliveryError: deleteField() }),
+        updatedBy: actor,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Failed to persist invoice delivery status:", error);
+    }
+
+    return {
+      issuedNow,
+      publicLinkReady: Boolean(publicUrl),
+      pdfReady: Boolean(pdfUrl),
+      email,
+      ...(errorMessage ? { error: errorMessage } : {}),
+    };
   }
 
   /**
@@ -1303,7 +1737,12 @@ class InvoiceService {
     tenantId: string,
     invoice: Invoice,
     settingsArg?: Partial<InvoiceSettings>,
-    opts: { publicUrl?: string; pdfUrl?: string } = {},
+    opts: {
+      publicUrl?: string;
+      pdfUrl?: string;
+      actor?: string;
+      deliveryAttemptId?: string;
+    } = {},
   ): Promise<void> {
     if (!invoice.customerEmail) return;
 
@@ -1527,6 +1966,10 @@ class InvoiceService {
         : {}),
       purpose: "invoice",
       relatedId: invoice.id,
+      ...(opts.actor ? { createdBy: opts.actor } : {}),
+      ...(opts.deliveryAttemptId
+        ? { deliveryAttemptId: opts.deliveryAttemptId }
+        : {}),
     });
   }
 
@@ -1538,10 +1981,13 @@ class InvoiceService {
     tenantId: string,
     id: string,
     templateId: InvoiceTemplateId,
+    userId?: string,
   ): Promise<boolean> {
+    const actor = this.actorId(userId);
     const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       templateId,
+      updatedBy: actor,
       updatedAt: serverTimestamp(),
     });
     await this.syncPublicLink(tenantId, id);
@@ -1558,6 +2004,11 @@ class InvoiceService {
     reason?: string,
     userId?: string,
   ): Promise<boolean> {
+    const actor = this.actorId(userId);
+    const cancellationReason = reason?.trim();
+    if (!cancellationReason) {
+      throw new Error("A reason is required to void an invoice");
+    }
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error("Invoice not found");
@@ -1571,6 +2022,9 @@ class InvoiceService {
     }
     if ((invoice.amountPaid || 0) > PAYMENT_EPSILON) {
       throw new Error("Cannot cancel an invoice with recorded payments");
+    }
+    if ((invoice.creditedAmount || 0) > PAYMENT_EPSILON) {
+      throw new Error("Cannot void an invoice after a credit note was issued");
     }
 
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
@@ -1630,7 +2084,8 @@ class InvoiceService {
       }
       if (
         currentInvoice.status === "paid" ||
-        (currentInvoice.amountPaid || 0) > PAYMENT_EPSILON
+        (currentInvoice.amountPaid || 0) > PAYMENT_EPSILON ||
+        (currentInvoice.creditedAmount || 0) > PAYMENT_EPSILON
       ) {
         throw new Error("Cannot cancel an invoice with recorded payments");
       }
@@ -1658,8 +2113,8 @@ class InvoiceService {
             activeJournal,
             {
               date: adjustmentDate,
-              createdBy: userId || "system",
-              reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ": " + reason : ""}`,
+              createdBy: actor,
+              reason: `Invoice ${invoice.invoiceNumber} cancelled: ${cancellationReason}`,
               txn: transaction,
             },
           );
@@ -1668,8 +2123,9 @@ class InvoiceService {
       transaction.update(invoiceDocRef, {
         status: "cancelled",
         cancelledAt: serverTimestamp(),
-        cancelReason: reason || null,
+        cancelReason: cancellationReason,
         updatedAt: serverTimestamp(),
+        updatedBy: actor,
         ...(adjustmentEntryId
           ? { cancellationAdjustmentEntryId: adjustmentEntryId }
           : {}),
@@ -1682,8 +2138,8 @@ class InvoiceService {
             activeJournal.id,
             activeJournal,
             transaction,
-            userId || "system",
-            `Invoice ${invoice.invoiceNumber} cancelled${reason ? ": " + reason : ""}`,
+            actor,
+            `Invoice ${invoice.invoiceNumber} cancelled: ${cancellationReason}`,
           );
         }
       }
@@ -1724,7 +2180,12 @@ class InvoiceService {
    * Send a payment reminder for an invoice
    * Updates reminder tracking fields
    */
-  async sendReminder(tenantId: string, id: string): Promise<boolean> {
+  async sendReminder(
+    tenantId: string,
+    id: string,
+    userId?: string,
+  ): Promise<boolean> {
+    const actor = this.actorId(userId);
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error("Invoice not found");
@@ -1795,6 +2256,7 @@ class InvoiceService {
           text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: ${formatInvoiceMoney(invoice.balanceDue)}\nDue Date: ${formatInvoiceDate(invoice.dueDate)}\n${publicUrl ? `\nView invoice online: ${publicUrl}\n` : ""}\nPlease arrange payment at your earliest convenience.`,
           purpose: "invoice-reminder",
           relatedId: id,
+          createdBy: actor,
         });
         emailQueued = true;
       } catch (error) {
@@ -1810,6 +2272,7 @@ class InvoiceService {
       await updateDoc(doc(db, paths.invoice(tenantId, id)), {
         lastReminderAt: serverTimestamp(),
         reminderCount: (invoice.reminderCount || 0) + 1,
+        updatedBy: actor,
         updatedAt: serverTimestamp(),
       });
     }
@@ -1873,7 +2336,15 @@ class InvoiceService {
     payment: PaymentFormData,
     userId?: string,
   ): Promise<string> {
+    const actor = this.actorId(userId);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(payment.date)) {
+      throw new Error("Payment date is invalid");
+    }
+    if (payment.date > getTodayTL()) {
+      throw new Error("Payment date cannot be in the future");
+    }
     const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
+    const paymentDocRef = doc(this.paymentsRef(tenantId));
 
     // Check if chart of accounts is set up (read BEFORE transaction)
     const accounts = await accountService.getAllAccounts(tenantId);
@@ -1882,19 +2353,47 @@ class InvoiceService {
       | Record<string, { id: string; name: string }>
       | undefined;
 
+    let depositAccount: { id: string; code: string; name: string } | undefined;
     if (hasAccounts) {
-      // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
-      const cashCode = payment.method === "cash" ? "1110" : "1120";
-      const [cashAccount, arAccount] = await Promise.all([
-        accountService.getAccountByCode(tenantId, cashCode),
+      // Pre-resolve account IDs outside transaction (getDocs not transaction-safe).
+      // Once a chart exists, missing posting accounts are a hard failure: a
+      // receipt must never update AR operationally without updating the books.
+      const defaultCashCode = payment.method === "cash" ? "1110" : "1120";
+      const [selectedAccount, arAccount] = await Promise.all([
+        payment.depositAccountId
+          ? accountService.getAccount(tenantId, payment.depositAccountId)
+          : accountService.getAccountByCode(tenantId, defaultCashCode),
         accountService.getAccountByCode(tenantId, "1210"),
       ]);
-      if (cashAccount?.id && arAccount?.id) {
-        resolvedAccounts = {
-          [cashCode]: { id: cashAccount.id, name: cashAccount.name },
-          "1210": { id: arAccount.id, name: arAccount.name },
-        };
+      if (
+        !selectedAccount?.id ||
+        !selectedAccount.isActive ||
+        selectedAccount.type !== "asset" ||
+        !["cash", "bank"].includes(selectedAccount.subType)
+      ) {
+        throw new Error(
+          "Select an active cash or bank account for this payment",
+        );
       }
+      if (!arAccount?.id) {
+        throw new Error(
+          "Missing account for code 1210. Initialize chart of accounts first.",
+        );
+      }
+      depositAccount = {
+        id: selectedAccount.id,
+        code: selectedAccount.code,
+        name: selectedAccount.name,
+      };
+      resolvedAccounts = {
+        [selectedAccount.code]: {
+          id: selectedAccount.id,
+          name: selectedAccount.name,
+        },
+        "1210": { id: arAccount.id, name: arAccount.name },
+      };
+    } else if (payment.depositAccountId) {
+      throw new Error("The selected deposit account is not available");
     }
 
     // Captured from inside the transaction for the post-commit receipt email
@@ -1931,12 +2430,10 @@ class InvoiceService {
         throw new Error("Payment date cannot be before the invoice issue date");
       }
       const nextPayment = calculateInvoicePaymentState(
-        invoice.total || 0,
+        subtractMoney(invoice.total || 0, invoice.creditedAmount || 0),
         invoice.amountPaid || 0,
         payment.amount,
       );
-
-      const paymentDocRef = doc(this.paymentsRef(tenantId));
 
       paidInFull = nextPayment.status === "paid";
       receiptAmount = nextPayment.amount;
@@ -1945,19 +2442,22 @@ class InvoiceService {
       // Resolve the journal counter before adding any writes. Firestore
       // transactions reject a read after the first write, and journal creation
       // reads settings/accounting to allocate the next entry number.
+      let journalEntryId: string | undefined;
       if (resolvedAccounts) {
-        await journalEntryService.createFromInvoicePayment(
+        journalEntryId = await journalEntryService.createFromInvoicePayment(
           tenantId,
           {
             invoiceId: invoice.id,
+            paymentId: paymentDocRef.id,
             invoiceNumber: invoice.invoiceNumber,
             customerName: invoice.customerName,
             date: payment.date,
             amount: nextPayment.amount,
             method: payment.method,
+            depositAccountCode: depositAccount?.code,
             reference: payment.reference,
           },
-          userId || "system",
+          actor,
           transaction,
           resolvedAccounts,
         );
@@ -1967,6 +2467,7 @@ class InvoiceService {
       // the same transaction, so either the whole accounting chain commits or
       // none of it does.
       transaction.set(paymentDocRef, {
+        kind: "payment",
         date: payment.date,
         customerId: invoice.customerId,
         customerName: invoice.customerName,
@@ -1976,6 +2477,17 @@ class InvoiceService {
         method: payment.method,
         reference: payment.reference,
         notes: payment.notes,
+        ...(depositAccount
+          ? {
+              depositAccountId: depositAccount.id,
+              depositAccountCode: depositAccount.code,
+              depositAccountName: depositAccount.name,
+            }
+          : {}),
+        ...(journalEntryId ? { journalEntryId } : {}),
+        refundedAmount: 0,
+        refundStatus: "none",
+        createdBy: actor,
         createdAt: serverTimestamp(),
       });
 
@@ -1984,6 +2496,8 @@ class InvoiceService {
         balanceDue: nextPayment.balanceDue,
         status: nextPayment.status,
         paidAt: nextPayment.status === "paid" ? serverTimestamp() : null,
+        lastPaymentId: paymentDocRef.id,
+        updatedBy: actor,
         updatedAt: serverTimestamp(),
       });
 
@@ -2000,6 +2514,7 @@ class InvoiceService {
           paidInvoice,
           payment,
           receiptAmount,
+          actor,
         );
       } catch (error) {
         console.error("Failed to queue receipt email:", error);
@@ -2007,6 +2522,335 @@ class InvoiceService {
     }
 
     return paymentId;
+  }
+
+  /**
+   * Refund all or part of one recorded receipt. The negative cash event,
+   * original receipt metadata, invoice balance, and reversing journal commit
+   * atomically so a refund can never exist on only one side of the books.
+   */
+  async refundPayment(
+    tenantId: string,
+    paymentId: string,
+    refund: PaymentRefundFormData,
+    userId?: string,
+  ): Promise<string> {
+    const actor = this.actorId(userId);
+    const reason = refund.reason.trim();
+    if (!reason) throw new Error("A refund reason is required");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(refund.date)) {
+      throw new Error("Refund date is invalid");
+    }
+    if (refund.date > getTodayTL()) {
+      throw new Error("Refund date cannot be in the future");
+    }
+
+    const paymentRef = doc(db, paths.paymentReceived(tenantId, paymentId));
+    const paymentSnap = await getDoc(paymentRef);
+    if (!paymentSnap.exists()) throw new Error("Payment not found");
+    const originalPayment = mapPayment(paymentSnap);
+    if (originalPayment.kind === "refund" || !originalPayment.invoiceId) {
+      throw new Error("This entry cannot be refunded");
+    }
+    if (refund.date < originalPayment.date) {
+      throw new Error("Refund date cannot be before the payment date");
+    }
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+    const depositCode =
+      originalPayment.depositAccountCode ||
+      (originalPayment.method === "cash" ? "1110" : "1120");
+    let resolvedAccounts:
+      | Record<string, { id: string; name: string }>
+      | undefined;
+    let depositAccount: { id: string; code: string; name: string } | undefined;
+    if (hasAccounts) {
+      const [cashAccount, arAccount] = await Promise.all([
+        originalPayment.depositAccountId
+          ? accountService.getAccount(
+              tenantId,
+              originalPayment.depositAccountId,
+            )
+          : accountService.getAccountByCode(tenantId, depositCode),
+        accountService.getAccountByCode(tenantId, "1210"),
+      ]);
+      if (!cashAccount?.id) {
+        throw new Error(`Missing refund account for code ${depositCode}`);
+      }
+      if (!arAccount?.id) {
+        throw new Error(
+          "Missing account for code 1210. Initialize chart of accounts first.",
+        );
+      }
+      depositAccount = {
+        id: cashAccount.id,
+        code: cashAccount.code,
+        name: cashAccount.name,
+      };
+      resolvedAccounts = {
+        [cashAccount.code]: { id: cashAccount.id, name: cashAccount.name },
+        "1210": { id: arAccount.id, name: arAccount.name },
+      };
+    }
+
+    const invoiceRef = doc(
+      db,
+      paths.invoice(tenantId, originalPayment.invoiceId),
+    );
+    const refundRef = doc(this.paymentsRef(tenantId));
+    await runTransaction(db, async (transaction) => {
+      const [currentPaymentDoc, currentInvoiceDoc] = await Promise.all([
+        transaction.get(paymentRef),
+        transaction.get(invoiceRef),
+      ]);
+      if (!currentPaymentDoc.exists()) throw new Error("Payment not found");
+      if (!currentInvoiceDoc.exists()) throw new Error("Invoice not found");
+      const currentPayment = {
+        id: currentPaymentDoc.id,
+        ...currentPaymentDoc.data(),
+      } as PaymentReceived;
+      const currentInvoice = {
+        id: currentInvoiceDoc.id,
+        ...currentInvoiceDoc.data(),
+      } as Invoice;
+      if (currentInvoice.status === "cancelled") {
+        throw new Error("A cancelled invoice cannot be refunded");
+      }
+
+      const available = subtractMoney(
+        currentPayment.amount,
+        currentPayment.refundedAmount || 0,
+      );
+      const amount = roundMoney(refund.amount);
+      if (amount <= 0 || compareMoney(amount, available) > 0) {
+        throw new Error("Refund exceeds the unrefunded payment amount");
+      }
+      const nextInvoice = calculateInvoiceRefundState(
+        currentInvoice.total,
+        currentInvoice.amountPaid || 0,
+        currentInvoice.creditedAmount || 0,
+        amount,
+        this.invoiceFallbackStatus(currentInvoice),
+      );
+      const nextRefundedAmount = addMoney(
+        currentPayment.refundedAmount || 0,
+        amount,
+      );
+      const refundStatus =
+        compareMoney(nextRefundedAmount, currentPayment.amount) === 0
+          ? "refunded"
+          : "partial";
+
+      let journalEntryId: string | undefined;
+      if (resolvedAccounts && depositAccount) {
+        journalEntryId = await journalEntryService.createFromInvoiceRefund(
+          tenantId,
+          {
+            refundId: refundRef.id,
+            invoiceNumber: currentInvoice.invoiceNumber,
+            customerName: currentInvoice.customerName,
+            date: refund.date,
+            amount,
+            depositAccountCode: depositAccount.code,
+            reference: refund.reference,
+          },
+          actor,
+          transaction,
+          resolvedAccounts,
+        );
+      }
+
+      transaction.set(refundRef, {
+        kind: "refund",
+        date: refund.date,
+        customerId: currentInvoice.customerId,
+        customerName: currentInvoice.customerName,
+        invoiceId: currentInvoice.id,
+        invoiceNumber: currentInvoice.invoiceNumber,
+        amount: toMoney(toDecimal(amount).negated()),
+        method: currentPayment.method,
+        reference: refund.reference || "",
+        notes: reason,
+        relatedPaymentId: currentPayment.id,
+        ...(depositAccount
+          ? {
+              depositAccountId: depositAccount.id,
+              depositAccountCode: depositAccount.code,
+              depositAccountName: depositAccount.name,
+            }
+          : {}),
+        ...(journalEntryId ? { journalEntryId } : {}),
+        createdBy: actor,
+        createdAt: serverTimestamp(),
+      });
+      transaction.update(paymentRef, {
+        refundedAmount: nextRefundedAmount,
+        refundStatus,
+        lastRefundId: refundRef.id,
+        updatedAt: serverTimestamp(),
+      });
+      transaction.update(invoiceRef, {
+        amountPaid: nextInvoice.amountPaid,
+        balanceDue: nextInvoice.balanceDue,
+        status: nextInvoice.status,
+        paidAt: nextInvoice.status === "paid" ? serverTimestamp() : null,
+        lastRefundId: refundRef.id,
+        updatedBy: actor,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await this.syncPublicLink(tenantId, originalPayment.invoiceId);
+    return refundRef.id;
+  }
+
+  /** Issue a partial/full credit against the unpaid balance of an invoice. */
+  async createCreditNote(
+    tenantId: string,
+    invoiceId: string,
+    credit: CreditNoteFormData,
+    userId?: string,
+  ): Promise<string> {
+    const actor = this.actorId(userId);
+    const reason = credit.reason.trim();
+    if (!reason) throw new Error("A credit-note reason is required");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(credit.date)) {
+      throw new Error("Credit-note date is invalid");
+    }
+    if (credit.date > getTodayTL()) {
+      throw new Error("Credit-note date cannot be in the future");
+    }
+    const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
+    const invoice = await this.getInvoiceById(tenantId, invoiceId);
+    if (!invoice) throw new Error("Invoice not found");
+    if (credit.date < invoice.issueDate) {
+      throw new Error("Credit-note date cannot be before the invoice date");
+    }
+    if (["draft", "cancelled", "credited"].includes(invoice.status)) {
+      throw new Error("This invoice cannot receive a credit note");
+    }
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+    let resolvedAccounts:
+      | Record<string, { id: string; name: string }>
+      | undefined;
+    if (hasAccounts) {
+      const [arAccount, revenueAccount, taxAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, "1210"),
+        accountService.getAccountByCode(tenantId, "4100"),
+        invoice.taxAmount > 0
+          ? accountService.getAccountByCode(tenantId, "2310")
+          : Promise.resolve(null),
+      ]);
+      if (!arAccount?.id) throw new Error("Missing account for code 1210.");
+      if (!revenueAccount?.id)
+        throw new Error("Missing account for code 4100.");
+      if (invoice.taxAmount > 0 && !taxAccount?.id) {
+        throw new Error("Missing account for code 2310.");
+      }
+      resolvedAccounts = {
+        "1210": { id: arAccount.id, name: arAccount.name },
+        "4100": { id: revenueAccount.id, name: revenueAccount.name },
+        ...(taxAccount?.id
+          ? { "2310": { id: taxAccount.id, name: taxAccount.name } }
+          : {}),
+      };
+    }
+
+    const creditRef = doc(this.creditNotesRef(tenantId));
+    await runTransaction(db, async (transaction) => {
+      const currentDoc = await transaction.get(invoiceRef);
+      if (!currentDoc.exists()) throw new Error("Invoice not found");
+      const currentInvoice = {
+        id: currentDoc.id,
+        ...currentDoc.data(),
+      } as Invoice;
+      if (["draft", "cancelled", "credited"].includes(currentInvoice.status)) {
+        throw new Error("This invoice cannot receive a credit note");
+      }
+      const nextCredit = calculateInvoiceCreditState(
+        currentInvoice.total,
+        currentInvoice.amountPaid || 0,
+        currentInvoice.creditedAmount || 0,
+        credit.amount,
+        this.invoiceFallbackStatus(currentInvoice),
+      );
+      // Calculate the tax share from the cumulative credited amount, then
+      // subtract tax already credited. This prevents a one-cent drift when an
+      // invoice is credited through several notes.
+      const cumulativeTaxTarget =
+        currentInvoice.total > 0
+          ? toMoney(
+              toDecimal(nextCredit.creditedAmount)
+                .times(currentInvoice.taxAmount || 0)
+                .dividedBy(currentInvoice.total),
+            )
+          : 0;
+      const taxAmount = subtractMoney(
+        cumulativeTaxTarget,
+        currentInvoice.creditedTaxAmount || 0,
+      );
+      const netAmount = subtractMoney(nextCredit.amount, taxAmount);
+      const sequence = Number(currentInvoice.creditNoteCount || 0) + 1;
+      const creditNoteNumber = `${currentInvoice.invoiceNumber}-CN-${String(sequence).padStart(2, "0")}`;
+
+      let journalEntryId: string | undefined;
+      if (resolvedAccounts) {
+        journalEntryId = await journalEntryService.createFromInvoiceCreditNote(
+          tenantId,
+          {
+            creditNoteId: creditRef.id,
+            creditNoteNumber,
+            invoiceNumber: currentInvoice.invoiceNumber,
+            customerName: currentInvoice.customerName,
+            date: credit.date,
+            amount: nextCredit.amount,
+            netAmount,
+            taxAmount,
+            reason,
+          },
+          actor,
+          transaction,
+          resolvedAccounts,
+        );
+      }
+
+      transaction.set(creditRef, {
+        creditNoteNumber,
+        invoiceId: currentInvoice.id,
+        invoiceNumber: currentInvoice.invoiceNumber,
+        customerId: currentInvoice.customerId,
+        customerName: currentInvoice.customerName,
+        date: credit.date,
+        amount: nextCredit.amount,
+        netAmount,
+        taxAmount,
+        reason,
+        status: "issued",
+        ...(journalEntryId ? { journalEntryId } : {}),
+        createdBy: actor,
+        createdAt: serverTimestamp(),
+      });
+      transaction.update(invoiceRef, {
+        creditedAmount: nextCredit.creditedAmount,
+        creditedTaxAmount: addMoney(
+          currentInvoice.creditedTaxAmount || 0,
+          taxAmount,
+        ),
+        balanceDue: nextCredit.balanceDue,
+        status: nextCredit.status,
+        paidAt: nextCredit.status === "paid" ? serverTimestamp() : null,
+        creditNoteCount: sequence,
+        lastCreditNoteId: creditRef.id,
+        updatedBy: actor,
+        updatedAt: serverTimestamp(),
+      });
+    });
+
+    await this.syncPublicLink(tenantId, invoiceId);
+    return creditRef.id;
   }
 
   /**
@@ -2018,6 +2862,7 @@ class InvoiceService {
     invoice: Invoice,
     payment: PaymentFormData,
     amount: number,
+    actor: string,
   ): Promise<void> {
     if (!invoice.customerEmail) return;
 
@@ -2030,6 +2875,7 @@ class InvoiceService {
     // The captured invoice predates the payment write — re-fetch so the
     // hosted-page snapshot reflects the settled state, not the stale one.
     let publicUrl: string | undefined;
+    let settledInvoice = invoice;
     try {
       const fresh =
         (await this.getInvoiceById(tenantId, invoice.id)) ??
@@ -2039,6 +2885,7 @@ class InvoiceService {
           amountPaid: invoice.total,
           balanceDue: 0,
         } as Invoice);
+      settledInvoice = fresh;
       publicUrl = (await this.ensureShareLink(tenantId, fresh, settings)).url;
     } catch (error) {
       console.error("Failed to ensure public invoice link for receipt:", error);
@@ -2058,9 +2905,9 @@ class InvoiceService {
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:28px;">
           <p style="margin:0 0 16px;">Dear ${esc(invoice.customerName)},</p>
-          <p style="margin:0 0 20px;">We received your payment of <strong>${formatInvoiceMoney(amount)}</strong> on ${esc(formatInvoiceDate(payment.date))}. Invoice <strong>${esc(invoice.invoiceNumber)}</strong> is now fully paid.</p>
+          <p style="margin:0 0 20px;">We received your payment of <strong>${formatInvoiceMoney(amount)}</strong> on ${esc(formatInvoiceDate(payment.date))}. Invoice <strong>${esc(invoice.invoiceNumber)}</strong> is now settled.</p>
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 20px;margin-bottom:20px;font-weight:700;color:#15803d;">
-            PAID — ${formatInvoiceMoney(invoice.total)} · Balance due: ${formatInvoiceMoney(0)}
+            SETTLED — ${formatInvoiceMoney(settledInvoice.amountPaid || 0)} received${(settledInvoice.creditedAmount || 0) > 0 ? ` · ${formatInvoiceMoney(settledInvoice.creditedAmount || 0)} credited` : ""} · Balance due: ${formatInvoiceMoney(0)}
           </div>
           ${
             publicUrl
@@ -2080,7 +2927,7 @@ class InvoiceService {
       `Payment received — thank you!`,
       "",
       `We received your payment of ${formatInvoiceMoney(amount)} on ${formatInvoiceDate(payment.date)}.`,
-      `Invoice ${invoice.invoiceNumber} from ${companyName} is now fully paid (${formatInvoiceMoney(invoice.total)}).`,
+      `Invoice ${invoice.invoiceNumber} from ${companyName} is now settled (${formatInvoiceMoney(settledInvoice.amountPaid || 0)} received${(settledInvoice.creditedAmount || 0) > 0 ? `, ${formatInvoiceMoney(settledInvoice.creditedAmount || 0)} credited` : ""}).`,
       ...(publicUrl ? ["", `View receipt online: ${publicUrl}`] : []),
     ].join("\n");
 
@@ -2094,6 +2941,7 @@ class InvoiceService {
       text,
       purpose: "receipt",
       relatedId: invoice.id,
+      createdBy: actor,
     });
   }
 
@@ -2113,6 +2961,18 @@ class InvoiceService {
 
     return querySnapshot.docs
       .map(mapPayment)
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
+
+  async getCreditNotesForInvoice(
+    tenantId: string,
+    invoiceId: string,
+  ): Promise<CreditNote[]> {
+    const snapshot = await getDocs(
+      query(this.creditNotesRef(tenantId), where("invoiceId", "==", invoiceId)),
+    );
+    return snapshot.docs
+      .map(mapCreditNote)
       .sort((a, b) => (a.date < b.date ? 1 : -1));
   }
 
@@ -2233,6 +3093,29 @@ class InvoiceService {
           error,
         );
       }
+    }
+
+    // VAT registration lives in settings/vat, while presentation defaults live
+    // in settings/invoice. Merge them so every saved invoice freezes the tax
+    // identity that applied when it was created.
+    try {
+      const vatSnap = await getDoc(doc(db, paths.vatSettings(tenantId)));
+      if (vatSnap.exists()) {
+        const vat = vatSnap.data();
+        settings.vatEnabled = vat.vatEnabled === true;
+        settings.vatRegistered = vat.vatRegistered === true;
+        settings.vatRegistrationNumber =
+          typeof vat.vatRegistrationNumber === "string" &&
+          vat.vatRegistrationNumber.trim()
+            ? vat.vatRegistrationNumber.trim()
+            : settings.vatRegistrationNumber;
+        settings.pricesIncludeVAT = vat.pricesIncludeVAT === true;
+        if (settings.vatEnabled && typeof vat.defaultVATRate === "number") {
+          settings.defaultTaxRate = vat.defaultVATRate;
+        }
+      }
+    } catch (error) {
+      console.warn("Could not read VAT settings for invoice snapshot:", error);
     }
 
     return settings;
@@ -2466,6 +3349,7 @@ class InvoiceService {
    * Call this periodically (e.g., daily) or on dashboard load
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {
+    const actor = this.actorId();
     const overdue = await this.getOverdueInvoices(tenantId);
 
     // Batch all updates (max 500 per batch)
@@ -2474,6 +3358,7 @@ class InvoiceService {
       for (const invoice of overdue.slice(i, i + 499)) {
         batch.update(doc(db, paths.invoice(tenantId, invoice.id)), {
           status: "overdue",
+          updatedBy: actor,
           updatedAt: serverTimestamp(),
         });
       }

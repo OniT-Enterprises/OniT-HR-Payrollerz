@@ -45,6 +45,7 @@ import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
 import { getEffectiveInvoiceStatus } from '@/lib/invoiceStatus';
 import { buildInvoiceWhatsAppUrl } from '@/lib/publicInvoice';
+import { compareMoney } from '@/lib/currency';
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import {
   FileText,
@@ -75,6 +76,7 @@ const STATUS_STYLES: Record<InvoiceStatus, string> = {
   paid: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
   partial: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
   overdue: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  credited: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
   cancelled: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
 
@@ -85,6 +87,7 @@ const INVOICE_STATUS_FILTERS = new Set<InvoiceStatus>([
   'paid',
   'partial',
   'overdue',
+  'credited',
   'cancelled',
 ]);
 const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = [
@@ -102,7 +105,7 @@ export default function Invoices() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { canManage } = useTenant();
+  const { session, canManage } = useTenant();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const canManageTenant = canManage();
@@ -118,6 +121,10 @@ export default function Invoices() {
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
+
+  const openAfterMenuClose = (openDialog: () => void) => {
+    window.setTimeout(openDialog, 0);
+  };
   const invoiceFilters =
     statusFilter === 'all'
       ? {}
@@ -176,8 +183,8 @@ export default function Invoices() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -186,12 +193,21 @@ export default function Invoices() {
   };
 
   const handleSend = async (invoice: Invoice) => {
-    if (!tenantId || !canManageTenant) return;
+    if (!tenantId || !canManageTenant || !session?.member.uid) return;
     try {
-      await invoiceService.markAsSent(tenantId, invoice.id);
+      const delivery = await invoiceService.markAsSent(
+        tenantId,
+        invoice.id,
+        session.member.uid,
+      );
       toast({
-        title: t('common.success') || 'Success',
-        description: t('money.invoices.markedSent') || 'Invoice marked as sent',
+        title: 'Invoice issued',
+        description:
+          delivery.email === 'queued'
+            ? `Email queued for ${invoice.customerEmail}.`
+            : delivery.email === 'not_requested'
+              ? 'The invoice is ready to share. This customer has no email address.'
+              : `The invoice is issued, but delivery needs attention. ${delivery.error || ''}`.trim(),
       });
       loadInvoices();
       queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
@@ -199,7 +215,7 @@ export default function Invoices() {
       console.error('Error sending invoice:', error);
       toast({
         title: t('common.error') || 'Error',
-        description: t('money.invoices.sendError') || 'Failed to send invoice',
+        description: error instanceof Error ? error.message : t('money.invoices.sendError') || 'Failed to issue invoice',
         variant: 'destructive',
       });
     }
@@ -232,6 +248,11 @@ export default function Invoices() {
       });
     } catch (error) {
       console.error('Error sharing invoice:', error);
+      toast({
+        title: 'Link not copied',
+        description: 'Copying is unavailable in this browser. Open the invoice and use its customer-page action instead.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -436,6 +457,7 @@ export default function Invoices() {
                 <SelectItem value="partial">{t('money.status.partial') || 'Partial'}</SelectItem>
                 <SelectItem value="paid">{t('money.status.paid') || 'Paid'}</SelectItem>
                 <SelectItem value="overdue">{t('money.status.overdue') || 'Overdue'}</SelectItem>
+                <SelectItem value="credited">{t('money.status.credited') || 'Credited'}</SelectItem>
                 <SelectItem value="cancelled">{t('money.status.cancelled') || 'Cancelled'}</SelectItem>
               </SelectContent>
             </Select>
@@ -450,6 +472,7 @@ export default function Invoices() {
                   <p><strong>{t('money.status.partial') || 'Partial'}:</strong> {MoneyTooltips.invoiceStatus.partial}</p>
                   <p><strong>{t('money.status.paid') || 'Paid'}:</strong> {MoneyTooltips.invoiceStatus.paid}</p>
                   <p><strong>{t('money.status.overdue') || 'Overdue'}:</strong> {MoneyTooltips.invoiceStatus.overdue}</p>
+                  <p><strong>{t('money.status.credited') || 'Credited'}:</strong> Balance cleared by one or more credit notes.</p>
                   <p><strong>{t('money.status.cancelled') || 'Cancelled'}:</strong> {MoneyTooltips.invoiceStatus.cancelled}</p>
                 </div>
               }
@@ -535,6 +558,11 @@ export default function Invoices() {
                           </Badge>
                         </div>
                         <p className="truncate text-sm text-muted-foreground">{invoice.customerName}</p>
+                        {invoice.deliveryStatus === 'failed' && invoice.status !== 'draft' && (
+                          <p className="mt-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                            Customer delivery failed · open to retry
+                          </p>
+                        )}
                         <p className="mt-0.5 text-sm font-semibold sm:hidden">
                           {formatCurrency(invoice.total)}
                           {invoice.balanceDue > 0 && invoice.balanceDue !== invoice.total && (
@@ -648,7 +676,9 @@ export default function Invoices() {
                           )}
                           {canManageTenant && ['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
                             <DropdownMenuItem
-                              onClick={() => setPaymentInvoice(invoice)}
+                              onSelect={() =>
+                                openAfterMenuClose(() => setPaymentInvoice(invoice))
+                              }
                             >
                               <DollarSign className="h-4 w-4 mr-2" />
                               {t('money.invoices.recordPayment') || 'Record Payment'}
@@ -656,7 +686,9 @@ export default function Invoices() {
                           )}
                           {canManageTenant && ['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
                             <DropdownMenuItem
-                              onClick={() => setReminderInvoice(invoice)}
+                              onSelect={() =>
+                                openAfterMenuClose(() => setReminderInvoice(invoice))
+                              }
                             >
                               <Bell className="h-4 w-4 mr-2" />
                               {t('money.invoices.sendReminder') || 'Send Reminder'}
@@ -664,7 +696,10 @@ export default function Invoices() {
                           )}
                           {canManageTenant &&
                             invoice.status !== 'cancelled' &&
-                            invoice.status !== 'paid' && (
+                            invoice.status !== 'paid' &&
+                            invoice.status !== 'credited' &&
+                            compareMoney(invoice.amountPaid || 0, 0) === 0 &&
+                            compareMoney(invoice.creditedAmount || 0, 0) === 0 && (
                               <>
                                 <DropdownMenuSeparator />
                                 {invoice.status === 'draft' ? (
@@ -677,7 +712,9 @@ export default function Invoices() {
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem
-                                    onClick={() => setVoidInvoice(invoice)}
+                                    onSelect={() =>
+                                      openAfterMenuClose(() => setVoidInvoice(invoice))
+                                    }
                                     className="text-red-500"
                                   >
                                     <XCircle className="h-4 w-4 mr-2" />

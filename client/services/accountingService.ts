@@ -1564,11 +1564,13 @@ class JournalEntryService {
     tenantId: string,
     payment: {
       invoiceId: string;
+      paymentId?: string;
       invoiceNumber: string;
       customerName: string;
       date: string;
       amount: number;
       method: PaymentMethod;
+      depositAccountCode?: string;
       reference?: string;
     },
     createdBy: string,
@@ -1589,8 +1591,11 @@ class JournalEntryService {
       return { id: account.id, name: account.name };
     };
 
-    // Use Cash on Hand for cash payments, Bank for others
-    const cashCode = payment.method === "cash" ? "1110" : "1120";
+    // A specific active cash/bank account may be selected by the operator.
+    // Legacy callers keep the standard method-based mapping.
+    const cashCode =
+      payment.depositAccountCode ||
+      (payment.method === "cash" ? "1110" : "1120");
     const cashAccount = await getAccountId(cashCode);
     const arAccount = await getAccountId("1210");
 
@@ -1620,7 +1625,7 @@ class JournalEntryService {
       date: payment.date,
       description: `Payment received for ${payment.invoiceNumber} - ${payment.customerName}`,
       source: "payment",
-      sourceId: payment.invoiceId,
+      sourceId: payment.paymentId || payment.invoiceId,
       sourceRef: payment.reference || payment.invoiceNumber,
       lines,
       totalDebit: payment.amount,
@@ -1630,9 +1635,164 @@ class JournalEntryService {
       postedBy: createdBy,
       fiscalYear: year,
       fiscalPeriod: month,
+      createdBy,
     };
 
     return await this.createJournalEntry(tenantId, journalEntry, txn);
+  }
+
+  /** Reverse a customer receipt: debit AR and credit cash/bank. */
+  async createFromInvoiceRefund(
+    tenantId: string,
+    refund: {
+      refundId: string;
+      invoiceNumber: string;
+      customerName: string;
+      date: string;
+      amount: number;
+      depositAccountCode: string;
+      reference?: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(refund.date);
+    const cashAccount = resolvedAccounts[refund.depositAccountCode];
+    const arAccount = resolvedAccounts["1210"];
+    if (!cashAccount?.id) {
+      throw new Error(`Missing account for code ${refund.depositAccountCode}.`);
+    }
+    if (!arAccount?.id) throw new Error("Missing account for code 1210.");
+    const amount = roundMoney(refund.amount);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: refund.date,
+        description: `Refund for ${refund.invoiceNumber} - ${refund.customerName}`,
+        source: "refund",
+        sourceId: refund.refundId,
+        sourceRef: refund.reference || refund.invoiceNumber,
+        lines: [
+          {
+            lineNumber: 1,
+            accountId: arAccount.id,
+            accountCode: "1210",
+            accountName: arAccount.name,
+            debit: amount,
+            credit: 0,
+            description: `Restore AR - ${refund.invoiceNumber}`,
+          },
+          {
+            lineNumber: 2,
+            accountId: cashAccount.id,
+            accountCode: refund.depositAccountCode,
+            accountName: cashAccount.name,
+            debit: 0,
+            credit: amount,
+            description: `Customer refund - ${refund.invoiceNumber}`,
+          },
+        ],
+        totalDebit: amount,
+        totalCredit: amount,
+        status: "posted",
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
+  }
+
+  /** Reduce revenue, VAT payable, and AR for an issued credit note. */
+  async createFromInvoiceCreditNote(
+    tenantId: string,
+    credit: {
+      creditNoteId: string;
+      creditNoteNumber: string;
+      invoiceNumber: string;
+      customerName: string;
+      date: string;
+      amount: number;
+      netAmount: number;
+      taxAmount: number;
+      reason: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(credit.date);
+    const revenueAccount = resolvedAccounts["4100"];
+    const taxAccount = resolvedAccounts["2310"];
+    const arAccount = resolvedAccounts["1210"];
+    if (!revenueAccount?.id) throw new Error("Missing account for code 4100.");
+    if (!arAccount?.id) throw new Error("Missing account for code 1210.");
+    if (credit.taxAmount > 0 && !taxAccount?.id) {
+      throw new Error("Missing account for code 2310.");
+    }
+    const amount = roundMoney(credit.amount);
+    const netAmount = roundMoney(credit.netAmount);
+    const taxAmount = roundMoney(credit.taxAmount);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: revenueAccount.id,
+        accountCode: "4100",
+        accountName: revenueAccount.name,
+        debit: netAmount,
+        credit: 0,
+        description: `Revenue credit - ${credit.invoiceNumber}`,
+      },
+    ];
+    if (taxAmount > 0 && taxAccount) {
+      lines.push({
+        lineNumber: lines.length + 1,
+        accountId: taxAccount.id,
+        accountCode: "2310",
+        accountName: taxAccount.name,
+        debit: taxAmount,
+        credit: 0,
+        description: `VAT credit - ${credit.invoiceNumber}`,
+      });
+    }
+    lines.push({
+      lineNumber: lines.length + 1,
+      accountId: arAccount.id,
+      accountCode: "1210",
+      accountName: arAccount.name,
+      debit: 0,
+      credit: amount,
+      description: `Reduce AR - ${credit.invoiceNumber}`,
+    });
+
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: credit.date,
+        description: `Credit note ${credit.creditNoteNumber} - ${credit.customerName}`,
+        source: "credit_note",
+        sourceId: credit.creditNoteId,
+        sourceRef: credit.creditNoteNumber,
+        lines,
+        totalDebit: amount,
+        totalCredit: amount,
+        status: "posted",
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
   }
 
   /**

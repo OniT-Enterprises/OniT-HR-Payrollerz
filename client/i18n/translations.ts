@@ -6706,6 +6706,7 @@ export const translations = {
         "paid": "Paid",
         "partial": "Partial",
         "overdue": "Overdue",
+        "credited": "Credited",
         "cancelled": "Cancelled"
       },
       "vendors": {
@@ -7034,6 +7035,7 @@ export const translations = {
         "inflows": "Cash Inflows",
         "outflows": "Cash Outflows",
         "customerPayments": "Customer Payments",
+        "customerRefunds": "Customer Refunds",
         "vendorPayments": "Vendor Payments",
         "operatingExpenses": "Operating Expenses",
         "totalInflows": "Total Inflows",
@@ -7080,6 +7082,11 @@ export const translations = {
         "bills": "bills"
       },
       "bankRecon": {
+        "optUnpaidInvoice": "Unpaid invoice",
+        "optUnpaidBill": "Unpaid bill",
+        "optRecordedPayment": "Recorded payment",
+        "optRecordedRefund": "Recorded refund",
+        "optExpense": "Expense",
         "blockedGeneric": "Cannot record this payment",
         "blockedOverpayment": "Bank amount is more than the balance due — cannot match",
         "confirmBillPaid": "The bill becomes paid.",
@@ -15092,6 +15099,7 @@ export const translations = {
         "paid": "Selu tiha",
         "partial": "Parsial",
         "overdue": "Liu Prazu",
+        "credited": "Kreditu tiha",
         "cancelled": "Kansela"
       },
       "vendors": {
@@ -15420,6 +15428,7 @@ export const translations = {
         "inflows": "Osan Tama",
         "outflows": "Osan Sai",
         "customerPayments": "Pagamentu Kliente",
+        "customerRefunds": "Devolve Osan ba Kliente",
         "vendorPayments": "Pagamentu Fornesedor",
         "operatingExpenses": "Despeza Operasional",
         "totalInflows": "Total Tama",
@@ -15466,6 +15475,11 @@ export const translations = {
         "bills": "fatura"
       },
       "bankRecon": {
+        "optUnpaidInvoice": "Fatura seidauk selu",
+        "optUnpaidBill": "Konta seidauk selu",
+        "optRecordedPayment": "Pagamentu rejista ona",
+        "optRecordedRefund": "Devolusaun rejista ona",
+        "optExpense": "Despeza",
         "blockedGeneric": "La bele rejista pagamentu ida-ne'e",
         "blockedOverpayment": "Montante banku boot liu saldo divida — la bele kombina",
         "confirmBillPaid": "Fatura selu ne'e sai selu tiha.",
@@ -23478,6 +23492,7 @@ export const translations = {
         "paid": "Paga",
         "partial": "Parcial",
         "overdue": "Em Atraso",
+        "credited": "Creditada",
         "cancelled": "Cancelada"
       },
       "vendors": {
@@ -23806,6 +23821,7 @@ export const translations = {
         "inflows": "Entradas de Caixa",
         "outflows": "Saídas de Caixa",
         "customerPayments": "Pagamentos de Clientes",
+        "customerRefunds": "Reembolsos a Clientes",
         "vendorPayments": "Pagamentos a Fornecedores",
         "operatingExpenses": "Despesas Operacionais",
         "totalInflows": "Total de Entradas",
@@ -23852,6 +23868,11 @@ export const translations = {
         "bills": "contas"
       },
       "bankRecon": {
+        "optUnpaidInvoice": "Fatura por receber",
+        "optUnpaidBill": "Conta por pagar",
+        "optRecordedPayment": "Pagamento registado",
+        "optRecordedRefund": "Reembolso registado",
+        "optExpense": "Despesa",
         "blockedGeneric": "Não é possível registar este pagamento",
         "blockedOverpayment": "O montante bancário é superior ao saldo em dívida — não é possível conciliar",
         "confirmBillPaid": "A conta fica paga.",

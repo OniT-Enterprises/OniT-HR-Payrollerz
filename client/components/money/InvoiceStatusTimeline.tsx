@@ -18,7 +18,7 @@ interface StatusStep {
 
 const MAIN_FLOW: StatusStep[] = [
   { status: 'draft', label: 'Draft', icon: Clock, description: 'Invoice created' },
-  { status: 'sent', label: 'Sent', icon: Send, description: 'Sent to customer' },
+  { status: 'sent', label: 'Issued', icon: Send, description: 'Finalised and posted' },
   { status: 'viewed', label: 'Viewed', icon: Eye, description: 'Customer viewed' },
   { status: 'paid', label: 'Paid', icon: DollarSign, description: 'Payment received' },
 ];
@@ -29,6 +29,7 @@ const STATUS_ORDER: Record<InvoiceStatus, number> = {
   viewed: 2,
   partial: 2.5, // Between viewed and paid
   paid: 3,
+  credited: 3,
   overdue: -1, // Special
   cancelled: -2, // Special
 };
@@ -103,6 +104,7 @@ function CompactTimeline({ invoice, className, effectiveOrder }: {
 }) {
   const isOverdue = invoice.status === 'overdue';
   const isCancelled = invoice.status === 'cancelled';
+  const isCredited = invoice.status === 'credited';
 
   return (
     <div className={cn('flex items-center gap-1', className)}>
@@ -119,6 +121,7 @@ function CompactTimeline({ invoice, className, effectiveOrder }: {
       })}
       {isOverdue && <AlertCircle className="h-3 w-3 text-red-500 ml-1" />}
       {isCancelled && <XCircle className="h-3 w-3 text-muted-foreground ml-1" />}
+      {isCredited && <Check className="h-3 w-3 text-green-600 ml-1" />}
     </div>
   );
 }
@@ -129,7 +132,11 @@ function FullTimelineStep({ step, invoice, effectiveOrder }: {
 }) {
   const { isComplete, isCurrent, isOverdue, isPartial } = getStepState(step.status, invoice.status, effectiveOrder);
   const Icon = step.icon;
-  const label = isCurrent && isOverdue ? 'Overdue' : isCurrent && isPartial ? 'Partial' : step.label;
+  const label = isCurrent && isOverdue
+    ? 'Overdue'
+    : isCurrent && isPartial
+      ? 'Partially settled'
+      : step.label;
 
   return (
     <div className="flex flex-col items-center relative z-10">
@@ -153,6 +160,7 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
   const currentOrder = STATUS_ORDER[effectiveStatus];
   const isOverdue = effectiveStatus === 'overdue';
   const isCancelled = effectiveStatus === 'cancelled';
+  const isCredited = effectiveStatus === 'credited';
   const isPartial = effectiveStatus === 'partial';
   const effectiveOrder = isOverdue || isPartial ? 2 : currentOrder;
 
@@ -166,6 +174,17 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
         <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-full">
           <XCircle className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground font-medium">Invoice Cancelled</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isCredited) {
+    return (
+      <div className={cn('flex items-center justify-center py-4', className)}>
+        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-950/30 rounded-full">
+          <Check className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-700 dark:text-green-300 font-medium">Settled by credit note</span>
         </div>
       </div>
     );
@@ -194,7 +213,13 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
       {isPartial && (
         <div className="mt-4 text-center">
           <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
-            Partial payment received - ${invoice.amountPaid.toLocaleString()} of ${invoice.total.toLocaleString()}
+            {invoice.amountPaid > 0
+              ? `$${invoice.amountPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} received`
+              : 'No payment received'}
+            {(invoice.creditedAmount || 0) > 0
+              ? ` · $${(invoice.creditedAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} credited`
+              : ''}
+            {` · $${invoice.balanceDue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} due`}
           </span>
         </div>
       )}

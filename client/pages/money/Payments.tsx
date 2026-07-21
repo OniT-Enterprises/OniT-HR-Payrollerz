@@ -27,7 +27,7 @@ import { invoiceService } from '@/services/invoiceService';
 import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 
 import { formatDateTL, getTodayTL } from '@/lib/dateUtils';
-import { sumMoney } from '@/lib/currency';
+import { absoluteMoney, compareMoney, divideMoney, sumMoney } from '@/lib/currency';
 import {
   DollarSign,
   Search,
@@ -84,8 +84,8 @@ export default function Payments() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -94,7 +94,11 @@ export default function Payments() {
   };
 
   // Calculate summary stats
+  const receipts = payments.filter(
+    (payment) => payment.kind !== 'refund' && compareMoney(payment.amount, 0) > 0,
+  );
   const totalReceived = sumMoney(payments.map((payment) => payment.amount));
+  const receiptTotal = sumMoney(receipts.map((payment) => payment.amount));
   const currentMonth = getTodayTL().slice(0, 7);
   const thisMonthPayments = payments.filter((payment) => payment.date.startsWith(currentMonth));
   const thisMonthTotal = sumMoney(thisMonthPayments.map((payment) => payment.amount));
@@ -222,10 +226,7 @@ export default function Payments() {
                   </p>
                   <p className="text-2xl font-bold">{formatCurrency(totalReceived)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {payments.length}{' '}
-                    {payments.length === 1
-                      ? t('money.payments.payment') || 'payment'
-                      : t('money.payments.payments') || 'payments'}
+                    Net of recorded refunds
                   </p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -243,8 +244,8 @@ export default function Payments() {
                     {t('money.payments.avgPayment') || 'Average Payment'}
                   </p>
                   <p className="text-2xl font-bold">
-                    {payments.length > 0
-                      ? formatCurrency(totalReceived / payments.length)
+                    {receipts.length > 0
+                      ? formatCurrency(divideMoney(receiptTotal, receipts.length))
                       : formatCurrency(0)}
                   </p>
                 </div>
@@ -305,6 +306,7 @@ export default function Payments() {
           <div className="space-y-3">
             {filteredPayments.map((payment) => {
               const MethodIcon = METHOD_ICONS[payment.method] || CreditCard;
+              const isRefund = payment.kind === 'refund' || compareMoney(payment.amount, 0) < 0;
               return (
                 <Card
                   key={payment.id}
@@ -314,8 +316,8 @@ export default function Payments() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-                          <MethodIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isRefund ? 'bg-orange-100 dark:bg-orange-900' : 'bg-green-100 dark:bg-green-900'}`}>
+                          <MethodIcon className={`h-5 w-5 ${isRefund ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -330,6 +332,11 @@ export default function Payments() {
                                 METHOD_LABELS[payment.method] ||
                                 payment.method}
                             </Badge>
+                            {isRefund && (
+                              <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                                Refund
+                              </Badge>
+                            )}
                             {payment.notes && (
                               <span className="text-xs text-muted-foreground truncate max-w-[200px]">
                                 {payment.notes}
@@ -340,8 +347,8 @@ export default function Payments() {
                       </div>
 
                       <div className="text-right">
-                        <p className="font-semibold text-green-600">
-                          +{formatCurrency(payment.amount)}
+                        <p className={`font-semibold ${isRefund ? 'text-orange-600' : 'text-green-600'}`}>
+                          {isRefund ? '-' : '+'}{formatCurrency(absoluteMoney(payment.amount))}
                         </p>
                         <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">
                           <Calendar className="h-3 w-3" />

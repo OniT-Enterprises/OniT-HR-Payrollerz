@@ -10,6 +10,7 @@ export interface CashMovementLine {
 
 export interface CashflowData {
   customerPayments: number;
+  customerRefunds: number;
   otherInflows: number;
   totalInflows: number;
   vendorPayments: number;
@@ -60,6 +61,7 @@ export function summarizeCashMovements(
 
 export function buildCashflowData(input: {
   customerPayments: number;
+  customerRefunds: number;
   vendorPayments: number;
   expenses: number;
   totalInflows: number;
@@ -69,12 +71,14 @@ export function buildCashflowData(input: {
   const netCashflow = subtractMoney(input.totalInflows, input.totalOutflows);
   return {
     customerPayments: input.customerPayments,
+    customerRefunds: input.customerRefunds,
     otherInflows: subtractMoney(input.totalInflows, input.customerPayments),
     totalInflows: input.totalInflows,
     vendorPayments: input.vendorPayments,
     expenses: input.expenses,
     otherOutflows: subtractMoney(
       input.totalOutflows,
+      input.customerRefunds,
       input.vendorPayments,
       input.expenses,
     ),

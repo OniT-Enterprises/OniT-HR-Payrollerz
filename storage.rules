@@ -96,6 +96,10 @@ service firebase.storage {
       return hasTenantModule(tenantId, 'payroll');
     }
 
+    function canAccessMoneyRecords(tenantId) {
+      return hasTenantModule(tenantId, 'money') || hasTenantModule(tenantId, 'accounting');
+    }
+
     // The employeeId linked to the calling member (null if none / not a member).
     // isSelfEmployee equivalent for Storage: lets a worker reach their own
     // employee documents and payslips without opening them to colleagues.
@@ -251,7 +255,7 @@ service firebase.storage {
     // as-sent content stays frozen at the app layer (the PDF is re-uploaded, never
     // re-rendered — see docs/INVOICING.md).
     match /tenants/{tenantId}/invoices/{invoiceId}/{document} {
-      allow read: if isTenantMember(tenantId);
+      allow read: if canAccessMoneyRecords(tenantId);
       allow write: if isTenantFinanceAdmin(tenantId) && isUnderSizeLimit() &&
         request.resource.contentType == 'application/pdf';
     }

@@ -7142,6 +7142,7 @@ const messages = {
       paid: "Selu tiha",
       partial: "Parsial",
       overdue: "Liu Prazu",
+      credited: "Kreditu tiha",
       cancelled: "Kansela",
     },
     vendors: {
@@ -7482,6 +7483,7 @@ const messages = {
       inflows: "Osan Tama",
       outflows: "Osan Sai",
       customerPayments: "Pagamentu Kliente",
+      customerRefunds: "Devolve Osan ba Kliente",
       vendorPayments: "Pagamentu Fornesedor",
       operatingExpenses: "Despeza Operasional",
       totalInflows: "Total Tama",
@@ -7528,6 +7530,11 @@ const messages = {
       bills: "fatura",
     },
     bankRecon: {
+      optUnpaidInvoice: "Fatura seidauk selu",
+      optUnpaidBill: "Konta seidauk selu",
+      optRecordedPayment: "Pagamentu rejista ona",
+      optRecordedRefund: "Devolusaun rejista ona",
+      optExpense: "Despeza",
       blockedGeneric: "La bele rejista pagamentu ida-ne'e",
       blockedOverpayment:
         "Montante banku boot liu saldo divida — la bele kombina",

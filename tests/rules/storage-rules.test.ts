@@ -37,6 +37,7 @@ const OWNER_B = 'owner-b';
 const OUTSIDER_A = 'outsider-a';
 // A member linked to emp-1, used to prove self-access to own docs/payslips.
 const SELF_A = 'self-a';
+const MONEY_A = 'money-a';
 
 describe('Storage rules', () => {
   let testEnv: RulesTestEnvironment;
@@ -88,6 +89,11 @@ describe('Storage rules', () => {
         modules: ['timeleave'],
         employeeId: 'emp-1',
       });
+      await setDoc(doc(adminDb, `tenants/tenant-a/members/${MONEY_A}`), {
+        uid: MONEY_A,
+        role: 'viewer',
+        modules: ['money'],
+      });
       await setDoc(doc(adminDb, 'tenants/tenant-b'), { id: 'tenant-b', name: 'Tenant B' });
       await setDoc(doc(adminDb, `tenants/tenant-b/members/${OWNER_B}`), {
         uid: OWNER_B,
@@ -110,6 +116,12 @@ describe('Storage rules', () => {
       await uploadString(
         ref(adminStorage, 'tenants/tenant-a/payslips/run-1/emp-1_1700000000000.pdf'),
         'payslip-bytes',
+        undefined,
+        { contentType: 'application/pdf' },
+      );
+      await uploadString(
+        ref(adminStorage, 'tenants/tenant-a/invoices/inv-1/INV-2026-001.pdf'),
+        'invoice-bytes',
         undefined,
         { contentType: 'application/pdf' },
       );
@@ -176,6 +188,25 @@ describe('Storage rules', () => {
 
     it('another tenant cannot read payslips', async () => {
       await assertFails(getBytes(ref(storageAs(OWNER_B), payslip)));
+    });
+  });
+
+  describe('invoice PDF access', () => {
+    const invoicePdf = 'tenants/tenant-a/invoices/inv-1/INV-2026-001.pdf';
+
+    it('allows money users to read invoice PDFs', async () => {
+      await assertSucceeds(getBytes(ref(storageAs(OWNER_A), invoicePdf)));
+      await assertSucceeds(getBytes(ref(storageAs(MONEY_A), invoicePdf)));
+    });
+
+    it('blocks tenant colleagues without money access', async () => {
+      await assertFails(getBytes(ref(storageAs(VIEWER_A), invoicePdf)));
+      await assertFails(getBytes(ref(storageAs(OUTSIDER_A), invoicePdf)));
+    });
+
+    it('blocks other tenants and unauthenticated users', async () => {
+      await assertFails(getBytes(ref(storageAs(OWNER_B), invoicePdf)));
+      await assertFails(getBytes(ref(anonStorage(), invoicePdf)));
     });
   });
 

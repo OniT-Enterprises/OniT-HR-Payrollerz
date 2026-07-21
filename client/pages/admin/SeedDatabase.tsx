@@ -429,7 +429,7 @@ export default function SeedDatabase() {
       "departments", "positions", "employees", "jobs", "candidates",
       "leaveRequests", "timesheets", "goals", "reviews", "trainings",
       "payruns", "customers", "vendors", "invoices", "bills", "expenses",
-      "payments_received", "bill_payments", "shifts", "shiftTemplates"
+      "payments_received", "credit_notes", "bill_payments", "shifts", "shiftTemplates"
     ];
 
     // Root-level collections (filtered by tenantId)

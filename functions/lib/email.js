@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendQueuedEmail = void 0;
+exports.syncInvoiceDeliveryStatus = exports.sendQueuedEmail = void 0;
 /**
  * Transactional email sender.
  *
@@ -124,5 +124,53 @@ exports.sendQueuedEmail = (0, firestore_1.onDocumentCreated)({ document: "mail/{
             attemptedAt: firestore_2.FieldValue.serverTimestamp(),
         });
     }
+});
+/**
+ * Mirror the provider result onto the invoice so the app distinguishes
+ * "queued" from actually sent and exposes a useful retry when delivery fails.
+ */
+exports.syncInvoiceDeliveryStatus = (0, firestore_1.onDocumentUpdated)("mail/{mailId}", async (event) => {
+    var _a, _b;
+    const before = (_a = event.data) === null || _a === void 0 ? void 0 : _a.before.data();
+    const after = (_b = event.data) === null || _b === void 0 ? void 0 : _b.after.data();
+    if (!before || !after || after.purpose !== "invoice")
+        return;
+    if (before.status === after.status)
+        return;
+    if (after.status !== "SENT" && after.status !== "ERROR")
+        return;
+    const tenantId = typeof after.tenantId === "string" ? after.tenantId : "";
+    const invoiceId = typeof after.relatedId === "string" ? after.relatedId : "";
+    const deliveryAttemptId = typeof after.deliveryAttemptId === "string"
+        ? after.deliveryAttemptId
+        : "";
+    if (!tenantId || !invoiceId || !deliveryAttemptId)
+        return;
+    const update = after.status === "SENT"
+        ? {
+            deliveryStatus: "sent",
+            deliveryError: firestore_2.FieldValue.delete(),
+            emailSentAt: after.sentAt || firestore_2.FieldValue.serverTimestamp(),
+            deliveryUpdatedAt: firestore_2.FieldValue.serverTimestamp(),
+            updatedAt: firestore_2.FieldValue.serverTimestamp(),
+        }
+        : {
+            deliveryStatus: "failed",
+            deliveryError: typeof after.error === "string"
+                ? after.error.slice(0, 500)
+                : "Email delivery failed",
+            deliveryUpdatedAt: firestore_2.FieldValue.serverTimestamp(),
+            updatedAt: firestore_2.FieldValue.serverTimestamp(),
+        };
+    const invoiceRef = (0, firestore_2.getFirestore)().doc(`tenants/${tenantId}/invoices/${invoiceId}`);
+    await (0, firestore_2.getFirestore)().runTransaction(async (transaction) => {
+        var _a;
+        const invoice = await transaction.get(invoiceRef);
+        if (!invoice.exists)
+            return;
+        if (((_a = invoice.data()) === null || _a === void 0 ? void 0 : _a.deliveryAttemptId) !== deliveryAttemptId)
+            return;
+        transaction.update(invoiceRef, update);
+    });
 });
 //# sourceMappingURL=email.js.map

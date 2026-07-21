@@ -85,6 +85,80 @@ export function calculateInvoicePaymentState(
   };
 }
 
+export function calculateInvoiceSettlementState(
+  totalInput: number,
+  amountPaidInput: number,
+  creditedAmountInput: number,
+  fallbackStatus: Extract<InvoiceStatus, 'sent' | 'viewed' | 'overdue'> = 'sent',
+): {
+  amountPaid: number;
+  creditedAmount: number;
+  balanceDue: number;
+  status: Extract<InvoiceStatus, 'sent' | 'viewed' | 'overdue' | 'paid' | 'partial' | 'credited'>;
+} {
+  const total = roundMoney(totalInput);
+  const amountPaid = roundMoney(amountPaidInput);
+  const creditedAmount = roundMoney(creditedAmountInput);
+  const balanceDue = subtractMoney(total, amountPaid, creditedAmount);
+
+  if (total < 0 || amountPaid < 0 || creditedAmount < 0 || balanceDue < 0) {
+    throw new Error('Invoice settlement amounts are inconsistent');
+  }
+  if (balanceDue === 0) {
+    return {
+      amountPaid,
+      creditedAmount,
+      balanceDue,
+      status: amountPaid > 0 ? 'paid' : 'credited',
+    };
+  }
+  return {
+    amountPaid,
+    creditedAmount,
+    balanceDue,
+    status: amountPaid > 0 || creditedAmount > 0 ? 'partial' : fallbackStatus,
+  };
+}
+
+export function calculateInvoiceRefundState(
+  total: number,
+  amountPaid: number,
+  creditedAmount: number,
+  requestedAmount: number,
+  fallbackStatus: Extract<InvoiceStatus, 'sent' | 'viewed' | 'overdue'> = 'sent',
+) {
+  const amount = validatePositiveMoney(requestedAmount, amountPaid, 'Refund');
+  return {
+    amount,
+    ...calculateInvoiceSettlementState(
+      total,
+      subtractMoney(amountPaid, amount),
+      creditedAmount,
+      fallbackStatus,
+    ),
+  };
+}
+
+export function calculateInvoiceCreditState(
+  total: number,
+  amountPaid: number,
+  creditedAmount: number,
+  requestedAmount: number,
+  fallbackStatus: Extract<InvoiceStatus, 'sent' | 'viewed' | 'overdue'> = 'sent',
+) {
+  const outstanding = subtractMoney(total, amountPaid, creditedAmount);
+  const amount = validatePositiveMoney(requestedAmount, outstanding, 'Credit note');
+  return {
+    amount,
+    ...calculateInvoiceSettlementState(
+      total,
+      amountPaid,
+      addMoney(creditedAmount, amount),
+      fallbackStatus,
+    ),
+  };
+}
+
 export function calculateBillPaymentState(
   total: number,
   amountPaid: number,
@@ -133,6 +207,22 @@ function validatePaymentAmount(requestedAmount: number, balanceDue: number): num
     throw new Error('Payment exceeds remaining balance');
   }
 
+  return amount;
+}
+
+function validatePositiveMoney(
+  requestedAmount: number,
+  availableAmount: number,
+  label: string,
+): number {
+  if (!Number.isFinite(requestedAmount)) {
+    throw new Error(`${label} amount must be a finite number`);
+  }
+  const amount = roundMoney(requestedAmount);
+  if (amount <= 0) throw new Error(`${label} amount must be at least $0.01`);
+  if (compareMoney(amount, roundMoney(availableAmount)) > 0) {
+    throw new Error(`${label} exceeds the available amount`);
+  }
   return amount;
 }
 

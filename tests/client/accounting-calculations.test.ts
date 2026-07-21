@@ -3,7 +3,10 @@ import {
   addToMoneyMap,
   calculateBillPaymentState,
   calculateInvoiceAmounts,
+  calculateInvoiceCreditState,
   calculateInvoicePaymentState,
+  calculateInvoiceRefundState,
+  calculateInvoiceSettlementState,
   calculateTaxedTotal,
   getAccountNet,
   getDaysPastDue,
@@ -88,6 +91,50 @@ describe('accounting calculations', () => {
     expect(() => calculateInvoicePaymentState(10, 0, 0.004)).toThrow('at least $0.01');
     expect(() => calculateInvoicePaymentState(10, 0, Number.NaN)).toThrow('finite');
     expect(() => calculateBillPaymentState(10, 9, 1.01)).toThrow('exceeds');
+  });
+
+  it('settles invoices with payments and credit notes without losing cents', () => {
+    expect(calculateInvoiceSettlementState(100, 40, 60)).toEqual({
+      amountPaid: 40,
+      creditedAmount: 60,
+      balanceDue: 0,
+      status: 'paid',
+    });
+    expect(calculateInvoiceSettlementState(100, 0, 100)).toEqual({
+      amountPaid: 0,
+      creditedAmount: 100,
+      balanceDue: 0,
+      status: 'credited',
+    });
+    expect(calculateInvoiceCreditState(10, 2.22, 1.11, 3.333)).toEqual({
+      amount: 3.33,
+      amountPaid: 2.22,
+      creditedAmount: 4.44,
+      balanceDue: 3.34,
+      status: 'partial',
+    });
+  });
+
+  it('reopens a settled invoice when a receipt is refunded', () => {
+    expect(calculateInvoiceRefundState(100, 100, 0, 25, 'sent')).toEqual({
+      amount: 25,
+      amountPaid: 75,
+      creditedAmount: 0,
+      balanceDue: 25,
+      status: 'partial',
+    });
+    expect(calculateInvoiceRefundState(100, 25, 75, 25, 'overdue')).toEqual({
+      amount: 25,
+      amountPaid: 0,
+      creditedAmount: 75,
+      balanceDue: 25,
+      status: 'partial',
+    });
+  });
+
+  it('rejects over-crediting and over-refunding', () => {
+    expect(() => calculateInvoiceCreditState(100, 80, 10, 10.01)).toThrow('exceeds');
+    expect(() => calculateInvoiceRefundState(100, 5, 0, 5.01)).toThrow('exceeds');
   });
 
   it('normalizes journal lines and requires exact balance at cents', () => {

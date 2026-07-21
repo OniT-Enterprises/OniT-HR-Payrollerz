@@ -54,17 +54,6 @@ function VoidInvoiceSummary({ invoice }: { invoice: Invoice }) {
   );
 }
 
-/** Warning about partial payments when voiding */
-function VoidPartialPaymentWarning({ amountPaid }: { amountPaid: number }) {
-  if (amountPaid <= 0) return null;
-  return (
-    <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-700 dark:text-yellow-400">
-      <strong>Note:</strong> This invoice has received partial payments.
-      Voiding will not refund these payments. You may need to process a refund separately.
-    </div>
-  );
-}
-
 export function VoidInvoiceDialog({
   invoice,
   open,
@@ -79,10 +68,23 @@ export function VoidInvoiceDialog({
 
   const handleVoid = async () => {
     if (!session?.tid || !canManage() || submitInFlight.current) return;
+    if (!reason.trim()) {
+      toast({
+        title: 'Reason required',
+        description: 'Add a short reason for voiding this invoice.',
+        variant: 'destructive',
+      });
+      return;
+    }
     submitInFlight.current = true;
     try {
       setLoading(true);
-      await invoiceService.cancelInvoice(session.tid, invoice.id, reason || "");
+      await invoiceService.cancelInvoice(
+        session.tid,
+        invoice.id,
+        reason.trim(),
+        session.member.uid,
+      );
       toast({ title: 'Invoice voided', description: `Invoice ${invoice.invoiceNumber} has been voided` });
       onVoided?.();
       onClose();
@@ -110,12 +112,10 @@ export function VoidInvoiceDialog({
         </AlertDialogHeader>
 
         <VoidInvoiceSummary invoice={invoice} />
-        <VoidPartialPaymentWarning amountPaid={invoice.amountPaid} />
 
         <div className="space-y-2">
           <Label htmlFor="reason">
             Reason for voiding
-            <span className="text-muted-foreground font-normal ml-1">(optional)</span>
           </Label>
           <Textarea
             id="reason"
@@ -128,7 +128,7 @@ export function VoidInvoiceDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleVoid} disabled={loading} className="bg-red-600 hover:bg-red-700">
+          <AlertDialogAction onClick={handleVoid} disabled={loading || !reason.trim()} className="bg-red-600 hover:bg-red-700">
             {loading ? (
               <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Voiding...</>
             ) : (

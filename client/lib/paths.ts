@@ -140,6 +140,9 @@ export const paths = {
   paymentsReceived: (tid: string) => `tenants/${tid}/payments_received`,
   paymentReceived: (tid: string, paymentId: string) => `tenants/${tid}/payments_received/${paymentId}`,
 
+  creditNotes: (tid: string) => `tenants/${tid}/credit_notes`,
+  creditNote: (tid: string, creditNoteId: string) => `tenants/${tid}/credit_notes/${creditNoteId}`,
+
   vendors: (tid: string) => `tenants/${tid}/vendors`,
   vendor: (tid: string, vendorId: string) => `tenants/${tid}/vendors/${vendorId}`,
 

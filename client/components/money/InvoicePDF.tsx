@@ -216,6 +216,7 @@ interface PdfContext {
 function StatusStamp({ invoice }: { invoice: Invoice }) {
   const config: Record<string, { label: string; color: string }> = {
     paid: { label: 'PAID', color: '#16a34a' },
+    credited: { label: 'CREDITED', color: '#2563eb' },
     draft: { label: 'DRAFT', color: '#9ca3af' },
     overdue: { label: 'OVERDUE', color: '#dc2626' },
     cancelled: { label: 'CANCELLED', color: '#9ca3af' },
@@ -230,9 +231,10 @@ function StatusStamp({ invoice }: { invoice: Invoice }) {
 }
 
 function CompanyBlock({ ctx, light }: { ctx: PdfContext; light?: boolean }) {
-  const { settings, logoSrc } = ctx;
+  const { invoice, settings, logoSrc } = ctx;
   const detailColor = light ? 'rgba(255,255,255,0.85)' : MUTED;
   const nameColor = light ? '#ffffff' : TEXT;
+  const taxId = invoice.supplierVatId || settings?.vatRegistrationNumber || settings?.companyTin;
   return (
     <View style={{ maxWidth: 260 }}>
       {logoSrc && (
@@ -256,8 +258,10 @@ function CompanyBlock({ ctx, light }: { ctx: PdfContext; light?: boolean }) {
       {settings?.companyEmail && (
         <Text style={[base.companyDetail, { color: detailColor }]}>{settings.companyEmail}</Text>
       )}
-      {settings?.companyTin && (
-        <Text style={[base.companyDetail, { color: detailColor }]}>TIN: {settings.companyTin}</Text>
+      {taxId && (
+        <Text style={[base.companyDetail, { color: detailColor }]}>
+          {invoice.isVATInvoice ? 'VAT / TIN' : 'TIN'}: {taxId}
+        </Text>
       )}
     </View>
   );
@@ -272,6 +276,7 @@ function BillToBlock({ ctx }: { ctx: PdfContext }) {
       {invoice.customerAddress && <Text style={base.customerDetail}>{invoice.customerAddress}</Text>}
       {invoice.customerPhone && <Text style={base.customerDetail}>{invoice.customerPhone}</Text>}
       {invoice.customerEmail && <Text style={base.customerDetail}>{invoice.customerEmail}</Text>}
+      {invoice.customerVatId && <Text style={base.customerDetail}>VAT / TIN: {invoice.customerVatId}</Text>}
     </View>
   );
 }
@@ -350,7 +355,8 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
+  const credited = invoice.creditedAmount || 0;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid, credited);
 
   return (
     <View style={base.totalsBox}>
@@ -403,16 +409,22 @@ function TotalsBlock({ ctx, variant }: { ctx: PdfContext; variant: InvoiceTempla
         </View>
       )}
       {paid > 0 && (
-        <>
-          <View style={base.totalRow}>
-            <Text style={[base.totalLabel, { color: '#16a34a' }]}>Paid</Text>
-            <Text style={[base.totalValue, { color: '#16a34a' }]}>-{formatInvoiceMoney(paid)}</Text>
-          </View>
-          <View style={base.totalRow}>
-            <Text style={[base.totalLabel, { fontFamily: 'Helvetica-Bold', color: TEXT }]}>Balance Due</Text>
-            <Text style={[base.totalValue, { fontFamily: 'Helvetica-Bold' }]}>{formatInvoiceMoney(balance)}</Text>
-          </View>
-        </>
+        <View style={base.totalRow}>
+          <Text style={[base.totalLabel, { color: '#16a34a' }]}>Paid</Text>
+          <Text style={[base.totalValue, { color: '#16a34a' }]}>-{formatInvoiceMoney(paid)}</Text>
+        </View>
+      )}
+      {credited > 0 && (
+        <View style={base.totalRow}>
+          <Text style={[base.totalLabel, { color: '#2563eb' }]}>Credit notes</Text>
+          <Text style={[base.totalValue, { color: '#2563eb' }]}>-{formatInvoiceMoney(credited)}</Text>
+        </View>
+      )}
+      {(paid > 0 || credited > 0) && (
+        <View style={base.totalRow}>
+          <Text style={[base.totalLabel, { fontFamily: 'Helvetica-Bold', color: TEXT }]}>Balance Due</Text>
+          <Text style={[base.totalValue, { fontFamily: 'Helvetica-Bold' }]}>{formatInvoiceMoney(balance)}</Text>
+        </View>
       )}
     </View>
   );
@@ -509,7 +521,9 @@ function ClassicTemplate({ ctx }: { ctx: PdfContext }) {
         <View style={base.rowBetween}>
           <CompanyBlock ctx={ctx} />
           <View>
-            <Text style={[base.invoiceTitle, { color: accent }]}>INVOICE</Text>
+            <Text style={[base.invoiceTitle, { color: accent }]}>
+              {invoice.isVATInvoice ? 'VAT INVOICE' : 'INVOICE'}
+            </Text>
             <Text style={base.invoiceNumber}>{invoice.invoiceNumber}</Text>
           </View>
         </View>
@@ -552,7 +566,9 @@ function ModernTemplate({ ctx }: { ctx: PdfContext }) {
       >
         <CompanyBlock ctx={ctx} light />
         <View>
-          <Text style={[base.invoiceTitle, { color: '#ffffff' }]}>INVOICE</Text>
+          <Text style={[base.invoiceTitle, { color: '#ffffff' }]}>
+            {invoice.isVATInvoice ? 'VAT INVOICE' : 'INVOICE'}
+          </Text>
           <Text style={[base.invoiceNumber, { color: 'rgba(255,255,255,0.85)' }]}>
             {invoice.invoiceNumber}
           </Text>
@@ -593,7 +609,9 @@ function MinimalTemplate({ ctx }: { ctx: PdfContext }) {
         <View style={base.rowBetween}>
           <CompanyBlock ctx={ctx} />
           <View>
-            <Text style={[base.label, { textAlign: 'right', letterSpacing: 2 }]}>Invoice</Text>
+            <Text style={[base.label, { textAlign: 'right', letterSpacing: 2 }]}>
+              {invoice.isVATInvoice ? 'VAT Invoice' : 'Invoice'}
+            </Text>
             <Text style={{ fontSize: 15, fontFamily: 'Helvetica-Bold', color: accent, textAlign: 'right' }}>
               {invoice.invoiceNumber}
             </Text>

@@ -15,9 +15,12 @@
  * Secret (set with `firebase functions:secrets:set`):
  *   RESEND_API_KEY — Resend API key (re_...)
  */
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import {
+  onDocumentCreated,
+  onDocumentUpdated,
+} from "firebase-functions/v2/firestore";
 import { defineSecret } from "firebase-functions/params";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 const RESEND_API_KEY = defineSecret("RESEND_API_KEY");
 
@@ -121,5 +124,59 @@ export const sendQueuedEmail = onDocumentCreated(
         attemptedAt: FieldValue.serverTimestamp(),
       });
     }
+  },
+);
+
+/**
+ * Mirror the provider result onto the invoice so the app distinguishes
+ * "queued" from actually sent and exposes a useful retry when delivery fails.
+ */
+export const syncInvoiceDeliveryStatus = onDocumentUpdated(
+  "mail/{mailId}",
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after || after.purpose !== "invoice") return;
+    if (before.status === after.status) return;
+    if (after.status !== "SENT" && after.status !== "ERROR") return;
+
+    const tenantId =
+      typeof after.tenantId === "string" ? after.tenantId : "";
+    const invoiceId =
+      typeof after.relatedId === "string" ? after.relatedId : "";
+    const deliveryAttemptId =
+      typeof after.deliveryAttemptId === "string"
+        ? after.deliveryAttemptId
+        : "";
+    if (!tenantId || !invoiceId || !deliveryAttemptId) return;
+
+    const update =
+      after.status === "SENT"
+        ? {
+            deliveryStatus: "sent",
+            deliveryError: FieldValue.delete(),
+            emailSentAt: after.sentAt || FieldValue.serverTimestamp(),
+            deliveryUpdatedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          }
+        : {
+            deliveryStatus: "failed",
+            deliveryError:
+              typeof after.error === "string"
+                ? after.error.slice(0, 500)
+                : "Email delivery failed",
+            deliveryUpdatedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          };
+
+    const invoiceRef = getFirestore().doc(
+      `tenants/${tenantId}/invoices/${invoiceId}`,
+    );
+    await getFirestore().runTransaction(async (transaction) => {
+      const invoice = await transaction.get(invoiceRef);
+      if (!invoice.exists) return;
+      if (invoice.data()?.deliveryAttemptId !== deliveryAttemptId) return;
+      transaction.update(invoiceRef, update);
+    });
   },
 );

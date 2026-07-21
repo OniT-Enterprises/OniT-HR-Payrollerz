@@ -31,6 +31,21 @@ export function toMoney(value: Decimal): number {
 }
 
 /**
+ * Parse user-entered money at the application boundary.
+ * Returns null for empty, malformed, NaN, or infinite input instead of
+ * allowing binary floating-point parsing to leak into accounting workflows.
+ */
+export function parseMoney(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  try {
+    const parsed = toDecimal(value);
+    return parsed.isFinite() ? toMoney(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Add multiple currency values
  */
 export function addMoney(...values: (number | Decimal)[]): number {
@@ -181,6 +196,11 @@ export function roundWholeMoney(value: number): number {
 /** Compare currency values without binary floating-point drift. */
 export function compareMoney(a: number, b: number): -1 | 0 | 1 {
   return toDecimal(a).comparedTo(toDecimal(b)) as -1 | 0 | 1;
+}
+
+/** Return a positive, cent-rounded display/comparison magnitude. */
+export function absoluteMoney(value: number): number {
+  return toMoney(toDecimal(value).abs());
 }
 
 /**

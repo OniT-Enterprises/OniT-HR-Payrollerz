@@ -71,6 +71,8 @@ export interface QueueEmailInput {
   purpose: EmailPurpose;
   relatedId?: string;
   createdBy?: string;
+  /** Correlates provider status back to the latest invoice delivery attempt. */
+  deliveryAttemptId?: string;
   /**
    * Default true when there are multiple recipients: one mail doc per
    * address (privacy). Set false to send a single doc with a shared "to".
@@ -112,6 +114,9 @@ export const notificationService = {
       ...(input.attachments?.length ? { attachments: input.attachments } : {}),
       ...(input.relatedId ? { relatedId: input.relatedId } : {}),
       ...(input.createdBy ? { createdBy: input.createdBy } : {}),
+      ...(input.deliveryAttemptId
+        ? { deliveryAttemptId: input.deliveryAttemptId }
+        : {}),
     };
 
     const perRecipient = input.perRecipient ?? recipients.length > 1;

@@ -48,6 +48,7 @@ interface VATSummary {
   inputVAT: number; // VAT paid on expenses
   netDue: number; // outputVAT - inputVAT
   salesCount: number;
+  adjustmentCount: number;
   expenseCount: number;
 }
 
@@ -173,12 +174,21 @@ export default function VATReturnsPage() {
       const outputVAT = invoiceVAT.outputVAT;
       const inputVAT = addMoney(billVAT.inputVAT, expenseVAT.inputVAT);
       const salesCount = invoiceVAT.salesCount;
+      const adjustmentCount = invoiceVAT.adjustmentCount;
       const expenseCount = billVAT.expenseCount + expenseVAT.expenseCount;
       const netDue = subtractMoney(outputVAT, inputVAT);
 
-      if (salesCount === 0 && expenseCount === 0) return null;
+      if (salesCount === 0 && adjustmentCount === 0 && expenseCount === 0)
+        return null;
 
-      return { outputVAT, inputVAT, netDue, salesCount, expenseCount };
+      return {
+        outputVAT,
+        inputVAT,
+        netDue,
+        salesCount,
+        adjustmentCount,
+        expenseCount,
+      };
     },
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
@@ -205,6 +215,7 @@ export default function VATReturnsPage() {
         inputVAT: summary.inputVAT,
         netDue: summary.netDue,
         salesCount: summary.salesCount,
+        adjustmentCount: summary.adjustmentCount,
         expenseCount: summary.expenseCount,
         status: markAsFiled ? 'filed' : 'draft',
         ...(markAsFiled && { filedAt: Timestamp.fromDate(new Date()) }),
@@ -362,6 +373,9 @@ export default function VATReturnsPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       from {summary.salesCount} invoice
                       {summary.salesCount !== 1 ? 's' : ''}
+                      {summary.adjustmentCount > 0
+                        ? ` · ${summary.adjustmentCount} credit/void adjustment${summary.adjustmentCount !== 1 ? 's' : ''}`
+                        : ''}
                     </p>
                   </CardContent>
                 </Card>

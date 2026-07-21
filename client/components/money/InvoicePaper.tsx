@@ -92,7 +92,11 @@ export interface InvoicePaperData {
   taxAmount: number;
   total: number;
   amountPaid?: number;
+  creditedAmount?: number;
   balanceDue?: number;
+  isVATInvoice?: boolean;
+  supplierVatId?: string;
+  customerVatId?: string;
   notes?: string;
   terms?: string;
   templateId?: InvoiceTemplateId;
@@ -154,9 +158,10 @@ function CompanyLogo({ settings, size = 56 }: { settings?: Partial<InvoiceSettin
 
 /** Rotated rubber-stamp for paid / draft / overdue states */
 function StatusStamp({ status }: { status?: InvoiceStatus }) {
-  if (!status || !['paid', 'draft', 'overdue', 'cancelled'].includes(status)) return null;
+  if (!status || !['paid', 'credited', 'draft', 'overdue', 'cancelled'].includes(status)) return null;
   const config: Record<string, { label: string; color: string }> = {
     paid: { label: 'PAID', color: '#16a34a' },
+    credited: { label: 'CREDITED', color: '#2563eb' },
     draft: { label: 'DRAFT', color: '#9ca3af' },
     overdue: { label: 'OVERDUE', color: '#dc2626' },
     cancelled: { label: 'CANCELLED', color: '#9ca3af' },
@@ -227,7 +232,8 @@ function ItemsTable({
 function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceTemplateId }) {
   const { invoice, accent } = ctx;
   const paid = invoice.amountPaid || 0;
-  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid);
+  const credited = invoice.creditedAmount || 0;
+  const balance = invoice.balanceDue ?? subtractMoney(invoice.total, paid, credited);
 
   return (
     <div className="ml-auto w-64 space-y-1.5 text-sm" style={{ color: PAPER_TEXT }}>
@@ -267,16 +273,22 @@ function TotalsBlock({ ctx, variant }: { ctx: TemplateContext; variant: InvoiceT
         </div>
       )}
       {paid > 0 && (
-        <>
-          <div className="flex justify-between py-0.5" style={{ color: '#16a34a' }}>
-            <span>Paid</span>
-            <span className="tabular-nums">-{formatInvoiceMoney(paid)}</span>
-          </div>
-          <div className="flex justify-between py-0.5 font-semibold">
-            <span>Balance Due</span>
-            <span className="tabular-nums">{formatInvoiceMoney(balance)}</span>
-          </div>
-        </>
+        <div className="flex justify-between py-0.5" style={{ color: '#16a34a' }}>
+          <span>Paid</span>
+          <span className="tabular-nums">-{formatInvoiceMoney(paid)}</span>
+        </div>
+      )}
+      {credited > 0 && (
+        <div className="flex justify-between py-0.5" style={{ color: '#2563eb' }}>
+          <span>Credit notes</span>
+          <span className="tabular-nums">-{formatInvoiceMoney(credited)}</span>
+        </div>
+      )}
+      {(paid > 0 || credited > 0) && (
+        <div className="flex justify-between py-0.5 font-semibold">
+          <span>Balance Due</span>
+          <span className="tabular-nums">{formatInvoiceMoney(balance)}</span>
+        </div>
       )}
     </div>
   );
@@ -363,14 +375,16 @@ function PaperFooter({ ctx, showDefault = true }: { ctx: TemplateContext; showDe
   );
 }
 
-function CompanyDetails({ settings, light }: { settings?: Partial<InvoiceSettings>; light?: boolean }) {
+function CompanyDetails({ ctx, light }: { ctx: TemplateContext; light?: boolean }) {
+  const { settings, invoice } = ctx;
   const muted = light ? 'rgba(255,255,255,0.85)' : PAPER_MUTED;
+  const taxId = invoice.supplierVatId || settings?.vatRegistrationNumber || settings?.companyTin;
   return (
     <div className="space-y-0.5 text-xs" style={{ color: muted }}>
       {settings?.companyAddress && <p className="whitespace-pre-line">{settings.companyAddress}</p>}
       {settings?.companyPhone && <p>Tel: {settings.companyPhone}</p>}
       {settings?.companyEmail && <p>{settings.companyEmail}</p>}
-      {settings?.companyTin && <p>TIN: {settings.companyTin}</p>}
+      {taxId && <p>{invoice.isVATInvoice ? 'VAT / TIN' : 'TIN'}: {taxId}</p>}
     </div>
   );
 }
@@ -387,6 +401,7 @@ function BillTo({ ctx }: { ctx: TemplateContext }) {
         {invoice.customerAddress && <p className="whitespace-pre-line">{invoice.customerAddress}</p>}
         {invoice.customerPhone && <p>{invoice.customerPhone}</p>}
         {invoice.customerEmail && <p>{invoice.customerEmail}</p>}
+        {invoice.customerVatId && <p>VAT / TIN: {invoice.customerVatId}</p>}
       </div>
     </div>
   );
@@ -429,11 +444,11 @@ function ClassicTemplate({ ctx }: { ctx: TemplateContext }) {
           <p className="text-lg font-bold" style={{ color: PAPER_TEXT }}>
             {settings?.companyName || 'Your Company Name'}
           </p>
-          <CompanyDetails settings={settings} />
+          <CompanyDetails ctx={ctx} />
         </div>
         <div className="text-right">
           <h2 className="text-3xl font-bold tracking-tight" style={{ color: accent }}>
-            INVOICE
+            {invoice.isVATInvoice ? 'VAT INVOICE' : 'INVOICE'}
           </h2>
           <p className="mt-1 font-mono text-sm" style={{ color: PAPER_MUTED }}>
             {invoice.invoiceNumber}
@@ -479,10 +494,12 @@ function ModernTemplate({ ctx }: { ctx: TemplateContext }) {
           <p className="text-lg font-bold text-white">
             {settings?.companyName || 'Your Company Name'}
           </p>
-          <CompanyDetails settings={settings} light />
+          <CompanyDetails ctx={ctx} light />
         </div>
         <div className="text-right text-white">
-          <h2 className="text-3xl font-bold tracking-tight">INVOICE</h2>
+          <h2 className="text-3xl font-bold tracking-tight">
+            {invoice.isVATInvoice ? 'VAT INVOICE' : 'INVOICE'}
+          </h2>
           <p className="mt-1 font-mono text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
             {invoice.invoiceNumber}
           </p>
@@ -529,12 +546,12 @@ function MinimalTemplate({ ctx }: { ctx: TemplateContext }) {
             <p className="text-sm font-semibold" style={{ color: PAPER_TEXT }}>
               {settings?.companyName || 'Your Company Name'}
             </p>
-            <CompanyDetails settings={settings} />
+            <CompanyDetails ctx={ctx} />
           </div>
         </div>
         <div className="text-right">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: PAPER_MUTED }}>
-            Invoice
+            {invoice.isVATInvoice ? 'VAT Invoice' : 'Invoice'}
           </p>
           <p className="mt-1 text-xl font-semibold tabular-nums" style={{ color: accent }}>
             {invoice.invoiceNumber}

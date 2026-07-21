@@ -137,6 +137,7 @@ const TENANT_SUBCOLLECTIONS = [
   "invoices",
   "recurring_invoices",
   "payments_received",
+  "credit_notes",
   "vendors",
   "bills",
   "bill_payments",

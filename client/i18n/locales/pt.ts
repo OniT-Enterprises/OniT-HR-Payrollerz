@@ -7270,6 +7270,7 @@ const messages = {
       paid: "Paga",
       partial: "Parcial",
       overdue: "Em Atraso",
+      credited: "Creditada",
       cancelled: "Cancelada",
     },
     vendors: {
@@ -7614,6 +7615,7 @@ const messages = {
       inflows: "Entradas de Caixa",
       outflows: "Saídas de Caixa",
       customerPayments: "Pagamentos de Clientes",
+      customerRefunds: "Reembolsos a Clientes",
       vendorPayments: "Pagamentos a Fornecedores",
       operatingExpenses: "Despesas Operacionais",
       totalInflows: "Total de Entradas",
@@ -7660,6 +7662,11 @@ const messages = {
       bills: "contas",
     },
     bankRecon: {
+      optUnpaidInvoice: "Fatura por receber",
+      optUnpaidBill: "Conta por pagar",
+      optRecordedPayment: "Pagamento registado",
+      optRecordedRefund: "Reembolso registado",
+      optExpense: "Despesa",
       blockedGeneric: "Não é possível registar este pagamento",
       blockedOverpayment:
         "O montante bancário é superior ao saldo em dívida — não é possível conciliar",

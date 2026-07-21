@@ -52,6 +52,7 @@ import {
 } from '@/lib/accounting/bank-reconciliation-settlement';
 import type { BankTransaction } from '@/types/money';
 import { addDays, formatDateISO } from '@/lib/dateUtils';
+import { absoluteMoney, compareMoney, subtractMoney } from '@/lib/currency';
 import { BankReconciliationSummary } from '@/components/money/BankReconciliationSummary';
 import { BankMatchDialog, type MatchOption } from '@/components/money/BankMatchDialog';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
@@ -222,7 +223,7 @@ export default function BankReconciliation() {
             });
           });
       } else {
-        const [unpaidBills, billPayments, expenses] = await Promise.all([
+        const [unpaidBills, billPayments, expenses, invoicePayments] = await Promise.all([
           billService.getUnpaidBills(tenantId),
           billService.getPaymentCandidates(tenantId, startDate, endDate, 50),
           expenseService.getExpenses(tenantId, {
@@ -230,7 +231,19 @@ export default function BankReconciliation() {
             endDate,
             pageSize: 50,
           }),
+          invoiceService.getPaymentCandidates(tenantId, startDate, endDate, 50),
         ]);
+
+        invoicePayments.forEach((payment) => {
+          if (payment.kind !== 'refund' && payment.amount >= 0) return;
+          options.push({
+            type: 'invoice_refund',
+            id: payment.id,
+            description: `Refund: ${payment.invoiceNumber || 'Invoice'} - ${payment.customerName || 'Customer'}`,
+            amount: payment.amount,
+            date: payment.date,
+          });
+        });
 
         // Unpaid bills are settle options. Payer-withholding bills are
         // excluded: the bank line shows the cash leg while recordPayment's
@@ -274,9 +287,9 @@ export default function BankReconciliation() {
 
       // Sort by amount similarity
       options.sort((a, b) => {
-        const diffA = Math.abs(a.amount - transaction.amount);
-        const diffB = Math.abs(b.amount - transaction.amount);
-        return diffA - diffB;
+        const diffA = absoluteMoney(subtractMoney(a.amount, transaction.amount));
+        const diffB = absoluteMoney(subtractMoney(b.amount, transaction.amount));
+        return compareMoney(diffA, diffB);
       });
 
       setMatchOptions(options.slice(0, 10)); // Show top 10
