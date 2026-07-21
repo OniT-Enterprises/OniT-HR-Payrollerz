@@ -58,8 +58,16 @@ firebase deploy --only hosting       # Deploy hosting only
 
 ## Hetzner VPS
 
-**Production**: xefe.tl (65.109.173.122). Served from `/var/www/xefe.tl/dist/spa`.
-`meza.naroman.tl` / `payroll.naroman.tl` now 301 → xefe.tl.
+**Production**: split hosts since 2026-07-21 — **xefe.tl** = marketing/public
+(docs, pricing, hosted invoice `/i/` + `/apply/` share links) and
+**app.xefe.tl** = the authenticated app (noindex). ONE build serves both from
+`/var/www/xefe.tl/dist/spa` (65.109.173.122); nginx redirects server-side
+hits across the boundary, `client/lib/hosts.ts` + HostGuard (App.tsx) correct
+client-side navigations. Auth lives on app.xefe.tl (Firebase authorized
+domain added). Both vhosts proxy `/api/` → xefe-api :3201; API_BASE is
+same-origin in prod. `meza.naroman.tl` / `payroll.naroman.tl` still 301 →
+xefe.tl. app cert: Let's Encrypt via certbot dns-cloudflare
+(`/root/.cloudflare-certbot.ini`).
 
 **Deploys are automatic**: pushing to `main` runs `deploy.yml`, which (after
 typecheck/lint/tests/rules suite) deploys Firestore+Storage rules, Cloud

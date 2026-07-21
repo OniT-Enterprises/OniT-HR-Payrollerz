@@ -11,7 +11,6 @@
  * hreflang. Google may ignore an hreflang code it doesn't recognize, but the
  * pages still index normally via the sitemap and internal links.
  */
-import { DOCS_MANIFEST } from "@/lib/docs/manifest";
 export type PublicLocale = "en" | "tet" | "pt";
 
 export const PREFIXED_PUBLIC_LOCALES = ["tet", "pt"] as const;
@@ -27,9 +26,12 @@ export const LOCALIZED_PUBLIC_PATHS = [
   "/docs",
 ] as const;
 
-// Docs article paths come from the manifest so new articles localize
-// automatically (client/lib/docs/manifest.ts is react-free).
-const DOCS_PATHS = DOCS_MANIFEST.map((entry) => `/docs/${entry.slug}`);
+// Docs paths localize by prefix — deliberately NOT via the docs manifest:
+// this module sits in the entry bundle and importing the manifest (all the
+// per-locale SEO copy) blew the gzip entry budget. Unknown /docs/<slug>
+// URLs just render the docs hub redirect, which is harmless.
+const isDocsPath = (bare: string): boolean =>
+  bare === "/docs" || bare.startsWith("/docs/");
 
 export function localeFromPath(pathname: string): PublicLocale {
   for (const locale of PREFIXED_PUBLIC_LOCALES) {
@@ -63,6 +65,6 @@ export function isLocalizedPublicPath(pathname: string): boolean {
   const bare = stripLocalePrefix(pathname);
   return (
     (LOCALIZED_PUBLIC_PATHS as readonly string[]).includes(bare) ||
-    DOCS_PATHS.includes(bare)
+    isDocsPath(bare)
   );
 }
