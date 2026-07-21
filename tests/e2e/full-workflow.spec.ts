@@ -99,12 +99,23 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   page,
 }) => {
   test.setTimeout(300_000);
+  const updateDepthErrors: string[] = [];
   // Surface app-side failures in the test output — a silent toast is
   // undebuggable in CI.
   page.on("pageerror", (err) => console.log("[pageerror]", err.message));
   page.on("console", (msg) => {
-    if (msg.type() === "error")
-      console.log("[console.error]", msg.text().slice(0, 400));
+    if (msg.type() === "error") {
+      const location = msg.location();
+      if (msg.text().includes("Maximum update depth exceeded")) {
+        updateDepthErrors.push(new URL(page.url()).pathname);
+      }
+      console.log(
+        "[console.error]",
+        new URL(page.url()).pathname,
+        `${location.url}:${location.lineNumber}:${location.columnNumber}`,
+        msg.text().slice(0, 400),
+      );
+    }
   });
 
   await forceEnglish(page);
@@ -530,27 +541,21 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
 
   // Form C remains an honest preparation hand-off: persist the accounting
   // checklist, but never claim that Xefe generated or filed the official form.
-  await page.goto("/payroll/tax");
-  await page.getByRole("button", { name: /start preparation/i }).click();
-  const formCDialog = page.getByRole("dialog", {
-    name: /prepare .* annual income tax/i,
-  });
+  await page.goto("/accounting/tax/annual-income-tax");
   await expect(
-    formCDialog.getByText(/does not generate or file the official form c/i),
+    page.getByText(/not the official form and xefe does not file it/i),
   ).toBeVisible();
-  const formCChecks = formCDialog.getByRole("checkbox");
+  const formCChecks = page.getByRole("checkbox");
   await expect(formCChecks).toHaveCount(4);
   for (let index = 0; index < 4; index += 1) {
     await formCChecks.nth(index).click();
   }
-  await formCDialog
+  await page
     .getByLabel(/review note/i)
     .fill("Prepared for independent accountant sign-off");
-  await formCDialog.getByRole("button", { name: /^save$/i }).click();
-  await expect(formCDialog).toBeHidden();
-  await expect(
-    page.getByRole("button", { name: /review preparation/i }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: /save progress/i }).last().click();
+  // .first(): the toast body and its aria-live announcer both carry the text.
+  await expect(page.getByText(/preparation saved/i).first()).toBeVisible();
 
   // Audit evidence is part of the workflow contract, not an optional side
   // effect. These are written by server-authenticated callables.
@@ -568,4 +573,5 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
       "tax.form_c_preparation_updated",
     ]),
   );
+  expect(updateDepthErrors, "React update loops detected").toEqual([]);
 });

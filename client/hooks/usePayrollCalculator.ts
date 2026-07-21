@@ -563,7 +563,12 @@ export function usePayrollCalculator({
   // keeps async config/YTD changes from resetting manual row edits.
   useEffect(() => {
     if (rosterEmployees.length === 0) {
-      setEmployeePayrollData([]);
+      // Query-backed callers briefly pass an empty roster while employees load.
+      // Preserve the existing empty array so that an unstable fallback `[]`
+      // cannot trigger an effect -> state update -> render loop.
+      setEmployeePayrollData((current) =>
+        current.length === 0 ? current : [],
+      );
       return;
     }
 
