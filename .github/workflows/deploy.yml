@@ -76,6 +76,8 @@ jobs:
           # firebase-core ensureAppCheckInitialized).
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_RECAPTCHA_ENTERPRISE_KEY: ${{ secrets.VITE_RECAPTCHA_ENTERPRISE_KEY }}
+          # Release tagging for Sentry — which deploy an error belongs to.
+          VITE_COMMIT_SHA: ${{ github.sha }}
 
       - name: Deploy Firestore & Storage rules
         run: node scripts/deploy-rules.mjs

@@ -5,15 +5,30 @@ import App from "./App";
 import { createOptimizedQueryClient } from "@/lib/queryCache";
 
 
-// Initialize Sentry for production error tracking
+// Initialize Sentry for production error tracking. Activates the moment the
+// VITE_SENTRY_DSN secret exists in the CI build; no-ops otherwise.
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
-    environment: import.meta.env.MODE,
+    // Host split: separate the app from the marketing site in triage.
+    environment:
+      typeof window !== "undefined" &&
+      window.location.hostname === "app.xefe.tl"
+        ? "production-app"
+        : "production-marketing",
+    release: import.meta.env.VITE_COMMIT_SHA || undefined,
     // Only send 10% of transactions for performance monitoring
     tracesSampleRate: 0.1,
-    // Capture 50% of error sessions (limits quota burn on launch spikes)
-    replaysOnErrorSampleRate: 0.5,
+    // Most service-layer failures are caught, console.error'd and flattened
+    // into a generic toast — capturing console.error is what makes those
+    // visible (the "Failed to reject leave request" class).
+    integrations: [
+      Sentry.captureConsoleIntegration({ levels: ["error"] }),
+    ],
+    // Session replay stays OFF permanently: screens here carry salaries,
+    // identity numbers and payroll history. Masking is not a good enough
+    // guarantee for that; stack traces + breadcrumbs are plenty.
+    replaysOnErrorSampleRate: 0,
     replaysSessionSampleRate: 0,
   });
 }
