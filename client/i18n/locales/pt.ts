@@ -1742,6 +1742,8 @@ const messages = {
       article1Title: "A cadeia do dinheiro da folha",
       article1Desc: "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
       readArticle: "Ler o artigo",
+      guides: "Guias",
+      architecture: "Por dentro",
       more: "Vamos acrescentando artigos à medida que documentamos cada parte do sistema. Para as próprias regras de cálculo, veja",
       moreEngine: "o motor Xefe",
     },

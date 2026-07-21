@@ -28,6 +28,7 @@ const NAV_LINKS = [
   { to: "/", labelKey: "landing.nav.home" },
   { to: "/how-it-works", labelKey: "landing.simple.nav.howItWorks" },
   { to: "/engine", labelKey: "landing.nav.engine" },
+  { to: "/docs", labelKey: "publicDocs.eyebrow" },
   { to: "/pricing", labelKey: "landing.nav.pricing" },
   { to: "/accountants", labelKey: "landing.nav.forAccountants" },
 ] as const;

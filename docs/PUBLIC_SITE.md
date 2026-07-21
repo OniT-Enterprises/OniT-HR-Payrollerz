@@ -17,12 +17,34 @@ this doc is the plumbing._
 | **Docs home** | `/docs` | `client/pages/DocsIndex.tsx` | lime |
 | Docs: money chain | `/docs/payroll-money-chain` | `client/pages/DocsMoneyChain.tsx` | lime |
 
-Docs articles share the lime accent and are footer-only in the nav (the menu
-stays short). Public docs content rule: statutes, deadlines, and Xefe's own
-product guarantees only — **never mention data sourcing** (the same rule as
-the /engine proof wording below). Internal file paths and sign-off status stay
-internal; the repo-side source of truth for the money-chain article is
-`docs/MONEY_CHAIN.md`.
+Docs articles share the lime accent; /docs sits in the top nav. Public docs
+content rule: statutes, deadlines, and Xefe's own product guarantees only —
+**never mention data sourcing** (the same rule as the /engine proof wording
+below). Internal file paths and sign-off status stay internal; the repo-side
+source of truth for the money-chain article is `docs/MONEY_CHAIN.md`.
+
+### Docs framework (full product documentation)
+
+Generic articles are typed data files rendered by ONE page — adding an
+article does NOT need a new component:
+
+1. Content: `client/content/docs/<slug>.ts` exporting
+   `article: LocalizedDocArticle` (en/pt/tet blocks —
+   `client/lib/docs/types.ts` has the block palette: prose, heading, steps,
+   list, callout, deadlines, ledger, table).
+2. Loader: one line in `client/lib/docs/registry.ts` (lazy chunk per article).
+3. Manifest: one entry in `client/lib/docs/manifest.ts` (slug, category,
+   per-locale SEO + hub card). The hub, the `/docs/:slug` route, the
+   localized-path check and the static heads all read the manifest —
+   no further wiring.
+4. `public/sitemap.xml` ×3 URLs with alternates.
+5. Bespoke visual articles (e.g. the money chain) keep their own component:
+   set `custom: true` in the manifest and register explicit routes BEFORE
+   `/docs/:slug`.
+
+Current articles: getting-started, running-payroll, tax-and-filings,
+invoices-and-money, time-and-leave (guides) + payroll-money-chain
+(architecture, custom).
 
 Shared chrome: `PublicNav` (pages-only menu), `PublicSectionNav` (in-page
 anchors + page accent), `SectionEyebrow`/`Crescent`, `PublicFooter`.

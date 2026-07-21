@@ -66,6 +66,7 @@ const XefeEngine = lazyWithRetry(() => import("@/pages/XefeEngine"));
 const SecurityPage = lazyWithRetry(() => import("@/pages/SecurityPage"));
 const DocsIndex = lazyWithRetry(() => import("@/pages/DocsIndex"));
 const DocsMoneyChain = lazyWithRetry(() => import("@/pages/DocsMoneyChain"));
+const DocsArticle = lazyWithRetry(() => import("@/pages/DocsArticle"));
 const AccountantPortfolioDashboard = lazyWithRetry(() => import("@/pages/AccountantPortfolioDashboard"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
@@ -212,6 +213,7 @@ export const authRoutes = (
     <Route path="/security" element={marketingRoute(<SecurityPage />)} />
     <Route path="/docs" element={marketingRoute(<DocsIndex />)} />
     <Route path="/docs/payroll-money-chain" element={marketingRoute(<DocsMoneyChain />)} />
+    <Route path="/docs/:slug" element={marketingRoute(<DocsArticle />)} />
     {/* Locale-prefixed marketing pages (/tet/..., /pt/...) so each language is
         crawlable at its own URL (hreflang). PublicLocaleSync inside PublicNav
         switches the i18n locale from the prefix. English stays at the bare path. */}
@@ -225,6 +227,7 @@ export const authRoutes = (
         <Route path={`/${prefix}/security`} element={marketingRoute(<SecurityPage />)} />
         <Route path={`/${prefix}/docs`} element={marketingRoute(<DocsIndex />)} />
         <Route path={`/${prefix}/docs/payroll-money-chain`} element={marketingRoute(<DocsMoneyChain />)} />
+        <Route path={`/${prefix}/docs/:slug`} element={marketingRoute(<DocsArticle />)} />
       </React.Fragment>
     ))}
     <Route path="/features" element={<Navigate to="/how-it-works" replace />} />

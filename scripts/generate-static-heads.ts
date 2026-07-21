@@ -18,6 +18,7 @@
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { DOCS_MANIFEST } from "../client/lib/docs/manifest";
 import { seoConfig } from "../client/lib/seo-config";
 
 const BASE_URL = "https://xefe.tl";
@@ -45,7 +46,7 @@ const ROUTES: RouteMeta[] = [
   seoConfig.engine,
   seoConfig.security,
   seoConfig.docsIndex,
-  seoConfig.docsMoneyChain,
+  ...DOCS_MANIFEST.map((entry) => entry.seo),
   seoConfig.signup,
   {
     title: "Privacy Policy",

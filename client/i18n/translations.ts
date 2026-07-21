@@ -1585,6 +1585,8 @@ export const translations = {
         "article1Title": "The payroll money chain",
         "article1Desc": "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
         "readArticle": "Read the article",
+        "guides": "Guides",
+        "architecture": "Under the hood",
         "more": "More articles are added as we document each part of the system. For the calculation rules themselves, see",
         "moreEngine": "the Xefe engine"
       },
@@ -9968,6 +9970,8 @@ export const translations = {
         "article1Title": "Kadeia osan folha pagamentu nian",
         "article1Desc": "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
         "readArticle": "Lee artigu",
+        "guides": "Gía sira",
+        "architecture": "Iha laran",
         "more": "Ami aumenta artigu sira bainhira ami dokumenta parte ida-idak husi sistema. Ba regra kálkulu sira rasik, haree",
         "moreEngine": "motór Xefe"
       },
@@ -18351,6 +18355,8 @@ export const translations = {
         "article1Title": "A cadeia do dinheiro da folha",
         "article1Desc": "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
         "readArticle": "Ler o artigo",
+        "guides": "Guias",
+        "architecture": "Por dentro",
         "more": "Vamos acrescentando artigos à medida que documentamos cada parte do sistema. Para as próprias regras de cálculo, veja",
         "moreEngine": "o motor Xefe"
       },

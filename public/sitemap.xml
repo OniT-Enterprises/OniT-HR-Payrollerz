@@ -259,4 +259,154 @@
     <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/payroll-money-chain"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/payroll-money-chain"/>
   </url>
+  <url>
+    <loc>https://xefe.tl/docs/getting-started</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/getting-started"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/tet/docs/getting-started</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/getting-started"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/pt/docs/getting-started</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/getting-started"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/getting-started"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/docs/running-payroll</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/running-payroll"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/tet/docs/running-payroll</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/running-payroll"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/pt/docs/running-payroll</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/running-payroll"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/running-payroll"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/docs/tax-and-filings</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/tax-and-filings"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/tet/docs/tax-and-filings</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/tax-and-filings"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/pt/docs/tax-and-filings</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/tax-and-filings"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/tax-and-filings"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/docs/invoices-and-money</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/invoices-and-money"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/tet/docs/invoices-and-money</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/invoices-and-money"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/pt/docs/invoices-and-money</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/invoices-and-money"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/invoices-and-money"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/docs/time-and-leave</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/time-and-leave"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/tet/docs/time-and-leave</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/time-and-leave"/>
+  </url>
+  <url>
+    <loc>https://xefe.tl/pt/docs/time-and-leave</loc>
+    <lastmod>2026-07-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://xefe.tl/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="tet" href="https://xefe.tl/tet/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://xefe.tl/pt/docs/time-and-leave"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/docs/time-and-leave"/>
+  </url>
 </urlset>

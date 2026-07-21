@@ -12,7 +12,7 @@
 - [Landing page](https://xefe.tl/): product overview and Timor-Leste compliance details
 - [How Xefe works](https://xefe.tl/how-it-works): plain-language workflow, inspectable payroll example, accounting controls, outputs, and validation approach
 - [Security](https://xefe.tl/security): server-enforced isolation, two-person payroll approval, backups and privacy design
-- [Documentation](https://xefe.tl/docs): plain-language docs — the payroll money chain (lifecycle, journals, statutory deadlines, system-enforced guarantees)
+- [Documentation](https://xefe.tl/docs): plain-language product docs — getting started, running payroll, taxes & statutory filings, invoices & money, attendance & leave, and the payroll money chain (lifecycle, journals, deadlines, guarantees)
 - [The Xefe engine](https://xefe.tl/engine): the payroll and accounting engine — Timor-Leste statutes implemented rule by rule, checked against real-world practice and official tax-authority assessments
 - [Pricing](https://xefe.tl/pricing): one flat price — $4 per employee per month, every feature included; free to set up, subscription only required to finalize payroll. Founding offer: businesses that sign up now get 6 months free.
 - [Accountant partners](https://xefe.tl/accountants): optional accountant support from a Dili accounting and audit firm (announcement coming soon), with explicit business-controlled access

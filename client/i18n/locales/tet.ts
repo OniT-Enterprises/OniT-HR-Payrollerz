@@ -1721,6 +1721,8 @@ const messages = {
       article1Title: "Kadeia osan folha pagamentu nian",
       article1Desc: "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
       readArticle: "Lee artigu",
+      guides: "Gía sira",
+      architecture: "Iha laran",
       more: "Ami aumenta artigu sira bainhira ami dokumenta parte ida-idak husi sistema. Ba regra kálkulu sira rasik, haree",
       moreEngine: "motór Xefe",
     },

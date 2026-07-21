@@ -1720,6 +1720,8 @@ const messages = {
       article1Title: "The payroll money chain",
       article1Desc: "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
       readArticle: "Read the article",
+      guides: "Guides",
+      architecture: "Under the hood",
       more: "More articles are added as we document each part of the system. For the calculation rules themselves, see",
       moreEngine: "the Xefe engine",
     },
