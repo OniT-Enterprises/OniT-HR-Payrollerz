@@ -68,7 +68,7 @@ try {
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
   origin: function (origin, callback) {
-    const allowed = ['https://xefe.tl', 'https://www.xefe.tl', 'https://payroll.naroman.tl', 'https://meza.naroman.tl'];
+    const allowed = ['https://xefe.tl', 'https://www.xefe.tl', 'https://app.xefe.tl', 'https://payroll.naroman.tl', 'https://meza.naroman.tl'];
     if (!origin || allowed.includes(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true);
     } else {

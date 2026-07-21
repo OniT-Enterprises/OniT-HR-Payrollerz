@@ -332,7 +332,7 @@ async function sendExpiryDigestEmail(
       "",
       ...lines,
       "",
-      "Review and acknowledge in Xefe: https://xefe.tl/people/employees (Document alerts)",
+      "Review and acknowledge in Xefe: https://app.xefe.tl/people/employees (Document alerts)",
       "",
       "(Sent via Xefe)",
     ].join("\n"),

@@ -9,7 +9,11 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { useChatStore, type ProgressStep, type ChatMessage, type StepStatus } from "@/stores/chatStore";
 import { cn } from "@/lib/utils";
 
-const API_BASE = import.meta.env.VITE_XEFE_API_URL || import.meta.env.VITE_MEZA_API_URL || "https://xefe.tl";
+const API_BASE = import.meta.env.VITE_XEFE_API_URL ||
+  import.meta.env.VITE_MEZA_API_URL ||
+  (import.meta.env.PROD && typeof window !== "undefined"
+    ? window.location.origin
+    : "https://xefe.tl");
 
 const CONFIRM_PATTERN = /(?:shall i|should i|would you like me to|do you want me to|want me to|like me to|go ahead|proceed|confirm)[\s\S]*\?\s*$/i;
 const SAFE_LINK_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"]);

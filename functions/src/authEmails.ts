@@ -16,7 +16,9 @@ import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions";
 import { requireAuth } from "./authz";
 
-const APP_URL = "https://xefe.tl";
+// Host split 2026-07-21: the authenticated app lives on app.xefe.tl
+// (app.xefe.tl must be in Firebase authorized domains).
+const APP_URL = "https://app.xefe.tl";
 const BRAND = "#6A9C29";
 
 // Where Firebase's hosted action handler sends the user after they verify their

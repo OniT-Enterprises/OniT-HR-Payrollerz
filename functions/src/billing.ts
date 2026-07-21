@@ -36,7 +36,8 @@ const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
-const DEFAULT_APP_URL = "https://xefe.tl";
+// Host split 2026-07-21: billing/checkout returns land in the app host.
+const DEFAULT_APP_URL = "https://app.xefe.tl";
 
 /**
  * How long a freshly created checkout session holds the "one checkout at a time"
@@ -906,7 +907,7 @@ export const sendRenewalReminders = onSchedule(
             : `Your Xefe subscription is paid until ${paidUntilStr}. After that date, finalizing payroll runs is locked until it's renewed.`,
           "",
           "To renew by bank transfer or cash:",
-          "- Request an invoice from your Billing page: https://xefe.tl/billing",
+          "- Request an invoice from your Billing page: https://app.xefe.tl/billing",
           "- Or simply reply to this email and we'll send payment details.",
           "",
           "Everything else in Xefe stays free to use.",

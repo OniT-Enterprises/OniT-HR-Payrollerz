@@ -6,12 +6,21 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { QueryClient } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
 import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import {
+  APP_ORIGIN,
+  MARKETING_ORIGIN,
+  APP_HOST,
+  MARKETING_HOST,
+  isAppHost,
+  pathBelongsToApp,
+  pathBelongsToMarketing,
+} from "@/lib/hosts";
 import { GuidanceProvider } from "@/contexts/GuidanceContext";
 import { I18nProvider, useI18n } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -121,6 +130,27 @@ function SessionRecovery({
   );
 }
 
+/**
+ * Host split: corrects client-side navigations that cross the
+ * marketing (xefe.tl) / app (app.xefe.tl) boundary — nginx handles the
+ * server-side hits, this handles SPA <Link> navigation. Prod hosts only;
+ * dev/localhost and previews are untouched.
+ */
+function HostGuard() {
+  const { pathname, search, hash } = useLocation();
+  React.useEffect(() => {
+    if (!import.meta.env.PROD || typeof window === "undefined") return;
+    const host = window.location.hostname;
+    const full = `${pathname}${search}${hash}`;
+    if (host === MARKETING_HOST && pathBelongsToApp(pathname)) {
+      window.location.replace(`${APP_ORIGIN}${full}`);
+    } else if (host === APP_HOST && pathBelongsToMarketing(pathname)) {
+      window.location.replace(`${MARKETING_ORIGIN}${full}`);
+    }
+  }, [pathname, search, hash]);
+  return null;
+}
+
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
   const {
@@ -151,8 +181,13 @@ function HomeRoute() {
   }
 
   // Not logged in - show landing page (dark marketing skeleton while the
-  // chunk loads; the app-style RouteLoadingFallback would flash light here)
+  // chunk loads; the app-style RouteLoadingFallback would flash light here).
+  // On the app host the marketing site lives on the apex — send guests there.
   if (!user) {
+    if (import.meta.env.PROD && isAppHost()) {
+      window.location.replace(MARKETING_ORIGIN);
+      return <MarketingRouteFallback />;
+    }
     return (
       <Suspense fallback={<MarketingRouteFallback />}>
         <Landing />
@@ -259,6 +294,7 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
             <Toaster />
             <Sonner />
             <BrowserRouter future={{ v7_startTransition: true }}>
+              <HostGuard />
               <ErrorBoundary>
                 <FirebaseProvider>
                   <AuthProvider>

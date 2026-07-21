@@ -18,7 +18,9 @@ const firestore_1 = require("firebase-admin/firestore");
 const auth_1 = require("firebase-admin/auth");
 const firebase_functions_1 = require("firebase-functions");
 const authz_1 = require("./authz");
-const APP_URL = "https://xefe.tl";
+// Host split 2026-07-21: the authenticated app lives on app.xefe.tl
+// (app.xefe.tl must be in Firebase authorized domains).
+const APP_URL = "https://app.xefe.tl";
 const BRAND = "#6A9C29";
 // Where Firebase's hosted action handler sends the user after they verify their
 // email / finish a password reset. xefe.tl is in Firebase's authorized domains.

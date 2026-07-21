@@ -26,7 +26,8 @@ const billingPricing_1 = require("./billingPricing");
 const STRIPE_SECRET_KEY = (0, params_1.defineSecret)("STRIPE_SECRET_KEY");
 const STRIPE_WEBHOOK_SECRET = (0, params_1.defineSecret)("STRIPE_WEBHOOK_SECRET");
 const PACKAGES_CONFIG_PATH = "platform/packagesConfig";
-const DEFAULT_APP_URL = "https://xefe.tl";
+// Host split 2026-07-21: billing/checkout returns land in the app host.
+const DEFAULT_APP_URL = "https://app.xefe.tl";
 /**
  * How long a freshly created checkout session holds the "one checkout at a time"
  * lock on a tenant. Long enough to cover the window between creating a Checkout
@@ -682,7 +683,7 @@ exports.sendRenewalReminders = (0, scheduler_1.onSchedule)({
                     : `Your Xefe subscription is paid until ${paidUntilStr}. After that date, finalizing payroll runs is locked until it's renewed.`,
                 "",
                 "To renew by bank transfer or cash:",
-                "- Request an invoice from your Billing page: https://xefe.tl/billing",
+                "- Request an invoice from your Billing page: https://app.xefe.tl/billing",
                 "- Or simply reply to this email and we'll send payment details.",
                 "",
                 "Everything else in Xefe stays free to use.",

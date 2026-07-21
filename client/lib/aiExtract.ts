@@ -10,7 +10,9 @@ import { auth } from "@/lib/firebase-core";
 const API_BASE =
   import.meta.env.VITE_XEFE_API_URL ||
   import.meta.env.VITE_MEZA_API_URL ||
-  "https://xefe.tl";
+  (import.meta.env.PROD && typeof window !== "undefined"
+    ? window.location.origin
+    : "https://xefe.tl");
 
 export const EXTRACT_MIME_TYPES = [
   "application/pdf",
