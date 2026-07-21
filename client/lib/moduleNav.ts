@@ -62,6 +62,7 @@ import {
   DollarSign,
   Building,
   Wrench,
+  UserPlus,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -142,7 +143,8 @@ export const peopleNavConfig: ModuleNavConfig = {
       matchPaths: ["/people/employees", "/people/add", "/people/staff", "/people/onboarding", "/people/offboarding"],
       subPages: [
         { label: "Directory", path: "/people/employees", icon: Users },
-        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus, manageOnly: true },
+        { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus, hrAdminOnly: true },
+        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus, hrAdminOnly: true },
       ],
       requiredModule: "staff",
     },
@@ -165,21 +167,23 @@ export const peopleNavConfig: ModuleNavConfig = {
       matchPaths: ["/people/grievances"],
       subPages: [],
       requiredModule: "staff",
+      hrAdminOnly: true,
     },
     {
       id: "performance",
       label: "Performance",
       labelKey: "performance",
       icon: Target,
-      path: "/people/reviews",
+      path: "/people/goals",
       matchPaths: ["/people/performance", "/people/goals", "/people/reviews", "/people/training", "/people/disciplinary"],
       subPages: [
-        { label: "Reviews", labelKey: "reviews", path: "/people/reviews", icon: Award },
-        { label: "Goals", labelKey: "goals", path: "/people/goals", icon: Target },
-        { label: "Training", labelKey: "training", path: "/people/training", icon: GraduationCap },
-        { label: "Disciplinary", labelKey: "disciplinary", path: "/people/disciplinary", icon: Shield },
+        { label: "Goals", labelKey: "goals", path: "/people/goals", icon: Target, hrAdminOnly: true },
+        { label: "Reviews", labelKey: "reviews", path: "/people/reviews", icon: Award, hrAdminOnly: true },
+        { label: "Training", labelKey: "training", path: "/people/training", icon: GraduationCap, hrAdminOnly: true },
+        { label: "Disciplinary", labelKey: "disciplinary", path: "/people/disciplinary", icon: Shield, hrAdminOnly: true },
       ],
       requiredModule: "performance",
+      hrAdminOnly: true,
     },
   ],
 };

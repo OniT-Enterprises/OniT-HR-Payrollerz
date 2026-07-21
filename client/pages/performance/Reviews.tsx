@@ -57,7 +57,6 @@ import {
   useCreateReview,
   useUpdateReview,
   useSubmitReview,
-  useAcknowledgeReview,
   useCompleteReview,
   useDeleteReview,
 } from "@/hooks/usePerformance";
@@ -75,6 +74,7 @@ import {
   Trash2,
   Eye,
   Send,
+  Award,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, toDateStringTL, formatDateTL } from "@/lib/dateUtils";
@@ -163,15 +163,16 @@ const defaultFormData: ReviewFormData = {
 
 export default function Reviews() {
   // Data queries
-  const { data: employees = [], isLoading: loadingEmployees } = useAllEmployees();
-  const { data: reviews = [], isLoading: loadingReviews } = useReviews();
+  const employeesQuery = useAllEmployees();
+  const { data: employees = [], isLoading: loadingEmployees } = employeesQuery;
+  const reviewsQuery = useReviews();
+  const { data: reviews = [], isLoading: loadingReviews } = reviewsQuery;
   const loading = loadingReviews || loadingEmployees;
 
   // Mutations
   const createReview = useCreateReview();
   const updateReview = useUpdateReview();
   const submitReview = useSubmitReview();
-  const acknowledgeReview = useAcknowledgeReview();
   const completeReview = useCompleteReview();
   const deleteReview = useDeleteReview();
 
@@ -336,13 +337,7 @@ export default function Reviews() {
 
   const handleCompleteReview = async (review: PerformanceReview) => {
     try {
-      if (review.status === "submitted") {
-        await acknowledgeReview.mutateAsync({ id: review.id! });
-        toast({
-          title: "Success",
-          description: "Review acknowledged",
-        });
-      } else if (review.status === "acknowledged") {
+      if (review.status === "acknowledged") {
         await completeReview.mutateAsync(review.id!);
         toast({
           title: "Success",
@@ -431,6 +426,33 @@ export default function Reviews() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (reviewsQuery.isError || employeesQuery.isError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title="Performance Reviews"
+            subtitle="Write reviews and track employee acknowledgement"
+            icon={Award}
+            iconColor="text-blue-500"
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium">Could not load performance reviews</p>
+              <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
+              <Button
+                className="mt-4"
+                onClick={() => void Promise.all([reviewsQuery.refetch(), employeesQuery.refetch()])}
+              >
+                Try again
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -669,14 +691,9 @@ export default function Reviews() {
                                 </>
                               )}
                               {review.status === "submitted" && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleCompleteReview(review)}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Acknowledge
-                                </Button>
+                                <span className="text-xs text-muted-foreground">
+                                  Waiting for employee in Ekipa
+                                </span>
                               )}
                               {review.status === "acknowledged" && (
                                 <Button

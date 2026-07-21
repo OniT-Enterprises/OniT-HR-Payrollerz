@@ -34,11 +34,17 @@ export function isMarketingHost(): boolean {
 /**
  * Paths that belong on app.xefe.tl. Auth screens are deliberately app-side:
  * signing in must happen on the origin that holds the session.
+ *
+ * "/" (and the /tet, /pt home pages) are NEVER app paths: the marketing home
+ * lives there, and HomeRoute owns the app host's "/" itself. Without this
+ * guard the two hosts bounce guests back and forth forever — "/" is not in
+ * PUBLIC_PATHS because the SPA always served Landing through HomeRoute.
  */
 export function pathBelongsToApp(pathname: string): boolean {
   if (pathname.startsWith("/auth/") || pathname === "/unauthorized") {
     return true;
   }
+  if (stripLocalePrefix(pathname) === "/") return false;
   return !isPublicPath(pathname);
 }
 
