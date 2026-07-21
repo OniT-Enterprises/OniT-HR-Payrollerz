@@ -26,7 +26,9 @@ export function AdvancedTaxModeCard() {
     return null;
   }
 
-  const enabled = session.config?.advancedTaxMode === true;
+  // Mirrors TenantContext's TEMPORARY default-ON: unset shows as enabled so
+  // the switch always reflects what the tenant actually sees.
+  const enabled = session.config?.advancedTaxMode !== false;
 
   const handleToggle = async (next: boolean) => {
     if (saving) return;

@@ -796,8 +796,13 @@ export function TenantProvider({ children }: TenantProviderProps) {
     );
   };
 
+  // TEMPORARY default-ON (2026-07-21, Tony's call): advanced tax controls show
+  // unless a tenant explicitly turned the toggle off. Tenants that switched it
+  // off keep the simple flow. Revert to `=== true` (default-off opt-in) when
+  // the launch audience split is re-tightened — docs/AUDIENCE_SPLIT.md.
   const showAdvancedTax =
-    session?.role === "accountant" || session?.config?.advancedTaxMode === true;
+    session != null &&
+    (session.role === "accountant" || session.config?.advancedTaxMode !== false);
 
   const value: TenantContextType = {
     session,

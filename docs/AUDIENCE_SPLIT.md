@@ -13,8 +13,15 @@ flow. This doc is the map. Shipped 2026-07-17.
 
 ```
 showAdvancedTax = session.role === 'accountant'
-               || session.config.advancedTaxMode === true
+               || session.config.advancedTaxMode !== false   // TEMPORARY default-ON
 ```
+
+> **TEMPORARY (2026-07-21, Tony's call):** the mode currently defaults **ON** —
+> advanced controls show unless a tenant explicitly flips the Settings toggle
+> off. Tenants that turned it off keep the simple flow. The original opt-in
+> default (`=== true`) should be restored when the audience split is
+> re-tightened for launch; `AdvancedTaxModeCard` mirrors the same default so
+> the switch reflects reality.
 
 - **`accountant`** is a new `TenantRole` (types/tenant.ts): full
   money/accounting/payroll control, **no administration** (members, employees,
