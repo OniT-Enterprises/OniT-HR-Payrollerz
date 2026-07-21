@@ -19,7 +19,13 @@ const INDEX_PATH = join(BUILD_DIR, "index.html");
 // wiring in the entry (~0.3 KiB) pushed CI over by 0.0 KiB rounded — the
 // same ~0.8 KiB local↔CI zlib delta as before. LOCAL builds must stay under
 // ~313.2 to pass CI. Deliberate features, not creep. Keep this tight.
-const MAX_INITIAL_GZIP_KIB = 314;
+// Raised 314 -> 340 (2026-07-21): the Sentry SDK now ships in the entry.
+// With no VITE_SENTRY_DSN at build time, Vite dead-code-eliminates the whole
+// init branch (the old baseline was measuring Sentry OUT); with the DSN
+// secret set, the SDK's real ~24 KiB gzip lands. It must stay in the entry —
+// boot-time crashes are exactly the errors worth catching. Builds WITHOUT
+// the DSN env still measure ~24 KiB smaller.
+const MAX_INITIAL_GZIP_KIB = 340;
 const FORBIDDEN_INITIAL_CHUNKS = [
   "firebase-firestore",
   "react-pdf",
