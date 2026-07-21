@@ -112,6 +112,7 @@ const BenefitsEnrollment = lazyWithRetry(() => import("@/pages/payroll/BenefitsE
 const DeductionsAdvances = lazyWithRetry(() => import("@/pages/payroll/DeductionsAdvances"));
 const PayrollSettings = lazyWithRetry(() => import("@/pages/payroll/PayrollSettings"));
 const TaxClearance = lazyWithRetry(() => import("@/pages/payroll/TaxClearance"));
+const AnnualIncomeTaxPrep = lazyWithRetry(() => import("@/pages/reports/AnnualIncomeTaxPrep"));
 
 // Money (Invoicing)
 const MoneyDashboard = lazyWithRetry(() => import("@/pages/MoneyDashboard"));
@@ -1019,6 +1020,14 @@ export const reportsRoutes = (
       element={
         <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
           <TaxClearance />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/tax/annual-income-tax"
+      element={
+        <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
+          <AnnualIncomeTaxPrep />
         </FeatureRoute>
       }
     />

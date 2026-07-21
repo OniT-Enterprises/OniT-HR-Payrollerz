@@ -46,8 +46,22 @@ from code alone.
       balanced acquisition journal exactly once.
 - [x] Add an annual business-income-tax preparation record and deadline so Form C
       cannot disappear from the compliance calendar.
-- [ ] **External — official Form C:** obtain the current official form/instructions
-      and accountant sign-off before claiming that Xefe calculates or files Form C.
+- [x] Obtain the current official form/instructions: **TADR-IT 1 (2023)** + its
+      instructions downloaded 2026-07-21 from attl.gov.tl (EN+PT saved to
+      `~/Sites/m365-mail-export/laws/2023_Income_Tax_Form_*`). Confirmed: Table A
+      sole trader 0% ≤ $6,000 then 10%; Table B company 10% flat; tax owing
+      rounds DOWN; losses 2008+ carry forward indefinitely; interest deductible
+      only for financial institutions; Appendix 2 (TADR-WTH 2) final-withholding
+      election replaces the return for fully-withheld sectors.
+- [x] Build the preparation workpaper (accountant flow): GL→official-line
+      mapping, adjustments, loss carry-forward, instalments/WHT credits with
+      payer TINs, Table A/B tax, depreciation schedule from the asset register,
+      line-numbered Excel export (`/payroll/tax/annual-income-tax`, pure engine
+      unit-tested in `tests/client/form-c.test.ts`).
+- [ ] **External — accountant sign-off:** have an accountant verify the workpaper
+      mapping and tax tables against current practice (incl. the Sch. VII
+      depreciation question) before claiming that Xefe calculates or files
+      Form C. `officialFormSupported` stays `false` until then.
 
 ## P1 — self-service operations
 

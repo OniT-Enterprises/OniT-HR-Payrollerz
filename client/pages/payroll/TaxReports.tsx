@@ -383,6 +383,20 @@ export default function TaxReports() {
                     <Clock className="h-3 w-3" />
                     {getDeadlineLabel(annualIncomeTax)}
                   </Badge>
+                  {/* Full workpaper is accountant-grade; the checklist dialog
+                      stays for the simple flow. */}
+                  {showAdvancedTax && (
+                    <Button
+                      size="sm"
+                      className="min-h-9"
+                      onClick={() =>
+                        navigate("/payroll/tax/annual-income-tax")
+                      }
+                    >
+                      {t("taxReports.formC.workpaper.openWorkpaper")}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

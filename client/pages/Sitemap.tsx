@@ -478,6 +478,13 @@ const sitemapData: SitemapSection[] = [
         badge: "Tax Filing",
       },
       {
+        name: "Annual Income Tax Preparation",
+        path: "/payroll/tax/annual-income-tax",
+        description:
+          "Workpaper mapping the year's books to the official annual income tax form lines",
+        badge: "Tax Filing",
+      },
+      {
         name: "Setup Reports",
         path: "/reports/setup",
         description: "Configure report templates and scheduling",
@@ -613,7 +620,8 @@ export default function Sitemap() {
 
     if (
       path === "/payroll/tax/monthly-wit" ||
-      path === "/payroll/tax/clearance"
+      path === "/payroll/tax/clearance" ||
+      path === "/payroll/tax/annual-income-tax"
     ) {
       return hasModule("payroll") && canManageTenant && showAdvancedTax;
     }

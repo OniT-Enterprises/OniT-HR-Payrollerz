@@ -37,9 +37,52 @@ export type AnnualIncomeTaxPreparationStatus =
   | "in_progress"
   | "ready_for_accountant";
 
+export interface AnnualIncomeTaxWorkpaperCreditEntry {
+  amount: number;
+  payerTin: string;
+}
+
 /**
- * Preparation tracker only. Xefe does not calculate or generate official
- * Form C until the current form/instructions have external sign-off.
+ * Accountant-entered workpaper inputs + the headline figures computed from
+ * them at last save. Line numbers reference the official TADR-IT 1 (2023);
+ * the GL detail is recomputed on demand and never persisted (doc size).
+ */
+export interface AnnualIncomeTaxWorkpaperState {
+  entityType: "sole_trader" | "company";
+  /** Line 145 — the TADR-verified loss carried forward. */
+  lossCarriedForward: number;
+  /** Line 175 — §64 instalments paid toward this year. */
+  installmentsPaid: number;
+  /** Line 170. */
+  foreignTaxCredits: number;
+  /** Lines 180–205 with the mandatory payer TINs. */
+  whtCredits: {
+    royalties: AnnualIncomeTaxWorkpaperCreditEntry;
+    rentalLandBuildings: AnnualIncomeTaxWorkpaperCreditEntry;
+    buildingConstruction: AnnualIncomeTaxWorkpaperCreditEntry;
+    constructionConsulting: AnnualIncomeTaxWorkpaperCreditEntry;
+    airSeaTransport: AnnualIncomeTaxWorkpaperCreditEntry;
+    mining: AnnualIncomeTaxWorkpaperCreditEntry;
+  };
+  adjustments: { line: string; amount: number; note: string }[];
+  /** Whole-dollar headline figures at last save (display/audit only). */
+  computed: {
+    grossIncome: number;
+    totalExpenses: number;
+    netIncome: number;
+    taxableIncome: number;
+    tax: number;
+    totalCredits: number;
+    taxOwing: number;
+  };
+}
+
+/**
+ * Preparation record. Xefe assembles a PREPARATION WORKPAPER (GL-mapped
+ * figures keyed to the official TADR-IT 1 line numbers) for the accountant
+ * to review and transcribe — it does not generate or file the official
+ * form itself; officialFormSupported stays false until the current
+ * form/instructions have external accountant sign-off.
  */
 export interface AnnualIncomeTaxPreparation {
   taxYear: number;
@@ -50,6 +93,7 @@ export interface AnnualIncomeTaxPreparation {
   reviewNote: string;
   preparationStatus: AnnualIncomeTaxPreparationStatus;
   officialFormSupported: false;
+  workpaper?: AnnualIncomeTaxWorkpaperState;
   updatedBy: string;
   updatedDate: string;
 }

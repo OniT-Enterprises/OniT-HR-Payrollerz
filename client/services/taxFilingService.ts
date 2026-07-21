@@ -41,6 +41,7 @@ import type {
   AnnualWITReturn,
   AnnualWITEmployeeRecord,
   AnnualIncomeTaxPreparation,
+  AnnualIncomeTaxWorkpaperState,
   MonthlyINSSReturn,
   EmployeeWITCertificate,
   FilingDueDate,
@@ -889,7 +890,7 @@ class TaxFilingService {
       | "cashFlowReady"
       | "taxAdjustmentsReviewed"
       | "reviewNote"
-    >,
+    > & { workpaper?: AnnualIncomeTaxWorkpaperState },
     userId: string,
     tenantId: string,
     audit?: AuditContext,
@@ -898,6 +899,29 @@ class TaxFilingService {
       throw new Error("A valid four-digit tax year is required");
     }
     if (!userId.trim()) throw new Error("A signed-in user is required");
+
+    // Workpaper amounts must be real numbers — a NaN slipping into the
+    // snapshot would poison every later read of the record.
+    if (preparation.workpaper) {
+      const { workpaper } = preparation;
+      const amounts = [
+        workpaper.lossCarriedForward,
+        workpaper.installmentsPaid,
+        workpaper.foreignTaxCredits,
+        ...Object.values(workpaper.whtCredits).map((entry) => entry.amount),
+        ...workpaper.adjustments.map((entry) => entry.amount),
+        ...Object.values(workpaper.computed),
+      ];
+      if (amounts.some((value) => !Number.isFinite(value))) {
+        throw new Error("Workpaper amounts must be valid numbers");
+      }
+      if (
+        workpaper.entityType !== "sole_trader" &&
+        workpaper.entityType !== "company"
+      ) {
+        throw new Error("A valid enterprise type is required");
+      }
+    }
 
     const allReady =
       preparation.profitAndLossReady &&
@@ -927,6 +951,8 @@ class TaxFilingService {
       updatedBy: userId,
       updatedDate: getTodayTL(),
     };
+    // Firestore rejects undefined values — only persist the key when present.
+    if (snapshot.workpaper === undefined) delete snapshot.workpaper;
     const filingId = existing?.id || `${tenantId}_annual_income_tax_${taxYear}`;
     const filingRef = doc(db, "taxFilings", filingId);
     const payload = {
@@ -964,7 +990,11 @@ class TaxFilingService {
           action: "tax.form_c_preparation_updated",
           filingId,
           period,
-          metadata: { preparationStatus, officialFormSupported: false },
+          metadata: {
+            preparationStatus,
+            officialFormSupported: false,
+            hasWorkpaper: preparation.workpaper !== undefined,
+          },
         })
         .catch((error) => console.error("Audit log failed:", error));
     }

@@ -8,6 +8,7 @@ import { taxFilingService } from '@/services/taxFilingService';
 import type { TaxFilingType, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSReturn, SubmissionMethod, CompanyDetails } from '@/services/taxFilingService';
 import type {
   AnnualIncomeTaxPreparation,
+  AnnualIncomeTaxWorkpaperState,
   StatutoryPaymentDetails,
   TaxFilingTask,
 } from '@/types/tax-filing';
@@ -29,6 +30,21 @@ export function useTaxFilings(type?: TaxFilingType) {
     queryKey: type ? taxFilingKeys.byType(tenantId, type) : taxFilingKeys.lists(tenantId),
     queryFn: () => taxFilingService.getAllFilings(tenantId, type),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Fetch one filing by type + period (e.g. the annual preparation record). */
+export function useTaxFilingByPeriod(
+  type: TaxFilingType,
+  period: string,
+  enabled: boolean = true,
+) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: taxFilingKeys.byPeriod(tenantId, type, period),
+    queryFn: () => taxFilingService.getFilingByPeriod(type, period, tenantId),
+    enabled: enabled && !!period,
+    staleTime: 60 * 1000,
   });
 }
 
@@ -93,7 +109,7 @@ export function useSaveAnnualIncomeTaxPreparation() {
         | 'cashFlowReady'
         | 'taxAdjustmentsReviewed'
         | 'reviewNote'
-      >;
+      > & { workpaper?: AnnualIncomeTaxWorkpaperState };
       userId: string;
       audit?: AuditContext;
     }) => taxFilingService.saveAnnualIncomeTaxPreparation(

@@ -8096,6 +8096,117 @@ const messages = {
       reviewNote: "Nota revizaun",
       reviewNotePlaceholder:
         "Revizór, buat ne'ebé sei falta, no asaun tuir mai",
+      workpaper: {
+        pageTitle: "Preparasaun impostu rendimentu anual",
+        pageSubtitle:
+          "Papel servisu tuir formuláriu ofisiál TADR-IT 1 impostu rendimentu anual",
+        openWorkpaper: "Loke papel servisu",
+        taxYear: "Tinan fiskál",
+        entityType: "Tipu empreza (Q.1 iha formuláriu)",
+        entityCompany: "Sosiedade (Unipessoal Lda, Lda, SA)",
+        entitySoleTrader: "Empreza individuál (na'in ida de'it)",
+        disclaimer:
+          "Papel servisu ne'e mapeia kontabilidade ne'ebé lansa ona ba númeru liña formuláriu ofisiál nian, hanesan apoiu ba preparasaun. La'ós formuláriu ofisiál no Xefe la submete — reviza valor ida-idak ho ita-nia kontabilista, depois transkreve ba formuláriu ofisiál ATTL nian.",
+        dueBy: "Formuláriu ofisiál to'o {{date}}.",
+        officialFormLink:
+          "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
+        summaryTitle: "Rezumu kálkulu",
+        summaryDesc:
+          "Liña 135–220 kalkula husi kontabilidade ne'ebé mapeia ona, ajustamentu no créditu sira",
+        grossIncome: "Rendimentu brutu (liña 05)",
+        totalExpenses: "Total despeza (liña 135)",
+        netIncome: "Rezultadu líkidu / prejuízu (liña 140)",
+        lossApplied: "Prejuízu ne'ebé uza tinan ne'e",
+        taxableIncome: "Rendimentu tributável (liña 150)",
+        tax: "Impostu rendimentu (liña 165)",
+        totalCredits: "Total créditu (liña 215)",
+        taxOwing: "Impostu atu selu / selu liu (liña 220)",
+        overpaid: "Selu liu ona — marka 'R' iha formuláriu ofisiál",
+        linesTitle: "Rendimentu no despeza (liña 05–110)",
+        linesDesc:
+          "Konta razaun sira mapeia ba númeru liña ofisiál — muda fali ho ajustamentu iha okos",
+        colLine: "Liña",
+        colDescription: "Deskrisaun",
+        colFromBooks: "Husi kontabilidade",
+        colAdjustment: "Ajustamentu",
+        colAmount: "Valor formuláriu",
+        lines: {
+          l05: "Rendimentu total/brutu",
+          l10: "Sosa — inventáriu no merkadoria",
+          l15: "Depresiasaun dedutível",
+          l20: "Amortizasaun intanjível",
+          l25: "Tusan ne'ebé la bele kobra",
+          l30: "Perda kámbiu",
+          l35: "Saláriu no vensimentu",
+          l40: "Despeza empreiteiru no subempreiteiru",
+          l45: "Despeza komisaun",
+          l50: "Renda no/ka aluga",
+          l55: "Despeza veíkulu",
+          l60: "Reparasaun no manutensaun",
+          l65: "Peskiza no dezenvolvimentu",
+          l70: "Bolsa, aprendizajen no formasaun",
+          l75: "Royalty sira",
+          l80: "Perda husi fa'an/transfere sasán",
+          l110: "Despeza dedutível seluk",
+        },
+        otherDetailTitle:
+          "Despeza seluk liu $1.000 (liña 115–130)",
+        excludedTitle: "Hasai tanba la dedutível — reviza",
+        adjustmentsTitle: "Ajustamentu kontabilista nian",
+        adjustmentsDesc:
+          "Valor ho sinál ne'ebé aumenta ba liña formuláriu — uza ba item ne'ebé la iha razaun (tusan la bele kobra, hasai saláriu na'in, reklasifikasaun)",
+        addAdjustment: "Aumenta ajustamentu",
+        adjustmentNote: "Razaun (rai iha papel servisu)",
+        creditsTitle: "Prejuízu transita, prestasaun no créditu",
+        creditsDesc:
+          "Valor ne'ebé Xefe la bele lee husi kontabilidade — hatama husi ita-nia rejistu TADR",
+        lossCarriedForward: "Prejuízu transita (liña 145)",
+        lossCarriedForwardHint:
+          "Valor ne'ebé TADR verifika ona de'it mak válidu iha formuláriu.",
+        installmentsPaid:
+          "Prestasaun impostu rendimentu ne'ebé selu ona (liña 175)",
+        foreignTaxCredits: "Créditu impostu rai-li'ur (liña 170)",
+        whtCreditsTitle: "Créditu retensaun iha fonte (liña 180–205)",
+        whtCreditsHint:
+          "NIF selu-na'in obrigatóriu — formuláriu la simu créditu se la iha.",
+        payerTin: "NIF selu-na'in",
+        wht: {
+          royalties: "Rendimentu royalty",
+          rentalLandBuildings: "Aluga rai no/ka edifísiu",
+          buildingConstruction: "Konstrusaun sivíl",
+          constructionConsulting: "Servisu konsultoria konstrusaun",
+          airSeaTransport: "Servisu transporte aéreu no marítimu",
+          mining: "Minasaun no servisu apoiu minasaun",
+        },
+        depreciationTitle: "Mapa depresiasaun",
+        depreciationDesc:
+          "Husi rejistu ativu fixu, iha koluna mapa ofisiál nian — anexa ba formuláriu",
+        assetDescription: "Ativu",
+        openingValue: "Valor iha 1 jan",
+        purchaseCost: "Kustu (se sosa foun)",
+        disposalProceeds: "Valor husi fa'an",
+        rate: "Taxa",
+        yearDepreciation: "Depresiasaun",
+        closingValue: "Valor ikus",
+        scheduleTotal: "Total mapa",
+        readinessTitle: "Aneksu no revizaun",
+        saveProgress: "Rai progresu",
+        exportWorkpaper: "Esporta papel servisu",
+        exportError: "La konsege esporta papel servisu.",
+        warningsTitle: "Avizu revizaun",
+        warnings: {
+          interestExcluded:
+            "{{account}} ({{amount}}) hasai ona — juru dedutível de'it ba instituisaun finanseira (Lei Tributária §31). Tau fila fali ho ajustamentu se aplika ba ita.",
+          incomeTaxExcluded:
+            "{{account}} ({{amount}}) hasai ona — impostu rendimentu rasik la'ós despeza dedutível.",
+          soleTraderOwnSalary:
+            "Empreza individuál la bele deduz pagamentu ba nia an rasik (Q.1 iha formuláriu). Hasai saláriu na'in husi liña 35 ho ajustamentu negativu.",
+          depreciationMismatch:
+            "Depresiasaun iha kontabilidade ({{gl}}) la hanesan ho mapa rejistu ativu ({{schedule}}). Rekonsilia molok transkreve liña 15.",
+          negativeLine:
+            "Liña {{line}} negativu ({{amount}}) — liña despeza la bele negativu iha formuláriu ofisiál.",
+        },
+      },
     },
   },
   guidance: {
