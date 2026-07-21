@@ -1,6 +1,6 @@
 /**
- * Bank Mandiri (Timor-Leste) Transfer File Format
- * Fixed-width text file format
+ * Best-effort Bank Mandiri (Timor-Leste) fixed-width template. The real bank
+ * specification has not been signed off.
  */
 
 import {
@@ -9,7 +9,7 @@ import {
   formatDateYYYYMMDD,
   formatAmount,
   padString,
-} from './index';
+} from "./index";
 
 /**
  * Mandiri Fixed-Width Format:
@@ -23,51 +23,61 @@ import {
 export function generateMandiriFile(
   summary: BankTransferSummary,
   companyName: string,
-  companyAccountNumber: string
+  companyAccountNumber: string,
 ): BankFileResult {
   const lines: string[] = [];
 
   // Header record (type H)
   const header = [
-    'H',                                            // Record type
-    padString(companyAccountNumber, 20, '0', true), // Debit account
-    padString(companyName, 35),                     // Company name
-    formatDateYYYYMMDD(summary.valueDate),          // Value date
-    padString(String(summary.transactionCount), 6, '0', true), // Transaction count
-    padString(formatAmount(summary.totalAmount).replace('.', ''), 15, '0', true), // Total (no decimal point)
-  ].join('');
+    "H", // Record type
+    padString(companyAccountNumber, 20, "0", true), // Debit account
+    padString(companyName, 35), // Company name
+    formatDateYYYYMMDD(summary.valueDate), // Value date
+    padString(String(summary.transactionCount), 6, "0", true), // Transaction count
+    padString(
+      formatAmount(summary.totalAmount).replace(".", ""),
+      15,
+      "0",
+      true,
+    ), // Total (no decimal point)
+  ].join("");
   lines.push(header);
 
   // Detail records (type D)
   for (const line of summary.lines) {
     const detail = [
-      'D',                                             // Record type
-      padString(line.accountNumber, 20, '0', true),   // Beneficiary account
-      padString(line.accountName, 35),                 // Beneficiary name
-      padString(formatAmount(line.amount).replace('.', ''), 15, '0', true), // Amount (cents)
-      padString(line.reference, 20),                   // Reference
-    ].join('');
+      "D", // Record type
+      padString(line.accountNumber, 20, "0", true), // Beneficiary account
+      padString(line.accountName, 35), // Beneficiary name
+      padString(formatAmount(line.amount).replace(".", ""), 15, "0", true), // Amount (cents)
+      padString(line.reference, 20), // Reference
+    ].join("");
     lines.push(detail);
   }
 
   // Trailer record (type T)
   const trailer = [
-    'T',                                            // Record type
-    padString(String(summary.transactionCount), 6, '0', true), // Transaction count
-    padString(formatAmount(summary.totalAmount).replace('.', ''), 15, '0', true), // Total amount
-  ].join('');
+    "T", // Record type
+    padString(String(summary.transactionCount), 6, "0", true), // Transaction count
+    padString(
+      formatAmount(summary.totalAmount).replace(".", ""),
+      15,
+      "0",
+      true,
+    ), // Total amount
+  ].join("");
   lines.push(trailer);
 
   // No UTF-8 BOM here (unlike the CSV formats): this is a fixed-width .txt
   // machine-upload file parsed by byte offset, not opened in Excel — a 3-byte
   // BOM prefix would shift every field position and corrupt the parse.
-  const content = lines.join('\n');
+  const content = lines.join("\n");
   const fileName = `MANDIRI_Salaries_${summary.payrollPeriod}_${formatDateYYYYMMDD(summary.valueDate)}.txt`;
 
   return {
     content,
     fileName,
-    mimeType: 'text/plain',
+    mimeType: "text/plain",
     summary,
   };
 }

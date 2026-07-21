@@ -41,7 +41,7 @@ import type {
   PayrollConfig,
   TimeOffPolicies,
 } from "@/types/settings";
-import { addMoney, sumMoney } from "@/lib/currency";
+import { addMoney, proRata, sumMoney } from "@/lib/currency";
 import { getTodayTL } from "@/lib/dateUtils";
 import { getInitialPayrollDates } from "@/lib/payroll/payroll-schedule";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
@@ -445,7 +445,7 @@ export function usePayrollCalculator({
             serviceCompensation: 0,
             subsidioAnual: 0,
           },
-          severanceEntitled: data.employee.severanceOnTermination !== false,
+          severanceEntitled: data.employee.severanceOnTermination === true,
         });
       // Per-employee frequency overrides the run-level selector
       const effectiveFrequency =
@@ -472,6 +472,10 @@ export function usePayrollCalculator({
         employeeId: data.employee.id || "",
         monthlySalary,
         payFrequency: effectiveFrequency,
+        employmentType: data.employee.jobDetails.employmentType,
+        contractedWeeklyHours: data.employee.jobDetails.contractedWeeklyHours,
+        minimumWageTreatment: data.employee.jobDetails.minimumWageTreatment,
+        minimumWageReviewNote: data.employee.jobDetails.minimumWageReviewNote,
         totalPeriodsInMonth,
         isHourly: false,
         hourlyRate,
@@ -1103,12 +1107,28 @@ export function usePayrollCalculator({
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
       const salary = d.employee.compensation.monthlySalary || 0;
       const minimumWage = calculationConfig?.minimumWage ?? 115;
-      if (salary > 0 && salary < minimumWage && !isShareholder(d.employee)) {
+      const isPartTime =
+        d.employee.jobDetails.employmentType?.toLowerCase() === "part-time";
+      const treatment = d.employee.jobDetails.minimumWageTreatment;
+      const weeklyHours = d.employee.jobDetails.contractedWeeklyHours;
+      const applicableMinimumWage = isPartTime
+        ? treatment === "full_floor"
+          ? minimumWage
+          : treatment === "pro_rata" && weeklyHours
+            ? proRata(minimumWage, weeklyHours, TL_WORKING_HOURS.standardWeeklyHours)
+            : null
+        : minimumWage;
+      if (
+        applicableMinimumWage !== null
+        && salary > 0
+        && salary < applicableMinimumWage
+        && !isShareholder(d.employee)
+      ) {
         warnings.push({
           employeeName: name,
           message: t("runPayroll.warningBelowMinWage", {
             salary: String(salary),
-            min: String(minimumWage),
+            min: String(applicableMinimumWage),
           }),
           type: "wage",
         });
@@ -1256,7 +1276,7 @@ export function usePayrollCalculator({
               serviceCompensation: 0,
               subsidioAnual: 0,
             },
-            severanceEntitled: data.employee.severanceOnTermination !== false,
+            severanceEntitled: data.employee.severanceOnTermination === true,
           });
         const effectiveFrequency =
           data.employee.compensation.payFrequency ?? payFrequency;
@@ -1282,6 +1302,10 @@ export function usePayrollCalculator({
           employeeId: data.employee.id || "",
           monthlySalary,
           payFrequency: effectiveFrequency,
+          employmentType: data.employee.jobDetails.employmentType,
+          contractedWeeklyHours: data.employee.jobDetails.contractedWeeklyHours,
+          minimumWageTreatment: data.employee.jobDetails.minimumWageTreatment,
+          minimumWageReviewNote: data.employee.jobDetails.minimumWageReviewNote,
           totalPeriodsInMonth,
           isHourly: false,
           hourlyRate,

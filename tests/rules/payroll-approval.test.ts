@@ -538,4 +538,65 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
       );
     });
   });
+
+  describe('paid transition requires an accounting settlement', () => {
+    beforeEach(async () => {
+      await testEnv.clearFirestore();
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const adminDb = context.firestore();
+        await setDoc(doc(adminDb, 'tenants/tenant-a'), {
+          name: 'Tenant A',
+          stripeSubscriptionId: 'sub_active',
+        });
+        await setDoc(doc(adminDb, 'tenants/tenant-a/members/admin-b'), {
+          uid: 'admin-b', role: 'hr-admin', modules: ['payroll', 'accounting'],
+        });
+        await setDoc(doc(adminDb, 'payrollRuns/run-1'), {
+          tenantId: 'tenant-a',
+          status: 'approved',
+          createdBy: 'owner-a',
+          approvedBy: 'admin-b',
+          totalNetPay: 1000,
+        });
+      });
+    });
+
+    it('blocks approved -> paid without payment evidence', async () => {
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), { status: 'paid' }),
+      );
+    });
+
+    it('allows approved -> paid with a linked settlement journal', async () => {
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'paid',
+          paidBy: 'admin-b',
+          paymentDate: '2026-07-20',
+          paymentReference: 'BNU-OT-42',
+          settlementJournalEntryId: 'journal-settlement-1',
+        }),
+      );
+    });
+
+    it('blocks changing settlement evidence after payment', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await updateDoc(doc(context.firestore(), 'payrollRuns/run-1'), {
+          status: 'paid',
+          paidBy: 'admin-b',
+          paymentDate: '2026-07-20',
+          paymentReference: 'BNU-OT-42',
+          settlementJournalEntryId: 'journal-settlement-1',
+        });
+      });
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          paymentReference: 'CHANGED',
+        }),
+      );
+    });
+  });
 });

@@ -66,6 +66,27 @@ export async function closeAdmin(): Promise<void> {
   }
 }
 
+/**
+ * The invite UI creates the Auth user and queues a password-setup email. The
+ * emulator has no inbox, so give that invited account the password the test
+ * would have set by following the email link. Membership still comes entirely
+ * from the product's owner-facing invite flow.
+ */
+export async function setInvitedUserPassword(options: {
+  email: string;
+  password: string;
+  displayName: string;
+}): Promise<string> {
+  const auth = getAuth(adminApp());
+  const user = await auth.getUserByEmail(options.email);
+  await auth.updateUser(user.uid, {
+    password: options.password,
+    displayName: options.displayName,
+    emailVerified: true,
+  });
+  return user.uid;
+}
+
 /** Find the tenant provisioned by the signup step via its unique name. */
 export async function findTenantIdByName(name: string): Promise<string> {
   const snapshot = await adminDb()
@@ -110,15 +131,59 @@ export async function markSetupComplete(tenantId: string): Promise<void> {
       {
         tenantId,
         setupComplete: true,
+        setupProgress: {
+          companyDetails: true,
+          paymentStructure: true,
+          payrollConfig: true,
+          completed: true,
+        },
         companyDetails: {
           legalName: "Replay Co Lda",
           tinNumber: "1234567890",
           registeredAddress: "Rua de Dili 1, Dili",
+          businessType: "Lda",
         },
         updatedAt: Timestamp.now(),
       },
       { merge: true },
     );
+}
+
+/** Seed reference data that is not the subject of the accounting browser test. */
+export async function seedDomesticWithholdingVendor(
+  tenantId: string,
+): Promise<{ id: string; name: string }> {
+  const db = adminDb();
+  const name = "E2E Construction Supplier";
+  const vendorRef = db.collection(`tenants/${tenantId}/vendors`).doc();
+  await Promise.all([
+    db.doc(`tenants/${tenantId}`).set({ advancedTaxMode: true }, { merge: true }),
+    db.doc(`tenants/${tenantId}/settings/config`).set(
+      {
+        companyDetails: {
+          legalName: "E2E Books Co Lda",
+          tinNumber: "1234567890",
+          registeredAddress: "Rua de Dili 1, Dili",
+          businessType: "Lda",
+        },
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true },
+    ),
+    vendorRef.set({
+      name,
+      type: "business",
+      tin: "VENDOR-TIN-100",
+      taxProfile: {
+        recipientResidence: "resident",
+        taxRegime: "domestic",
+      },
+      isActive: true,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    }),
+  ]);
+  return { id: vendorRef.id, name };
 }
 
 export async function seedEmployees(
@@ -182,18 +247,32 @@ export async function getLatestRunTotals(tenantId: string): Promise<{
  * not just that the run reached "paid". Returns the posted entry's balance and
  * per-account-code debit/credit totals (tenant-scoped journalEntries).
  */
-export async function getPayrollJournal(tenantId: string): Promise<{
+export interface JournalSummary {
+  id: string;
   totalDebit: number;
   totalCredit: number;
   byCode: Record<string, { debit: number; credit: number }>;
-} | null> {
+}
+
+/** Read a posted journal by source and summarize its account lines. */
+export async function getJournalBySource(
+  tenantId: string,
+  source: string,
+  requiredAccountCode?: string,
+): Promise<JournalSummary | null> {
   const snapshot = await adminDb()
     .collection(`tenants/${tenantId}/journalEntries`)
-    .where("source", "==", "payroll")
+    .where("source", "==", source)
     .limit(5)
     .get();
   if (snapshot.empty) return null;
-  const entry = snapshot.docs[0].data();
+  const document = requiredAccountCode
+    ? snapshot.docs.find((candidate) =>
+        ((candidate.data().lines ?? []) as Array<{ accountCode?: string }>)
+          .some((line) => line.accountCode === requiredAccountCode))
+    : snapshot.docs[0];
+  if (!document) return null;
+  const entry = document.data();
   const byCode: Record<string, { debit: number; credit: number }> = {};
   for (const line of (entry.lines ?? []) as Array<{ accountCode: string; debit: number; credit: number }>) {
     const c = (byCode[line.accountCode] ??= { debit: 0, credit: 0 });
@@ -206,10 +285,56 @@ export async function getPayrollJournal(tenantId: string): Promise<{
     byCode[code].credit = round2(byCode[code].credit);
   }
   return {
+    id: document.id,
     totalDebit: Number(entry.totalDebit ?? 0),
     totalCredit: Number(entry.totalCredit ?? 0),
     byCode,
   };
+}
+
+/** Poll for a journal created asynchronously after a browser action. */
+export async function waitForJournalBySource(
+  tenantId: string,
+  source: string,
+  requiredAccountCode?: string,
+  timeoutMs = 45_000,
+): Promise<JournalSummary> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const journal = await getJournalBySource(tenantId, source, requiredAccountCode);
+    if (journal) return journal;
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+  throw new Error(
+    `No ${source} journal${requiredAccountCode ? ` containing ${requiredAccountCode}` : ""} found for ${tenantId}`,
+  );
+}
+
+export async function getPayrollJournal(tenantId: string): Promise<JournalSummary | null> {
+  return getJournalBySource(tenantId, "payroll");
+}
+
+/** Poll server-written tenant audit logs until every expected action exists. */
+export async function waitForAuditActions(
+  tenantId: string,
+  expectedActions: string[],
+  timeoutMs = 45_000,
+): Promise<string[]> {
+  const expected = new Set(expectedActions);
+  const deadline = Date.now() + timeoutMs;
+  let last: string[] = [];
+  while (Date.now() < deadline) {
+    const snapshot = await adminDb()
+      .collection(`tenants/${tenantId}/auditLogs`)
+      .limit(200)
+      .get();
+    last = snapshot.docs.map((document) => String(document.data().action));
+    if ([...expected].every((action) => last.includes(action))) return last;
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+  throw new Error(
+    `Missing audit actions for ${tenantId}: ${[...expected].filter((action) => !last.includes(action)).join(", ")}`,
+  );
 }
 
 /** Sum the employee income tax + INSS across the run's saved records. */
@@ -240,7 +365,7 @@ export async function getLatestRunRecordTotals(tenantId: string): Promise<{
 
 /**
  * Ground-truth check: poll the tenant's payroll run until it reaches the
- * expected status (the approve flow ends at 'paid'). Returns the final
+ * expected status. Returns the final
  * status; throws with the actual status on timeout so failures name the
  * stuck state instead of a missing UI element.
  */

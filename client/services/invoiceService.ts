@@ -1936,35 +1936,15 @@ class InvoiceService {
         payment.amount,
       );
 
-      // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
-      transaction.set(paymentDocRef, {
-        date: payment.date,
-        customerId: invoice.customerId,
-        customerName: invoice.customerName,
-        invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        amount: nextPayment.amount,
-        method: payment.method,
-        reference: payment.reference,
-        notes: payment.notes,
-        createdAt: serverTimestamp(),
-      });
-
-      // Update invoice within same transaction
-      transaction.update(invoiceRef, {
-        amountPaid: nextPayment.amountPaid,
-        balanceDue: nextPayment.balanceDue,
-        status: nextPayment.status,
-        paidAt: nextPayment.status === "paid" ? serverTimestamp() : null,
-        updatedAt: serverTimestamp(),
-      });
 
       paidInFull = nextPayment.status === "paid";
       receiptAmount = nextPayment.amount;
       paidInvoice = invoice;
 
-      // Create journal entry within same transaction
+      // Resolve the journal counter before adding any writes. Firestore
+      // transactions reject a read after the first write, and journal creation
+      // reads settings/accounting to allocate the next entry number.
       if (resolvedAccounts) {
         await journalEntryService.createFromInvoicePayment(
           tenantId,
@@ -1982,6 +1962,30 @@ class InvoiceService {
           resolvedAccounts,
         );
       }
+
+      // Receipt and invoice state join the already-prepared journal writes in
+      // the same transaction, so either the whole accounting chain commits or
+      // none of it does.
+      transaction.set(paymentDocRef, {
+        date: payment.date,
+        customerId: invoice.customerId,
+        customerName: invoice.customerName,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: nextPayment.amount,
+        method: payment.method,
+        reference: payment.reference,
+        notes: payment.notes,
+        createdAt: serverTimestamp(),
+      });
+
+      transaction.update(invoiceRef, {
+        amountPaid: nextPayment.amountPaid,
+        balanceDue: nextPayment.balanceDue,
+        status: nextPayment.status,
+        paidAt: nextPayment.status === "paid" ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
+      });
 
       return paymentDocRef.id;
     });

@@ -14,6 +14,7 @@ export function useCompanyPaymentProfile() {
     settings?.companyDetails?.tradingName ||
     "";
   const tin = settings?.companyDetails?.tinNumber || "";
+  const employerNiss = settings?.companyDetails?.employerNiss || "";
   const activeAccounts = (settings?.paymentStructure?.bankAccounts ?? []).filter(
     (account) => account.isActive && Boolean(account.accountNumber?.trim()),
   );
@@ -21,5 +22,5 @@ export function useCompanyPaymentProfile() {
     (activeAccounts.find((account) => account.purpose === "payroll") || activeAccounts[0])
       ?.accountNumber || "";
 
-  return { ...query, companyName, tin, debitAccount };
+  return { ...query, companyName, tin, employerNiss, debitAccount };
 }

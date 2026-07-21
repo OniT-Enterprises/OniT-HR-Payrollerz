@@ -4,11 +4,15 @@ import type { TaxFilingStatus } from "@/types/tax-filing";
 
 type AdjustDateFn = (isoDate: string) => string;
 
-const defaultAdjustDate: AdjustDateFn = (isoDate) => adjustToNextBusinessDayTL(isoDate);
+const defaultAdjustDate: AdjustDateFn = (isoDate) =>
+  adjustToNextBusinessDayTL(isoDate);
 
 const pad2 = (value: number): string => String(value).padStart(2, "0");
 
-function parseMonthlyTaxPeriod(period: string): { year: number; month: number } {
+function parseMonthlyTaxPeriod(period: string): {
+  year: number;
+  month: number;
+} {
   const match = /^(\d{4})-(\d{2})$/.exec(period);
   if (!match) {
     throw new RangeError("Tax period must use YYYY-MM format.");
@@ -60,6 +64,14 @@ export function getAnnualWITDueDateBase(taxYear: number): string {
   return `${taxYear + 1}-03-31`;
 }
 
+/** Law 8/2008 Secs. 62-63: annual income-tax return due by month 3 end. */
+export function getAnnualIncomeTaxDueDateBase(taxYear: number): string {
+  if (!Number.isInteger(taxYear) || taxYear < 1900 || taxYear > 9998) {
+    throw new RangeError("Tax year must be a four-digit year.");
+  }
+  return `${taxYear + 1}-03-31`;
+}
+
 export function getMonthlyWITDueDate(
   period: string,
   adjustDate: AdjustDateFn = defaultAdjustDate,
@@ -83,13 +95,18 @@ export function getDaysUntilDueIso(todayIso: string, dueIso: string): number {
 export function getNextMonthlyAdjustedDeadline(
   todayIso: string,
   dayOfMonth: number,
-  adjustDate: AdjustDateFn = defaultAdjustDate
+  adjustDate: AdjustDateFn = defaultAdjustDate,
 ): string {
   const today = parseDateISO(todayIso);
   const currentMonthBaseIso = `${today.getUTCFullYear()}-${pad2(today.getUTCMonth() + 1)}-${pad2(dayOfMonth)}`;
-  const nextMonthBaseDate = new Date(today.getUTCFullYear(), today.getUTCMonth() + 1, dayOfMonth);
+  const nextMonthBaseDate = new Date(
+    today.getUTCFullYear(),
+    today.getUTCMonth() + 1,
+    dayOfMonth,
+  );
   const nextMonthBaseIso = `${nextMonthBaseDate.getFullYear()}-${pad2(nextMonthBaseDate.getMonth() + 1)}-${pad2(nextMonthBaseDate.getDate())}`;
-  const baseIso = todayIso <= currentMonthBaseIso ? currentMonthBaseIso : nextMonthBaseIso;
+  const baseIso =
+    todayIso <= currentMonthBaseIso ? currentMonthBaseIso : nextMonthBaseIso;
   return adjustDate(baseIso);
 }
 
@@ -97,7 +114,7 @@ export function getNextAnnualAdjustedDeadline(
   todayIso: string,
   month: number,
   day: number,
-  adjustDate: AdjustDateFn = defaultAdjustDate
+  adjustDate: AdjustDateFn = defaultAdjustDate,
 ): string {
   const today = parseDateISO(todayIso);
   const currentBaseIso = `${today.getUTCFullYear()}-${pad2(month)}-${pad2(day)}`;
@@ -105,10 +122,15 @@ export function getNextAnnualAdjustedDeadline(
   if (todayIso <= currentAdjustedIso) {
     return currentAdjustedIso;
   }
-  return adjustDate(`${today.getUTCFullYear() + 1}-${pad2(month)}-${pad2(day)}`);
+  return adjustDate(
+    `${today.getUTCFullYear() + 1}-${pad2(month)}-${pad2(day)}`,
+  );
 }
 
-export function getUrgencyFromDays(daysUntilDue: number, isOverdue: boolean = false): "ok" | "warning" | "urgent" {
+export function getUrgencyFromDays(
+  daysUntilDue: number,
+  isOverdue: boolean = false,
+): "ok" | "warning" | "urgent" {
   if (isOverdue || daysUntilDue < 0) return "urgent";
   if (daysUntilDue <= 3) return "urgent";
   if (daysUntilDue <= 7) return "warning";
@@ -129,4 +151,30 @@ export function resolveTaskStatus(params: {
   }
   if (params.legacyStatus === "filed") return "filed";
   return getFilingStatusFromDays(params.daysUntilDue);
+}
+
+/**
+ * Monthly WIT has one due date but two independent facts: the return was
+ * submitted and the withheld cash was remitted. A legacy top-level `filed`
+ * status proves only the return; legacy payment evidence proves the remittance.
+ */
+export function resolveMonthlyWITTaskStatuses(params: {
+  status?: TaxFilingStatus;
+  statementStatus?: TaxFilingStatus;
+  paymentStatus?: TaxFilingStatus;
+  paymentRecordedDate?: string;
+  daysUntilDue: number;
+}): { statement: TaxFilingStatus; payment: TaxFilingStatus } {
+  return {
+    statement: resolveTaskStatus({
+      explicitStatus: params.statementStatus,
+      legacyStatus: params.status,
+      daysUntilDue: params.daysUntilDue,
+    }),
+    payment: resolveTaskStatus({
+      explicitStatus: params.paymentStatus,
+      legacyStatus: params.paymentRecordedDate ? "filed" : undefined,
+      daysUntilDue: params.daysUntilDue,
+    }),
+  };
 }

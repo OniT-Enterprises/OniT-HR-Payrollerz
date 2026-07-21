@@ -15,6 +15,7 @@ import type {
   ListPayrollRunsOptions,
 } from '@/types/payroll';
 import type { AuditContext } from '@/services/employeeService';
+import type { PayrollPaymentDetails } from '@/services/payrollService';
 
 // ─── Query key factories ─────────────────────────────────────────
 
@@ -128,9 +129,12 @@ export function useMarkPayrollRunAsPaid() {
   const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (id: string) => payrollService.runs.markPayrollRunAsPaid(id),
+    mutationFn: ({ id, payment }: { id: string; payment: PayrollPaymentDetails }) =>
+      payrollService.runs.markPayrollRunAsPaid(id, payment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: payrollRunKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: bankTransferKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: deductionKeys.all(tenantId) });
     },
   });
 }

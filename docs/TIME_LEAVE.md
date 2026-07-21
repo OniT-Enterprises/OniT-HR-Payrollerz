@@ -7,11 +7,11 @@ the older split between “Time Tracking” and “Attendance”.
 
 Time & Leave has three task-first destinations:
 
-| Task | Route | Who can use it |
-|---|---|---|
+| Task                         | Route                    | Who can use it                                                                  |
+| ---------------------------- | ------------------------ | ------------------------------------------------------------------------------- |
 | Record and review attendance | `/time-leave/attendance` | Owner/HR: all; manager: their department; accountant: read-only; employee: self |
-| Request and decide leave | `/time-leave/leave` | Owner/HR: all; manager: their department; accountant: read-only; employee: self |
-| Plan weekly shifts | `/time-leave/shifts` | Owner/HR and department managers |
+| Request and decide leave     | `/time-leave/leave`      | Owner/HR: all; manager: their department; accountant: read-only; employee: self |
+| Plan weekly shifts           | `/time-leave/shifts`     | Owner/HR and department managers                                                |
 
 Leave policy and holiday configuration lives at `/time-leave/settings`,
 restricted to owners and HR admins. It is reached through the Settings area
@@ -29,16 +29,16 @@ row.
 
 ## Canonical Firestore model
 
-| Data | Canonical path | Authority |
-|---|---|---|
-| Attendance records | `/attendance/{id}` with `tenantId` | Owner/HR or scoped manager writes |
-| Attendance import batches | `/attendanceImports/{id}` with `tenantId` | Owner/HR writes |
-| Leave requests | `/leave_requests/{id}` with `tenantId` | `createLeaveRequest` creates; `approveLeaveRequest` decides; employee can cancel pending own requests |
-| Leave balances | `/leave_balances/{tenant_employee_year}` with `tenantId` | Cloud Functions projection; clients read only |
-| Shifts | `/tenants/{tid}/shifts/{id}` | Owner/HR or scoped manager writes |
-| Weekly timesheets | `/tenants/{tid}/timesheets/{employee_week}` | Cloud Functions projection; clients read only |
-| Policies | `/tenants/{tid}/settings/config.timeOffPolicies` | Owner/HR writes |
-| Holiday overrides | `/tenants/{tid}/holidays/{YYYY-MM-DD}` | Owner/HR writes |
+| Data                      | Canonical path                                           | Authority                                                                                             |
+| ------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Attendance records        | `/attendance/{id}` with `tenantId`                       | Owner/HR or scoped manager writes                                                                     |
+| Attendance import batches | `/attendanceImports/{id}` with `tenantId`                | Owner/HR writes                                                                                       |
+| Leave requests            | `/leave_requests/{id}` with `tenantId`                   | `createLeaveRequest` creates; `approveLeaveRequest` decides; employee can cancel pending own requests |
+| Leave balances            | `/leave_balances/{tenant_employee_year}` with `tenantId` | Cloud Functions projection; clients read only                                                         |
+| Shifts                    | `/tenants/{tid}/shifts/{id}`                             | Owner/HR or scoped manager writes                                                                     |
+| Weekly timesheets         | `/tenants/{tid}/timesheets/{employee_week}`              | Cloud Functions projection; clients read only                                                         |
+| Policies                  | `/tenants/{tid}/settings/config.timeOffPolicies`         | Owner/HR writes                                                                                       |
+| Holiday overrides         | `/tenants/{tid}/holidays/{YYYY-MM-DD}`                   | Owner/HR writes                                                                                       |
 
 The old `/tenants/{tid}/leaveRequests`, `/tenants/{tid}/leaveBalances`, and
 top-level `/timesheets` schemas are retired and blocked for ordinary clients.
@@ -88,22 +88,23 @@ Built-in types (defaults; per-tenant slots in `timeOffPolicies` may change the
 numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
 (client/services/leaveService.ts), `TL_DEFAULT_LEAVE_POLICIES`
 (client/types/settings.ts), `DEFAULT_ENTITLEMENTS` + `entitlementsFromConfig`
-+ `leavePayFraction` (functions/src/timeleave.ts), `policyOptions` +
-`KNOWN_LEAVE_TYPES` (LeaveRequests.tsx), `LEAVE_TYPE_COLORS`
-(LeaveCalendar.tsx), the Ekipa picker (mobile/ekipa), and the Xefe API
-whitelist (server/xefe-api/index.js).
 
-| id | Policy slot | Statute | Default days/yr | Employer pay default | Notes |
-|---|---|---|---|---|---|
-| `annual` | `annualLeave` | Art. 32 | 12 working days | 100% | Carry-over configurable; probation-gated |
-| `sick` | `sickLeave` | Art. 34 | 12 | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate |
-| `maternity` | `maternityLeave` | Art. 59(1) | 84 (12 weeks, ≥10 after birth) | **Unpaid** — INSS parental subsidy (DL 18/2017) | See INSS section below |
-| `paternity` | `paternityLeave` | Art. 60 | 5 working days | **Unpaid** — INSS parental subsidy | See INSS section below |
-| `miscarriage` | `miscarriageLeave` | Art. 59(4): “licença com a duração de 4 semanas” | 20 working days (≈4 weeks) | **Unpaid** — same INSS regime as maternity | Medical certificate. Clinical-risk PRE-birth leave (Art. 59(3)) has no fixed length — record it as sick leave with a certificate |
-| `special` | `specialLeave` | Art. 33(3) | 3 | 100% | One pooled allotment: marriage + family death + community/religious events; proof per Art. 33(7) |
-| `unpaid` | `unpaidLeave` | — | 30 | 0% | |
-| `study` | `studyLeave` | Art. 76(3): “sem perda da remuneração … para realização de provas de avaliação” | 3 (Xefe default; the statute sets no cap) | 100% | Exams only, worker-students; proof of enrolment/exam schedule per Art. 76(5) |
-| (custom) | `customLeaveTypes[]` | — | tenant-set | tenant-set | Created in Settings → Time Off Policies; id charset `[a-zA-Z0-9_-]`, must not shadow built-ins; deactivate instead of delete |
+- `leavePayFraction` (functions/src/timeleave.ts), `policyOptions` +
+  `KNOWN_LEAVE_TYPES` (LeaveRequests.tsx), `LEAVE_TYPE_COLORS`
+  (LeaveCalendar.tsx), the Ekipa picker (mobile/ekipa), and the Xefe API
+  whitelist (server/xefe-api/index.js).
+
+| id            | Policy slot          | Statute                                                                         | Default days/yr                           | Employer pay default                                                | Notes                                                                                                                            |
+| ------------- | -------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `annual`      | `annualLeave`        | Art. 32                                                                         | 12 working days                           | 100%                                                                | Carry-over configurable; probation-gated                                                                                         |
+| `sick`        | `sickLeave`          | Art. 34                                                                         | 12                                        | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate                                                                                                              |
+| `maternity`   | `maternityLeave`     | Art. 59(1)                                                                      | 84 (12 weeks, ≥10 after birth)            | **Unpaid** — INSS parental subsidy (DL 18/2017)                     | See INSS section below                                                                                                           |
+| `paternity`   | `paternityLeave`     | Art. 60                                                                         | 5 working days                            | **Unpaid** — INSS parental subsidy                                  | See INSS section below                                                                                                           |
+| `miscarriage` | `miscarriageLeave`   | Art. 59(4): “licença com a duração de 4 semanas”                                | 20 working days (≈4 weeks)                | **Unpaid** — same INSS regime as maternity                          | Medical certificate. Clinical-risk PRE-birth leave (Art. 59(3)) has no fixed length — record it as sick leave with a certificate |
+| `special`     | `specialLeave`       | Art. 33(3)                                                                      | 3                                         | 100%                                                                | One pooled allotment: marriage + family death + community/religious events; proof per Art. 33(7)                                 |
+| `unpaid`      | `unpaidLeave`        | —                                                                               | 30                                        | 0%                                                                  |                                                                                                                                  |
+| `study`       | `studyLeave`         | Art. 76(3): “sem perda da remuneração … para realização de provas de avaliação” | 3 (Xefe default; the statute sets no cap) | 100%                                                                | Exams only, worker-students; proof of enrolment/exam schedule per Art. 76(5)                                                     |
+| (custom)      | `customLeaveTypes[]` | —                                                                               | tenant-set                                | tenant-set                                                          | Created in Settings → Time Off Policies; id charset `[a-zA-Z0-9_-]`, must not shadow built-ins; deactivate instead of delete     |
 
 Legacy render-only ids `bereavement`/`marriage` still display but are not
 requestable (pooled into `special`).
@@ -172,12 +173,12 @@ operator enters; the note is what keeps the two hours from being deducted.
 
 ## Roles
 
-| Role | Attendance | Leave | Shifts | Settings |
-|---|---|---|---|---|
-| Owner / HR admin | Read/write all | Read/create/decide all | Read/write all | Read/write |
-| Manager | Read/write own department | Read/create/decide own department, plus own requests | Read/write own department | No |
-| Accountant | Read all | Read all | No | No |
-| Viewer / employee | Read self | Read/create/cancel self | Own published shifts in Ekipa | No |
+| Role              | Attendance                | Leave                                                | Shifts                        | Settings   |
+| ----------------- | ------------------------- | ---------------------------------------------------- | ----------------------------- | ---------- |
+| Owner / HR admin  | Read/write all            | Read/create/decide all                               | Read/write all                | Read/write |
+| Manager           | Read/write own department | Read/create/decide own department, plus own requests | Read/write own department     | No         |
+| Accountant        | Read all                  | Read all                                             | No                            | No         |
+| Viewer / employee | Read self                 | Read/create/cancel self                              | Own published shifts in Ekipa | No         |
 
 UI visibility is not authorization. Keep `firestore.rules`, callable checks,
 service query constraints, and mobile queries aligned whenever this matrix
@@ -192,8 +193,8 @@ pnpm typecheck
 pnpm test
 pnpm --dir functions build
 pnpm exec tsc -p mobile/ekipa/tsconfig.json --noEmit
-JAVA_HOME=/opt/homebrew/opt/openjdk@21 pnpm emul:rules
-JAVA_HOME=/opt/homebrew/opt/openjdk@21 pnpm test:api
+PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH pnpm emul:rules
+PATH=/opt/homebrew/opt/openjdk@21/bin:$PATH pnpm test:api
 ```
 
 Relevant coverage includes `tests/rules/time-leave-access.test.ts`,

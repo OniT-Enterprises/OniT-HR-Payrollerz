@@ -78,6 +78,7 @@ import type { BankTransfer } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
+  BANK_FORMAT_CONFIDENCE,
   BankCode,
   generateBankFile,
   groupRecordsByBank,
@@ -119,8 +120,14 @@ export default function BankTransfers() {
   // ─── React Query data fetching ──────────────────────────────────
   const transferQuery = useBankTransfers();
   const payrollRunsQuery = usePayrollRuns();
-  const transfers = useMemo(() => transferQuery.data ?? [], [transferQuery.data]);
-  const payrollRuns = useMemo(() => payrollRunsQuery.data ?? [], [payrollRunsQuery.data]);
+  const transfers = useMemo(
+    () => transferQuery.data ?? [],
+    [transferQuery.data],
+  );
+  const payrollRuns = useMemo(
+    () => payrollRunsQuery.data ?? [],
+    [payrollRunsQuery.data],
+  );
   const loadingTransfers = transferQuery.isLoading;
   const loadingRuns = payrollRunsQuery.isLoading;
   const createTransferMutation = useCreateBankTransfer();
@@ -128,16 +135,17 @@ export default function BankTransfers() {
   const markRunPaidMutation = useMarkPayrollRunAsPaid();
 
   const settingsQuery = useQuery({
-    queryKey: ['tenants', tenantId, 'settings'],
+    queryKey: ["tenants", tenantId, "settings"],
     queryFn: () => settingsService.getSettings(tenantId),
     enabled: canManageTenant,
     staleTime: 10 * 60 * 1000,
   });
   const companySettings = settingsQuery.data;
 
-  const companyName = companySettings?.companyDetails?.legalName
-    || companySettings?.companyDetails?.tradingName
-    || t("bankTransfers.company");
+  const companyName =
+    companySettings?.companyDetails?.legalName ||
+    companySettings?.companyDetails?.tradingName ||
+    t("bankTransfers.company");
 
   const bankAccounts = useMemo(() => {
     if (!companySettings?.paymentStructure?.bankAccounts) return [];
@@ -148,12 +156,15 @@ export default function BankTransfers() {
         name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
         accountNumber: a.accountNumber || "",
         purpose: a.purpose || "general",
+        ledgerAccountCode:
+          a.ledgerAccountCode || (a.purpose === "payroll" ? "1130" : "1120"),
       }));
   }, [companySettings]);
 
   const companyAccount = useMemo(() => {
-    const payrollAccount = bankAccounts.find((a) => a.purpose === "payroll") || bankAccounts[0];
-    return payrollAccount?.accountNumber ?? '';
+    const payrollAccount =
+      bankAccounts.find((a) => a.purpose === "payroll") || bankAccounts[0];
+    return payrollAccount?.accountNumber ?? "";
   }, [bankAccounts]);
 
   const loading = loadingTransfers || loadingRuns;
@@ -169,7 +180,6 @@ export default function BankTransfers() {
     transfer: BankTransfer;
     to: "completed" | "failed";
   } | null>(null);
-  const [alsoMarkRunPaid, setAlsoMarkRunPaid] = useState(true);
 
   // Bank file generation state
   const [showBankFileDialog, setShowBankFileDialog] = useState(false);
@@ -178,7 +188,9 @@ export default function BankTransfers() {
   const [generatingFiles, setGeneratingFiles] = useState(false);
   // Cover emails for banks that take salary batches by emailed instruction
   // (BNU/BNCTL) — shown with a copy button after the packs download.
-  const [coverEmails, setCoverEmails] = useState<{ bankCode: BankCode; text: string }[]>([]);
+  const [coverEmails, setCoverEmails] = useState<
+    { bankCode: BankCode; text: string }[]
+  >([]);
   const bankFilesInFlight = useRef(false);
   const shouldLoadEmployees =
     canManageTenant && (showBankFileDialog || !!selectedBankFileRun);
@@ -198,14 +210,21 @@ export default function BankTransfers() {
   const transferInFlight = useRef(false);
 
   // ─── Payroll records for bank file generation ──────────────────
-  const bankFileRecordsQuery = usePayrollRecordsByRun(selectedBankFileRun || undefined);
+  const bankFileRecordsQuery = usePayrollRecordsByRun(
+    selectedBankFileRun || undefined,
+  );
   const bankFileRecords = useMemo(
     () => bankFileRecordsQuery.data ?? [],
     [bankFileRecordsQuery.data],
   );
 
   const bankFileSummary = useMemo(() => {
-    if (!selectedBankFileRun || employees.length === 0 || bankFileRecords.length === 0) return null;
+    if (
+      !selectedBankFileRun ||
+      employees.length === 0 ||
+      bankFileRecords.length === 0
+    )
+      return null;
     const grouped = groupRecordsByBank(
       bankFileRecords.filter((record) => record.netPay > 0),
       employees,
@@ -219,12 +238,17 @@ export default function BankTransfers() {
   }, [bankFileRecords, employees, selectedBankFileRun]);
 
   const bankFileCoverage = useMemo(() => {
-    const payableRecords = bankFileRecords.filter((record) => record.netPay > 0);
-    if (payableRecords.length === 0 || employeeDirectoryQuery.data === undefined) {
+    const payableRecords = bankFileRecords.filter(
+      (record) => record.netPay > 0,
+    );
+    if (
+      payableRecords.length === 0 ||
+      employeeDirectoryQuery.data === undefined
+    ) {
       return { missingEmployeeCount: 0, unsupportedBankCount: 0 };
     }
     const employeeIds = new Set(
-      employees.flatMap((employee) => employee.id ? [employee.id] : []),
+      employees.flatMap((employee) => (employee.id ? [employee.id] : [])),
     );
     const missingEmployeeIds = new Set(
       payableRecords
@@ -255,7 +279,9 @@ export default function BankTransfers() {
   // Pre-select banks that have employees when summary changes
   useEffect(() => {
     if (bankFileSummary) {
-      const availableBanks = (Object.keys(bankFileSummary) as BankCode[]).filter(bank => bankFileSummary[bank] > 0);
+      const availableBanks = (
+        Object.keys(bankFileSummary) as BankCode[]
+      ).filter((bank) => bankFileSummary[bank] > 0);
       setSelectedBanks(availableBanks);
     }
   }, [bankFileSummary]);
@@ -272,7 +298,7 @@ export default function BankTransfers() {
       return;
     }
 
-    const selectedRun = payrollRuns.find(r => r.id === selectedBankFileRun);
+    const selectedRun = payrollRuns.find((r) => r.id === selectedBankFileRun);
     if (!selectedRun) {
       toast({
         title: t("bankTransfers.toastErrorTitle"),
@@ -290,26 +316,36 @@ export default function BankTransfers() {
         employeeDirectoryQuery.isFetching ||
         bankFileRecordsQuery.isFetching
       ) {
-        throw new Error(t("bankTransfers.toastEmployeesLoading") || "Bank details are still loading");
+        throw new Error(
+          t("bankTransfers.toastEmployeesLoading") ||
+            "Bank details are still loading",
+        );
       }
       if (
         settingsQuery.isError ||
         employeeDirectoryQuery.isError ||
         bankFileRecordsQuery.isError
-      ) throw new Error("Required bank-file data could not be loaded");
+      )
+        throw new Error("Required bank-file data could not be loaded");
       if (!companySettings || !companyAccount.trim()) {
         throw new Error("A company debit account must be configured first");
       }
 
       const records = bankFileRecords;
-      if (records.length === 0) throw new Error("No payroll records were found");
+      if (records.length === 0)
+        throw new Error("No payroll records were found");
       const payableRecords = records.filter((record) => record.netPay > 0);
-      if (payableRecords.length === 0) throw new Error("No positive salary payments were found");
+      if (payableRecords.length === 0)
+        throw new Error("No positive salary payments were found");
       const employeeIds = new Set(
-        employees.flatMap((employee) => employee.id ? [employee.id] : []),
+        employees.flatMap((employee) => (employee.id ? [employee.id] : [])),
       );
-      if (payableRecords.some((record) => !employeeIds.has(record.employeeId))) {
-        throw new Error("One or more payroll employee records could not be loaded");
+      if (
+        payableRecords.some((record) => !employeeIds.has(record.employeeId))
+      ) {
+        throw new Error(
+          "One or more payroll employee records could not be loaded",
+        );
       }
       const grouped = groupRecordsByBank(payableRecords, employees);
       const selectedEmployeeIds = new Set(
@@ -356,7 +392,7 @@ export default function BankTransfers() {
         }
 
         // Small delay between downloads to prevent browser blocking
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
       setCoverEmails(packEmails);
 
@@ -410,10 +446,10 @@ export default function BankTransfers() {
   };
 
   const toggleBankSelection = (bankCode: BankCode) => {
-    setSelectedBanks(prev =>
+    setSelectedBanks((prev) =>
       prev.includes(bankCode)
-        ? prev.filter(b => b !== bankCode)
-        : [...prev, bankCode]
+        ? prev.filter((b) => b !== bankCode)
+        : [...prev, bankCode],
     );
   };
 
@@ -431,7 +467,7 @@ export default function BankTransfers() {
       (run) =>
         (run.status === "approved" || run.status === "paid") &&
         run.id &&
-        !transferredRunIds.has(run.id)
+        !transferredRunIds.has(run.id),
     );
   }, [payrollRuns, transfers]);
 
@@ -474,11 +510,15 @@ export default function BankTransfers() {
   const statusActionRun = statusAction
     ? payrollRuns.find((run) => run.id === statusAction.transfer.payrollRunId)
     : undefined;
-  // Marking the transfer completed is the moment salaries actually left the
-  // bank — offer to flip the linked run to paid in the same confirmation
-  // (markPayrollRunAsPaid also settles the Deductions & Advances register).
-  const offerMarkRunPaid =
-    statusAction?.to === "completed" && statusActionRun?.status === "approved";
+  // Completing the bank transfer is the payment event. Current approved runs,
+  // plus legacy paid runs missing their settlement journal, are posted through
+  // one atomic service transaction.
+  const willSettlePayroll =
+    statusAction?.to === "completed" &&
+    !!statusActionRun &&
+    (statusActionRun.status === "approved" ||
+      (statusActionRun.status === "paid" &&
+        !statusActionRun.settlementJournalEntryId));
   const statusActionPending =
     updateTransferStatusMutation.isPending || markRunPaidMutation.isPending;
 
@@ -486,7 +526,6 @@ export default function BankTransfers() {
     transfer: BankTransfer,
     to: "completed" | "failed",
   ) => {
-    setAlsoMarkRunPaid(true);
     setStatusAction({ transfer, to });
   };
 
@@ -496,17 +535,43 @@ export default function BankTransfers() {
     const linkedRun = payrollRuns.find(
       (run) => run.id === action.transfer.payrollRunId,
     );
-    const shouldMarkRunPaid =
+    const shouldSettlePayroll =
       action.to === "completed" &&
-      alsoMarkRunPaid &&
       !!linkedRun?.id &&
-      linkedRun.status === "approved";
+      (linkedRun.status === "approved" ||
+        (linkedRun.status === "paid" && !linkedRun.settlementJournalEntryId));
 
     try {
-      await updateTransferStatusMutation.mutateAsync({
-        id: action.transfer.id,
-        status: action.to,
-      });
+      if (shouldSettlePayroll) {
+        const configuredAccount = bankAccounts.find(
+          (account) => account.id === action.transfer.bankAccountId,
+        );
+        if (!user?.uid) throw new Error("A signed-in user is required");
+        await markRunPaidMutation.mutateAsync({
+          id: linkedRun!.id!,
+          payment: {
+            tenantId,
+            paymentDate: action.transfer.transferDate,
+            paymentReference: action.transfer.reference,
+            paymentMethod: "bank_transfer",
+            paidBy: user.uid,
+            paymentAccountCode: configuredAccount?.ledgerAccountCode || "1130",
+            bankAccountId: action.transfer.bankAccountId,
+            bankAccountName: action.transfer.bankAccountName,
+            bankTransferId: action.transfer.id,
+            audit: {
+              tenantId,
+              userId: user.uid,
+              userEmail: user.email || "",
+            },
+          },
+        });
+      } else {
+        await updateTransferStatusMutation.mutateAsync({
+          id: action.transfer.id,
+          status: action.to,
+        });
+      }
     } catch (error) {
       console.error("Failed to update transfer status:", error);
       toast({
@@ -531,29 +596,13 @@ export default function BankTransfers() {
             }) || `Transfer ${action.transfer.reference} marked failed.`,
     });
 
-    if (shouldMarkRunPaid) {
-      try {
-        await markRunPaidMutation.mutateAsync(linkedRun!.id!);
-        toast({
-          title: t("bankTransfers.toastTransferSuccess"),
-          description:
-            t("bankTransfers.toastRunMarkedPaid") ||
-            "Payroll run marked as paid.",
-        });
-      } catch (error) {
-        // The transfer status already changed; be explicit about what failed
-        // so the user finishes the job from Payroll History.
-        console.error("Failed to mark payroll run as paid:", error);
-        toast({
-          title: t("bankTransfers.toastErrorTitle"),
-          description:
-            t("bankTransfers.toastRunPaidError") ||
-            `The transfer was marked completed, but marking the payroll run as paid failed${
-              error instanceof Error ? `: ${error.message}` : "."
-            } You can mark it paid from Payroll History.`,
-          variant: "destructive",
-        });
-      }
+    if (shouldSettlePayroll) {
+      toast({
+        title: t("bankTransfers.toastTransferSuccess"),
+        description:
+          t("bankTransfers.toastRunMarkedPaid") ||
+          "Payroll payment and accounting entry recorded.",
+      });
     }
 
     setStatusAction(null);
@@ -611,7 +660,10 @@ export default function BankTransfers() {
 
     const newTransfer: Omit<BankTransfer, "id" | "tenantId"> = {
       payrollRunId: formData.payrollRunId,
-      payrollPeriod: formatDateTL(selectedRun.periodStart, { month: "long", year: "numeric" }),
+      payrollPeriod: formatDateTL(selectedRun.periodStart, {
+        month: "long",
+        year: "numeric",
+      }),
       amount: selectedRun.totalNetPay,
       employeeCount: selectedRun.employeeCount,
       transferDate: formData.transferDate,
@@ -690,12 +742,14 @@ export default function BankTransfers() {
     const csvContent = [
       headers.join(","),
       ...rows.map((row) =>
-        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")
+        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(","),
       ),
     ].join("\n");
 
     // Download file
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -707,7 +761,9 @@ export default function BankTransfers() {
 
     toast({
       title: t("bankTransfers.toastExportComplete"),
-      description: t("bankTransfers.toastExportCompleteDesc", { count: String(filteredTransfers.length) }),
+      description: t("bankTransfers.toastExportCompleteDesc", {
+        count: String(filteredTransfers.length),
+      }),
     });
   };
 
@@ -730,25 +786,36 @@ export default function BankTransfers() {
   }, [transfers, selectedStatus, selectedPeriod]);
 
   // Column sorting for the transfers table (asc → desc → off)
-  const { sorted: sortedTransfers, sort, toggleSort } = useTableSort<BankTransfer, BankTransferSortKey>(
-    filteredTransfers,
-    {
-      payrollPeriod: (transfer) => transfer.payrollPeriod,
-      amount: (transfer) => transfer.amount,
-      employees: (transfer) => transfer.employeeCount,
-      transferDate: (transfer) => transfer.transferDate,
-      bankAccount: (transfer) => transfer.bankAccountName,
-      status: (transfer) => transfer.status,
-      reference: (transfer) => transfer.reference,
-    },
-  );
+  const {
+    sorted: sortedTransfers,
+    sort,
+    toggleSort,
+  } = useTableSort<BankTransfer, BankTransferSortKey>(filteredTransfers, {
+    payrollPeriod: (transfer) => transfer.payrollPeriod,
+    amount: (transfer) => transfer.amount,
+    employees: (transfer) => transfer.employeeCount,
+    transferDate: (transfer) => transfer.transferDate,
+    bankAccount: (transfer) => transfer.bankAccountName,
+    status: (transfer) => transfer.status,
+    reference: (transfer) => transfer.reference,
+  });
 
   // Renders a sortable shadcn <TableHead> wired to the sort state above
-  const sortableHead = (key: BankTransferSortKey, label: string, align: "left" | "right" = "left") => {
+  const sortableHead = (
+    key: BankTransferSortKey,
+    label: string,
+    align: "left" | "right" = "left",
+  ) => {
     const active = sort?.key === key;
     return (
       <TableHead
-        aria-sort={active ? (sort!.direction === "asc" ? "ascending" : "descending") : "none"}
+        aria-sort={
+          active
+            ? sort!.direction === "asc"
+              ? "ascending"
+              : "descending"
+            : "none"
+        }
         className={align === "right" ? "text-right" : undefined}
       >
         <SortableColumnHeader
@@ -807,9 +874,9 @@ export default function BankTransfers() {
                     <Skeleton className="h-5 w-5 rounded" />
                     <Skeleton className="h-5 w-40" />
                   </CardTitle>
-                  <CardDescription>
+                  <div className="text-sm text-muted-foreground">
                     <Skeleton className="mt-2 h-4 w-32" />
-                  </CardDescription>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Skeleton className="h-10 w-32" />
@@ -834,14 +901,30 @@ export default function BankTransfers() {
                 <TableBody>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                      <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-8 w-8 rounded" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-32" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -863,7 +946,9 @@ export default function BankTransfers() {
         <MainNavigation />
         <DashboardLoadError
           isRetrying={transferQuery.isFetching || payrollRunsQuery.isFetching}
-          onRetry={() => Promise.all([transferQuery.refetch(), payrollRunsQuery.refetch()])}
+          onRetry={() =>
+            Promise.all([transferQuery.refetch(), payrollRunsQuery.refetch()])
+          }
         />
       </div>
     );
@@ -880,123 +965,409 @@ export default function BankTransfers() {
           subtitle={t("bankTransfers.subtitle")}
           icon={Send}
           iconColor="text-primary"
-          actions={canManageTenant ? (
-            <Button
-              className="bg-green-600 hover:bg-green-700 text-white"
-              disabled={availablePayrollRuns.length === 0}
-              onClick={() => setShowTransferDialog(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t("bankTransfers.newTransfer")}
-            </Button>
-          ) : undefined}
+          actions={
+            canManageTenant ? (
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                disabled={availablePayrollRuns.length === 0}
+                onClick={() => setShowTransferDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t("bankTransfers.newTransfer")}
+              </Button>
+            ) : undefined
+          }
         />
 
-          {/* Filters */}
-          <Card className="mb-6 border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
-                {t("bankTransfers.filters")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="status-filter">{t("bankTransfers.status")}</Label>
-                  <Select
-                    value={selectedStatus}
-                    onValueChange={setSelectedStatus}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("bankTransfers.allStatuses")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("bankTransfers.allStatuses")}</SelectItem>
-                      <SelectItem value="completed">{t("bankTransfers.completed")}</SelectItem>
-                      <SelectItem value="pending">{t("bankTransfers.pending")}</SelectItem>
-                      <SelectItem value="processing">{t("bankTransfers.processing")}</SelectItem>
-                      <SelectItem value="failed">{t("bankTransfers.failed")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="period-filter">{t("bankTransfers.payrollPeriod")}</Label>
-                  <Select
-                    value={selectedPeriod}
-                    onValueChange={setSelectedPeriod}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("bankTransfers.allPeriods")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("bankTransfers.allPeriods")}</SelectItem>
-                      {availablePeriods.map((period) => (
-                        <SelectItem key={period} value={period}>
-                          {period}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Filters */}
+        <Card className="mb-6 border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
+              {t("bankTransfers.filters")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="status-filter">
+                  {t("bankTransfers.status")}
+                </Label>
+                <Select
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("bankTransfers.allStatuses")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("bankTransfers.allStatuses")}
+                    </SelectItem>
+                    <SelectItem value="completed">
+                      {t("bankTransfers.completed")}
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      {t("bankTransfers.pending")}
+                    </SelectItem>
+                    <SelectItem value="processing">
+                      {t("bankTransfers.processing")}
+                    </SelectItem>
+                    <SelectItem value="failed">
+                      {t("bankTransfers.failed")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <Label htmlFor="period-filter">
+                  {t("bankTransfers.payrollPeriod")}
+                </Label>
+                <Select
+                  value={selectedPeriod}
+                  onValueChange={setSelectedPeriod}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("bankTransfers.allPeriods")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      {t("bankTransfers.allPeriods")}
+                    </SelectItem>
+                    {availablePeriods.map((period) => (
+                      <SelectItem key={period} value={period}>
+                        {period}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Transfers Table */}
-          <Card className="border-border/50">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    {t("bankTransfers.transferHistory")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("bankTransfers.showingTransfers", { count: String(filteredTransfers.length) })}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleExportCSV}>
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("bankTransfers.exportCsv")}
-                  </Button>
+        {/* Transfers Table */}
+        <Card className="border-border/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  {t("bankTransfers.transferHistory")}
+                </CardTitle>
+                <CardDescription>
+                  {t("bankTransfers.showingTransfers", {
+                    count: String(filteredTransfers.length),
+                  })}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleExportCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("bankTransfers.exportCsv")}
+                </Button>
 
-                  {canManageTenant && <>
-                  {/* Bank File Generation Dialog */}
-                  <Dialog open={showBankFileDialog} onOpenChange={setShowBankFileDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="border-green-500/30 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30">
-                        <FileText className="h-4 w-4 mr-2" />
-                        {t("bankTransfers.bankFiles")}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg">
-                      <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5 text-green-600" />
-                          {t("bankTransfers.generateBankFiles")}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {t("bankTransfers.generateBankFilesDesc")}
-                        </DialogDescription>
-                      </DialogHeader>
+                {canManageTenant && (
+                  <>
+                    {/* Bank File Generation Dialog */}
+                    <Dialog
+                      open={showBankFileDialog}
+                      onOpenChange={setShowBankFileDialog}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-green-500/30 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          {t("bankTransfers.bankFiles")}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-green-600" />
+                            {t("bankTransfers.generateBankFiles")}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {t("bankTransfers.generateBankFilesDesc")}
+                          </DialogDescription>
+                        </DialogHeader>
 
-                      <div className="space-y-4 mt-4">
-                        {/* Payroll Run Selection */}
-                        <div>
-                          <Label>{t("bankTransfers.selectPayrollRun")}</Label>
-                          <Select
-                            value={selectedBankFileRun}
-                            onValueChange={setSelectedBankFileRun}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("bankTransfers.selectPayrollRunPlaceholder")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {payrollRuns
-                                .filter(r => (r.status === "approved" || r.status === "paid") && r.id)
-                                .map((run) => (
+                        <div className="space-y-4 mt-4">
+                          {/* Payroll Run Selection */}
+                          <div>
+                            <Label>{t("bankTransfers.selectPayrollRun")}</Label>
+                            <Select
+                              value={selectedBankFileRun}
+                              onValueChange={setSelectedBankFileRun}
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={t(
+                                    "bankTransfers.selectPayrollRunPlaceholder",
+                                  )}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {payrollRuns
+                                  .filter(
+                                    (r) =>
+                                      (r.status === "approved" ||
+                                        r.status === "paid") &&
+                                      r.id,
+                                  )
+                                  .map((run) => (
+                                    <SelectItem key={run.id} value={run.id!}>
+                                      {formatDateTL(run.periodStart, {
+                                        month: "long",
+                                        year: "numeric",
+                                      })}{" "}
+                                      - {formatCurrency(run.totalNetPay)}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                            {bankAccounts.length === 0 && (
+                              <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
+                                <AlertCircle className="h-3 w-3" />
+                                {t("bankTransfers.bankDetailsRequired")}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Bank Summary & Selection */}
+                          {selectedBankFileRun &&
+                            (loadingEmployees ||
+                              settingsQuery.isFetching ||
+                              bankFileRecordsQuery.isFetching) && (
+                              <div className="flex items-center gap-2 rounded-lg border p-3 text-sm text-muted-foreground">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>
+                                  {t("bankTransfers.loadingEmployees") ||
+                                    "Loading employees..."}
+                                </span>
+                              </div>
+                            )}
+
+                          {selectedBankFileRun &&
+                            (settingsQuery.isError ||
+                              employeeDirectoryQuery.isError ||
+                              bankFileRecordsQuery.isError ||
+                              !companyAccount) && (
+                              <div
+                                className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200"
+                                role="alert"
+                              >
+                                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span>
+                                  {t("bankTransfers.bankDetailsRequired")}
+                                </span>
+                              </div>
+                            )}
+
+                          {bankFileSummary && (
+                            <div className="space-y-3">
+                              <Label>
+                                {t("bankTransfers.selectBanksToGenerate")}
+                              </Label>
+                              <div className="grid grid-cols-2 gap-3">
+                                {TL_BANKS.map((bank) => {
+                                  const bankCode = bank.code as BankCode;
+                                  const count = bankFileSummary[bankCode] || 0;
+                                  const isSelected =
+                                    selectedBanks.includes(bankCode);
+                                  const isDisabled = count === 0;
+
+                                  return (
+                                    <div
+                                      key={bank.code}
+                                      className={`
+                                      flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
+                                      ${isDisabled ? "bg-gray-50 dark:bg-gray-900 opacity-50 cursor-not-allowed" : ""}
+                                      ${isSelected && !isDisabled ? "border-green-500 bg-green-50 dark:bg-green-950/30" : "border-border hover:border-green-300"}
+                                    `}
+                                      onClick={() =>
+                                        !isDisabled &&
+                                        toggleBankSelection(bankCode)
+                                      }
+                                    >
+                                      <Checkbox
+                                        checked={isSelected}
+                                        disabled={isDisabled}
+                                        aria-label={`${bank.code} ${bank.name}`}
+                                        onClick={(event) =>
+                                          event.stopPropagation()
+                                        }
+                                        onCheckedChange={() =>
+                                          !isDisabled &&
+                                          toggleBankSelection(bankCode)
+                                        }
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm">
+                                          {bank.code}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {bank.name}
+                                        </p>
+                                        <p
+                                          className={`text-[11px] ${
+                                            BANK_FORMAT_CONFIDENCE[bankCode] ===
+                                            "verified"
+                                              ? "text-green-700 dark:text-green-400"
+                                              : "text-amber-700 dark:text-amber-400"
+                                          }`}
+                                        >
+                                          {t(
+                                            BANK_FORMAT_CONFIDENCE[bankCode] ===
+                                              "verified"
+                                              ? "bankTransfers.formatVerified"
+                                              : "bankTransfers.formatBestEffort",
+                                          )}
+                                        </p>
+                                      </div>
+                                      <Badge
+                                        variant={
+                                          count > 0 ? "default" : "secondary"
+                                        }
+                                        className="shrink-0"
+                                      >
+                                        {count} {t("bankTransfers.emp")}
+                                      </Badge>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {missingEmployeeCount > 0 && (
+                            <div
+                              className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-200"
+                              role="alert"
+                            >
+                              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                              <span>
+                                {t(
+                                  "bankTransfers.missingEmployeeRecordsNotice",
+                                  {
+                                    count: missingEmployeeCount,
+                                  },
+                                )}
+                              </span>
+                            </div>
+                          )}
+
+                          {unsupportedBankCount > 0 && (
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
+                              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                              <span>
+                                {t("bankTransfers.excludedEmployeesNotice", {
+                                  count: unsupportedBankCount,
+                                })}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Company Account Info */}
+                          {selectedBankFileRun && (
+                            <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+                              <p className="text-muted-foreground">
+                                {t("bankTransfers.filesGeneratedFor")}{" "}
+                                <strong>{companyName}</strong>
+                              </p>
+                              {companyAccount && (
+                                <p className="text-muted-foreground">
+                                  {t("bankTransfers.debitAccount")}: ****
+                                  {companyAccount.slice(-4)}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 pt-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowBankFileDialog(false)}
+                              className="flex-1"
+                              disabled={generatingFiles}
+                            >
+                              {t("bankTransfers.cancel")}
+                            </Button>
+                            <Button
+                              onClick={handleGenerateBankFiles}
+                              disabled={
+                                !selectedBankFileRun ||
+                                selectedBanks.length === 0 ||
+                                generatingFiles ||
+                                loadingEmployees ||
+                                settingsQuery.isFetching ||
+                                bankFileRecordsQuery.isFetching ||
+                                settingsQuery.isError ||
+                                employeeDirectoryQuery.isError ||
+                                bankFileRecordsQuery.isError ||
+                                missingEmployeeCount > 0 ||
+                                !companyAccount
+                              }
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              {generatingFiles ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  {t("bankTransfers.generating")}
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  {t("bankTransfers.generateFiles", {
+                                    count: String(selectedBanks.length),
+                                  })}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog
+                      open={showTransferDialog}
+                      onOpenChange={setShowTransferDialog}
+                    >
+                      {/* New Transfer button moved to PageHeader */}
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>
+                            {t("bankTransfers.recordBankTransfer") ||
+                              "Record Bank Transfer"}
+                          </DialogTitle>
+                          <DialogDescription>
+                            {t("bankTransfers.recordBankTransferDesc") ||
+                              "Records this payroll's transfer as pending in Xefe. No money is sent — generate the bank files, take or email them to your bank, then mark the transfer completed here."}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                          <div>
+                            <Label htmlFor="payroll-run">
+                              {t("bankTransfers.payrollRunLabel")} *
+                            </Label>
+                            <Select
+                              value={formData.payrollRunId}
+                              onValueChange={(value) =>
+                                handleInputChange("payrollRunId", value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={t(
+                                    "bankTransfers.selectPayrollRunFormPlaceholder",
+                                  )}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availablePayrollRuns.map((run) => (
                                   <SelectItem key={run.id} value={run.id!}>
                                     {formatDateTL(run.periodStart, {
                                       month: "long",
@@ -1005,472 +1376,320 @@ export default function BankTransfers() {
                                     - {formatCurrency(run.totalNetPay)}
                                   </SelectItem>
                                 ))}
-                            </SelectContent>
-                          </Select>
-                          {bankAccounts.length === 0 && (
-                            <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
-                              <AlertCircle className="h-3 w-3" />
-                              {t("bankTransfers.bankDetailsRequired")}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Bank Summary & Selection */}
-                        {selectedBankFileRun && (loadingEmployees || settingsQuery.isFetching || bankFileRecordsQuery.isFetching) && (
-                          <div className="flex items-center gap-2 rounded-lg border p-3 text-sm text-muted-foreground">
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>{t("bankTransfers.loadingEmployees") || "Loading employees..."}</span>
-                          </div>
-                        )}
-
-                        {selectedBankFileRun && (
-                          settingsQuery.isError ||
-                          employeeDirectoryQuery.isError ||
-                          bankFileRecordsQuery.isError ||
-                          !companyAccount
-                        ) && (
-                          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200" role="alert">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>{t("bankTransfers.bankDetailsRequired")}</span>
-                          </div>
-                        )}
-
-                        {bankFileSummary && (
-                          <div className="space-y-3">
-                            <Label>{t("bankTransfers.selectBanksToGenerate")}</Label>
-                            <div className="grid grid-cols-2 gap-3">
-                              {TL_BANKS.map((bank) => {
-                                const bankCode = bank.code as BankCode;
-                                const count = bankFileSummary[bankCode] || 0;
-                                const isSelected = selectedBanks.includes(bankCode);
-                                const isDisabled = count === 0;
-
-                                return (
-                                  <div
-                                    key={bank.code}
-                                    className={`
-                                      flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
-                                      ${isDisabled ? 'bg-gray-50 dark:bg-gray-900 opacity-50 cursor-not-allowed' : ''}
-                                      ${isSelected && !isDisabled ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-border hover:border-green-300'}
-                                    `}
-                                    onClick={() => !isDisabled && toggleBankSelection(bankCode)}
-                                  >
-                                    <Checkbox
-                                      checked={isSelected}
-                                      disabled={isDisabled}
-                                      aria-label={`${bank.code} ${bank.name}`}
-                                      onClick={(event) => event.stopPropagation()}
-                                      onCheckedChange={() => !isDisabled && toggleBankSelection(bankCode)}
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-sm">{bank.code}</p>
-                                      <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
-                                    </div>
-                                    <Badge variant={count > 0 ? "default" : "secondary"} className="shrink-0">
-                                      {count} {t("bankTransfers.emp")}
-                                    </Badge>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {missingEmployeeCount > 0 && (
-                          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-200" role="alert">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>
-                              {t("bankTransfers.missingEmployeeRecordsNotice", {
-                                count: missingEmployeeCount,
-                              })}
-                            </span>
-                          </div>
-                        )}
-
-                        {unsupportedBankCount > 0 && (
-                          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-200">
-                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>
-                              {t("bankTransfers.excludedEmployeesNotice", {
-                                count: unsupportedBankCount,
-                              })}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Company Account Info */}
-                        {selectedBankFileRun && (
-                          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
-                            <p className="text-muted-foreground">
-                              {t("bankTransfers.filesGeneratedFor")} <strong>{companyName}</strong>
-                            </p>
-                            {companyAccount && (
-                              <p className="text-muted-foreground">
-                                {t("bankTransfers.debitAccount")}: ****{companyAccount.slice(-4)}
+                              </SelectContent>
+                            </Select>
+                            {availablePayrollRuns.length === 0 && (
+                              <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                {t("bankTransfers.noApprovedRuns")}
                               </p>
                             )}
                           </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowBankFileDialog(false)}
-                            className="flex-1"
-                            disabled={generatingFiles}
-                          >
-                            {t("bankTransfers.cancel")}
-                          </Button>
-                          <Button
-                            onClick={handleGenerateBankFiles}
-                            disabled={
-                              !selectedBankFileRun ||
-                              selectedBanks.length === 0 ||
-                              generatingFiles ||
-                              loadingEmployees ||
-                              settingsQuery.isFetching ||
-                              bankFileRecordsQuery.isFetching ||
-                              settingsQuery.isError ||
-                              employeeDirectoryQuery.isError ||
-                              bankFileRecordsQuery.isError ||
-                              missingEmployeeCount > 0 ||
-                              !companyAccount
-                            }
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            {generatingFiles ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("bankTransfers.generating")}
-                              </>
-                            ) : (
-                              <>
-                                <Download className="h-4 w-4 mr-2" />
-                                {t("bankTransfers.generateFiles", { count: String(selectedBanks.length) })}
-                              </>
+                          <div>
+                            <Label htmlFor="bank-account">
+                              {t("bankTransfers.bankAccountLabel")} *
+                            </Label>
+                            <Select
+                              value={formData.bankAccount}
+                              onValueChange={(value) =>
+                                handleInputChange("bankAccount", value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={t(
+                                    "bankTransfers.selectBankAccount",
+                                  )}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {bankAccounts.map((account) => (
+                                  <SelectItem
+                                    key={account.id}
+                                    value={account.id}
+                                  >
+                                    {account.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {bankAccounts.length === 0 && (
+                              <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
+                                <AlertCircle className="h-3 w-3" />
+                                {t("bankTransfers.bankDetailsRequired")}
+                              </p>
                             )}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog
-                    open={showTransferDialog}
-                    onOpenChange={setShowTransferDialog}
-                  >
-                    {/* New Transfer button moved to PageHeader */}
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {t("bankTransfers.recordBankTransfer") ||
-                            "Record Bank Transfer"}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {t("bankTransfers.recordBankTransferDesc") ||
-                            "Records this payroll's transfer as pending in Xefe. No money is sent — generate the bank files, take or email them to your bank, then mark the transfer completed here."}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                          <Label htmlFor="payroll-run">{t("bankTransfers.payrollRunLabel")} *</Label>
-                          <Select
-                            value={formData.payrollRunId}
-                            onValueChange={(value) =>
-                              handleInputChange("payrollRunId", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("bankTransfers.selectPayrollRunFormPlaceholder")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availablePayrollRuns.map((run) => (
-                                <SelectItem key={run.id} value={run.id!}>
-                                  {formatDateTL(run.periodStart, { month: "long", year: "numeric" })}{" "}
-                                  - {formatCurrency(run.totalNetPay)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {availablePayrollRuns.length === 0 && (
-                            <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {t("bankTransfers.noApprovedRuns")}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <Label htmlFor="bank-account">{t("bankTransfers.bankAccountLabel")} *</Label>
-                          <Select
-                            value={formData.bankAccount}
-                            onValueChange={(value) =>
-                              handleInputChange("bankAccount", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("bankTransfers.selectBankAccount")} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {bankAccounts.map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  {account.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {bankAccounts.length === 0 && (
-                            <p className="mt-1 flex items-center gap-1 text-sm text-amber-600">
-                              <AlertCircle className="h-3 w-3" />
-                              {t("bankTransfers.bankDetailsRequired")}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <Label htmlFor="transfer-date">{t("bankTransfers.transferDateLabel")} *</Label>
-                          <Input
-                            id="transfer-date"
-                            type="date"
-                            value={formData.transferDate}
-                            onChange={(e) =>
-                              handleInputChange("transferDate", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="notes">{t("bankTransfers.notesLabel")}</Label>
-                          <Input
-                            id="notes"
-                            value={formData.notes}
-                            onChange={(e) =>
-                              handleInputChange("notes", e.target.value)
-                            }
-                            placeholder={t("bankTransfers.optionalNotes")}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setShowTransferDialog(false)}
-                            className="flex-1"
-                            disabled={createTransferMutation.isPending}
-                          >
-                            {t("bankTransfers.cancel")}
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="flex-1"
-                            disabled={createTransferMutation.isPending}
-                          >
-                            {createTransferMutation.isPending ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                {t("bankTransfers.processing")}...
-                              </>
-                            ) : (
-                              t("bankTransfers.recordTransfer") ||
-                              "Record Transfer"
-                            )}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                  </>}
-                </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="transfer-date">
+                              {t("bankTransfers.transferDateLabel")} *
+                            </Label>
+                            <Input
+                              id="transfer-date"
+                              type="date"
+                              value={formData.transferDate}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "transferDate",
+                                  e.target.value,
+                                )
+                              }
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="notes">
+                              {t("bankTransfers.notesLabel")}
+                            </Label>
+                            <Input
+                              id="notes"
+                              value={formData.notes}
+                              onChange={(e) =>
+                                handleInputChange("notes", e.target.value)
+                              }
+                              placeholder={t("bankTransfers.optionalNotes")}
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setShowTransferDialog(false)}
+                              className="flex-1"
+                              disabled={createTransferMutation.isPending}
+                            >
+                              {t("bankTransfers.cancel")}
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="flex-1"
+                              disabled={createTransferMutation.isPending}
+                            >
+                              {createTransferMutation.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  {t("bankTransfers.processing")}...
+                                </>
+                              ) : (
+                                t("bankTransfers.recordTransfer") ||
+                                "Record Transfer"
+                              )}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
               </div>
-            </CardHeader>
-            <CardContent>
-              {filteredTransfers.length === 0 ? (
-                <div className="text-center py-12">
-                  <Send className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">{t("bankTransfers.noTransfersFound")}</p>
-                  <p className="text-sm text-muted-foreground/70">
-                    {transfers.length === 0
-                      ? t("bankTransfers.createFirstTransfer")
-                      : t("bankTransfers.adjustFilters")}
-                  </p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {sortableHead("payrollPeriod", t("bankTransfers.payrollPeriod"))}
-                      {sortableHead("amount", t("bankTransfers.amount"))}
-                      {sortableHead("employees", t("bankTransfers.employees"))}
-                      {sortableHead("transferDate", t("bankTransfers.transferDate"))}
-                      {sortableHead("bankAccount", t("bankTransfers.bankAccount"))}
-                      {sortableHead("status", t("bankTransfers.status"))}
-                      {sortableHead("reference", t("bankTransfers.reference"))}
-                      <TableHead>{t("bankTransfers.actions")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedTransfers.map((transfer) => (
-                      <TableRow key={transfer.id}>
-                        <TableCell className="font-medium">
-                          {transfer.payrollPeriod}
-                        </TableCell>
-                        <TableCell>
-                          {formatCurrency(transfer.amount)}
-                        </TableCell>
-                        <TableCell>{transfer.employeeCount}</TableCell>
-                        <TableCell>
-                          {formatDateTL(transfer.transferDate)}
-                        </TableCell>
-                        <TableCell>{transfer.bankAccountName}</TableCell>
-                        <TableCell>{getStatusBadge(transfer.status)}</TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {transfer.reference}
-                        </TableCell>
-                        <TableCell>
-                          {canManageTenant && transfer.status !== "completed" ? (
-                            <div className="flex gap-1">
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredTransfers.length === 0 ? (
+              <div className="text-center py-12">
+                <Send className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-2">
+                  {t("bankTransfers.noTransfersFound")}
+                </p>
+                <p className="text-sm text-muted-foreground/70">
+                  {transfers.length === 0
+                    ? t("bankTransfers.createFirstTransfer")
+                    : t("bankTransfers.adjustFilters")}
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {sortableHead(
+                      "payrollPeriod",
+                      t("bankTransfers.payrollPeriod"),
+                    )}
+                    {sortableHead("amount", t("bankTransfers.amount"))}
+                    {sortableHead("employees", t("bankTransfers.employees"))}
+                    {sortableHead(
+                      "transferDate",
+                      t("bankTransfers.transferDate"),
+                    )}
+                    {sortableHead(
+                      "bankAccount",
+                      t("bankTransfers.bankAccount"),
+                    )}
+                    {sortableHead("status", t("bankTransfers.status"))}
+                    {sortableHead("reference", t("bankTransfers.reference"))}
+                    <TableHead>{t("bankTransfers.actions")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedTransfers.map((transfer) => (
+                    <TableRow key={transfer.id}>
+                      <TableCell className="font-medium">
+                        {transfer.payrollPeriod}
+                      </TableCell>
+                      <TableCell>{formatCurrency(transfer.amount)}</TableCell>
+                      <TableCell>{transfer.employeeCount}</TableCell>
+                      <TableCell>
+                        {formatDateTL(transfer.transferDate)}
+                      </TableCell>
+                      <TableCell>{transfer.bankAccountName}</TableCell>
+                      <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {transfer.reference}
+                      </TableCell>
+                      <TableCell>
+                        {canManageTenant && transfer.status !== "completed" ? (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title={
+                                t("bankTransfers.markCompleted") ||
+                                "Mark completed"
+                              }
+                              aria-label={
+                                t("bankTransfers.markCompleted") ||
+                                "Mark completed"
+                              }
+                              onClick={() =>
+                                openStatusAction(transfer, "completed")
+                              }
+                            >
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                            {transfer.status !== "failed" && (
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                title={t("bankTransfers.markCompleted") || "Mark completed"}
-                                aria-label={t("bankTransfers.markCompleted") || "Mark completed"}
-                                onClick={() => openStatusAction(transfer, "completed")}
+                                title={
+                                  t("bankTransfers.markFailed") || "Mark failed"
+                                }
+                                aria-label={
+                                  t("bankTransfers.markFailed") || "Mark failed"
+                                }
+                                onClick={() =>
+                                  openStatusAction(transfer, "failed")
+                                }
                               >
-                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                <XCircle className="h-4 w-4 text-red-500" />
                               </Button>
-                              {transfer.status !== "failed" && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  title={t("bankTransfers.markFailed") || "Mark failed"}
-                                  aria-label={t("bankTransfers.markFailed") || "Mark failed"}
-                                  onClick={() => openStatusAction(transfer, "failed")}
-                                >
-                                  <XCircle className="h-4 w-4 text-red-500" />
-                                </Button>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">&mdash;</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            &mdash;
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Confirm advancing a transfer's status. Xefe never talks to the
+      {/* Confirm advancing a transfer's status. Xefe never talks to the
             bank — a human confirms what the bank did with the emailed
             pack/file, and (for completed) can flip the linked run to paid. */}
-        <AlertDialog
-          open={!!statusAction}
-          onOpenChange={(open) => {
-            if (!open) setStatusAction(null);
-          }}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {statusAction?.to === "completed"
-                  ? t("bankTransfers.markCompletedTitle") ||
-                    "Mark transfer completed?"
-                  : t("bankTransfers.markFailedTitle") ||
-                    "Mark transfer failed?"}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {statusAction?.to === "completed"
-                  ? t("bankTransfers.markCompletedDesc") ||
-                    "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank."
-                  : t("bankTransfers.markFailedDesc") ||
-                    "Record that your bank rejected or did not execute this salary batch. This only updates the record in Xefe — you can mark it completed later if the bank processes a retry."}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            {statusAction && (
-              <div className="rounded-md border bg-muted/30 p-3 text-sm">
-                <p className="font-mono text-xs">{statusAction.transfer.reference}</p>
-                <p className="text-muted-foreground">
-                  {statusAction.transfer.payrollPeriod} &middot;{" "}
-                  {formatCurrency(statusAction.transfer.amount)} &middot;{" "}
-                  {statusAction.transfer.employeeCount} {t("bankTransfers.emp")}
-                </p>
-              </div>
-            )}
-            {offerMarkRunPaid && (
-              <label
-                htmlFor="also-mark-run-paid"
-                className="flex items-start gap-2 text-sm"
-              >
-                <Checkbox
-                  id="also-mark-run-paid"
-                  checked={alsoMarkRunPaid}
-                  onCheckedChange={(checked) =>
-                    setAlsoMarkRunPaid(checked === true)
-                  }
-                  className="mt-0.5"
-                />
-                <span>
-                  {t("bankTransfers.alsoMarkRunPaid") ||
-                    "Also mark the payroll run as paid (updates advance and recurring-deduction balances)"}
-                </span>
-              </label>
-            )}
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={statusActionPending}>
-                {t("bankTransfers.cancel")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmStatusAction}
-                disabled={statusActionPending}
-                className={
-                  statusAction?.to === "failed"
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                }
-              >
-                {statusAction?.to === "completed"
-                  ? t("bankTransfers.markCompleted") || "Mark completed"
-                  : t("bankTransfers.markFailed") || "Mark failed"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* BNU/BNCTL run on emailed instructions — hand the user the exact
-            message their branch already accepts, next to the downloaded pack. */}
-        <Dialog
-          open={coverEmails.length > 0}
-          onOpenChange={(open) => {
-            if (!open) setCoverEmails([]);
-          }}
-        >
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{t("bankTransfers.coverEmail.title")}</DialogTitle>
-              <DialogDescription>
-                {t("bankTransfers.coverEmail.description")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {coverEmails.map(({ bankCode, text }) => (
-                <div key={bankCode} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{bankCode}</p>
-                    <Button variant="outline" size="sm" onClick={() => copyCoverEmail(text)}>
-                      <Copy className="mr-2 h-3.5 w-3.5" />
-                      {t("bankTransfers.coverEmail.copy")}
-                    </Button>
-                  </div>
-                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-5">
-                    {text}
-                  </pre>
-                </div>
-              ))}
+      <AlertDialog
+        open={!!statusAction}
+        onOpenChange={(open) => {
+          if (!open) setStatusAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusAction?.to === "completed"
+                ? t("bankTransfers.markCompletedTitle") ||
+                  "Mark transfer completed?"
+                : t("bankTransfers.markFailedTitle") || "Mark transfer failed?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {statusAction?.to === "completed"
+                ? t("bankTransfers.markCompletedDesc") ||
+                  "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank."
+                : t("bankTransfers.markFailedDesc") ||
+                  "Record that your bank rejected or did not execute this salary batch. This only updates the record in Xefe — you can mark it completed later if the bank processes a retry."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {statusAction && (
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <p className="font-mono text-xs">
+                {statusAction.transfer.reference}
+              </p>
+              <p className="text-muted-foreground">
+                {statusAction.transfer.payrollPeriod} &middot;{" "}
+                {formatCurrency(statusAction.transfer.amount)} &middot;{" "}
+                {statusAction.transfer.employeeCount} {t("bankTransfers.emp")}
+              </p>
             </div>
-          </DialogContent>
-        </Dialog>
+          )}
+          {willSettlePayroll && (
+            <p className="text-sm text-muted-foreground">
+              {t("bankTransfers.completePostsPayment") ||
+                "This will mark payroll paid, update deduction balances, and post the bank payment to accounting."}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={statusActionPending}>
+              {t("bankTransfers.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmStatusAction}
+              disabled={statusActionPending}
+              className={
+                statusAction?.to === "failed"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }
+            >
+              {statusAction?.to === "completed"
+                ? t("bankTransfers.markCompleted") || "Mark completed"
+                : t("bankTransfers.markFailed") || "Mark failed"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* BNU/BNCTL run on emailed instructions — hand the user the exact
+            message their branch already accepts, next to the downloaded pack. */}
+      <Dialog
+        open={coverEmails.length > 0}
+        onOpenChange={(open) => {
+          if (!open) setCoverEmails([]);
+        }}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t("bankTransfers.coverEmail.title")}</DialogTitle>
+            <DialogDescription>
+              {t("bankTransfers.coverEmail.description")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {coverEmails.map(({ bankCode, text }) => (
+              <div key={bankCode} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">{bankCode}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyCoverEmail(text)}
+                  >
+                    <Copy className="mr-2 h-3.5 w-3.5" />
+                    {t("bankTransfers.coverEmail.copy")}
+                  </Button>
+                </div>
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-xs leading-5">
+                  {text}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

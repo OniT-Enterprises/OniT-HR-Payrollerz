@@ -1,13 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   calculateTLPayroll,
   calculateSubsidioAnual,
   type TLPayrollInput,
-} from '@/lib/payroll/calculations-tl';
-import { calculateProRataHours } from '@/lib/payroll/run-payroll-helpers';
-import { TL_WORKING_HOURS } from '@/lib/payroll/constants-tl';
-import { maxMoney, subtractMoney } from '@/lib/currency';
-import { resolveLeaverFinalPay, severanceDefaultForReason } from '@/lib/payroll/leaver-final-pay';
+} from "@/lib/payroll/calculations-tl";
+import { calculateProRataHours } from "@/lib/payroll/run-payroll-helpers";
+import { TL_WORKING_HOURS } from "@/lib/payroll/constants-tl";
+import { maxMoney, subtractMoney } from "@/lib/currency";
+import {
+  resolveLeaverFinalPay,
+  severanceDefaultForReason,
+} from "@/lib/payroll/leaver-final-pay";
 
 /**
  * REAL-LIFE SCENARIO: mid-period termination / final-pay run (KEY = termination-payroll)
@@ -27,18 +30,18 @@ import { resolveLeaverFinalPay, severanceDefaultForReason } from '@/lib/payroll/
  * and the engine input carries terminationDate so service_compensation fires.
  */
 
-const PERIOD_START = '2026-09-01';
-const PERIOD_END = '2026-09-30'; // 30-day month → clean half at Sept 15
+const PERIOD_START = "2026-09-01";
+const PERIOD_END = "2026-09-30"; // 30-day month → clean half at Sept 15
 const FULL_MONTHLY_HOURS = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
 
-const ABILIO_HIRE = '2019-06-01'; // 7+ years service → one completed 5-yr block
-const ABILIO_TERMINATION = '2026-09-15';
+const ABILIO_HIRE = "2019-06-01"; // 7+ years service → one completed 5-yr block
+const ABILIO_TERMINATION = "2026-09-15";
 
 function baseInput(overrides: Partial<TLPayrollInput>): TLPayrollInput {
   return {
-    employeeId: 'abilio',
+    employeeId: "abilio",
     monthlySalary: 600,
-    payFrequency: 'monthly',
+    payFrequency: "monthly",
     isHourly: false,
     hourlyRate: undefined,
     regularHours: FULL_MONTHLY_HOURS,
@@ -73,55 +76,87 @@ function baseInput(overrides: Partial<TLPayrollInput>): TLPayrollInput {
   };
 }
 
-describe('real-life: mid-period termination final pay (termination-payroll)', () => {
-  it('calculateProRataHours prorates the END edge: leaver keeps ~half the hours', () => {
+describe("real-life: mid-period termination final pay (termination-payroll)", () => {
+  it("calculateProRataHours prorates the END edge: leaver keeps ~half the hours", () => {
     const hours = calculateProRataHours(
-      ABILIO_HIRE, PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS, ABILIO_TERMINATION,
+      ABILIO_HIRE,
+      PERIOD_START,
+      PERIOD_END,
+      FULL_MONTHLY_HOURS,
+      ABILIO_TERMINATION,
     );
     // Sept 1–15 = 15 of 30 days → half of 190.6667 ≈ 95.33.
     expect(hours).toBeCloseTo(FULL_MONTHLY_HOURS / 2, 1);
   });
 
-  it('calculateProRataHours edge cases: ended before period → 0; ends after period → full; both edges', () => {
+  it("calculateProRataHours edge cases: ended before period → 0; ends after period → full; both edges", () => {
     // Terminated before the period even starts — not employed at all.
     expect(
-      calculateProRataHours(ABILIO_HIRE, PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS, '2026-08-20'),
+      calculateProRataHours(
+        ABILIO_HIRE,
+        PERIOD_START,
+        PERIOD_END,
+        FULL_MONTHLY_HOURS,
+        "2026-08-20",
+      ),
     ).toBe(0);
     // Termination after period end — normal full period.
     expect(
-      calculateProRataHours(ABILIO_HIRE, PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS, '2026-10-15'),
+      calculateProRataHours(
+        ABILIO_HIRE,
+        PERIOD_START,
+        PERIOD_END,
+        FULL_MONTHLY_HOURS,
+        "2026-10-15",
+      ),
     ).toBeCloseTo(FULL_MONTHLY_HOURS, 4);
     // No end date — unchanged hire-only behaviour.
     expect(
-      calculateProRataHours(ABILIO_HIRE, PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS),
+      calculateProRataHours(
+        ABILIO_HIRE,
+        PERIOD_START,
+        PERIOD_END,
+        FULL_MONTHLY_HOURS,
+      ),
     ).toBeCloseTo(FULL_MONTHLY_HOURS, 4);
     // Hired AND terminated inside the same period (Sept 6 – Sept 20 = 15 days).
     expect(
-      calculateProRataHours('2026-09-06', PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS, '2026-09-20'),
+      calculateProRataHours(
+        "2026-09-06",
+        PERIOD_START,
+        PERIOD_END,
+        FULL_MONTHLY_HOURS,
+        "2026-09-20",
+      ),
     ).toBeCloseTo(FULL_MONTHLY_HOURS / 2, 1);
   });
 
-  it('terminationDate fires Art. 56 service compensation: WIT-taxable, NOT INSS-able', () => {
+  it("terminationDate fires Art. 56 service compensation: WIT-taxable, NOT INSS-able", () => {
     // 2019-06-01 → 2026-09-15 = 7 completed years = one 5-yr block = 1 month.
     const result = calculateTLPayroll(
       baseInput({ terminationDate: ABILIO_TERMINATION }),
     );
     expect(result.serviceCompensation).toBeCloseTo(600, 2);
-    const line = result.earnings.find((e) => e.type === 'service_compensation');
+    const line = result.earnings.find((e) => e.type === "service_compensation");
     expect(line).toBeDefined();
     expect(line!.isTaxable).toBe(true);
     expect(line!.isINSSBase).toBe(false); // not the DL 30/2021 indemnity
 
     // It raises gross and the WIT base but never the INSS base.
     const without = calculateTLPayroll(baseInput({}));
-    expect(subtractMoney(result.grossPay, without.grossPay)).toBeCloseTo(600, 2);
+    expect(subtractMoney(result.grossPay, without.grossPay)).toBeCloseTo(
+      600,
+      2,
+    );
     expect(result.inssBase).toBeCloseTo(without.inssBase, 2);
   });
 
-  it('leaver subsidio: Art. 44 prorated to the termination month, netted against YTD paid', () => {
+  it("leaver subsidio: Art. 44 prorated to the termination month, netted against YTD paid", () => {
     // Entitlement: Jan..Sep = 9/12 of $600 = $450.
     const entitled = calculateSubsidioAnual(
-      600, ABILIO_HIRE, new Date(`${ABILIO_TERMINATION}T00:00:00`),
+      600,
+      ABILIO_HIRE,
+      new Date(`${ABILIO_TERMINATION}T00:00:00`),
       { terminationDate: ABILIO_TERMINATION },
     );
     expect(entitled).toBeCloseTo(450, 2);
@@ -140,12 +175,19 @@ describe('real-life: mid-period termination final pay (termination-payroll)', ()
     expect(result.subsidioAnual).toBeCloseTo(450, 2);
   });
 
-  it('full final-pay run reconciles: half wages + severance + subsidio − statutory = net', () => {
+  it("full final-pay run reconciles: half wages + severance + subsidio − statutory = net", () => {
     // Mirror the wizard seeding: full baseline hours, unworked half booked as
     // absence (rl-prorata-hire mechanism), plus both termination items.
     const halfAbsence = Number(
-      (FULL_MONTHLY_HOURS -
-        calculateProRataHours(ABILIO_HIRE, PERIOD_START, PERIOD_END, FULL_MONTHLY_HOURS, ABILIO_TERMINATION)
+      (
+        FULL_MONTHLY_HOURS -
+        calculateProRataHours(
+          ABILIO_HIRE,
+          PERIOD_START,
+          PERIOD_END,
+          FULL_MONTHLY_HOURS,
+          ABILIO_TERMINATION,
+        )
       ).toFixed(2),
     );
     const result = calculateTLPayroll(
@@ -164,35 +206,40 @@ describe('real-life: mid-period termination final pay (termination-payroll)', ()
     const earningsTotal = result.earnings
       .filter((e) => e.isCash !== false)
       .reduce((sum, e) => sum + e.amount, 0);
-    const deductionsTotal = result.deductions.reduce((sum, d) => sum + d.amount, 0);
+    const deductionsTotal = result.deductions.reduce(
+      (sum, d) => sum + d.amount,
+      0,
+    );
     expect(result.netPay).toBeCloseTo(earningsTotal - deductionsTotal, 1);
     expect(result.netPay).toBeGreaterThan(0);
   });
 });
 
-describe('resolveLeaverFinalPay: exact-once idempotency', () => {
+describe("resolveLeaverFinalPay: exact-once idempotency", () => {
   const common = {
     monthlySalary: 600,
     hireDate: ABILIO_HIRE,
-    asOfDate: new Date('2026-09-30T00:00:00'),
+    asOfDate: new Date("2026-09-30T00:00:00"),
     includeSubsidioAnual: false,
     subsidioConfig: { proRataForNewEmployees: true },
   };
 
-  it('first final run: fires severance and pays the full prorated subsidio', () => {
+  it("first final run: fires severance and pays the full prorated subsidio", () => {
     const r = resolveLeaverFinalPay({
       ...common,
       inPeriodTermination: ABILIO_TERMINATION,
+      severanceEntitled: true,
       committed: { serviceCompensation: 0, subsidioAnual: 0 },
     });
     expect(r.terminationDate).toBe(ABILIO_TERMINATION); // severance WILL fire
     expect(r.subsidioAnual).toBeCloseTo(450, 2); // Jan..Sep = 9/12
   });
 
-  it('second run over the same period: severance suppressed, subsidio netted to 0', () => {
+  it("second run over the same period: severance suppressed, subsidio netted to 0", () => {
     const r = resolveLeaverFinalPay({
       ...common,
       inPeriodTermination: ABILIO_TERMINATION,
+      severanceEntitled: true,
       // The first run already recorded these amounts.
       committed: { serviceCompensation: 600, subsidioAnual: 450 },
     });
@@ -200,26 +247,30 @@ describe('resolveLeaverFinalPay: exact-once idempotency', () => {
     expect(r.subsidioAnual).toBe(0); // NO second subsidio
   });
 
-  it('partial prior subsidio (annual run before termination) is topped up, not doubled', () => {
+  it("partial prior subsidio (annual run before termination) is topped up, not doubled", () => {
     const r = resolveLeaverFinalPay({
       ...common,
       inPeriodTermination: ABILIO_TERMINATION,
+      severanceEntitled: true,
       committed: { serviceCompensation: 0, subsidioAnual: 200 },
     });
     expect(r.terminationDate).toBe(ABILIO_TERMINATION);
     expect(r.subsidioAnual).toBeCloseTo(250, 2); // 450 entitlement − 200 already paid
   });
 
-  it('non-leaver: no severance; subsidio follows the run toggle only', () => {
+  it("non-leaver: no severance; subsidio follows the run toggle only", () => {
     const off = resolveLeaverFinalPay({
-      ...common, inPeriodTermination: null,
+      ...common,
+      inPeriodTermination: null,
       committed: { serviceCompensation: 0, subsidioAnual: 0 },
     });
     expect(off.terminationDate).toBeUndefined();
     expect(off.subsidioAnual).toBe(0);
 
     const on = resolveLeaverFinalPay({
-      ...common, includeSubsidioAnual: true, inPeriodTermination: null,
+      ...common,
+      includeSubsidioAnual: true,
+      inPeriodTermination: null,
       committed: { serviceCompensation: 0, subsidioAnual: 0 },
     });
     expect(on.terminationDate).toBeUndefined();
@@ -227,17 +278,17 @@ describe('resolveLeaverFinalPay: exact-once idempotency', () => {
   });
 });
 
-describe('resolveLeaverFinalPay: cause-aware Art. 56 decision (severanceEntitled)', () => {
+describe("resolveLeaverFinalPay: cause-aware Art. 56 decision (severanceEntitled)", () => {
   const common = {
     monthlySalary: 600,
     hireDate: ABILIO_HIRE,
-    asOfDate: new Date('2026-09-30T00:00:00'),
+    asOfDate: new Date("2026-09-30T00:00:00"),
     includeSubsidioAnual: false,
     subsidioConfig: { proRataForNewEmployees: true },
     committed: { serviceCompensation: 0, subsidioAnual: 0 },
   };
 
-  it('severanceEntitled:false (e.g. resignation) suppresses the Art. 56 line but NOT the subsidio', () => {
+  it("severanceEntitled:false (e.g. resignation) suppresses the Art. 56 line but NOT the subsidio", () => {
     const r = resolveLeaverFinalPay({
       ...common,
       inPeriodTermination: ABILIO_TERMINATION,
@@ -247,20 +298,28 @@ describe('resolveLeaverFinalPay: cause-aware Art. 56 decision (severanceEntitled
     expect(r.subsidioAnual).toBeCloseTo(450, 2); // Art. 44 still owed (9/12)
   });
 
-  it('severanceEntitled omitted defaults to the statute-literal true', () => {
+  it("severanceEntitled omitted stays safe-off until a review explicitly includes it", () => {
     const r = resolveLeaverFinalPay({
       ...common,
       inPeriodTermination: ABILIO_TERMINATION,
     });
-    expect(r.terminationDate).toBe(ABILIO_TERMINATION);
+    expect(r.terminationDate).toBeUndefined();
   });
 
-  it('severanceDefaultForReason: OFF only for resignation, ON for every other cause', () => {
-    expect(severanceDefaultForReason('resignation')).toBe(false);
+  it("severanceDefaultForReason: OFF only for resignation, ON for every other cause", () => {
+    expect(severanceDefaultForReason("resignation")).toBe(false);
     // 'death' (Art. 47(1)(b) caducidade) defaults ON — statute-literal reading,
     // payable to the estate/heirs (the offboarding UI carries that note).
     (
-      ['redundancy', 'termination', 'retirement', 'contract_end', 'mutual_agreement', 'death', 'other'] as const
+      [
+        "redundancy",
+        "termination",
+        "retirement",
+        "contract_end",
+        "mutual_agreement",
+        "death",
+        "other",
+      ] as const
     ).forEach((reason) => expect(severanceDefaultForReason(reason)).toBe(true));
   });
 });

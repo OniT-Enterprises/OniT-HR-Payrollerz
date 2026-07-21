@@ -1,6 +1,6 @@
 /**
- * ANZ Bank Transfer File Format
- * CSV format with ANZ header format
+ * Best-effort ANZ bank-transfer template. The real bank specification has not
+ * been signed off; callers must keep this visibly labelled as best-effort.
  */
 
 import {
@@ -8,8 +8,8 @@ import {
   BankFileResult,
   formatDateYYYYMMDD,
   formatAmount,
-} from './index';
-import { getTodayTL } from '@/lib/dateUtils';
+} from "./index";
+import { getTodayTL } from "@/lib/dateUtils";
 
 /**
  * ANZ CSV Format:
@@ -19,13 +19,13 @@ import { getTodayTL } from '@/lib/dateUtils';
 export function generateANZFile(
   summary: BankTransferSummary,
   companyName: string,
-  companyAccountNumber: string
+  companyAccountNumber: string,
 ): BankFileResult {
   const lines: string[] = [];
   const valueDate = formatDateYYYYMMDD(summary.valueDate);
 
   // File header block
-  lines.push('ANZ BULK PAYMENT FILE');
+  lines.push("ANZ BULK PAYMENT FILE");
   lines.push(`Date Generated,${getTodayTL()}`);
   lines.push(`Company Name,${companyName}`);
   lines.push(`Debit Account,${companyAccountNumber}`);
@@ -33,41 +33,43 @@ export function generateANZFile(
   lines.push(`Total Records,${summary.transactionCount}`);
   lines.push(`Total Amount,${formatAmount(summary.totalAmount)}`);
   lines.push(`Currency,USD`);
-  lines.push('');
+  lines.push("");
 
   // Column headers
-  lines.push('Sequence,Account BSB,Account Number,Account Name,Amount,Reference,Description');
+  lines.push(
+    "Sequence,Account BSB,Account Number,Account Name,Amount,Reference,Description",
+  );
 
   // Detail records
   let sequence = 1;
   for (const line of summary.lines) {
     const row = [
       String(sequence++),
-      '', // BSB (not used in TL)
+      "", // BSB (not used in TL)
       line.accountNumber,
       `"${line.accountName.replace(/"/g, '""')}"`,
       formatAmount(line.amount),
       line.reference,
       `Salary ${summary.payrollPeriod}`,
     ];
-    lines.push(row.join(','));
+    lines.push(row.join(","));
   }
 
   // Batch trailer
-  lines.push('');
-  lines.push('--- END OF FILE ---');
+  lines.push("");
+  lines.push("--- END OF FILE ---");
   lines.push(`Records: ${summary.transactionCount}`);
   lines.push(`Total: USD ${formatAmount(summary.totalAmount)}`);
 
   // Prepend a UTF-8 BOM so Excel reads accented TL/PT beneficiary names
   // (ç, ã, é) correctly instead of mojibake when the CSV is opened directly.
-  const content = '﻿' + lines.join('\n');
+  const content = "﻿" + lines.join("\n");
   const fileName = `ANZ_Salaries_${summary.payrollPeriod}_${valueDate}.csv`;
 
   return {
     content,
     fileName,
-    mimeType: 'text/csv',
+    mimeType: "text/csv",
     summary,
   };
 }

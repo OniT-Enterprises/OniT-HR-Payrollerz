@@ -348,8 +348,23 @@ export function useSaveArticle56FinalPay() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: ({ caseId, calculatedBy }: { caseId: string; calculatedBy: string }) =>
-      offboardingService.saveArticle56FinalPay(tenantId, caseId, calculatedBy),
+    mutationFn: ({
+      caseId,
+      calculatedBy,
+      severanceIncluded,
+      acknowledged,
+      note,
+    }: {
+      caseId: string;
+      calculatedBy: string;
+      severanceIncluded: boolean;
+      acknowledged: boolean;
+      note: string;
+    }) => offboardingService.saveArticle56FinalPay(tenantId, caseId, calculatedBy, {
+      severanceIncluded,
+      acknowledged,
+      note,
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
     },

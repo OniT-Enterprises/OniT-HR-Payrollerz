@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  getAnnualIncomeTaxDueDateBase,
   getDaysUntilDueIso,
   getNextAnnualAdjustedDeadline,
   getNextMonthlyAdjustedDeadline,
   getUrgencyFromDays,
+  resolveMonthlyWITTaskStatuses,
   resolveTaskStatus,
 } from "@/lib/tax/compliance";
 
@@ -12,20 +14,33 @@ const identityAdjust = (isoDate: string) => isoDate;
 const pad2 = (value: number): string => String(value).padStart(2, "0");
 
 describe("Tax compliance deadline helpers", () => {
+  it("sets annual business income-tax preparation to the end of month 3", () => {
+    expect(getAnnualIncomeTaxDueDateBase(2025)).toBe("2026-03-31");
+    expect(() => getAnnualIncomeTaxDueDateBase(25)).toThrow(/four-digit/);
+  });
+
   it("keeps monthly deadline in current month when today is due day", () => {
-    expect(getNextMonthlyAdjustedDeadline("2026-01-15", 15, identityAdjust)).toBe("2026-01-15");
+    expect(
+      getNextMonthlyAdjustedDeadline("2026-01-15", 15, identityAdjust),
+    ).toBe("2026-01-15");
   });
 
   it("moves monthly deadline to next month when due day already passed", () => {
-    expect(getNextMonthlyAdjustedDeadline("2026-01-16", 15, identityAdjust)).toBe("2026-02-15");
+    expect(
+      getNextMonthlyAdjustedDeadline("2026-01-16", 15, identityAdjust),
+    ).toBe("2026-02-15");
   });
 
   it("keeps annual deadline in current year when today is before adjusted deadline", () => {
-    expect(getNextAnnualAdjustedDeadline("2026-12-01", 12, 20, identityAdjust)).toBe("2026-12-20");
+    expect(
+      getNextAnnualAdjustedDeadline("2026-12-01", 12, 20, identityAdjust),
+    ).toBe("2026-12-20");
   });
 
   it("moves annual deadline to next year when current-year deadline is passed", () => {
-    expect(getNextAnnualAdjustedDeadline("2026-12-21", 12, 20, identityAdjust)).toBe("2027-12-20");
+    expect(
+      getNextAnnualAdjustedDeadline("2026-12-21", 12, 20, identityAdjust),
+    ).toBe("2027-12-20");
   });
 
   it("rolls weekend monthly deadlines to next business day", () => {
@@ -60,21 +75,48 @@ describe("Tax compliance status helpers", () => {
   });
 
   it("resolves task status with explicit filed override", () => {
-    expect(resolveTaskStatus({ explicitStatus: "filed", daysUntilDue: -10 })).toBe("filed");
+    expect(
+      resolveTaskStatus({ explicitStatus: "filed", daysUntilDue: -10 }),
+    ).toBe("filed");
   });
 
   it("resolves task status from legacy filed for backward compatibility", () => {
-    expect(resolveTaskStatus({ legacyStatus: "filed", daysUntilDue: -2 })).toBe("filed");
+    expect(resolveTaskStatus({ legacyStatus: "filed", daysUntilDue: -2 })).toBe(
+      "filed",
+    );
   });
 
   it("resolves pending/overdue tasks from due date when not filed", () => {
-    expect(resolveTaskStatus({ explicitStatus: "pending", daysUntilDue: 4 })).toBe("pending");
-    expect(resolveTaskStatus({ explicitStatus: "pending", daysUntilDue: -1 })).toBe("overdue");
+    expect(
+      resolveTaskStatus({ explicitStatus: "pending", daysUntilDue: 4 }),
+    ).toBe("pending");
+    expect(
+      resolveTaskStatus({ explicitStatus: "pending", daysUntilDue: -1 }),
+    ).toBe("overdue");
   });
 
   it("computes day difference in TL-safe ISO space", () => {
     expect(getDaysUntilDueIso("2026-03-01", "2026-03-01")).toBe(0);
     expect(getDaysUntilDueIso("2026-03-01", "2026-03-05")).toBe(4);
     expect(getDaysUntilDueIso("2026-03-05", "2026-03-01")).toBe(-4);
+  });
+
+  it("keeps a filed WIT return unpaid until payment evidence exists", () => {
+    expect(
+      resolveMonthlyWITTaskStatuses({
+        status: "filed",
+        daysUntilDue: -2,
+      }),
+    ).toEqual({ statement: "filed", payment: "overdue" });
+  });
+
+  it("recognizes legacy WIT payment evidence independently of return status", () => {
+    expect(
+      resolveMonthlyWITTaskStatuses({
+        status: "pending",
+        paymentRecordedDate: "2026-04-12",
+        daysUntilDue: 3,
+      }),
+    ).toEqual({ statement: "pending", payment: "filed" });
   });
 });

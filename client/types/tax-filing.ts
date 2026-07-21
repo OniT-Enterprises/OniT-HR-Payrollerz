@@ -13,20 +13,60 @@
 // ============================================
 
 export type TaxFilingType =
-  | 'monthly_wit'
-  | 'annual_wit'
-  | 'inss_monthly'
+  | "monthly_wit"
+  | "annual_wit"
+  | "annual_income_tax"
+  | "inss_monthly"
   // Law 8/2008 Secs. 5-9 domestic services tax (hotel/restaurant receipts),
   // filed on the same consolidated monthly form as WIT, due day 15.
-  | 'services_tax'
+  | "services_tax"
   // Law 8/2008 Art. 64 income-tax installment (0.5% of turnover), due day 15
   // after the month/quarter ends.
-  | 'installment_tax';
-export type TaxFilingTask = 'statement' | 'payment';
+  | "installment_tax";
+export type TaxFilingTask = "statement" | "payment";
 
-export type TaxFilingStatus = 'pending' | 'filed' | 'overdue' | 'draft';
+export type TaxFilingStatus = "pending" | "filed" | "overdue" | "draft";
 
-export type SubmissionMethod = 'etax' | 'bnu_paper' | 'inss_portal' | 'not_filed';
+export type SubmissionMethod =
+  | "etax"
+  | "bnu_paper"
+  | "inss_portal"
+  | "not_filed";
+
+export type AnnualIncomeTaxPreparationStatus =
+  | "in_progress"
+  | "ready_for_accountant";
+
+/**
+ * Preparation tracker only. Xefe does not calculate or generate official
+ * Form C until the current form/instructions have external sign-off.
+ */
+export interface AnnualIncomeTaxPreparation {
+  taxYear: number;
+  profitAndLossReady: boolean;
+  balanceSheetReady: boolean;
+  cashFlowReady: boolean;
+  taxAdjustmentsReviewed: boolean;
+  reviewNote: string;
+  preparationStatus: AnnualIncomeTaxPreparationStatus;
+  officialFormSupported: false;
+  updatedBy: string;
+  updatedDate: string;
+}
+
+export interface StatutoryPaymentDetails {
+  paymentDate: string;
+  paymentReference: string;
+  paymentMethod: "bank_transfer" | "cash";
+  paymentAccountCode?: string;
+  bankAccountId?: string;
+  bankAccountName?: string;
+  paidBy: string;
+  /** Portal/channel used to remit the payment, independent of return filing. */
+  submissionMethod?: SubmissionMethod;
+  notes?: string;
+  audit?: import("@/services/employeeService").AuditContext;
+}
 
 // ============================================
 // MONTHLY WIT RETURN
@@ -124,7 +164,7 @@ export interface MonthlyINSSEmployeeRecord {
   unjustifiedAbsenceDays?: number;
   /** "Dias Falta por parentalidade" — approved maternity/paternity leave days falling in the month. */
   parentalLeaveDays?: number;
-  /** Worker NIF/TIN. Xefe's employee master has no TIN field yet, so this stays unset and the DR column is left blank. */
+  /** Worker NIF/TIN carried from the employee master into the DR export. */
   tinNumber?: string;
 }
 
@@ -198,7 +238,12 @@ export interface TaxFiling {
   paymentDueDate?: string;
 
   // Data Snapshot
-  dataSnapshot: MonthlyWITReturn | AnnualWITReturn | MonthlyINSSReturn;
+  dataSnapshot:
+    | MonthlyWITReturn
+    | AnnualWITReturn
+    | MonthlyINSSReturn
+    | AnnualIncomeTaxPreparation;
+  preparationStatus?: AnnualIncomeTaxPreparationStatus;
 
   // Filing Details (when filed)
   filedDate?: string;
@@ -213,6 +258,13 @@ export interface TaxFiling {
   paymentReceiptNumber?: string;
   statementNotes?: string;
   paymentNotes?: string;
+  paymentJournalEntryId?: string;
+  paymentRecordedDate?: string;
+  paymentReference?: string;
+  paymentAccountCode?: string;
+  paymentBankAccountId?: string;
+  paymentBankAccountName?: string;
+  paymentRecordedBy?: string;
 
   // Totals (for quick display)
   totalWages: number;
@@ -270,9 +322,14 @@ export interface FilingDueDate {
 // FOREIGN WORKER TYPES
 // ============================================
 
-type VisaType = 'C' | 'other';
+type VisaType = "C" | "other";
 
-export type WorkPermitStatus = 'not_required' | 'pending' | 'approved' | 'expired' | 'renewal_pending';
+export type WorkPermitStatus =
+  | "not_required"
+  | "pending"
+  | "approved"
+  | "expired"
+  | "renewal_pending";
 
 export interface WorkVisa {
   number: string;
@@ -333,13 +390,13 @@ export interface ForeignWorkerDocumentChecklist {
   returnTicketOrFunds: {
     provided: boolean;
     documentUrl?: string;
-    type?: 'ticket' | 'funds_proof';
+    type?: "ticket" | "funds_proof";
   };
 }
 
 export interface RenewalHistoryEntry {
   date: string;
-  type: 'work_visa' | 'residence_permit' | 'work_permit';
+  type: "work_visa" | "residence_permit" | "work_permit";
   previousExpiry: string;
   newExpiry: string;
   processedBy: string;

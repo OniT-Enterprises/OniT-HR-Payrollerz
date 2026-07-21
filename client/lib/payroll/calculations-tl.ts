@@ -96,12 +96,21 @@ export type TLNonCashBenefitINSSCategory =
   | 'expense_allowance'
   | 'extraordinary';
 
+export type TLMinimumWageTreatment =
+  | 'full_floor'
+  | 'pro_rata'
+  | 'reviewed_exception';
+
 export interface TLPayrollInput {
   employeeId: string;
 
   // Basic pay info
   monthlySalary: number;         // Base monthly salary
   payFrequency: TLPayFrequency;  // weekly, biweekly, monthly
+  employmentType?: string;
+  contractedWeeklyHours?: number;
+  minimumWageTreatment?: TLMinimumWageTreatment;
+  minimumWageReviewNote?: string;
 
   // For weekly/biweekly - which period of the month
   periodNumber?: number;          // 1-4 for weekly, 1-2 for biweekly
@@ -1393,15 +1402,44 @@ export function validateTLPayrollInput(
   // Minimum wage applies to employment relationships. Fully exempt payees (shareholders
   // receiving distributions rather than wages) are outside it and may be paid any amount.
   const isStatutoryExempt = input.taxInfo.hasTaxExemption && input.taxInfo.inssExempt;
+  const isPartTime = input.employmentType?.toLowerCase() === 'part-time';
+  const configuredMinimumWage = config?.minimumWage ?? TL_INSS.minimumSalary;
+  let applicableMinimumWage: number | null = configuredMinimumWage;
+
+  if (isPartTime && !isStatutoryExempt) {
+    const hours = input.contractedWeeklyHours;
+    if (!Number.isFinite(hours) || !hours || hours <= 0 || hours > TL_WORKING_HOURS.standardWeeklyHours) {
+      errors.push(
+        `Part-time contracted weekly hours must be between 1 and ${TL_WORKING_HOURS.standardWeeklyHours}.`,
+      );
+      applicableMinimumWage = null;
+    }
+
+    if (!input.minimumWageTreatment) {
+      errors.push('Part-time minimum-wage treatment is required.');
+      applicableMinimumWage = null;
+    } else if (input.minimumWageTreatment === 'pro_rata' && applicableMinimumWage !== null) {
+      applicableMinimumWage = proRata(
+        configuredMinimumWage,
+        hours!,
+        TL_WORKING_HOURS.standardWeeklyHours,
+      );
+    } else if (input.minimumWageTreatment === 'reviewed_exception') {
+      if (!input.minimumWageReviewNote?.trim()) {
+        errors.push('A review note is required for the part-time minimum-wage exception.');
+      }
+      applicableMinimumWage = null;
+    }
+  }
 
   if (input.monthlySalary < 0) {
     errors.push('Monthly salary cannot be negative.');
   } else if (
-    input.monthlySalary < (config?.minimumWage ?? TL_INSS.minimumSalary) &&
+    applicableMinimumWage !== null &&
+    input.monthlySalary < applicableMinimumWage &&
     !isStatutoryExempt
   ) {
-    const minimumWage = config?.minimumWage ?? TL_INSS.minimumSalary;
-    errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${minimumWage}).`);
+    errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${applicableMinimumWage}).`);
   }
 
   if (input.regularHours < 0) {

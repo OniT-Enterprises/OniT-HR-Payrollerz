@@ -22,7 +22,7 @@ import {
   Transaction,
   DocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import {
   addMoney,
@@ -58,7 +58,9 @@ import {
   addToMoneyMap,
   buildBillPaymentJournalLines,
   buildInvoiceJournalLines,
+  buildLiabilityPaymentJournalLines,
   buildPayrollJournalLines,
+  buildPayrollSettlementJournalLines,
   calculateBillPaymentPostingAmounts,
   dedupeAccountsByCode,
   deriveBalanceSheet,
@@ -513,14 +515,19 @@ class JournalEntryService {
 
         // Audit trail: posted journal entry (includes auto-generated postings)
         const actor = finalEntry.postedBy || finalEntry.createdBy || "system";
+        // Firestore only accepts client-created audit records that are
+        // attributed to the authenticated caller. `postedBy` can legitimately
+        // name an approver or an automated source, so keep it on the journal
+        // but use the actual session identity for the audit envelope.
+        const auditActor = auth.currentUser?.uid || actor;
         const auditDocRef = doc(
           db,
           paths.auditLogs(tenantId),
           `acct_${journalDocRef.id}_post`,
         );
         transaction.set(auditDocRef, {
-          userId: actor,
-          userEmail: actor,
+          userId: auditActor,
+          userEmail: auth.currentUser?.email || auditActor,
           action: "accounting.journal_post",
           module: "accounting",
           description: `Posted journal entry ${finalEntry.entryNumber}`,
@@ -1340,6 +1347,127 @@ class JournalEntryService {
     };
 
     return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  /**
+   * Post the cash side of an approved payroll run. The caller supplies the
+   * transaction so the journal, payroll status, linked bank transfer, and
+   * deduction-register updates can commit as one unit.
+   */
+  async createPayrollSettlement(
+    tenantId: string,
+    payment: {
+      payrollRunId: string;
+      periodStart: string;
+      periodEnd: string;
+      paymentDate: string;
+      paymentReference: string;
+      netPay: number;
+      paymentAccountCode: string;
+      bankAccountId?: string;
+      bankAccountName?: string;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(payment.paymentDate);
+    const resolve = (code: string) => {
+      const account = resolvedAccounts[code];
+      if (!account?.id) throw new Error(`Missing account for code ${code}.`);
+      return account;
+    };
+    const { lines, totalDebit, totalCredit } =
+      buildPayrollSettlementJournalLines(
+        payment.netPay,
+        payment.paymentAccountCode,
+        payment.paymentReference,
+        resolve,
+      );
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: payment.paymentDate,
+        description: `Payroll payment for ${payment.periodStart} to ${payment.periodEnd}`,
+        source: 'payroll_payment',
+        sourceId: payment.payrollRunId,
+        sourceRef: payment.bankAccountName
+          ? `${payment.paymentReference} — ${payment.bankAccountName}`
+          : payment.paymentReference,
+        lines,
+        totalDebit,
+        totalCredit,
+        status: 'posted',
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
+  }
+
+  /** Post a WIT or INSS remittance against the payroll liability accounts. */
+  async createStatutoryLiabilityPayment(
+    tenantId: string,
+    payment: {
+      filingId: string;
+      label: string;
+      period: string;
+      paymentDate: string;
+      paymentReference: string;
+      paymentAccountCode: string;
+      liabilities: Array<{
+        accountCode: '2220' | '2230' | '2240';
+        amount: number;
+        description: string;
+      }>;
+    },
+    createdBy: string,
+    txn: Transaction,
+    resolvedAccounts: Record<string, { id: string; name: string }>,
+  ): Promise<string> {
+    const { year, period: month } = getFiscalDateParts(payment.paymentDate);
+    const resolve = (code: string) => {
+      const account = resolvedAccounts[code];
+      if (!account?.id) throw new Error(`Missing account for code ${code}.`);
+      return account;
+    };
+    const cleanReference = payment.paymentReference.trim();
+    if (!cleanReference) throw new Error('A statutory payment reference is required.');
+    const { lines, totalDebit, totalCredit } = buildLiabilityPaymentJournalLines(
+      payment.liabilities,
+      payment.paymentAccountCode,
+      `${payment.label} payment - ${cleanReference}`,
+      resolve,
+    );
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
+
+    return this.createJournalEntry(
+      tenantId,
+      {
+        entryNumber,
+        date: payment.paymentDate,
+        description: `${payment.label} payment - ${payment.period}`,
+        source: 'tax_payment',
+        sourceId: `${payment.filingId}:payment`,
+        sourceRef: cleanReference,
+        lines,
+        totalDebit,
+        totalCredit,
+        status: 'posted',
+        postedAt: serverTimestamp(),
+        postedBy: createdBy,
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdBy,
+      },
+      txn,
+    );
   }
 
   // ============================================

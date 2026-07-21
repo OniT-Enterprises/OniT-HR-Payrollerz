@@ -374,6 +374,124 @@ export function buildPayrollJournalLines(
   };
 }
 
+export interface LiabilityPaymentLine {
+  accountCode: string;
+  amount: number;
+  description: string;
+}
+
+/**
+ * Build the payment side of an already-accrued liability. This is shared by
+ * salary disbursements and statutory remittances so those workflows cannot
+ * mark something paid while leaving cash and the payable unchanged.
+ */
+export function buildLiabilityPaymentJournalLines(
+  liabilities: LiabilityPaymentLine[],
+  paymentAccountCode: string,
+  paymentDescription: string,
+  resolve: AccountResolver,
+): { lines: JournalEntryLine[]; totalDebit: number; totalCredit: number } {
+  const normalized = liabilities
+    .map((line) => ({ ...line, amount: roundMoney(line.amount) }))
+    .filter((line) => line.amount > 0);
+
+  if (normalized.length === 0) {
+    throw new Error('A liability payment must clear at least $0.01.');
+  }
+
+  const total = sumMoney(normalized.map((line) => line.amount));
+  const lines: JournalEntryLine[] = normalized.map((line, index) => {
+    const account = resolve(line.accountCode);
+    return {
+      lineNumber: index + 1,
+      accountId: account.id,
+      accountCode: line.accountCode,
+      accountName: account.name,
+      debit: line.amount,
+      credit: 0,
+      description: line.description,
+    };
+  });
+
+  const paymentAccount = resolve(paymentAccountCode);
+  lines.push({
+    lineNumber: lines.length + 1,
+    accountId: paymentAccount.id,
+    accountCode: paymentAccountCode,
+    accountName: paymentAccount.name,
+    debit: 0,
+    credit: total,
+    description: paymentDescription,
+  });
+
+  return { lines, totalDebit: total, totalCredit: total };
+}
+
+/** Dr 2210 Net Salaries Payable / Cr cash or bank. */
+export function buildPayrollSettlementJournalLines(
+  netPay: number,
+  paymentAccountCode: string,
+  reference: string,
+  resolve: AccountResolver,
+) {
+  const cleanReference = reference.trim();
+  if (!cleanReference) throw new Error('A payroll payment reference is required.');
+  return buildLiabilityPaymentJournalLines(
+    [{
+      accountCode: '2210',
+      amount: netPay,
+      description: `Clear net salaries payable - ${cleanReference}`,
+    }],
+    paymentAccountCode,
+    `Salary payment - ${cleanReference}`,
+    resolve,
+  );
+}
+
+/** Dr the fixed-asset account / Cr the selected funding or payable account. */
+export function buildFixedAssetAcquisitionJournalLines(
+  acquisitionCost: number,
+  assetAccountCode: string,
+  fundingAccountCode: string,
+  assetName: string,
+  resolve: AccountResolver,
+): { lines: JournalEntryLine[]; totalDebit: number; totalCredit: number } {
+  const amount = roundMoney(acquisitionCost);
+  const name = assetName.trim();
+  if (amount <= 0) throw new Error('Fixed-asset acquisition cost must be positive.');
+  if (!name) throw new Error('Fixed-asset name is required.');
+  if (!assetAccountCode || !fundingAccountCode) {
+    throw new Error('Asset and funding accounts are required.');
+  }
+  if (assetAccountCode === fundingAccountCode) {
+    throw new Error('Funding account must differ from the fixed-asset account.');
+  }
+
+  const asset = resolve(assetAccountCode);
+  const funding = resolve(fundingAccountCode);
+  const lines: JournalEntryLine[] = [
+    {
+      lineNumber: 1,
+      accountId: asset.id,
+      accountCode: assetAccountCode,
+      accountName: asset.name,
+      debit: amount,
+      credit: 0,
+      description: `Acquire fixed asset - ${name}`,
+    },
+    {
+      lineNumber: 2,
+      accountId: funding.id,
+      accountCode: fundingAccountCode,
+      accountName: funding.name,
+      debit: 0,
+      credit: amount,
+      description: `Fund fixed asset - ${name}`,
+    },
+  ];
+  return { lines, totalDebit: amount, totalCredit: amount };
+}
+
 /** Minimal invoice shape the journal builder needs. */
 export interface InvoiceJournalInput {
   id?: string;

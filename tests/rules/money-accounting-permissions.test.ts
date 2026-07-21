@@ -15,7 +15,14 @@ import {
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  runTransaction,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
 
 const PROJECT_ID = 'test-money-accounting-perms';
 const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8081);
@@ -172,6 +179,25 @@ describe('Money + Accounting Rules', () => {
     }));
 
     await assertSucceeds(getDoc(doc(viewerDb, 'tenants/tenant-a/bankTransactions/tx-1')));
+  });
+
+  it('allows a finance admin to claim a new deterministic bank-transfer id transactionally', async () => {
+    const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
+    const transferRef = doc(ownerDb, 'bankTransfers/tenant-a__run-1');
+
+    await assertSucceeds(runTransaction(ownerDb, async (transaction) => {
+      const existing = await transaction.get(transferRef);
+      if (existing.exists()) throw new Error('unexpected existing transfer');
+      transaction.set(transferRef, {
+        tenantId: 'tenant-a',
+        payrollRunId: 'run-1',
+        amount: 100,
+        status: 'pending',
+      });
+    }));
+
+    const unauthedDb = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(unauthedDb, 'bankTransfers/tenant-a__missing')));
   });
 
   it('allows tenant admins to void posted journal entries; blocks edits to other fields', async () => {

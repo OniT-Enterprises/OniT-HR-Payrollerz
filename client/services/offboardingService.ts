@@ -62,7 +62,7 @@ export interface ExitInterview {
 }
 
 export interface Article56FinalPaySnapshot {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   monthlySalary: number;
   hireDate: string;
   terminationDate: string;
@@ -89,6 +89,11 @@ export interface Article56FinalPaySnapshot {
   // severanceIncluded records whether the final payroll run will pay it.
   severanceIncluded?: boolean;
   departureReason?: DepartureReason;
+  /** v4: explicit review gate for the unresolved cause-based interpretation. */
+  reviewAcknowledged?: boolean;
+  reviewNote?: string;
+  reviewedBy?: string;
+  reviewedAt?: Date;
   calculatedBy: string;
   calculatedAt: Date;
 }
@@ -106,12 +111,12 @@ export interface OffboardingCase {
   lastWorkingDay: string;
   noticeDate: string;
   notes?: string;
-  /**
-   * Editable Art. 56 decision for this case; absent = the cause-aware default
-   * (severanceDefaultForReason). Frozen into the snapshot and stamped on the
-   * employee (`severanceOnTermination`) at completion.
-   */
+  /** Explicit reviewed Art. 56 decision. Absence is never treated as consent. */
   includeArt56Severance?: boolean;
+  finalPayReviewAcknowledged?: boolean;
+  finalPayReviewNote?: string;
+  finalPayReviewedBy?: string;
+  finalPayReviewedAt?: Date;
 
   // Status
   status: OffboardingStatus;
@@ -353,6 +358,25 @@ class OffboardingService {
         throw new Error('Offboarding case not found');
       }
 
+      const isCompleting =
+        updates.status === 'completed'
+        && existing.status !== 'completed'
+        && Boolean(existing.employeeId);
+      const reviewedSeverance =
+        updates.includeArt56Severance ?? existing.includeArt56Severance;
+      if (isCompleting) {
+        const finalPaySnapshot = updates.article56FinalPay ?? existing.article56FinalPay;
+        if (
+          typeof reviewedSeverance !== 'boolean'
+          || finalPaySnapshot?.reviewAcknowledged !== true
+          || !finalPaySnapshot.reviewNote?.trim()
+        ) {
+          throw new Error(
+            'Final pay requires an explicit Art. 56 decision and accountant/legal review acknowledgement.',
+          );
+        }
+      }
+
       const docRef = doc(db, OFFBOARDING_COLLECTION, caseId);
       await updateDoc(docRef, {
         ...updates,
@@ -362,17 +386,13 @@ class OffboardingService {
       // When offboarding finishes, terminate the employee record so they stop
       // appearing in active lists and the next payroll run. Best-effort: a
       // permissions failure here must not roll back the case completion.
-      if (updates.status === 'completed' && existing.status !== 'completed' && existing.employeeId) {
+      if (isCompleting && existing.employeeId) {
         const { employeeService } = await import('./employeeService');
-        const severanceIncluded =
-          updates.includeArt56Severance ??
-          existing.includeArt56Severance ??
-          severanceDefaultForReason(existing.departureReason);
         await employeeService
           .updateEmployee(tenantId, existing.employeeId, {
             status: 'terminated',
             terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
-            severanceOnTermination: severanceIncluded,
+            severanceOnTermination: reviewedSeverance!,
           })
           .catch((err) => {
             console.error('Offboarding completed but employee could not be marked terminated:', err);
@@ -450,8 +470,16 @@ class OffboardingService {
     tenantId: string,
     caseId: string,
     calculatedBy: string,
+    review: {
+      severanceIncluded: boolean;
+      acknowledged: boolean;
+      note: string;
+    },
   ): Promise<Article56FinalPaySnapshot> {
     if (!calculatedBy.trim()) throw new Error('A signed-in user is required to save final pay.');
+    if (!review.acknowledged || !review.note.trim()) {
+      throw new Error('A review acknowledgement and note are required before calculating final pay.');
+    }
     const caseRef = doc(db, OFFBOARDING_COLLECTION, caseId);
 
     return runTransaction(db, async (transaction) => {
@@ -510,13 +538,10 @@ class OffboardingService {
 
       const departureReason = (caseData.departureReason ||
         'other') as DepartureReason;
-      const severanceIncluded =
-        typeof caseData.includeArt56Severance === 'boolean'
-          ? caseData.includeArt56Severance
-          : severanceDefaultForReason(departureReason);
+      const severanceIncluded = review.severanceIncluded;
 
       const snapshot: Article56FinalPaySnapshot = {
-        version: 3,
+        version: 4,
         monthlySalary: details.monthlySalary,
         hireDate: details.hireDate,
         terminationDate: details.terminationDate,
@@ -536,6 +561,10 @@ class OffboardingService {
           : 'Reference figures only. Art. 56 severance is EXCLUDED for this case, so the next payroll run pays only the prorated Art. 44 subsídio (net of anything already paid this year) — do NOT also settle it manually.',
         severanceIncluded,
         departureReason,
+        reviewAcknowledged: true,
+        reviewNote: review.note.trim(),
+        reviewedBy: calculatedBy.trim(),
+        reviewedAt: new Date(),
         calculatedBy: calculatedBy.trim(),
         calculatedAt: new Date(),
       };
@@ -551,7 +580,13 @@ class OffboardingService {
         article56FinalPay: {
           ...snapshot,
           calculatedAt: serverTimestamp(),
+          reviewedAt: serverTimestamp(),
         },
+        includeArt56Severance: severanceIncluded,
+        finalPayReviewAcknowledged: true,
+        finalPayReviewNote: review.note.trim(),
+        finalPayReviewedBy: calculatedBy.trim(),
+        finalPayReviewedAt: serverTimestamp(),
         checklist,
         status,
         ...(status === 'completed' ? { completedAt: serverTimestamp() } : {}),
@@ -773,6 +808,13 @@ class OffboardingService {
       lastWorkingDay: data.lastWorkingDay,
       noticeDate: data.noticeDate,
       notes: data.notes,
+      includeArt56Severance: data.includeArt56Severance,
+      finalPayReviewAcknowledged: data.finalPayReviewAcknowledged,
+      finalPayReviewNote: data.finalPayReviewNote,
+      finalPayReviewedBy: data.finalPayReviewedBy,
+      finalPayReviewedAt: data.finalPayReviewedAt instanceof Timestamp
+        ? data.finalPayReviewedAt.toDate()
+        : data.finalPayReviewedAt,
       status: data.status,
       // Fill keys older docs don't have (absent = false) so progress math and
       // the checklist UI always see the full current key set.
@@ -784,6 +826,9 @@ class OffboardingService {
             calculatedAt: data.article56FinalPay.calculatedAt instanceof Timestamp
               ? data.article56FinalPay.calculatedAt.toDate()
               : data.article56FinalPay.calculatedAt,
+            reviewedAt: data.article56FinalPay.reviewedAt instanceof Timestamp
+              ? data.article56FinalPay.reviewedAt.toDate()
+              : data.article56FinalPay.reviewedAt,
           }
         : undefined,
       createdBy: data.createdBy,

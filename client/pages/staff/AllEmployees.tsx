@@ -885,6 +885,7 @@ export default function AllEmployees() {
         bilheteIdentidade: { ...emptyDoc, required: true },
         employeeIdCard: { ...emptyDoc, required: true },
         socialSecurityNumber: { ...emptyDoc, required: true },
+        taxIdentificationNumber: { ...emptyDoc },
         electoralCard: { ...emptyDoc },
         idCard: { ...emptyDoc },
         passport: { ...emptyDoc },

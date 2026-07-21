@@ -603,6 +603,12 @@ function DocumentsCard({ employee, canManageTenant, onOpenChange, navigate }: Do
             expiryDate={employee.documents?.socialSecurityNumber?.expiryDate}
           />
           <DocumentField
+            icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
+            label="Worker NIF / TIN"
+            number={employee.documents?.taxIdentificationNumber?.number}
+            expiryDate={employee.documents?.taxIdentificationNumber?.expiryDate}
+          />
+          <DocumentField
             icon={<Globe className="h-4 w-4 text-muted-foreground" />}
             label="Electoral Card"
             number={employee.documents?.electoralCard?.number}

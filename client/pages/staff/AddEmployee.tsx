@@ -58,6 +58,7 @@ import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMappe
 import ContractGeneratorDialog from "@/components/staff/ContractGeneratorDialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import { toDateStringTL } from "@/lib/dateUtils";
@@ -112,6 +113,7 @@ export default function AddEmployee() {
   const isHiringHandoff = !editEmployeeId && !!(hiringCandidateId || hiringApplicationId);
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { user } = useAuth();
 
   const WIZARD_STEPS: WizardStep[] = useMemo(
     () => [
@@ -171,6 +173,9 @@ export default function AddEmployee() {
       manager: "",
       startDate: "",
       employmentType: "Full-time",
+      contractedWeeklyHours: "",
+      minimumWageTreatment: undefined,
+      minimumWageReviewNote: "",
       contractEndDate: "",
       probationEndDate: "",
       fixedTermMotive: "",
@@ -201,6 +206,7 @@ export default function AddEmployee() {
   const [docValues, setDocValues] = useState<Record<string, { number: string; expiryDate: string }>>({
     bilheteIdentidade: { number: "", expiryDate: "" },
     socialSecurityNumber: { number: "", expiryDate: "" },
+    taxIdentificationNumber: { number: "", expiryDate: "" },
     electoralCard: { number: "", expiryDate: "" },
     passport: { number: "", expiryDate: "" },
   });
@@ -216,6 +222,10 @@ export default function AddEmployee() {
     socialSecurityNumber: {
       labelKey: "addEmployee.documents.types.socialSecurityNumber.label",
       descriptionKey: "addEmployee.documents.types.socialSecurityNumber.description",
+    },
+    taxIdentificationNumber: {
+      labelKey: "addEmployee.documents.types.taxIdentificationNumber.label",
+      descriptionKey: "addEmployee.documents.types.taxIdentificationNumber.description",
     },
     electoralCard: {
       labelKey: "addEmployee.documents.types.electoralCard.label",
@@ -251,11 +261,13 @@ export default function AddEmployee() {
         { fieldKey: "bilheteIdentidade", required: true, hasExpiry: true },
         { fieldKey: "electoralCard", required: false, hasExpiry: true },
         { fieldKey: "socialSecurityNumber", required: true, hasExpiry: false },
+        { fieldKey: "taxIdentificationNumber", required: false, hasExpiry: false },
       ];
     }
     return [
       { fieldKey: "passport", required: true, hasExpiry: true },
       { fieldKey: "socialSecurityNumber", required: true, hasExpiry: false },
+      { fieldKey: "taxIdentificationNumber", required: false, hasExpiry: false },
     ];
   }, [isTimorese]);
 
@@ -304,6 +316,9 @@ export default function AddEmployee() {
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
+          contractedWeeklyHours: employee.jobDetails.contractedWeeklyHours?.toString() || "",
+          minimumWageTreatment: employee.jobDetails.minimumWageTreatment,
+          minimumWageReviewNote: employee.jobDetails.minimumWageReviewNote || "",
           contractEndDate: employee.jobDetails.contractEndDate || "",
           probationEndDate: employee.jobDetails.probationEndDate || "",
           fixedTermMotive: employee.jobDetails.fixedTermMotive || "",
@@ -323,6 +338,10 @@ export default function AddEmployee() {
           socialSecurityNumber: {
             number: employee.documents?.socialSecurityNumber?.number || "",
             expiryDate: employee.documents?.socialSecurityNumber?.expiryDate || "",
+          },
+          taxIdentificationNumber: {
+            number: employee.documents?.taxIdentificationNumber?.number || "",
+            expiryDate: employee.documents?.taxIdentificationNumber?.expiryDate || "",
           },
           electoralCard: {
             number: employee.documents?.electoralCard?.number || "",
@@ -558,6 +577,18 @@ export default function AddEmployee() {
           position: data.jobTitle,
           hireDate: data.startDate || toDateStringTL(currentDate),
           employmentType: data.employmentType,
+          contractedWeeklyHours:
+            data.employmentType === "Part-time"
+              ? Number(data.contractedWeeklyHours)
+              : 44,
+          minimumWageTreatment:
+            data.employmentType === "Part-time"
+              ? data.minimumWageTreatment!
+              : "full_floor",
+          minimumWageReviewNote:
+            data.employmentType === "Part-time"
+              ? data.minimumWageReviewNote || ""
+              : "",
           contractEndDate: data.contractEndDate || "",
           probationEndDate: data.probationEndDate || "",
           fixedTermMotive: submitLooksFixedTerm ? data.fixedTermMotive || "" : "",
@@ -576,6 +607,7 @@ export default function AddEmployee() {
           bilheteIdentidade: { number: docValues.bilheteIdentidade?.number || "", expiryDate: docValues.bilheteIdentidade?.expiryDate || "", required: isTimorese },
           employeeIdCard: { number: docValues.bilheteIdentidade?.number || "", expiryDate: docValues.bilheteIdentidade?.expiryDate || "", required: isTimorese },
           socialSecurityNumber: { number: docValues.socialSecurityNumber?.number || "", expiryDate: docValues.socialSecurityNumber?.expiryDate || "", required: true },
+          taxIdentificationNumber: { number: docValues.taxIdentificationNumber?.number || "", expiryDate: "", required: false },
           electoralCard: { number: docValues.electoralCard?.number || "", expiryDate: docValues.electoralCard?.expiryDate || "", required: false },
           idCard: { number: "", expiryDate: "", required: false },
           passport: { number: docValues.passport?.number || "", expiryDate: docValues.passport?.expiryDate || "", required: !isTimorese },
@@ -635,7 +667,29 @@ export default function AddEmployee() {
 
       // Save to Firebase
       if (isEditMode && editingEmployee) {
-        await employeeService.updateEmployee(tenantId, editingEmployee.id!, newEmployee);
+        await employeeService.updateEmployee(
+          tenantId,
+          editingEmployee.id!,
+          newEmployee,
+          user ? {
+            tenantId,
+            userId: user.uid,
+            userEmail: user.email || "",
+            userName: user.displayName || undefined,
+            changes: [
+              {
+                field: "jobDetails.minimumWageTreatment",
+                from: editingEmployee.jobDetails.minimumWageTreatment || null,
+                to: newEmployee.jobDetails.minimumWageTreatment || null,
+              },
+              {
+                field: "jobDetails.minimumWageReviewNote",
+                from: editingEmployee.jobDetails.minimumWageReviewNote || null,
+                to: newEmployee.jobDetails.minimumWageReviewNote || null,
+              },
+            ],
+          } : undefined,
+        );
         savedEmployeeId = editingEmployee.id!;
         toast({
           title: t("addEmployee.toast.updatedTitle"),
@@ -644,7 +698,17 @@ export default function AddEmployee() {
           }),
         });
       } else {
-        const id = await employeeService.addEmployee(tenantId, newEmployee, undefined, employeeIdForUpload);
+        const id = await employeeService.addEmployee(
+          tenantId,
+          newEmployee,
+          user ? {
+            tenantId,
+            userId: user.uid,
+            userEmail: user.email || "",
+            userName: user.displayName || undefined,
+          } : undefined,
+          employeeIdForUpload,
+        );
         if (!id) throw new Error("Failed to save");
         savedEmployeeId = id;
         toast({
@@ -908,7 +972,7 @@ export default function AddEmployee() {
           onComplete={handleSubmit(onFormSubmit, (validationErrors) => {
             // Navigate to the step with the first error and show toast
             const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp", "dateOfBirth"];
-            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "contractEndDate", "probationEndDate", "fixedTermMotive"];
+            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "contractEndDate", "probationEndDate", "fixedTermMotive", "contractedWeeklyHours", "minimumWageTreatment", "minimumWageReviewNote"];
             const errorKeys = Object.keys(validationErrors);
             if (errorKeys.some(k => basicFields.includes(k))) {
               setCurrentStep(0);
@@ -1176,6 +1240,84 @@ export default function AddEmployee() {
                   />
                 </div>
               </div>
+
+              {formValues.employmentType === "Part-time" && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="space-y-4">
+                    <p>{t("addEmployee.fields.partTimeWageHelp")}</p>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="contractedWeeklyHours">
+                          {t("addEmployee.fields.contractedWeeklyHours")}
+                        </Label>
+                        <Input
+                          id="contractedWeeklyHours"
+                          type="number"
+                          min="1"
+                          max="44"
+                          step="0.5"
+                          {...register("contractedWeeklyHours")}
+                        />
+                        {errors.contractedWeeklyHours && (
+                          <p className="text-sm text-destructive">
+                            {errors.contractedWeeklyHours.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="minimumWageTreatment">
+                          {t("addEmployee.fields.minimumWageTreatment")}
+                        </Label>
+                        <Controller
+                          name="minimumWageTreatment"
+                          control={control}
+                          render={({ field }) => (
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger id="minimumWageTreatment">
+                                <SelectValue placeholder={t("addEmployee.fields.minimumWageTreatmentPlaceholder")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pro_rata">
+                                  {t("addEmployee.fields.minimumWageTreatments.proRata")}
+                                </SelectItem>
+                                <SelectItem value="full_floor">
+                                  {t("addEmployee.fields.minimumWageTreatments.fullFloor")}
+                                </SelectItem>
+                                <SelectItem value="reviewed_exception">
+                                  {t("addEmployee.fields.minimumWageTreatments.reviewedException")}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.minimumWageTreatment && (
+                          <p className="text-sm text-destructive">
+                            {errors.minimumWageTreatment.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {formValues.minimumWageTreatment === "reviewed_exception" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="minimumWageReviewNote">
+                          {t("addEmployee.fields.minimumWageReviewNote")}
+                        </Label>
+                        <Input
+                          id="minimumWageReviewNote"
+                          {...register("minimumWageReviewNote")}
+                          placeholder={t("addEmployee.fields.minimumWageReviewNotePlaceholder")}
+                        />
+                        {errors.minimumWageReviewNote && (
+                          <p className="text-sm text-destructive">
+                            {errors.minimumWageReviewNote.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Contract dates & fixed-term motive (Lei 4/2012 Arts. 12-14) */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1451,6 +1593,7 @@ export default function AddEmployee() {
                     const label = labelKey ? t(labelKey) : doc.fieldKey;
                     const description = descriptionKey ? t(descriptionKey) : "";
                     const isINSS = doc.fieldKey === "socialSecurityNumber";
+                    const isTIN = doc.fieldKey === "taxIdentificationNumber";
                     return (
                       <TableRow key={doc.fieldKey}>
                         <TableCell>
@@ -1468,7 +1611,11 @@ export default function AddEmployee() {
                           <Input
                             value={vals.number}
                             onChange={e => handleDocumentChange(doc.fieldKey, "number", e.target.value)}
-                            placeholder={isINSS ? (t("addEmployee.documents.inssPlaceholder") || "100XXXXXX") : t("addEmployee.documents.numberPlaceholder")}
+                            placeholder={isINSS
+                              ? (t("addEmployee.documents.inssPlaceholder") || "100XXXXXX")
+                              : isTIN
+                                ? t("addEmployee.documents.tinPlaceholder")
+                                : t("addEmployee.documents.numberPlaceholder")}
                             className="max-w-[180px]"
                           />
                         </TableCell>

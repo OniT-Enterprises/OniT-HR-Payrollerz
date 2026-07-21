@@ -57,6 +57,7 @@ export function CompanyDetailsTab({
       tradingName: initialData.tradingName || '',
       businessType: initialData.businessType || 'Lda',
       tinNumber: initialData.tinNumber || '',
+      employerNiss: initialData.employerNiss || '',
       registeredAddress: initialData.registeredAddress || '',
       city: initialData.city || 'Dili',
       country: initialData.country || 'Timor-Leste',
@@ -72,6 +73,7 @@ export function CompanyDetailsTab({
       tradingName: initialData.tradingName || '',
       businessType: initialData.businessType || 'Lda',
       tinNumber: initialData.tinNumber || '',
+      employerNiss: initialData.employerNiss || '',
       registeredAddress: initialData.registeredAddress || '',
       city: initialData.city || 'Dili',
       country: initialData.country || 'Timor-Leste',
@@ -154,6 +156,7 @@ export function CompanyDetailsTab({
           tradingName: data.tradingName || "",
           businessType: data.businessType,
           tinNumber: data.tinNumber || '',
+          employerNiss: data.employerNiss || '',
           registeredAddress: data.registeredAddress || '',
           city: data.city,
           country: data.country,
@@ -326,6 +329,15 @@ export function CompanyDetailsTab({
                 id="tinNumber"
                 {...form.register('tinNumber')}
                 placeholder={t('settings.company.tinPlaceholder')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="employerNiss">{t('settings.company.employerNiss')}</Label>
+              <Input
+                id="employerNiss"
+                {...form.register('employerNiss')}
+                placeholder={t('settings.company.employerNissPlaceholder')}
               />
             </div>
           </div>

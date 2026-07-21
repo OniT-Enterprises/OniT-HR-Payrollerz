@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayrollRunAsPaid, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
+import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
@@ -138,7 +138,6 @@ export default function PayrollHistory() {
   // React Query: mutations
   const approveMutation = useApprovePayrollRun();
   const rejectMutation = useRejectPayrollRun();
-  const markPaidMutation = useMarkPayrollRunAsPaid();
   const updateRunMutation = useUpdatePayrollRun();
   const repairMutation = useRepairStuckRun();
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
@@ -176,7 +175,7 @@ export default function PayrollHistory() {
   const [rejectRun, setRejectRun] = useState<PayrollRun | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const approving = approveMutation.isPending || markPaidMutation.isPending || updateRunMutation.isPending;
+  const approving = approveMutation.isPending || updateRunMutation.isPending;
   const rejecting = rejectMutation.isPending;
   const [activeTab, setActiveTab] = useState("pending");
   const approvalInFlight = useRef(false);
@@ -452,9 +451,9 @@ export default function PayrollHistory() {
         allocations: allocationRollup.allocations,
       }, tenantId);
 
-      // Link the idempotent journal before the final paid-state transition.
+      // Link the idempotent accrual journal. Approval and payment are separate:
+      // cash leaves the books only when the bank/cash payment is confirmed.
       await updateRunMutation.mutateAsync({ id: approveRun.id, updates: { journalEntryId } });
-      await markPaidMutation.mutateAsync(approveRun.id);
 
       toast({
         title: t("payrollHistory.toastApproved"),
@@ -462,7 +461,13 @@ export default function PayrollHistory() {
       });
 
       setShowApproveDialog(false);
-      setNextStepsRun(approveRun);
+      // Let the approval modal's 200 ms exit animation finish so Radix fully
+      // releases its focus/pointer lock before mounting the next modal.
+      // Overlapping the two makes the second modal capture `pointer-events:
+      // none` as the body's original value and restore that stale value when
+      // it closes, leaving the whole page inert.
+      const approvedRun = approveRun;
+      window.setTimeout(() => setNextStepsRun(approvedRun), 250);
       setApproveRun(null);
     } catch (error: unknown) {
       // Kept in the console (not only a toast): the rollback below hides the

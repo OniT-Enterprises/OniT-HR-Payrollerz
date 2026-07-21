@@ -5,7 +5,11 @@ on:
     branches: [main]
 
 jobs:
+  e2e:
+    uses: ./.github/workflows/e2e.yml
+
   deploy:
+    needs: e2e
     runs-on: ubuntu-latest
     env:
       # Some actions still declare Node 20; runners force Node 24 from
@@ -35,6 +39,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Translation coverage
+        run: npm run i18n:check
 
       - name: Setup Java (Firestore emulator)
         uses: actions/setup-java@v4

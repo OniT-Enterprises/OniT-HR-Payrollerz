@@ -1,103 +1,104 @@
-# Hotel Esplanada — Website & Booking-System Video
+# Xefe — Product Video (comprehensive cut, v4)
 
-An explainer video for the **Hotel Esplanada owner + front-desk staff** (non-technical),
-covering what we built, why it's better, and how the booking system works end to end —
-from a guest booking on **hotelesplanada.com** through to the reservation landing in the
-**Rezerva PMS** booking calendar. English, narrated in the same "Alice" voice as the
-Timor-Leste tourism video.
+A full product tour for **Timor-Leste business owners** (non-technical), narrated in
+English by ElevenLabs "Alice" ("Xefe" is spoken *Sheffy*). Covers every module —
+dashboard, people, hiring, time & leave, shifts, the payroll wizard, approval &
+payslips, **the engine story** (/engine page), tax filing, bank pack, invoices,
+bills & expenses, accounting, reports, XefeBot, mobile, languages — plus trust and
+pricing cards. ~6 minutes.
 
-Same 3-stage pipeline as `../` (the minister video), re-skinned to the Hotel Esplanada
-brand (navy `#214569` + amber `#F59E0B`, Aclonica headings) and pointed at different sites.
+Same 3-stage pipeline as the Esplanada/minister videos, pointed at the live app
+with the **demo tenant** (Kafé Knua Dili — a FICTIONAL café; never use real Dili business names in demo data).
 
 ```
-vo-lines.txt ─▶ generate-audio.mjs ─▶ audio/scene-NN.mp3        (ElevenLabs "Alice")
-hotelesplanada.com + pms.rezerva.tl ─▶ capture.mjs ─▶ recordings/<scene>/*.webm  (Playwright)
-                                                    │
-assets/seo-stats.html ──────────────────────────────┤  (the "Found on Google" scene)
-                                                    ▼
-                    render.mjs ─▶ presentation-esplanada-en.mp4  (ffmpeg: audio+recordings+cards+music+xfades)
-                    qa.mjs      ─▶ pass/fail gate + tmp/qa/*.png contact sheets
+vo-lines.txt ─▶ generate-audio.mjs ─▶ audio/scene-NN.mp3          (ElevenLabs "Alice")
+xefe.tl (demo login) ─▶ capture.mjs ─▶ recordings/<scene>/page.webm  (Playwright recordVideo)
+localhost:8080/engine ──────┘             (engine scene, until /engine is deployed)
+                                              │
+              render.mjs ─▶ presentation-xefe-en.mp4   (ffmpeg: cards+chapters+xfades+music)
+              qa.mjs      ─▶ pass/fail gate + tmp/qa/*.png contact sheets
 ```
 
 ## Quick start
 
 ```bash
-# 1. Voiceover (needs ELEVENLABS_API_KEY, or the media-monitor .env.local a few dirs up)
+# 0. Credentials: presentation/.env (gitignored, loaded by env.mjs) with
+#    XEFE_EMAIL=demo@xefe.tl
+#    XEFE_PASSWORD=…            (see scripts/seed-demo-tenant.mjs)
+
+# 1. Demo data (idempotent; needs ../service-account.json)
+node prep-demo-data.mjs        # subscription, self-approval, advancedTax, July attendance
+node prep-demo-data-2.mjs      # jobs+candidates, shifts, leave, expenses (small pass)
+node prep-demo-data-3.mjs      # compliance docs + bank details
+node prep-demo-data-4.mjs      # THE FULL SEED: 30 staff, customers, 12 invoices,
+                               # 14 expenses, matching journals+GL, café renamed
+node prep-demo-ui-2.mjs        # runs+finalizes June payroll for all 30 via the client
+
+# 2. Voiceover (ELEVENLABS_API_KEY, falls back to media-monitor .env.local)
 node generate-audio.mjs
 
-# 2a. Website + booking-widget scenes (public, no login)
-node capture.mjs --only=web
+# 3. Capture (dev server must be running for the engine scene: pnpm dev in ../)
+node capture.mjs                                   # all scenes
+node capture.mjs --scene=07-runpayroll             # one scene
+node capture.mjs --scene=05-timeleave,06-shifts    # several
 
-# 2b. PMS scenes (need the PMS login — email+password, NOT Google SSO)
-PMS_EMAIL='admin@hotel.com' PMS_PASSWORD='...' HEADLESS=false node capture.mjs --only=pms
-
-# 2c. The live test booking (creates ONE real booking so it shows in the PMS queue)
-HEADLESS=false node capture.mjs --scene=05-booking --book-live
-
-# 3. Assemble + QA
+# 4. Assemble + QA
 node render.mjs
 node qa.mjs --open
 ```
 
-Browsers: reuses the parent `presentation/`'s Playwright. If missing:
-`npx playwright install chromium chromium-headless-shell`.
+## Scenes (VO numbers; chapters are silent interstitials in the 100s)
 
-## Scenes
-
-| # | Scene | Source | Type |
-|---|-------|--------|------|
-| 0 | Intro card | — | card (navy) |
-| 1 | The old way (commission problem) | — | card |
-| — | *Your New Website* | — | interstitial |
-| 2 | Homepage tour | hotelesplanada.com | recording |
-| — | *Found on Google* | — | interstitial |
-| 3 | SEO stats | `assets/seo-stats.html` | recording |
-| — | *Five Languages* | — | interstitial |
-| 4 | Language flip (en/pt/tet/zh/id) | hotelesplanada.com | recording |
-| — | *Book Direct* | — | interstitial |
-| 5 | Booking flow (dates→room→details→pay→confirm) | /book/hotel-esplanada | recording |
-| — | *Into Your Front Desk* | — | interstitial |
-| 6 | "Awaiting Reception" queue | pms.rezerva.tl | recording |
-| 7 | Assign room + booking calendar | pms.rezerva.tl | recording |
-| 8 | Check-in (passport / signature / reg card) | pms.rezerva.tl | recording |
-| — | *Everything in One Place* | — | interstitial |
-| 9 | POS / tasks / finances / night audit | pms.rezerva.tl | recording |
-| 10 | Close card ("Powered by Rezerva · Built by OniT") | — | card |
-
-## Facts baked into the script (verified)
-
-- **SEO (Google Search Console, hotelesplanada.com, ~Apr–Jul 2026):** 6,866 impressions,
-  221 clicks, avg position 8.4 (trending to 5–7); `hotel esplanada dili` pos ~2.
-  Visitors from Timor-Leste, Australia, Singapore, USA, UK, Indonesia. Site indexed ~April 2026.
-- Rooms from **$80/night**, breakfast included; **direct price = Booking.com − $2**.
-- Established **1972**. OTA commission cited as **15–18%**.
-- Booking reference codes are real: `ESP-<nights>-WB-<seq>` (WB = website channel).
+| # | Scene | Source |
+|---|-------|--------|
+| 0 | Intro card (wordmark) | card |
+| 1 | The problem | card |
+| 2 | Dashboard (+ typing to XefeBot) | rec |
+| 3 | People / employee profile | rec |
+| 4 | Hiring pipeline (2 jobs, 5 candidates) | rec |
+| 5 | Attendance (Previous → last worked day) + pending leave | rec |
+| 6 | Shift grid (NEXT week — seeded Jul 20–25) | rec |
+| 7 | Run-payroll wizard (ticks compliance box; never finalizes) | rec |
+| 8 | Paid June run (filter → Paid) + payslips | rec |
+| 9 | **The engine page** (localhost /engine) | rec |
+| 10 | Tax & INSS filing (advancedTax on; generates the WIT return) | rec |
+| 11 | Bank Files dialog (June run, BNU) | rec |
+| 12 | Invoices: actions menu + detail | rec |
+| 13 | Expenses + new-bill withholding | rec |
+| 14 | Payroll journal expanded + trial balance (Generate) | rec |
+| 15 | Reports hub → payroll reports | rec |
+| 16 | XefeBot live answer (over-records; render speed-fits) | rec |
+| 17 | Mobile 390×844 (pillarboxed) | rec |
+| 18 | Language flip EN→TET→PT | rec |
+| 19 | Trust card (controls) | card |
+| 20 | Close card ($4/employee · xefe.tl) | card |
 
 ## Gotchas / notes
 
-- **PMS login is email+password only for automation.** Google/Apple SSO fails in a
-  controlled browser ("Couldn't sign you in — browser may not be secure"). Use the
-  `#email` / `#password` form.
-- **Live test booking doesn't work via automation.** Cloudflare **Turnstile** on the
-  booking submit refuses controlled browsers (same as Google SSO), so `--book-live`
-  can't complete the submit — scene 5 therefore ends on the clean "availability
-  request" review screen (accurate: it IS a request, not an instant booking). To show
-  a booking in the PMS queue, use a real booking already in the system. This build
-  features the owner-created **"test tino"** booking (a real website booking →
-  Awaiting/Confirmed), shown via its calendar tooltip ("via website").
-- The PMS account (`admin@hotel.com`) is the **super-admin** over all hotels; the
-  current hotel is pinned to `hotel-esplanada` via `localStorage['hotel-state']`
-  (seeded in `capturePms`). PMS runs in **dark theme**.
-- **Cold Firestore load** (~5–20s) is trimmed off the front of each PMS clip:
-  each PMS scene returns a `contentStart` offset and `capturePms` `-ss`-trims it,
-  padding the content to the VO window. Do NOT click the List/Calendar **view
-  toggles** — they trigger a second cold re-query that the front-trim can't remove.
-- **Known cosmetic QA fail:** scene 5 (booking) reports a white page-load lead-in
-  (the widget UI is white). It is fully absorbed by the 0.4s crossfade from the
-  "Book Direct" chapter card — not visible in the final.
-- PMS scene routes in `capture.mjs` (`/rooms/bookings`, `/pos`, `/finances`,
-  `/rooms/night-audit`, …) are best-effort; verify/adjust against the live nav.
-- Recordings speed-fit to the VO in `render.mjs`; keep scripted actions within each
-  scene's VO window (see `durationFor`) so nothing plays too fast.
+- **Never finalize payroll or send anything during capture.** The wizard scene
+  stops at review; the June run was finalized once, deliberately, by
+  `prep-demo-ui.mjs` (self-approval + manual subscription were enabled by
+  `prep-demo-data.mjs` — Admin SDK, demo tenant only).
+- The approve dialog runs an async *allocation pre-check* and needs its
+  "post as Unassigned" checkbox ticked before **Approve & Process** enables.
+  The payroll wizard's employee step has a similar compliance checkbox.
+- **Modern headless Chrome records the app shell fine** (the old blank-screencast
+  problem is gone — verified in `tmp/probe.mjs`). Each scene is a real
+  recordVideo clip; the SPA cold-boot lead-in is measured per scene and trimmed
+  in capture.
+- **In-scene navigation must use `navSPA()`** (pushState + popstate), never
+  `page.goto()` — a full reload puts the splash screen in the middle of the
+  recording.
+- Scene clips should be a touch LONGER than their VO; render.mjs speed-fits.
+- Engine scene: `/engine` isn't deployed yet — capture points at the local dev
+  server (`ENGINE_URL`, default `http://localhost:8080`). Switch to
+  `https://xefe.tl` once deployed.
+- The demo tenant's "Finish setup" banner is hidden by `hideSetupBanner()`;
+  don't complete setup for real — the 20% state is part of the fixture.
+- Attendance is seeded for all 30 staff Mon–Sat + a Sunday crew, so "today" is never
+  empty; the attendance scenes still click **Previous** once for a fuller day.
+- Re-seeding (`../scripts/seed-demo-tenant.mjs`) wipes employees/shifts/etc. —
+  re-run all three prep scripts afterwards, and expect a NEW pending June run
+  to need approving again.
 
-Gitignored outputs: `audio/`, `recordings/`, `tmp/`, `*.mp4`.
+Gitignored outputs: `audio/`, `recordings/`, `tmp/`, `*.mp4`, `.env`.

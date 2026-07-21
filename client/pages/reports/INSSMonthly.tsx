@@ -62,6 +62,7 @@ import {
   useGenerateMonthlyINSS,
   useSaveTaxFiling,
   useMarkTaxFilingAsFiled,
+  useRecordTaxFilingPayment,
 } from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
@@ -75,10 +76,13 @@ import type {
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function INSSMonthly() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const { t } = useI18n();
 
   // React Query hooks
@@ -91,6 +95,7 @@ export default function INSSMonthly() {
   const generateINSS = useGenerateMonthlyINSS();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
+  const recordPayment = useRecordTaxFilingPayment();
 
   const company: Partial<CompanyDetails> = settings?.companyDetails || {};
   const dueDates = useMemo(
@@ -124,6 +129,14 @@ export default function INSSMonthly() {
     useState<SubmissionMethod>("inss_portal");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
+  const [paymentDate, setPaymentDate] = useState(getTodayTL());
+  const [paymentAccountId, setPaymentAccountId] = useState("");
+  const paymentAccounts = useMemo(
+    () => (settings?.paymentStructure?.bankAccounts ?? []).filter(
+      (account) => account.isActive && Boolean(account.accountNumber?.trim()),
+    ),
+    [settings],
+  );
 
   const months = useMemo(
     () =>
@@ -299,7 +312,9 @@ export default function INSSMonthly() {
     try {
       // exceljs is heavy — load it only when the user actually exports.
       const { downloadInssDrExcel } = await import("@/lib/reports/inssDrExcel");
-      await downloadInssDrExcel(selectedReturn);
+      await downloadInssDrExcel(selectedReturn, {
+        employerNISS: paymentProfile.employerNiss,
+      });
       toast({
         title: t("reports.inssMonthly.toast.exportedTitle"),
         description:
@@ -323,8 +338,7 @@ export default function INSSMonthly() {
   };
 
   // Signed bank payment order for the month's total contribution — the
-  // corpus-verified BNU workflow (docs/BANK_PAYMENTS.md). The employer NISS
-  // is not stored in settings yet, so the reference leaves it to fill in.
+  // corpus-verified BNU workflow (docs/BANK_PAYMENTS.md).
   const handleDownloadPaymentOrder = async () => {
     if (!selectedReturn) return;
     try {
@@ -346,6 +360,7 @@ export default function INSSMonthly() {
       const period = selectedReturn.reportingPeriod;
       const tin =
         selectedReturn.employerTIN || paymentProfile.tin || "________";
+      const employerNiss = paymentProfile.employerNiss || "________";
       const pack = await generateSinglePaymentOrderXlsx({
         company: {
           name: paymentProfile.companyName || selectedReturn.employerName,
@@ -355,12 +370,13 @@ export default function INSSMonthly() {
         purpose: `das contribuições à Segurança Social de ${formatPeriodLabelPT(period)}`,
         beneficiaryName: INSS_PAYMENT_ACCOUNT.beneficiary,
         beneficiaryAccount: INSS_PAYMENT_ACCOUNT.account,
-        reference: `Ref ________ Seg Soc ${tin} ${formatPeriodRefPT(period)}`,
+        reference: `NISS ${employerNiss} Seg Soc ${tin} ${formatPeriodRefPT(period)}`,
         amount: selectedReturn.totalContributions,
         valueDate: getTodayTL(),
         fileBaseName: `INSS_Pagamento_${period}`,
-        extraNote:
-          "Nota: preencher o NISS da entidade empregadora na descrição da transferência.",
+        extraNote: paymentProfile.employerNiss
+          ? undefined
+          : "Nota: preencher o NISS da entidade empregadora na descrição da transferência.",
       });
       downloadBlob(pack.blob, pack.fileName);
       toast({
@@ -380,20 +396,58 @@ export default function INSSMonthly() {
   const handleOpenMarkFiled = (filingId: string, task: TaxFilingTask) => {
     setSelectedFilingId(filingId);
     setSelectedTask(task);
+    if (task === "payment") {
+      const preferred = paymentAccounts.find(
+        (account) => account.purpose === "social_security",
+      ) || paymentAccounts.find((account) => account.purpose === "general") ||
+        paymentAccounts[0];
+      setPaymentAccountId(preferred?.id || "cash");
+      setPaymentDate(getTodayTL());
+    }
     setShowMarkFiledDialog(true);
   };
 
   const handleMarkFiled = async () => {
     if (!selectedFilingId) return;
     try {
-      await markFiled.mutateAsync({
-        filingId: selectedFilingId,
-        method: filedMethod,
-        receiptNumber: receiptNumber || "",
-        notes: filedNotes || "",
-        userId: user?.uid || "",
-        task: selectedTask,
-      });
+      if (selectedTask === "payment") {
+        const bankAccount = paymentAccounts.find(
+          (account) => account.id === paymentAccountId,
+        );
+        const isCash = paymentAccountId === "cash";
+        await recordPayment.mutateAsync({
+          filingId: selectedFilingId,
+          payment: {
+            paymentDate,
+            paymentReference: receiptNumber,
+            paymentMethod: isCash ? "cash" : "bank_transfer",
+            paymentAccountCode: isCash
+              ? "1110"
+              : bankAccount?.ledgerAccountCode || "1120",
+            bankAccountId: bankAccount?.id,
+            bankAccountName: bankAccount
+              ? `${bankAccount.accountName} - ${bankAccount.bankName}`
+              : undefined,
+            paidBy: user?.uid || "",
+            submissionMethod: filedMethod,
+            notes: filedNotes,
+            audit: {
+              tenantId,
+              userId: user?.uid || "",
+              userEmail: user?.email || "",
+            },
+          },
+        });
+      } else {
+        await markFiled.mutateAsync({
+          filingId: selectedFilingId,
+          method: filedMethod,
+          receiptNumber: receiptNumber || "",
+          notes: filedNotes || "",
+          userId: user?.uid || "",
+          task: selectedTask,
+        });
+      }
 
       toast({
         title: t("reports.inssMonthly.toast.savedTitle"),
@@ -419,6 +473,8 @@ export default function INSSMonthly() {
     const year = new Date().getFullYear();
     return [year, year - 1, year - 2].map(String);
   }, []);
+
+  const selectedFiling = filings.find((item) => item.id === selectedFilingId);
 
   const overdueFiling = useMemo(
     () => dueDates.find((d) => d.status === "overdue"),
@@ -1219,15 +1275,50 @@ export default function INSSMonthly() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            {selectedTask === "payment" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="inss-payment-date">
+                    {t("reports.inssMonthly.markFiled.paymentDate")}
+                  </Label>
+                  <Input
+                    id="inss-payment-date"
+                    type="date"
+                    value={paymentDate}
+                    onChange={(event) => setPaymentDate(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="inss-payment-account">
+                    {t("reports.inssMonthly.markFiled.paymentAccount")}
+                  </Label>
+                  <Select value={paymentAccountId} onValueChange={setPaymentAccountId}>
+                    <SelectTrigger id="inss-payment-account">
+                      <SelectValue placeholder={t("reports.inssMonthly.markFiled.selectPaymentAccount")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.accountName} - {account.bankName} ****{account.accountNumber.slice(-4)}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="cash">
+                        {t("reports.inssMonthly.markFiled.cashOnHand")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
-              <Label>
+              <Label htmlFor="inss-submission-method">
                 {t("reports.inssMonthly.markFiled.submissionMethod")}
               </Label>
               <Select
                 value={filedMethod}
                 onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="inss-submission-method">
                   <SelectValue
                     placeholder={t(
                       "reports.inssMonthly.markFiled.selectMethod",
@@ -1245,8 +1336,11 @@ export default function INSSMonthly() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("reports.inssMonthly.markFiled.receiptLabel")}</Label>
+              <Label htmlFor="inss-payment-reference">
+                {t("reports.inssMonthly.markFiled.receiptLabel")}
+              </Label>
               <Input
+                id="inss-payment-reference"
                 value={receiptNumber}
                 onChange={(e) => setReceiptNumber(e.target.value)}
                 placeholder={t(
@@ -1255,8 +1349,11 @@ export default function INSSMonthly() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("reports.inssMonthly.markFiled.notesLabel")}</Label>
+              <Label htmlFor="inss-payment-notes">
+                {t("reports.inssMonthly.markFiled.notesLabel")}
+              </Label>
               <Textarea
+                id="inss-payment-notes"
                 value={filedNotes}
                 onChange={(e) => setFiledNotes(e.target.value)}
                 placeholder={t(
@@ -1272,7 +1369,20 @@ export default function INSSMonthly() {
             >
               {t("reports.inssMonthly.markFiled.cancel")}
             </Button>
-            <Button onClick={handleMarkFiled}>
+            <Button
+              onClick={handleMarkFiled}
+              disabled={
+                markFiled.isPending ||
+                recordPayment.isPending ||
+                (selectedTask === "payment" && (
+                  !paymentDate ||
+                  !paymentAccountId ||
+                  (((selectedFiling?.totalINSSEmployee || 0) +
+                    (selectedFiling?.totalINSSEmployer || 0)) > 0 &&
+                    !receiptNumber.trim())
+                ))
+              }
+            >
               <CheckCircle className="h-4 w-4 mr-2" />
               {t("reports.inssMonthly.markFiled.save")}
             </Button>

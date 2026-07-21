@@ -140,7 +140,7 @@ const StaffCvDocument = ({ employee, companyName, issuedOn }: StaffCvDocProps) =
           </View>
           <View style={styles.col}>
             <Field label="INSS (Social Security)" value={documents?.socialSecurityNumber?.number} />
-            <Field label="TIN / Tax ID" value={personalInfo.socialSecurityNumber} />
+            <Field label="TIN / Tax ID" value={documents?.taxIdentificationNumber?.number} />
             <Field
               label="Work permit"
               value={documents?.workingVisaResidency?.number}

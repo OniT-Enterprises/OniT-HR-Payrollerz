@@ -759,6 +759,61 @@ describe("validateTLPayrollInput", () => {
     expect(errors[0]).toContain("minimum wage");
   });
 
+  it("uses an explicit pro-rata floor for part-time staff", () => {
+    const errors = validateTLPayrollInput(
+      makeBaseInput({
+        monthlySalary: 60,
+        employmentType: "Part-time",
+        contractedWeeklyHours: 22,
+        minimumWageTreatment: "pro_rata",
+      }),
+    );
+    expect(errors).toEqual([]);
+  });
+
+  it("can explicitly retain the full floor for part-time staff", () => {
+    const errors = validateTLPayrollInput(
+      makeBaseInput({
+        monthlySalary: 60,
+        employmentType: "Part-time",
+        contractedWeeklyHours: 22,
+        minimumWageTreatment: "full_floor",
+      }),
+    );
+    expect(errors.some((error) => error.includes("minimum wage ($115)"))).toBe(true);
+  });
+
+  it("blocks part-time payroll when hours or treatment are missing", () => {
+    const errors = validateTLPayrollInput(
+      makeBaseInput({ monthlySalary: 60, employmentType: "Part-time" }),
+    );
+    expect(errors.some((error) => error.includes("contracted weekly hours"))).toBe(true);
+    expect(errors.some((error) => error.includes("treatment is required"))).toBe(true);
+  });
+
+  it("requires an audit note for a reviewed part-time exception", () => {
+    const withoutNote = validateTLPayrollInput(
+      makeBaseInput({
+        monthlySalary: 40,
+        employmentType: "Part-time",
+        contractedWeeklyHours: 22,
+        minimumWageTreatment: "reviewed_exception",
+      }),
+    );
+    expect(withoutNote.some((error) => error.includes("review note"))).toBe(true);
+
+    const withNote = validateTLPayrollInput(
+      makeBaseInput({
+        monthlySalary: 40,
+        employmentType: "Part-time",
+        contractedWeeklyHours: 22,
+        minimumWageTreatment: "reviewed_exception",
+        minimumWageReviewNote: "Reviewed by external counsel on 2026-07-20.",
+      }),
+    );
+    expect(withNote).toEqual([]);
+  });
+
   it("rejects negative regular hours", () => {
     const errors = validateTLPayrollInput(makeBaseInput({ regularHours: -10 }));
     expect(errors.length).toBeGreaterThan(0);

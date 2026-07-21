@@ -1,6 +1,6 @@
 /**
- * BNCTL (Banco Nacional de Comércio de Timor-Leste) Transfer File Format
- * CSV format for domestic transfers
+ * Legacy best-effort BNCTL CSV template. The user-facing flow now downloads
+ * the best-effort emailed payment pack; no BNCTL-specific sample is signed off.
  */
 
 import {
@@ -8,7 +8,7 @@ import {
   BankFileResult,
   formatDateYYYYMMDD,
   formatAmount,
-} from './index';
+} from "./index";
 
 /**
  * BNCTL CSV Format:
@@ -18,23 +18,25 @@ import {
 export function generateBNCTLFile(
   summary: BankTransferSummary,
   companyName: string,
-  companyAccountNumber: string
+  companyAccountNumber: string,
 ): BankFileResult {
   const lines: string[] = [];
   const valueDate = formatDateYYYYMMDD(summary.valueDate);
 
   // Batch header (metadata rows)
-  lines.push('BNCTL BULK TRANSFER FILE');
+  lines.push("BNCTL BULK TRANSFER FILE");
   lines.push(`Batch Reference,SALARY-${summary.payrollPeriod}`);
   lines.push(`Originator,${companyName}`);
   lines.push(`Debit Account,${companyAccountNumber}`);
   lines.push(`Value Date,${summary.valueDate}`);
   lines.push(`Transaction Count,${summary.transactionCount}`);
   lines.push(`Batch Total (USD),${formatAmount(summary.totalAmount)}`);
-  lines.push('');
+  lines.push("");
 
   // Column headers
-  lines.push('No.,Account Number,Beneficiary Name,Amount (USD),Reference,Remarks');
+  lines.push(
+    "No.,Account Number,Beneficiary Name,Amount (USD),Reference,Remarks",
+  );
 
   // Detail records
   let rowNum = 1;
@@ -47,23 +49,25 @@ export function generateBNCTLFile(
       line.reference,
       `Salary Payment ${summary.payrollPeriod}`,
     ];
-    lines.push(row.join(','));
+    lines.push(row.join(","));
   }
 
   // Summary footer
-  lines.push('');
-  lines.push(`TOTAL,${summary.transactionCount} records,${formatAmount(summary.totalAmount)} USD`);
+  lines.push("");
+  lines.push(
+    `TOTAL,${summary.transactionCount} records,${formatAmount(summary.totalAmount)} USD`,
+  );
   lines.push(`Generated,${new Date().toISOString()}`);
 
   // Prepend a UTF-8 BOM so Excel reads accented TL/PT beneficiary names
   // (ç, ã, é) correctly instead of mojibake when the CSV is opened directly.
-  const content = '﻿' + lines.join('\n');
+  const content = "﻿" + lines.join("\n");
   const fileName = `BNCTL_Salaries_${summary.payrollPeriod}_${valueDate}.csv`;
 
   return {
     content,
     fileName,
-    mimeType: 'text/csv',
+    mimeType: "text/csv",
     summary,
   };
 }

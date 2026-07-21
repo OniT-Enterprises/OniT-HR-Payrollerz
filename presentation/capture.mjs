@@ -34,7 +34,9 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 const args = process.argv.slice(2);
-const sceneOnly = args.find((a) => a.startsWith('--scene='))?.split('=')[1];
+// --scene=07-runpayroll or --scene=05-timeleave,06-shifts,08-approve
+const sceneArg = args.find((a) => a.startsWith('--scene='))?.split('=')[1];
+const sceneOnly = sceneArg ? new Set(sceneArg.split(',')) : null;
 
 const SITE = process.env.XEFE_URL || 'https://xefe.tl';
 const ENGINE_URL = process.env.ENGINE_URL || 'http://localhost:8080';
@@ -79,20 +81,38 @@ async function hideSetupBanner(page) {
   }).catch(() => {});
 }
 
+// Smooth JS scroll of whatever actually scrolls (the app shell scrolls <main>,
+// dialogs scroll themselves, public pages scroll the window). mouse.wheel on a
+// non-scrollable pane rubber-bands and makes the recording jiggle — never use it.
 async function slowScroll(page, totalPx, steps = 8, stepMs = 450) {
   for (let i = 0; i < steps; i++) {
-    await page.mouse.wheel(0, totalPx / steps);
+    const moved = await page.evaluate((px) => {
+      const candidates = [
+        ...document.querySelectorAll('[role="dialog"] [class*="overflow-y"], [role="dialog"]'),
+        ...document.querySelectorAll('main, main [class*="overflow-y"]'),
+        document.scrollingElement,
+      ].filter(Boolean);
+      for (const el of candidates) {
+        if (el.scrollHeight > el.clientHeight + 12 &&
+            el.scrollTop + el.clientHeight < el.scrollHeight - 6) {
+          el.scrollBy({ top: px, behavior: 'smooth' });
+          return true;
+        }
+      }
+      return false;
+    }, Math.round(totalPx / steps)).catch(() => false);
+    if (!moved) break; // nothing (left) to scroll — hold still instead of jiggling
     await page.waitForTimeout(stepMs);
   }
 }
 
 async function clickIfVisible(page, locator, wait = 1200) {
   try {
-    if (await locator.isVisible({ timeout: 1500 })) {
-      await locator.click({ timeout: 4000 });
-      await page.waitForTimeout(wait);
-      return true;
-    }
+    // pages hydrate content well after the splash clears — wait generously
+    await locator.waitFor({ state: 'visible', timeout: 6000 });
+    await locator.click({ timeout: 4000 });
+    await page.waitForTimeout(wait);
+    return true;
   } catch { /* non-fatal */ }
   return false;
 }
@@ -103,6 +123,16 @@ async function typeSlow(page, locator, text, delay = 55) {
     await locator.pressSequentially(text, { delay });
     return true;
   } catch { return false; }
+}
+
+// Client-side route change (React Router listens to popstate) — avoids the
+// full-reload splash screen that a page.goto() would put in the recording.
+async function navSPA(page, path) {
+  await page.evaluate((p) => {
+    window.history.pushState({}, '', p);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, path);
+  await settle(page, 1600);
 }
 
 async function login(page) {
@@ -150,9 +180,10 @@ const SCENES = [
   {
     num: 5, name: '05-timeleave', route: '/time-leave/attendance',
     async act(page) {
-      await slowScroll(page, 600, 5);
-      await page.goto(`${SITE}/time-leave/leave`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await settle(page, 1500);
+      // today may be an off day — step back to the last day with records
+      await clickIfVisible(page, page.getByRole('button', { name: /previous/i }).first(), 2200);
+      await slowScroll(page, 500, 4);
+      await navSPA(page, '/time-leave/leave');
       const pending = page.getByText('Lucia Pereira').first();
       if (await pending.isVisible().catch(() => false)) await pending.hover().catch(() => {});
       await page.waitForTimeout(1800);
@@ -161,13 +192,9 @@ const SCENES = [
   {
     num: 6, name: '06-shifts', route: '/time-leave/shifts',
     async act(page) {
-      // seeded shifts live in NEXT week (Jul 20–25) — page opens on current week
-      const next = page.locator('button:has(svg)').filter({ hasNot: page.locator('[disabled]') })
-        .and(page.getByRole('button', { name: /next|→|>/i }));
-      if (!(await clickIfVisible(page, next.first(), 2200))) {
-        // fallback: any chevron-right styled week nav
-        await clickIfVisible(page, page.locator('button[aria-label*="next" i]').first(), 2200);
-      }
+      // seeded shifts live in NEXT week (Jul 20–25) — week nav is aria-label'd
+      await page.waitForTimeout(1200);
+      await clickIfVisible(page, page.getByRole('button', { name: /^next$/i }).first(), 2600);
       await slowScroll(page, 500, 5);
     },
   },
@@ -176,25 +203,36 @@ const SCENES = [
     async act(page, dur) {
       // step 1: period — accept defaults, advance
       await page.waitForTimeout(1800);
-      await clickIfVisible(page, page.getByRole('button', { name: /next|continue/i }).first(), 2500);
-      // step 2: employee rows with live calculations
-      await page.waitForTimeout(2500);
+      await clickIfVisible(page, page.getByRole('button', { name: /^(next|continue)$/i }).first(), 2200);
+      // step 2: employees (compliance-clean since prep-demo-data-3) — advance
+      await page.waitForTimeout(1600);
+      await slowScroll(page, 300, 2, 500);
+      await clickIfVisible(page, page.getByRole('button', { name: /^(next|continue)$/i }).first(), 2800);
+      // step 3: hours & pay — the live calculations; give them room to breathe
+      await page.waitForTimeout(2600);
+      await slowScroll(page, 700, 6, 600);
+      // step 4: review totals — look, never submit
+      await clickIfVisible(page, page.getByRole('button', { name: /^(next|continue)$/i }).first(), 2800);
       await slowScroll(page, 500, 4, 550);
-      // expand the first employee row if it has a toggle
-      await clickIfVisible(page, page.locator('table button:has(svg), [role="row"] button:has(svg)').first(), 2000);
-      await slowScroll(page, 400, 3, 550);
-      await clickIfVisible(page, page.getByRole('button', { name: /next|continue|review/i }).first(), 2500);
-      await slowScroll(page, 400, 3, 550);
     },
   },
   {
     num: 8, name: '08-approve', route: '/payroll/history',
     async act(page) {
-      // June run is approved + paid; open its detail
-      await clickIfVisible(page, page.getByText(/june 2026/i).first(), 2600);
-      await slowScroll(page, 500, 4);
-      await clickIfVisible(page, page.getByRole('button', { name: /payslip/i }).first(), 3000);
-      await page.waitForTimeout(1500);
+      // default view is Pending Approval (now empty) — switch to All Runs
+      await clickIfVisible(page, page.getByRole('combobox').first(), 900);
+      await clickIfVisible(page, page.getByRole('option', { name: /all/i }).first(), 1800);
+      // open the paid June run's per-employee records
+      await clickIfVisible(page, page.getByRole('button', { name: /more actions/i }).first(), 1000);
+      await clickIfVisible(page, page.getByRole('menuitem', { name: /view details/i }).first(), 2600);
+      await slowScroll(page, 500, 4, 500);
+      await page.keyboard.press('Escape').catch(() => {});
+      await page.waitForTimeout(600);
+      // the payslip itself: the landing page renders the real PayslipPDF layout
+      await navSPA(page, '/landing');
+      const slip = page.getByText(/document every employee receives/i).first();
+      await slip.scrollIntoViewIfNeeded({ timeout: 8000 }).catch(() => {});
+      await page.waitForTimeout(2500);
     },
   },
   {
@@ -213,57 +251,65 @@ const SCENES = [
     num: 10, name: '10-tax', route: '/payroll/tax',
     async act(page) {
       await slowScroll(page, 450, 4);
-      await page.goto(`${SITE}/payroll/tax/monthly-wit`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await settle(page, 1800);
+      await navSPA(page, '/payroll/tax/monthly-wit');
+      await clickIfVisible(page, page.getByRole('button', { name: /generate return/i }).first(), 3000);
       await slowScroll(page, 500, 5);
     },
   },
   {
     num: 11, name: '11-bank', route: '/payroll/payments',
     async act(page) {
+      await page.waitForTimeout(1200);
+      // open the Bank Files dialog and point it at the paid June run
+      await clickIfVisible(page, page.getByRole('button', { name: /bank files/i }).first(), 1600);
+      await clickIfVisible(page, page.getByRole('combobox').last(), 900);
+      await clickIfVisible(page, page.getByRole('option', { name: /june|2026-06|jun/i }).first(), 1800);
+      // pick BNU (checkbox card) and actually generate the pack
+      await clickIfVisible(page, page.locator('[role="dialog"] [role="checkbox"], [role="dialog"] input[type="checkbox"]').first(), 1500)
+        || await clickIfVisible(page, page.getByText(/^BNU/i).first(), 1500);
       await page.waitForTimeout(1500);
-      await slowScroll(page, 450, 4);
-      // open whatever pack/download affordance is visible (no clicks that navigate away)
-      const pack = page.getByRole('button', { name: /pack|transfer|download|generate/i }).first();
-      if (await pack.isVisible().catch(() => false)) await pack.hover().catch(() => {});
-      await page.waitForTimeout(1800);
+      await clickIfVisible(page, page.getByRole('button', { name: /generate \d|generate file/i }).last(), 4000);
+      await page.waitForTimeout(2000);
     },
   },
   {
     num: 12, name: '12-invoices', route: '/money/invoices',
     async act(page) {
       await page.waitForTimeout(1200);
-      await clickIfVisible(page, page.locator('table tbody tr, [data-testid="invoice-row"]').first(), 2600);
-      await slowScroll(page, 350, 3);
-      await clickIfVisible(page, page.getByRole('button', { name: /share|whatsapp|send/i }).first(), 2800);
-      await page.waitForTimeout(1500);
+      // the share affordances live in each row's actions menu
+      await clickIfVisible(page, page.getByRole('button', { name: /more actions/i }).first(), 2600);
+      await page.waitForTimeout(1800);
+      await page.keyboard.press('Escape').catch(() => {});
+      await clickIfVisible(page, page.getByText(/INV[-\d]/i).first(), 2600);
+      await slowScroll(page, 400, 4);
     },
   },
   {
     num: 13, name: '13-expenses', route: '/money/expenses',
     async act(page) {
       await slowScroll(page, 400, 4);
-      await page.goto(`${SITE}/money/bills/new`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await settle(page, 1800);
+      await navSPA(page, '/money/bills/new');
       await slowScroll(page, 550, 5);
     },
   },
   {
     num: 14, name: '14-accounting', route: '/accounting/journal',
     async act(page) {
-      await clickIfVisible(page, page.getByText('JE-2026-0001').first(), 2600);
+      await clickIfVisible(page, page.getByText(/payroll for 2026-06/i).first(), 2600);
       await slowScroll(page, 450, 4);
-      await page.goto(`${SITE}/accounting/statements/trial-balance`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await settle(page, 2200);
+      await navSPA(page, '/accounting/statements/trial-balance');
+      await clickIfVisible(page, page.getByRole('button', { name: /^generate$/i }).first(), 3000);
       await slowScroll(page, 400, 3);
     },
   },
   {
     num: 15, name: '15-reports', route: '/reports',
     async act(page) {
-      await slowScroll(page, 450, 4);
-      await clickIfVisible(page, page.getByText(/payroll reports/i).first(), 2600);
-      await slowScroll(page, 450, 4);
+      await slowScroll(page, 400, 3);
+      (await clickIfVisible(page, page.getByRole('link', { name: /payroll/i }).first(), 3000))
+        || (await clickIfVisible(page, page.getByText(/view reports/i).first(), 3000));
+      await settle(page, 1200);
+      await slowScroll(page, 500, 4);
     },
   },
   {
@@ -273,36 +319,40 @@ const SCENES = [
       await typeSlow(page, ask, 'How much did the June payroll cost in total?', 55);
       await page.waitForTimeout(400);
       await ask.press('Enter').catch(() => {});
-      // give the live model time to answer; render speed-fits the wait
-      await page.waitForFunction(
-        () => /\$\s?[\d,]+|june|payroll/i.test(
-          [...document.querySelectorAll('[class*="chat"], [class*="message"], [data-role]')]
-            .map((e) => e.textContent || '').join(' ').slice(-2000),
-        ),
-        { timeout: 40000 },
-      ).catch(() => {});
-      await page.waitForTimeout(4000);
+      // wait until the answer text stops growing (stream finished), then linger
+      let last = 0;
+      for (let i = 0; i < 15; i++) {
+        await page.waitForTimeout(2000);
+        const len = await page.evaluate(() =>
+          (document.querySelector('[role="dialog"]')?.textContent || document.body.textContent || '').length,
+        ).catch(() => 0);
+        if (len === last && i > 3) break;
+        last = len;
+      }
+      await page.waitForTimeout(2500);
     },
   },
   {
     num: 17, name: '17-mobile', route: '/', mobile: true,
     async act(page) {
       await slowScroll(page, 500, 5);
-      await page.goto(`${SITE}/time-leave/attendance`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await settle(page, 1600);
-      await slowScroll(page, 500, 5);
+      await navSPA(page, '/time-leave/attendance');
+      await clickIfVisible(page, page.getByRole('button', { name: /previous/i }).first(), 2000);
+      await slowScroll(page, 450, 4);
     },
   },
   {
     num: 18, name: '18-languages', route: '/',
     async act(page) {
-      const switcher = page.getByRole('button', { name: /english/i }).first();
       for (const lang of [/tetun/i, /portugu/i, /english/i]) {
+        // the switcher's own label changes with the locale — re-locate each time
+        const switcher = page.getByRole('button').filter({ hasText: /english|tetun|portugu/i }).first();
         if (await clickIfVisible(page, switcher, 700)) {
           await clickIfVisible(page, page.getByRole('menuitem', { name: lang }).first(), 2400)
             || await clickIfVisible(page, page.getByText(lang).last(), 2400);
         }
         await hideSetupBanner(page);
+        await page.waitForTimeout(400);
       }
     },
   },
@@ -363,13 +413,13 @@ await desktop.addInitScript(() => { try { localStorage.setItem('theme', 'dark');
 }
 
 for (const scene of SCENES.filter((s) => !s.mobile)) {
-  if (sceneOnly && scene.name !== sceneOnly) continue;
+  if (sceneOnly && !sceneOnly.has(scene.name)) continue;
   await captureScene(desktop, scene);
 }
 await desktop.close();
 
 // Mobile context (its own portrait video size)
-const mobileScenes = SCENES.filter((s) => s.mobile && (!sceneOnly || s.name === sceneOnly));
+const mobileScenes = SCENES.filter((s) => s.mobile && (!sceneOnly || sceneOnly.has(s.name)));
 if (mobileScenes.length) {
   const mobile = await browser.newContext({
     viewport: MOBILE, deviceScaleFactor: 2, isMobile: true, hasTouch: true,

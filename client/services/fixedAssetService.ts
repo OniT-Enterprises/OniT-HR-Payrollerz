@@ -16,7 +16,6 @@ import {
   query,
   runTransaction,
   serverTimestamp,
-  setDoc,
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -24,9 +23,11 @@ import { db } from "@/lib/firebase";
 import { addMoney, roundMoney, subtractMoney } from "@/lib/currency";
 import type {
   FixedAsset,
+  FixedAssetAcquisitionOrigin,
   FixedAssetPosting,
   JournalEntryLine,
 } from "@/types/accounting";
+import { buildFixedAssetAcquisitionJournalLines } from "@/lib/accounting/calculations";
 import {
   ACCUMULATED_DEPRECIATION_CODE,
   CASH_BANK_CODE,
@@ -62,7 +63,13 @@ async function resolveAccount(tenantId: string, code: string) {
   if (!account?.id) {
     throw new Error(`Chart of accounts is missing account ${code}.`);
   }
-  return { id: account.id, code, name: account.name };
+  return {
+    id: account.id,
+    code,
+    name: account.name,
+    type: account.type,
+    subType: account.subType,
+  };
 }
 
 export interface DepreciationPreviewLine {
@@ -70,7 +77,19 @@ export interface DepreciationPreviewLine {
   charge: number;
 }
 
+type CreateFixedAssetInput = Omit<
+  FixedAsset,
+  "id" | "accumulatedDepreciation" | "status" | "createdAt" | "updatedAt"
+> & {
+  acquisitionOrigin: FixedAssetAcquisitionOrigin;
+  acquisitionRequestId: string;
+};
+
 export const fixedAssetService = {
+  newAcquisitionRequestId(tenantId: string): string {
+    return doc(assetsRef(tenantId)).id;
+  },
+
   async list(tenantId: string): Promise<FixedAsset[]> {
     const snap = await getDocs(
       query(assetsRef(tenantId), orderBy("acquisitionDate", "desc")),
@@ -80,10 +99,7 @@ export const fixedAssetService = {
 
   async create(
     tenantId: string,
-    asset: Omit<
-      FixedAsset,
-      "id" | "accumulatedDepreciation" | "status" | "createdAt" | "updatedAt"
-    >,
+    asset: CreateFixedAssetInput,
   ): Promise<string> {
     if (asset.acquisitionCost <= 0)
       throw new Error("Acquisition cost must be positive.");
@@ -93,14 +109,95 @@ export const fixedAssetService = {
     ) {
       throw new Error("Residual value must be ≥ 0 and below cost.");
     }
-    const ref = doc(assetsRef(tenantId));
-    await setDoc(ref, {
-      ...asset,
-      residualValue: asset.residualValue || 0,
-      accumulatedDepreciation: 0,
-      status: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+    if (!asset.acquisitionRequestId.trim()) {
+      throw new Error("An acquisition request ID is required.");
+    }
+    if (![
+      "already_posted_via_bill",
+      "opening_balance",
+      "post_now",
+    ].includes(asset.acquisitionOrigin)) {
+      throw new Error("Choose how the acquisition entered the books.");
+    }
+
+    let acquisitionAccounts:
+      | { asset: Awaited<ReturnType<typeof resolveAccount>>; funding: Awaited<ReturnType<typeof resolveAccount>> }
+      | undefined;
+    if (asset.acquisitionOrigin === "post_now") {
+      if (!asset.fundingAccountCode?.trim()) {
+        throw new Error("A funding or payable account is required.");
+      }
+      const [assetAccount, fundingAccount] = await Promise.all([
+        resolveAccount(tenantId, asset.assetAccountCode),
+        resolveAccount(tenantId, asset.fundingAccountCode),
+      ]);
+      if (assetAccount.type !== "asset" || assetAccount.subType !== "fixed_asset") {
+        throw new Error("The acquisition debit must use a fixed-asset account.");
+      }
+      const validFunding =
+        fundingAccount.type === "liability"
+        || fundingAccount.type === "equity"
+        || (fundingAccount.type === "asset"
+          && ["cash", "bank"].includes(fundingAccount.subType));
+      if (!validFunding) {
+        throw new Error("Funding must be a cash, bank, payable, loan, or equity account.");
+      }
+      acquisitionAccounts = { asset: assetAccount, funding: fundingAccount };
+    }
+
+    const ref = doc(assetsRef(tenantId), asset.acquisitionRequestId);
+    await runTransaction(db, async (tx) => {
+      const existing = await tx.get(ref);
+      if (existing.exists()) return;
+
+      let acquisitionJournalEntryId: string | undefined;
+      if (asset.acquisitionOrigin === "post_now" && acquisitionAccounts) {
+        const byCode = new Map([
+          [acquisitionAccounts.asset.code, acquisitionAccounts.asset],
+          [acquisitionAccounts.funding.code, acquisitionAccounts.funding],
+        ]);
+        const posting = buildFixedAssetAcquisitionJournalLines(
+          asset.acquisitionCost,
+          asset.assetAccountCode,
+          asset.fundingAccountCode!,
+          asset.name,
+          (code) => {
+            const account = byCode.get(code);
+            if (!account) throw new Error(`Missing acquisition account ${code}.`);
+            return account;
+          },
+        );
+        const [yearStr, monthStr] = asset.acquisitionDate.split("-");
+        acquisitionJournalEntryId = await journalEntryService.createJournalEntry(
+          tenantId,
+          {
+            date: asset.acquisitionDate,
+            description: `Fixed asset acquisition - ${asset.name}`,
+            source: "fixed_asset_acquisition",
+            sourceId: ref.id,
+            sourceRef: asset.reference || asset.name,
+            lines: posting.lines,
+            totalDebit: posting.totalDebit,
+            totalCredit: posting.totalCredit,
+            status: "posted",
+            fiscalYear: Number(yearStr),
+            fiscalPeriod: Number(monthStr),
+            createdBy: asset.createdBy,
+            postedBy: asset.createdBy,
+          },
+          tx,
+        );
+      }
+
+      tx.set(ref, {
+        ...asset,
+        residualValue: asset.residualValue || 0,
+        ...(acquisitionJournalEntryId ? { acquisitionJournalEntryId } : {}),
+        accumulatedDepreciation: 0,
+        status: "active",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     });
     return ref.id;
   },

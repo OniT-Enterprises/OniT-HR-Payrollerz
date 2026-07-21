@@ -14,6 +14,7 @@ import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { useSettings } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Settings as SettingsIcon,
   Building,
@@ -23,6 +24,7 @@ import {
   Landmark,
   Plug,
   ChevronRight,
+  Users,
 } from "lucide-react";
 import { SettingsSkeleton, SetupProgress } from "@/components/settings";
 
@@ -38,6 +40,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const settingsQuery = useSettings();
+  const { session } = useTenant();
   const { data: settings, isLoading } = settingsQuery;
   const [searchParams] = useSearchParams();
 
@@ -47,6 +50,13 @@ export default function Settings() {
   }
 
   const settingsLinks = [
+    {
+      label: t("settings.access.title"),
+      path: "/settings/access",
+      icon: Users,
+      description: t("settings.access.description"),
+      hidden: !["owner", "hr-admin"].includes(session?.role || ""),
+    },
     {
       label: t("nav.companySettingsLink"),
       path: "/settings/company",
@@ -124,7 +134,7 @@ export default function Settings() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {settingsLinks.map((link) => (
+          {settingsLinks.filter((link) => !link.hidden).map((link) => (
             <button
               key={link.path}
               onClick={() => navigate(link.path)}

@@ -30,7 +30,8 @@ import {
   withheldRecurringByEmployee,
 } from '@/lib/payroll/recurring-deductions';
 import { isTenantSubscribed } from '@/lib/packagePricing';
-import { addMoney } from '@/lib/currency';
+import { addMoney, subtractMoney } from '@/lib/currency';
+import { accountService, journalEntryService } from './accountingService';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -51,6 +52,20 @@ export interface EmployeePayrollYTD {
   /** Subsídio anual (13th month) already paid this year — lets a leaver's
    * final-pay run net the Art. 44 entitlement instead of double-paying. */
   ytdSubsidioAnual: number;
+}
+
+export interface PayrollPaymentDetails {
+  tenantId: string;
+  paymentDate: string;
+  paymentReference: string;
+  paymentMethod: 'bank_transfer' | 'cash';
+  paidBy: string;
+  /** Defaults to payroll bank 1130, or cash on hand 1110 for cash payments. */
+  paymentAccountCode?: string;
+  bankAccountId?: string;
+  bankAccountName?: string;
+  bankTransferId?: string;
+  audit?: AuditContext;
 }
 
 // ============================================
@@ -555,58 +570,197 @@ class PayrollRunService {
     return true;
   }
 
-  async markPayrollRunAsPaid(id: string): Promise<boolean> {
-    // NOTE (accounting follow-up): this only flips status. It does NOT post a
-    // settlement journal (Dr Salaries Payable 2210 / Cr bank), so book cash is
-    // not reduced for the net wage disbursement and 2210 accrues across runs.
-    // The correct fix is a dedicated payroll-disbursement posting that mirrors
-    // createFromSupplierWithholdingRemittance — it must capture WHICH bank
-    // account paid and a payment reference (a tenant may have several banks),
-    // so it can't be auto-derived here without risking a wrong-account credit.
-    // WIT/INSS payables (2220/2230/2240) intentionally persist until remitted.
+  async markPayrollRunAsPaid(
+    id: string,
+    payment: PayrollPaymentDetails,
+  ): Promise<boolean> {
     const payroll = await this.getPayrollRunById(id);
     if (!payroll) {
       throw new Error('Payroll run not found');
     }
-    if (payroll.status !== 'approved') {
+    if (!payroll.tenantId || payroll.tenantId !== payment.tenantId) {
+      throw new Error('Payroll payment tenant does not match the payroll run');
+    }
+    // A paid legacy run may be repaired once by attaching the missing cash
+    // settlement. Current runs must still be approved first.
+    if (payroll.status === 'paid' && payroll.settlementJournalEntryId) {
+      return true;
+    }
+    if (payroll.status !== 'approved' && payroll.status !== 'paid') {
       throw new Error(`Only approved payroll runs can be marked paid (current: ${payroll.status})`);
     }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(payment.paymentDate)) {
+      throw new Error('A valid payroll payment date is required');
+    }
+    const paymentReference = payment.paymentReference.trim();
+    if (!paymentReference) {
+      throw new Error('A payroll payment reference is required');
+    }
+    if (!payment.paidBy) {
+      throw new Error('The payroll payment user is required');
+    }
 
-    // Atomic approved -> paid flip (mirrors approvePayrollRun): two tabs could
-    // both pass the pre-check above; the transaction lets exactly one win, so
-    // the recurring-deduction settlement below runs exactly once per run.
-    const docRef = doc(db, 'payrollRuns', id);
-    await runTransaction(db, async (transaction) => {
-      const snap = await transaction.get(docRef);
-      if (!snap.exists()) {
+    const paymentAccountCode = payment.paymentAccountCode?.trim() ||
+      (payment.paymentMethod === 'cash' ? '1110' : '1130');
+    const resolvedAccounts: Record<string, { id: string; name: string }> = {};
+    let initializedChart = false;
+    for (const code of ['2210', paymentAccountCode]) {
+      let account = await accountService.getAccountByCode(payment.tenantId, code);
+      if (!account?.id && !initializedChart) {
+        await accountService.initializeChartOfAccounts(payment.tenantId);
+        initializedChart = true;
+        account = await accountService.getAccountByCode(payment.tenantId, code);
+      }
+      if (!account?.id) {
+        account = await accountService.ensureSystemAccountByCode(payment.tenantId, code);
+      }
+      if (!account?.id || !account.isActive) {
+        throw new Error(`Payment account ${code} is missing or inactive`);
+      }
+      resolvedAccounts[code] = { id: account.id, name: account.name };
+    }
+
+    const deductionPlan = await this.getRecurringDeductionSettlementPlan(payroll, id);
+    // Journal + audit + counter + payroll + optional transfer consume fewer
+    // than 10 writes; leave a wide margin under Firestore's 500-write limit.
+    if (deductionPlan.length > 400) {
+      throw new Error(
+        'This payroll has too many deduction settlements for one safe payment transaction. Contact support before marking it paid.',
+      );
+    }
+
+    const runRef = doc(db, 'payrollRuns', id);
+    const transferRef = payment.bankTransferId
+      ? doc(db, 'bankTransfers', payment.bankTransferId)
+      : null;
+    const deductionRefs = deductionPlan.map((item) =>
+      doc(db, 'recurringDeductions', item.id),
+    );
+
+    const settlementJournalEntryId = await runTransaction(db, async (transaction) => {
+      // All reads precede createPayrollSettlement, which writes the journal.
+      const runSnap = await transaction.get(runRef);
+      const transferSnap = transferRef ? await transaction.get(transferRef) : null;
+      const deductionSnaps = await Promise.all(
+        deductionRefs.map((ref) => transaction.get(ref)),
+      );
+
+      if (!runSnap.exists()) {
         throw new Error('Payroll run not found');
       }
-      const current = snap.data().status;
-      if (current !== 'approved') {
+      const currentRun = runSnap.data() as PayrollRun;
+      if (currentRun.settlementJournalEntryId) {
+        return currentRun.settlementJournalEntryId;
+      }
+      const current = currentRun.status;
+      if (current !== 'approved' && current !== 'paid') {
         throw new Error(`Only approved payroll runs can be marked paid (current: ${current})`);
       }
-      transaction.update(docRef, {
+      if (currentRun.tenantId !== payment.tenantId) {
+        throw new Error('Payroll payment tenant does not match the payroll run');
+      }
+      if (transferRef) {
+        if (!transferSnap?.exists()) throw new Error('Linked bank transfer not found');
+        const transfer = transferSnap.data() as BankTransfer;
+        if (
+          transfer.tenantId !== payment.tenantId ||
+          transfer.payrollRunId !== id
+        ) {
+          throw new Error('Linked bank transfer does not match this payroll run');
+        }
+        if (transfer.status === 'failed') {
+          throw new Error('A failed bank transfer cannot settle payroll');
+        }
+      }
+
+      const journalId = await journalEntryService.createPayrollSettlement(
+        payment.tenantId,
+        {
+          payrollRunId: id,
+          periodStart: currentRun.periodStart,
+          periodEnd: currentRun.periodEnd,
+          paymentDate: payment.paymentDate,
+          paymentReference,
+          netPay: currentRun.totalNetPay,
+          paymentAccountCode,
+          bankAccountId: payment.bankAccountId,
+          bankAccountName: payment.bankAccountName,
+        },
+        payment.paidBy,
+        transaction,
+        resolvedAccounts,
+      );
+
+      const periodMonth = periodMonthOf(currentRun.periodStart);
+      deductionSnaps.forEach((snapshot, index) => {
+        if (!snapshot.exists()) return;
+        const settlement = deductionPlan[index];
+        const currentDeduction = snapshot.data() as RecurringDeduction;
+        if (currentDeduction.lastAppliedPeriod === periodMonth) return;
+        const updates: Record<string, unknown> = {
+          lastAppliedPeriod: settlement.lastAppliedPeriod,
+          updatedAt: serverTimestamp(),
+        };
+        if (
+          typeof currentDeduction.remainingBalance === 'number' &&
+          (currentDeduction.totalAmount ?? 0) > 0
+        ) {
+          const remainingBalance = Math.max(
+            0,
+            subtractMoney(currentDeduction.remainingBalance, settlement.appliedAmount),
+          );
+          updates.remainingBalance = remainingBalance;
+          if (remainingBalance === 0) updates.status = 'completed';
+        }
+        transaction.update(deductionRefs[index], updates);
+      });
+
+      transaction.update(runRef, {
         status: 'paid',
         paidAt: serverTimestamp(),
+        paidBy: payment.paidBy,
+        paymentDate: payment.paymentDate,
+        paymentReference,
+        paymentMethod: payment.paymentMethod,
+        paymentAccountCode,
+        settlementJournalEntryId: journalId,
+        ...(payment.bankAccountId
+          ? { paymentBankAccountId: payment.bankAccountId }
+          : {}),
+        ...(payment.bankAccountName
+          ? { paymentBankAccountName: payment.bankAccountName }
+          : {}),
+        ...(payment.bankTransferId
+          ? { bankTransferId: payment.bankTransferId }
+          : {}),
         updatedAt: serverTimestamp(),
       });
+      if (transferRef) {
+        transaction.update(transferRef, {
+          status: 'completed',
+          completedAt: serverTimestamp(),
+          settlementJournalEntryId: journalId,
+          updatedAt: serverTimestamp(),
+        });
+      }
+      return journalId;
     });
 
-    // Settle the Deductions & Advances register AFTER the flip (a paid run can
-    // no longer be cancelled, so a settled balance can't belong to a cancelled
-    // run). Errors here must surface — silently skipping would leave advance
-    // balances undecremented and the once-per-period-month stamp missing.
-    try {
-      await this.settleRecurringDeductions(payroll, id);
-    } catch (error) {
-      console.error(
-        'Recurring-deduction settlement failed after marking run paid:',
-        error,
-      );
-      throw new Error(
-        'The payroll run was marked paid, but updating the Deductions & Advances register failed. ' +
-          'Review advance balances on the Deductions page before running the next payroll.',
-      );
+    if (payment.audit) {
+      await auditLogService.logPayrollAction({
+        ...payment.audit,
+        tenantId: payment.tenantId,
+        action: 'payroll.pay',
+        payrollRunId: id,
+        period: `${payroll.periodStart} to ${payroll.periodEnd}`,
+        metadata: {
+          amount: payroll.totalNetPay,
+          paymentDate: payment.paymentDate,
+          paymentReference,
+          paymentMethod: payment.paymentMethod,
+          settlementJournalEntryId,
+        },
+      }).catch((error) => console.error('Audit log failed:', error));
     }
     return true;
   }
@@ -628,20 +782,20 @@ class PayrollRunService {
    * balance never drops by more than min(scheduled, withheld). Docs the cap
    * squeezed to zero are not stamped and stay eligible next period month.
    */
-  private async settleRecurringDeductions(
+  private async getRecurringDeductionSettlementPlan(
     payroll: PayrollRun,
     runId: string,
-  ): Promise<void> {
+  ) {
     const tenantId = payroll.tenantId;
-    if (!tenantId) return;
+    if (!tenantId) return [];
     const periodMonth = periodMonthOf(payroll.periodStart);
-    if (!/^\d{4}-\d{2}$/.test(periodMonth)) return;
+    if (!/^\d{4}-\d{2}$/.test(periodMonth)) return [];
 
     const [records, deductions] = await Promise.all([
       payrollRecordService.getPayrollRecordsByRunId(runId, tenantId),
       recurringDeductionService.getActiveDeductionsForPayroll(tenantId),
     ]);
-    if (deductions.length === 0 || records.length === 0) return;
+    if (deductions.length === 0 || records.length === 0) return [];
 
     // Percentage docs resolve unbounded here (no salary base at paid time) —
     // the records' withheld amounts bound them instead.
@@ -650,30 +804,11 @@ class PayrollRunService {
       periodEnd: payroll.periodEnd,
       unboundedPercentages: true,
     });
-    const plan = buildSettlementPlan(
+    return buildSettlementPlan(
       scheduled,
       withheldRecurringByEmployee(records),
       periodMonth,
     );
-    if (plan.length === 0) return;
-
-    for (const chunk of chunkArray(plan, 450)) {
-      const batch = writeBatch(db);
-      for (const settlement of chunk) {
-        const updates: Record<string, unknown> = {
-          lastAppliedPeriod: settlement.lastAppliedPeriod,
-          updatedAt: serverTimestamp(),
-        };
-        if (settlement.remainingBalance !== undefined) {
-          updates.remainingBalance = settlement.remainingBalance;
-        }
-        if (settlement.status) {
-          updates.status = settlement.status;
-        }
-        batch.update(doc(db, 'recurringDeductions', settlement.id), updates);
-      }
-      await batch.commit();
-    }
   }
 
   async cancelPayrollRun(id: string): Promise<boolean> {

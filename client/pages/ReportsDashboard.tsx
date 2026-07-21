@@ -95,14 +95,24 @@ function formatShortDate(value: string, locale: "en" | "tet" | "pt") {
 
 function getFilingLabel(item: FilingDueDate, t: Translate) {
   if (item.type === "monthly_wit") {
-    return t("moduleDashboards.reports.filings.monthlyWit", {
-      period: item.period,
-    });
+    return t(
+      item.task === "payment"
+        ? "moduleDashboards.reports.filings.monthlyWitPayment"
+        : "moduleDashboards.reports.filings.monthlyWitReturn",
+      { period: item.period },
+    );
   }
   if (item.type === "annual_wit") {
     return t("moduleDashboards.reports.filings.annualWit", {
       period: item.period,
     });
+  }
+  if (item.type === "annual_income_tax") {
+    return (
+      t("moduleDashboards.reports.filings.annualIncomeTax", {
+        period: item.period,
+      }) || `Annual income tax preparation — ${item.period}`
+    );
   }
   if (item.type === "services_tax") {
     return (

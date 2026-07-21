@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -73,7 +72,6 @@ import {
   type DepartureReason,
   DEPARTURE_REASONS,
   getChecklistProgress,
-  severanceDefaultForReason,
 } from "@/services/offboardingService";
 import {
   onboardingService,
@@ -106,16 +104,20 @@ import { formatDateTL } from "@/lib/dateUtils";
 export default function Offboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const requestedEmployeeId = searchParams.get("employeeId") || searchParams.get("employee") || "";
+  const requestedEmployeeId =
+    searchParams.get("employeeId") || searchParams.get("employee") || "";
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
   const tenantId = useTenantId();
-  const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
+  const { data: employees = [], isLoading: employeesLoading } =
+    useEmployeeDirectory({ status: "active" });
 
   // Data via React Query
-  const { data: activeCases = [], isLoading: activeCasesLoading } = useActiveCases();
-  const { data: completedCases = [], isLoading: completedCasesLoading } = useCompletedCases();
+  const { data: activeCases = [], isLoading: activeCasesLoading } =
+    useActiveCases();
+  const { data: completedCases = [], isLoading: completedCasesLoading } =
+    useCompletedCases();
   const createOffboardingMutation = useCreateOffboardingCase();
   const updateChecklistMutation = useUpdateChecklistItem();
   const updateExitInterviewMutation = useUpdateExitInterviewField();
@@ -124,11 +126,37 @@ export default function Offboarding() {
 
   const loading = activeCasesLoading || completedCasesLoading;
 
-  const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(null);
+  const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(
+    null,
+  );
+  const [finalPayReviewAcknowledged, setFinalPayReviewAcknowledged] =
+    useState(false);
+  const [finalPayReviewNote, setFinalPayReviewNote] = useState("");
   const [showDialog, setShowDialog] = useState(Boolean(requestedEmployeeId));
   const queryClient = useQueryClient();
 
-  const onboardingQueryKey = ["onboarding", "byEmployee", tenantId, selectedCase?.employeeId ?? ""];
+  useEffect(() => {
+    setFinalPayReviewAcknowledged(
+      selectedCase?.article56FinalPay?.reviewAcknowledged === true,
+    );
+    setFinalPayReviewNote(
+      selectedCase?.article56FinalPay?.reviewNote ||
+        selectedCase?.finalPayReviewNote ||
+        "",
+    );
+  }, [
+    selectedCase?.id,
+    selectedCase?.article56FinalPay?.reviewAcknowledged,
+    selectedCase?.article56FinalPay?.reviewNote,
+    selectedCase?.finalPayReviewNote,
+  ]);
+
+  const onboardingQueryKey = [
+    "onboarding",
+    "byEmployee",
+    tenantId,
+    selectedCase?.employeeId ?? "",
+  ];
   const onboardingQuery = useQuery({
     queryKey: onboardingQueryKey,
     queryFn: () =>
@@ -149,10 +177,21 @@ export default function Offboarding() {
   // E8 (Arts. 50(4), 51, 55): dismissal for cause without a concluded written
   // disciplinary process is automatically unlawful — soft-gate warning only.
   const caseDisciplinaryQuery = useQuery({
-    queryKey: ["disciplinary", "byEmployee", tenantId, selectedCase?.employeeId ?? ""],
-    queryFn: () => disciplinaryService.getEmployeeRecords(tenantId, selectedCase!.employeeId),
+    queryKey: [
+      "disciplinary",
+      "byEmployee",
+      tenantId,
+      selectedCase?.employeeId ?? "",
+    ],
+    queryFn: () =>
+      disciplinaryService.getEmployeeRecords(
+        tenantId,
+        selectedCase!.employeeId,
+      ),
     enabled:
-      !!tenantId && !!selectedCase?.employeeId && selectedCase?.departureReason === "termination",
+      !!tenantId &&
+      !!selectedCase?.employeeId &&
+      selectedCase?.departureReason === "termination",
     staleTime: 60 * 1000,
   });
   const disciplinaryWarningText =
@@ -163,18 +202,26 @@ export default function Offboarding() {
     caseDisciplinaryQuery.isSuccess &&
     !caseDisciplinaryQuery.data.some((r) => r.status === "closed");
   // E7 (Arts. 49(8)-(9), 53(2)-(3)): statutory notice for the selected case.
-  const selectedHireDate = selectedEmployeeQuery.data?.jobDetails?.hireDate || "";
-  const noticeReq =
-    selectedCase?.lastWorkingDay
-      ? requiredNoticeDays(selectedCase.departureReason, selectedHireDate, selectedCase.lastWorkingDay)
-      : null;
+  const selectedHireDate =
+    selectedEmployeeQuery.data?.jobDetails?.hireDate || "";
+  const noticeReq = selectedCase?.lastWorkingDay
+    ? requiredNoticeDays(
+        selectedCase.departureReason,
+        selectedHireDate,
+        selectedCase.lastWorkingDay,
+      )
+    : null;
   const noticeGiven =
     selectedCase?.noticeDate && selectedCase?.lastWorkingDay
       ? noticeDaysGiven(selectedCase.noticeDate, selectedCase.lastWorkingDay)
       : null;
   const noticeShortfall =
     noticeReq && selectedCase?.noticeDate && selectedCase?.lastWorkingDay
-      ? noticeShortfallDays(selectedCase.noticeDate, selectedCase.lastWorkingDay, noticeReq.days)
+      ? noticeShortfallDays(
+          selectedCase.noticeDate,
+          selectedCase.lastWorkingDay,
+          noticeReq.days,
+        )
       : null;
 
   // F12 (DL 20/2017 Art. 5(2)-(3)): concrete INSS cessation deadline.
@@ -200,7 +247,11 @@ export default function Offboarding() {
     0;
   const art55Amount =
     art55Months > 0 && art55MonthlySalary > 0 && selectedCase?.lastWorkingDay
-      ? art55Indemnity(art55MonthlySalary, selectedHireDate, selectedCase.lastWorkingDay)
+      ? art55Indemnity(
+          art55MonthlySalary,
+          selectedHireDate,
+          selectedCase.lastWorkingDay,
+        )
       : 0;
 
   // F11 (Art. 57): bilingual work certificate, generated client-side.
@@ -210,11 +261,16 @@ export default function Offboarding() {
     try {
       setCertGenerating(true);
       // Dynamic import keeps @react-pdf out of the page bundle.
-      const { downloadWorkCertificate } = await import("@/lib/pdf/workCertificate");
+      const { downloadWorkCertificate } = await import(
+        "@/lib/pdf/workCertificate"
+      );
       await downloadWorkCertificate({
         companyDetails: settings?.companyDetails,
         workerName: selectedCase.employeeName,
-        position: selectedCase.position || selectedEmployeeQuery.data?.jobDetails?.position || "",
+        position:
+          selectedCase.position ||
+          selectedEmployeeQuery.data?.jobDetails?.position ||
+          "",
         department: selectedCase.department,
         hireDate: selectedEmployeeQuery.data?.jobDetails?.hireDate || "",
         lastWorkingDay: selectedCase.lastWorkingDay,
@@ -222,7 +278,10 @@ export default function Offboarding() {
     } catch (error) {
       toast({
         title: t("common.error") || "Error",
-        description: error instanceof Error ? error.message : "Could not generate the certificate",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Could not generate the certificate",
         variant: "destructive",
       });
     } finally {
@@ -235,7 +294,11 @@ export default function Offboarding() {
     const previous = onboardingCase;
     const updatedEquipment = (onboardingCase.equipment || []).map((a) =>
       a.id === assetId
-        ? { ...a, returned, returnedAt: returned ? new Date().toISOString() : undefined }
+        ? {
+            ...a,
+            returned,
+            returnedAt: returned ? new Date().toISOString() : undefined,
+          }
         : a,
     );
     queryClient.setQueryData<OnboardingCase | null>(onboardingQueryKey, {
@@ -247,12 +310,19 @@ export default function Offboarding() {
         equipment: updatedEquipment,
       });
       const allReturned =
-        updatedEquipment.length > 0 && updatedEquipment.every((a) => a.returned);
-      if (selectedCase?.id && allReturned !== selectedCase.checklist.equipmentReturned) {
+        updatedEquipment.length > 0 &&
+        updatedEquipment.every((a) => a.returned);
+      if (
+        selectedCase?.id &&
+        allReturned !== selectedCase.checklist.equipmentReturned
+      ) {
         updateChecklist(selectedCase.id, "equipmentReturned", allReturned);
       }
     } catch (error) {
-      queryClient.setQueryData<OnboardingCase | null>(onboardingQueryKey, previous);
+      queryClient.setQueryData<OnboardingCase | null>(
+        onboardingQueryKey,
+        previous,
+      );
       toast({
         title: "Could not update",
         description: error instanceof Error ? error.message : "Unknown error",
@@ -274,10 +344,21 @@ export default function Offboarding() {
 
   // E8 warning at CREATE time too: same soft gate for the dialog's selection.
   const dialogDisciplinaryQuery = useQuery({
-    queryKey: ["disciplinary", "byEmployee", tenantId, newOffboarding.employeeId],
-    queryFn: () => disciplinaryService.getEmployeeRecords(tenantId, newOffboarding.employeeId),
+    queryKey: [
+      "disciplinary",
+      "byEmployee",
+      tenantId,
+      newOffboarding.employeeId,
+    ],
+    queryFn: () =>
+      disciplinaryService.getEmployeeRecords(
+        tenantId,
+        newOffboarding.employeeId,
+      ),
     enabled:
-      !!tenantId && !!newOffboarding.employeeId && newOffboarding.departureReason === "termination",
+      !!tenantId &&
+      !!newOffboarding.employeeId &&
+      newOffboarding.departureReason === "termination",
     staleTime: 60 * 1000,
   });
   const showDialogDisciplinaryWarning =
@@ -302,14 +383,14 @@ export default function Offboarding() {
   });
 
   const departments = Array.from(
-    new Set(employees.map((emp) => emp.jobDetails.department))
+    new Set(employees.map((emp) => emp.jobDetails.department)),
   ).sort();
 
   const handleStartOffboarding = () => {
     if (
-      !newOffboarding.employeeId
-      || !newOffboarding.departureReason
-      || !newOffboarding.lastWorkingDay
+      !newOffboarding.employeeId ||
+      !newOffboarding.departureReason ||
+      !newOffboarding.lastWorkingDay
     ) {
       toast({
         title: t("hiring.offboarding.toast.validationTitle"),
@@ -319,7 +400,9 @@ export default function Offboarding() {
       return;
     }
 
-    const employee = employees.find((emp) => emp.id === newOffboarding.employeeId);
+    const employee = employees.find(
+      (emp) => emp.id === newOffboarding.employeeId,
+    );
     if (!employee) return;
 
     createOffboardingMutation.mutate(
@@ -360,18 +443,25 @@ export default function Offboarding() {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
-  const updateChecklist = (caseId: string, item: keyof OffboardingChecklist, value: boolean) => {
+  const updateChecklist = (
+    caseId: string,
+    item: keyof OffboardingChecklist,
+    value: boolean,
+  ) => {
     updateChecklistMutation.mutate(
       { caseId, item, value },
       {
         onSuccess: () => {
           // Optimistically update selected case
           if (selectedCase?.id === caseId) {
-            const updatedChecklist = { ...selectedCase.checklist, [item]: value };
+            const updatedChecklist = {
+              ...selectedCase.checklist,
+              [item]: value,
+            };
             const progress = getChecklistProgress(updatedChecklist);
             if (progress === 100) {
               setSelectedCase(null);
@@ -391,11 +481,15 @@ export default function Offboarding() {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
-  const updateExitInterview = (caseId: string, field: string, value: string) => {
+  const updateExitInterview = (
+    caseId: string,
+    field: string,
+    value: string,
+  ) => {
     updateExitInterviewMutation.mutate(
       { caseId, field: field as keyof OffboardingCase["exitInterview"], value },
       {
@@ -408,41 +502,66 @@ export default function Offboarding() {
             });
           }
         },
-      }
+      },
     );
   };
 
   const saveArticle56FinalPay = () => {
-    if (!selectedCase?.id || !user?.uid) return;
+    if (
+      !selectedCase?.id ||
+      !user?.uid ||
+      typeof selectedCase.includeArt56Severance !== "boolean" ||
+      !finalPayReviewAcknowledged ||
+      !finalPayReviewNote.trim()
+    )
+      return;
     saveArticle56Mutation.mutate(
-      { caseId: selectedCase.id, calculatedBy: user.uid },
+      {
+        caseId: selectedCase.id,
+        calculatedBy: user.uid,
+        severanceIncluded: selectedCase.includeArt56Severance,
+        acknowledged: finalPayReviewAcknowledged,
+        note: finalPayReviewNote,
+      },
       {
         onSuccess: (snapshot) => {
-          const checklist = { ...selectedCase.checklist, finalPayCalculated: true };
+          const checklist = {
+            ...selectedCase.checklist,
+            finalPayCalculated: true,
+          };
           if (getChecklistProgress(checklist) === 100) {
             setSelectedCase(null);
           } else {
             setSelectedCase({
               ...selectedCase,
               article56FinalPay: snapshot,
+              includeArt56Severance: snapshot.severanceIncluded,
+              finalPayReviewAcknowledged: true,
+              finalPayReviewNote: snapshot.reviewNote,
               checklist,
               status: "in_progress",
             });
           }
           toast({
-            title: t("hiring.offboarding.finalPay.savedTitle") || "Article 56 calculation saved",
-            description: t("hiring.offboarding.finalPay.savedDescription")
-              || "The source salary, service dates, and statutory result were frozen on this case.",
+            title:
+              t("hiring.offboarding.finalPay.savedTitle") ||
+              "Article 56 calculation saved",
+            description:
+              t("hiring.offboarding.finalPay.savedDescription") ||
+              "The source salary, service dates, and statutory result were frozen on this case.",
           });
         },
         onError: (error) => {
           // Engine RangeErrors (bad dates on the source records) mean the
           // record needs fixing, not that the app failed — frame them that way.
           toast({
-            title: error instanceof RangeError
-              ? t("common.needsReviewTitle")
-              : t("hiring.offboarding.finalPay.errorTitle") || "Could not calculate final pay",
-            description: error instanceof Error ? error.message : "Unknown error",
+            title:
+              error instanceof RangeError
+                ? t("common.needsReviewTitle")
+                : t("hiring.offboarding.finalPay.errorTitle") ||
+                  "Could not calculate final pay",
+            description:
+              error instanceof Error ? error.message : "Unknown error",
             variant: "destructive",
           });
         },
@@ -478,14 +597,21 @@ export default function Offboarding() {
 
   const getDepartureReasonLabel = (reason: string) => {
     const labels: Record<string, string> = {
-      resignation: t("hiring.offboarding.dialog.reasons.resignation") || "Resignation",
-      redundancy: t("hiring.offboarding.dialog.reasons.redundancy") || "Redundancy",
-      termination: t("hiring.offboarding.dialog.reasons.termination") || "Termination",
-      retirement: t("hiring.offboarding.dialog.reasons.retirement") || "Retirement",
-      contract_end: t("hiring.offboarding.dialog.reasons.contractEnd") || "Contract end",
+      resignation:
+        t("hiring.offboarding.dialog.reasons.resignation") || "Resignation",
+      redundancy:
+        t("hiring.offboarding.dialog.reasons.redundancy") || "Redundancy",
+      termination:
+        t("hiring.offboarding.dialog.reasons.termination") || "Termination",
+      retirement:
+        t("hiring.offboarding.dialog.reasons.retirement") || "Retirement",
+      contract_end:
+        t("hiring.offboarding.dialog.reasons.contractEnd") || "Contract end",
       mutual_agreement:
-        t("hiring.offboarding.dialog.reasons.mutualAgreement") || "Mutual agreement",
-      death: t("hiring.offboarding.dialog.reasons.death") || "Death of employee",
+        t("hiring.offboarding.dialog.reasons.mutualAgreement") ||
+        "Mutual agreement",
+      death:
+        t("hiring.offboarding.dialog.reasons.death") || "Death of employee",
       other: t("hiring.offboarding.dialog.reasons.other") || "Other",
     };
     return labels[reason] || reason;
@@ -493,7 +619,9 @@ export default function Offboarding() {
 
   // Exit-interview surfacing: answers are captured live on each case above;
   // this is the read-only view + CSV export over the completed cases.
-  const completedWithInterviews = completedCases.filter(hasExitInterviewAnswers);
+  const completedWithInterviews = completedCases.filter(
+    hasExitInterviewAnswers,
+  );
 
   const getSatisfactionLabel = (value: string) => {
     const keys: Record<string, string> = {
@@ -511,16 +639,22 @@ export default function Offboarding() {
   };
 
   const getRecommendLabel = (value: string) =>
-    t(`hiring.offboarding.exit.recommendOptions.${value}`) || recommendLabel(value);
+    t(`hiring.offboarding.exit.recommendOptions.${value}`) ||
+    recommendLabel(value);
 
   const exportExitInterviews = () => {
     const columns = EXIT_INTERVIEW_CSV_COLUMNS.map((col) => ({
       key: col.key,
       label: t(`hiring.offboarding.exitInterviews.csv.${col.key}`) || col.label,
     }));
-    exportToCSV(toExitInterviewRows(completedCases), "exit_interviews", columns);
+    exportToCSV(
+      toExitInterviewRows(completedCases),
+      "exit_interviews",
+      columns,
+    );
     toast({
-      title: t("hiring.offboarding.exitInterviews.exportedTitle") || "Export ready",
+      title:
+        t("hiring.offboarding.exitInterviews.exportedTitle") || "Export ready",
       description:
         t("hiring.offboarding.exitInterviews.exportedDesc") ||
         "Exit interview answers downloaded as a CSV file.",
@@ -530,7 +664,7 @@ export default function Offboarding() {
   if (loading || employeesLoading) {
     return (
       <div className="min-h-screen bg-background">
-          <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
@@ -550,9 +684,7 @@ export default function Offboarding() {
           iconColor="text-blue-500"
           actions={
             employees.length > 0 ? (
-              <Button
-                onClick={() => setShowDialog(true)}
-              >
+              <Button onClick={() => setShowDialog(true)}>
                 <UserMinus className="mr-2 h-4 w-4" />
                 {t("hiring.offboarding.actions.start")}
               </Button>
@@ -565,7 +697,9 @@ export default function Offboarding() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>{t("hiring.offboarding.dialog.title")}</DialogTitle>
-              <DialogDescription>{t("hiring.offboarding.dialog.description")}</DialogDescription>
+              <DialogDescription>
+                {t("hiring.offboarding.dialog.description")}
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -574,7 +708,10 @@ export default function Offboarding() {
                   <Select
                     value={newOffboarding.department}
                     onValueChange={(value) =>
-                      setNewOffboarding((prev) => ({ ...prev, department: value }))
+                      setNewOffboarding((prev) => ({
+                        ...prev,
+                        department: value,
+                      }))
                     }
                   >
                     <SelectTrigger>
@@ -597,10 +734,15 @@ export default function Offboarding() {
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder={t("hiring.offboarding.dialog.searchPlaceholder")}
+                      placeholder={t(
+                        "hiring.offboarding.dialog.searchPlaceholder",
+                      )}
                       value={newOffboarding.search}
                       onChange={(e) =>
-                        setNewOffboarding((prev) => ({ ...prev, search: e.target.value }))
+                        setNewOffboarding((prev) => ({
+                          ...prev,
+                          search: e.target.value,
+                        }))
                       }
                       className="pl-10"
                     />
@@ -617,16 +759,24 @@ export default function Offboarding() {
                 <Select
                   value={newOffboarding.employeeId}
                   onValueChange={(value) =>
-                    setNewOffboarding((prev) => ({ ...prev, employeeId: value }))
+                    setNewOffboarding((prev) => ({
+                      ...prev,
+                      employeeId: value,
+                    }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("hiring.offboarding.dialog.selectPlaceholder")} />
+                    <SelectValue
+                      placeholder={t(
+                        "hiring.offboarding.dialog.selectPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredEmployees.map((employee) => (
                       <SelectItem key={employee.id} value={employee.id || ""}>
-                        {employee.personalInfo.firstName} {employee.personalInfo.lastName} -{" "}
+                        {employee.personalInfo.firstName}{" "}
+                        {employee.personalInfo.lastName} -{" "}
                         {employee.jobDetails.department}
                       </SelectItem>
                     ))}
@@ -639,11 +789,18 @@ export default function Offboarding() {
                 <Select
                   value={newOffboarding.departureReason}
                   onValueChange={(value) =>
-                    setNewOffboarding((prev) => ({ ...prev, departureReason: value as DepartureReason }))
+                    setNewOffboarding((prev) => ({
+                      ...prev,
+                      departureReason: value as DepartureReason,
+                    }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("hiring.offboarding.dialog.reasonPlaceholder")} />
+                    <SelectValue
+                      placeholder={t(
+                        "hiring.offboarding.dialog.reasonPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {DEPARTURE_REASONS.map((reason) => (
@@ -671,7 +828,10 @@ export default function Offboarding() {
                     value={newOffboarding.lastWorkingDay}
                     required
                     onChange={(e) =>
-                      setNewOffboarding((prev) => ({ ...prev, lastWorkingDay: e.target.value }))
+                      setNewOffboarding((prev) => ({
+                        ...prev,
+                        lastWorkingDay: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -681,7 +841,10 @@ export default function Offboarding() {
                     type="date"
                     value={newOffboarding.noticeDate}
                     onChange={(e) =>
-                      setNewOffboarding((prev) => ({ ...prev, noticeDate: e.target.value }))
+                      setNewOffboarding((prev) => ({
+                        ...prev,
+                        noticeDate: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -693,7 +856,10 @@ export default function Offboarding() {
                   placeholder={t("hiring.offboarding.dialog.notesPlaceholder")}
                   value={newOffboarding.notes}
                   onChange={(e) =>
-                    setNewOffboarding((prev) => ({ ...prev, notes: e.target.value }))
+                    setNewOffboarding((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
                   }
                 />
               </div>
@@ -702,7 +868,10 @@ export default function Offboarding() {
               <Button variant="outline" onClick={() => setShowDialog(false)}>
                 {t("hiring.offboarding.dialog.cancel")}
               </Button>
-              <Button onClick={handleStartOffboarding} disabled={createOffboardingMutation.isPending}>
+              <Button
+                onClick={handleStartOffboarding}
+                disabled={createOffboardingMutation.isPending}
+              >
                 {createOffboardingMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -745,7 +914,9 @@ export default function Offboarding() {
                     {t("hiring.offboarding.ongoing.title")}
                   </CardTitle>
                   <CardDescription>
-                    {t("hiring.offboarding.ongoing.description", { count: activeCases.length })}
+                    {t("hiring.offboarding.ongoing.description", {
+                      count: activeCases.length,
+                    })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -775,11 +946,16 @@ export default function Offboarding() {
                               <div className="flex items-center gap-3">
                                 <Avatar>
                                   <AvatarFallback>
-                                    {case_.employeeName.split(" ").map((n) => n[0]).join("")}
+                                    {case_.employeeName
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h4 className="font-semibold">{case_.employeeName}</h4>
+                                  <h4 className="font-semibold">
+                                    {case_.employeeName}
+                                  </h4>
                                   <p className="text-sm text-muted-foreground">
                                     {case_.department} • {case_.position}
                                   </p>
@@ -791,23 +967,34 @@ export default function Offboarding() {
                             </div>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span>{t("hiring.offboarding.progress.label")}</span>
+                                <span>
+                                  {t("hiring.offboarding.progress.label")}
+                                </span>
                                 <span>
                                   {t("hiring.offboarding.progress.completed", {
-                                    percent: getChecklistProgress(case_.checklist),
+                                    percent: getChecklistProgress(
+                                      case_.checklist,
+                                    ),
                                   })}
                                 </span>
                               </div>
-                              <Progress value={getChecklistProgress(case_.checklist)} className="h-2" />
+                              <Progress
+                                value={getChecklistProgress(case_.checklist)}
+                                className="h-2"
+                              />
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">
                                   {t("hiring.offboarding.progress.reason", {
-                                    reason: getDepartureReasonLabel(case_.departureReason),
+                                    reason: getDepartureReasonLabel(
+                                      case_.departureReason,
+                                    ),
                                   })}
                                 </span>
                                 <span className="text-muted-foreground">
                                   {t("hiring.offboarding.progress.lastDay", {
-                                    date: case_.lastWorkingDay || t("hiring.offboarding.progress.tbd"),
+                                    date:
+                                      case_.lastWorkingDay ||
+                                      t("hiring.offboarding.progress.tbd"),
                                   })}
                                 </span>
                               </div>
@@ -828,7 +1015,9 @@ export default function Offboarding() {
                       <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     {selectedCase
-                      ? t("hiring.offboarding.checklist.titleWithName", { name: selectedCase.employeeName })
+                      ? t("hiring.offboarding.checklist.titleWithName", {
+                          name: selectedCase.employeeName,
+                        })
                       : t("hiring.offboarding.checklist.title")}
                   </CardTitle>
                   <CardDescription>
@@ -852,7 +1041,9 @@ export default function Offboarding() {
                       {/* Progress Summary */}
                       <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">{t("hiring.offboarding.progress.overall")}</span>
+                          <span className="font-medium">
+                            {t("hiring.offboarding.progress.overall")}
+                          </span>
                           <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
                             {getChecklistProgress(selectedCase.checklist)}%
                           </span>
@@ -860,7 +1051,9 @@ export default function Offboarding() {
                         <div className="h-3 bg-muted rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary rounded-full transition-all duration-500"
-                            style={{ width: `${getChecklistProgress(selectedCase.checklist)}%` }}
+                            style={{
+                              width: `${getChecklistProgress(selectedCase.checklist)}%`,
+                            }}
                           />
                         </div>
                       </div>
@@ -884,20 +1077,28 @@ export default function Offboarding() {
                             <CalendarClock className="h-3.5 w-3.5 shrink-0" />
                             {selectedCase.noticeDate && noticeGiven !== null ? (
                               <span>
-                                {t("hiring.offboarding.notice.required") || "Required notice"}:{" "}
-                                {noticeReq.days} {t("hiring.offboarding.notice.days") || "days"} (
-                                {noticeReq.basis}) —{" "}
-                                {t("hiring.offboarding.notice.given") || "given"}: {noticeGiven}{" "}
+                                {t("hiring.offboarding.notice.required") ||
+                                  "Required notice"}
+                                : {noticeReq.days}{" "}
+                                {t("hiring.offboarding.notice.days") || "days"}{" "}
+                                ({noticeReq.basis}) —{" "}
+                                {t("hiring.offboarding.notice.given") ||
+                                  "given"}
+                                : {noticeGiven}{" "}
                                 {t("hiring.offboarding.notice.days") || "days"}
                               </span>
                             ) : (
                               <span>
-                                {t("hiring.offboarding.notice.notRecorded")
-                                  || "Notice date not recorded"}{" "}
-                                — {t("hiring.offboarding.notice.requiredForReason")
-                                  || "required notice for this departure reason is"}{" "}
-                                {noticeReq.days} {t("hiring.offboarding.notice.days") || "days"} (
-                                {noticeReq.basis})
+                                {t("hiring.offboarding.notice.notRecorded") ||
+                                  "Notice date not recorded"}{" "}
+                                —{" "}
+                                {t(
+                                  "hiring.offboarding.notice.requiredForReason",
+                                ) ||
+                                  "required notice for this departure reason is"}{" "}
+                                {noticeReq.days}{" "}
+                                {t("hiring.offboarding.notice.days") || "days"}{" "}
+                                ({noticeReq.basis})
                               </span>
                             )}
                           </div>
@@ -906,11 +1107,18 @@ export default function Offboarding() {
                               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                               <span>
                                 {selectedCase.departureReason === "resignation"
-                                  ? (t("hiring.offboarding.notice.shortfallWorker")
-                                      || "Notice is short: the worker owes the employer the missing")
-                                  : (t("hiring.offboarding.notice.shortfallEmployer")
-                                      || "Notice is short: the employer owes the worker the missing")}{" "}
-                                {noticeShortfall} {t("hiring.offboarding.notice.daysPay") || "days' pay"} (
+                                  ? t(
+                                      "hiring.offboarding.notice.shortfallWorker",
+                                    ) ||
+                                    "Notice is short: the worker owes the employer the missing"
+                                  : t(
+                                      "hiring.offboarding.notice.shortfallEmployer",
+                                    ) ||
+                                    "Notice is short: the employer owes the worker the missing"}{" "}
+                                {noticeShortfall}{" "}
+                                {t("hiring.offboarding.notice.daysPay") ||
+                                  "days' pay"}{" "}
+                                (
                                 {selectedCase.departureReason === "resignation"
                                   ? "Lei 4/2012 Art. 53(3)"
                                   : "Lei 4/2012 Art. 49(9)"}
@@ -931,97 +1139,128 @@ export default function Offboarding() {
                           <div className="flex items-start gap-2">
                             <Landmark className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                              {t("hiring.offboarding.art55.title")
-                                || "Art. 55 reference (court-awarded if dismissal is ruled unlawful)"}
+                              {t("hiring.offboarding.art55.title") ||
+                                "Art. 55 reference (court-awarded if dismissal is ruled unlawful)"}
                               {": "}
                               <span className="font-medium text-foreground">
                                 {art55Months}{" "}
                                 {art55Months === 1
-                                  ? (t("hiring.offboarding.art55.month") || "month")
-                                  : (t("hiring.offboarding.art55.months") || "months")}
-                                {art55Amount > 0 && <> = {formatCurrencyTL(art55Amount)}</>}
+                                  ? t("hiring.offboarding.art55.month") ||
+                                    "month"
+                                  : t("hiring.offboarding.art55.months") ||
+                                    "months"}
+                                {art55Amount > 0 && (
+                                  <> = {formatCurrencyTL(art55Amount)}</>
+                                )}
                               </span>{" "}
                               (Lei 4/2012 Art. 55(3)).
                             </span>
                           </div>
                           <p className="pl-[22px]">
-                            {t("hiring.offboarding.art55.note")
-                              || "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure."}
+                            {t("hiring.offboarding.art55.note") ||
+                              "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure."}
                           </p>
                         </div>
                       )}
 
                       {/* Equipment issued at onboarding */}
-                      {onboardingCase && onboardingCase.equipment && onboardingCase.equipment.length > 0 && (
-                        <div className="space-y-3 rounded-lg border border-border/50 p-4 bg-muted/20">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm flex items-center gap-2">
-                              <Building className="h-4 w-4 text-muted-foreground" />
-                              Equipment issued at onboarding
-                            </h4>
-                            <Badge variant="outline" className="text-xs">
-                              {onboardingCase.equipment.filter((a) => a.returned).length}/
-                              {onboardingCase.equipment.length} returned
-                            </Badge>
-                          </div>
-                          <div className="space-y-2">
-                            {onboardingCase.equipment.map((asset: EquipmentAsset) => (
-                              <div
-                                key={asset.id}
-                                className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
-                                  asset.returned
-                                    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20"
-                                    : "border-border/50"
-                                }`}
-                              >
-                                <Checkbox
-                                  checked={!!asset.returned}
-                                  onCheckedChange={(v) =>
-                                    toggleAssetReturned(asset.id, v === true)
-                                  }
-                                  className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium capitalize">
-                                    {asset.type.replace("_", " ")}
-                                    {asset.make || asset.model ? (
-                                      <span className="text-muted-foreground font-normal">
-                                        {" "}— {[asset.make, asset.model].filter(Boolean).join(" ")}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                  {(asset.serialNumber || asset.assetTag) && (
-                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                      {asset.serialNumber && <>S/N: {asset.serialNumber}</>}
-                                      {asset.serialNumber && asset.assetTag && " · "}
-                                      {asset.assetTag && <>Tag: {asset.assetTag}</>}
-                                    </div>
-                                  )}
-                                  {asset.notes && (
-                                    <div className="text-xs text-muted-foreground mt-0.5 italic">
-                                      {asset.notes}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                          {onboardingCase.companyEmail && (
-                            <div className="text-xs text-muted-foreground pt-1 border-t border-border/30 flex items-center gap-2">
-                              <Mail className="h-3 w-3" />
-                              Company email to deactivate:{" "}
-                              <span className="font-mono">{onboardingCase.companyEmail}</span>
+                      {onboardingCase &&
+                        onboardingCase.equipment &&
+                        onboardingCase.equipment.length > 0 && (
+                          <div className="space-y-3 rounded-lg border border-border/50 p-4 bg-muted/20">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-sm flex items-center gap-2">
+                                <Building className="h-4 w-4 text-muted-foreground" />
+                                Equipment issued at onboarding
+                              </h4>
+                              <Badge variant="outline" className="text-xs">
+                                {
+                                  onboardingCase.equipment.filter(
+                                    (a) => a.returned,
+                                  ).length
+                                }
+                                /{onboardingCase.equipment.length} returned
+                              </Badge>
                             </div>
-                          )}
-                        </div>
-                      )}
+                            <div className="space-y-2">
+                              {onboardingCase.equipment.map(
+                                (asset: EquipmentAsset) => (
+                                  <div
+                                    key={asset.id}
+                                    className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+                                      asset.returned
+                                        ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20"
+                                        : "border-border/50"
+                                    }`}
+                                  >
+                                    <Checkbox
+                                      checked={!!asset.returned}
+                                      onCheckedChange={(v) =>
+                                        toggleAssetReturned(
+                                          asset.id,
+                                          v === true,
+                                        )
+                                      }
+                                      className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium capitalize">
+                                        {asset.type.replace("_", " ")}
+                                        {asset.make || asset.model ? (
+                                          <span className="text-muted-foreground font-normal">
+                                            {" "}
+                                            —{" "}
+                                            {[asset.make, asset.model]
+                                              .filter(Boolean)
+                                              .join(" ")}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      {(asset.serialNumber ||
+                                        asset.assetTag) && (
+                                        <div className="text-xs text-muted-foreground mt-0.5">
+                                          {asset.serialNumber && (
+                                            <>S/N: {asset.serialNumber}</>
+                                          )}
+                                          {asset.serialNumber &&
+                                            asset.assetTag &&
+                                            " · "}
+                                          {asset.assetTag && (
+                                            <>Tag: {asset.assetTag}</>
+                                          )}
+                                        </div>
+                                      )}
+                                      {asset.notes && (
+                                        <div className="text-xs text-muted-foreground mt-0.5 italic">
+                                          {asset.notes}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                            {onboardingCase.companyEmail && (
+                              <div className="text-xs text-muted-foreground pt-1 border-t border-border/30 flex items-center gap-2">
+                                <Mail className="h-3 w-3" />
+                                Company email to deactivate:{" "}
+                                <span className="font-mono">
+                                  {onboardingCase.companyEmail}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
-                      {onboardingCase === null && selectedCase?.employeeId && !onboardingQuery.isLoading && (
-                        <div className="rounded-lg border border-dashed border-border/50 p-4 text-xs text-muted-foreground">
-                          No onboarding record found for this employee — use the checklist below to
-                          track equipment return manually.
-                        </div>
-                      )}
+                      {onboardingCase === null &&
+                        selectedCase?.employeeId &&
+                        !onboardingQuery.isLoading && (
+                          <div className="rounded-lg border border-dashed border-border/50 p-4 text-xs text-muted-foreground">
+                            No onboarding record found for this employee — use
+                            the checklist below to track equipment return
+                            manually.
+                          </div>
+                        )}
 
                       {/* Article 56 calculation is source-derived, never a manual checkbox. */}
                       <div className="space-y-3 rounded-lg border border-border/70 p-4">
@@ -1029,137 +1268,275 @@ export default function Offboarding() {
                           <div>
                             <h4 className="flex items-center gap-2 text-sm font-medium">
                               <DollarSign className="h-4 w-4 text-primary" />
-                              {t("hiring.offboarding.finalPay.title") || "Article 56 service compensation"}
+                              {t("hiring.offboarding.finalPay.title") ||
+                                "Article 56 service compensation"}
                             </h4>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              {t("hiring.offboarding.finalPay.description")
-                                || "One monthly salary for each completed five-year period of service."}
+                              {t("hiring.offboarding.finalPay.description") ||
+                                "One monthly salary for each completed five-year period of service."}
                             </p>
                           </div>
                           {selectedCase.article56FinalPay ? (
                             <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                               <CheckCircle className="mr-1 h-3 w-3" />
-                              {t("hiring.offboarding.finalPay.saved") || "Calculated"}
+                              {t("hiring.offboarding.finalPay.saved") ||
+                                "Calculated"}
                             </Badge>
                           ) : null}
                         </div>
 
-                        {/* Cause-aware, editable Art. 56 decision. Defaults follow
-                            real TL practice (paid on employer-initiated endings,
-                            not on resignation); the statute's literal text is
-                            cause-independent, hence the confirm-with-accountant
-                            note when it is switched off. */}
-                        <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-3">
-                          <Switch
-                            checked={
-                              selectedCase.includeArt56Severance ??
-                              severanceDefaultForReason(selectedCase.departureReason)
-                            }
-                            disabled={setSeveranceMutation.isPending || selectedCase.status === "completed"}
-                            onCheckedChange={(checked) => {
-                              if (!selectedCase.id) return;
-                              setSeveranceMutation.mutate(
-                                { caseId: selectedCase.id, include: checked },
-                                {
-                                  onError: () =>
-                                    toast({
-                                      title: t("common.error"),
-                                      description: t("hiring.offboarding.finalPay.severanceToggleFailed")
-                                        || "Could not save the severance decision.",
-                                      variant: "destructive",
-                                    }),
-                                },
-                              );
-                              setSelectedCase({ ...selectedCase, includeArt56Severance: checked });
-                            }}
-                          />
-                          <div className="space-y-1">
-                            <Label className="text-xs font-medium">
-                              {t("hiring.offboarding.finalPay.includeSeverance")
-                                || "Pay Art. 56 severance in the final payroll run"}
+                        <div className="space-y-3 rounded-lg bg-muted/40 p-3">
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="art56Decision"
+                              className="text-xs font-medium"
+                            >
+                              {t("hiring.offboarding.finalPay.decision") ||
+                                "Reviewed Art. 56 treatment *"}
                             </Label>
+                            <Select
+                              value={
+                                selectedCase.includeArt56Severance === true
+                                  ? "include"
+                                  : selectedCase.includeArt56Severance === false
+                                    ? "exclude"
+                                    : ""
+                              }
+                              disabled={
+                                setSeveranceMutation.isPending ||
+                                selectedCase.status === "completed"
+                              }
+                              onValueChange={(value) => {
+                                if (!selectedCase.id) return;
+                                const include = value === "include";
+                                setSeveranceMutation.mutate(
+                                  { caseId: selectedCase.id, include },
+                                  {
+                                    onError: () =>
+                                      toast({
+                                        title: t("common.error"),
+                                        description:
+                                          t(
+                                            "hiring.offboarding.finalPay.severanceToggleFailed",
+                                          ) ||
+                                          "Could not save the severance decision.",
+                                        variant: "destructive",
+                                      }),
+                                  },
+                                );
+                                setSelectedCase({
+                                  ...selectedCase,
+                                  includeArt56Severance: include,
+                                });
+                              }}
+                            >
+                              <SelectTrigger id="art56Decision">
+                                <SelectValue
+                                  placeholder={
+                                    t(
+                                      "hiring.offboarding.finalPay.decisionPlaceholder",
+                                    ) || "Choose after accountant/legal review"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="include">
+                                  {t(
+                                    "hiring.offboarding.finalPay.decisionInclude",
+                                  ) || "Include in final payroll"}
+                                </SelectItem>
+                                <SelectItem value="exclude">
+                                  {t(
+                                    "hiring.offboarding.finalPay.decisionExclude",
+                                  ) || "Exclude from final payroll"}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {t("hiring.offboarding.finalPay.reviewWarning") ||
+                              "The statutory text and common practice can point to different outcomes. Xefe will not choose for you."}
+                          </p>
+                          {selectedCase.departureReason === "death" && (
                             <p className="text-xs text-muted-foreground">
-                              {(selectedCase.includeArt56Severance ??
-                                severanceDefaultForReason(selectedCase.departureReason))
-                                ? (t("hiring.offboarding.finalPay.severanceOnNote")
-                                    || "Default for this departure reason. The next payroll run pays it automatically once the case completes.")
-                                : (t("hiring.offboarding.finalPay.severanceOffNote")
-                                    || "Not usually paid on this departure reason in TL practice — but the law's text is cause-independent, so the employee may still be entitled. Confirm with your accountant.")}
+                              {t(
+                                "hiring.offboarding.finalPay.deathHeirsNote",
+                              ) ||
+                                "Worker deceased (Art. 47(1)(b)): confirm beneficiaries with your accountant."}
                             </p>
-                            {selectedCase.departureReason === "death" && (
-                              <p className="text-xs text-muted-foreground">
-                                {t("hiring.offboarding.finalPay.deathHeirsNote")
-                                  || "Worker deceased (Art. 47(1)(b)): this payment is payable to the estate/heirs — confirm beneficiaries with your accountant."}
-                              </p>
-                            )}
+                          )}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="finalPayReviewNote"
+                              className="text-xs font-medium"
+                            >
+                              {t("hiring.offboarding.finalPay.reviewNote") ||
+                                "Review note *"}
+                            </Label>
+                            <Textarea
+                              id="finalPayReviewNote"
+                              value={finalPayReviewNote}
+                              onChange={(event) =>
+                                setFinalPayReviewNote(event.target.value)
+                              }
+                              placeholder={
+                                t(
+                                  "hiring.offboarding.finalPay.reviewNotePlaceholder",
+                                ) ||
+                                "Reviewer, date, and basis for the decision"
+                              }
+                              disabled={selectedCase.status === "completed"}
+                              rows={2}
+                            />
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <Checkbox
+                              id="finalPayReviewAcknowledged"
+                              checked={finalPayReviewAcknowledged}
+                              onCheckedChange={(checked) =>
+                                setFinalPayReviewAcknowledged(checked === true)
+                              }
+                              disabled={selectedCase.status === "completed"}
+                            />
+                            <Label
+                              htmlFor="finalPayReviewAcknowledged"
+                              className="text-xs font-normal leading-5"
+                            >
+                              {t(
+                                "hiring.offboarding.finalPay.reviewAcknowledgement",
+                              ) ||
+                                "I confirm that an accountant or legal reviewer checked this treatment."}
+                            </Label>
                           </div>
                         </div>
 
                         {selectedCase.article56FinalPay ? (
                           <div className="space-y-2 rounded-lg bg-muted/40 p-3 text-sm">
                             <div className="flex justify-between gap-4">
-                              <span className="text-muted-foreground">{t("hiring.offboarding.finalPay.salary") || "Monthly salary"}</span>
-                              <span className="font-medium">{formatCurrencyTL(selectedCase.article56FinalPay.monthlySalary)}</span>
+                              <span className="text-muted-foreground">
+                                {t("hiring.offboarding.finalPay.salary") ||
+                                  "Monthly salary"}
+                              </span>
+                              <span className="font-medium">
+                                {formatCurrencyTL(
+                                  selectedCase.article56FinalPay.monthlySalary,
+                                )}
+                              </span>
                             </div>
                             <div className="flex justify-between gap-4">
-                              <span className="text-muted-foreground">{t("hiring.offboarding.finalPay.service") || "Completed service"}</span>
+                              <span className="text-muted-foreground">
+                                {t("hiring.offboarding.finalPay.service") ||
+                                  "Completed service"}
+                              </span>
                               <span className="font-medium">
-                                {selectedCase.article56FinalPay.completedYears} {t("hiring.offboarding.finalPay.years") || "years"}
-                                {" · "}{selectedCase.article56FinalPay.completedFiveYearPeriods} × 5
+                                {selectedCase.article56FinalPay.completedYears}{" "}
+                                {t("hiring.offboarding.finalPay.years") ||
+                                  "years"}
+                                {" · "}
+                                {
+                                  selectedCase.article56FinalPay
+                                    .completedFiveYearPeriods
+                                }{" "}
+                                × 5
                               </span>
                             </div>
                             <div className="flex justify-between gap-4 border-t border-border/70 pt-2">
                               <span className="font-medium">
-                                {t("hiring.offboarding.finalPay.amount") || "Service compensation"}
-                                {selectedCase.article56FinalPay.severanceIncluded === false && (
+                                {t("hiring.offboarding.finalPay.amount") ||
+                                  "Service compensation"}
+                                {selectedCase.article56FinalPay
+                                  .severanceIncluded === false && (
                                   <span className="ml-1 font-normal text-muted-foreground">
-                                    {t("hiring.offboarding.finalPay.excludedTag") || "(excluded — reference only)"}
+                                    {t(
+                                      "hiring.offboarding.finalPay.excludedTag",
+                                    ) || "(excluded — reference only)"}
                                   </span>
                                 )}
                               </span>
-                              <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.serviceCompensation)}</span>
+                              <span className="font-semibold">
+                                {formatCurrencyTL(
+                                  selectedCase.article56FinalPay
+                                    .serviceCompensation,
+                                )}
+                              </span>
                             </div>
-                            {typeof selectedCase.article56FinalPay.subsidioAnual === "number" && (
+                            {typeof selectedCase.article56FinalPay
+                              .subsidioAnual === "number" && (
                               <>
                                 <div className="flex justify-between gap-4 border-t border-border/70 pt-2">
                                   <span className="font-medium">
-                                    {t("hiring.offboarding.finalPay.subsidio") || "13th month (Art. 44)"}
+                                    {t(
+                                      "hiring.offboarding.finalPay.subsidio",
+                                    ) || "13th month (Art. 44)"}
                                     <span className="ml-1 font-normal text-muted-foreground">
-                                      {selectedCase.article56FinalPay.subsidioAnualMonths}/12
+                                      {
+                                        selectedCase.article56FinalPay
+                                          .subsidioAnualMonths
+                                      }
+                                      /12
                                     </span>
                                   </span>
-                                  <span className="font-semibold">{formatCurrencyTL(selectedCase.article56FinalPay.subsidioAnual)}</span>
+                                  <span className="font-semibold">
+                                    {formatCurrencyTL(
+                                      selectedCase.article56FinalPay
+                                        .subsidioAnual,
+                                    )}
+                                  </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                  {t("hiring.offboarding.finalPay.subsidioNote")
-                                    || "Reference only — the leaver's next payroll run pays severance + this prorated 13th month automatically (net of anything already paid). Don't settle these manually too."}
+                                  {t(
+                                    "hiring.offboarding.finalPay.subsidioNote",
+                                  ) ||
+                                    "Reference only — the leaver's next payroll run pays severance + this prorated 13th month automatically (net of anything already paid). Don't settle these manually too."}
                                 </p>
                               </>
                             )}
                           </div>
                         ) : (
                           <div className="space-y-1 text-xs text-muted-foreground">
-                            <p>{t("hiring.offboarding.finalPay.sourceHint") || "Uses the saved employee monthly salary and hire date, plus this case's last working day."}</p>
                             <p>
-                              {t("hiring.offboarding.finalPay.lastDay") || "Last working day"}: {selectedCase.lastWorkingDay || (t("hiring.offboarding.progress.tbd") || "Not set")}
+                              {t("hiring.offboarding.finalPay.sourceHint") ||
+                                "Uses the saved employee monthly salary and hire date, plus this case's last working day."}
+                            </p>
+                            <p>
+                              {t("hiring.offboarding.finalPay.lastDay") ||
+                                "Last working day"}
+                              :{" "}
+                              {selectedCase.lastWorkingDay ||
+                                t("hiring.offboarding.progress.tbd") ||
+                                "Not set"}
                             </p>
                           </div>
                         )}
 
                         <p className="text-xs text-muted-foreground">
-                          {t("hiring.offboarding.finalPay.taxNote")
-                            || "WIT-taxable under Tax Law Art. 1. This universal Art. 56 payment is not included in the INSS base. Saving it does not run or pay payroll."}
+                          {t("hiring.offboarding.finalPay.taxNote") ||
+                            "WIT-taxable under Tax Law Art. 1. This universal Art. 56 payment is not included in the INSS base. Saving it does not run or pay payroll."}
                         </p>
                         <Button
-                          variant={selectedCase.article56FinalPay ? "outline" : "default"}
+                          variant={
+                            selectedCase.article56FinalPay
+                              ? "outline"
+                              : "default"
+                          }
                           className="min-h-11 w-full sm:w-auto"
                           onClick={saveArticle56FinalPay}
-                          disabled={saveArticle56Mutation.isPending}
+                          disabled={
+                            saveArticle56Mutation.isPending ||
+                            typeof selectedCase.includeArt56Severance !==
+                              "boolean" ||
+                            !finalPayReviewAcknowledged ||
+                            !finalPayReviewNote.trim()
+                          }
                         >
-                          {saveArticle56Mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {saveArticle56Mutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
                           {selectedCase.article56FinalPay
-                            ? (t("hiring.offboarding.finalPay.recalculate") || "Recalculate from saved employee data")
-                            : (t("hiring.offboarding.finalPay.calculate") || "Calculate and save")}
+                            ? t("hiring.offboarding.finalPay.recalculate") ||
+                              "Recalculate from saved employee data"
+                            : t("hiring.offboarding.finalPay.calculate") ||
+                              "Calculate and save"}
                         </Button>
                       </div>
 
@@ -1167,27 +1544,73 @@ export default function Offboarding() {
                       <div className="space-y-4">
                         {(
                           [
-                            { id: "accessRevoked", label: t("hiring.offboarding.checklist.items.access"), icon: <Key className="h-4 w-4" /> },
-                            { id: "equipmentReturned", label: t("hiring.offboarding.checklist.items.equipment"), icon: <Building className="h-4 w-4" /> },
-                            { id: "documentsSigned", label: t("hiring.offboarding.checklist.items.documents"), icon: <FileText className="h-4 w-4" /> },
-                            { id: "knowledgeTransfer", label: t("hiring.offboarding.checklist.items.knowledge"), icon: <Archive className="h-4 w-4" /> },
-                            { id: "benefitsCancelled", label: t("hiring.offboarding.checklist.items.benefits"), icon: <CreditCard className="h-4 w-4" /> },
+                            {
+                              id: "accessRevoked",
+                              label: t(
+                                "hiring.offboarding.checklist.items.access",
+                              ),
+                              icon: <Key className="h-4 w-4" />,
+                            },
+                            {
+                              id: "equipmentReturned",
+                              label: t(
+                                "hiring.offboarding.checklist.items.equipment",
+                              ),
+                              icon: <Building className="h-4 w-4" />,
+                            },
+                            {
+                              id: "documentsSigned",
+                              label: t(
+                                "hiring.offboarding.checklist.items.documents",
+                              ),
+                              icon: <FileText className="h-4 w-4" />,
+                            },
+                            {
+                              id: "knowledgeTransfer",
+                              label: t(
+                                "hiring.offboarding.checklist.items.knowledge",
+                              ),
+                              icon: <Archive className="h-4 w-4" />,
+                            },
+                            {
+                              id: "benefitsCancelled",
+                              label: t(
+                                "hiring.offboarding.checklist.items.benefits",
+                              ),
+                              icon: <CreditCard className="h-4 w-4" />,
+                            },
                             {
                               // F12 — DL 20/2017 Art. 5(2)-(3): cessation must be
                               // declared to INSS by day 10 of the following month.
                               id: "inssCessationDeclared",
-                              label: t("hiring.offboarding.checklist.items.inssCessation")
-                                || "INSS cessation declared",
+                              label:
+                                t(
+                                  "hiring.offboarding.checklist.items.inssCessation",
+                                ) || "INSS cessation declared",
                               icon: <Landmark className="h-4 w-4" />,
                               hint:
-                                (t("hiring.offboarding.checklist.items.inssCessationHint")
-                                  || "Declare at the INSS portal by day 10 of the month after the last working day — until declared, INSS presumes the employment continues and contributions keep accruing.")
-                                + (inssDeadline
+                                (t(
+                                  "hiring.offboarding.checklist.items.inssCessationHint",
+                                ) ||
+                                  "Declare at the INSS portal by day 10 of the month after the last working day — until declared, INSS presumes the employment continues and contributions keep accruing.") +
+                                (inssDeadline
                                   ? ` ${t("hiring.offboarding.checklist.items.inssCessationDeadline") || "Deadline"}: ${formatDateTL(inssDeadline)}.`
                                   : ""),
                             },
-                            { id: "exitInterviewCompleted", label: t("hiring.offboarding.checklist.items.exitInterview"), icon: <Mail className="h-4 w-4" /> },
-                            { id: "referenceLetter", label: t("hiring.offboarding.checklist.items.reference"), icon: <Download className="h-4 w-4" /> },
+                            {
+                              id: "exitInterviewCompleted",
+                              label: t(
+                                "hiring.offboarding.checklist.items.exitInterview",
+                              ),
+                              icon: <Mail className="h-4 w-4" />,
+                            },
+                            {
+                              id: "referenceLetter",
+                              label: t(
+                                "hiring.offboarding.checklist.items.reference",
+                              ),
+                              icon: <Download className="h-4 w-4" />,
+                            },
                           ] as {
                             id: keyof OffboardingChecklist;
                             label: string;
@@ -1206,7 +1629,11 @@ export default function Offboarding() {
                             <Checkbox
                               checked={selectedCase.checklist[item.id]}
                               onCheckedChange={(checked) =>
-                                updateChecklist(selectedCase.id!, item.id, checked as boolean)
+                                updateChecklist(
+                                  selectedCase.id!,
+                                  item.id,
+                                  checked as boolean,
+                                )
                               }
                               className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                             />
@@ -1218,7 +1645,9 @@ export default function Offboarding() {
                                 </label>
                               </div>
                               {item.hint && (
-                                <p className="mt-1 text-xs text-muted-foreground">{item.hint}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {item.hint}
+                                </p>
                               )}
                               {item.id === "referenceLetter" && (
                                 <div className="mt-2 space-y-1.5">
@@ -1228,19 +1657,25 @@ export default function Offboarding() {
                                     variant="outline"
                                     size="sm"
                                     onClick={generateWorkCertificate}
-                                    disabled={certGenerating || selectedEmployeeQuery.isLoading}
+                                    disabled={
+                                      certGenerating ||
+                                      selectedEmployeeQuery.isLoading
+                                    }
                                   >
                                     {certGenerating ? (
                                       <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                     ) : (
                                       <FileText className="mr-2 h-3.5 w-3.5" />
                                     )}
-                                    {t("hiring.offboarding.certificate.generate")
-                                      || "Generate certificate (Art. 57)"}
+                                    {t(
+                                      "hiring.offboarding.certificate.generate",
+                                    ) || "Generate certificate (Art. 57)"}
                                   </Button>
                                   <p className="text-xs text-muted-foreground">
-                                    {t("hiring.offboarding.certificate.mandatoryNote")
-                                      || "The Certificado de Trabalho (name, contract dates, functions performed) is mandatory on every cessation — Art. 57."}
+                                    {t(
+                                      "hiring.offboarding.certificate.mandatoryNote",
+                                    ) ||
+                                      "The Certificado de Trabalho (name, contract dates, functions performed) is mandatory on every cessation — Art. 57."}
                                   </p>
                                 </div>
                               )}
@@ -1252,63 +1687,107 @@ export default function Offboarding() {
                       {/* Exit Interview Section */}
                       <Separator />
                       <div className="space-y-4">
-                        <h4 className="font-medium">{t("hiring.offboarding.exit.title")}</h4>
+                        <h4 className="font-medium">
+                          {t("hiring.offboarding.exit.title")}
+                        </h4>
 
                         <div className="grid grid-cols-1 gap-4">
                           <div className="space-y-2">
-                            <Label>{t("hiring.offboarding.exit.overall")}</Label>
+                            <Label>
+                              {t("hiring.offboarding.exit.overall")}
+                            </Label>
                             <Select
-                              value={selectedCase.exitInterview.overallSatisfaction}
+                              value={
+                                selectedCase.exitInterview.overallSatisfaction
+                              }
                               onValueChange={(value) =>
-                                updateExitInterview(selectedCase.id!, "overallSatisfaction", value)
+                                updateExitInterview(
+                                  selectedCase.id!,
+                                  "overallSatisfaction",
+                                  value,
+                                )
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={t("hiring.offboarding.exit.overallPlaceholder")} />
+                                <SelectValue
+                                  placeholder={t(
+                                    "hiring.offboarding.exit.overallPlaceholder",
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="very-satisfied">
-                                  {t("hiring.offboarding.exit.overallOptions.verySatisfied")}
+                                  {t(
+                                    "hiring.offboarding.exit.overallOptions.verySatisfied",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="satisfied">
-                                  {t("hiring.offboarding.exit.overallOptions.satisfied")}
+                                  {t(
+                                    "hiring.offboarding.exit.overallOptions.satisfied",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="neutral">
-                                  {t("hiring.offboarding.exit.overallOptions.neutral")}
+                                  {t(
+                                    "hiring.offboarding.exit.overallOptions.neutral",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="dissatisfied">
-                                  {t("hiring.offboarding.exit.overallOptions.dissatisfied")}
+                                  {t(
+                                    "hiring.offboarding.exit.overallOptions.dissatisfied",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="very-dissatisfied">
-                                  {t("hiring.offboarding.exit.overallOptions.veryDissatisfied")}
+                                  {t(
+                                    "hiring.offboarding.exit.overallOptions.veryDissatisfied",
+                                  )}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>{t("hiring.offboarding.exit.manager")}</Label>
+                            <Label>
+                              {t("hiring.offboarding.exit.manager")}
+                            </Label>
                             <Select
-                              value={selectedCase.exitInterview.managerRelationship}
+                              value={
+                                selectedCase.exitInterview.managerRelationship
+                              }
                               onValueChange={(value) =>
-                                updateExitInterview(selectedCase.id!, "managerRelationship", value)
+                                updateExitInterview(
+                                  selectedCase.id!,
+                                  "managerRelationship",
+                                  value,
+                                )
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={t("hiring.offboarding.exit.managerPlaceholder")} />
+                                <SelectValue
+                                  placeholder={t(
+                                    "hiring.offboarding.exit.managerPlaceholder",
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="excellent">
-                                  {t("hiring.offboarding.exit.managerOptions.excellent")}
+                                  {t(
+                                    "hiring.offboarding.exit.managerOptions.excellent",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="good">
-                                  {t("hiring.offboarding.exit.managerOptions.good")}
+                                  {t(
+                                    "hiring.offboarding.exit.managerOptions.good",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="average">
-                                  {t("hiring.offboarding.exit.managerOptions.average")}
+                                  {t(
+                                    "hiring.offboarding.exit.managerOptions.average",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="poor">
-                                  {t("hiring.offboarding.exit.managerOptions.poor")}
+                                  {t(
+                                    "hiring.offboarding.exit.managerOptions.poor",
+                                  )}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -1317,47 +1796,79 @@ export default function Offboarding() {
                           <div className="space-y-2">
                             <Label>{t("hiring.offboarding.exit.reason")}</Label>
                             <Textarea
-                              placeholder={t("hiring.offboarding.exit.reasonPlaceholder")}
+                              placeholder={t(
+                                "hiring.offboarding.exit.reasonPlaceholder",
+                              )}
                               value={selectedCase.exitInterview.primaryReason}
                               onChange={(e) =>
-                                updateExitInterview(selectedCase.id!, "primaryReason", e.target.value)
+                                updateExitInterview(
+                                  selectedCase.id!,
+                                  "primaryReason",
+                                  e.target.value,
+                                )
                               }
                               rows={2}
                             />
                           </div>
 
                           <div className="space-y-2">
-                            <Label>{t("hiring.offboarding.exit.recommend")}</Label>
+                            <Label>
+                              {t("hiring.offboarding.exit.recommend")}
+                            </Label>
                             <Select
                               value={selectedCase.exitInterview.wouldRecommend}
                               onValueChange={(value) =>
-                                updateExitInterview(selectedCase.id!, "wouldRecommend", value)
+                                updateExitInterview(
+                                  selectedCase.id!,
+                                  "wouldRecommend",
+                                  value,
+                                )
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={t("hiring.offboarding.exit.recommendPlaceholder")} />
+                                <SelectValue
+                                  placeholder={t(
+                                    "hiring.offboarding.exit.recommendPlaceholder",
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="yes">
-                                  {t("hiring.offboarding.exit.recommendOptions.yes")}
+                                  {t(
+                                    "hiring.offboarding.exit.recommendOptions.yes",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="maybe">
-                                  {t("hiring.offboarding.exit.recommendOptions.maybe")}
+                                  {t(
+                                    "hiring.offboarding.exit.recommendOptions.maybe",
+                                  )}
                                 </SelectItem>
                                 <SelectItem value="no">
-                                  {t("hiring.offboarding.exit.recommendOptions.no")}
+                                  {t(
+                                    "hiring.offboarding.exit.recommendOptions.no",
+                                  )}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>{t("hiring.offboarding.exit.comments")}</Label>
+                            <Label>
+                              {t("hiring.offboarding.exit.comments")}
+                            </Label>
                             <Textarea
-                              placeholder={t("hiring.offboarding.exit.commentsPlaceholder")}
-                              value={selectedCase.exitInterview.additionalComments}
+                              placeholder={t(
+                                "hiring.offboarding.exit.commentsPlaceholder",
+                              )}
+                              value={
+                                selectedCase.exitInterview.additionalComments
+                              }
                               onChange={(e) =>
-                                updateExitInterview(selectedCase.id!, "additionalComments", e.target.value)
+                                updateExitInterview(
+                                  selectedCase.id!,
+                                  "additionalComments",
+                                  e.target.value,
+                                )
                               }
                               rows={2}
                             />
@@ -1371,10 +1882,16 @@ export default function Offboarding() {
                       <div className="flex gap-3">
                         <Button
                           onClick={() =>
-                            updateChecklist(selectedCase.id!, "exitInterviewCompleted", true)
+                            updateChecklist(
+                              selectedCase.id!,
+                              "exitInterviewCompleted",
+                              true,
+                            )
                           }
                           className="flex-1 disabled:opacity-50"
-                          disabled={getChecklistProgress(selectedCase.checklist) === 100}
+                          disabled={
+                            getChecklistProgress(selectedCase.checklist) === 100
+                          }
                         >
                           {t("hiring.offboarding.actions.completeExit")}
                         </Button>
@@ -1397,16 +1914,22 @@ export default function Offboarding() {
                         <div className="p-2 rounded-lg bg-blue-500/10">
                           <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        {t("hiring.offboarding.exitInterviews.title") || "Exit interviews"}
+                        {t("hiring.offboarding.exitInterviews.title") ||
+                          "Exit interviews"}
                       </CardTitle>
                       <CardDescription className="mt-1.5">
                         {t("hiring.offboarding.exitInterviews.description") ||
                           "Answers recorded during offboarding for completed departures."}
                       </CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={exportExitInterviews}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportExitInterviews}
+                    >
                       <Download className="mr-2 h-4 w-4" />
-                      {t("hiring.offboarding.exitInterviews.export") || "Export CSV"}
+                      {t("hiring.offboarding.exitInterviews.export") ||
+                        "Export CSV"}
                     </Button>
                   </div>
                 </CardHeader>
@@ -1419,7 +1942,9 @@ export default function Offboarding() {
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <span className="text-sm font-medium">{case_.employeeName}</span>
+                            <span className="text-sm font-medium">
+                              {case_.employeeName}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               {" "}
                               — {getDepartureReasonLabel(case_.departureReason)}
@@ -1430,16 +1955,27 @@ export default function Offboarding() {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {case_.exitInterview.overallSatisfaction && (
-                              <Badge variant="outline" className="text-xs font-normal">
-                                {getSatisfactionLabel(case_.exitInterview.overallSatisfaction)}
+                              <Badge
+                                variant="outline"
+                                className="text-xs font-normal"
+                              >
+                                {getSatisfactionLabel(
+                                  case_.exitInterview.overallSatisfaction,
+                                )}
                               </Badge>
                             )}
                             {case_.exitInterview.wouldRecommend && (
-                              <Badge variant="outline" className="text-xs font-normal">
-                                {t("hiring.offboarding.exitInterviews.recommendShort") ||
-                                  "Would recommend"}
+                              <Badge
+                                variant="outline"
+                                className="text-xs font-normal"
+                              >
+                                {t(
+                                  "hiring.offboarding.exitInterviews.recommendShort",
+                                ) || "Would recommend"}
                                 {": "}
-                                {getRecommendLabel(case_.exitInterview.wouldRecommend)}
+                                {getRecommendLabel(
+                                  case_.exitInterview.wouldRecommend,
+                                )}
                               </Badge>
                             )}
                           </div>

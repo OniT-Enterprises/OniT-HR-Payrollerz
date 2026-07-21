@@ -39,6 +39,9 @@ const STAFF = [
 const DAYS = ['2026-07-01', '2026-07-02', '2026-07-03', '2026-07-04',
   '2026-07-06', '2026-07-07', '2026-07-08', '2026-07-09', '2026-07-10', '2026-07-11',
   '2026-07-13', '2026-07-14', '2026-07-15', '2026-07-16', '2026-07-17', '2026-07-18'];
+// Sundays: the café runs a reduced crew, so "today" is never empty on camera.
+const SUNDAYS = ['2026-07-05', '2026-07-12', '2026-07-19'];
+const SUNDAY_CREW = new Set(['EMP002', 'EMP003', 'EMP005', 'EMP006']);
 
 const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
 function nightHoursOf(clockIn, clockOut) {
@@ -86,8 +89,9 @@ async function run() {
 
   let batch = db.batch();
   let n = 0;
-  for (const date of DAYS) {
+  for (const date of [...DAYS, ...SUNDAYS].sort()) {
     for (const [employeeId, employeeName, department, departmentId, [inT, outT]] of STAFF) {
+      if (SUNDAYS.includes(date) && !SUNDAY_CREW.has(employeeId)) continue;
       // one believable late arrival
       const late = employeeId === 'EMP004' && date === '2026-07-09';
       const clockIn = late ? '08:19' : inT;

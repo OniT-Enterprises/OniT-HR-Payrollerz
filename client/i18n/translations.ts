@@ -49,6 +49,7 @@ export const translations = {
       }
     },
     "common": {
+      "reset": "Reset",
       "needsReviewTitle": "Needs review before filing",
       "needsReviewDesc": "A payroll record is missing or has an invalid {{field}}. Fix or re-run that payroll — Xefe never guesses compliance values. Ask your accountant if you are unsure.",
       "greetingMorning": "Good morning",
@@ -147,6 +148,17 @@ export const translations = {
       "setupBannerDesc": "Finish company, payment, and payroll setup. {{percent}}% complete.",
       "billingPlan": "Billing & Plan",
       "billingPlanDesc": "Your plan, price, and payments",
+      "payrollSettingsLink": "Payroll Settings",
+      "payrollSettingsLinkDesc": "Tax, INSS, overtime, and 13th-month rules",
+      "timeLeaveSettingsLink": "Time Off Policies",
+      "timeLeaveSettingsLinkDesc": "Leave entitlements and public holidays",
+      "companySettingsLink": "Company",
+      "companySettingsLinkDesc": "Company details, locations, and departments",
+      "paymentsSettingsLink": "Payments & Banking",
+      "paymentsSettingsLinkDesc": "Bank accounts, payment methods, and payroll schedule",
+      "integrationsSettingsLink": "Accountant & Integrations",
+      "integrationsSettingsLinkDesc": "QuickBooks export, advanced tax mode, and accountant access",
+      "allSettings": "All settings",
       "planFree": "Free",
       "planActive": "Active",
       "employees": "Employees",
@@ -218,7 +230,7 @@ export const translations = {
     },
     "allowances": {
       "title": "Allowances",
-      "subtitle": "Manage employee allowances and benefits",
+      "subtitle": "Manage employee allowances and benefits — active allowances are added to every payroll run automatically",
       "add": "Add Allowance",
       "addFirst": "Add your first allowance",
       "addError": "Failed to add allowance",
@@ -280,6 +292,7 @@ export const translations = {
       "removeError": "Failed to remove allowance"
     },
     "dashboard": {
+      "cardPayrollOverdue": "Payroll overdue — Art. 40 requires payment at least monthly",
       "payrollStatus": "Payroll Status",
       "days": "days",
       "untilPayDate": "until pay date (25th)",
@@ -703,7 +716,7 @@ export const translations = {
         "hero": {
           "eyebrow": "Payroll built for Timor-Leste",
           "title": "Pay your team correctly.",
-          "titleAccent": "Stay compliant.",
+          "titleAccent": "Keep obligations visible.",
           "description": "Xefe calculates WIT, INSS, overtime and subsídio anual, then prepares bank files and payslips — without spreadsheets.",
           "primary": "Start free",
           "secondary": "See how it works",
@@ -761,7 +774,7 @@ export const translations = {
           },
           "banks": {
             "title": "Files for local banks",
-            "description": "Prepare payroll files for BNU, BNCTL, Mandiri and ANZ without retyping each payment."
+            "description": "Use the verified BNU salary pack, with clearly labelled best-effort exports for BNCTL, Mandiri and ANZ."
           },
           "languages": {
             "title": "Clear in every language",
@@ -815,7 +828,7 @@ export const translations = {
           "q1": "Does Xefe handle WIT, INSS and subsídio anual?",
           "a1": "Yes. Xefe calculates WIT withholding, INSS contributions, overtime and the 13th-month subsídio anual on every payroll run, and keeps each amount visible for review before you finalize.",
           "q2": "Which Timor-Leste banks does Xefe support?",
-          "a2": "Xefe prepares salary payment files for BNU, BNCTL, Mandiri and ANZ, so you don't retype each transfer.",
+          "a2": "Xefe has a verified BNU salary pack. BNCTL, Mandiri and ANZ exports are available as best-effort templates that you must confirm with your bank.",
           "q3": "Is Xefe available in Tetun?",
           "a3": "Yes — the whole app works in Tetun, English and Portuguese, and you can switch language at any time.",
           "q4": "How much does Xefe cost?",
@@ -832,14 +845,14 @@ export const translations = {
         "headline": "The Operating System",
         "headlineAccent": "For TL Businesses",
         "subheadline": {
-          "before": "HR, payroll, accounting & invoicing — built specifically for Timor-Leste. Full compliance with",
+          "before": "HR, payroll, accounting & invoicing — built specifically for Timor-Leste around",
           "highlight1": "Lei Trabalho",
           "middle": ", WIT/INSS, and",
           "highlight2": "real double-entry accounting",
           "after": "."
         },
         "points": {
-          "labor": "Lei Trabalho compliant",
+          "labor": "Core Lei Trabalho rules built in",
           "tax": "WIT & INSS built-in",
           "languages": "Tetun, English, Portuguese",
           "accounting": "Double-entry accounting"
@@ -902,7 +915,7 @@ export const translations = {
         "laborLaw": {
           "title": "Lei Trabalho Timor",
           "subtitle": "Timor-Leste Labor Code",
-          "description": "Fully compliant with Timor-Leste Labor Code. 44-hour work weeks, overtime at 150%/200%, rest day rules, and more."
+          "description": "Applies reviewed core Timor-Leste Labor Code rules, including 44-hour work weeks, overtime at 150%/200%, and rest-day rules. Exceptional cases stay subject to legal review."
         },
         "witInss": {
           "title": "WIT & INSS",
@@ -941,9 +954,9 @@ export const translations = {
       },
       "laborLaw": {
         "badge": "Lei Trabalho Timor-Leste",
-        "title": "Full Labor Law",
-        "titleAccent": "Compliance Built-in",
-        "description": "Every calculation follows Timor-Leste Labor Code. Overtime, leave, severance - all handled automatically and correctly.",
+        "title": "Core Labor Rules",
+        "titleAccent": "Built In",
+        "description": "Reviewed core rules are built into payroll. Exceptional cases, including severance, stay behind an explicit professional-review gate.",
         "features": {
           "workWeek": {
             "title": "44-Hour Work Week",
@@ -963,11 +976,11 @@ export const translations = {
           },
           "annual": {
             "title": "Annual Leave",
-            "description": "12 days minimum, increasing to 22 days after 9 years"
+            "description": "12-day statutory minimum tracked without invented service tiers"
           },
           "severance": {
             "title": "Severance Pay",
-            "description": "30 days per year of service for dismissal without cause"
+            "description": "Calculated only after a case-specific legal/accountant review acknowledgement"
           }
         }
       },
@@ -1019,12 +1032,12 @@ export const translations = {
         "eyebrow": "Payslips",
         "title": "A payslip your team can",
         "titleAccent": "actually read",
-        "subtitle": "Every payroll run produces a compliant payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa."
+        "subtitle": "Every payroll run produces a review-ready payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa."
       },
       "cta": {
         "title": "Ready to Start?",
         "titleAccent": "Start Today",
-        "description": "Join Timor-Leste businesses already using Xefe for compliant, effortless HR & Payroll.",
+        "description": "Join Timor-Leste businesses using Xefe for clear, reviewable HR and payroll workflows.",
         "primary": "Start Free"
       },
       "footer": {
@@ -1525,7 +1538,7 @@ export const translations = {
           },
           "pay": {
             "title": "Pay",
-            "description": "Not a file no bank accepts: the exact two-sheet Excel pack and Portuguese cover email that BNU and BNCTL branches process, with a signed payment order. Businesses on QuickBooks export the journal as CSV or IIF instead."
+            "description": "Download the evidence-backed two-sheet BNU Excel pack, Portuguese cover email and signed payment order. BNCTL, Mandiri and ANZ outputs are labelled best-effort until your bank confirms them. Businesses on QuickBooks can export the journal as CSV or IIF."
           }
         }
       },
@@ -1776,6 +1789,50 @@ export const translations = {
     "settings": {
       "headerTitle": "Company Settings",
       "headerSubtitle": "Configure your company, payroll, and HR policies",
+      "access": {
+        "title": "Team access",
+        "description": "Invite people and control which parts of Xefe they can use.",
+        "invite": "Invite person",
+        "roles": {
+          "owner": "Owner",
+          "hr-admin": "HR administrator",
+          "accountant": "Accountant",
+          "manager": "Manager",
+          "viewer": "Viewer"
+        },
+        "modules": {
+          "hiring": "Hiring",
+          "staff": "People",
+          "timeleave": "Time & leave",
+          "performance": "Performance",
+          "payroll": "Payroll",
+          "money": "Money",
+          "accounting": "Accounting",
+          "reports": "Reports"
+        },
+        "actionFailed": "Could not update team access.",
+        "invitedTitle": "Invitation sent",
+        "invitedDescription": "The person can use the invitation email to join this company.",
+        "updatedTitle": "Access updated",
+        "resetSentTitle": "Password reset sent",
+        "removedTitle": "Access removed",
+        "loadFailed": "Could not load team members.",
+        "empty": "No team members found.",
+        "unnamed": "Unnamed member",
+        "you": "You",
+        "noModules": "No access areas",
+        "resetPassword": "Reset password",
+        "inviteTitle": "Invite someone",
+        "inviteDescription": "Choose a role now. You can fine-tune access after they join.",
+        "email": "Email address",
+        "role": "Role",
+        "standardAccessHint": "The role starts with standard access for that job.",
+        "sendInvite": "Send invitation",
+        "editTitle": "Edit team access",
+        "accessAreas": "Access areas",
+        "removeTitle": "Remove this person's access?",
+        "removeDescription": "{{email}} will no longer be able to open this company in Xefe."
+      },
       "advancedTax": {
         "title": "Advanced tax mode",
         "description": "Show accountant-grade tax controls — supplier withholding, treaty rates, and tax filing forms — to everyone who manages this company. Leave this off unless your accountant asked for it; Xefe applies safe defaults either way.",
@@ -1811,6 +1868,8 @@ export const translations = {
         },
         "tinNumber": "SERVE / NIF (TIN) *",
         "tinPlaceholder": "Unique Company Number / Tax ID",
+        "employerNiss": "Employer NISS",
+        "employerNissPlaceholder": "INSS employer registration number",
         "addressTitle": "Address",
         "registeredAddress": "Registered Address *",
         "registeredAddressPlaceholder": "Street address, building name, etc.",
@@ -1861,6 +1920,9 @@ export const translations = {
         "save": "Save Structure"
       },
       "payment": {
+        "ledgerAccount": "Ledger account",
+        "ledgerOperatingBank": "Cash in Bank — Operating (1120)",
+        "ledgerPayrollBank": "Cash in Bank — Payroll (1130)",
         "title": "Payment Structure",
         "description": "Configure payment methods, bank accounts, and payroll periods",
         "methods": "Payment Methods",
@@ -1899,17 +1961,41 @@ export const translations = {
         "save": "Save Payment Structure"
       },
       "timeOff": {
+        "customTypes": {
+          "title": "Custom leave types",
+          "hint": "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones.",
+          "active": "Active",
+          "inactive": "Inactive",
+          "name": "Name",
+          "namePlaceholder": "e.g. Volunteer day",
+          "code": "Code",
+          "codeTaken": "This code is already used by another leave type.",
+          "requiresCertificate": "Requires supporting document",
+          "add": "Add type",
+          "addTitle": "Add custom leave type",
+          "saveReminder": "New and edited types are stored when you press Save below."
+        },
+        "breastfeedingNote": "After returning from maternity leave, the worker is entitled to two 1-hour paid breastfeeding breaks per day until the child is 6 months old, and a pregnant worker's medical exam absences are also paid (Labour Law Art. 62) — record these in attendance as worked time, do not dock them. There is nothing to configure here.",
+        "miscarriageLeave": "Miscarriage Leave (Art. 59.4)",
+        "miscarriageLeaveHint": "4 weeks after a pregnancy interruption (Labour Law Art. 59.4), as working days. Clinical-risk leave BEFORE the birth (Art. 59.3) has no fixed length — record it as sick leave with a medical certificate.",
+        "studyLeave": "Study Leave (Art. 76.3)",
+        "studyLeaveHint": "Paid absence for worker-students to sit exams, without loss of remuneration (Labour Law Art. 76.3). Exams only — the employer may ask for proof of enrolment and the exam schedule (Art. 76.5). The law sets no annual cap; the days per year here is the company allotment.",
+        "parentalInssExplainer": "Paid 100% by INSS directly to the worker when they have 6 months of contributions in the last 12 (DL 18/2017) — the employer normally pays nothing during the leave.",
+        "parentalPaidWarning": "INSS does not pay the subsidy for days the worker receives salary (DL 18/2017 Art. 21(3)) — employer-paid maternity/paternity replaces, not tops up, the INSS subsidy.",
         "title": "Time Off Policies",
         "description": "Configure leave entitlements based on Timor-Leste labor law",
         "laborCodeTitle": "Timor-Leste Labor Code (Law 4/2012)",
         "laborCodeHint": "Default values are set according to TL labor law. Adjust only if your company offers better benefits.",
         "probationLabel": "Probation Period Before Leave Eligibility",
+        "probationHint": "Annual leave cannot start before the employee has completed this many months (probation: Labour Law Art. 14). Owners and HR admins can override on a specific request.",
         "months": "months",
         "entitlements": "Leave Entitlements",
         "annualLeave": "Annual Leave",
         "sickLeave": "Sick Leave",
         "maternityLeave": "Maternity Leave",
         "paternityLeave": "Paternity Leave",
+        "specialLeave": "Special Leave (Art. 33.3)",
+        "specialLeaveHint": "One pooled allotment of paid days per calendar year covering marriage, family death, and community or religious events (Labour Law Art. 33.3). The employer may ask for supporting proof.",
         "days": "days",
         "weeks": "weeks",
         "daysPerYear": "Days per Year",
@@ -1918,6 +2004,11 @@ export const translations = {
         "paidPercentage": "Paid Percentage",
         "requiresMedicalCert": "Requires medical certificate",
         "maternityDaysHint": "Days (12 weeks = 84 days)",
+        "annualLeaveHint": "Legal minimum: 12 working days per year (Labour Law Art. 32). Carry-over limits are your company's policy.",
+        "maternityHint": "Legal duration: 12 weeks (Labour Law Art. 59).",
+        "paternityHint": "Legal minimum: 5 working days (Labour Law Art. 59).",
+        "sickPayBandsTitle": "Sick pay is fixed by law",
+        "sickPayBandsText": "Payroll pays certified sick leave per the Labour Code: 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
         "invalidValues": "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
         "save": "Save Time Off Policies"
       },
@@ -1926,38 +2017,69 @@ export const translations = {
         "description": "Tax, social security, and overtime settings for Timor-Leste",
         "wit": "Wage Income Tax (WIT)",
         "residentThreshold": "Resident Tax Threshold",
-        "residentThresholdHint": "First ${{amount}} is tax-free for residents",
+        "residentThresholdHint": "First ${{amount}} is tax-free for residents (Tax Law 8/2008, Schedule V)",
         "residentRate": "Resident Rate",
         "nonResidentRate": "Non-Resident Rate",
-        "flatRateHint": "Flat rate, no threshold",
+        "flatRateHint": "Flat rate from the first dollar (Tax Law 8/2008, Schedule V)",
         "socialSecurity": "Social Security (INSS)",
         "employeeContribution": "Employee Contribution",
+        "employeeContributionHint": "Statutory rate: 4% (Decree-Law 20/2017, Arts. 8–10)",
         "employerContribution": "Employer Contribution",
+        "employerContributionHint": "Statutory rate: 6% (Decree-Law 20/2017, Arts. 8–10)",
         "excludeFoodAllowance": "Exclude food allowance from SS",
         "excludePerDiem": "Exclude per diem from SS",
+        "inssExclusionsHint": "Expense allowances sit outside the INSS contribution base by law (Decree-Law 20/2017, Art. 9). Only include one if it is really recurring remuneration paid every month.",
         "overtime": "Working Hours & Overtime",
         "maxHoursWeek": "Max Hours/Week",
+        "maxHoursWeekHint": "Legal maximum: 44 hours/week (Labour Law Art. 25)",
         "hourlyRateMethod": "Overtime and absence method",
         "hourlyRateWeeklyAverage": "44-hour weekly average",
         "hourlyRateFixed190": "190-hour workpaper method",
         "hourlyRateHint": "The 190-hour method rounds the hourly rate up and combined overtime once. Use the method in your contracts or accountant's payroll.",
         "first2HoursRate": "Standard OT Rate",
-        "first2HoursHint": "1.5x = +50%",
+        "first2HoursHint": "1.5× = +50%, the legal minimum (Labour Law Art. 27)",
         "beyond2HoursRate": "Beyond 2 hrs OT Rate",
         "beyond2HoursHint": "2x = +100%",
         "sundayHolidayRate": "Sunday/Holiday Rate",
+        "sundayHolidayHint": "2× = +100%, the legal minimum for rest-day and holiday work (Labour Law Arts. 27(2), 30)",
+        "nightPremiumRate": "Night Hours Premium",
+        "nightPremiumHint": "Extra pay for hours worked 21:00–06:00. The legal minimum is +25%.",
+        "minimumWageSection": "Minimum Wage",
+        "minimumWageLabel": "Minimum monthly wage",
+        "minimumWageHint": "The legal minimum in Timor-Leste is $115/month (unchanged since 2012). Payroll warns when a salary is below this value.",
         "thirteenthMonth": "Subsidio Anual (13th Month)",
         "enable13th": "Enable 13th month payment",
+        "subsidioDeadlineNote": "Statutory deadline: pay by 20 December each year (Labour Law Art. 44).",
         "approvalSection": "Payroll approval",
         "selfApprovalLabel": "Allow self-approval (solo operator)",
         "selfApprovalDesc": "The person who creates a payroll run can also approve it. Use only if your business has a single payroll admin — with this off, a second admin must approve every run (safer).",
         "selfApprovalOwnerOnly": "Only the account owner can change this.",
-        "paymentDeadline": "Payment Deadline",
-        "paymentDeadlinePlaceholder": "MM-DD",
-        "paymentDeadlineHint": "Format: MM-DD (e.g., 12-20 for December 20)",
-        "invalidValues": "Check the rates, hours, and payment deadline. Percentages must be 0–100 and the deadline MM-DD.",
+        "invalidValues": "Check the rates and hours. Percentages must be 0–100.",
         "prorataHint": "Pro-rata for employees with less than 12 months",
-        "save": "Save Payroll Configuration"
+        "save": "Save Payroll Configuration",
+        "statutory": {
+          "title": "Fixed by Timor-Leste law",
+          "description": "Xefe applies these statutory rules automatically. They are set by law and cannot be edited.",
+          "pending": "Pending confirmation",
+          "witDueLabel": "Monthly wage tax (WIT)",
+          "witDueValue": "Pay by day 15 of the following month (Law 8/2008 Art. 23)",
+          "inssDueLabel": "INSS declaration & payment",
+          "inssDueValue": "Statement by day 10, payment by day 20 of the following month",
+          "deductionCapLabel": "Wage deductions cap",
+          "deductionCapValue": "Deductions are capped at 30% of the month's wages (Labour Law Art. 42.3); court orders sit outside the cap",
+          "workingHoursLabel": "Standard working time",
+          "workingHoursValue": "8 hours/day, 44 hours/week; overtime capped at 4 hours/day and 16 hours/week (Labour Law Arts. 25–26)",
+          "nightWindowLabel": "Night work window",
+          "nightWindowValue": "21:00–06:00 — hours in this window earn the night premium",
+          "sickBandsLabel": "Sick leave pay",
+          "sickBandsValue": "12 certified days per year: first 6 days at 100% pay, next 6 at 50%",
+          "severanceLabel": "Service compensation on termination",
+          "severanceValue": "One month's salary per completed 5-year period of service, by termination cause (Labour Law Art. 56)",
+          "nonCashLabel": "Non-cash benefits",
+          "nonCashValue": "Taxed as wages only when worth more than $20/month (Tax Law 8/2008)",
+          "subsidioLabel": "13th month (Subsidio Anual)",
+          "subsidioValue": "One month's salary, due by 20 December each year (Labour Law Art. 44)"
+        }
       },
       "notifications": {
         "errorTitle": "Error",
@@ -2267,6 +2389,10 @@ export const translations = {
         "importStartedDesc": "Processing {{count}} employees..."
       },
       "toast": {
+        "fixedTermMotiveTitle": "No fixed-term motive stated",
+        "fixedTermMotiveDesc": "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
+        "minorWarningTitle": "Minor employee (Labour Law Art. 69)",
+        "minorWarningDesc": "Light work only: max 5h/day, 25h/week, no night or overtime work.",
         "errorTitle": "Error",
         "requiredFieldsTitle": "Missing required fields",
         "requiredFieldsDesc": "Please fill in all required fields before continuing.",
@@ -2283,6 +2409,14 @@ export const translations = {
         "uploadWarningDesc": "Employee was saved, but failed to upload: {files}"
       },
       "fields": {
+        "contractEndDate": "Contract end date",
+        "contractEndDateHelp": "Fixed-term contracts only — leave empty for permanent.",
+        "fixedTermMotive": "Fixed-term motive",
+        "fixedTermMotivePlaceholder": "Select the statutory motive",
+        "fixedTermMotiveWarning": "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
+        "minorLightWorkNote": "Aged 15-16 at hire: light work only — max 5h/day, 25h/week, no night or overtime work (Labour Law Art. 69).",
+        "probationEndDate": "Probation ends",
+        "probationEndDateHelp": "Art. 14: 8/15 days for fixed-term, 30-90 days for permanent contracts.",
         "firstName": "First Name *",
         "lastName": "Last Name *",
         "email": "Email *",
@@ -2309,6 +2443,17 @@ export const translations = {
           "contractor": "Contractor",
           "shareholder": "Shareholder"
         },
+        "partTimeWageHelp": "For part-time staff, record the contracted hours and the wage treatment agreed after review. Payroll will not assume the full-time floor.",
+        "contractedWeeklyHours": "Contracted hours per week *",
+        "minimumWageTreatment": "Minimum-wage treatment *",
+        "minimumWageTreatmentPlaceholder": "Choose treatment",
+        "minimumWageTreatments": {
+          "proRata": "Pro-rata by weekly hours",
+          "fullFloor": "Apply full monthly floor",
+          "reviewedException": "Reviewed exception"
+        },
+        "minimumWageReviewNote": "Review note *",
+        "minimumWageReviewNotePlaceholder": "Who reviewed it and why this treatment applies",
         "sefopeTitle": "SEFOPE Registration (Labor Ministry)",
         "sefopeTooltip": "Required for all TL employees",
         "sefopeNumber": "SEFOPE Number",
@@ -2383,6 +2528,10 @@ export const translations = {
             "label": "INSS Number",
             "description": "Social Security number"
           },
+          "taxIdentificationNumber": {
+            "label": "Worker NIF / TIN",
+            "description": "Individual tax number, if issued"
+          },
           "electoralCard": {
             "label": "Electoral Card",
             "description": "Kartaun Eleitoral"
@@ -2400,6 +2549,7 @@ export const translations = {
         },
         "required": "Required",
         "numberPlaceholder": "Enter number",
+        "tinPlaceholder": "Enter individual NIF / TIN",
         "nationality": "Nationality",
         "nationalityOther": "Other",
         "visaTitle": "Working Visa",
@@ -2755,6 +2905,37 @@ export const translations = {
         }
       },
       "offboarding": {
+        "art55": {
+          "title": "Art. 55 reference (court-awarded if dismissal is ruled unlawful)",
+          "month": "month",
+          "months": "months",
+          "note": "Not payable through payroll — a court fixes it. The Art. 50(4) written disciplinary process avoids this exposure."
+        },
+        "exitInterviews": {
+          "title": "Exit interviews",
+          "description": "Answers recorded during offboarding for completed departures.",
+          "export": "Export CSV",
+          "exportedDesc": "Exit interview answers downloaded as a CSV file.",
+          "exportedTitle": "Export ready",
+          "recommendShort": "Would recommend"
+        },
+        "notice": {
+          "required": "Required notice",
+          "days": "days",
+          "given": "given",
+          "notRecorded": "Notice date not recorded",
+          "requiredForReason": "required notice for this departure reason is",
+          "shortfallWorker": "Notice is short: the worker owes the employer the missing",
+          "shortfallEmployer": "Notice is short: the employer owes the worker the missing",
+          "daysPay": "days' pay"
+        },
+        "disciplinary": {
+          "noConcludedWarning": "No concluded disciplinary case is on file for this employee. Dismissal for cause without the Art. 50(4) written process (accusation, defence, reasoned decision) is automatically unlawful (Art. 51) and exposes you to Art. 55 indemnity — confirm with your accountant."
+        },
+        "certificate": {
+          "generate": "Generate certificate (Art. 57)",
+          "mandatoryNote": "The Certificado de Trabalho (name, contract dates, functions performed) is mandatory on every cessation — Art. 57."
+        },
         "title": "Employee Offboarding",
         "subtitle": "Manage employee departures and exit processes",
         "actions": {
@@ -2774,6 +2955,9 @@ export const translations = {
           "reason": "Departure Reason",
           "reasonPlaceholder": "Select reason...",
           "reasons": {
+            "mutualAgreement": "Mutual agreement",
+            "death": "Death of employee",
+            "other": "Other",
             "resignation": "Resignation",
             "redundancy": "Redundancy",
             "termination": "Termination",
@@ -2821,6 +3005,9 @@ export const translations = {
           "empty": "Select an employee to view their checklist",
           "emptyPrompt": "Select an ongoing departure to view checklist",
           "items": {
+            "inssCessation": "INSS cessation declared",
+            "inssCessationDeadline": "Deadline",
+            "inssCessationHint": "Declare at the INSS portal by day 10 of the month after the last working day — until declared, INSS presumes the employment continues and contributions keep accruing.",
             "access": "Revoke System Access",
             "equipment": "Equipment Return",
             "documents": "Exit Documents Signed",
@@ -2832,8 +3019,22 @@ export const translations = {
           }
         },
         "finalPay": {
+          "decision": "Reviewed Art. 56 treatment *",
+          "decisionPlaceholder": "Choose after accountant/legal review",
+          "decisionInclude": "Include in final payroll",
+          "decisionExclude": "Exclude from final payroll",
+          "reviewWarning": "The statutory text and common practice can point to different outcomes. Xefe will not choose for you.",
+          "reviewNote": "Review note *",
+          "reviewNotePlaceholder": "Reviewer, date, and basis for the decision",
+          "reviewAcknowledgement": "I confirm that an accountant or legal reviewer checked this treatment.",
+          "deathHeirsNote": "Worker deceased (Art. 47(1)(b)): this payment is payable to the estate/heirs — confirm beneficiaries with your accountant.",
           "title": "Article 56 service compensation",
-          "description": "One monthly salary for each completed five-year period of service, for every termination cause.",
+          "description": "One monthly salary for each completed five-year period of service.",
+          "includeSeverance": "Pay Art. 56 severance in the final payroll run",
+          "severanceOnNote": "Default for this departure reason. The next payroll run pays it automatically once the case completes.",
+          "severanceOffNote": "Not usually paid on this departure reason in TL practice — but the law's text is cause-independent, so the employee may still be entitled. Confirm with your accountant.",
+          "severanceToggleFailed": "Could not save the severance decision.",
+          "excludedTag": "(excluded — reference only)",
           "saved": "Calculated",
           "savedTitle": "Article 56 calculation saved",
           "savedDescription": "The source salary, service dates, and statutory result were frozen on this case.",
@@ -2990,6 +3191,7 @@ export const translations = {
         "subtitle": "Manage employee leave requests and approvals",
         "scopeMissing": "Your manager account is not linked to a department yet. You can still see your own requests, but HR must set your department before team approvals appear.",
         "actions": {
+          "inssDeclaration": "INSS declaration",
           "newRequest": "New Request",
           "cancel": "Cancel",
           "approve": "Approve",
@@ -2997,6 +3199,12 @@ export const translations = {
           "submit": "Submit Request"
         },
         "dialog": {
+          "studyLeaveHint": "Paid absence for exams only — worker-students keep their remuneration for assessment days (Labour Law Art. 76.3). The employer may ask for proof of enrolment and the exam schedule (Art. 76.5).",
+          "miscarriageInssHint": "After a pregnancy interruption the worker is entitled to a 4-week license (Labour Law Art. 59.4). It is unpaid by the employer by default: the worker claims the INSS parental subsidy directly (within 6 months of the first day of the leave) when they have 6 months of contributions in the last 12 (DL 18/2017).",
+          "breastfeedingNote": "After returning, the worker is entitled to two 1-hour paid breaks per day until the child is 6 months old (Art. 62) — record these in attendance as worked time, do not dock them.",
+          "maternityInssHint": "The worker claims the maternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage monthly, for up to 90 days, when the worker has 6 months of contributions in the last 12 (DL 18/2017). The leave itself is a minimum of 12 weeks, at least 10 of them after the birth.",
+          "paternityInssHint": "The worker claims the paternity subsidy directly from INSS (within 6 months of the first day of the leave). INSS pays 100% of the reference wage in a single payment for the 5 working days, when the worker has 6 months of contributions in the last 12 (DL 18/2017).",
+          "parentalInssFallbackHint": "If the worker does not meet the contribution condition, INSS pays nothing — whether the employer must pay instead is legally unsettled; confirm with your accountant.",
           "title": "Submit Leave Request",
           "description": "Create a new leave request for an employee",
           "employee": "Employee *",
@@ -3008,6 +3216,7 @@ export const translations = {
           "balanceTitle": "Leave Balance",
           "balanceSummary": "{{remaining}} days remaining ({{used}} used, {{pending}} pending)",
           "balanceUnavailable": "Balance not available",
+          "specialLeaveHint": "3 paid days per calendar year, pooled across marriage, family death, and community or religious events (Labour Law Art. 33.3). Need more days? Request them as annual or unpaid leave. The employer may ask for supporting proof.",
           "startDate": "Start Date *",
           "endDate": "End Date *",
           "duration": "Duration",
@@ -3073,10 +3282,12 @@ export const translations = {
           "cancelled": "Cancelled"
         },
         "leaveTypes": {
+          "miscarriage": "Miscarriage Leave",
           "annual": "Annual Leave",
           "sick": "Sick Leave",
           "maternity": "Maternity Leave",
           "paternity": "Paternity Leave",
+          "special": "Special Leave",
           "bereavement": "Bereavement Leave",
           "unpaid": "Unpaid Leave",
           "marriage": "Marriage Leave",
@@ -3090,6 +3301,7 @@ export const translations = {
           "marriage": "Marriage Certificate"
         },
         "toast": {
+          "inssDeclarationFailed": "Could not generate the INSS declaration.",
           "errorTitle": "Error",
           "loadFailed": "Failed to load leave data. Please try again.",
           "validationTitle": "Validation Error",
@@ -3204,6 +3416,7 @@ export const translations = {
           "notAvailable": "N/A"
         },
         "toast": {
+          "breakEntitlement": "Art. 25(2): a worker is entitled to a 1-hour break after 5 hours of continuous work.",
           "errorTitle": "Error",
           "loadFailed": "Failed to load attendance data.",
           "validationTitle": "Validation Error",
@@ -3778,6 +3991,11 @@ export const translations = {
         }
       },
       "custom": {
+        "builtIn": "Built-in",
+        "deleteDescription": "This removes the saved report for everyone in your company. It does not delete any employee or attendance data.",
+        "deleteReport": "Delete report",
+        "deleteTitle": "Delete this saved report?",
+        "savedReport": "Saved",
         "title": "Custom Reports",
         "subtitle": "Build and customize your own reports",
         "noDataTitle": "No report data is available",
@@ -3798,6 +4016,9 @@ export const translations = {
         "noMatches": "No data matched your criteria",
         "showingLimited": "Showing 20 of {{count}} records. Export to see all.",
         "builder": {
+          "runOnce": "Run once",
+          "saveAndRun": "Save & run",
+          "saving": "Saving…",
           "title": "Create custom report",
           "description": "Choose a data source, the columns you need, and optional filters.",
           "name": "Report name",
@@ -3859,6 +4080,10 @@ export const translations = {
           }
         },
         "toast": {
+          "deleteFailed": "Could not delete the report. Please try again.",
+          "deleted": "Report deleted",
+          "saveFailed": "Could not save the report. Please try again.",
+          "saved": "Report saved",
           "generated": "Report generated",
           "generatedDescription": "Found {{count}} records",
           "error": "Could not run report",
@@ -4156,6 +4381,8 @@ export const translations = {
         "title": "INSS Monthly Return",
         "subtitle": "Generate and track monthly INSS contribution submissions.",
         "due": {
+          "arrearsNotice": "Late payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
+          "arrearsEstimate": "Estimated so far for {{period}}: US$ {{amount}} ({{months}} × 1%).",
           "overdueTitle": "Overdue {{task}}",
           "overdueDescription": "{{task}} for {{period}} was due on {{dueDate}}.",
           "upcomingTitle": "Upcoming {{task}} due",
@@ -4224,6 +4451,10 @@ export const translations = {
           "draft": "Draft"
         },
         "markFiled": {
+          "paymentDate": "Payment Date",
+          "paymentAccount": "Payment Account",
+          "selectPaymentAccount": "Select account",
+          "cashOnHand": "Cash on hand",
           "title": "Mark {{task}} as filed",
           "description": "Record {{task}} submission details for this INSS return.",
           "submissionMethod": "Submission Method",
@@ -4419,7 +4650,8 @@ export const translations = {
           "etaxPortal": "e-Tax Portal",
           "officialForm": "Official Form",
           "view": "View",
-          "markFiled": "Mark Filed"
+          "markFiled": "Mark Filed",
+          "recordPayment": "Record Payment"
         },
         "etax": {
           "title": "File on e-Tax (assisted)",
@@ -4440,8 +4672,10 @@ export const translations = {
         "alerts": {
           "overdueTitle": "Overdue filing",
           "overdueDescription": "WIT return for {{period}} was due on {{dueDate}}. Please file immediately to avoid penalties.",
+          "paymentOverdueDescription": "WIT payment for {{period}} was due on {{dueDate}}. Record the remittance evidence as soon as it is paid.",
           "upcomingTitle": "Upcoming due date",
-          "upcomingDescription": "WIT return for {{period}} is due on {{dueDate}} ({{days}} days remaining)."
+          "upcomingDescription": "WIT return for {{period}} is due on {{dueDate}} ({{days}} days remaining).",
+          "paymentUpcomingDescription": "WIT payment for {{period}} is due on {{dueDate}} ({{days}} days remaining)."
         },
         "generate": {
           "title": "Generate Return",
@@ -4496,6 +4730,8 @@ export const translations = {
           "period": "Period",
           "dueDate": "Due Date",
           "status": "Status",
+          "returnStatus": "Return",
+          "paymentStatus": "Payment",
           "totalWages": "Total Wages",
           "wit": "WIT",
           "employees": "Employees",
@@ -4516,18 +4752,26 @@ export const translations = {
           "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
         },
         "markFiled": {
+          "paymentDate": "Payment Date",
+          "paymentAccount": "Payment Account",
+          "selectPaymentAccount": "Select account",
+          "cashOnHand": "Cash on hand",
           "title": "Mark Return as Filed",
           "description": "Record the submission details for this WIT return.",
+          "paymentTitle": "Record WIT Payment",
+          "paymentDescription": "Record the payment evidence and clear WIT payable in accounting.",
           "submissionMethod": "Submission Method",
           "selectMethod": "Select method",
           "etax": "e-Tax Portal",
           "bnu": "BNU Bank (Paper)",
           "receiptLabel": "Receipt Number (Optional)",
+          "paymentReferenceLabel": "Bank / receipt reference *",
           "receiptPlaceholder": "Enter receipt or confirmation number",
           "notesLabel": "Notes (Optional)",
           "notesPlaceholder": "Any additional notes about this filing",
           "cancel": "Cancel",
-          "confirm": "Confirm Filed"
+          "confirm": "Confirm Filed",
+          "confirmPayment": "Record Payment"
         },
         "status": {
           "pending": "Pending",
@@ -4554,6 +4798,8 @@ export const translations = {
           "officialExportFailedDescription": "Failed to generate Excel form. Please try again.",
           "filedTitle": "Filing Recorded",
           "filedDescription": "The return has been marked as filed.",
+          "paymentTitle": "Payment Recorded",
+          "paymentDescription": "The WIT liability and payment evidence have been recorded.",
           "updateErrorDescription": "Failed to update filing status."
         },
         "csv": {
@@ -4571,6 +4817,10 @@ export const translations = {
       },
       "profitLoss": {
         "etax": {
+          "baseExclusionsTitle": "Check the base before filing (Law 8/2008 Sec. 64.6)",
+          "baseExclusionsBody": "The installment base excludes exempt income and receipts a customer already withheld tax on when paying you. Xefe cannot identify customer-side withholding automatically, so if part of your revenue was paid under withholding (or is exempt), enter the reduced base below — the figures above update.",
+          "baseOverrideLabel": "Adjusted turnover base (optional)",
+          "baseOverrideAboveRevenue": "The adjusted base is higher than the period revenue Xefe derived — double-check before filing.",
           "title": "File installment tax on e-Tax (assisted)",
           "description": "Installment tax is 0.5% of turnover: quarterly when prior-year turnover is at most $1 million, monthly when it is higher. Check the period, then file in e-Tax — Xefe never files for you.",
           "account": "Domestic Installment Tax",
@@ -5221,7 +5471,10 @@ export const translations = {
         "sourceExpense": "Expense",
         "sourceRevenue": "Revenue",
         "sourceReceipt": "Receipt",
-        "sourcePayment": "Payment"
+        "sourcePayment": "Payment",
+        "sourcePayrollPayment": "Payroll payment",
+        "sourceTaxPayment": "Tax / INSS payment",
+        "sourceFixedAssetAcquisition": "Fixed-asset acquisition"
       },
       "fixedAssets": {
         "title": "Fixed Assets",
@@ -5266,6 +5519,20 @@ export const translations = {
         "disposePreviewLoss": "Net book value {{nbv}} — this sale books a loss of {{amount}}.",
         "fieldName": "Asset name",
         "fieldReference": "Reference / serial",
+        "fieldAcquisitionOrigin": "How did this asset enter the books?",
+        "acquisitionOriginPlaceholder": "Choose one",
+        "acquisitionOrigins": {
+          "bill": "Already posted through a bill",
+          "opening": "Opening balance",
+          "postNow": "Post the acquisition now"
+        },
+        "acquisitionOriginHelp": {
+          "already_posted_via_bill": "Register only. The supplier bill already posted the asset cost.",
+          "opening_balance": "Register only. The asset is already included in the opening balances.",
+          "post_now": "Xefe will debit the asset account and credit the funding account once."
+        },
+        "fieldFundingAccount": "Paid from / owed to",
+        "fundingAccountPlaceholder": "Choose a cash, bank, payable, or equity account",
         "fieldAcquired": "Acquisition date",
         "fieldCost": "Cost (USD)",
         "fieldResidual": "Residual value",
@@ -6490,6 +6757,8 @@ export const translations = {
         }
       },
       "bills": {
+        "withholdingNotice": "Withholding notice",
+        "withholdingNoticeError": "Failed to generate the withholding notice.",
         "title": "Bills",
         "subtitle": "Manage accounts payable",
         "new": "New Bill",
@@ -6685,6 +6954,27 @@ export const translations = {
         "bills": "bills"
       },
       "bankRecon": {
+        "blockedGeneric": "Cannot record this payment",
+        "blockedOverpayment": "Bank amount is more than the balance due — cannot match",
+        "confirmBillPaid": "The bill becomes paid.",
+        "confirmFullA": "This records a payment of",
+        "confirmInvoicePaid": "The invoice becomes paid.",
+        "confirmOn": "on",
+        "confirmPartialA": "This records a partial payment of",
+        "confirmReceiptEmail": "If the customer has an email on file, they will receive a payment receipt.",
+        "confirmRemainsDue": "will remain due.",
+        "linkOnlyHint": "Already recorded — matching just links this bank line",
+        "nowPaid": "is now paid",
+        "partialRecordedOn": "Partial payment recorded on",
+        "paymentRecorded": "Payment recorded",
+        "paymentRecordedTag": "Payment recorded",
+        "recordAndMatch": "Record payment & match",
+        "remainsDue": "remains due",
+        "settleBlocked": "The bank amount is more than the balance due — record this payment from the invoice or bill page instead.",
+        "unmatchLocked": "Payment recorded — manage it from the invoice or bill page",
+        "willRecordFull": "Will record the payment — becomes paid",
+        "willRecordPartial": "Will record a partial payment",
+        "alreadyImportedSkipped": "already imported (skipped)",
         "title": "Bank Reconciliation",
         "subtitle": "Import and match bank transactions",
         "importCSV": "Import CSV",
@@ -6725,6 +7015,18 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "absence": "Absence",
+      "lateArrival": "Late arrival",
+      "specialHours": "Special hours (2× pay)",
+      "advanceRepayment": "Advance Repayment",
+      "loanRepayment": "Loan Repayment",
+      "courtOrder": "Court Order",
+      "otherDeductions": "Other Deductions",
+      "payDateNonWorkingDay": "This pay date falls on a weekend or public holiday. Art. 40(5): pay on the preceding working day.",
+      "payDateUseDate": "Use {date}",
+      "warningOTCapArt27": "exceeded the Art. 27(4) overtime cap (4h/day / 16h/week) in this period — allowed only for force majeure (Art. 27(5))",
+      "warningRestDayCapArt27": "worked more than 8h on a rest day or public holiday — Art. 27(3) caps such work at 8 hours",
+      "warningArt86Headcount": "the Art. 86 INSS discount requires {{max}} or fewer workers — this run has {{count}}; the discount lapses while over {{max}}",
       "title": "Run Payroll",
       "freePlanNotice": "You're on the free plan. Build and review payroll freely — finalizing a run needs a subscription.",
       "freePlanNoticeCta": "View plan",
@@ -6891,6 +7193,14 @@ export const translations = {
       "stepReviewDesc": "Please review these numbers before submitting payroll."
     },
     "deductions": {
+      "edit": "Edit",
+      "editDialogDescription": "Update this deduction. Advance repayment progress is kept — the remaining balance only changes if you change the total amount.",
+      "editDialogTitle": "Edit Deduction",
+      "editTotalHint": "Changing the total keeps what has already been repaid — the remaining balance becomes the new total minus the amount repaid so far.",
+      "saveChanges": "Save Changes",
+      "totalAmountRequired": "An advance that tracks a balance needs a total amount greater than zero.",
+      "updateError": "Failed to update the deduction.",
+      "updateSuccess": "Deduction updated.",
       "title": "Deductions & Advances",
       "subtitle": "Manage recurring deductions and payroll advances",
       "addDeduction": "Add Deduction",
@@ -6902,6 +7212,9 @@ export const translations = {
       "otherDeductions": "Other Deductions",
       "deductionsTableTitle": "Deductions",
       "deductionsTableDescription": "Manage employee deductions and advances",
+      "deductionTypes": "Deduction Types",
+      "clickToFilter": "Click a type to filter the table",
+      "active": "active",
       "searchPlaceholder": "Search...",
       "tabAll": "All",
       "tabAdvances": "Advances",
@@ -7107,11 +7420,25 @@ export const translations = {
       }
     },
     "bankTransfers": {
+      "completePostsPayment": "This will mark payroll paid, update deduction balances, and post the bank payment to accounting.",
+      "alsoMarkRunPaid": "Also mark the payroll run as paid (updates advance and recurring-deduction balances)",
+      "markCompleted": "Mark completed",
+      "markCompletedDesc": "Confirm your bank has executed this salary batch. This only updates the record in Xefe — it does not contact the bank.",
+      "markCompletedTitle": "Mark transfer completed?",
+      "markFailed": "Mark failed",
+      "markFailedDesc": "Record that your bank rejected or did not execute this salary batch. This only updates the record in Xefe — you can mark it completed later if the bank processes a retry.",
+      "markFailedTitle": "Mark transfer failed?",
+      "recordBankTransfer": "Record Bank Transfer",
+      "recordBankTransferDesc": "Records this payroll's transfer as pending in Xefe. No money is sent — generate the bank files, take or email them to your bank, then mark the transfer completed here.",
+      "recordTransfer": "Record Transfer",
+      "toastRunMarkedPaid": "Payroll run marked as paid.",
+      "toastRunPaidError": "The transfer was marked completed, but marking the payroll run as paid failed. You can mark it paid from Payroll History.",
+      "toastStatusUpdateError": "Failed to update the transfer status. Please try again.",
       "title": "Bank Transfers",
       "subtitle": "Manage payroll bank transfers and transaction history",
       "coverEmail": {
         "title": "Now email the bank",
-        "description": "BNU and BNCTL execute salary batches from an emailed instruction. Send the downloaded file to your branch with this message, and print and sign the Ordem de Pagamento sheet inside the file to attach.",
+        "description": "BNU salary batches use an emailed instruction. For BNCTL, this pack is best-effort until your branch confirms it. Email the file and attach the printed, signed Ordem de Pagamento sheet.",
         "copy": "Copy email text",
         "copied": "Email text copied"
       },
@@ -7132,6 +7459,8 @@ export const translations = {
       "bankFiles": "Bank Files",
       "generateBankFiles": "Generate Bank Transfer Files",
       "generateBankFilesDesc": "Generate bank-specific files for salary payments (BNU, Mandiri, ANZ, BNCTL)",
+      "formatVerified": "Verified workflow",
+      "formatBestEffort": "Best effort — confirm with your bank",
       "selectPayrollRun": "Select Payroll Run",
       "selectPayrollRunPlaceholder": "Select a payroll run",
       "selectBanksToGenerate": "Select Banks to Generate",
@@ -7181,6 +7510,9 @@ export const translations = {
       "toastValidationDesc": "Please fill in all required fields.",
       "toastTransferSuccess": "Success",
       "toastTransferSuccessDesc": "Bank transfer {{reference}} initiated successfully.",
+      "toastTransferRecordedDesc": "Transfer {{reference}} was recorded as pending. Send the bank file or pack to your bank, then mark it completed here.",
+      "toastMarkedCompleted": "Transfer {{reference}} was completed and the payroll payment was posted.",
+      "toastMarkedFailed": "Transfer {{reference}} was marked failed.",
       "toastTransferError": "Failed to initiate transfer. Please try again.",
       "toastNoData": "No Data",
       "toastNoDataDesc": "No transfers to export.",
@@ -7199,6 +7531,10 @@ export const translations = {
       "company": "Company"
     },
     "taxReports": {
+      "inssArrearsMonth": "month",
+      "inssArrearsMonths": "months",
+      "inssArrearsNotice": "Late INSS payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
+      "inssArrearsEstimate": "Estimated so far for {{period}}: US$ {{amount}} ({{months}} month(s)).",
       "title": "Payroll Taxes & INSS",
       "subtitle": "Timor-Leste compliance center for WIT (ATTL) and INSS monthly filings.",
       "actionRequired": "Action required",
@@ -7214,13 +7550,34 @@ export const translations = {
       "daysRemaining": "{{days}} days remaining",
       "inssStatementTask": "statement (10th)",
       "inssPaymentTask": "payment (20th)",
+      "witStatementTask": "return",
+      "witPaymentTask": "payment",
       "noPeriodsFound": "No periods found",
       "attlTitle": "ATTL Monthly WIT Return",
       "attlDesc": "Generate, export (CSV/PDF), and track monthly Wage Income Tax filings.",
       "openWitFiling": "Open WIT Filing",
       "inssTitle": "INSS Monthly Return",
       "inssDesc": "Generate and export monthly INSS contribution submissions and track filing status.",
-      "openInssFiling": "Open INSS Filing"
+      "openInssFiling": "Open INSS Filing",
+      "formC": {
+        "title": "Annual business income tax (Form C)",
+        "savedTitle": "Preparation saved",
+        "savedDescription": "The annual income-tax preparation checklist was updated.",
+        "saveError": "Could not save the preparation checklist.",
+        "reviewProgress": "Review preparation",
+        "startPreparation": "Start preparation",
+        "dialogTitle": "Prepare {{year}} annual income tax",
+        "dialogDescription": "Collect the accounting reports and adjustments your accountant needs for the official return.",
+        "externalWarning": "Xefe tracks preparation only. It does not generate or file the official Form C; use the current ATTL form and obtain accountant sign-off.",
+        "checklist": {
+          "profitAndLoss": "Profit and loss reviewed",
+          "balanceSheet": "Balance sheet reviewed",
+          "cashFlow": "Cash-flow statement reviewed",
+          "taxAdjustments": "Tax adjustments reviewed"
+        },
+        "reviewNote": "Review note",
+        "reviewNotePlaceholder": "Reviewer, open items, and the next action"
+      }
     },
     "guidance": {
       "hideGuidance": "Hide guidance",
@@ -7463,7 +7820,12 @@ export const translations = {
         },
         "filings": {
           "monthlyWit": "WIT {{period}}",
+          "monthlyWitReturn": "WIT return {{period}}",
+          "monthlyWitPayment": "WIT payment {{period}}",
           "annualWit": "Annual WIT {{period}}",
+          "annualIncomeTax": "Annual income tax {{period}}",
+          "servicesTax": "Services tax {{period}}",
+          "installmentTax": "Income-tax installment {{period}}",
           "inssPayment": "INSS payment {{period}}",
           "inssStatement": "INSS statement {{period}}",
           "overdue": "{{days}}d overdue",
@@ -7485,6 +7847,7 @@ export const translations = {
       }
     },
     "supplierRemittance": {
+      "deductionSuspended": "Unremitted withholding suspends the deductibility of the underlying expense (Law 8/2008 Sec. 32.2) — remit to keep the deduction.",
       "errorTitle": "Could not record tax payment",
       "proofRequired": "Upload the bank slip, BNU receipt, or other payment proof.",
       "signInRequired": "Sign in before recording a tax payment.",
@@ -7845,6 +8208,7 @@ export const translations = {
       }
     },
     "common": {
+      "reset": "Fila ba orijinál",
       "needsReviewTitle": "Presiza revizaun molok deklara",
       "needsReviewDesc": "Rejistu folha-pagamentu ida la iha {{field}} válidu. Hadi'a ka prosesa fila fali folha ne'e — Xefe nunka adivinha valór konformidade. Se la hatene, husu ba ita-nia kontabilista.",
       "greetingMorning": "Bondia",
@@ -7943,6 +8307,17 @@ export const translations = {
       "setupBannerDesc": "Remata konfigurasaun empreza, pagamentu no saláriu. {{percent}}% kompletu.",
       "billingPlan": "Faturasaun & Planu",
       "billingPlanDesc": "Ita-nia planu, presu no pagamentu",
+      "payrollSettingsLink": "Konfigurasaun Folha",
+      "payrollSettingsLinkDesc": "Impostu, INSS, oras estra no fulan 13",
+      "timeLeaveSettingsLink": "Politika Lisensa",
+      "timeLeaveSettingsLinkDesc": "Direitu lisensa no feriadu públiku",
+      "companySettingsLink": "Empreza",
+      "companySettingsLinkDesc": "Detallu empreza, fatin servisu no departamentu",
+      "paymentsSettingsLink": "Pagamentu no Banku",
+      "paymentsSettingsLinkDesc": "Konta banku, métodu pagamentu no oráriu folha",
+      "integrationsSettingsLink": "Kontabilista no Integrasaun",
+      "integrationsSettingsLinkDesc": "Esporta QuickBooks, modu impostu avansadu no asesu kontabilista",
+      "allSettings": "Definisaun hotu",
       "planFree": "Gratuitu",
       "planActive": "Ativu",
       "employees": "Empregadu",
@@ -8014,7 +8389,7 @@ export const translations = {
     },
     "allowances": {
       "title": "Subsidiu",
-      "subtitle": "Jere subsidiu no benefisiu funsionariu",
+      "subtitle": "Jere subsidiu no benefisiu funsionariu — subsidiu ativu tama automatikamente iha kada folha",
       "add": "Tau Subsidiu",
       "addFirst": "Tau ita nia subsidiu primeiru",
       "addError": "Falha tau subsidiu",
@@ -8076,6 +8451,7 @@ export const translations = {
       "removeError": "Falha hasai subsidiu"
     },
     "dashboard": {
+      "cardPayrollOverdue": "Saláriu atrazadu — Art. 40 ezije pagamentu pelu menus kada fulan",
       "payrollStatus": "Status Saláriu",
       "days": "loron",
       "untilPayDate": "to'o loron selu (25)",
@@ -8499,7 +8875,7 @@ export const translations = {
         "hero": {
           "eyebrow": "Folha pagamentu ba Timor-Leste",
           "title": "Selu ita-nia ekipa ho loos.",
-          "titleAccent": "Kumpre lei ho fasil.",
+          "titleAccent": "Haree obrigasaun hotu.",
           "description": "Xefe kalkula WIT, INSS, oras estra no subsídiu anuál, depois prepara ficheiru banku no payslip — la presiza spreadsheet.",
           "primary": "Hahú grátis",
           "secondary": "Haree oinsá funsiona",
@@ -8557,7 +8933,7 @@ export const translations = {
           },
           "banks": {
             "title": "Ficheiru ba banku lokal",
-            "description": "Prepara ficheiru folha ba BNU, BNCTL, Mandiri no ANZ la presiza hakerek fali pagamentu ida-idak."
+            "description": "Uza pakote saláriu BNU ne'ebé verifika ona; exportasaun BNCTL, Mandiri no ANZ marka klaru nu'udar best-effort."
           },
           "languages": {
             "title": "Klaru iha lian ida-idak",
@@ -8611,7 +8987,7 @@ export const translations = {
           "q1": "Xefe kalkula WIT, INSS no subsídiu anuál ka lae?",
           "a1": "Sin. Xefe kalkula retensaun WIT, kontribuisaun INSS, oras-servisu-liu no subsídiu anuál (fulan-13) ba kada folha de pagamentu, no husik montante hotu vizível atu revee molok ita finaliza.",
           "q2": "Xefe suporta banku Timor-Leste saida sira?",
-          "a2": "Xefe prepara ficheiru pagamentu saláriu ba BNU, BNCTL, Mandiri no ANZ, atu ita la presiza hakerek fali kada transferénsia.",
+          "a2": "Xefe iha pakote saláriu BNU ne'ebé verifika ona. Exportasaun BNCTL, Mandiri no ANZ mak modelu best-effort ne'ebé Ita tenke konfirma ho banku.",
           "q3": "Xefe disponível iha Tetun ka lae?",
           "a3": "Sin — aplikasaun tomak servisu iha Tetun, Ingles no Portugés, no ita bele troka lian iha kualkér momentu.",
           "q4": "Xefe nia presu hira?",
@@ -8628,14 +9004,14 @@ export const translations = {
         "headline": "Sistema Operasaun",
         "headlineAccent": "Ba Empresa TL",
         "subheadline": {
-          "before": "RH, folha, kontabilidade no fatura — hadi'a ba Timor-Leste. Komformidade ho",
+          "before": "RH, folha, kontabilidade no fatura — hadi'a ba Timor-Leste tuir",
           "highlight1": "Lei Trabalho",
           "middle": ", WIT/INSS, no",
           "highlight2": "kontabilidade double-entry",
           "after": "."
         },
         "points": {
-          "labor": "Kompativel Lei Trabalho",
+          "labor": "Regra prinsipal Lei Trabalho iha laran",
           "tax": "WIT no INSS iha ona",
           "languages": "Tetun, Ingles, Portugues",
           "accounting": "Kontabilidade double-entry"
@@ -8698,7 +9074,7 @@ export const translations = {
         "laborLaw": {
           "title": "Lei Trabalho Timor",
           "subtitle": "Kodigu Laboral",
-          "description": "Komformidade ho Kodigu Laboral. Semana 44 oras, oras extra 150%/200%, regra deskansu no seluk."
+          "description": "Aplika regra prinsipal Kodigu Laboral ne'ebé reviza ona, inklui semana 44 oras, oras extra 150%/200% no regra deskansu. Kazu esepsionál sei presiza reviza jurídiku."
         },
         "witInss": {
           "title": "WIT no INSS",
@@ -8737,9 +9113,9 @@ export const translations = {
       },
       "laborLaw": {
         "badge": "Lei Trabalho Timor-Leste",
-        "title": "Lei Laboral Kompletu",
-        "titleAccent": "Komformidade integradu",
-        "description": "Kalkulasaun hotu tuir Kodigu Laboral. Oras extra, lisensa, indemnizasaun - hotu automatik no loos.",
+        "title": "Regra Laboral Prinsipal",
+        "titleAccent": "Iha Sistema Laran",
+        "description": "Regra prinsipal ne'ebé reviza ona iha folha laran. Kazu esepsionál, inklui indemnizasaun, presiza reviza profisionál no konkordánsia esplísita.",
         "features": {
           "workWeek": {
             "title": "Semana 44 oras",
@@ -8759,11 +9135,11 @@ export const translations = {
           },
           "annual": {
             "title": "Lisensa anual",
-            "description": "12 loron minimu, to'o 22 loron depois 9 tinan"
+            "description": "Mínimu estatutáriu loron 12, la inventa nivel tuir tinan servisu"
           },
           "severance": {
             "title": "Indemnizasaun",
-            "description": "30 loron kada tinan servisu la iha justa causa"
+            "description": "Kalkula de'it depois reviza kazu espesífiku husi jurista ka kontabilista"
           }
         }
       },
@@ -8815,7 +9191,7 @@ export const translations = {
         "eyebrow": "Resibu Pagamentu",
         "title": "Resibu pagamentu ne'ebé ita-nia ekipa",
         "titleAccent": "bele lee duni",
-        "subtitle": "Kada prosesu folha pagamentu prodús resibu ne'ebé tuir lei — WIT, INSS no subsídiu anuál fahe liña ba liña, iha Tetun, Inglés ka Portugés. Trabalhador sira simu sira-nian iha telefone liuhusi Ekipa."
+        "subtitle": "Kada prosesu folha pagamentu prodús resibu klaru atu reviza — WIT, INSS no subsídiu anuál fahe liña ba liña, iha Tetun, Inglés ka Portugés. Trabalhador sira simu sira-nian iha telefone liuhusi Ekipa."
       },
       "cta": {
         "title": "Prontu atu hahu?",
@@ -9321,7 +9697,7 @@ export const translations = {
           },
           "pay": {
             "title": "Selu",
-            "description": "La'ós ficheiru ne'ebé banku la simu: pakote Excel ho folha rua no email kapa iha Portugés ne'ebé sukursál BNU no BNCTL prosesa, ho ordem pagamentu asinadu. Empreza ho QuickBooks bele esporta jornál nudar CSV ka IIF."
+            "description": "Download pakote Excel BNU ho folha rua ne'ebé bazeia ba evidénsia, email kapa Portugés no ordem pagamentu asinadu. Output BNCTL, Mandiri no ANZ marka best-effort to'o banku konfirma. Empreza ho QuickBooks bele esporta jornál nudar CSV ka IIF."
           }
         }
       },
@@ -9572,6 +9948,50 @@ export const translations = {
     "settings": {
       "headerTitle": "Konfigurasaun Empresa",
       "headerSubtitle": "Konfigura empresa, folha no politika RH",
+      "access": {
+        "title": "Asesu ekipa",
+        "description": "Konvida ema no kontrola parte Xefe ne'ebé sira bele uza.",
+        "invite": "Konvida ema",
+        "roles": {
+          "owner": "Na'in",
+          "hr-admin": "Administradór RH",
+          "accountant": "Kontabilista",
+          "manager": "Jestór",
+          "viewer": "Lee de'it"
+        },
+        "modules": {
+          "hiring": "Rekrutamentu",
+          "staff": "Pessoal",
+          "timeleave": "Tempu no lisensa",
+          "performance": "Dezempeñu",
+          "payroll": "Folha saláriu",
+          "money": "Osan",
+          "accounting": "Kontabilidade",
+          "reports": "Relatóriu"
+        },
+        "actionFailed": "La konsege atualiza asesu ekipa.",
+        "invitedTitle": "Konvite haruka ona",
+        "invitedDescription": "Ema ne'e bele uza email konvite atu tama ba kompañia ida-ne'e.",
+        "updatedTitle": "Asesu atualiza ona",
+        "resetSentTitle": "Reset password haruka ona",
+        "removedTitle": "Asesu hasai ona",
+        "loadFailed": "La konsege karrega membru ekipa.",
+        "empty": "La hetan membru ekipa.",
+        "unnamed": "Membru laiha naran",
+        "you": "Ita",
+        "noModules": "Laiha área asesu",
+        "resetPassword": "Reset password",
+        "inviteTitle": "Konvida ema ida",
+        "inviteDescription": "Hili papél agora. Ita bele ajusta asesu depois sira tama.",
+        "email": "Enderesu email",
+        "role": "Papél",
+        "standardAccessHint": "Papél komesa ho asesu padraun ba servisu ne'e.",
+        "sendInvite": "Haruka konvite",
+        "editTitle": "Edita asesu ekipa",
+        "accessAreas": "Área asesu",
+        "removeTitle": "Hasai ema ne'e nia asesu?",
+        "removeDescription": "{{email}} sei la bele loke tan kompañia ida-ne'e iha Xefe."
+      },
       "advancedTax": {
         "title": "Modu impostu avansadu",
         "description": "Hatudu kontrolu impostu nivel kontabilista — retensaun ba fornesedór, taxa tratadu, no formuláriu deklarasaun — ba ema hotu ne'ebé jere empresa ida-ne'e. Husik desliga se ita-nia kontabilista la husu; Xefe aplika valór seguru automátiku.",
@@ -9607,6 +10027,8 @@ export const translations = {
         },
         "tinNumber": "Númeru Úniku SERVE / NIF *",
         "tinPlaceholder": "Númeru Úniku Empreza / NIF",
+        "employerNiss": "NISS Empregador",
+        "employerNissPlaceholder": "Númeru rejistu empregador INSS",
         "addressTitle": "Endereco",
         "registeredAddress": "Endereco Registu *",
         "registeredAddressPlaceholder": "Rua, edifisio, etc.",
@@ -9657,6 +10079,9 @@ export const translations = {
         "save": "Rai Estrutura"
       },
       "payment": {
+        "ledgerAccount": "Konta kontabilidade",
+        "ledgerOperatingBank": "Banku — Operasaun (1120)",
+        "ledgerPayrollBank": "Banku — Pagamentu Saláriu (1130)",
         "title": "Estrutura Pagamentu",
         "description": "Konfigura metodu, konta no periodu",
         "methods": "Metodu Pagamentu",
@@ -9695,17 +10120,41 @@ export const translations = {
         "save": "Rai Estrutura Pagamentu"
       },
       "timeOff": {
+        "customTypes": {
+          "title": "Tipu lisensa personalizada",
+          "hint": "Lisensa kompañia nian rasik, aumenta tan ba tipu sira iha Lei Trabálhu (ex., loron voluntáriu). Tipu ativu sira mosu iha formuláriu pedidu iha web no telemovel; bainhira dezativa tipu ida, nia la mosu tan ba pedidu foun maibé la muda sira ne'ebé iha ona.",
+          "active": "Ativu",
+          "inactive": "Inativu",
+          "name": "Naran",
+          "namePlaceholder": "ex., Loron voluntáriu",
+          "code": "Kódigu",
+          "codeTaken": "Kódigu ida-ne'e uza tiha ona ba tipu lisensa seluk.",
+          "requiresCertificate": "Presiza dokumentu prova",
+          "add": "Tau tipu",
+          "addTitle": "Tau tipu lisensa personalizada",
+          "saveReminder": "Tipu foun no tipu ne'ebé muda ona rai bainhira Ita hanehan Rai iha okos."
+        },
+        "breastfeedingNote": "Depois fila husi lisensa maternidade, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, atu fó susu to'o bebé halo fulan 6, no falta traballadora isin-rua nian ba konsulta médiku mós selu (Lei Trabálhu Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta. Laiha buat atu konfigura iha ne'e.",
+        "miscarriageLeave": "Lisensa interrupsaun gravidés (Art. 59.4)",
+        "miscarriageLeaveHint": "Semana 4 depois interrupsaun gravidés (Lei Trabálhu Art. 59.4), sura nu'udar loron servisu. Lisensa tanba risku klíniku MOLOK partu (Art. 59.3) laiha durasaun fixu — rejista nu'udar lisensa doensa ho sertifikadu médiku.",
+        "studyLeave": "Lisensa Estudu (Art. 76.3)",
+        "studyLeaveHint": "Falta ho pagamentu ba traballadór-estudante sira atu tuir prova avaliasaun, la lakon saláriu (Lei Trabálhu Art. 76.3). Ba prova de'it — empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5). Lei la tau limite anual; loron por tinan iha ne'e mak alokasaun kompañia nian.",
+        "parentalInssExplainer": "INSS selu 100% diretamente ba traballadór bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017) — baibain empregadór la selu buat ida durante lisensa.",
+        "parentalPaidWarning": "INSS la selu subsídiu ba loron sira ne'ebé traballadór simu saláriu (DL 18/2017 Art. 21(3)) — maternidade/paternidade ne'ebé empregadór selu troka subsídiu INSS, la aumenta ba nia.",
         "title": "Politika Lisensa",
         "description": "Konfigura lisensa tuir lei Timor-Leste",
         "laborCodeTitle": "Kodigu Laboral Timor-Leste (Lei 4/2012)",
         "laborCodeHint": "Valor padrao tuir lei laboral. Altera so se benefisiu diak liu.",
         "probationLabel": "Periodu experiencia antes de lisensa",
+        "probationHint": "Lisensa anual la bele hahú antes empregadu kompleta fulan hirak-ne'e (períodu esperiénsia: Lei Trabálhu Art. 14). Na'in no admin RH bele halo eksesaun ba pedidu ida.",
         "months": "fulan",
         "entitlements": "Direitu Lisensa",
         "annualLeave": "Lisensa Anual",
         "sickLeave": "Lisensa Doensa",
         "maternityLeave": "Lisensa Maternidade",
         "paternityLeave": "Lisensa Paternidade",
+        "specialLeave": "Lisensa Espesiál (Art. 33.3)",
+        "specialLeaveHint": "Alokasaun ida de'it ho loron selu kada tinan kalendáriu ba kazamentu, mate família nian, no eventu komunidade ka relijiozu (Lei Trabálhu Art. 33.3). Empregadór bele husu prova.",
         "days": "loron",
         "weeks": "semana",
         "daysPerYear": "Loron por tinan",
@@ -9714,6 +10163,11 @@ export const translations = {
         "paidPercentage": "Percentajen Paga",
         "requiresMedicalCert": "Presiza sertifikadu mediku",
         "maternityDaysHint": "Loron (12 semana = 84 loron)",
+        "annualLeaveHint": "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
+        "maternityHint": "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
+        "paternityHint": "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 59).",
+        "sickPayBandsTitle": "Pagamentu lisensa doensa fixu tuir lei",
+        "sickPayBandsText": "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral: loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
         "invalidValues": "Uza loron no persentajen válidu. Persentajen tenke 0–100 no períodu esperiénsia 0–12 fulan.",
         "save": "Rai Politika Lisensa"
       },
@@ -9722,38 +10176,69 @@ export const translations = {
         "description": "Impostu, seguransa sosial no horas extra",
         "wit": "Impostu Rendimentu (WIT)",
         "residentThreshold": "Limite Isensaun (Residente)",
-        "residentThresholdHint": "Primeiru ${{amount}} la iha impostu",
+        "residentThresholdHint": "Primeiru ${{amount}} la iha impostu (Lei Impostu 8/2008, Anexu V)",
         "residentRate": "Taxa Residente",
         "nonResidentRate": "Taxa La Residente",
-        "flatRateHint": "Taxa fija, laiha limite",
+        "flatRateHint": "Taxa fija husi dolar primeiru (Lei Impostu 8/2008, Anexu V)",
         "socialSecurity": "Seguransa Sosial (INSS)",
         "employeeContribution": "Kontribuisaun Empregadu",
+        "employeeContributionHint": "Taxa legál: 4% (Dekretu-Lei 20/2017, Art. 8–10)",
         "employerContribution": "Kontribuisaun Empregador",
+        "employerContributionHint": "Taxa legál: 6% (Dekretu-Lei 20/2017, Art. 8–10)",
         "excludeFoodAllowance": "Labele konta subsidiu hanorin ba SS",
         "excludePerDiem": "Labele konta ajuda de custo ba SS",
+        "inssExclusionsHint": "Subsidiu despeza sira la tama iha baze kontribuisaun INSS tuir lei (Dekretu-Lei 20/2017, Art. 9). Inklui ida de'it se nia loloos remunerasaun regulár ne'ebé selu kada fulan.",
         "overtime": "Horas Servisu no Extra",
         "maxHoursWeek": "Maximu Horas/Semana",
+        "maxHoursWeekHint": "Máximu legál: oras 44/semana (Lei Trabálhu Art. 25)",
         "hourlyRateMethod": "Métodu oras estra no falta",
         "hourlyRateWeeklyAverage": "Média semana oras 44",
         "hourlyRateFixed190": "Métodu folha oras 190",
         "hourlyRateHint": "Métodu oras 190 arredonda taxa oras ba leten no arredonda totál oras estra hamutuk dala ida. Uza métodu iha kontratu ka folha kontabilista.",
         "first2HoursRate": "Taxa oras estra padrão",
-        "first2HoursHint": "1.5x = +50%",
+        "first2HoursHint": "1.5× = +50%, mínimu legál (Lei Trabálhu Art. 27)",
         "beyond2HoursRate": "Taxa depois 2 oras",
         "beyond2HoursHint": "2x = +100%",
         "sundayHolidayRate": "Taxa Domingu/Feriadu",
+        "sundayHolidayHint": "2× = +100%, mínimu legál ba servisu loron deskansa no feriadu (Lei Trabálhu Art. 27(2), 30)",
+        "nightPremiumRate": "Prémiu Oras Kalan",
+        "nightPremiumHint": "Pagamentu estra ba oras servisu 21:00–06:00. Mínimu legal mak +25%.",
+        "minimumWageSection": "Saláriu Mínimu",
+        "minimumWageLabel": "Saláriu mínimu mensal",
+        "minimumWageHint": "Mínimu legal iha Timor-Leste mak $115/fulan (la muda desde 2012). Folha fó avizu bainhira saláriu ida menus husi valor ne'e.",
         "thirteenthMonth": "Subsidiu Anual (13 Mes)",
         "enable13th": "Ativa pagamentu 13 mes",
+        "subsidioDeadlineNote": "Prazu legal: selu to'o 20 Dezembru kada tinan (Lei Trabálhu Art. 44).",
         "approvalSection": "Aprovasaun payroll",
         "selfApprovalLabel": "Permite aprovasaun rasik (admin ida de’it)",
         "selfApprovalDesc": "Ema ne’ebé kria payroll mós bele aprova. Uza de’it se Ita-nia negósiu iha admin payroll ida de’it — se taka, admin seluk tenke aprova kada payroll (seguru liu).",
         "selfApprovalOwnerOnly": "Na’in konta de’it mak bele muda ida-ne’e.",
-        "paymentDeadline": "Prazu Pagamentu",
-        "paymentDeadlinePlaceholder": "MM-DD",
-        "paymentDeadlineHint": "Formatu: MM-DD (ez.: 12-20 ba 20 Desembru)",
-        "invalidValues": "Verifika taxa, oras no prazu pagamentu. Persentajen tenke 0–100 no prazu MM-DD.",
+        "invalidValues": "Verifika taxa no oras. Persentajen tenke 0–100.",
         "prorataHint": "Pro-rata ba empregadu ho menus de 12 fulan",
-        "save": "Rai Konfigurasaun Folha"
+        "save": "Rai Konfigurasaun Folha",
+        "statutory": {
+          "title": "Fixu tuir lei Timor-Leste",
+          "description": "Xefe aplika regra legál sira-ne'e automatikamente. Lei mak define sira no la bele muda.",
+          "pending": "Hein konfirmasaun",
+          "witDueLabel": "Impostu saláriu mensal (WIT)",
+          "witDueValue": "Selu to'o loron 15 fulan tuir mai (Lei 8/2008 Art. 23)",
+          "inssDueLabel": "Deklarasaun no pagamentu INSS",
+          "inssDueValue": "Deklarasaun to'o loron 10, pagamentu to'o loron 20 fulan tuir mai",
+          "deductionCapLabel": "Limite dedusaun saláriu",
+          "deductionCapValue": "Dedusaun sira limite ba 30% husi saláriu fulan nian (Lei Trabálhu Art. 42.3); orden tribunál la tama iha limite",
+          "workingHoursLabel": "Oras servisu padraun",
+          "workingHoursValue": "Oras 8/loron, oras 44/semana; oras estra limite ba oras 4/loron no oras 16/semana (Lei Trabálhu Art. 25–26)",
+          "nightWindowLabel": "Janela servisu kalan",
+          "nightWindowValue": "21:00–06:00 — oras iha janela ne'e hetan prémiu kalan",
+          "sickBandsLabel": "Pagamentu lisensa doensa",
+          "sickBandsValue": "Loron 12 ho sertifikadu kada tinan: loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%",
+          "severanceLabel": "Kompensasaun servisu iha terminasaun",
+          "severanceValue": "Saláriu fulan ida kada períodu tinan 5 kompletu, tuir kauza terminasaun (Lei Trabálhu Art. 56)",
+          "nonCashLabel": "Benefísiu la'ós osan",
+          "nonCashValue": "Sai impostu hanesan saláriu de'it bainhira valor liu $20/fulan (Lei Impostu 8/2008)",
+          "subsidioLabel": "Fulan 13 (Subsidiu Anual)",
+          "subsidioValue": "Saláriu fulan ida, selu to'o 20 Dezembru kada tinan (Lei Trabálhu Art. 44)"
+        }
       },
       "notifications": {
         "errorTitle": "Erru",
@@ -10063,6 +10548,10 @@ export const translations = {
         "importStartedDesc": "Prosesu {{count}} empregadu..."
       },
       "toast": {
+        "fixedTermMotiveTitle": "La deklara motivu kontratu ho prazu",
+        "fixedTermMotiveDesc": "Art. 12(2): kontratu ho prazu ne'ebé la deklara motivu konsidera nu'udar permanente.",
+        "minorWarningTitle": "Traballadór menór (Lei Trabálhu Art. 69)",
+        "minorWarningDesc": "Servisu ki'ik de'it: máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu.",
         "errorTitle": "Erru",
         "requiredFieldsTitle": "Kampu obrigatóriu sira falta",
         "requiredFieldsDesc": "Favor kompleta kampu obrigatóriu sira antes kontinua.",
@@ -10079,6 +10568,14 @@ export const translations = {
         "uploadWarningDesc": "Empregadu rai ona, maibé la konsege upload: {files}"
       },
       "fields": {
+        "contractEndDate": "Data remata kontratu",
+        "contractEndDateHelp": "Ba kontratu ho prazu de'it — husik mamuk se permanente.",
+        "fixedTermMotive": "Motivu kontratu ho prazu",
+        "fixedTermMotivePlaceholder": "Hili motivu legál",
+        "fixedTermMotiveWarning": "Art. 12(2): kontratu ho prazu ne'ebé la deklara motivu konsidera nu'udar permanente.",
+        "minorLightWorkNote": "Tinan 15-16 iha admisaun: servisu ki'ik de'it — máximu oras 5/loron, oras 25/semana, la bele servisu kalan ka oras extraordináriu (Lei Trabálhu Art. 69).",
+        "probationEndDate": "Remata períodu esperiénsia",
+        "probationEndDateHelp": "Art. 14: loron 8/15 ba kontratu ho prazu, loron 30-90 ba kontratu permanente.",
         "firstName": "Naran *",
         "lastName": "Apelidu *",
         "email": "Email *",
@@ -10105,6 +10602,17 @@ export const translations = {
           "contractor": "Kontratadu",
           "shareholder": "Asionista"
         },
+        "partTimeWageHelp": "Ba traballadór tempu parsiál, rejista oras kontratu no tratamentu saláriu ne'ebé reviza ona. Folha saláriu sei la asume limite tempu tomak.",
+        "contractedWeeklyHours": "Oras kontratu kada semana *",
+        "minimumWageTreatment": "Tratamentu saláriu mínimu *",
+        "minimumWageTreatmentPlaceholder": "Hili tratamentu",
+        "minimumWageTreatments": {
+          "proRata": "Pro-rata tuir oras semana",
+          "fullFloor": "Aplika limite mensál tomak",
+          "reviewedException": "Exesaun ne'ebé reviza ona"
+        },
+        "minimumWageReviewNote": "Nota revizaun *",
+        "minimumWageReviewNotePlaceholder": "Sé mak reviza no tanbasá tratamentu ne'e aplika",
         "sefopeTitle": "Registu SEFOPE (Ministeriu Traballu)",
         "sefopeTooltip": "Presiza ba empregadu TL hotu",
         "sefopeNumber": "Numero SEFOPE",
@@ -10179,6 +10687,10 @@ export const translations = {
             "label": "Numero INSS",
             "description": "Numero Seguransa Sosial"
           },
+          "taxIdentificationNumber": {
+            "label": "NIF / TIN Traballadór",
+            "description": "Númeru fiskál individuál, se iha"
+          },
           "electoralCard": {
             "label": "Kartaun Eleitoral",
             "description": "Kartaun Eleitoral"
@@ -10196,6 +10708,7 @@ export const translations = {
         },
         "required": "Presiza",
         "numberPlaceholder": "Hatama numero",
+        "tinPlaceholder": "Hatama NIF / TIN individuál",
         "nationality": "Nacionalidade",
         "nationalityOther": "Seluk",
         "visaTitle": "Visa Servisu",
@@ -10461,6 +10974,37 @@ export const translations = {
         }
       },
       "offboarding": {
+        "art55": {
+          "title": "Referénsia Art. 55 (tribunál mak fó se despedimentu sai ilegál)",
+          "month": "fulan",
+          "months": "fulan",
+          "note": "La selu liu husi folla pagamentu — tribunál mak determina. Prosesu disiplinár hakerek tuir Art. 50(4) evita risku ida-ne'e."
+        },
+        "exitInterviews": {
+          "title": "Entrevista saida",
+          "description": "Resposta ne'ebé rejista durante prosesu saida, ba saida ne'ebé kompletu ona.",
+          "export": "Exporta CSV",
+          "exportedDesc": "Resposta entrevista saida download ona nu'udar ficheiro CSV.",
+          "exportedTitle": "Exportasaun prontu",
+          "recommendShort": "Sei rekomenda"
+        },
+        "notice": {
+          "required": "Avizu préviu ezijidu",
+          "days": "loron",
+          "given": "kumpre",
+          "notRecorded": "Data avizu préviu la rejista",
+          "requiredForReason": "avizu préviu ezijidu ba motivu sai ida-ne'e mak",
+          "shortfallWorker": "Avizu préviu la to'o: traballadór selu ba empregadór",
+          "shortfallEmployer": "Avizu préviu la to'o: empregadór selu ba traballadór",
+          "daysPay": "loron pagamentu ne'ebé falta"
+        },
+        "disciplinary": {
+          "noConcludedWarning": "La iha prosesu disiplinár ne'ebé remata ona ba traballadór ida-ne'e. Despedimentu ho justa kauza sein prosesu hakerek tuir Art. 50(4) (akuzasaun, defeza, desizaun ho razaun) automatikamente ilegál (Art. 51) no fó risku ba ita atu selu indemnizasaun Art. 55 — konfirma ho ita-nia kontabilista."
+        },
+        "certificate": {
+          "generate": "Halo sertifikadu (Art. 57)",
+          "mandatoryNote": "Sertifikadu Trabálhu (naran, data kontratu, funsaun ne'ebé halo) obrigatóriu iha kazu terminasaun hotu-hotu — Art. 57."
+        },
         "title": "Saida Empregadu",
         "subtitle": "Jere saida no prosesu remata",
         "actions": {
@@ -10480,6 +11024,9 @@ export const translations = {
           "reason": "Razao Saida",
           "reasonPlaceholder": "Hili razao...",
           "reasons": {
+            "mutualAgreement": "Akordu hamutuk",
+            "death": "Traballadór mate",
+            "other": "Seluk",
             "resignation": "Demisaun",
             "redundancy": "Redundansia",
             "termination": "Resizaun",
@@ -10527,6 +11074,9 @@ export const translations = {
           "empty": "Hili empregadu atu hare checklist",
           "emptyPrompt": "Hili saida ne'ebe hela",
           "items": {
+            "inssCessation": "Deklara ona terminasaun ba INSS",
+            "inssCessationDeadline": "Prazu",
+            "inssCessationHint": "Deklara iha portál INSS to'o loron 10 fulan tuir loron servisu ikus — se seidauk deklara, INSS presume katak servisu la'o hela no kontribuisaun kontinua akumula.",
             "access": "Hasai asesu sistema",
             "equipment": "Fila ekipamentu",
             "documents": "Dokumentu saida asina",
@@ -10538,8 +11088,22 @@ export const translations = {
           }
         },
         "finalPay": {
+          "decision": "Tratamentu Art. 56 ne'ebé reviza tiha ona *",
+          "decisionPlaceholder": "Hili depois kontabilista ka revizor legál reviza tiha ona",
+          "decisionInclude": "Inklui iha folla pagamentu finál",
+          "decisionExclude": "Hasai husi folla pagamentu finál",
+          "reviewWarning": "Lei nia testu no prátika komún bele hatudu rezultadu la hanesan. Xefe la hili ba Ita.",
+          "reviewNote": "Nota revizaun *",
+          "reviewNotePlaceholder": "Ema ne'ebé reviza, data, no baze ba desizaun",
+          "reviewAcknowledgement": "Ha'u konfirma katak kontabilista ka revizor legál verifika tiha ona tratamentu ida-ne'e.",
+          "deathHeirsNote": "Traballadór mate ona (Art. 47(1)(b)): pagamentu ida-ne'e selu ba erdeiru sira — konfirma benefisiáriu sira ho ita-nia kontabilista.",
           "title": "Kompensasaun servisu Artigu 56",
-          "description": "Fulan ida nia saláriu ba kada períodu servisu tinan lima kompletu, ba terminasaun hotu.",
+          "description": "Fulan ida nia saláriu ba kada períodu servisu tinan lima kompletu.",
+          "includeSeverance": "Selu kompensasaun Art. 56 iha folla pagamentu finál",
+          "severanceOnNote": "Padraun ba razaun sai ida-ne'e. Folla pagamentu tuir mai sei selu automatikamente bainhira kazu remata.",
+          "severanceOffNote": "Baibain la selu ba razaun sai ida-ne'e iha prátika Timor nian — maibé lei nia testu la haketak kauza, entaun traballadór bele sei iha direitu. Konfirma ho ita-nia kontabilista.",
+          "severanceToggleFailed": "La bele rai desizaun kona-ba kompensasaun.",
+          "excludedTag": "(la tama — referénsia de'it)",
           "saved": "Kalkula ona",
           "savedTitle": "Kálkulu Artigu 56 rai ona",
           "savedDescription": "Saláriu fonte, data servisu no rezultadu legal rai ona iha kazu ne'e.",
@@ -10786,6 +11350,7 @@ export const translations = {
         "subtitle": "Jere pedidos lisensa no aprovasaun",
         "scopeMissing": "Ita-nia konta jestór seidauk liga ba departamentu. Ita bele haree ita-nia pedidu rasik, maibé RH tenke define departamentu molok aprovasaun ekipa mosu.",
         "actions": {
+          "inssDeclaration": "Deklarasaun INSS",
           "newRequest": "Pedido Foun",
           "cancel": "Kansela",
           "approve": "Aprova",
@@ -10793,6 +11358,12 @@ export const translations = {
           "submit": "Submete Pedido"
         },
         "dialog": {
+          "studyLeaveHint": "Falta ho pagamentu ba prova avaliasaun de'it — traballadór-estudante sira kontinua simu saláriu iha loron avaliasaun nian (Lei Trabálhu Art. 76.3). Empregadór bele husu komprovativu matríkula no kalendáriu prova nian (Art. 76.5).",
+          "miscarriageInssHint": "Depois interrupsaun gravidés, traballadora iha direitu ba lisensa semana 4 (Lei Trabálhu Art. 59.4). Baibain empregadór la selu: traballadora husu subsídiu INSS diretamente (iha fulan 6 nia laran husi loron primeiru lisensa nian) bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
+          "breastfeedingNote": "Depois fila mai, traballadora iha direitu ba pausa 2 kada loron, ida-idak oras 1 ho pagamentu, to'o bebé halo fulan 6 (Art. 62) — rejista sira-ne'e iha prezensa nu'udar tempu servisu, la bele deskonta.",
+          "maternityInssHint": "Traballadora husu subsídiu maternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia kada fulan, to'o loron 90, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017). Lisensa rasik mínimu semana 12, pelu menus semana 10 depois bebé moris.",
+          "paternityInssHint": "Traballadór husu subsídiu paternidade diretamente ba INSS (iha fulan 6 nia laran husi loron primeiru lisensa nian). INSS selu 100% saláriu referénsia iha pagamentu dala ida de'it ba loron servisu 5, bainhira nia iha kontribuisaun fulan 6 iha fulan 12 ikus (DL 18/2017).",
+          "parentalInssFallbackHint": "Se traballadór la kumpre kondisaun kontribuisaun, INSS la selu buat ida — lei seidauk klaru se empregadór tenke selu fali ka lae; konfirma ho ita-nia kontabilista.",
           "title": "Submete Pedido Lisensa",
           "description": "Kria pedido lisensa ba empregadu",
           "employee": "Empregadu *",
@@ -10804,6 +11375,7 @@ export const translations = {
           "balanceTitle": "Saldo Lisensa",
           "balanceSummary": "{{remaining}} loron restu ({{used}} uza, {{pending}} pendente)",
           "balanceUnavailable": "Saldo la disponivel",
+          "specialLeaveHint": "Loron 3 ho pagamentu kada tinan kalendáriu, hamutuk ba kazamentu, mate família nian, no eventu komunidade ka relijiozu (Lei Trabálhu Art. 33.3). Presiza loron liu tan? Husu nu'udar lisensa anual ka lisensa la selu. Empregadór bele husu prova.",
           "startDate": "Data Hahu *",
           "endDate": "Data Remata *",
           "duration": "Durasaun",
@@ -10869,10 +11441,12 @@ export const translations = {
           "cancelled": "Kansela"
         },
         "leaveTypes": {
+          "miscarriage": "Lisensa interrupsaun gravidés",
           "annual": "Lisensa anual",
           "sick": "Lisensa doensa",
           "maternity": "Lisensa maternidade",
           "paternity": "Lisensa paternidade",
+          "special": "Lisensa Espesiál",
           "bereavement": "Lisensa lutu",
           "unpaid": "Lisensa la selu",
           "marriage": "Lisensa casamento",
@@ -10886,6 +11460,7 @@ export const translations = {
           "marriage": "Sertidaun kazamentu"
         },
         "toast": {
+          "inssDeclarationFailed": "La bele kria deklarasaun INSS.",
           "errorTitle": "Erru",
           "loadFailed": "Falha karrega dadus lisensa. Koko fali.",
           "validationTitle": "Erru validasaun",
@@ -11000,6 +11575,7 @@ export const translations = {
           "notAvailable": "N/A"
         },
         "toast": {
+          "breakEntitlement": "Art. 25(2): traballadór iha direitu ba intervalu oras 1 hafoin servisu oras 5 tuir malu.",
           "errorTitle": "Erru",
           "loadFailed": "Falha karrega dadus prezensa.",
           "validationTitle": "Erru validasaun",
@@ -11644,7 +12220,10 @@ export const translations = {
         "sourceExpense": "Despeza",
         "sourceRevenue": "Rendimentu",
         "sourceReceipt": "Reseitu",
-        "sourcePayment": "Pagamentu"
+        "sourcePayment": "Pagamentu",
+        "sourcePayrollPayment": "Pagamentu folha saláriu",
+        "sourceTaxPayment": "Pagamentu impostu / INSS",
+        "sourceFixedAssetAcquisition": "Akizisaun ativu fixu"
       },
       "fixedAssets": {
         "title": "Ativos Fixos",
@@ -11689,6 +12268,20 @@ export const translations = {
         "disposePreviewLoss": "Valor livru {{nbv}} — fa'an ne'e hamosu lakon {{amount}}.",
         "fieldName": "Naran ativu",
         "fieldReference": "Referénsia / série",
+        "fieldAcquisitionOrigin": "Oinsá ativu ida-ne'e tama ba livru kontabilidade?",
+        "acquisitionOriginPlaceholder": "Hili ida",
+        "acquisitionOrigins": {
+          "bill": "Lansa ona liuhusi fatura fornecedór",
+          "opening": "Saldo abertura",
+          "postNow": "Lansa akizisaun agora"
+        },
+        "acquisitionOriginHelp": {
+          "already_posted_via_bill": "Rejista de'it. Fatura fornecedór lansa ona kustu ativu.",
+          "opening_balance": "Rejista de'it. Ativu inklui ona iha saldo abertura.",
+          "post_now": "Xefe sei débita konta ativu no krédita konta fundu dala ida de'it."
+        },
+        "fieldFundingAccount": "Selu husi / deve ba",
+        "fundingAccountPlaceholder": "Hili konta kaixa, banku, deve ka kapital",
         "fieldAcquired": "Data sosa",
         "fieldCost": "Kustu (USD)",
         "fieldResidual": "Valor rezidual",
@@ -12617,6 +13210,11 @@ export const translations = {
         }
       },
       "custom": {
+        "builtIn": "Padraun",
+        "deleteDescription": "Ida-ne'e hasai relatoriu ne'ebé rai tiha ba ema hotu iha Ita-nia kompañia. La hamoos dadus empregadu ka rejistu prezensa.",
+        "deleteReport": "Hamoos relatoriu",
+        "deleteTitle": "Hamoos relatoriu ne'ebé rai tiha ne'e?",
+        "savedReport": "Rai tiha",
         "title": "Relatoriu personalizadu",
         "subtitle": "Kria no personaliza relatoriu rasik",
         "noDataTitle": "Dadus ba relatoriu seidauk disponivel",
@@ -12637,6 +13235,9 @@ export const translations = {
         "noMatches": "La iha dadus ne'ebé hanesan ho kritériu",
         "showingLimited": "Hatudu rejistu 20 husi {{count}}. Exporta atu haree hotu.",
         "builder": {
+          "runOnce": "Hala'o dala ida",
+          "saveAndRun": "Rai no hala'o",
+          "saving": "Rai hela…",
           "title": "Kria relatoriu personalizadu",
           "description": "Hili fonte dadus, koluna ne'ebé presiza no filtru opsionál.",
           "name": "Naran relatoriu",
@@ -12698,6 +13299,10 @@ export const translations = {
           }
         },
         "toast": {
+          "deleteFailed": "La bele hamoos relatoriu. Koko fali.",
+          "deleted": "Relatoriu hamoos tiha",
+          "saveFailed": "La bele rai relatoriu. Koko fali.",
+          "saved": "Relatoriu rai tiha",
           "generated": "Relatoriu kria ona",
           "generatedDescription": "Hetan rejistu {{count}}",
           "error": "La bele hala'o relatoriu",
@@ -12995,6 +13600,8 @@ export const translations = {
         "title": "Deklarasaun INSS Mensal",
         "subtitle": "Kria no akompaña submisaun kontribuisaun INSS mensal.",
         "due": {
+          "arrearsNotice": "Pagamentu atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
+          "arrearsEstimate": "Estimativa to'o agora ba {{period}}: US$ {{amount}} ({{months}} × 1%).",
           "overdueTitle": "Tarde ona ba {{task}}",
           "overdueDescription": "{{task}} ba {{period}} tenke entrega iha {{dueDate}}.",
           "upcomingTitle": "{{task}} sei to'o data",
@@ -13063,6 +13670,10 @@ export const translations = {
           "draft": "Esbosu"
         },
         "markFiled": {
+          "paymentDate": "Data pagamentu",
+          "paymentAccount": "Konta pagamentu",
+          "selectPaymentAccount": "Hili konta",
+          "cashOnHand": "Osan iha kaixa",
           "title": "Marka {{task}} hanesan hatama ona",
           "description": "Rai detallu submisaun {{task}} ba deklarasaun INSS ida-ne'e.",
           "submissionMethod": "Métodu submisaun",
@@ -13258,7 +13869,8 @@ export const translations = {
           "etaxPortal": "Portal e-Tax",
           "officialForm": "Formuláriu Ofisiál",
           "view": "Haree",
-          "markFiled": "Marka hatama"
+          "markFiled": "Marka hatama",
+          "recordPayment": "Rejista pagamentu"
         },
         "etax": {
           "title": "Preenxe iha e-Tax (asistidu)",
@@ -13279,8 +13891,10 @@ export const translations = {
         "alerts": {
           "overdueTitle": "Arkivu tarde ona",
           "overdueDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}}. Favór submete lalais atu evita multa.",
+          "paymentOverdueDescription": "Pagamentu WIT ba {{period}} vense ona iha {{dueDate}}. Rejista evidénsia remesa bainhira selu ona.",
           "upcomingTitle": "Prazu besik mai",
-          "upcomingDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}} (resta loron {{days}})."
+          "upcomingDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}} (resta loron {{days}}).",
+          "paymentUpcomingDescription": "Pagamentu WIT ba {{period}} vense iha {{dueDate}} (resta loron {{days}})."
         },
         "generate": {
           "title": "Kria Deklarasaun",
@@ -13335,6 +13949,8 @@ export const translations = {
           "period": "Períodu",
           "dueDate": "Data vensimentu",
           "status": "Estadu",
+          "returnStatus": "Deklarasaun",
+          "paymentStatus": "Pagamentu",
           "totalWages": "Total Saláriu",
           "wit": "WIT",
           "employees": "Empregadu",
@@ -13355,18 +13971,26 @@ export const translations = {
           "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
         },
         "markFiled": {
+          "paymentDate": "Data pagamentu",
+          "paymentAccount": "Konta pagamentu",
+          "selectPaymentAccount": "Hili konta",
+          "cashOnHand": "Osan iha kaixa",
           "title": "Marka deklarasaun hanesan hatama ona",
           "description": "Rai detallu submisaun ba deklarasaun WIT ida-ne'e.",
+          "paymentTitle": "Rejista pagamentu WIT",
+          "paymentDescription": "Rejista evidénsia pagamentu no hamoos WIT atu selu iha kontabilidade.",
           "submissionMethod": "Métodu submisaun",
           "selectMethod": "Hili métodu",
           "etax": "Portal e-Tax",
           "bnu": "Banku BNU (papel)",
           "receiptLabel": "Numeru Recibu (Opsionál)",
+          "paymentReferenceLabel": "Referénsia banku / resibu *",
           "receiptPlaceholder": "Hatama numeru recibu ka konfirmasaun",
           "notesLabel": "Nota (Opsionál)",
           "notesPlaceholder": "Kualkér nota adisionál kona-ba arkivu ida-ne'e",
           "cancel": "Kansela",
-          "confirm": "Konfirma hatama"
+          "confirm": "Konfirma hatama",
+          "confirmPayment": "Rejista pagamentu"
         },
         "status": {
           "pending": "Pendente",
@@ -13393,6 +14017,8 @@ export const translations = {
           "officialExportFailedDescription": "La konsege gera formuláriu Excel. Favór koko fali.",
           "filedTitle": "Arkivu rejista ona",
           "filedDescription": "Deklarasaun marka ona hanesan hatama.",
+          "paymentTitle": "Pagamentu rejista ona",
+          "paymentDescription": "Obrigasaun WIT no evidénsia pagamentu rejista ona.",
           "updateErrorDescription": "La konsege atualiza status arkivu."
         },
         "csv": {
@@ -13410,6 +14036,10 @@ export const translations = {
       },
       "profitLoss": {
         "etax": {
+          "baseExclusionsTitle": "Verifika baze molok submete (Lei 8/2008 Sec. 64.6)",
+          "baseExclusionsBody": "Baze prestasaun la inklui rendimentu izentu no reseita ne'ebé kliente retén ona impostu bainhira selu ba ita. Xefe la bele identifika automatikamente retensaun husi kliente, entaun se parte husi ita-nia reseita selu ho retensaun (ka izentu), hatama baze ki'ik iha kraik — númeru iha leten sei atualiza.",
+          "baseOverrideLabel": "Baze volume negósiu ajustadu (opsionál)",
+          "baseOverrideAboveRevenue": "Baze ajustadu boot liu reseita períodu ne'ebé Xefe kalkula — verifika fila fali molok submete.",
           "title": "Preenxe impostu prestasaun iha e-Tax (asistidu)",
           "description": "Prestasaun impostu mak 0,5% hosi volume negósiu: trimestrál se tinan kotuk la liu $1 millaun, no mensál se liu. Konfirma períodu no submete iha e-Tax — Xefe la submete hodi ita.",
           "account": "Impostu Prestasaun Doméstiku",
@@ -14286,6 +14916,8 @@ export const translations = {
         }
       },
       "bills": {
+        "withholdingNotice": "Avizu retensaun",
+        "withholdingNoticeError": "La konsege halo avizu retensaun.",
         "title": "Fatura Selu",
         "subtitle": "Jere konta selu",
         "new": "Fatura Foun",
@@ -14481,6 +15113,27 @@ export const translations = {
         "bills": "fatura"
       },
       "bankRecon": {
+        "blockedGeneric": "La bele rejista pagamentu ida-ne'e",
+        "blockedOverpayment": "Montante banku boot liu saldo divida — la bele kombina",
+        "confirmBillPaid": "Fatura selu ne'e sai selu tiha.",
+        "confirmFullA": "Ida-ne'e rejista pagamentu",
+        "confirmInvoicePaid": "Fatura ne'e sai selu tiha.",
+        "confirmOn": "iha",
+        "confirmPartialA": "Ida-ne'e rejista pagamentu parsiál",
+        "confirmReceiptEmail": "Se kliente iha email iha rejistu, nia sei simu resibu pagamentu.",
+        "confirmRemainsDue": "sei kontinua divida.",
+        "linkOnlyHint": "Rejista tiha ona — kombina liga de'it liña banku ida-ne'e",
+        "nowPaid": "agora selu tiha",
+        "partialRecordedOn": "Pagamentu parsiál rejista ona iha",
+        "paymentRecorded": "Pagamentu rejista ona",
+        "paymentRecordedTag": "Pagamentu rejista ona",
+        "recordAndMatch": "Rejista pagamentu no kombina",
+        "remainsDue": "kontinua divida",
+        "settleBlocked": "Montante banku boot liu saldo divida — rejista pagamentu ida-ne'e husi pájina fatura ka fatura selu.",
+        "unmatchLocked": "Pagamentu rejista ona — jere husi pájina fatura ka fatura selu",
+        "willRecordFull": "Sei rejista pagamentu — sai selu tiha",
+        "willRecordPartial": "Sei rejista pagamentu parsiál",
+        "alreadyImportedSkipped": "importa ona (la konta)",
         "title": "Rekonsiliasaun Banku",
         "subtitle": "Importa no kombina transasaun banku",
         "importCSV": "Importa CSV",
@@ -14521,6 +15174,18 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "absence": "Falta",
+      "lateArrival": "Tarde mai",
+      "specialHours": "Oras espesiál (2×)",
+      "advanceRepayment": "Selu Adiantamentu",
+      "loanRepayment": "Selu Empréstimu",
+      "courtOrder": "Ordem tribunál",
+      "otherDeductions": "Dedusaun seluk",
+      "payDateNonWorkingDay": "Data pagamentu ida-ne'e monu iha fim-de-semana ka feriadu. Art. 40(5): selu iha loron servisu ne'ebé antes.",
+      "payDateUseDate": "Uza {date}",
+      "warningOTCapArt27": "liu limite oras extraordináriu Art. 27(4) (oras 4/loron / oras 16/semana) iha períodu ida-ne'e — permite de'it iha kazu forsa maiór (Art. 27(5))",
+      "warningRestDayCapArt27": "servisu liu oras 8 iha loron deskansa ka feriadu — Art. 27(3) limita servisu ne'e ba oras 8",
+      "warningArt86Headcount": "deskontu INSS Art. 86 presiza traballadór {{max}} ka menus — folha ida-ne'e iha {{count}}; direitu deskontu para bainhira liu {{max}}",
       "title": "Prosesu Saláriu",
       "freePlanNotice": "Ita uza planu gratuitu. Bele prepara no reve saláriu livre — atu finaliza presiza subskrisaun.",
       "freePlanNoticeCta": "Haree planu",
@@ -14687,6 +15352,14 @@ export const translations = {
       "stepReviewDesc": "Favór reviza numeru sira-ne'e molok submete saláriu."
     },
     "deductions": {
+      "edit": "Edita",
+      "editDialogDescription": "Atualiza dedusaun ida-ne'e. Progresu selu adiantamentu mantén nafatin — saldo restu muda de'it se Ita muda montante totál.",
+      "editDialogTitle": "Edita Dedusaun",
+      "editTotalHint": "Muda totál mantén saida ne'ebé selu tiha ona — saldo restu sai totál foun hasai montante ne'ebé selu tiha ona.",
+      "saveChanges": "Rai Mudansa",
+      "totalAmountRequired": "Adiantamentu ne'ebé akompaña saldo presiza montante totál boot liu zero.",
+      "updateError": "La konsege atualiza dedusaun.",
+      "updateSuccess": "Dedusaun atualiza tiha.",
       "title": "Dedusaun & Adianta",
       "subtitle": "Jere dedusaun rekorrente no adianta saláriu",
       "addDeduction": "Aumenta Dedusaun",
@@ -14698,6 +15371,9 @@ export const translations = {
       "otherDeductions": "Dedusaun Seluk",
       "deductionsTableTitle": "Dedusaun",
       "deductionsTableDescription": "Jere dedusaun no adianta empregadu nian",
+      "deductionTypes": "Tipu Dedusaun",
+      "clickToFilter": "Klik tipu ida atu filtra tabela",
+      "active": "ativu",
       "searchPlaceholder": "Buka...",
       "tabAll": "Hotu",
       "tabAdvances": "Adianta",
@@ -14903,11 +15579,25 @@ export const translations = {
       }
     },
     "bankTransfers": {
+      "completePostsPayment": "Ida-ne'e sei marka folha pagamentu nu'udar selu tiha, atualiza saldo dedusaun sira, no lansa pagamentu banku ba kontabilidade.",
+      "alsoMarkRunPaid": "Marka mós folha pagamentu nu'udar selu tiha (atualiza saldo adiantamentu no dedusaun rekorrente)",
+      "markCompleted": "Marka kompletu",
+      "markCompletedDesc": "Konfirma katak Ita-nia banku halo tiha ona transferensia saláriu ida-ne'e. Ida-ne'e atualiza de'it rejistu iha Xefe — la kontakta banku.",
+      "markCompletedTitle": "Marka transferensia kompletu?",
+      "markFailed": "Marka falha",
+      "markFailedDesc": "Rejista katak banku rejeita ka la halo transferensia saláriu ida-ne'e. Ida-ne'e atualiza de'it rejistu iha Xefe — Ita bele marka kompletu depois se banku prosesa fila fali.",
+      "markFailedTitle": "Marka transferensia falha?",
+      "recordBankTransfer": "Rejista Transferensia Banku",
+      "recordBankTransferDesc": "Rejista transferensia folha ida-ne'e nu'udar pendente iha Xefe. Osan la sai — kria ficheiro banku, lori ka haruka liu husi email ba Ita-nia banku, depois marka transferensia kompletu iha ne'e.",
+      "recordTransfer": "Rejista Transferensia",
+      "toastRunMarkedPaid": "Folha pagamentu marka ona nu'udar selu tiha.",
+      "toastRunPaidError": "Transferensia marka ona kompletu, maibé la konsege marka folha pagamentu nu'udar selu tiha. Ita bele marka selu tiha iha Istória Saláriu.",
+      "toastStatusUpdateError": "La konsege atualiza estadu transferensia. Favór koko fali.",
       "title": "Transferensia Banku",
       "subtitle": "Jere transferensia banku folha pagamentu no istória transasaun",
       "coverEmail": {
         "title": "Agora haruka email ba banku",
-        "description": "BNU no BNCTL prosesa saláriu husi instrusaun liu husi email. Haruka ficheiru ne'ebé download ona ba Ita-nia balcão ho mensajen ida-ne'e, no imprime no asina folha Ordem de Pagamento iha ficheiru laran atu anexa.",
+        "description": "BNU prosesa lote saláriu husi instrusaun liu husi email. Ba BNCTL, pakote ida-ne'e best-effort to'o Ita-nia balcão konfirma. Haruka ficheiru no anexa folha Ordem de Pagamento ne'ebé imprime no asina ona.",
         "copy": "Kopia testu email",
         "copied": "Testu email kopia ona"
       },
@@ -14928,6 +15618,8 @@ export const translations = {
       "bankFiles": "Ficheiro Banku",
       "generateBankFiles": "Kria Ficheiro Transferensia Banku",
       "generateBankFilesDesc": "Kria ficheiro espesífiku banku ba pagamentu saláriu (BNU, Mandiri, ANZ, BNCTL)",
+      "formatVerified": "Prosesu verifika ona",
+      "formatBestEffort": "Best effort — konfirma ho Ita-nia banku",
       "selectPayrollRun": "Hili Folha Pagamentu",
       "selectPayrollRunPlaceholder": "Hili folha pagamentu ida",
       "selectBanksToGenerate": "Hili Banku atu Kria",
@@ -14977,6 +15669,9 @@ export const translations = {
       "toastValidationDesc": "Favór prenxe kampu obrigatóriu hotu.",
       "toastTransferSuccess": "Susesu",
       "toastTransferSuccessDesc": "Transferensia banku {{reference}} inisia ho susesu.",
+      "toastTransferRecordedDesc": "Transferensia {{reference}} rejista hanesan pendente. Haruka ficheiru ka pakote ba banku, depois marka kompletu iha ne'e.",
+      "toastMarkedCompleted": "Transferensia {{reference}} kompletu ona no pagamentu folha saláriu lansa ona.",
+      "toastMarkedFailed": "Transferensia {{reference}} marka hanesan falla.",
       "toastTransferError": "La konsege inisia transferensia. Favór koko fali.",
       "toastNoData": "Laiha Dadus",
       "toastNoDataDesc": "Laiha transferensia atu exporta.",
@@ -14995,6 +15690,10 @@ export const translations = {
       "company": "Empresa"
     },
     "taxReports": {
+      "inssArrearsMonth": "fulan",
+      "inssArrearsMonths": "fulan",
+      "inssArrearsNotice": "Pagamentu INSS atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
+      "inssArrearsEstimate": "Estimativa to'o agora ba {{period}}: US$ {{amount}} (fulan {{months}}).",
       "title": "Impostu Folha Pagamentu & INSS",
       "subtitle": "Sentru konformidade Timor-Leste ba WIT (ATTL) no INSS mensal.",
       "actionRequired": "Presiza asaun",
@@ -15010,13 +15709,34 @@ export const translations = {
       "daysRemaining": "Restu loron {{days}}",
       "inssStatementTask": "deklarasaun (dia 10)",
       "inssPaymentTask": "pagamentu (dia 20)",
+      "witStatementTask": "deklarasaun",
+      "witPaymentTask": "pagamentu",
       "noPeriodsFound": "Laiha períodu",
       "attlTitle": "Relatoriu WIT Mensal ATTL",
       "attlDesc": "Kria, exporta (CSV/PDF), no akompanha submisaun Impostu Reseitu Saláriu mensal.",
       "openWitFiling": "Loke Submisaun WIT",
       "inssTitle": "Relatoriu INSS Mensal",
       "inssDesc": "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
-      "openInssFiling": "Loke Submisaun INSS"
+      "openInssFiling": "Loke Submisaun INSS",
+      "formC": {
+        "title": "Impostu rendimentu negósiu anual (Formuláriu C)",
+        "savedTitle": "Preparasaun rai ona",
+        "savedDescription": "Lista preparasaun impostu rendimentu anual atualiza ona.",
+        "saveError": "La konsege rai lista preparasaun.",
+        "reviewProgress": "Reviza preparasaun",
+        "startPreparation": "Hahu preparasaun",
+        "dialogTitle": "Prepara impostu rendimentu anual {{year}}",
+        "dialogDescription": "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
+        "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete Formuláriu C ofisiál; uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "checklist": {
+          "profitAndLoss": "Lucro no prejuízu reviza ona",
+          "balanceSheet": "Balansu reviza ona",
+          "cashFlow": "Relatóriu fluxu osan reviza ona",
+          "taxAdjustments": "Ajustamentu fiskál reviza ona"
+        },
+        "reviewNote": "Nota revizaun",
+        "reviewNotePlaceholder": "Revizór, buat ne'ebé sei falta, no asaun tuir mai"
+      }
     },
     "guidance": {
       "hideGuidance": "Subar orientasaun",
@@ -15259,7 +15979,12 @@ export const translations = {
         },
         "filings": {
           "monthlyWit": "WIT {{period}}",
+          "monthlyWitReturn": "Deklarasaun WIT {{period}}",
+          "monthlyWitPayment": "Pagamentu WIT {{period}}",
           "annualWit": "WIT anuál {{period}}",
+          "annualIncomeTax": "Impostu rendimentu anual {{period}}",
+          "servicesTax": "Impostu servisu {{period}}",
+          "installmentTax": "Prestasaun impostu rendimentu {{period}}",
           "inssPayment": "Pagamentu INSS {{period}}",
           "inssStatement": "Deklarasaun INSS {{period}}",
           "overdue": "atrasu loron {{days}}",
@@ -15281,6 +16006,7 @@ export const translations = {
       }
     },
     "supplierRemittance": {
+      "deductionSuspended": "Retensaun ne'ebé seidauk entrega suspende dedusaun despeza ne'ebé relasiona (Lei 8/2008 Sec. 32.2) — entrega atu mantén dedusaun.",
       "errorTitle": "La konsege rejista pagamentu impostu",
       "proofRequired": "Hatama resibu banku, resibu BNU, ka prova pagamentu seluk.",
       "signInRequired": "Tenke tama konta molok rejista pagamentu impostu.",
@@ -15641,6 +16367,7 @@ export const translations = {
       }
     },
     "common": {
+      "reset": "Repor",
       "needsReviewTitle": "Precisa de revisão antes de declarar",
       "needsReviewDesc": "Um registo de folha de pagamento não tem {{field}} válido. Corrija ou reprocesse essa folha — o Xefe nunca adivinha valores de conformidade. Em caso de dúvida, fale com o seu contabilista.",
       "greetingMorning": "Bom dia",
@@ -15739,6 +16466,17 @@ export const translations = {
       "setupBannerDesc": "Termine a configuração da empresa, pagamentos e salários. {{percent}}% concluído.",
       "billingPlan": "Faturação & Plano",
       "billingPlanDesc": "O seu plano, preço e pagamentos",
+      "payrollSettingsLink": "Configuração da Folha",
+      "payrollSettingsLinkDesc": "Impostos, INSS, horas extra e 13.º mês",
+      "timeLeaveSettingsLink": "Políticas de Licenças",
+      "timeLeaveSettingsLinkDesc": "Direitos de licença e feriados públicos",
+      "companySettingsLink": "Empresa",
+      "companySettingsLinkDesc": "Dados da empresa, locais de trabalho e departamentos",
+      "paymentsSettingsLink": "Pagamentos e Bancos",
+      "paymentsSettingsLinkDesc": "Contas bancárias, métodos de pagamento e calendário da folha",
+      "integrationsSettingsLink": "Contabilista e Integrações",
+      "integrationsSettingsLinkDesc": "Exportação QuickBooks, modo fiscal avançado e acesso do contabilista",
+      "allSettings": "Todas as definições",
       "planFree": "Gratuito",
       "planActive": "Ativo",
       "employees": "Funcionários",
@@ -15810,7 +16548,7 @@ export const translations = {
     },
     "allowances": {
       "title": "Subsídios",
-      "subtitle": "Gerir subsídios e benefícios dos funcionários",
+      "subtitle": "Gerir subsídios e benefícios dos funcionários — os subsídios ativos entram automaticamente em cada folha",
       "add": "Adicionar Subsídio",
       "addFirst": "Adicione o seu primeiro subsídio",
       "addError": "Falha ao adicionar subsídio",
@@ -15872,6 +16610,7 @@ export const translations = {
       "removeError": "Falha ao remover subsídio"
     },
     "dashboard": {
+      "cardPayrollOverdue": "Salários em atraso — o art. 40.º exige pagamento pelo menos mensal",
       "payrollStatus": "Estado da Folha de Pagamento",
       "days": "dias",
       "untilPayDate": "até à data de pagamento (dia 25)",
@@ -16295,7 +17034,7 @@ export const translations = {
         "hero": {
           "eyebrow": "Folha de pagamento para Timor-Leste",
           "title": "Pague corretamente à sua equipa.",
-          "titleAccent": "Mantenha a conformidade.",
+          "titleAccent": "Mantenha as obrigações visíveis.",
           "description": "O Xefe calcula IRT, INSS, horas extra e subsídio anual, depois prepara ficheiros bancários e recibos — sem folhas de cálculo.",
           "primary": "Começar grátis",
           "secondary": "Ver como funciona",
@@ -16353,7 +17092,7 @@ export const translations = {
           },
           "banks": {
             "title": "Ficheiros para bancos locais",
-            "description": "Prepare ficheiros de folha para BNU, BNCTL, Mandiri e ANZ sem voltar a introduzir cada pagamento."
+            "description": "Use o pacote salarial BNU verificado, com exportações BNCTL, Mandiri e ANZ claramente marcadas como estimativas a confirmar."
           },
           "languages": {
             "title": "Claro em todos os idiomas",
@@ -16407,7 +17146,7 @@ export const translations = {
           "q1": "O Xefe trata do WIT, INSS e subsídio anual?",
           "a1": "Sim. O Xefe calcula a retenção de WIT, as contribuições para o INSS, horas extra e o subsídio anual (13.º) em cada processamento, e mantém cada valor visível para revisão antes de finalizar.",
           "q2": "Que bancos de Timor-Leste é que o Xefe suporta?",
-          "a2": "O Xefe prepara ficheiros de pagamento de salários para o BNU, BNCTL, Mandiri e ANZ, para não ter de reescrever cada transferência.",
+          "a2": "O Xefe tem um pacote salarial BNU verificado. As exportações BNCTL, Mandiri e ANZ são modelos de melhor esforço que devem ser confirmados com o banco.",
           "q3": "O Xefe está disponível em Tétum?",
           "a3": "Sim — toda a aplicação funciona em Tétum, Inglês e Português, e pode mudar de idioma a qualquer momento.",
           "q4": "Quanto custa o Xefe?",
@@ -16424,14 +17163,14 @@ export const translations = {
         "headline": "O Sistema Operativo",
         "headlineAccent": "Para Empresas de TL",
         "subheadline": {
-          "before": "RH, folha de pagamento, contabilidade e faturação — construído especificamente para Timor-Leste. Conformidade total com a",
+          "before": "RH, folha de pagamento, contabilidade e faturação — criado especificamente para Timor-Leste em torno da",
           "highlight1": "Lei do Trabalho",
           "middle": ", IRT/INSS, e",
           "highlight2": "contabilidade de dupla entrada real",
           "after": "."
         },
         "points": {
-          "labor": "Conforme com a Lei do Trabalho",
+          "labor": "Regras centrais da Lei do Trabalho integradas",
           "tax": "IRT e INSS integrados",
           "languages": "Tétum, Inglês, Português",
           "accounting": "Contabilidade de dupla entrada"
@@ -16494,7 +17233,7 @@ export const translations = {
         "laborLaw": {
           "title": "Lei do Trabalho de Timor",
           "subtitle": "Código do Trabalho de Timor-Leste",
-          "description": "Totalmente conforme com o Código do Trabalho de Timor-Leste. Semanas de 44 horas, horas extra a 150%/200%, regras de descanso e muito mais."
+          "description": "Aplica regras centrais revistas do Código do Trabalho de Timor-Leste, incluindo semanas de 44 horas, horas extra a 150%/200% e descanso. Casos excecionais continuam sujeitos a revisão jurídica."
         },
         "witInss": {
           "title": "IRT e INSS",
@@ -16533,9 +17272,9 @@ export const translations = {
       },
       "laborLaw": {
         "badge": "Lei do Trabalho Timor-Leste",
-        "title": "Conformidade Total",
-        "titleAccent": "com a Lei do Trabalho",
-        "description": "Cada cálculo segue o Código do Trabalho de Timor-Leste. Horas extra, licenças, indemnizações — tudo tratado automaticamente e corretamente.",
+        "title": "Regras Laborais Centrais",
+        "titleAccent": "Integradas",
+        "description": "As regras centrais revistas estão integradas na folha. Casos excecionais, incluindo indemnizações, exigem uma revisão profissional explicitamente reconhecida.",
         "features": {
           "workWeek": {
             "title": "Semana de 44 Horas",
@@ -16555,11 +17294,11 @@ export const translations = {
           },
           "annual": {
             "title": "Férias Anuais",
-            "description": "12 dias mínimo, aumentando para 22 dias após 9 anos"
+            "description": "Mínimo legal de 12 dias, sem escalões inventados por antiguidade"
           },
           "severance": {
             "title": "Indemnização",
-            "description": "30 dias por ano de serviço para despedimento sem justa causa"
+            "description": "Calculada apenas após confirmação de revisão jurídica ou contabilística do caso"
           }
         }
       },
@@ -16611,12 +17350,12 @@ export const translations = {
         "eyebrow": "Recibos de Vencimento",
         "title": "Um recibo que a sua equipa",
         "titleAccent": "consegue mesmo ler",
-        "subtitle": "Cada processamento gera um recibo conforme a lei — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa."
+        "subtitle": "Cada processamento gera um recibo pronto para revisão — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa."
       },
       "cta": {
         "title": "Pronto para Começar?",
         "titleAccent": "Comece Hoje",
-        "description": "Junte-se às empresas de Timor-Leste que já usam o Xefe para RH e Folha de Pagamento conformes e sem esforço.",
+        "description": "Junte-se às empresas de Timor-Leste que usam o Xefe para fluxos de RH e folha claros e fáceis de rever.",
         "primary": "Começar Grátis"
       },
       "footer": {
@@ -17117,7 +17856,7 @@ export const translations = {
           },
           "pay": {
             "title": "Pagar",
-            "description": "Não é um ficheiro que nenhum banco aceita: é o pacote Excel de duas folhas e o email de cobertura em português que os balcões do BNU e do BNCTL processam, com ordem de pagamento assinada. Quem usa QuickBooks exporta o lançamento em CSV ou IIF."
+            "description": "Descarregue o pacote Excel BNU de duas folhas, baseado em evidência, com email de cobertura em português e ordem de pagamento assinada. Os formatos BNCTL, Mandiri e ANZ são marcados como melhor esforço até confirmação do banco. Quem usa QuickBooks pode exportar o lançamento em CSV ou IIF."
           }
         }
       },
@@ -17368,6 +18107,50 @@ export const translations = {
     "settings": {
       "headerTitle": "Definições da Empresa",
       "headerSubtitle": "Configure a sua empresa, folha de pagamento e políticas de RH",
+      "access": {
+        "title": "Acesso da equipa",
+        "description": "Convide pessoas e controle as áreas do Xefe que podem utilizar.",
+        "invite": "Convidar pessoa",
+        "roles": {
+          "owner": "Proprietário",
+          "hr-admin": "Administrador de RH",
+          "accountant": "Contabilista",
+          "manager": "Gestor",
+          "viewer": "Consulta"
+        },
+        "modules": {
+          "hiring": "Recrutamento",
+          "staff": "Pessoas",
+          "timeleave": "Tempo e licenças",
+          "performance": "Desempenho",
+          "payroll": "Folha de pagamento",
+          "money": "Dinheiro",
+          "accounting": "Contabilidade",
+          "reports": "Relatórios"
+        },
+        "actionFailed": "Não foi possível atualizar o acesso da equipa.",
+        "invitedTitle": "Convite enviado",
+        "invitedDescription": "A pessoa pode usar o email de convite para aderir a esta empresa.",
+        "updatedTitle": "Acesso atualizado",
+        "resetSentTitle": "Reposição da palavra-passe enviada",
+        "removedTitle": "Acesso removido",
+        "loadFailed": "Não foi possível carregar os membros da equipa.",
+        "empty": "Não foram encontrados membros da equipa.",
+        "unnamed": "Membro sem nome",
+        "you": "Você",
+        "noModules": "Sem áreas de acesso",
+        "resetPassword": "Repor palavra-passe",
+        "inviteTitle": "Convidar alguém",
+        "inviteDescription": "Escolha agora uma função. Pode ajustar o acesso depois da adesão.",
+        "email": "Endereço de email",
+        "role": "Função",
+        "standardAccessHint": "A função começa com o acesso padrão para esse trabalho.",
+        "sendInvite": "Enviar convite",
+        "editTitle": "Editar acesso da equipa",
+        "accessAreas": "Áreas de acesso",
+        "removeTitle": "Remover o acesso desta pessoa?",
+        "removeDescription": "{{email}} deixará de poder abrir esta empresa no Xefe."
+      },
       "advancedTax": {
         "title": "Modo fiscal avançado",
         "description": "Mostra controlos fiscais de nível contabilista — retenção a fornecedores, taxas de tratado e formulários de declaração — a todos os que gerem esta empresa. Deixe desligado salvo indicação do seu contabilista; o Xefe aplica valores seguros por defeito.",
@@ -17403,6 +18186,8 @@ export const translations = {
         },
         "tinNumber": "N.º Único SERVE / NIF *",
         "tinPlaceholder": "Número Único da Empresa / NIF",
+        "employerNiss": "NISS da entidade empregadora",
+        "employerNissPlaceholder": "Número de registo da entidade no INSS",
         "addressTitle": "Morada",
         "registeredAddress": "Morada Registada *",
         "registeredAddressPlaceholder": "Rua, nome do edifício, etc.",
@@ -17453,6 +18238,9 @@ export const translations = {
         "save": "Guardar Estrutura"
       },
       "payment": {
+        "ledgerAccount": "Conta contabilística",
+        "ledgerOperatingBank": "Banco — Operações (1120)",
+        "ledgerPayrollBank": "Banco — Folha de Pagamento (1130)",
         "title": "Estrutura de Pagamento",
         "description": "Configure métodos de pagamento, contas bancárias e períodos de pagamento",
         "methods": "Métodos de Pagamento",
@@ -17491,17 +18279,41 @@ export const translations = {
         "save": "Guardar Estrutura de Pagamento"
       },
       "timeOff": {
+        "customTypes": {
+          "title": "Tipos de licença personalizados",
+          "hint": "Licenças específicas da empresa, além do conjunto da Lei do Trabalho (p. ex., dias de voluntariado). Os tipos ativos aparecem no formulário de pedido na web e no telemóvel; desativar um tipo esconde-o dos novos pedidos sem afetar os existentes.",
+          "active": "Ativo",
+          "inactive": "Inativo",
+          "name": "Nome",
+          "namePlaceholder": "p. ex., Dia de voluntariado",
+          "code": "Código",
+          "codeTaken": "Este código já está a ser utilizado por outro tipo de licença.",
+          "requiresCertificate": "Requer documento comprovativo",
+          "add": "Adicionar tipo",
+          "addTitle": "Adicionar tipo de licença personalizado",
+          "saveReminder": "Os tipos novos e editados são guardados quando premir Guardar abaixo."
+        },
+        "breastfeedingNote": "Depois de regressar da licença de maternidade, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora para amamentação até o bebé completar 6 meses, e as ausências da trabalhadora grávida para exames médicos também são pagas (Lei do Trabalho, art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte. Não há nada a configurar aqui.",
+        "miscarriageLeave": "Licença por Interrupção da Gravidez (art. 59.º(4))",
+        "miscarriageLeaveHint": "4 semanas após uma interrupção da gravidez (Lei do Trabalho, art. 59.º(4)), em dias úteis. A licença por risco clínico ANTES do parto (art. 59.º(3)) não tem duração fixa — registe-a como licença por doença com certificado médico.",
+        "studyLeave": "Licença de Estudo (art. 76.º(3))",
+        "studyLeaveHint": "Ausência paga para os trabalhadores-estudantes realizarem provas de avaliação, sem perda de remuneração (Lei do Trabalho, art. 76.º(3)). Apenas para provas — o empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)). A lei não fixa um limite anual; os dias por ano aqui são a alocação da empresa.",
+        "parentalInssExplainer": "Pago a 100% pelo INSS diretamente ao trabalhador quando este tem 6 meses de contribuições nos últimos 12 (DL 18/2017) — normalmente o empregador não paga nada durante a licença.",
+        "parentalPaidWarning": "O INSS não paga o subsídio nos dias em que o trabalhador recebe salário (DL 18/2017, art. 21.º(3)) — a maternidade/paternidade paga pelo empregador substitui o subsídio do INSS, não acresce a ele.",
         "title": "Políticas de Licenças",
         "description": "Configure direitos de licença com base na lei laboral de Timor-Leste",
         "laborCodeTitle": "Código do Trabalho de Timor-Leste (Lei 4/2012)",
         "laborCodeHint": "Os valores padrão estão definidos conforme a lei laboral de TL. Ajuste apenas se a sua empresa oferecer melhores benefícios.",
         "probationLabel": "Período Experimental Antes da Elegibilidade para Licença",
+        "probationHint": "As férias anuais não podem começar antes de o funcionário completar estes meses (período experimental: Lei do Trabalho, art. 14.º). Proprietários e administradores de RH podem abrir exceção num pedido específico.",
         "months": "meses",
         "entitlements": "Direitos de Licença",
         "annualLeave": "Férias Anuais",
         "sickLeave": "Licença por Doença",
         "maternityLeave": "Licença de Maternidade",
         "paternityLeave": "Licença de Paternidade",
+        "specialLeave": "Licença Especial (art. 33.º/3)",
+        "specialLeaveHint": "Uma única alocação de dias pagos por ano civil que cobre casamento, falecimento de familiar e eventos comunitários ou religiosos (Lei do Trabalho, art. 33.º, n.º 3). O empregador pode pedir comprovativo.",
         "days": "dias",
         "weeks": "semanas",
         "daysPerYear": "Dias por Ano",
@@ -17510,6 +18322,11 @@ export const translations = {
         "paidPercentage": "Percentagem Paga",
         "requiresMedicalCert": "Requer certificado médico",
         "maternityDaysHint": "Dias (12 semanas = 84 dias)",
+        "annualLeaveHint": "Mínimo legal: 12 dias úteis por ano (Lei do Trabalho, art. 32.º). Os limites de transição são política da sua empresa.",
+        "maternityHint": "Duração legal: 12 semanas (Lei do Trabalho, art. 59.º).",
+        "paternityHint": "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 59.º).",
+        "sickPayBandsTitle": "O pagamento da licença por doença é fixado por lei",
+        "sickPayBandsText": "A folha paga a licença por doença certificada conforme o Código do Trabalho: 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
         "invalidValues": "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
         "save": "Guardar Políticas de Licenças"
       },
@@ -17518,38 +18335,69 @@ export const translations = {
         "description": "Impostos, segurança social e definições de horas extra para Timor-Leste",
         "wit": "Imposto sobre Rendimento do Trabalho (IRT)",
         "residentThreshold": "Limiar Fiscal para Residentes",
-        "residentThresholdHint": "Primeiros ${{amount}} isentos de imposto para residentes",
+        "residentThresholdHint": "Primeiros ${{amount}} isentos de imposto para residentes (Lei Tributária 8/2008, Anexo V)",
         "residentRate": "Taxa para Residentes",
         "nonResidentRate": "Taxa para Não-Residentes",
-        "flatRateHint": "Taxa fixa, sem limiar",
+        "flatRateHint": "Taxa fixa desde o primeiro dólar (Lei Tributária 8/2008, Anexo V)",
         "socialSecurity": "Segurança Social (INSS)",
         "employeeContribution": "Contribuição do Funcionário",
+        "employeeContributionHint": "Taxa legal: 4% (Decreto-Lei 20/2017, arts. 8.º–10.º)",
         "employerContribution": "Contribuição do Empregador",
+        "employerContributionHint": "Taxa legal: 6% (Decreto-Lei 20/2017, arts. 8.º–10.º)",
         "excludeFoodAllowance": "Excluir subsídio de alimentação da SS",
         "excludePerDiem": "Excluir per diem da SS",
+        "inssExclusionsHint": "Os subsídios de despesas ficam fora da base contributiva do INSS por lei (Decreto-Lei 20/2017, art. 9.º). Inclua um apenas se for realmente remuneração regular paga todos os meses.",
         "overtime": "Horário de Trabalho e Horas Extra",
         "maxHoursWeek": "Máximo Horas/Semana",
+        "maxHoursWeekHint": "Máximo legal: 44 horas/semana (Lei do Trabalho, art. 25.º)",
         "hourlyRateMethod": "Método de horas extra e faltas",
         "hourlyRateWeeklyAverage": "Média semanal de 44 horas",
         "hourlyRateFixed190": "Método de folha de 190 horas",
         "hourlyRateHint": "O método de 190 horas arredonda a taxa horária para cima e o total combinado de horas extra uma vez. Use o método dos contratos ou da folha do contabilista.",
         "first2HoursRate": "Taxa Normal de Horas Extra",
-        "first2HoursHint": "1,5x = +50%",
+        "first2HoursHint": "1,5× = +50%, o mínimo legal (Lei do Trabalho, art. 27.º)",
         "beyond2HoursRate": "Taxa Além de 2h HE",
         "beyond2HoursHint": "2x = +100%",
         "sundayHolidayRate": "Taxa Domingo/Feriado",
+        "sundayHolidayHint": "2× = +100%, o mínimo legal para trabalho em dia de descanso e feriado (Lei do Trabalho, arts. 27.º/2 e 30.º)",
+        "nightPremiumRate": "Prémio de Horas Noturnas",
+        "nightPremiumHint": "Pagamento extra pelas horas trabalhadas entre as 21:00 e as 06:00. O mínimo legal é +25%.",
+        "minimumWageSection": "Salário Mínimo",
+        "minimumWageLabel": "Salário mínimo mensal",
+        "minimumWageHint": "O mínimo legal em Timor-Leste é $115/mês (inalterado desde 2012). A folha avisa quando um salário está abaixo deste valor.",
         "thirteenthMonth": "Subsídio Anual (13.º Mês)",
         "enable13th": "Ativar pagamento do 13.º mês",
+        "subsidioDeadlineNote": "Prazo legal: pagar até 20 de dezembro de cada ano (Lei do Trabalho, art. 44.º).",
         "approvalSection": "Aprovação da folha de pagamento",
         "selfApprovalLabel": "Permitir autoaprovação (operador único)",
         "selfApprovalDesc": "Quem cria a folha de pagamento também pode aprová-la. Use apenas se a sua empresa tiver um único administrador de folha — desativado, um segundo administrador deve aprovar cada folha (mais seguro).",
         "selfApprovalOwnerOnly": "Apenas o proprietário da conta pode alterar isto.",
-        "paymentDeadline": "Prazo de Pagamento",
-        "paymentDeadlinePlaceholder": "MM-DD",
-        "paymentDeadlineHint": "Formato: MM-DD (ex., 12-20 para 20 de Dezembro)",
-        "invalidValues": "Verifique taxas, horas e prazo. As percentagens devem ser 0–100 e o prazo no formato MM-DD.",
+        "invalidValues": "Verifique taxas e horas. As percentagens devem ser 0–100.",
         "prorataHint": "Pro-rata para funcionários com menos de 12 meses",
-        "save": "Guardar Configuração da Folha"
+        "save": "Guardar Configuração da Folha",
+        "statutory": {
+          "title": "Fixado pela lei de Timor-Leste",
+          "description": "O Xefe aplica estas regras legais automaticamente. São definidas por lei e não podem ser editadas.",
+          "pending": "Confirmação pendente",
+          "witDueLabel": "Imposto mensal sobre salários (IRT/WIT)",
+          "witDueValue": "Pagar até ao dia 15 do mês seguinte (Lei 8/2008, art. 23.º)",
+          "inssDueLabel": "Declaração e pagamento do INSS",
+          "inssDueValue": "Declaração até ao dia 10, pagamento até ao dia 20 do mês seguinte",
+          "deductionCapLabel": "Limite de descontos salariais",
+          "deductionCapValue": "Os descontos estão limitados a 30% do salário do mês (Lei do Trabalho, art. 42.º/3); ordens judiciais ficam fora do limite",
+          "workingHoursLabel": "Tempo de trabalho padrão",
+          "workingHoursValue": "8 horas/dia, 44 horas/semana; horas extra limitadas a 4 h/dia e 16 h/semana (Lei do Trabalho, arts. 25.º–26.º)",
+          "nightWindowLabel": "Período de trabalho noturno",
+          "nightWindowValue": "21:00–06:00 — as horas neste período recebem o prémio noturno",
+          "sickBandsLabel": "Pagamento da licença por doença",
+          "sickBandsValue": "12 dias certificados por ano: primeiros 6 dias a 100%, 6 seguintes a 50%",
+          "severanceLabel": "Compensação por antiguidade na cessação",
+          "severanceValue": "Um mês de salário por cada período completo de 5 anos de serviço, conforme a causa da cessação (Lei do Trabalho, art. 56.º)",
+          "nonCashLabel": "Benefícios em espécie",
+          "nonCashValue": "Tributados como salário apenas quando valem mais de $20/mês (Lei Fiscal 8/2008)",
+          "subsidioLabel": "13.º mês (Subsídio Anual)",
+          "subsidioValue": "Um mês de salário, a pagar até 20 de dezembro de cada ano (Lei do Trabalho, art. 44.º)"
+        }
       },
       "notifications": {
         "errorTitle": "Erro",
@@ -17859,6 +18707,10 @@ export const translations = {
         "importStartedDesc": "A processar {{count}} funcionários..."
       },
       "toast": {
+        "fixedTermMotiveTitle": "Motivo do termo não declarado",
+        "fixedTermMotiveDesc": "Art. 12.º(2): um contrato a termo sem motivo declarado é considerado permanente.",
+        "minorWarningTitle": "Trabalhador menor (Lei do Trabalho, art. 69.º)",
+        "minorWarningDesc": "Apenas trabalho leve: máx. 5h/dia, 25h/semana, sem trabalho noturno nem horas extraordinárias.",
         "errorTitle": "Erro",
         "requiredFieldsTitle": "Faltam campos obrigatórios",
         "requiredFieldsDesc": "Preencha todos os campos obrigatórios antes de continuar.",
@@ -17875,6 +18727,14 @@ export const translations = {
         "uploadWarningDesc": "Funcionário foi guardado, mas falhou o carregamento de: {files}"
       },
       "fields": {
+        "contractEndDate": "Data de fim do contrato",
+        "contractEndDateHelp": "Apenas para contratos a termo — deixe vazio se for permanente.",
+        "fixedTermMotive": "Motivo do termo",
+        "fixedTermMotivePlaceholder": "Selecione o motivo legal",
+        "fixedTermMotiveWarning": "Art. 12.º(2): um contrato a termo sem motivo declarado é considerado permanente.",
+        "minorLightWorkNote": "Com 15-16 anos à admissão: apenas trabalho leve — máx. 5h/dia, 25h/semana, sem trabalho noturno nem horas extraordinárias (Lei do Trabalho, art. 69.º).",
+        "probationEndDate": "Fim do período experimental",
+        "probationEndDateHelp": "Art. 14.º: 8/15 dias para contratos a termo, 30-90 dias para permanentes.",
         "firstName": "Primeiro Nome *",
         "lastName": "Apelido *",
         "email": "Email *",
@@ -17901,6 +18761,17 @@ export const translations = {
           "contractor": "Contratado",
           "shareholder": "Acionista"
         },
+        "partTimeWageHelp": "Para trabalhadores a tempo parcial, registe as horas contratadas e o tratamento salarial acordado após revisão. A folha não presumirá o mínimo de tempo inteiro.",
+        "contractedWeeklyHours": "Horas contratadas por semana *",
+        "minimumWageTreatment": "Tratamento do salário mínimo *",
+        "minimumWageTreatmentPlaceholder": "Selecionar tratamento",
+        "minimumWageTreatments": {
+          "proRata": "Proporcional às horas semanais",
+          "fullFloor": "Aplicar mínimo mensal integral",
+          "reviewedException": "Exceção revista"
+        },
+        "minimumWageReviewNote": "Nota de revisão *",
+        "minimumWageReviewNotePlaceholder": "Quem reviu e por que se aplica este tratamento",
         "sefopeTitle": "Registo SEFOPE (Ministério do Trabalho)",
         "sefopeTooltip": "Obrigatório para todos os funcionários de TL",
         "sefopeNumber": "Número SEFOPE",
@@ -17975,6 +18846,10 @@ export const translations = {
             "label": "Número INSS",
             "description": "Número da Segurança Social"
           },
+          "taxIdentificationNumber": {
+            "label": "NIF / TIN do trabalhador",
+            "description": "Número fiscal individual, se atribuído"
+          },
           "electoralCard": {
             "label": "Cartão Eleitoral",
             "description": "Kartaun Eleitoral"
@@ -17992,6 +18867,7 @@ export const translations = {
         },
         "required": "Obrigatório",
         "numberPlaceholder": "Introduza o número",
+        "tinPlaceholder": "Introduza o NIF / TIN individual",
         "nationality": "Nacionalidade",
         "nationalityOther": "Outra",
         "visaTitle": "Visto de Trabalho",
@@ -18347,6 +19223,37 @@ export const translations = {
         }
       },
       "offboarding": {
+        "art55": {
+          "title": "Referência art. 55.º (fixada pelo tribunal se o despedimento for julgado ilícito)",
+          "month": "mês",
+          "months": "meses",
+          "note": "Não é pago pela folha de salários — é fixado pelo tribunal. O processo disciplinar escrito do art. 50.º(4) evita esta exposição."
+        },
+        "exitInterviews": {
+          "title": "Entrevistas de saída",
+          "description": "Respostas registadas durante a desvinculação, para saídas concluídas.",
+          "export": "Exportar CSV",
+          "exportedDesc": "Respostas das entrevistas de saída descarregadas como ficheiro CSV.",
+          "exportedTitle": "Exportação pronta",
+          "recommendShort": "Recomendaria"
+        },
+        "notice": {
+          "required": "Aviso prévio exigido",
+          "days": "dias",
+          "given": "cumprido",
+          "notRecorded": "Data do aviso prévio não registada",
+          "requiredForReason": "o aviso prévio exigido para este motivo de saída é de",
+          "shortfallWorker": "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
+          "shortfallEmployer": "Aviso prévio insuficiente: o empregador deve ao trabalhador os",
+          "daysPay": "dias de remuneração em falta"
+        },
+        "disciplinary": {
+          "noConcludedWarning": "Não existe qualquer processo disciplinar concluído em arquivo para este trabalhador. O despedimento com justa causa sem o processo escrito do art. 50.º(4) (acusação, defesa, decisão fundamentada) é automaticamente ilícito (art. 51.º) e expõe-no à indemnização do art. 55.º — confirme com o seu contabilista."
+        },
+        "certificate": {
+          "generate": "Gerar certificado (art. 57.º)",
+          "mandatoryNote": "O Certificado de Trabalho (nome, datas do contrato, funções desempenhadas) é obrigatório em qualquer cessação — art. 57.º."
+        },
         "title": "Desvinculação de Funcionário",
         "subtitle": "Gerir saídas de funcionários e processos de saída",
         "actions": {
@@ -18366,6 +19273,9 @@ export const translations = {
           "reason": "Motivo de Saída",
           "reasonPlaceholder": "Selecionar motivo...",
           "reasons": {
+            "mutualAgreement": "Acordo mútuo",
+            "death": "Falecimento do trabalhador",
+            "other": "Outro",
             "resignation": "Demissão",
             "redundancy": "Despedimento Coletivo",
             "termination": "Despedimento",
@@ -18413,6 +19323,9 @@ export const translations = {
           "empty": "Selecione um funcionário para ver a lista",
           "emptyPrompt": "Selecione uma saída em curso para ver a lista",
           "items": {
+            "inssCessation": "Cessação declarada à Segurança Social",
+            "inssCessationDeadline": "Prazo",
+            "inssCessationHint": "Declare no portal da Segurança Social até ao dia 10 do mês seguinte ao último dia de trabalho — enquanto não for declarada, a Segurança Social presume que o vínculo continua e as contribuições continuam a vencer.",
             "access": "Revogar Acesso ao Sistema",
             "equipment": "Devolução de Equipamento",
             "documents": "Documentos de Saída Assinados",
@@ -18424,8 +19337,22 @@ export const translations = {
           }
         },
         "finalPay": {
+          "decision": "Tratamento do art. 56.º revisto *",
+          "decisionPlaceholder": "Escolha após revisão do contabilista ou jurista",
+          "decisionInclude": "Incluir na folha final",
+          "decisionExclude": "Excluir da folha final",
+          "reviewWarning": "O texto da lei e a prática comum podem apontar para resultados diferentes. O Xefe não escolhe por si.",
+          "reviewNote": "Nota de revisão *",
+          "reviewNotePlaceholder": "Revisor, data e fundamento da decisão",
+          "reviewAcknowledgement": "Confirmo que um contabilista ou revisor jurídico verificou este tratamento.",
+          "deathHeirsNote": "Trabalhador falecido (art. 47.º(1)(b)): este pagamento é devido à herança/aos herdeiros — confirme os beneficiários com o seu contabilista.",
           "title": "Compensação de serviço do Artigo 56.º",
-          "description": "Um mês de salário por cada período completo de cinco anos de serviço, qualquer que seja a causa da cessação.",
+          "description": "Um mês de salário por cada período completo de cinco anos de serviço.",
+          "includeSeverance": "Pagar a compensação do Art. 56.º na folha de pagamento final",
+          "severanceOnNote": "Predefinição para este motivo de saída. A próxima folha de pagamento paga-a automaticamente quando o caso for concluído.",
+          "severanceOffNote": "Normalmente não é paga para este motivo de saída na prática timorense — mas o texto da lei não distingue a causa, pelo que o trabalhador pode ainda ter direito. Confirme com o seu contabilista.",
+          "severanceToggleFailed": "Não foi possível guardar a decisão sobre a compensação.",
+          "excludedTag": "(excluída — apenas referência)",
           "saved": "Calculado",
           "savedTitle": "Cálculo do Artigo 56.º guardado",
           "savedDescription": "O salário de origem, as datas de serviço e o resultado legal ficaram registados neste caso.",
@@ -18582,6 +19509,7 @@ export const translations = {
         "subtitle": "Gerir pedidos e aprovações de licença dos funcionários",
         "scopeMissing": "A sua conta de gestor ainda não está ligada a um departamento. Pode ver os seus próprios pedidos, mas os RH têm de definir o seu departamento antes de aparecerem as aprovações da equipa.",
         "actions": {
+          "inssDeclaration": "Declaração INSS",
           "newRequest": "Novo Pedido",
           "cancel": "Cancelar",
           "approve": "Aprovar",
@@ -18589,6 +19517,12 @@ export const translations = {
           "submit": "Submeter Pedido"
         },
         "dialog": {
+          "studyLeaveHint": "Ausência paga apenas para provas de avaliação — os trabalhadores-estudantes mantêm a remuneração nos dias de avaliação (Lei do Trabalho, art. 76.º(3)). O empregador pode pedir comprovativo de matrícula e o calendário das provas (art. 76.º(5)).",
+          "miscarriageInssHint": "Após uma interrupção da gravidez, a trabalhadora tem direito a uma licença de 4 semanas (Lei do Trabalho, art. 59.º(4)). Por defeito, não é paga pelo empregador: a trabalhadora pede o subsídio parental diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença) quando tem 6 meses de contribuições nos últimos 12 (DL n.º 18/2017).",
+          "breastfeedingNote": "Depois de regressar, a trabalhadora tem direito a duas pausas diárias pagas de 1 hora até o bebé completar 6 meses (art. 62.º) — registe-as na assiduidade como tempo trabalhado, não as desconte.",
+          "maternityInssHint": "A trabalhadora pede o subsídio de maternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, mensalmente, até 90 dias, quando a trabalhadora tem 6 meses de contribuições nos últimos 12 (DL 18/2017). A licença em si é de, no mínimo, 12 semanas, das quais pelo menos 10 após o parto.",
+          "paternityInssHint": "O trabalhador pede o subsídio de paternidade diretamente ao INSS (no prazo de 6 meses a contar do primeiro dia da licença). O INSS paga 100% do salário de referência, num pagamento único, pelos 5 dias úteis, quando o trabalhador tem 6 meses de contribuições nos últimos 12 (DL 18/2017).",
+          "parentalInssFallbackHint": "Se o trabalhador não cumprir a condição de contribuições, o INSS não paga nada — se o empregador tem de pagar em substituição é juridicamente incerto; confirme com o seu contabilista.",
           "title": "Submeter Pedido de Licença",
           "description": "Criar um novo pedido de licença para um funcionário",
           "employee": "Funcionário *",
@@ -18600,6 +19534,7 @@ export const translations = {
           "balanceTitle": "Saldo de Licença",
           "balanceSummary": "{{remaining}} dias restantes ({{used}} usados, {{pending}} pendentes)",
           "balanceUnavailable": "Saldo não disponível",
+          "specialLeaveHint": "3 dias pagos por ano civil, partilhados entre casamento, falecimento de familiar e eventos comunitários ou religiosos (Lei do Trabalho, art. 33.º, n.º 3). Precisa de mais dias? Peça-os como férias anuais ou licença sem vencimento. O empregador pode pedir comprovativo.",
           "startDate": "Data de Início *",
           "endDate": "Data de Fim *",
           "duration": "Duração",
@@ -18665,10 +19600,12 @@ export const translations = {
           "cancelled": "Cancelado"
         },
         "leaveTypes": {
+          "miscarriage": "Licença por Interrupção da Gravidez",
           "annual": "Férias Anuais",
           "sick": "Licença por Doença",
           "maternity": "Licença de Maternidade",
           "paternity": "Licença de Paternidade",
+          "special": "Licença Especial",
           "bereavement": "Licença por Luto",
           "unpaid": "Licença sem Vencimento",
           "marriage": "Licença por Casamento",
@@ -18682,6 +19619,7 @@ export const translations = {
           "marriage": "Certidão de Casamento"
         },
         "toast": {
+          "inssDeclarationFailed": "Não foi possível gerar a declaração do INSS.",
           "errorTitle": "Erro",
           "loadFailed": "Falha ao carregar dados de licença. Por favor tente novamente.",
           "validationTitle": "Erro de Validação",
@@ -18796,6 +19734,7 @@ export const translations = {
           "notAvailable": "N/D"
         },
         "toast": {
+          "breakEntitlement": "Art. 25.º(2): o trabalhador tem direito a uma pausa de 1 hora após 5 horas de trabalho contínuo.",
           "errorTitle": "Erro",
           "loadFailed": "Falha ao carregar dados de assiduidade.",
           "validationTitle": "Erro de Validação",
@@ -19370,6 +20309,11 @@ export const translations = {
         }
       },
       "custom": {
+        "builtIn": "Predefinido",
+        "deleteDescription": "Isto remove o relatório guardado para todas as pessoas da sua empresa. Não elimina dados de funcionários nem registos de presença.",
+        "deleteReport": "Eliminar relatório",
+        "deleteTitle": "Eliminar este relatório guardado?",
+        "savedReport": "Guardado",
         "title": "Relatórios Personalizados",
         "subtitle": "Construa e personalize os seus próprios relatórios",
         "noDataTitle": "Não há dados disponíveis para relatórios",
@@ -19390,6 +20334,9 @@ export const translations = {
         "noMatches": "Nenhum dado corresponde aos critérios",
         "showingLimited": "A mostrar 20 de {{count}} registos. Exporte para ver todos.",
         "builder": {
+          "runOnce": "Executar uma vez",
+          "saveAndRun": "Guardar e executar",
+          "saving": "A guardar…",
           "title": "Criar relatório personalizado",
           "description": "Escolha a fonte de dados, as colunas necessárias e filtros opcionais.",
           "name": "Nome do relatório",
@@ -19451,6 +20398,10 @@ export const translations = {
           }
         },
         "toast": {
+          "deleteFailed": "Não foi possível eliminar o relatório. Tente novamente.",
+          "deleted": "Relatório eliminado",
+          "saveFailed": "Não foi possível guardar o relatório. Tente novamente.",
+          "saved": "Relatório guardado",
           "generated": "Relatório gerado",
           "generatedDescription": "{{count}} registos encontrados",
           "error": "Não foi possível executar o relatório",
@@ -19748,6 +20699,8 @@ export const translations = {
         "title": "Declaração Mensal do INSS",
         "subtitle": "Gerar e acompanhar as submissões mensais de contribuições do INSS.",
         "due": {
+          "arrearsNotice": "O pagamento em atraso vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
+          "arrearsEstimate": "Estimativa até agora para {{period}}: US$ {{amount}} ({{months}} × 1%).",
           "overdueTitle": "{{task}} em atraso",
           "overdueDescription": "{{task}} de {{period}} devia ser entregue em {{dueDate}}.",
           "upcomingTitle": "{{task}} com prazo próximo",
@@ -19816,6 +20769,10 @@ export const translations = {
           "draft": "Rascunho"
         },
         "markFiled": {
+          "paymentDate": "Data de Pagamento",
+          "paymentAccount": "Conta de Pagamento",
+          "selectPaymentAccount": "Selecionar conta",
+          "cashOnHand": "Numerário em caixa",
           "title": "Marcar {{task}} como entregue",
           "description": "Registar os detalhes da submissão de {{task}} para esta declaração do INSS.",
           "submissionMethod": "Método de Submissão",
@@ -20011,7 +20968,8 @@ export const translations = {
           "etaxPortal": "Portal e-Tax",
           "officialForm": "Formulário Oficial",
           "view": "Ver",
-          "markFiled": "Marcar Entregue"
+          "markFiled": "Marcar Entregue",
+          "recordPayment": "Registar Pagamento"
         },
         "etax": {
           "title": "Preencher no e-Tax (assistido)",
@@ -20032,8 +20990,10 @@ export const translations = {
         "alerts": {
           "overdueTitle": "Entrega em atraso",
           "overdueDescription": "A declaração de IRT de {{period}} devia ter sido entregue em {{dueDate}}. Entregue-a imediatamente para evitar penalizações.",
+          "paymentOverdueDescription": "O pagamento de IRT de {{period}} venceu em {{dueDate}}. Registe o comprovativo assim que for pago.",
           "upcomingTitle": "Prazo próximo",
-          "upcomingDescription": "A declaração de IRT de {{period}} vence em {{dueDate}} (faltam {{days}} dias)."
+          "upcomingDescription": "A declaração de IRT de {{period}} vence em {{dueDate}} (faltam {{days}} dias).",
+          "paymentUpcomingDescription": "O pagamento de IRT de {{period}} vence em {{dueDate}} (faltam {{days}} dias)."
         },
         "generate": {
           "title": "Gerar Declaração",
@@ -20088,6 +21048,8 @@ export const translations = {
           "period": "Período",
           "dueDate": "Prazo",
           "status": "Estado",
+          "returnStatus": "Declaração",
+          "paymentStatus": "Pagamento",
           "totalWages": "Salários Totais",
           "wit": "IRT",
           "employees": "Funcionários",
@@ -20108,18 +21070,26 @@ export const translations = {
           "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
         },
         "markFiled": {
+          "paymentDate": "Data de Pagamento",
+          "paymentAccount": "Conta de Pagamento",
+          "selectPaymentAccount": "Selecionar conta",
+          "cashOnHand": "Numerário em caixa",
           "title": "Marcar Declaração como Entregue",
           "description": "Registar os detalhes da submissão desta declaração de IRT.",
+          "paymentTitle": "Registar Pagamento de IRT",
+          "paymentDescription": "Registe o comprovativo e liquide o IRT a pagar na contabilidade.",
           "submissionMethod": "Método de Submissão",
           "selectMethod": "Selecionar método",
           "etax": "Portal e-Tax",
           "bnu": "Banco BNU (papel)",
           "receiptLabel": "Número do Recibo (Opcional)",
+          "paymentReferenceLabel": "Referência bancária / recibo *",
           "receiptPlaceholder": "Introduza o número do recibo ou confirmação",
           "notesLabel": "Notas (Opcional)",
           "notesPlaceholder": "Quaisquer notas adicionais sobre esta entrega",
           "cancel": "Cancelar",
-          "confirm": "Confirmar Entregue"
+          "confirm": "Confirmar Entregue",
+          "confirmPayment": "Registar Pagamento"
         },
         "status": {
           "pending": "Pendente",
@@ -20146,6 +21116,8 @@ export const translations = {
           "officialExportFailedDescription": "Falha ao gerar o formulário Excel. Tente novamente.",
           "filedTitle": "Entrega Registada",
           "filedDescription": "A declaração foi marcada como entregue.",
+          "paymentTitle": "Pagamento Registado",
+          "paymentDescription": "A obrigação de IRT e o comprovativo de pagamento foram registados.",
           "updateErrorDescription": "Falha ao atualizar o estado da entrega."
         },
         "csv": {
@@ -20163,6 +21135,10 @@ export const translations = {
       },
       "profitLoss": {
         "etax": {
+          "baseExclusionsTitle": "Verifique a base antes de submeter (Lei 8/2008, Sec. 64.6)",
+          "baseExclusionsBody": "A base da prestação exclui rendimentos isentos e recebimentos sobre os quais um cliente já reteve imposto ao pagar-lhe. O Xefe não identifica automaticamente a retenção feita pelo cliente, por isso, se parte da sua receita foi paga com retenção (ou é isenta), introduza a base reduzida abaixo — os valores acima atualizam-se.",
+          "baseOverrideLabel": "Base de volume de negócios ajustada (opcional)",
+          "baseOverrideAboveRevenue": "A base ajustada é superior à receita do período calculada pelo Xefe — reveja antes de submeter.",
           "title": "Preencher imposto prestacional no e-Tax (assistido)",
           "description": "A prestação é 0,5% do volume de negócios: trimestral até $1 milhão no ano anterior e mensal acima disso. Confirme o período e submeta no e-Tax — o Xefe nunca submete por si.",
           "account": "Imposto Prestacional Doméstico",
@@ -20813,7 +21789,10 @@ export const translations = {
         "sourceExpense": "Despesa",
         "sourceRevenue": "Receita",
         "sourceReceipt": "Recibo",
-        "sourcePayment": "Pagamento"
+        "sourcePayment": "Pagamento",
+        "sourcePayrollPayment": "Pagamento da folha",
+        "sourceTaxPayment": "Pagamento de imposto / INSS",
+        "sourceFixedAssetAcquisition": "Aquisição de ativo fixo"
       },
       "fixedAssets": {
         "title": "Ativos Fixos",
@@ -20858,6 +21837,20 @@ export const translations = {
         "disposePreviewLoss": "Valor líquido {{nbv}} — esta venda regista uma perda de {{amount}}.",
         "fieldName": "Nome do ativo",
         "fieldReference": "Referência / série",
+        "fieldAcquisitionOrigin": "Como entrou este ativo na contabilidade?",
+        "acquisitionOriginPlaceholder": "Selecione uma opção",
+        "acquisitionOrigins": {
+          "bill": "Já lançado através de uma fatura",
+          "opening": "Saldo de abertura",
+          "postNow": "Lançar a aquisição agora"
+        },
+        "acquisitionOriginHelp": {
+          "already_posted_via_bill": "Apenas registar. A fatura do fornecedor já lançou o custo do ativo.",
+          "opening_balance": "Apenas registar. O ativo já está incluído nos saldos de abertura.",
+          "post_now": "O Xefe debitará a conta do ativo e creditará a conta de financiamento uma única vez."
+        },
+        "fieldFundingAccount": "Pago por / devido a",
+        "fundingAccountPlaceholder": "Selecione caixa, banco, conta a pagar ou capital",
         "fieldAcquired": "Data de aquisição",
         "fieldCost": "Custo (USD)",
         "fieldResidual": "Valor residual",
@@ -22082,6 +23075,8 @@ export const translations = {
         }
       },
       "bills": {
+        "withholdingNotice": "Aviso de retenção",
+        "withholdingNoticeError": "Não foi possível gerar o aviso de retenção.",
         "title": "Contas",
         "subtitle": "Gerir contas a pagar",
         "new": "Nova Conta",
@@ -22277,6 +23272,27 @@ export const translations = {
         "bills": "contas"
       },
       "bankRecon": {
+        "blockedGeneric": "Não é possível registar este pagamento",
+        "blockedOverpayment": "O montante bancário é superior ao saldo em dívida — não é possível conciliar",
+        "confirmBillPaid": "A conta fica paga.",
+        "confirmFullA": "Isto regista um pagamento de",
+        "confirmInvoicePaid": "A fatura fica paga.",
+        "confirmOn": "em",
+        "confirmPartialA": "Isto regista um pagamento parcial de",
+        "confirmReceiptEmail": "Se o cliente tiver um email registado, receberá um recibo de pagamento.",
+        "confirmRemainsDue": "continuará em dívida.",
+        "linkOnlyHint": "Já registado — a conciliação apenas associa esta linha bancária",
+        "nowPaid": "está agora paga",
+        "partialRecordedOn": "Pagamento parcial registado em",
+        "paymentRecorded": "Pagamento registado",
+        "paymentRecordedTag": "Pagamento registado",
+        "recordAndMatch": "Registar pagamento e conciliar",
+        "remainsDue": "continua em dívida",
+        "settleBlocked": "O montante bancário é superior ao saldo em dívida — registe este pagamento a partir da página da fatura ou da conta.",
+        "unmatchLocked": "Pagamento registado — faça a gestão a partir da página da fatura ou da conta",
+        "willRecordFull": "Vai registar o pagamento — fica paga",
+        "willRecordPartial": "Vai registar um pagamento parcial",
+        "alreadyImportedSkipped": "já importado (ignorado)",
         "title": "Reconciliação Bancária",
         "subtitle": "Importar e conciliar transações bancárias",
         "importCSV": "Importar CSV",
@@ -22317,6 +23333,18 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "absence": "Falta",
+      "lateArrival": "Atraso",
+      "specialHours": "Horas especiais (2×)",
+      "advanceRepayment": "Reembolso de adiantamento",
+      "loanRepayment": "Reembolso de empréstimo",
+      "courtOrder": "Ordem judicial",
+      "otherDeductions": "Outras deduções",
+      "payDateNonWorkingDay": "Esta data de pagamento cai num fim de semana ou feriado. Art. 40.º(5): pague no dia útil anterior.",
+      "payDateUseDate": "Usar {date}",
+      "warningOTCapArt27": "excedeu o limite de horas extraordinárias do art. 27.º(4) (4h/dia / 16h/semana) neste período — só permitido em caso de força maior (art. 27.º(5))",
+      "warningRestDayCapArt27": "trabalhou mais de 8h num dia de descanso ou feriado — o art. 27.º(3) limita esse trabalho a 8 horas",
+      "warningArt86Headcount": "o desconto de INSS do art. 86.º exige {{max}} trabalhadores ou menos — este processamento tem {{count}}; o direito ao desconto cessa enquanto exceder {{max}}",
       "title": "Processar Folha",
       "freePlanNotice": "Está no plano gratuito. Prepare e reveja a folha à vontade — finalizar exige uma subscrição.",
       "freePlanNoticeCta": "Ver plano",
@@ -22483,6 +23511,14 @@ export const translations = {
       "stepReviewDesc": "Por favor reveja estes números antes de submeter a folha."
     },
     "deductions": {
+      "edit": "Editar",
+      "editDialogDescription": "Atualize esta dedução. O progresso do reembolso do adiantamento é mantido — o saldo restante só muda se alterar o montante total.",
+      "editDialogTitle": "Editar Dedução",
+      "editTotalHint": "Alterar o total mantém o que já foi reembolsado — o saldo restante passa a ser o novo total menos o montante já reembolsado.",
+      "saveChanges": "Guardar Alterações",
+      "totalAmountRequired": "Um adiantamento que acompanha um saldo precisa de um montante total superior a zero.",
+      "updateError": "Falha ao atualizar a dedução.",
+      "updateSuccess": "Dedução atualizada.",
       "title": "Deduções e Adiantamentos",
       "subtitle": "Gerir deduções recorrentes e adiantamentos salariais",
       "addDeduction": "Adicionar Dedução",
@@ -22494,6 +23530,9 @@ export const translations = {
       "otherDeductions": "Outras Deduções",
       "deductionsTableTitle": "Deduções",
       "deductionsTableDescription": "Gerir deduções e adiantamentos dos funcionários",
+      "deductionTypes": "Tipos de Dedução",
+      "clickToFilter": "Clique num tipo para filtrar a tabela",
+      "active": "ativas",
       "searchPlaceholder": "Pesquisar...",
       "tabAll": "Todos",
       "tabAdvances": "Adiantamentos",
@@ -22699,11 +23738,25 @@ export const translations = {
       }
     },
     "bankTransfers": {
+      "completePostsPayment": "Isto marca a folha de pagamento como paga, atualiza os saldos das deduções e lança o pagamento bancário na contabilidade.",
+      "alsoMarkRunPaid": "Marcar também a folha de pagamento como paga (atualiza os saldos de adiantamentos e deduções recorrentes)",
+      "markCompleted": "Marcar como concluída",
+      "markCompletedDesc": "Confirme que o seu banco executou este lote de salários. Isto apenas atualiza o registo no Xefe — não contacta o banco.",
+      "markCompletedTitle": "Marcar transferência como concluída?",
+      "markFailed": "Marcar como falhada",
+      "markFailedDesc": "Registe que o seu banco rejeitou ou não executou este lote de salários. Isto apenas atualiza o registo no Xefe — pode marcá-la como concluída mais tarde se o banco processar uma nova tentativa.",
+      "markFailedTitle": "Marcar transferência como falhada?",
+      "recordBankTransfer": "Registar Transferência Bancária",
+      "recordBankTransferDesc": "Regista a transferência desta folha como pendente no Xefe. Não é enviado dinheiro — gere os ficheiros bancários, entregue-os ou envie-os por email ao seu banco, e depois marque aqui a transferência como concluída.",
+      "recordTransfer": "Registar Transferência",
+      "toastRunMarkedPaid": "Folha de pagamento marcada como paga.",
+      "toastRunPaidError": "A transferência foi marcada como concluída, mas falhou a marcação da folha de pagamento como paga. Pode marcá-la como paga a partir do Histórico da Folha.",
+      "toastStatusUpdateError": "Falha ao atualizar o estado da transferência. Por favor tente novamente.",
       "title": "Transferências Bancárias",
       "subtitle": "Gerir transferências bancárias de folha e histórico de transações",
       "coverEmail": {
         "title": "Agora envie o email ao banco",
-        "description": "O BNU e o BNCTL executam os salários a partir de uma instrução por email. Envie o ficheiro descarregado ao seu balcão com esta mensagem, e imprima e assine a folha de Ordem de Pagamento incluída no ficheiro para anexar.",
+        "description": "O BNU executa lotes salariais por instrução enviada por email. Para o BNCTL, este pacote é de melhor esforço até confirmação do balcão. Envie o ficheiro e anexe a folha Ordem de Pagamento impressa e assinada.",
         "copy": "Copiar texto do email",
         "copied": "Texto do email copiado"
       },
@@ -22724,6 +23777,8 @@ export const translations = {
       "bankFiles": "Ficheiros Bancários",
       "generateBankFiles": "Gerar Ficheiros de Transferência Bancária",
       "generateBankFilesDesc": "Gerar ficheiros específicos de cada banco para pagamentos de salários (BNU, Mandiri, ANZ, BNCTL)",
+      "formatVerified": "Fluxo verificado",
+      "formatBestEffort": "Melhor esforço — confirme com o seu banco",
       "selectPayrollRun": "Selecionar Processamento",
       "selectPayrollRunPlaceholder": "Selecionar um processamento",
       "selectBanksToGenerate": "Selecionar Bancos para Gerar",
@@ -22773,6 +23828,9 @@ export const translations = {
       "toastValidationDesc": "Por favor preencha todos os campos obrigatórios.",
       "toastTransferSuccess": "Sucesso",
       "toastTransferSuccessDesc": "Transferência bancária {{reference}} iniciada com sucesso.",
+      "toastTransferRecordedDesc": "A transferência {{reference}} foi registada como pendente. Envie o ficheiro ou pacote ao banco e depois marque-a como concluída aqui.",
+      "toastMarkedCompleted": "A transferência {{reference}} foi concluída e o pagamento da folha foi lançado.",
+      "toastMarkedFailed": "A transferência {{reference}} foi marcada como falhada.",
       "toastTransferError": "Falha ao iniciar transferência. Por favor tente novamente.",
       "toastNoData": "Sem Dados",
       "toastNoDataDesc": "Sem transferências para exportar.",
@@ -22791,6 +23849,10 @@ export const translations = {
       "company": "Empresa"
     },
     "taxReports": {
+      "inssArrearsMonth": "mês",
+      "inssArrearsMonths": "meses",
+      "inssArrearsNotice": "O pagamento em atraso à Segurança Social vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",
+      "inssArrearsEstimate": "Estimativa até agora para {{period}}: US$ {{amount}} ({{months}} mês/meses).",
       "title": "Impostos e INSS da Folha",
       "subtitle": "Centro de conformidade de Timor-Leste para IRT (ATTL) e declarações mensais de INSS.",
       "actionRequired": "Ação necessária",
@@ -22806,13 +23868,34 @@ export const translations = {
       "daysRemaining": "Faltam {{days}} dias",
       "inssStatementTask": "declaração (dia 10)",
       "inssPaymentTask": "pagamento (dia 20)",
+      "witStatementTask": "declaração",
+      "witPaymentTask": "pagamento",
       "noPeriodsFound": "Nenhum período encontrado",
       "attlTitle": "Declaração Mensal de IRT da ATTL",
       "attlDesc": "Gerar, exportar (CSV/PDF) e acompanhar declarações mensais de Imposto sobre Rendimento do Trabalho.",
       "openWitFiling": "Abrir Declaração IRT",
       "inssTitle": "Declaração Mensal de INSS",
       "inssDesc": "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
-      "openInssFiling": "Abrir Declaração INSS"
+      "openInssFiling": "Abrir Declaração INSS",
+      "formC": {
+        "title": "Imposto anual sobre o rendimento empresarial (Formulário C)",
+        "savedTitle": "Preparação guardada",
+        "savedDescription": "A lista de preparação do imposto anual foi atualizada.",
+        "saveError": "Não foi possível guardar a lista de preparação.",
+        "reviewProgress": "Rever preparação",
+        "startPreparation": "Iniciar preparação",
+        "dialogTitle": "Preparar o imposto anual de {{year}}",
+        "dialogDescription": "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
+        "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o Formulário C oficial; use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "checklist": {
+          "profitAndLoss": "Demonstração de resultados revista",
+          "balanceSheet": "Balanço revisto",
+          "cashFlow": "Demonstração de fluxos de caixa revista",
+          "taxAdjustments": "Ajustamentos fiscais revistos"
+        },
+        "reviewNote": "Nota de revisão",
+        "reviewNotePlaceholder": "Revisor, pontos em aberto e próxima ação"
+      }
     },
     "guidance": {
       "hideGuidance": "Ocultar orientação",
@@ -23055,7 +24138,12 @@ export const translations = {
         },
         "filings": {
           "monthlyWit": "WIT {{period}}",
+          "monthlyWitReturn": "Declaração WIT {{period}}",
+          "monthlyWitPayment": "Pagamento WIT {{period}}",
           "annualWit": "WIT anual {{period}}",
+          "annualIncomeTax": "Imposto anual sobre o rendimento {{period}}",
+          "servicesTax": "Imposto sobre serviços {{period}}",
+          "installmentTax": "Prestação do imposto sobre o rendimento {{period}}",
           "inssPayment": "Pagamento de INSS {{period}}",
           "inssStatement": "Declaração de INSS {{period}}",
           "overdue": "{{days}}d em atraso",
@@ -23077,6 +24165,7 @@ export const translations = {
       }
     },
     "supplierRemittance": {
+      "deductionSuspended": "A retenção não entregue suspende a dedutibilidade da despesa subjacente (Lei 8/2008, Sec. 32.2) — entregue para manter a dedução.",
       "errorTitle": "Não foi possível registar o pagamento do imposto",
       "proofRequired": "Carregue o comprovativo bancário, recibo do BNU ou outro comprovativo de pagamento.",
       "signInRequired": "Inicie sessão antes de registar um pagamento de imposto.",

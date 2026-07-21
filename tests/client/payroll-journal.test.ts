@@ -9,7 +9,10 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  buildLiabilityPaymentJournalLines,
+  buildFixedAssetAcquisitionJournalLines,
   buildPayrollJournalLines,
+  buildPayrollSettlementJournalLines,
   normalizeJournalAmounts,
   payrollJournalAccountCodes,
   type PayrollJournalSummary,
@@ -146,5 +149,92 @@ describe("payroll journal — balance and account correctness", () => {
     // The two control accounts appear only because deductions are present.
     expect(declared.has("1220")).toBe(true);
     expect(declared.has("2260")).toBe(true);
+  });
+});
+
+describe("payroll and statutory cash settlement", () => {
+  it("clears net salaries payable against the selected payroll bank account", () => {
+    const result = buildPayrollSettlementJournalLines(
+      5_672.24,
+      "1130",
+      "BNU-OT-42/2026",
+      resolve,
+    );
+
+    expect(debitFor(result.lines, "2210")).toBe(5_672.24);
+    expect(creditFor(result.lines, "1130")).toBe(5_672.24);
+    expect(result.totalDebit).toBe(result.totalCredit);
+    expect(() => normalizeJournalAmounts(
+      result.lines,
+      result.totalDebit,
+      result.totalCredit,
+    )).not.toThrow();
+  });
+
+  it("clears both INSS liabilities with one bank credit", () => {
+    const result = buildLiabilityPaymentJournalLines(
+      [
+        { accountCode: "2230", amount: 40, description: "Employee INSS" },
+        { accountCode: "2240", amount: 60, description: "Employer INSS" },
+      ],
+      "1120",
+      "INSS payment",
+      resolve,
+    );
+
+    expect(debitFor(result.lines, "2230")).toBe(40);
+    expect(debitFor(result.lines, "2240")).toBe(60);
+    expect(creditFor(result.lines, "1120")).toBe(100);
+    expect(result.totalDebit).toBe(100);
+    expect(result.totalCredit).toBe(100);
+  });
+
+  it("refuses a payment with no liability or no payroll reference", () => {
+    expect(() => buildLiabilityPaymentJournalLines(
+      [{ accountCode: "2220", amount: 0, description: "WIT" }],
+      "1120",
+      "WIT payment",
+      resolve,
+    )).toThrow(/at least/);
+    expect(() => buildPayrollSettlementJournalLines(100, "1130", "   ", resolve))
+      .toThrow(/reference/);
+  });
+});
+
+describe("fixed-asset acquisition posting", () => {
+  it("debits the asset and credits the selected funding account", () => {
+    const result = buildFixedAssetAcquisitionJournalLines(
+      12_345.67,
+      "1540",
+      "2100",
+      "Delivery truck",
+      resolve,
+    );
+
+    expect(debitFor(result.lines, "1540")).toBe(12_345.67);
+    expect(creditFor(result.lines, "2100")).toBe(12_345.67);
+    expect(result.totalDebit).toBe(result.totalCredit);
+    expect(() => normalizeJournalAmounts(
+      result.lines,
+      result.totalDebit,
+      result.totalCredit,
+    )).not.toThrow();
+  });
+
+  it("rejects missing or self-funding acquisition accounts", () => {
+    expect(() => buildFixedAssetAcquisitionJournalLines(
+      100,
+      "1530",
+      "1530",
+      "Laptop",
+      resolve,
+    )).toThrow(/differ/);
+    expect(() => buildFixedAssetAcquisitionJournalLines(
+      0,
+      "1530",
+      "1120",
+      "Laptop",
+      resolve,
+    )).toThrow(/positive/);
   });
 });

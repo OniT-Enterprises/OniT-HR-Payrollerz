@@ -2,11 +2,9 @@
 # ad-hoc laptop `firebase deploy --only functions` (which breaks whenever the
 # local CLI login expires).
 #
-# Auth: uses the FIREBASE_ADMINSDK_JSON service account already stored for the
-# rules deploy. If the first run fails with a permissions error, grant that
-# service account these roles in IAM (one-time, console or gcloud):
-#   roles/cloudfunctions.developer, roles/iam.serviceAccountUser,
-#   roles/artifactregistry.reader, roles/cloudbuild.builds.editor
+# Auth: uses the dedicated Functions deployer account also used by deploy.yml.
+# The narrower Admin SDK account is intentionally reserved for rules and cannot
+# deploy Gen2 Functions/Cloud Run/Eventarc resources.
 name: Deploy Cloud Functions (manual)
 
 on:
@@ -20,7 +18,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -33,10 +31,10 @@ jobs:
           npm ci --prefix functions
           npm --prefix functions run build
 
-      - name: Write service account credentials
-        run: printf '%s' "$FIREBASE_ADMINSDK_JSON" > "$RUNNER_TEMP/sa.json"
+      - name: Write deployer credentials
+        run: printf '%s' "$FIREBASE_DEPLOYER_JSON" > "$RUNNER_TEMP/sa.json"
         env:
-          FIREBASE_ADMINSDK_JSON: ${{ secrets.FIREBASE_ADMINSDK_JSON }}
+          FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 
       - name: Deploy functions
         run: npx firebase deploy --only functions --project onit-hr-payroll --non-interactive --force

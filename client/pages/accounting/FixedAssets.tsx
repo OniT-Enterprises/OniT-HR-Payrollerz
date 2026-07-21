@@ -51,9 +51,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useInvalidateAccounting } from "@/hooks/useAccounting";
+import { useAccounts, useInvalidateAccounting } from "@/hooks/useAccounting";
 import { fixedAssetService } from "@/services/fixedAssetService";
-import type { FixedAsset } from "@/types/accounting";
+import type { FixedAsset, FixedAssetAcquisitionOrigin } from "@/types/accounting";
 import {
   ASSET_CLASSES,
   ACCUMULATED_DEPRECIATION_CODE,
@@ -88,6 +88,8 @@ const EMPTY_FORM = {
   acquisitionCost: "",
   residualValue: "0",
   usefulLifeMonths: "60",
+  acquisitionOrigin: "" as FixedAssetAcquisitionOrigin | "",
+  fundingAccountCode: "",
 };
 
 export default function FixedAssets() {
@@ -104,6 +106,8 @@ export default function FixedAssets() {
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [acquisitionRequestId, setAcquisitionRequestId] = useState("");
+  const { data: accounts = [] } = useAccounts(showAdd);
   const [scheduleAsset, setScheduleAsset] = useState<FixedAsset | null>(null);
   const [disposeAsset, setDisposeAsset] = useState<FixedAsset | null>(null);
   const [disposeDate, setDisposeDate] = useState(getTodayTL());
@@ -170,6 +174,17 @@ export default function FixedAssets() {
   const classLife = (key: string) =>
     ASSET_CLASSES.find((c) => c.key === key)?.defaultLifeMonths ?? 60;
 
+  const fundingAccounts = useMemo(
+    () => accounts.filter((account) =>
+      account.isActive
+      && (
+        account.type === "liability"
+        || account.type === "equity"
+        || (account.type === "asset" && ["cash", "bank"].includes(account.subType))
+      )),
+    [accounts],
+  );
+
   const handleClassChange = (key: string) => {
     setForm((f) => ({
       ...f,
@@ -181,7 +196,9 @@ export default function FixedAssets() {
   const handleSave = async () => {
     if (!tenantId) return;
     const cls = ASSET_CLASSES.find((c) => c.key === form.assetClass);
-    if (!cls) return;
+    if (!cls || !form.acquisitionOrigin) return;
+    const requestId = acquisitionRequestId || fixedAssetService.newAcquisitionRequestId(tenantId);
+    setAcquisitionRequestId(requestId);
     setSaving(true);
     try {
       await fixedAssetService.create(tenantId, {
@@ -190,6 +207,12 @@ export default function FixedAssets() {
         reference: form.reference.trim() || undefined,
         acquisitionDate: form.acquisitionDate,
         acquisitionCost: Number(form.acquisitionCost) || 0,
+        acquisitionOrigin: form.acquisitionOrigin,
+        acquisitionRequestId: requestId,
+        fundingAccountCode:
+          form.acquisitionOrigin === "post_now"
+            ? form.fundingAccountCode
+            : undefined,
         residualValue: Number(form.residualValue) || 0,
         usefulLifeMonths: Number(form.usefulLifeMonths) || 0,
         method: "straight_line",
@@ -205,6 +228,10 @@ export default function FixedAssets() {
       });
       setShowAdd(false);
       setForm(EMPTY_FORM);
+      setAcquisitionRequestId("");
+      if (form.acquisitionOrigin === "post_now") {
+        await invalidateAccounting();
+      }
       await reload();
     } catch (error) {
       console.error("Failed to save asset:", error);
@@ -443,6 +470,11 @@ export default function FixedAssets() {
                   size="sm"
                   onClick={() => {
                     setForm(EMPTY_FORM);
+                    if (tenantId) {
+                      setAcquisitionRequestId(
+                        fixedAssetService.newAcquisitionRequestId(tenantId),
+                      );
+                    }
                     setShowAdd(true);
                   }}
                 >
@@ -615,7 +647,13 @@ export default function FixedAssets() {
       </div>
 
       {/* Add asset */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <Dialog
+        open={showAdd}
+        onOpenChange={(open) => {
+          setShowAdd(open);
+          if (!open) setAcquisitionRequestId("");
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("accounting.fixedAssets.addAsset")}</DialogTitle>
@@ -667,6 +705,55 @@ export default function FixedAssets() {
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>{t("accounting.fixedAssets.fieldAcquisitionOrigin")}</Label>
+              <Select
+                value={form.acquisitionOrigin}
+                onValueChange={(value: FixedAssetAcquisitionOrigin) =>
+                  setForm({ ...form, acquisitionOrigin: value, fundingAccountCode: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("accounting.fixedAssets.acquisitionOriginPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="already_posted_via_bill">
+                    {t("accounting.fixedAssets.acquisitionOrigins.bill")}
+                  </SelectItem>
+                  <SelectItem value="opening_balance">
+                    {t("accounting.fixedAssets.acquisitionOrigins.opening")}
+                  </SelectItem>
+                  <SelectItem value="post_now">
+                    {t("accounting.fixedAssets.acquisitionOrigins.postNow")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              {form.acquisitionOrigin && (
+                <p className="text-xs text-muted-foreground">
+                  {t(`accounting.fixedAssets.acquisitionOriginHelp.${form.acquisitionOrigin}`)}
+                </p>
+              )}
+            </div>
+            {form.acquisitionOrigin === "post_now" && (
+              <div className="space-y-2">
+                <Label>{t("accounting.fixedAssets.fieldFundingAccount")}</Label>
+                <Select
+                  value={form.fundingAccountCode}
+                  onValueChange={(value) => setForm({ ...form, fundingAccountCode: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("accounting.fixedAssets.fundingAccountPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fundingAccounts.map((account) => (
+                      <SelectItem key={account.id || account.code} value={account.code}>
+                        {account.code} — {account.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor="fa-date">
@@ -762,7 +849,9 @@ export default function FixedAssets() {
                 saving ||
                 !form.name.trim() ||
                 !(Number(form.acquisitionCost) > 0) ||
-                lifeInvalid
+                lifeInvalid ||
+                !form.acquisitionOrigin ||
+                (form.acquisitionOrigin === "post_now" && !form.fundingAccountCode)
               }
             >
               {saving ? t("common.saving") : t("common.save")}

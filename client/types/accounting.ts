@@ -96,6 +96,7 @@ export type JournalEntryStatus = 'draft' | 'posted' | 'void';
 export type JournalEntrySource =
   | 'manual'
   | 'payroll'
+  | 'payroll_payment'
   | 'invoice'
   | 'bill'
   | 'payment'
@@ -106,6 +107,7 @@ export type JournalEntrySource =
   | 'closing'
   | 'opening'
   | 'recurring'
+  | 'fixed_asset_acquisition'
   | 'depreciation';
 
 export interface JournalEntry {
@@ -214,6 +216,10 @@ export interface RecurringJournalTemplate {
 export type DepreciationMethod = 'straight_line';
 
 export type FixedAssetStatus = 'active' | 'fully_depreciated' | 'disposed';
+export type FixedAssetAcquisitionOrigin =
+  | 'already_posted_via_bill'
+  | 'opening_balance'
+  | 'post_now';
 
 export interface FixedAsset {
   id?: string;
@@ -224,6 +230,10 @@ export interface FixedAsset {
 
   acquisitionDate: string;       // YYYY-MM-DD
   acquisitionCost: number;
+  acquisitionOrigin?: FixedAssetAcquisitionOrigin; // absent only on legacy register rows
+  acquisitionRequestId?: string;
+  fundingAccountCode?: string;
+  acquisitionJournalEntryId?: string;
   residualValue: number;         // salvage value; depreciable = cost − residual
   usefulLifeMonths: number;
   method: DepreciationMethod;

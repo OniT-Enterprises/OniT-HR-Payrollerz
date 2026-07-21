@@ -235,7 +235,7 @@ const sitemapData: SitemapSection[] = [
   },
   {
     title: "Payroll",
-    description: "Process payroll with Timor-Leste tax compliance (WIT, INSS)",
+    description: "Process payroll with Timor-Leste WIT and INSS calculations",
     icon: Calculator,
     color: "text-cyan-600",
     bgColor: "bg-cyan-100 dark:bg-cyan-900",
@@ -250,8 +250,8 @@ const sitemapData: SitemapSection[] = [
         name: "Run Payroll",
         path: "/payroll/run",
         description:
-          "Process payroll with automatic WIT and INSS calculations for TL compliance",
-        badge: "TL Compliant",
+          "Process payroll with automatic WIT and INSS calculations for review",
+        badge: "TL Rules",
       },
       {
         name: "Payroll History",
@@ -754,7 +754,7 @@ export default function Sitemap() {
             <div className="bg-muted/50 rounded-lg px-4 py-2">
               <span className="text-2xl font-bold text-emerald-600">TL</span>
               <span className="text-sm text-muted-foreground ml-2">
-                Timor-Leste Compliant
+                Timor-Leste rules built in
               </span>
             </div>
           </div>
@@ -821,8 +821,8 @@ export default function Sitemap() {
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>Xefe - Built for Timor-Leste businesses</p>
           <p className="mt-1">
-            Compliant with ATTL tax regulations, INSS social security, and TL
-            labor law
+            Supports reviewed ATTL, INSS, and core Timor-Leste payroll rules;
+            exceptional cases require professional review
           </p>
         </div>
       </div>

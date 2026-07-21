@@ -1515,7 +1515,27 @@ service cloud.firestore {
          resource.data.status == 'approved' ||
          (resource.data.status != 'paid' &&
           resource.data.status != 'cancelled' &&
-          resource.data.status != 'rejected'))
+          resource.data.status != 'rejected')) &&
+        // A run becomes paid only from approved (or repairs a legacy paid run),
+        // and only together with the cash-settlement evidence/link. This blocks
+        // a direct draft -> paid update that would bypass approval and leave the
+        // salary payable/cash accounts untouched.
+        (request.resource.data.status != 'paid' ||
+         ((resource.data.status == 'approved' || resource.data.status == 'paid') &&
+          request.resource.data.settlementJournalEntryId is string &&
+          request.resource.data.settlementJournalEntryId.size() > 0 &&
+          request.resource.data.paymentDate is string &&
+          request.resource.data.paymentDate.size() == 10 &&
+          request.resource.data.paymentReference is string &&
+          request.resource.data.paymentReference.size() > 0 &&
+          request.resource.data.paidBy == request.auth.uid)) &&
+        // Once linked, settlement evidence is immutable. Corrections belong in
+        // reversing journals, never by silently pointing the run elsewhere.
+        (resource.data.get('settlementJournalEntryId', null) == null ||
+         (request.resource.data.settlementJournalEntryId == resource.data.settlementJournalEntryId &&
+          request.resource.data.paymentDate == resource.data.paymentDate &&
+          request.resource.data.paymentReference == resource.data.paymentReference &&
+          request.resource.data.paidBy == resource.data.paidBy))
       );
 
       allow delete: if isSuperAdmin() || (
@@ -1609,7 +1629,15 @@ service cloud.firestore {
     }
 
     match /bankTransfers/{docId} {
-      allow read: if isSuperAdmin() ||
+      // createTransfer claims a deterministic tenant/run id in a transaction.
+      // Firestore evaluates the transaction's read before its create, so an
+      // authenticated caller must be able to observe that the target does not
+      // exist. Existing documents remain tenant-scoped, and list queries still
+      // evaluate each returned document against that tenant boundary.
+      allow get: if (resource == null && isAuthenticated()) ||
+        isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
+      allow list: if isSuperAdmin() ||
         (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||

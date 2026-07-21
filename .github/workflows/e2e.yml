@@ -1,13 +1,13 @@
 # Full-workflow browser E2E against the Firebase emulator suite running
-# PRODUCTION security rules. Non-gating: runs alongside the deploy workflow
-# rather than blocking it — promote to a required check once it has a stable
-# CI history.
+# production security rules. The deploy workflow calls this suite and cannot
+# deploy unless every browser and API test passes.
 name: E2E (emulators)
 
 on:
-  push:
-    branches: [main]
+  workflow_call:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -77,7 +77,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

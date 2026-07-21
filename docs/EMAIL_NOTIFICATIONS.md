@@ -13,8 +13,8 @@ server: db.collection("mail").add(...)    ─┼─►  mail/{id} doc  ─►  s
 ```
 
 - Doc shape (Trigger-Email compatible): `{tenantId, to: string[], subject,
-  text?|html?, replyTo?, fromName?, attachments?, status:'pending', purpose,
-  relatedId?, createdBy?, createdAt}`.
+text?|html?, replyTo?, fromName?, attachments?, status:'pending', purpose,
+relatedId?, createdBy?, createdAt}`.
 - `fromName` renders as **"{Business} via Xefe <invoices@xefe.tl>"** — the
   address is fixed server-side so tenants can brand but never spoof.
 - `attachments`: `[{filename, url | content(base64), contentType?}]` — url is
@@ -58,30 +58,33 @@ by server-side triggers (see `sendApplicationReceivedEmail`).
 ## Current senders (purpose tags)
 
 ### Client (via notificationService)
-| Flow | purpose | Recipients |
-|---|---|---|
-| Invoice send (hosted-page link + as-sent PDF attached, `fromName`) | `invoice` | customer |
-| Invoice payment reminder (hosted-page link) | `invoice-reminder` | customer |
-| Payment receipt (auto when invoice fully paid) | `receipt` | customer |
-| Payslip bulk send (manual, with PDFs) | `payslip` | staff (per-recipient) |
-| Platform/superadmin notices | `notification` | admins (shared to) |
-| Leave decision | `leave-decision` | employee |
-| Announcement broadcast (opt-in checkbox) | `announcement` | all active staff (per-recipient) |
-| Billing invoice request | `billing-invoice-request` | info@naroman.tl |
-| Interview invitation / reminder / reschedule / decision | `interview-*` | candidate |
-| Application verified/rejected | `application-outcome` | applicant |
-| Performance review submitted / completed | `review-submitted` / `review-completed` | employee |
+
+| Flow                                                               | purpose                                 | Recipients                       |
+| ------------------------------------------------------------------ | --------------------------------------- | -------------------------------- |
+| Invoice send (hosted-page link + as-sent PDF attached, `fromName`) | `invoice`                               | customer                         |
+| Invoice payment reminder (hosted-page link)                        | `invoice-reminder`                      | customer                         |
+| Payment receipt (auto when invoice fully paid)                     | `receipt`                               | customer                         |
+| Payslip bulk send (manual, with PDFs)                              | `payslip`                               | staff (per-recipient)            |
+| Platform/superadmin notices                                        | `notification`                          | admins (shared to)               |
+| Leave decision                                                     | `leave-decision`                        | employee                         |
+| Announcement broadcast (opt-in checkbox)                           | `announcement`                          | all active staff (per-recipient) |
+| Billing invoice request                                            | `billing-invoice-request`               | info@naroman.tl                  |
+| Interview invitation / reminder / reschedule / decision            | `interview-*`                           | candidate                        |
+| Application verified/rejected                                      | `application-outcome`                   | applicant                        |
+| Performance review submitted / completed                           | `review-submitted` / `review-completed` | employee                         |
 
 ### Server (Admin SDK)
-| Function | purpose | Recipients |
-|---|---|---|
-| `sendWelcomeEmail`, `requestPasswordReset`, member invites (tenant.ts) | `welcome` / `password-reset` | user |
-| `sendRenewalReminders` (daily 08:00 Dili) | `billing-renewal-reminder(-ops)` | tenant + ops |
-| `sendApplicationReceivedEmail` (on public application create) | `application-received` | applicant |
-| `notifyEkipaExpenseDecision` (also sends Ekipa push) | `expense-decision` | employee |
-| `checkDocumentExpiry` digest (daily 06:00 Dili, only on days with NEW alerts) | `document-expiry-digest` | tenant owner/billing email |
+
+| Function                                                                      | purpose                          | Recipients                 |
+| ----------------------------------------------------------------------------- | -------------------------------- | -------------------------- |
+| `sendWelcomeEmail`, `requestPasswordReset`, member invites (tenant.ts)        | `welcome` / `password-reset`     | user                       |
+| `sendRenewalReminders` (daily 08:00 Dili)                                     | `billing-renewal-reminder(-ops)` | tenant + ops               |
+| `sendApplicationReceivedEmail` (on public application create)                 | `application-received`           | applicant                  |
+| `notifyEkipaExpenseDecision` (also sends Ekipa push)                          | `expense-decision`               | employee                   |
+| `checkDocumentExpiry` digest (daily 06:00 Dili, only on days with NEW alerts) | `document-expiry-digest`         | tenant owner/billing email |
 
 ### UX conventions
+
 - Actions that email someone **say so before firing** — e.g. the leave
   approve/reject dialogs state "{name} will be notified by email", the
   announcement dialog has an explicit opt-in checkbox.
@@ -91,6 +94,7 @@ by server-side triggers (see `sendApplicationReceivedEmail`).
 - Candidate/staff emails are bilingual EN + Tetun.
 
 ## Deliberately NOT emailed (decided 2026-07-17 — revisit only on request)
+
 - Payslip auto-send on payroll finalize (manual bulk send + Ekipa push cover
   it; auto would double-send)
 - Candidate kanban status drags (accidental-drag footgun — the deliberate
@@ -108,7 +112,9 @@ Email and push are complementary: push for in-app immediacy, email for the
 paper trail and staff without the app.
 
 ## Gotchas
-- **CI does NOT deploy functions** — deploy changed triggers manually.
+
+- Pushes to `main` deploy changed Functions automatically after the release
+  gates pass. Use the manual Functions workflow only for a standalone redeploy.
 - Resend sender domain is xefe.tl (verified account-level). Default from:
   `Xefe <noreply@xefe.tl>`; business sends may use `fromName`.
 - Firestore batches cap at 500 ops — the service chunks fan-outs at 400.

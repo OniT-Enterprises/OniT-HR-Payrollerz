@@ -61,6 +61,7 @@ export function PaymentStructureTab({
       bankName: '',
       accountName: '',
       accountNumber: '',
+      ledgerAccountCode: '1130',
       isActive: true,
     };
     setPayment({ ...payment, bankAccounts: [...payment.bankAccounts, newAccount] });
@@ -284,6 +285,26 @@ export function PaymentStructureTab({
                         setPayment({ ...payment, bankAccounts: updated });
                       }}
                     />
+                    <Select
+                      value={account.ledgerAccountCode || (account.purpose === 'payroll' ? '1130' : '1120')}
+                      onValueChange={(value: '1120' | '1130') => {
+                        const updated = [...payment.bankAccounts];
+                        updated[index] = { ...account, ledgerAccountCode: value };
+                        setPayment({ ...payment, bankAccounts: updated });
+                      }}
+                    >
+                      <SelectTrigger aria-label={t('settings.payment.ledgerAccount')}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1120">
+                          {t('settings.payment.ledgerOperatingBank')}
+                        </SelectItem>
+                        <SelectItem value="1130">
+                          {t('settings.payment.ledgerPayrollBank')}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               ))}

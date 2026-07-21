@@ -772,7 +772,16 @@ export default function BankReconciliation() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {tx.status === 'unmatched' && (
-                                <DropdownMenuItem onClick={() => openMatchDialog(tx)} className="cursor-pointer">
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    // Let Radix finish closing the menu before
+                                    // mounting another modal layer. Opening the
+                                    // dialog synchronously can strand its
+                                    // pointer-events lock after the dialog closes.
+                                    setTimeout(() => void openMatchDialog(tx), 0);
+                                  }}
+                                  className="cursor-pointer"
+                                >
                                   <Link2 className="h-4 w-4 mr-2 text-blue-500" />
                                   {t('money.bankRecon.match') || 'Match'}
                                 </DropdownMenuItem>

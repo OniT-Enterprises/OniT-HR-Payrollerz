@@ -47,6 +47,7 @@ export type AuditAction =
   // Payroll actions
   | "payroll.run"
   | "payroll.approve"
+  | "payroll.pay"
   | "payroll.reject"
   | "payroll.export"
   // Tax filing actions
@@ -57,6 +58,8 @@ export type AuditAction =
   | "tax.inss_filed"
   | "tax.inss_exported"
   | "tax.annual_filed"
+  | "tax.payment_recorded"
+  | "tax.form_c_preparation_updated"
   // Document actions
   | "document.upload"
   | "document.delete"
@@ -183,6 +186,7 @@ function generateDescription(
     "accounting.opening_balances_posted": `Posted opening balances${entityName ? ` for ${entityName}` : ""}`,
     "payroll.run": `Generated payroll run`,
     "payroll.approve": `Approved payroll run`,
+    "payroll.pay": `Recorded payroll payment`,
     "payroll.reject": `Rejected payroll run`,
     "payroll.export": `Exported payroll data`,
     "tax.wit_generated": `Generated WIT return${entityName ? ` for ${entityName}` : ""}`,
@@ -192,6 +196,8 @@ function generateDescription(
     "tax.inss_filed": `Filed INSS return${entityName ? ` for ${entityName}` : ""}`,
     "tax.inss_exported": `Exported INSS return`,
     "tax.annual_filed": `Filed annual WIT return`,
+    "tax.payment_recorded": `Recorded statutory payment`,
+    "tax.form_c_preparation_updated": `Updated annual income tax preparation`,
     "document.upload": `Uploaded document${entityName ? `: ${entityName}` : ""}`,
     "document.delete": `Deleted document${entityName ? `: ${entityName}` : ""}`,
     "document.expire_alert": `Document expiry alert sent`,
@@ -302,7 +308,7 @@ export const auditLogService = {
     userName?: string;
     action: Extract<
       AuditAction,
-      "payroll.run" | "payroll.approve" | "payroll.reject" | "payroll.export"
+      "payroll.run" | "payroll.approve" | "payroll.pay" | "payroll.reject" | "payroll.export"
     >;
     payrollRunId: string;
     period?: string;
@@ -333,6 +339,8 @@ export const auditLogService = {
       | "tax.inss_filed"
       | "tax.inss_exported"
       | "tax.annual_filed"
+      | "tax.payment_recorded"
+      | "tax.form_c_preparation_updated"
     >;
     filingId: string;
     period: string;

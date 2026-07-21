@@ -20,14 +20,14 @@ export type DepartureReason =
   | "other";
 
 /**
- * Cause-aware Art. 56 default (Lei 4/2012). The article's text is
+ * Legacy practice suggestion for Art. 56 review (Lei 4/2012). The article's text is
  * cause-independent ("independentemente do motivo"), but real firm practice
  * pays severance on employer-initiated endings and NEVER on resignation
  * payslips — so resignation defaults OFF (with an "employee may still be
  * entitled — confirm with your accountant" note in the UI) and every other
- * cause defaults ON. Always editable per case; the offboarding decision is
- * stamped on the employee as `severanceOnTermination` at completion, which
- * is what the payroll run honors.
+ * cause suggests ON. The production pipeline does not apply this helper as a
+ * default: a reviewer must make and acknowledge the decision, which is stamped
+ * on the employee as `severanceOnTermination` and then honored by payroll.
  *
  * "death" (Art. 47(1)(b) caducidade on the worker's death) defaults ON on the
  * statute-literal reading — the Art. 56 payment is then payable to the
@@ -274,7 +274,7 @@ export function resolveLeaverFinalPay(args: {
   includeSubsidioAnual: boolean;
   subsidioConfig?: { proRataForNewEmployees?: boolean };
   committed: { serviceCompensation: number; subsidioAnual: number };
-  /** Default true (statute-literal). False = offboarding excluded Art. 56. */
+  /** Only explicit true includes Art. 56; absence is review-blocked/safe-off. */
   severanceEntitled?: boolean;
 }): { terminationDate: string | undefined; subsidioAnual: number } {
   const {
@@ -285,7 +285,7 @@ export function resolveLeaverFinalPay(args: {
     includeSubsidioAnual,
     subsidioConfig,
     committed,
-    severanceEntitled = true,
+    severanceEntitled = false,
   } = args;
 
   if (!inPeriodTermination) {

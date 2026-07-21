@@ -6,7 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import { taxFilingService } from '@/services/taxFilingService';
 import type { TaxFilingType, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSReturn, SubmissionMethod, CompanyDetails } from '@/services/taxFilingService';
-import type { TaxFilingTask } from '@/types/tax-filing';
+import type {
+  AnnualIncomeTaxPreparation,
+  StatutoryPaymentDetails,
+  TaxFilingTask,
+} from '@/types/tax-filing';
 import type { AuditContext } from '@/services/employeeService';
 
 const taxFilingKeys = {
@@ -75,6 +79,36 @@ export function useSaveTaxFiling() {
   });
 }
 
+/** Save progress toward the externally prepared annual business income return. */
+export function useSaveAnnualIncomeTaxPreparation() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ taxYear, preparation, userId, audit }: {
+      taxYear: number;
+      preparation: Pick<
+        AnnualIncomeTaxPreparation,
+        | 'profitAndLossReady'
+        | 'balanceSheetReady'
+        | 'cashFlowReady'
+        | 'taxAdjustmentsReviewed'
+        | 'reviewNote'
+      >;
+      userId: string;
+      audit?: AuditContext;
+    }) => taxFilingService.saveAnnualIncomeTaxPreparation(
+      taxYear,
+      preparation,
+      userId,
+      tenantId,
+      audit,
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taxFilingKeys.all(tenantId) });
+    },
+  });
+}
+
 /** Mark a filing as filed */
 export function useMarkTaxFilingAsFiled() {
   const queryClient = useQueryClient();
@@ -91,6 +125,23 @@ export function useMarkTaxFilingAsFiled() {
     }) => taxFilingService.markAsFiled(filingId, method, receiptNumber, notes, userId, audit, task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taxFilingKeys.all(tenantId) });
+    },
+  });
+}
+
+/** Record a monthly WIT/INSS remittance and its clearing journal. */
+export function useRecordTaxFilingPayment() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({ filingId, payment }: {
+      filingId: string;
+      payment: StatutoryPaymentDetails;
+    }) => taxFilingService.recordPayment(filingId, payment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: taxFilingKeys.all(tenantId) });
+      queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'journalEntries'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'generalLedger'] });
     },
   });
 }

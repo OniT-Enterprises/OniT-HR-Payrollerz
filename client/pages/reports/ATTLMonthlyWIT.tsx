@@ -65,8 +65,9 @@ import {
   useTaxFilings,
   useTaxFilingsDueSoon,
   useGenerateMonthlyWIT,
-  useSaveTaxFiling,
   useMarkTaxFilingAsFiled,
+  useSaveTaxFiling,
+  useRecordTaxFilingPayment,
 } from "@/hooks/useTaxFiling";
 
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
@@ -75,6 +76,7 @@ import type {
   TaxFiling,
   SubmissionMethod,
   TaxFilingStatus,
+  TaxFilingTask,
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
@@ -84,6 +86,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { downloadBlob } from "@/lib/downloadBlob";
 import { SupplierWithholdingRemittancePanel } from "@/components/reports/SupplierWithholdingRemittancePanel";
+import { getTodayTL } from "@/lib/dateUtils";
+import {
+  getDaysUntilDueIso,
+  resolveMonthlyWITTaskStatuses,
+} from "@/lib/tax/compliance";
 
 // ============================================
 // COMPONENT
@@ -105,6 +112,7 @@ export default function ATTLMonthlyWIT() {
   const generateWIT = useGenerateMonthlyWIT();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
+  const recordPayment = useRecordTaxFilingPayment();
 
   const company: Partial<CompanyDetails> = settings?.companyDetails || {};
   const dueDates = useMemo(
@@ -119,6 +127,7 @@ export default function ATTLMonthlyWIT() {
   );
   const [showMarkFiledDialog, setShowMarkFiledDialog] = useState(false);
   const [selectedFilingId, setSelectedFilingId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaxFilingTask>("statement");
 
   // Form state for period selection
   const currentDate = new Date();
@@ -139,6 +148,15 @@ export default function ATTLMonthlyWIT() {
   const [filedMethod, setFiledMethod] = useState<SubmissionMethod>("etax");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
+  const [paymentDate, setPaymentDate] = useState(getTodayTL());
+  const [paymentAccountId, setPaymentAccountId] = useState("");
+  const paymentAccounts = useMemo(
+    () =>
+      (settings?.paymentStructure?.bankAccounts ?? []).filter(
+        (account) => account.isActive && Boolean(account.accountNumber?.trim()),
+      ),
+    [settings],
+  );
 
   const months = useMemo(
     () =>
@@ -191,6 +209,15 @@ export default function ATTLMonthlyWIT() {
         };
     }
   };
+
+  const getTaskStatuses = (filing: TaxFiling) =>
+    resolveMonthlyWITTaskStatuses({
+      ...filing,
+      daysUntilDue: getDaysUntilDueIso(
+        getTodayTL(),
+        filing.paymentDueDate || filing.dueDate,
+      ),
+    });
 
   // Preload PDF/Excel modules so downloads resolve instantly from cache
   const preloaded = useRef(false);
@@ -281,9 +308,15 @@ export default function ATTLMonthlyWIT() {
     // single-column rows; the table is a ragged block below them.
     const csvContent = Papa.unparse(
       [
-        [`${t("reports.attlMonthlyWit.csv.employer")}: ${selectedReturn.employerName}`],
-        [`${t("reports.attlMonthlyWit.csv.tinLabel")}: ${selectedReturn.employerTIN}`],
-        [`${t("reports.attlMonthlyWit.csv.period")}: ${selectedReturn.reportingPeriod}`],
+        [
+          `${t("reports.attlMonthlyWit.csv.employer")}: ${selectedReturn.employerName}`,
+        ],
+        [
+          `${t("reports.attlMonthlyWit.csv.tinLabel")}: ${selectedReturn.employerTIN}`,
+        ],
+        [
+          `${t("reports.attlMonthlyWit.csv.period")}: ${selectedReturn.reportingPeriod}`,
+        ],
         [],
         headers,
         ...rows,
@@ -456,11 +489,12 @@ export default function ATTLMonthlyWIT() {
       const sector = settings?.companyStructure?.businessSector;
       if (isTLServicesTaxLiableSector(sector)) {
         const { invoiceService } = await import("@/services/invoiceService");
-        const receiptsTotal = await invoiceService.getPaidInvoiceTotalByDateRange(
-          tenantId,
-          periodStart,
-          periodEnd,
-        );
+        const receiptsTotal =
+          await invoiceService.getPaidInvoiceTotalByDateRange(
+            tenantId,
+            periodStart,
+            periodEnd,
+          );
         const designated = mapSectorReceiptsToDesignatedServices(
           sector,
           receiptsTotal,
@@ -505,13 +539,50 @@ export default function ATTLMonthlyWIT() {
     if (!selectedFilingId) return;
 
     try {
-      await markFiled.mutateAsync({
-        filingId: selectedFilingId,
-        method: filedMethod,
-        receiptNumber: receiptNumber || "",
-        notes: filedNotes || "",
-        userId: user?.uid,
-      });
+      const filing = filings.find((item) => item.id === selectedFilingId);
+      if (!filing) throw new Error("Tax filing not found");
+      if (selectedTask === "payment") {
+        const bankAccount = paymentAccounts.find(
+          (account) => account.id === paymentAccountId,
+        );
+        const isCash = paymentAccountId === "cash";
+        await recordPayment.mutateAsync({
+          filingId: selectedFilingId,
+          payment: {
+            paymentDate,
+            paymentReference: receiptNumber,
+            paymentMethod: isCash ? "cash" : "bank_transfer",
+            paymentAccountCode: isCash
+              ? "1110"
+              : bankAccount?.ledgerAccountCode || "1120",
+            bankAccountId: bankAccount?.id,
+            bankAccountName: bankAccount
+              ? `${bankAccount.accountName} - ${bankAccount.bankName}`
+              : undefined,
+            paidBy: user?.uid || "",
+            notes: filedNotes,
+            audit: {
+              tenantId,
+              userId: user?.uid || "",
+              userEmail: user?.email || "",
+            },
+          },
+        });
+      } else {
+        await markFiled.mutateAsync({
+          filingId: selectedFilingId,
+          method: filedMethod,
+          receiptNumber,
+          notes: filedNotes,
+          userId: user?.uid || "",
+          task: "statement",
+          audit: {
+            tenantId,
+            userId: user?.uid || "",
+            userEmail: user?.email || "",
+          },
+        });
+      }
 
       setShowMarkFiledDialog(false);
       setSelectedFilingId(null);
@@ -519,8 +590,16 @@ export default function ATTLMonthlyWIT() {
       setFiledNotes("");
 
       toast({
-        title: t("reports.attlMonthlyWit.toast.filedTitle"),
-        description: t("reports.attlMonthlyWit.toast.filedDescription"),
+        title: t(
+          selectedTask === "payment"
+            ? "reports.attlMonthlyWit.toast.paymentTitle"
+            : "reports.attlMonthlyWit.toast.filedTitle",
+        ),
+        description: t(
+          selectedTask === "payment"
+            ? "reports.attlMonthlyWit.toast.paymentDescription"
+            : "reports.attlMonthlyWit.toast.filedDescription",
+        ),
       });
     } catch (error) {
       console.error("Failed to mark as filed:", error);
@@ -532,10 +611,23 @@ export default function ATTLMonthlyWIT() {
     }
   };
 
-  const openMarkFiledDialog = (filingId: string) => {
+  const openMarkFiledDialog = (filingId: string, task: TaxFilingTask) => {
     setSelectedFilingId(filingId);
+    setSelectedTask(task);
+    setReceiptNumber("");
+    setFiledNotes("");
+    if (task === "payment") {
+      const preferred =
+        paymentAccounts.find((account) => account.purpose === "tax") ||
+        paymentAccounts.find((account) => account.purpose === "general") ||
+        paymentAccounts[0];
+      setPaymentAccountId(preferred?.id || "cash");
+      setPaymentDate(getTodayTL());
+    }
     setShowMarkFiledDialog(true);
   };
+
+  const selectedFiling = filings.find((item) => item.id === selectedFilingId);
 
   // ============================================
   // COMPUTED VALUES
@@ -714,10 +806,15 @@ export default function ATTLMonthlyWIT() {
                     {t("reports.attlMonthlyWit.alerts.overdueTitle")}
                   </p>
                   <p className="text-sm text-red-600 dark:text-red-400">
-                    {t("reports.attlMonthlyWit.alerts.overdueDescription", {
-                      period: formatPeriodLabel(overdueFiling.period),
-                      dueDate: overdueFiling.dueDate,
-                    })}
+                    {t(
+                      overdueFiling.task === "payment"
+                        ? "reports.attlMonthlyWit.alerts.paymentOverdueDescription"
+                        : "reports.attlMonthlyWit.alerts.overdueDescription",
+                      {
+                        period: formatPeriodLabel(overdueFiling.period),
+                        dueDate: overdueFiling.dueDate,
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -735,11 +832,16 @@ export default function ATTLMonthlyWIT() {
                     {t("reports.attlMonthlyWit.alerts.upcomingTitle")}
                   </p>
                   <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                    {t("reports.attlMonthlyWit.alerts.upcomingDescription", {
-                      period: formatPeriodLabel(upcomingDue.period),
-                      dueDate: upcomingDue.dueDate,
-                      days: upcomingDue.daysUntilDue,
-                    })}
+                    {t(
+                      upcomingDue.task === "payment"
+                        ? "reports.attlMonthlyWit.alerts.paymentUpcomingDescription"
+                        : "reports.attlMonthlyWit.alerts.upcomingDescription",
+                      {
+                        period: formatPeriodLabel(upcomingDue.period),
+                        dueDate: upcomingDue.dueDate,
+                        days: upcomingDue.daysUntilDue,
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -761,9 +863,11 @@ export default function ATTLMonthlyWIT() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label>{t("reports.attlMonthlyWit.generate.year")}</Label>
+                  <Label htmlFor="wit-report-year">
+                    {t("reports.attlMonthlyWit.generate.year")}
+                  </Label>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger>
+                    <SelectTrigger id="wit-report-year">
                       <SelectValue
                         placeholder={t(
                           "reports.attlMonthlyWit.generate.selectYear",
@@ -780,12 +884,14 @@ export default function ATTLMonthlyWIT() {
                   </Select>
                 </div>
                 <div>
-                  <Label>{t("reports.attlMonthlyWit.generate.month")}</Label>
+                  <Label htmlFor="wit-report-month">
+                    {t("reports.attlMonthlyWit.generate.month")}
+                  </Label>
                   <Select
                     value={selectedMonth}
                     onValueChange={setSelectedMonth}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="wit-report-month">
                       <SelectValue
                         placeholder={t(
                           "reports.attlMonthlyWit.generate.selectMonth",
@@ -1202,8 +1308,11 @@ export default function ATTLMonthlyWIT() {
                 </Card>
               ) : (
                 filings.map((filing) => {
-                  const statusConfig = getStatusConfig(filing.status);
+                  const taskStatuses = getTaskStatuses(filing);
+                  const statusConfig = getStatusConfig(taskStatuses.statement);
+                  const paymentConfig = getStatusConfig(taskStatuses.payment);
                   const StatusIcon = statusConfig.icon;
+                  const PaymentIcon = paymentConfig.icon;
 
                   return (
                     <Card key={filing.id}>
@@ -1218,10 +1327,22 @@ export default function ATTLMonthlyWIT() {
                               {filing.dueDate}
                             </p>
                           </div>
-                          <Badge className={statusConfig.className}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {statusConfig.label}
-                          </Badge>
+                          <div className="space-y-1 text-right">
+                            <Badge className={statusConfig.className}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {t("reports.attlMonthlyWit.history.returnStatus")}
+                              : {statusConfig.label}
+                            </Badge>
+                            <div>
+                              <Badge className={paymentConfig.className}>
+                                <PaymentIcon className="h-3 w-3 mr-1" />
+                                {t(
+                                  "reports.attlMonthlyWit.history.paymentStatus",
+                                )}
+                                : {paymentConfig.label}
+                              </Badge>
+                            </div>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
@@ -1251,13 +1372,28 @@ export default function ATTLMonthlyWIT() {
                           >
                             {t("reports.attlMonthlyWit.actions.view")}
                           </Button>
-                          {filing.status !== "filed" && (
+                          {taskStatuses.statement !== "filed" && (
                             <Button
                               variant="secondary"
                               size="sm"
-                              onClick={() => openMarkFiledDialog(filing.id)}
+                              onClick={() =>
+                                openMarkFiledDialog(filing.id, "statement")
+                              }
                             >
                               {t("reports.attlMonthlyWit.actions.markFiled")}
+                            </Button>
+                          )}
+                          {taskStatuses.payment !== "filed" && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                openMarkFiledDialog(filing.id, "payment")
+                              }
+                            >
+                              {t(
+                                "reports.attlMonthlyWit.actions.recordPayment",
+                              )}
                             </Button>
                           )}
                         </div>
@@ -1307,8 +1443,15 @@ export default function ATTLMonthlyWIT() {
                     </TableRow>
                   ) : (
                     filings.map((filing) => {
-                      const statusConfig = getStatusConfig(filing.status);
+                      const taskStatuses = getTaskStatuses(filing);
+                      const statusConfig = getStatusConfig(
+                        taskStatuses.statement,
+                      );
+                      const paymentConfig = getStatusConfig(
+                        taskStatuses.payment,
+                      );
                       const StatusIcon = statusConfig.icon;
+                      const PaymentIcon = paymentConfig.icon;
 
                       return (
                         <TableRow key={filing.id}>
@@ -1317,10 +1460,24 @@ export default function ATTLMonthlyWIT() {
                           </TableCell>
                           <TableCell>{filing.dueDate}</TableCell>
                           <TableCell>
-                            <Badge className={statusConfig.className}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {statusConfig.label}
-                            </Badge>
+                            <div className="space-y-1">
+                              <Badge className={statusConfig.className}>
+                                <StatusIcon className="h-3 w-3 mr-1" />
+                                {t(
+                                  "reports.attlMonthlyWit.history.returnStatus",
+                                )}
+                                : {statusConfig.label}
+                              </Badge>
+                              <div>
+                                <Badge className={paymentConfig.className}>
+                                  <PaymentIcon className="h-3 w-3 mr-1" />
+                                  {t(
+                                    "reports.attlMonthlyWit.history.paymentStatus",
+                                  )}
+                                  : {paymentConfig.label}
+                                </Badge>
+                              </div>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             {formatCurrencyTL(filing.totalWages)}
@@ -1340,14 +1497,29 @@ export default function ATTLMonthlyWIT() {
                               >
                                 {t("reports.attlMonthlyWit.actions.view")}
                               </Button>
-                              {filing.status !== "filed" && (
+                              {taskStatuses.statement !== "filed" && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => openMarkFiledDialog(filing.id)}
+                                  onClick={() =>
+                                    openMarkFiledDialog(filing.id, "statement")
+                                  }
                                 >
                                   {t(
                                     "reports.attlMonthlyWit.actions.markFiled",
+                                  )}
+                                </Button>
+                              )}
+                              {taskStatuses.payment !== "filed" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    openMarkFiledDialog(filing.id, "payment")
+                                  }
+                                >
+                                  {t(
+                                    "reports.attlMonthlyWit.actions.recordPayment",
                                   )}
                                 </Button>
                               )}
@@ -1406,45 +1578,105 @@ export default function ATTLMonthlyWIT() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {t("reports.attlMonthlyWit.markFiled.title")}
+              {t(
+                selectedTask === "payment"
+                  ? "reports.attlMonthlyWit.markFiled.paymentTitle"
+                  : "reports.attlMonthlyWit.markFiled.title",
+              )}
             </DialogTitle>
             <DialogDescription>
-              {t("reports.attlMonthlyWit.markFiled.description")}
+              {t(
+                selectedTask === "payment"
+                  ? "reports.attlMonthlyWit.markFiled.paymentDescription"
+                  : "reports.attlMonthlyWit.markFiled.description",
+              )}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <div>
-              <Label>
-                {t("reports.attlMonthlyWit.markFiled.submissionMethod")}
-              </Label>
-              <Select
-                value={filedMethod}
-                onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={t(
-                      "reports.attlMonthlyWit.markFiled.selectMethod",
-                    )}
+            {selectedTask === "statement" && (
+              <div>
+                <Label htmlFor="wit-submission-method">
+                  {t("reports.attlMonthlyWit.markFiled.submissionMethod")}
+                </Label>
+                <Select
+                  value={filedMethod}
+                  onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}
+                >
+                  <SelectTrigger id="wit-submission-method">
+                    <SelectValue
+                      placeholder={t(
+                        "reports.attlMonthlyWit.markFiled.selectMethod",
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="etax">
+                      {t("reports.attlMonthlyWit.markFiled.etax")}
+                    </SelectItem>
+                    <SelectItem value="bnu_paper">
+                      {t("reports.attlMonthlyWit.markFiled.bnu")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedTask === "payment" && (
+              <>
+                <div>
+                  <Label htmlFor="wit-payment-date">
+                    {t("reports.attlMonthlyWit.markFiled.paymentDate")}
+                  </Label>
+                  <Input
+                    id="wit-payment-date"
+                    type="date"
+                    value={paymentDate}
+                    onChange={(event) => setPaymentDate(event.target.value)}
                   />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="etax">
-                    {t("reports.attlMonthlyWit.markFiled.etax")}
-                  </SelectItem>
-                  <SelectItem value="bnu_paper">
-                    {t("reports.attlMonthlyWit.markFiled.bnu")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="wit-payment-account">
+                    {t("reports.attlMonthlyWit.markFiled.paymentAccount")}
+                  </Label>
+                  <Select
+                    value={paymentAccountId}
+                    onValueChange={setPaymentAccountId}
+                  >
+                    <SelectTrigger id="wit-payment-account">
+                      <SelectValue
+                        placeholder={t(
+                          "reports.attlMonthlyWit.markFiled.selectPaymentAccount",
+                        )}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentAccounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.accountName} - {account.bankName} ****
+                          {account.accountNumber.slice(-4)}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="cash">
+                        {t("reports.attlMonthlyWit.markFiled.cashOnHand")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
 
             <div>
-              <Label>
-                {t("reports.attlMonthlyWit.markFiled.receiptLabel")}
+              <Label htmlFor="wit-receipt-reference">
+                {t(
+                  selectedTask === "payment"
+                    ? "reports.attlMonthlyWit.markFiled.paymentReferenceLabel"
+                    : "reports.attlMonthlyWit.markFiled.receiptLabel",
+                )}
               </Label>
               <Input
+                id="wit-receipt-reference"
                 placeholder={t(
                   "reports.attlMonthlyWit.markFiled.receiptPlaceholder",
                 )}
@@ -1454,8 +1686,11 @@ export default function ATTLMonthlyWIT() {
             </div>
 
             <div>
-              <Label>{t("reports.attlMonthlyWit.markFiled.notesLabel")}</Label>
+              <Label htmlFor="wit-filing-notes">
+                {t("reports.attlMonthlyWit.markFiled.notesLabel")}
+              </Label>
               <Textarea
+                id="wit-filing-notes"
                 placeholder={t(
                   "reports.attlMonthlyWit.markFiled.notesPlaceholder",
                 )}
@@ -1473,9 +1708,24 @@ export default function ATTLMonthlyWIT() {
             >
               {t("reports.attlMonthlyWit.markFiled.cancel")}
             </Button>
-            <Button onClick={handleMarkAsFiled}>
+            <Button
+              onClick={handleMarkAsFiled}
+              disabled={
+                markFiled.isPending ||
+                recordPayment.isPending ||
+                (selectedTask === "payment" &&
+                  (!paymentDate ||
+                    !paymentAccountId ||
+                    ((selectedFiling?.totalWITWithheld || 0) > 0 &&
+                      !receiptNumber.trim())))
+              }
+            >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {t("reports.attlMonthlyWit.markFiled.confirm")}
+              {t(
+                selectedTask === "payment"
+                  ? "reports.attlMonthlyWit.markFiled.confirmPayment"
+                  : "reports.attlMonthlyWit.markFiled.confirm",
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -99,17 +99,23 @@ const JOURNAL_SOURCE_OPTIONS: Array<{
   labelKey: string;
 }> = [
   { value: "payroll", labelKey: "accounting.journalEntries.sourcePayroll" },
+  { value: "payroll_payment", labelKey: "accounting.journalEntries.sourcePayrollPayment" },
   { value: "manual", labelKey: "accounting.journalEntries.sourceManual" },
   { value: "opening", labelKey: "accounting.journalEntries.sourceOpening" },
   { value: "invoice", labelKey: "accounting.journalEntries.sourceInvoice" },
   { value: "bill", labelKey: "accounting.journalEntries.sourceBill" },
   { value: "payment", labelKey: "accounting.journalEntries.sourcePayment" },
+  { value: "tax_payment", labelKey: "accounting.journalEntries.sourceTaxPayment" },
   { value: "receipt", labelKey: "accounting.journalEntries.sourceReceipt" },
   {
     value: "adjustment",
     labelKey: "accounting.journalEntries.sourceAdjustment",
   },
   { value: "recurring", labelKey: "accounting.journalEntries.sourceRecurring" },
+  {
+    value: "fixed_asset_acquisition",
+    labelKey: "accounting.journalEntries.sourceFixedAssetAcquisition",
+  },
   {
     value: "depreciation",
     labelKey: "accounting.journalEntries.sourceDepreciation",
@@ -372,6 +378,8 @@ export default function JournalEntries() {
       manual: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
       payroll:
         "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      payroll_payment:
+        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
       invoice:
         "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
       adjustment:
@@ -382,6 +390,8 @@ export default function JournalEntries() {
         "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
       depreciation:
         "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
+      fixed_asset_acquisition:
+        "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
       expense: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
       revenue:
         "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
@@ -389,11 +399,14 @@ export default function JournalEntries() {
         "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
       payment:
         "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+      tax_payment:
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
     };
 
     const sourceLabels: Record<string, string> = {
       manual: t("accounting.journalEntries.sourceManual"),
       payroll: t("accounting.journalEntries.sourcePayroll"),
+      payroll_payment: t("accounting.journalEntries.sourcePayrollPayment"),
       invoice: t("accounting.journalEntries.sourceInvoice"),
       adjustment: t("accounting.journalEntries.sourceAdjustment"),
       opening: t("accounting.journalEntries.sourceOpening"),
@@ -401,8 +414,10 @@ export default function JournalEntries() {
       revenue: t("accounting.journalEntries.sourceRevenue"),
       receipt: t("accounting.journalEntries.sourceReceipt"),
       payment: t("accounting.journalEntries.sourcePayment"),
+      tax_payment: t("accounting.journalEntries.sourceTaxPayment"),
       recurring: t("accounting.journalEntries.sourceRecurring"),
       depreciation: t("accounting.journalEntries.sourceDepreciation"),
+      fixed_asset_acquisition: t("accounting.journalEntries.sourceFixedAssetAcquisition"),
     };
 
     return (

@@ -66,7 +66,10 @@ export interface TaxablePayrollRecord extends TLStatutoryPayrollRecord {
 export interface StatutoryEmployeeMaster {
   id?: string;
   personalInfo: { firstName: string; lastName: string };
-  documents?: { socialSecurityNumber?: { number?: string } };
+  documents?: {
+    socialSecurityNumber?: { number?: string };
+    taxIdentificationNumber?: { number?: string };
+  };
   jobDetails?: { hireDate?: string };
   status?: string;
   terminationDate?: string;
@@ -163,7 +166,7 @@ export function buildMonthlyWITReturn(
     employeeRecords.push({
       employeeId: employee.id!,
       fullName: `${requireStatutoryText(employee.personalInfo.firstName, 'employee first name')} ${requireStatutoryText(employee.personalInfo.lastName, 'employee last name')}`,
-      tinNumber: undefined, // TL employees typically don't have individual TINs
+      tinNumber: employee.documents?.taxIdentificationNumber?.number?.trim() || undefined,
       isResident,
       grossWages: roundMoney(grossWages),
       taxableWages,
@@ -369,8 +372,7 @@ export function buildMonthlyINSSReturn(
       contractDays,
       unjustifiedAbsenceDays,
       parentalLeaveDays,
-      // Worker NIF/TIN: the employee master carries no TIN field, so the DR
-      // column stays blank rather than inventing a value.
+      tinNumber: employee.documents?.taxIdentificationNumber?.number?.trim() || undefined,
     });
 
     totalContributionBase = addMoney(totalContributionBase, contributionBase);

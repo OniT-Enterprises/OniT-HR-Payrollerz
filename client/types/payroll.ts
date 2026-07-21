@@ -74,6 +74,14 @@ export interface PayrollRun {
   approvedBy?: string;
   approvedAt?: FirestoreTimestamp;
   paidAt?: FirestoreTimestamp;
+  paidBy?: string;
+  paymentDate?: string;
+  paymentReference?: string;
+  paymentMethod?: 'bank_transfer' | 'cash';
+  paymentAccountCode?: string;
+  paymentBankAccountId?: string;
+  paymentBankAccountName?: string;
+  bankTransferId?: string;
 
   // Rejection tracking
   rejectedBy?: string;
@@ -85,6 +93,7 @@ export interface PayrollRun {
 
   // Accounting linkage (optional)
   journalEntryId?: string;
+  settlementJournalEntryId?: string;
 
   // Batch write tracking — used to detect/repair interrupted multi-batch writes
   expectedRecordCount?: number;
@@ -279,6 +288,7 @@ export interface BankTransfer {
   notes?: string;
   errorMessage?: string;
   completedAt?: FirestoreTimestamp;
+  settlementJournalEntryId?: string;
   createdAt?: FirestoreTimestamp;
   updatedAt?: FirestoreTimestamp;
 }

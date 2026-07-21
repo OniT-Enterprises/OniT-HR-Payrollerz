@@ -360,8 +360,10 @@ export function BankMatchDialog({
             </div>
             {t('money.bankRecon.matchTransaction') || 'Match Transaction'}
           </DialogTitle>
-          <DialogDescription>
-            {transaction && <TransactionSummary transaction={transaction} formatCurrency={formatCurrency} />}
+          <DialogDescription asChild>
+            <div>
+              {transaction && <TransactionSummary transaction={transaction} formatCurrency={formatCurrency} />}
+            </div>
           </DialogDescription>
         </DialogHeader>
         {confirmOption && confirmDecision && confirmDecision.kind !== 'blocked' ? (

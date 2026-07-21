@@ -35,14 +35,15 @@ fields, plus a branding subset of InvoiceSettings and `pdfUrl`.
 
 Written client-side by tenant admins via `invoiceService`:
 
-| Method | When |
-|---|---|
+| Method                                          | When                                                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `ensureShareLink(tenantId, invoice, settings?)` | markAsSent, Share/WhatsApp/Copy actions, reminder + receipt emails — creates or refreshes the doc, returns `{token, url}` |
-| `syncPublicLink(tenantId, invoiceId)` | after recordPayment, cancelInvoice, updateInvoiceTemplate — refresh-if-exists, never fails the parent action |
-| `regenerateShareLink(tenantId, invoiceId)` | "Reset link" UI — deletes the old doc (old URL dies instantly), new token, new doc |
+| `syncPublicLink(tenantId, invoiceId)`           | after recordPayment, cancelInvoice, updateInvoiceTemplate — refresh-if-exists, never fails the parent action              |
+| `regenerateShareLink(tenantId, invoiceId)`      | "Reset link" UI — deletes the old doc (old URL dies instantly), new token, new doc                                        |
 
 **Firestore rules** (`firestore.rules`, tested in
 `tests/rules/invoice-links.test.ts` — 19 tests):
+
 - Public `get` only when `revoked == false`; **`resource == null` must stay
   allowed** or ensureShareLink's existence check is denied and links can
   never be created (learned in prod).
@@ -80,11 +81,11 @@ needs the gcloud grant. See the comment at the top of `storage.rules`.
 
 ## Emails (see docs/EMAIL_NOTIFICATIONS.md for the pipeline)
 
-| Email | purpose | Contents |
-|---|---|---|
-| Invoice send (first send only, needs customerEmail) | `invoice` | full HTML invoice + "View invoice online" button + frozen PDF attached |
-| Payment reminder (manual) | `invoice-reminder` | summary + hosted-page button |
-| Receipt (auto when fully paid) | `receipt` | amount received, PAID banner, "View receipt online" |
+| Email                                               | purpose            | Contents                                                               |
+| --------------------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| Invoice send (first send only, needs customerEmail) | `invoice`          | full HTML invoice + "View invoice online" button + frozen PDF attached |
+| Payment reminder (manual)                           | `invoice-reminder` | summary + hosted-page button                                           |
+| Receipt (auto when fully paid)                      | `receipt`          | amount received, PAID banner, "View receipt online"                    |
 
 All send as **"{Business} via Xefe <invoices@xefe.tl>"** (`fromName` on the
 mail doc), reply-to = the business's own email. Email failures never fail
@@ -107,8 +108,9 @@ trusted than any automated sender, zero infra.
 
 ## Gotchas / known gaps
 
-- **Functions deploys are manual** (`firebase deploy --only functions
-  --project onit-hr-payroll`) — CI never deploys them.
+- Pushes to `main` deploy Functions automatically, before the client, after the
+  release gates pass. The **Deploy Cloud Functions (manual)** GitHub workflow is
+  the supported standalone recovery/redeploy path.
 - `PUBLIC_BASE_URL` is `https://xefe.tl` in prod builds, window origin in
   dev (client/lib/publicInvoice.ts).
 - "Open customer page" / WhatsApp call `window.open` after an await —

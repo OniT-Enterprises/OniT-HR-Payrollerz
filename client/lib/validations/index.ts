@@ -44,6 +44,9 @@ export const firestoreEmployeeSchema = z.object({
     position: z.string().default(''),
     hireDate: z.string().default(''),
     employmentType: z.string().default('Full-time'),
+    contractedWeeklyHours: z.number().positive().max(44).optional(),
+    minimumWageTreatment: z.enum(['full_floor', 'pro_rata', 'reviewed_exception']).optional(),
+    minimumWageReviewNote: z.string().optional(),
     workLocation: z.string().default(''),
     manager: z.string().default(''),
     fundingSource: z.string().optional(),
@@ -87,6 +90,11 @@ export const firestoreEmployeeSchema = z.object({
       expiryDate: z.string().default(''),
       required: z.boolean().default(true),
     }).default({ number: '', expiryDate: '', required: true }),
+    taxIdentificationNumber: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).optional(),
     electoralCard: z.object({
       number: z.string().default(''),
       expiryDate: z.string().default(''),
@@ -256,6 +264,9 @@ export const addEmployeeFormSchema = z.object({
   contractEndDate: z.string().optional().or(z.literal('')),
   probationEndDate: z.string().optional().or(z.literal('')),
   fixedTermMotive: z.string().optional().or(z.literal('')),
+  contractedWeeklyHours: z.string().optional().or(z.literal('')),
+  minimumWageTreatment: z.enum(['full_floor', 'pro_rata', 'reviewed_exception']).optional(),
+  minimumWageReviewNote: z.string().max(500).optional().or(z.literal('')),
 
   // Step 3: Compensation
   salary: z.string().optional().or(z.literal('')),
@@ -267,14 +278,43 @@ export const addEmployeeFormSchema = z.object({
   // Lei 4/2012 Art. 68 — minimum working age is 15. Hard block when a date of
   // birth is provided and the person would be under 15 at the hire date
   // (falls back to today while the start date is still empty).
-  if (!data.dateOfBirth) return;
-  const age = ageAt(data.dateOfBirth, data.startDate || new Date());
-  if (age !== null && age < MINIMUM_WORKING_AGE) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['dateOfBirth'],
-      message: `Labour Law Art. 68: minimum working age is 15 (age at hire date: ${age})`,
-    });
+  if (data.dateOfBirth) {
+    const age = ageAt(data.dateOfBirth, data.startDate || new Date());
+    if (age !== null && age < MINIMUM_WORKING_AGE) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['dateOfBirth'],
+        message: `Labour Law Art. 68: minimum working age is 15 (age at hire date: ${age})`,
+      });
+    }
+  }
+
+  if (data.employmentType === 'Part-time') {
+    const weeklyHours = Number(data.contractedWeeklyHours);
+    if (!data.contractedWeeklyHours || !Number.isFinite(weeklyHours) || weeklyHours <= 0 || weeklyHours > 44) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['contractedWeeklyHours'],
+        message: 'Part-time contracted hours must be between 1 and 44 per week',
+      });
+    }
+    if (!data.minimumWageTreatment) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['minimumWageTreatment'],
+        message: 'Choose how the minimum-wage check applies to this part-time contract',
+      });
+    }
+    if (
+      data.minimumWageTreatment === 'reviewed_exception'
+      && !data.minimumWageReviewNote?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['minimumWageReviewNote'],
+        message: 'Record the accountant or legal review supporting this exception',
+      });
+    }
   }
 });
 
@@ -406,6 +446,7 @@ export const companyDetailsFormSchema = z.object({
   tradingName: z.string().optional().or(z.literal('')),
   businessType: z.enum(['SA', 'Lda', 'Unipessoal', 'ENIN', 'NGO', 'Government', 'Other']).default('Lda'),
   tinNumber: z.string().max(50).optional().or(z.literal('')),
+  employerNiss: z.string().max(50).optional().or(z.literal('')),
   registeredAddress: z.string().max(500).optional().or(z.literal('')),
   city: z.string().max(100).default('Dili'),
   country: z.string().max(100).default('Timor-Leste'),

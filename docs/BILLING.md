@@ -22,9 +22,9 @@ write it.
 of truth, mirrored by `tenantHasActiveSubscription()` in `firestore.rules`
 (keep the two in sync). Two ways to qualify:
 
-| Path | Condition |
-|---|---|
-| **Stripe** | `stripeSubscriptionId` set (webhook-managed) AND `subscriptionPaidUntil` (when present) not in the past |
+| Path                              | Condition                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Stripe**                        | `stripeSubscriptionId` set (webhook-managed) AND `subscriptionPaidUntil` (when present) not in the past      |
 | **Manual** (bank transfer / cash) | `manualSubscription == true` AND an **unexpired** `subscriptionPaidUntil` — manual subs are never open-ended |
 
 ## Enforcement (two layers)
@@ -103,13 +103,13 @@ superadmins set those fields.
      sub can't overwrite the live one after a re-subscribe) unless the stored
      id is empty (first activation / post-revert re-subscribe) or a
      `checkout.session.completed` is activating the newer subscription.
-  `createCheckoutSession` **self-heals**: before the "already subscribed" guard it
-  verifies a stored `stripeSubscriptionId` against Stripe and clears it ONLY on
-  Stripe's say-so — `resource_missing` or a live non-blocking status. Any other
-  Stripe error (outage/auth/rate limit) fails the checkout with `unavailable`
-  instead of reverting a possibly-paying tenant, and the self-heal revert never
-  touches the `pendingCheckout` lock (a concurrent checkout call may have just
-  claimed it).
+     `createCheckoutSession` **self-heals**: before the "already subscribed" guard it
+     verifies a stored `stripeSubscriptionId` against Stripe and clears it ONLY on
+     Stripe's say-so — `resource_missing` or a live non-blocking status. Any other
+     Stripe error (outage/auth/rate limit) fails the checkout with `unavailable`
+     instead of reverting a possibly-paying tenant, and the self-heal revert never
+     touches the `pendingCheckout` lock (a concurrent checkout call may have just
+     claimed it).
 - `syncSubscriptionQuantities` (daily 03:00 Dili): true-up — sets each Stripe
   subscription to the current billed-seat count. Monthly changes apply on the
   next invoice without part-month charges. Added annual seats are prorated and
@@ -147,8 +147,10 @@ double billing during payment-method changes.
 
 ## Gotchas
 
-- **CI does NOT deploy Cloud Functions** — every billing function change
-  needs `firebase deploy --only functions:<name> --project onit-hr-payroll`.
+- Pushes to `main` deploy Cloud Functions automatically after E2E, unit, rules,
+  translation, and build gates pass. For an intentional standalone redeploy,
+  run the **Deploy Cloud Functions (manual)** GitHub workflow; do not depend on
+  a developer laptop's Firebase login.
 - Stripe Dashboard public details (business name, statement descriptor,
   branding) are dashboard-only settings — keep them "Xefe"/"XEFE.TL".
 - The Stripe billing account currency and several vendor billing addresses

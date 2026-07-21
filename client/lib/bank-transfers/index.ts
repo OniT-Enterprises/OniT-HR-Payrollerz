@@ -3,16 +3,31 @@
  * Generates bank-specific payment files for bulk salary transfers
  */
 
-import { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
-import { PayrollRecord, PayrollRun } from '@/types/payroll';
-import { Employee } from '@/services/employeeService';
-import { generateBNUFile } from './bnu-format';
-import { generateMandiriFile } from './mandiri-format';
-import { generateANZFile } from './anz-format';
-import { generateBNCTLFile } from './bnctl-format';
-import { sumMoney } from '@/lib/currency';
+import { TLPayrollRun, TLPayrollRecord } from "@/types/payroll-tl";
+import { PayrollRecord, PayrollRun } from "@/types/payroll";
+import { Employee } from "@/services/employeeService";
+import { generateBNUFile } from "./bnu-format";
+import { generateMandiriFile } from "./mandiri-format";
+import { generateANZFile } from "./anz-format";
+import { generateBNCTLFile } from "./bnctl-format";
+import { sumMoney } from "@/lib/currency";
 
-export type BankCode = 'BNU' | 'MANDIRI' | 'ANZ' | 'BNCTL';
+export type BankCode = "BNU" | "MANDIRI" | "ANZ" | "BNCTL";
+
+/**
+ * Evidence status for bank-facing output. Only BNU has been checked against
+ * real salary-batch documents. Keep every other format visibly best-effort
+ * until a bank/customer supplies a signed-off sample.
+ */
+export const BANK_FORMAT_CONFIDENCE: Record<
+  BankCode,
+  "verified" | "best_effort"
+> = {
+  BNU: "verified",
+  MANDIRI: "best_effort",
+  ANZ: "best_effort",
+  BNCTL: "best_effort",
+};
 
 export interface BankTransferLine {
   accountNumber: string;
@@ -49,18 +64,20 @@ interface BankTransferInput {
 }
 
 const BANK_NAMES: Record<BankCode, string> = {
-  BNU: 'Banco Nacional Ultramarino',
-  MANDIRI: 'Bank Mandiri (Timor-Leste)',
-  ANZ: 'ANZ Bank',
-  BNCTL: 'Banco Nacional de Comércio de Timor-Leste',
+  BNU: "Banco Nacional Ultramarino",
+  MANDIRI: "Bank Mandiri (Timor-Leste)",
+  ANZ: "ANZ Bank",
+  BNCTL: "Banco Nacional de Comércio de Timor-Leste",
 };
 
 function getEmployeeBankCode(employee: Employee): BankCode | null {
-  const bankName = employee.bankName?.toUpperCase() || '';
-  if (bankName.includes('BNU') || bankName.includes('ULTRAMARINO')) return 'BNU';
-  if (bankName.includes('MANDIRI')) return 'MANDIRI';
-  if (bankName.includes('ANZ')) return 'ANZ';
-  if (bankName.includes('BNCTL') || bankName.includes('COMÉRCIO')) return 'BNCTL';
+  const bankName = employee.bankName?.toUpperCase() || "";
+  if (bankName.includes("BNU") || bankName.includes("ULTRAMARINO"))
+    return "BNU";
+  if (bankName.includes("MANDIRI")) return "MANDIRI";
+  if (bankName.includes("ANZ")) return "ANZ";
+  if (bankName.includes("BNCTL") || bankName.includes("COMÉRCIO"))
+    return "BNCTL";
   return null;
 }
 
@@ -70,7 +87,9 @@ export function validateBankTransferRecords(
   employees: Employee[],
 ): void {
   const employeesById = new Map(
-    employees.flatMap((employee) => employee.id ? [[employee.id, employee] as const] : []),
+    employees.flatMap((employee) =>
+      employee.id ? [[employee.id, employee] as const] : [],
+    ),
   );
   const issues: string[] = [];
 
@@ -82,7 +101,7 @@ export function validateBankTransferRecords(
       continue;
     }
     if (!getEmployeeBankCode(employee)) {
-      issues.push(`${label}: supported bank not configured`);
+      issues.push(`${label}: recognized bank not configured`);
     }
     if (!employee.bankAccountNumber?.trim()) {
       issues.push(`${label}: bank account number missing`);
@@ -93,7 +112,9 @@ export function validateBankTransferRecords(
   }
 
   if (issues.length > 0) {
-    throw new Error(`Bank file validation failed: ${issues.slice(0, 5).join('; ')}`);
+    throw new Error(
+      `Bank file validation failed: ${issues.slice(0, 5).join("; ")}`,
+    );
   }
 }
 
@@ -104,9 +125,12 @@ type AnyPayrollRecord = TLPayrollRecord | PayrollRecord;
 
 export function groupRecordsByBank(
   records: AnyPayrollRecord[],
-  employees: Employee[]
+  employees: Employee[],
 ): Record<BankCode, Array<{ record: AnyPayrollRecord; employee: Employee }>> {
-  const groups: Record<BankCode, Array<{ record: AnyPayrollRecord; employee: Employee }>> = {
+  const groups: Record<
+    BankCode,
+    Array<{ record: AnyPayrollRecord; employee: Employee }>
+  > = {
     BNU: [],
     MANDIRI: [],
     ANZ: [],
@@ -137,11 +161,18 @@ export function groupRecordsByBank(
  */
 export function generateBankFile(
   bankCode: BankCode,
-  input: BankTransferInput
+  input: BankTransferInput,
 ): BankFileResult {
-  const { payrollRun, records, employees, valueDate, companyName, companyAccountNumber } = input;
+  const {
+    payrollRun,
+    records,
+    employees,
+    valueDate,
+    companyName,
+    companyAccountNumber,
+  } = input;
   if (!companyAccountNumber.trim()) {
-    throw new Error('Company debit account number is required');
+    throw new Error("Company debit account number is required");
   }
 
   // Filter records for this bank
@@ -155,7 +186,7 @@ export function generateBankFile(
   const lines: BankTransferLine[] = bankRecords.map(({ record, employee }) => {
     const period = formatPeriod(payrollRun.periodStart, payrollRun.periodEnd);
     return {
-      accountNumber: employee.bankAccountNumber || '',
+      accountNumber: employee.bankAccountNumber || "",
       accountName: record.employeeName,
       amount: record.netPay,
       reference: `SALARY-${period}-${record.employeeNumber || record.employeeId}`,
@@ -171,7 +202,9 @@ export function generateBankFile(
       line.amount <= 0,
   );
   if (invalidLine) {
-    throw new Error(`Invalid bank details for employee ${invalidLine.employeeId}`);
+    throw new Error(
+      `Invalid bank details for employee ${invalidLine.employeeId}`,
+    );
   }
 
   const summary: BankTransferSummary = {
@@ -186,13 +219,13 @@ export function generateBankFile(
 
   // Generate bank-specific file format
   switch (bankCode) {
-    case 'BNU':
+    case "BNU":
       return generateBNUFile(summary, companyName, companyAccountNumber);
-    case 'MANDIRI':
+    case "MANDIRI":
       return generateMandiriFile(summary, companyName, companyAccountNumber);
-    case 'ANZ':
+    case "ANZ":
       return generateANZFile(summary, companyName, companyAccountNumber);
-    case 'BNCTL':
+    case "BNCTL":
       return generateBNCTLFile(summary, companyName, companyAccountNumber);
     default:
       throw new Error(`Unknown bank code: ${bankCode}`);
@@ -205,7 +238,7 @@ export function generateBankFile(
 export function downloadBankFile(result: BankFileResult): void {
   const blob = new Blob([result.content], { type: result.mimeType });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.download = result.fileName;
   document.body.appendChild(link);
@@ -228,11 +261,11 @@ function formatPeriod(startDate: string, endDate: string): string {
   const end = new Date(endDate);
   // en-CA yields an ISO-style "YYYY-MM-DD"; slice to the "YYYY-MM" month key.
   return end
-    .toLocaleDateString('en-CA', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: 'Asia/Dili',
+    .toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      timeZone: "Asia/Dili",
     })
     .slice(0, 7);
 }
@@ -243,8 +276,8 @@ function formatPeriod(startDate: string, endDate: string): string {
 export function formatDateYYYYMMDD(dateString: string): string {
   const date = new Date(dateString);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}${month}${day}`;
 }
 
@@ -258,7 +291,12 @@ export function formatAmount(amount: number): string {
 /**
  * Pad or truncate string to fixed length
  */
-export function padString(str: string, length: number, fillChar = ' ', alignRight = false): string {
+export function padString(
+  str: string,
+  length: number,
+  fillChar = " ",
+  alignRight = false,
+): string {
   const truncated = str.substring(0, length);
   if (alignRight) {
     return truncated.padStart(length, fillChar);

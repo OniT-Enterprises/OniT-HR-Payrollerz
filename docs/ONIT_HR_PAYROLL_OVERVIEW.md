@@ -1,4 +1,5 @@
 # OniT HR/Payroll System
+
 ## Complete Platform Overview for Timor-Leste
 
 **Version:** 1.0
@@ -50,6 +51,7 @@ accountant/legal sign-off is still required for the interpretations listed in th
 The foundation of the system - managing your entire workforce from a single dashboard.
 
 #### Staff Directory
+
 - Complete employee profiles with personal details, employment history, and documents
 - Photo management and digital employee cards
 - Emergency contact information
@@ -58,6 +60,7 @@ The foundation of the system - managing your entire workforce from a single dash
 - Bulk import via CSV with intelligent column mapping
 
 #### Department Management
+
 - Hierarchical department structure
 - Department heads and reporting relationships
 - Budget allocation per department
@@ -65,6 +68,7 @@ The foundation of the system - managing your entire workforce from a single dash
 - Visual organization chart with drag-and-drop editing
 
 #### Document Management
+
 - Digital storage for employee documents
 - Automatic expiry tracking for:
   - Passports
@@ -82,23 +86,27 @@ Run a small-business hiring process without a separate ATS-style workspace for
 every stage. Jobs, applicants, and interviews stay together on one screen.
 
 #### Job Management
+
 - Create, share, close, and reopen job postings
 - Define the role, contract, location, and salary range
 - Share a public application link by WhatsApp, Facebook, or email
 
 #### Candidate Pipeline
+
 - Private CV storage; identity documents are requested only after selection
 - Clear status workflow: New → Shortlisted → Interview → Ready to hire → Hired
 - Interview scheduling and respectful applicant email updates
 - One-tap handoff from an accepted applicant to the employee form
 
 #### Onboarding
+
 - One first-day readiness checklist linked to the employee record
 - Manager assignment and company email capture
 - Contract, policy, and first-day confirmations
 - Issued-equipment recording for later recovery during offboarding
 
 #### Offboarding
+
 - Exit interview management
 - Asset return tracking
 - First-day and knowledge-transfer checklists
@@ -111,6 +119,7 @@ Focused attendance, leave, and weekly scheduling that feed payroll without a
 second timesheet-entry screen.
 
 #### Attendance
+
 - Daily attendance list with clock-in/out entry
 - Late arrival tracking
 - Early departure logging
@@ -121,6 +130,7 @@ second timesheet-entry screen.
 - Payroll-ready weekly projections
 
 #### Leave Management
+
 - Leave request submission and approval
 - Leave types:
   - Annual leave (Férias)
@@ -135,6 +145,7 @@ second timesheet-entry screen.
 - Department-scoped manager approvals
 
 #### Shift Scheduling
+
 - Simple weekly schedule grouped by day
 - Create, edit, publish, copy-week, and CSV export actions
 - Overnight-shift support
@@ -145,12 +156,14 @@ second timesheet-entry screen.
 Develop your workforce with structured goals, reviews, and training.
 
 #### Goals & OKRs
+
 - Individual and team goal setting
 - Goal alignment with company objectives
 - Progress tracking and updates
 - Goal completion analytics
 
 #### Performance Reviews
+
 - Configurable review cycles (annual, quarterly, etc.)
 - 360-degree feedback support
 - Self-assessment forms
@@ -159,6 +172,7 @@ Develop your workforce with structured goals, reviews, and training.
 - Review history and trends
 
 #### Training & Certifications
+
 - Training program management
 - Course assignment and tracking
 - Certification tracking with expiry alerts
@@ -166,6 +180,7 @@ Develop your workforce with structured goals, reviews, and training.
 - Compliance training requirements
 
 #### Disciplinary Management
+
 - Incident recording
 - Progressive discipline workflow
 - Warning letter generation
@@ -174,9 +189,11 @@ Develop your workforce with structured goals, reviews, and training.
 
 ### 5. Payroll
 
-Fully compliant payroll processing for Timor-Leste with automated tax calculations.
+Payroll processing built around reviewed core Timor-Leste rules, with explicit
+professional-review gates for exceptional legal interpretations.
 
 #### Payroll Processing
+
 - Monthly and bi-weekly pay cycles
 - Automatic calculation of:
   - Base salary
@@ -191,6 +208,7 @@ Fully compliant payroll processing for Timor-Leste with automated tax calculatio
 - Individual payroll adjustments
 
 #### Payslip Generation
+
 - PDF payslips with company branding
 - Email distribution to employees
 - Payslip portal for employee self-service
@@ -198,6 +216,7 @@ Fully compliant payroll processing for Timor-Leste with automated tax calculatio
 - Bilingual payslips (English/Tetum/Portuguese)
 
 #### Bank Transfers
+
 - Bank file generation for:
   - BNU (Banco Nacional Ultramarino)
   - BNCTL (Banco Nacional de Comércio de Timor-Leste)
@@ -208,18 +227,21 @@ Fully compliant payroll processing for Timor-Leste with automated tax calculatio
 - Mobile money integration (Telkomcel, Telemor)
 
 #### Tax Filing Support
+
 - ATTL Monthly Withholding Tax Report (Imposto sobre Rendimentos)
 - INSS Monthly Contribution Report
 - Annual tax summaries per employee
 - Export formats compatible with government systems
 
 #### Benefits Administration
+
 - Benefit plan configuration
 - Employee enrollment management
 - Benefit cost tracking
 - Dependent management
 
 #### Deductions & Advances
+
 - Salary advance management
 - Loan tracking with automatic deductions
 - Custom deduction types
@@ -230,6 +252,7 @@ Fully compliant payroll processing for Timor-Leste with automated tax calculatio
 Complete accounts receivable and payable for daily business operations.
 
 #### Customer Management
+
 - Customer database with contact details
 - Customer categories and segments
 - Credit terms per customer
@@ -237,6 +260,7 @@ Complete accounts receivable and payable for daily business operations.
 - Outstanding balance tracking
 
 #### Invoicing
+
 - Professional invoice creation
 - Customizable invoice templates
 - Line items with descriptions, quantities, prices
@@ -249,6 +273,7 @@ Complete accounts receivable and payable for daily business operations.
 - PDF generation and email delivery
 
 #### Payments Received
+
 - Payment recording against invoices
 - Payment methods:
   - Cash
@@ -259,12 +284,14 @@ Complete accounts receivable and payable for daily business operations.
 - Accounts receivable aging reports
 
 #### Vendor Management
+
 - Vendor database
 - Payment terms tracking
 - Vendor categories
 - Purchase history
 
 #### Bills & Expenses
+
 - Bill entry from vendors
 - Expense recording
 - Expense categories mapping to chart of accounts
@@ -273,6 +300,7 @@ Complete accounts receivable and payable for daily business operations.
 - Receipt attachment
 
 #### Financial Reports
+
 - Profit & Loss statement
 - Cash flow report
 - Balance sheet
@@ -284,6 +312,7 @@ Complete accounts receivable and payable for daily business operations.
 Full double-entry accounting system for formal financial management.
 
 #### Chart of Accounts
+
 - Pre-configured chart of accounts for TL businesses
 - Account categories:
   - 1xxx: Assets
@@ -295,6 +324,7 @@ Full double-entry accounting system for formal financial management.
 - Account hierarchies
 
 #### Journal Entries
+
 - Manual journal entry creation
 - Automatic entries from:
   - Invoice creation (DR: AR, CR: Revenue)
@@ -307,17 +337,20 @@ Full double-entry accounting system for formal financial management.
 - Reversing entries
 
 #### General Ledger
+
 - Complete transaction history per account
 - Date range filtering
 - Running balance calculation
 - Export to Excel
 
 #### Trial Balance
+
 - Real-time trial balance
 - Period comparison
 - Adjusting entries support
 
 #### Bank Reconciliation
+
 - Bank statement import
 - Transaction matching
 - Reconciliation reports
@@ -327,6 +360,7 @@ Full double-entry accounting system for formal financial management.
 Comprehensive reporting across all modules.
 
 #### Payroll Reports
+
 - Payroll summary by department
 - Payroll cost analysis
 - INSS contribution reports
@@ -335,6 +369,7 @@ Comprehensive reporting across all modules.
 - Payroll register
 
 #### Employee Reports
+
 - Headcount reports
 - Turnover analysis
 - Tenure distribution
@@ -343,6 +378,7 @@ Comprehensive reporting across all modules.
 - Termination reports
 
 #### Attendance Reports
+
 - Attendance summary
 - Absence reports
 - Overtime reports
@@ -350,17 +386,20 @@ Comprehensive reporting across all modules.
 - Punctuality analysis
 
 #### Department Reports
+
 - Department cost centers
 - Headcount by department
 - Department budget vs actual
 
 #### Custom Reports
+
 - Report builder with flexible filters
 - Export to Excel, PDF, CSV
 - Scheduled report delivery
 - Report templates
 
 #### Tax Filing Reports
+
 - ATTL Monthly Withholding Tax (Imposto Retido)
 - INSS Monthly Contributions
 - Annual employee tax summaries
@@ -370,12 +409,14 @@ Comprehensive reporting across all modules.
 System configuration and management tools.
 
 #### Tenant Management (Multi-Organization)
+
 - Multiple organizations in single deployment
 - Isolated data per organization
 - Organization-specific settings
 - Billing per organization
 
 #### User Management
+
 - Role-based access control
 - Roles: Super Admin, Admin, HR Manager, Payroll Manager, Employee
 - Custom permission sets
@@ -383,6 +424,7 @@ System configuration and management tools.
 - Password policies
 
 #### Settings
+
 - Company profile and branding
 - Fiscal year configuration
 - Currency settings (USD)
@@ -392,6 +434,7 @@ System configuration and management tools.
 - System localization
 
 #### Audit Log
+
 - Complete audit trail
 - User action tracking
 - Data change history
@@ -404,35 +447,39 @@ System configuration and management tools.
 ### Tax Compliance
 
 #### INSS (Social Security)
+
 - Automatic calculation of employee contribution: **4%** of gross salary
 - Automatic calculation of employer contribution: **6%** of gross salary
 - Monthly INSS report generation in government-required format
 - INSS number tracking per employee
 
 #### Withholding Tax (Imposto sobre Rendimentos)
+
 - Progressive tax rate calculation per TL tax law
 - Tax brackets automatically applied
 - ATTL monthly withholding tax report
 - Annual tax certificate generation
 
 #### Sales Tax
+
 - 10% Imposto sobre Vendas on invoices
 - Tax-inclusive and tax-exclusive pricing options
 - Tax summary reports
 
 ### Local Banking Integration
 
-#### Supported Banks
-- **BNU** (Banco Nacional Ultramarino) - File format for bulk transfers
-- **BNCTL** (Banco Nacional de Comércio de Timor-Leste) - Payment file generation
-- **Mandiri** - Indonesian bank format support
-- **ANZ** - International format support
+#### Bank output status
+
+- **BNU** (Banco Nacional Ultramarino) — verified emailed salary pack
+- **BNCTL** (Banco Nacional de Comércio de Timor-Leste) — best-effort pack;
+  confirm with the branch
+- **Mandiri** — best-effort template; confirm with the bank
+- **ANZ** — best-effort template; confirm with the bank
 
 #### Mobile Money
-- **Telkomcel** mobile money integration ready
-- **Telemor** mobile money integration ready
-- Pay employees directly to mobile wallets
-- Accept customer payments via mobile money
+
+- Record mobile-money payments in Xefe
+- No direct Telkomcel/Telemor wallet integration is claimed
 
 ### Language Support
 
@@ -445,6 +492,7 @@ System configuration and management tools.
 ### TL Public Holidays
 
 Pre-configured Timor-Leste public holidays:
+
 - New Year's Day (1 January)
 - Veterans Day (3 March)
 - Good Friday (variable)
@@ -518,36 +566,39 @@ Automatic holiday detection for payroll and scheduling.
 
 ### Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Frontend | React 18 | User interface framework |
-| Language | TypeScript | Type-safe JavaScript |
-| Build | Vite 6 | Fast build and development |
-| Styling | Tailwind CSS | Utility-first CSS framework |
-| UI Components | shadcn/ui + Radix | Accessible component library |
-| State | React Context + TanStack Query | State and data management |
-| Database | Firebase Firestore | NoSQL cloud database |
-| Authentication | Firebase Auth | User authentication |
-| File Storage | Firebase Storage | Document and image storage |
-| Hosting | Firebase Hosting / VPS | Web hosting |
-| PDF Generation | React-PDF | Payslips and reports |
-| Charts | Recharts | Data visualization |
+| Layer          | Technology                     | Purpose                      |
+| -------------- | ------------------------------ | ---------------------------- |
+| Frontend       | React 18                       | User interface framework     |
+| Language       | TypeScript                     | Type-safe JavaScript         |
+| Build          | Vite 6                         | Fast build and development   |
+| Styling        | Tailwind CSS                   | Utility-first CSS framework  |
+| UI Components  | shadcn/ui + Radix              | Accessible component library |
+| State          | React Context + TanStack Query | State and data management    |
+| Database       | Firebase Firestore             | NoSQL cloud database         |
+| Authentication | Firebase Auth                  | User authentication          |
+| File Storage   | Firebase Storage               | Document and image storage   |
+| Hosting        | Firebase Hosting / VPS         | Web hosting                  |
+| PDF Generation | React-PDF                      | Payslips and reports         |
+| Charts         | Recharts                       | Data visualization           |
 
 ### Key Technical Features
 
 #### Offline Capability
+
 - Service worker caching
 - Offline data access for critical functions
 - Automatic sync when connection restored
 - Works with intermittent TL internet
 
 #### Multi-Tenant Architecture
+
 - Single codebase serves multiple organizations
 - Complete data isolation between tenants
 - Tenant-specific configuration
 - Scalable to hundreds of organizations
 
 #### Security
+
 - Role-based access control (RBAC)
 - Row-level security in database
 - Encrypted data transmission (HTTPS)
@@ -556,6 +607,7 @@ Automatic holiday detection for payroll and scheduling.
 - Audit logging
 
 #### Performance
+
 - Code splitting for fast initial load
 - Lazy loading of modules
 - Optimized database queries
@@ -568,55 +620,55 @@ Automatic holiday detection for payroll and scheduling.
 
 ### For Businesses
 
-| Benefit | Description |
-|---------|-------------|
-| **Time Savings** | Automate payroll from days to minutes |
-| **Error Reduction** | Eliminate manual calculation errors |
-| **Compliance** | Never miss a tax filing or permit expiry |
-| **Cost Reduction** | Replace multiple systems with one |
-| **Visibility** | Real-time dashboards and reports |
-| **Employee Satisfaction** | Self-service portal, accurate pay |
-| **Scalability** | Grows with your business |
+| Benefit                   | Description                              |
+| ------------------------- | ---------------------------------------- |
+| **Time Savings**          | Automate payroll from days to minutes    |
+| **Error Reduction**       | Eliminate manual calculation errors      |
+| **Compliance**            | Never miss a tax filing or permit expiry |
+| **Cost Reduction**        | Replace multiple systems with one        |
+| **Visibility**            | Real-time dashboards and reports         |
+| **Employee Satisfaction** | Self-service portal, accurate pay        |
+| **Scalability**           | Grows with your business                 |
 
 ### For Employees
 
-| Benefit | Description |
-|---------|-------------|
-| **Self-Service** | View payslips, request leave anytime |
-| **Transparency** | Clear breakdown of earnings and deductions |
-| **Tetum Interface** | Use the system in their language |
-| **Mobile Access** | Check information from phone |
-| **Accurate Pay** | Correct calculations every time |
+| Benefit             | Description                                |
+| ------------------- | ------------------------------------------ |
+| **Self-Service**    | View payslips, request leave anytime       |
+| **Transparency**    | Clear breakdown of earnings and deductions |
+| **Tetum Interface** | Use the system in their language           |
+| **Mobile Access**   | Check information from phone               |
+| **Accurate Pay**    | Correct calculations every time            |
 
 ### For Government/Regulators
 
-| Benefit | Description |
-|---------|-------------|
-| **Tax Compliance** | Easier collection of INSS and withholding tax |
-| **Labor Law Enforcement** | Businesses follow overtime rules |
-| **Foreign Worker Tracking** | Better visibility of work permits |
-| **Economic Data** | Aggregate employment statistics |
-| **Formalization** | Bring informal businesses into formal economy |
+| Benefit                     | Description                                   |
+| --------------------------- | --------------------------------------------- |
+| **Tax Compliance**          | Easier collection of INSS and withholding tax |
+| **Labor Law Enforcement**   | Businesses follow overtime rules              |
+| **Foreign Worker Tracking** | Better visibility of work permits             |
+| **Economic Data**           | Aggregate employment statistics               |
+| **Formalization**           | Bring informal businesses into formal economy |
 
 ### For Accounting Firms
 
-| Benefit | Description |
-|---------|-------------|
-| **New Revenue Stream** | Offer HR/Payroll as a service |
-| **Client Stickiness** | Deeper engagement with clients |
-| **Efficiency** | Reduce manual data entry from clients |
-| **Standardization** | All clients on same system |
-| **Upsell Opportunity** | Bundle with accounting services |
+| Benefit                | Description                           |
+| ---------------------- | ------------------------------------- |
+| **New Revenue Stream** | Offer HR/Payroll as a service         |
+| **Client Stickiness**  | Deeper engagement with clients        |
+| **Efficiency**         | Reduce manual data entry from clients |
+| **Standardization**    | All clients on same system            |
+| **Upsell Opportunity** | Bundle with accounting services       |
 
 ### For Timor-Leste Economy
 
-| Benefit | Description |
-|---------|-------------|
-| **Formalization** | Encourage businesses to operate formally |
-| **Tax Revenue** | Improved compliance = more government revenue |
-| **Employment Data** | Better national employment statistics |
-| **Local Capacity** | Build local tech expertise |
-| **Reduce Brain Drain** | Modern tools keep talent local |
+| Benefit                | Description                                   |
+| ---------------------- | --------------------------------------------- |
+| **Formalization**      | Encourage businesses to operate formally      |
+| **Tax Revenue**        | Improved compliance = more government revenue |
+| **Employment Data**    | Better national employment statistics         |
+| **Local Capacity**     | Build local tech expertise                    |
+| **Reduce Brain Drain** | Modern tools keep talent local                |
 
 ---
 
@@ -625,6 +677,7 @@ Automatic holiday detection for payroll and scheduling.
 ### Deployment Options
 
 #### Option 1: Cloud Hosted (Recommended)
+
 - Hosted on Firebase/Google Cloud
 - Automatic updates and maintenance
 - 99.9% uptime SLA
@@ -632,12 +685,14 @@ Automatic holiday detection for payroll and scheduling.
 - No hardware investment required
 
 #### Option 2: Private Cloud
+
 - Dedicated instance per organization
 - Hosted in region of choice
 - Greater data control
 - Custom SLA
 
 #### Option 3: On-Premise
+
 - Install on organization's servers
 - Complete data sovereignty
 - Requires local IT support
@@ -645,15 +700,15 @@ Automatic holiday detection for payroll and scheduling.
 
 ### Implementation Timeline
 
-| Phase | Duration | Activities |
-|-------|----------|------------|
-| **Discovery** | 1 week | Requirements gathering, current process review |
-| **Setup** | 1 week | System configuration, company settings, user accounts |
-| **Data Migration** | 1-2 weeks | Import employees, historical data, documents |
-| **Training** | 1 week | HR team training, employee orientation |
-| **Parallel Run** | 2-4 weeks | Run alongside existing system |
-| **Go Live** | 1 day | Switch to OniT as primary system |
-| **Support** | Ongoing | Technical support, updates, enhancements |
+| Phase              | Duration  | Activities                                            |
+| ------------------ | --------- | ----------------------------------------------------- |
+| **Discovery**      | 1 week    | Requirements gathering, current process review        |
+| **Setup**          | 1 week    | System configuration, company settings, user accounts |
+| **Data Migration** | 1-2 weeks | Import employees, historical data, documents          |
+| **Training**       | 1 week    | HR team training, employee orientation                |
+| **Parallel Run**   | 2-4 weeks | Run alongside existing system                         |
+| **Go Live**        | 1 day     | Switch to OniT as primary system                      |
+| **Support**        | Ongoing   | Technical support, updates, enhancements              |
 
 ### Training Provided
 
@@ -678,6 +733,7 @@ Automatic holiday detection for payroll and scheduling.
 - One product with every feature included; the subscription unlocks finalizing payroll
 
 **Includes:**
+
 - All modules
 - Unlimited users
 - Email support
@@ -686,12 +742,14 @@ Automatic holiday detection for payroll and scheduling.
 ### Model 2: Accounting Firm Partnership
 
 **Structure:**
+
 - Accounting firms become resellers
 - White-label option available
 - Volume discounts for multiple clients
 - Revenue share: 70% firm / 30% OniT
 
 **Benefits for Firms:**
+
 - New service offering
 - Recurring revenue
 - Client retention tool
@@ -700,12 +758,14 @@ Automatic holiday detection for payroll and scheduling.
 ### Model 3: Government/NGO Licensing
 
 **Structure:**
+
 - Annual licensing fee
 - Unlimited employees within organization
 - Dedicated support
 - Custom integrations
 
 **Typical Clients:**
+
 - Government ministries
 - International NGOs (UN agencies, etc.)
 - Development organizations
@@ -714,12 +774,14 @@ Automatic holiday detection for payroll and scheduling.
 ### Model 4: Telco Partnership
 
 **Structure:**
+
 - Telco (Telkomcel/Telemor) bundles with business services
 - Mobile money integration
 - Co-marketing arrangement
 - Transaction fee sharing on payroll disbursements
 
 **Benefits:**
+
 - Mass distribution channel
 - Payment infrastructure
 - Credibility by association
@@ -731,23 +793,23 @@ Automatic holiday detection for payroll and scheduling.
 
 ### Data Security
 
-| Measure | Implementation |
-|---------|----------------|
-| Encryption in Transit | TLS 1.3 for all connections |
-| Encryption at Rest | AES-256 for stored data |
-| Authentication | Email/password with optional 2FA |
-| Authorization | Role-based access control |
-| Session Management | Secure tokens, automatic timeout |
-| Audit Logging | All actions logged with timestamp and user |
+| Measure               | Implementation                             |
+| --------------------- | ------------------------------------------ |
+| Encryption in Transit | TLS 1.3 for all connections                |
+| Encryption at Rest    | AES-256 for stored data                    |
+| Authentication        | Email/password with optional 2FA           |
+| Authorization         | Role-based access control                  |
+| Session Management    | Secure tokens, automatic timeout           |
+| Audit Logging         | All actions logged with timestamp and user |
 
 ### Compliance
 
-| Standard | Status |
-|----------|--------|
-| TL Labor Law | Compliant |
-| TL Tax Law | Compliant |
-| INSS Regulations | Compliant |
-| Data Privacy | Best practices implemented |
+| Standard         | Status                     |
+| ---------------- | -------------------------- |
+| TL Labor Law     | Compliant                  |
+| TL Tax Law       | Compliant                  |
+| INSS Regulations | Compliant                  |
+| Data Privacy     | Best practices implemented |
 
 ### Backup & Recovery
 
@@ -762,6 +824,7 @@ Automatic holiday detection for payroll and scheduling.
 ## Roadmap
 
 ### Current (v1.0)
+
 - Complete HR management
 - Full payroll processing
 - Time and attendance
@@ -770,24 +833,28 @@ Automatic holiday detection for payroll and scheduling.
 - TL compliance reports
 
 ### Q2 2026
+
 - Mobile app (iOS/Android)
 - Advanced analytics dashboard
 - API for third-party integrations
 - Telkomcel mobile money integration
 
 ### Q3 2026
+
 - Employee self-service app
 - Biometric attendance integration
 - Recruitment job board integration
 - Telemor mobile money integration
 
 ### Q4 2026
+
 - Learning management system (LMS)
 - Advanced performance management
 - Succession planning
 - Integration with TL government systems
 
 ### 2027 and Beyond
+
 - AI-powered insights
 - Predictive analytics
 - Regional expansion (Indonesia, Philippines)
@@ -816,20 +883,20 @@ Automatic holiday detection for payroll and scheduling.
 
 ## Appendix A: Feature Comparison
 
-| Feature | OniT | Generic HR Software | Spreadsheets |
-|---------|------|---------------------|--------------|
-| TL Tax Calculation | Native | Manual setup | Manual |
-| INSS Calculation | Automatic | Manual | Manual |
-| Tetum Language | Yes | No | No |
-| TL Bank Formats | Yes | No | No |
-| Mobile Money | Yes | No | No |
-| Foreign Worker Tracking | Built-in | Plugin/manual | Manual |
-| ATTL Reports | Automatic | Manual | Manual |
-| Offline Access | Yes | Varies | Desktop only |
-| Multi-tenant | Yes | Varies | No |
-| Cost (SME) | $99/mo | $200-500/mo | "Free"* |
+| Feature                 | OniT      | Generic HR Software | Spreadsheets |
+| ----------------------- | --------- | ------------------- | ------------ |
+| TL Tax Calculation      | Native    | Manual setup        | Manual       |
+| INSS Calculation        | Automatic | Manual              | Manual       |
+| Tetum Language          | Yes       | No                  | No           |
+| TL Bank Formats         | Yes       | No                  | No           |
+| Mobile Money            | Yes       | No                  | No           |
+| Foreign Worker Tracking | Built-in  | Plugin/manual       | Manual       |
+| ATTL Reports            | Automatic | Manual              | Manual       |
+| Offline Access          | Yes       | Varies              | Desktop only |
+| Multi-tenant            | Yes       | Varies              | No           |
+| Cost (SME)              | $99/mo    | $200-500/mo         | "Free"\*     |
 
-*Spreadsheet hidden costs: errors, time, compliance risk
+\*Spreadsheet hidden costs: errors, time, compliance risk
 
 ---
 
@@ -838,45 +905,45 @@ Automatic holiday detection for payroll and scheduling.
 ### Withholding Tax Rates (2024)
 
 | Monthly Income (USD) | Tax Rate |
-|---------------------|----------|
-| $0 - $500 | 0% |
-| $501 - $750 | 5% |
-| $751 - $1,000 | 10% |
-| $1,001+ | 15% |
+| -------------------- | -------- |
+| $0 - $500            | 0%       |
+| $501 - $750          | 5%       |
+| $751 - $1,000        | 10%      |
+| $1,001+              | 15%      |
 
 ### INSS Contribution Rates
 
-| Contribution | Rate |
-|--------------|------|
-| Employee | 4% |
-| Employer | 6% |
-| **Total** | **10%** |
+| Contribution | Rate    |
+| ------------ | ------- |
+| Employee     | 4%      |
+| Employer     | 6%      |
+| **Total**    | **10%** |
 
 ### Sales Tax
 
-| Tax | Rate |
-|-----|------|
-| Imposto sobre Vendas | 10% |
+| Tax                  | Rate |
+| -------------------- | ---- |
+| Imposto sobre Vendas | 10%  |
 
 ---
 
 ## Appendix C: Glossary
 
-| Term | Definition |
-|------|------------|
-| **ATTL** | Autoridade Tributária de Timor-Leste (Tax Authority) |
-| **INSS** | Instituto Nacional de Segurança Social (Social Security) |
-| **SEPFOPE** | Secretaria de Estado da Formação Profissional e Emprego |
-| **BNU** | Banco Nacional Ultramarino |
-| **BNCTL** | Banco Nacional de Comércio de Timor-Leste |
-| **Kartaun Eleitoral** | Electoral Card (ID document) |
-| **Bilhete de Identidade** | National ID Card |
-| **Imposto sobre Rendimentos** | Income/Withholding Tax |
-| **Imposto sobre Vendas** | Sales Tax |
-| **Férias** | Annual Leave |
-| **Licença médica** | Sick Leave |
+| Term                          | Definition                                               |
+| ----------------------------- | -------------------------------------------------------- |
+| **ATTL**                      | Autoridade Tributária de Timor-Leste (Tax Authority)     |
+| **INSS**                      | Instituto Nacional de Segurança Social (Social Security) |
+| **SEPFOPE**                   | Secretaria de Estado da Formação Profissional e Emprego  |
+| **BNU**                       | Banco Nacional Ultramarino                               |
+| **BNCTL**                     | Banco Nacional de Comércio de Timor-Leste                |
+| **Kartaun Eleitoral**         | Electoral Card (ID document)                             |
+| **Bilhete de Identidade**     | National ID Card                                         |
+| **Imposto sobre Rendimentos** | Income/Withholding Tax                                   |
+| **Imposto sobre Vendas**      | Sales Tax                                                |
+| **Férias**                    | Annual Leave                                             |
+| **Licença médica**            | Sick Leave                                               |
 
 ---
 
-*Document Version 1.0 - January 2026*
-*OniT HR/Payroll - Built for Timor-Leste*
+_Document Version 1.0 - January 2026_
+_OniT HR/Payroll - Built for Timor-Leste_

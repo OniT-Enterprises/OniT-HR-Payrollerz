@@ -13,18 +13,18 @@
 
 ## Executive Summary
 
-| Area | Grade | Status |
-|------|-------|--------|
-| Payroll Calculations | A | Decimal.js, correct TL tax law, 79 tests passing |
-| UI/UX Quality | A | Polished, consistent design system |
-| Security | B+ | All critical issues resolved, production rules deployed |
-| Data Architecture | A- | Multi-tenant, typed, well-structured |
-| i18n / Localization | A- | UI + payslips + admin dialogs translated (Tetum/English) |
-| Dependencies | A | 0 npm audit vulnerabilities |
-| Build & Deploy | B+ | Clean build, console stripping, code-split |
-| Test Coverage | B+ | 97 tests (payroll math + integration batch); no E2E/UI tests |
-| TL Market Fit (small biz) | B | Monthly payroll works, some workflow gaps |
-| TL Market Fit (security co.) | D | Shift scheduling, weekly pay, sites not built |
+| Area                         | Grade | Status                                                       |
+| ---------------------------- | ----- | ------------------------------------------------------------ |
+| Payroll Calculations         | A     | Decimal.js, correct TL tax law, 79 tests passing             |
+| UI/UX Quality                | A     | Polished, consistent design system                           |
+| Security                     | B+    | All critical issues resolved, production rules deployed      |
+| Data Architecture            | A-    | Multi-tenant, typed, well-structured                         |
+| i18n / Localization          | A-    | UI + payslips + admin dialogs translated (Tetum/English)     |
+| Dependencies                 | A     | 0 npm audit vulnerabilities                                  |
+| Build & Deploy               | B+    | Clean build, console stripping, code-split                   |
+| Test Coverage                | B+    | 97 tests (payroll math + integration batch); no E2E/UI tests |
+| TL Market Fit (small biz)    | B     | Monthly payroll works, some workflow gaps                    |
+| TL Market Fit (security co.) | D     | Shift scheduling, weekly pay, sites not built                |
 
 ---
 
@@ -46,6 +46,7 @@
 ### Issues Found
 
 #### CALC-1: Non-Resident Tax Rate Documentation Mismatch
+
 - **Severity:** VERIFY
 - **Location:** `constants-tl.ts:6,19`, `calculations-tl.ts:5`
 - **Issue:** Code implements 10% (no threshold) for non-residents, which appears correct per Law 8/2008. But some comments reference "20% flat." Need to confirm with ATTL.
@@ -53,6 +54,7 @@
 - **Status:** `[x]` VERIFIED — 10% is correct per Decree Law 8/2008 Part VI / Schedule V, confirmed by ATTL. The "20%" traces to superseded UNTAET Reg. 2000/32. Comments updated.
 
 #### CALC-2: Night Shift Premium in INSS Base
+
 - **Severity:** MEDIUM
 - **Location:** `calculations-tl.ts:452`
 - **Issue:** Night shift premium (25% extra) is included in INSS base (`isINSSBase: true`). Standard overtime is excluded. Night shift could be considered "extraordinary" and should be excluded.
@@ -60,8 +62,9 @@
 - **Status:** `[ ]` Pending — needs INSS guidance verification
 
 #### CALC-3: Deduction Cap
+
 - **Severity:** LOW (figure confirmed)
-- **Status:** `[x]` CONFIRMED at 30% — **Lei 4/2012, Artigo 42.º(3)** (primary source, Jornal da República / ILO NATLEX): *"Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total da remuneração recebida pelo trabalhador."* The earlier "1/6 ≈ 16.67% / Art. 279" claim was **wrong** — Art. 279 is **Portugal's** Código do Trabalho, not Timor-Leste's. The code value (30%, Art. 42) is correct.
+- **Status:** `[x]` CONFIRMED at 30% — **Lei 4/2012, Artigo 42.º(3)** (primary source, Jornal da República / ILO NATLEX): _"Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total da remuneração recebida pelo trabalhador."_ The earlier "1/6 ≈ 16.67% / Art. 279" claim was **wrong** — Art. 279 is **Portugal's** Código do Trabalho, not Timor-Leste's. The code value (30%, Art. 42) is correct.
 - **Current implementation:** WIT and employee INSS are protected at their
   statutory amounts. Court orders, loans, advances and other deductions share
   the remainder of 30% of wages paid and are proportionally reduced at cent
@@ -69,9 +72,11 @@
   requires local professional sign-off.
 
 #### CALC-4: Negative Salary Rejection
+
 - **Status:** `[x]` Done
 
 #### CALC-5: Validation Function Called
+
 - **Status:** `[x]` Done — called in both `handleSaveDraft()` and `handleProcessPayroll()`
 
 ---
@@ -96,18 +101,18 @@
 
 ### All Issues Resolved
 
-| # | Issue | Severity | Status |
-|---|-------|----------|--------|
-| SEC-1 | Dev Firestore rules deployed to production | CRITICAL | `[x]` Done — deployed 2026-02-08 |
-| SEC-2 | No input validation on payroll inputs | CRITICAL | `[x]` Done — NaN/Infinity rejected, caps enforced |
-| SEC-3 | No rate limiting on bulk operations | HIGH | `[x]` Done — 499 record limit |
-| SEC-4 | Console logs leak PII in production | MEDIUM | `[x]` Done — esbuild drop (verified in dist/) |
-| SEC-5 | Math.random() for share tokens | LOW | `[x]` Done — crypto.getRandomValues() |
-| SEC-6 | Date range not validated | MEDIUM | `[x]` Done — past 2y / future 1m |
-| SEC-7 | Compliance override reason not validated | LOW | `[x]` Done — min 10 chars |
-| SEC-8 | Impersonation persists in localStorage | MEDIUM | `[x]` Done — sessionStorage |
-| SEC-9 | Double-submit on Expenses form | HIGH | `[x]` Done — saving state guard added |
-| SEC-10 | Vulnerable xlsx dependency (prototype pollution + ReDoS) | HIGH | `[x]` Done — replaced with exceljs |
+| #      | Issue                                                    | Severity | Status                                            |
+| ------ | -------------------------------------------------------- | -------- | ------------------------------------------------- |
+| SEC-1  | Dev Firestore rules deployed to production               | CRITICAL | `[x]` Done — deployed 2026-02-08                  |
+| SEC-2  | No input validation on payroll inputs                    | CRITICAL | `[x]` Done — NaN/Infinity rejected, caps enforced |
+| SEC-3  | No rate limiting on bulk operations                      | HIGH     | `[x]` Done — 499 record limit                     |
+| SEC-4  | Console logs leak PII in production                      | MEDIUM   | `[x]` Done — esbuild drop (verified in dist/)     |
+| SEC-5  | Math.random() for share tokens                           | LOW      | `[x]` Done — crypto.getRandomValues()             |
+| SEC-6  | Date range not validated                                 | MEDIUM   | `[x]` Done — past 2y / future 1m                  |
+| SEC-7  | Compliance override reason not validated                 | LOW      | `[x]` Done — min 10 chars                         |
+| SEC-8  | Impersonation persists in localStorage                   | MEDIUM   | `[x]` Done — sessionStorage                       |
+| SEC-9  | Double-submit on Expenses form                           | HIGH     | `[x]` Done — saving state guard added             |
+| SEC-10 | Vulnerable xlsx dependency (prototype pollution + ReDoS) | HIGH     | `[x]` Done — replaced with exceljs                |
 
 ---
 
@@ -126,6 +131,7 @@
 ### Remaining
 
 #### I18N-3: Hardcoded English in RunPayroll Dialogs
+
 - **Severity:** LOW
 - **Location:** `RunPayroll.tsx` — all dialog strings
 - **Status:** `[x]` Done — 30 dialog strings extracted to i18n (en + tet)
@@ -136,43 +142,43 @@
 
 ### Critical — All Resolved
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Deploy production Firestore rules | `[x]` Done | Deployed 2026-02-08 |
-| Input validation on payroll | `[x]` Done | NaN/Infinity rejected, caps enforced |
-| Minimum wage enforcement | `[x]` Done | Inline warnings in payroll UI |
-| Working hours limit warnings | `[x]` Done | Inline warnings in payroll UI |
+| Feature                           | Status     | Notes                                |
+| --------------------------------- | ---------- | ------------------------------------ |
+| Deploy production Firestore rules | `[x]` Done | Deployed 2026-02-08                  |
+| Input validation on payroll       | `[x]` Done | NaN/Infinity rejected, caps enforced |
+| Minimum wage enforcement          | `[x]` Done | Inline warnings in payroll UI        |
+| Working hours limit warnings      | `[x]` Done | Inline warnings in payroll UI        |
 
 ### High — Blocks Practical Daily Use
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Leave request workflow UI | `[x]` Done | Self-service leave requests |
-| Bank transfer file generation | `[x]` Done | TL bank formats supported |
-| Payslip Tetum translation | `[x]` Done | 36 strings translated |
-| Two-person payroll approval | `[x]` Done | UI + service + Firestore rules |
-| Setup wizard (company TIN, bank) | `[x]` Done | Multi-step wizard |
-| Contract expiry alerts | `[x]` Done | Integrated into DocumentAlertsCard, 90-day window |
+| Feature                          | Status     | Notes                                                                              |
+| -------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| Leave request workflow UI        | `[x]` Done | Self-service leave requests                                                        |
+| Bank transfer file generation    | `[x]` Done | BNU workflow verified; BNCTL/ANZ/Mandiri labelled best-effort pending bank samples |
+| Payslip Tetum translation        | `[x]` Done | 36 strings translated                                                              |
+| Two-person payroll approval      | `[x]` Done | UI + service + Firestore rules                                                     |
+| Setup wizard (company TIN, bank) | `[x]` Done | Multi-step wizard                                                                  |
+| Contract expiry alerts           | `[x]` Done | Integrated into DocumentAlertsCard, 90-day window                                  |
 
 ### Medium — Limits Compliance Reporting
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| ATTL e-Tax portal export | `[x]` Done | Excel export matching ATTL form format |
-| Annual INSS reconciliation | `[x]` Done | `/reports/inss-annual` page with CSV export |
-| Employer INSS on payslips | `[x]` Done | Employer contributions section on PayslipPDF |
-| 13th month accrual display | `[x]` Done | Monthly accrual shown on TL payslips |
+| Feature                    | Status     | Notes                                        |
+| -------------------------- | ---------- | -------------------------------------------- |
+| ATTL e-Tax portal export   | `[x]` Done | Excel export matching ATTL form format       |
+| Annual INSS reconciliation | `[x]` Done | `/reports/inss-annual` page with CSV export  |
+| Employer INSS on payslips  | `[x]` Done | Employer contributions section on PayslipPDF |
+| 13th month accrual display | `[x]` Done | Monthly accrual shown on TL payslips         |
 
 ### Blocks Security Company Target Market
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Shift scheduling | `[ ]` Not built | Core requirement for security ops |
-| Client/site-specific pay rates | `[ ]` Not built | Guards paid by assignment |
-| Fingerprint CSV import | `[ ]` Not standardized | "What brand/model?" open question |
-| Supervisor mobile interface | `[ ]` Not built | Field access needed |
-| Weekly sub-payroll workflow | `[ ]` Partial | Calculation done, UI not complete |
-| Late arrival tracking + warnings | `[ ]` Not built | 3-strike system in roadmap |
+| Feature                          | Status                 | Notes                             |
+| -------------------------------- | ---------------------- | --------------------------------- |
+| Shift scheduling                 | `[ ]` Not built        | Core requirement for security ops |
+| Client/site-specific pay rates   | `[ ]` Not built        | Guards paid by assignment         |
+| Fingerprint CSV import           | `[ ]` Not standardized | "What brand/model?" open question |
+| Supervisor mobile interface      | `[ ]` Not built        | Field access needed               |
+| Weekly sub-payroll workflow      | `[ ]` Partial          | Calculation done, UI not complete |
+| Late arrival tracking + warnings | `[ ]` Not built        | 3-strike system in roadmap        |
 
 ---
 
@@ -207,15 +213,15 @@
 
 ### Build Output (Feb 10, 2026)
 
-| Chunk | Size | Gzipped | Notes |
-|-------|------|---------|-------|
-| `index` | 471KB | 129KB | Main app bundle |
-| `vendor-firebase` | 527KB | 124KB | Firebase SDK (lazy candidates limited) |
-| `vendor-ui` | 191KB | 55KB | Radix UI components |
-| `vendor-react` | 144KB | 46KB | React runtime |
-| `react-pdf.browser` | 1,591KB | 526KB | Lazy-loaded (only on payslip download) |
-| `ATTLMonthlyWIT` | 971KB | 278KB | Lazy-loaded (only on ATTL export page) |
-| `RunPayroll` | 94KB | 27KB | Code-split payroll page |
+| Chunk               | Size    | Gzipped | Notes                                  |
+| ------------------- | ------- | ------- | -------------------------------------- |
+| `index`             | 471KB   | 129KB   | Main app bundle                        |
+| `vendor-firebase`   | 527KB   | 124KB   | Firebase SDK (lazy candidates limited) |
+| `vendor-ui`         | 191KB   | 55KB    | Radix UI components                    |
+| `vendor-react`      | 144KB   | 46KB    | React runtime                          |
+| `react-pdf.browser` | 1,591KB | 526KB   | Lazy-loaded (only on payslip download) |
+| `ATTLMonthlyWIT`    | 971KB   | 278KB   | Lazy-loaded (only on ATTL export page) |
+| `RunPayroll`        | 94KB    | 27KB    | Code-split payroll page                |
 
 ### Dependencies — 0 Vulnerabilities
 
@@ -239,30 +245,30 @@
 
 ### Where OniT Wins (TL-Specific)
 
-| Feature | OniT | QuickBooks |
-|---------|------|------------|
-| TL WIT calculation | Built-in, automatic | Manual custom item |
-| TL INSS 4%/6% split | Built-in, automatic | Manual calculation |
-| $500 threshold pro-ration | Automatic for weekly/biweekly | Not supported |
-| Subsidio Anual (13th month) | Pro-rated calculation | Not supported |
-| TL overtime rates (150%/200%) | Labor Code compliant | Generic overtime |
-| Tetum language | UI + payslips translated | Not available |
-| TL contract types | All 4 types | Not supported |
-| TL tax returns (WIT/INSS) | ATTL Excel export | Not supported |
-| TL date/timezone | Asia/Dili, dd/mm/yyyy | Not localized |
-| Price for TL market | Custom (affordable) | $$$$ per user/month |
+| Feature                       | OniT                          | QuickBooks          |
+| ----------------------------- | ----------------------------- | ------------------- |
+| TL WIT calculation            | Built-in, automatic           | Manual custom item  |
+| TL INSS 4%/6% split           | Built-in, automatic           | Manual calculation  |
+| $500 threshold pro-ration     | Automatic for weekly/biweekly | Not supported       |
+| Subsidio Anual (13th month)   | Pro-rated calculation         | Not supported       |
+| TL overtime rates (150%/200%) | Labor Code compliant          | Generic overtime    |
+| Tetum language                | UI + payslips translated      | Not available       |
+| TL contract types             | All 4 types                   | Not supported       |
+| TL tax returns (WIT/INSS)     | ATTL Excel export             | Not supported       |
+| TL date/timezone              | Asia/Dili, dd/mm/yyyy         | Not localized       |
+| Price for TL market           | Custom (affordable)           | $$$$ per user/month |
 
 ### Where QuickBooks Wins (Maturity)
 
-| Feature | OniT | QuickBooks |
-|---------|------|------------|
-| Payroll workflow (run→pay) | Complete (with 2-person approval) | Complete |
-| Bank integrations | TL banks supported | Extensive global |
-| Payslip delivery | PDF only | Email/portal |
-| Leave management | Self-service workflow | Full workflow |
-| Mobile app | None | Full app |
-| Audit trail | Comprehensive | Complete |
-| User base / battle-tested | New | Millions |
+| Feature                    | OniT                                             | QuickBooks       |
+| -------------------------- | ------------------------------------------------ | ---------------- |
+| Payroll workflow (run→pay) | Complete (with 2-person approval)                | Complete         |
+| Bank outputs               | BNU verified; other TL templates are best-effort | Extensive global |
+| Payslip delivery           | PDF only                                         | Email/portal     |
+| Leave management           | Self-service workflow                            | Full workflow    |
+| Mobile app                 | None                                             | Full app         |
+| Audit trail                | Comprehensive                                    | Complete         |
+| User base / battle-tested  | New                                              | Millions         |
 
 ---
 
@@ -270,83 +276,83 @@
 
 ### Week 1 — Critical Security Fixes
 
-| # | Task | File | Status |
-|---|------|------|--------|
-| 1 | Add input validation to `handleInputChange` | `RunPayroll.tsx` | `[x]` Done |
-| 2 | Call `validateTLPayrollInput()` before submission | `RunPayroll.tsx` | `[x]` Done |
-| 3 | Add negative salary rejection | `calculations-tl.ts` | `[x]` Done |
-| 4 | Add payroll record batch size limit | `payrollService.ts` | `[x]` Done |
-| 5 | Add date range validation | `RunPayroll.tsx` | `[x]` Done |
-| 6 | Validate compliance override reason length | `RunPayroll.tsx` | `[x]` Done |
-| 7 | Deploy production Firestore rules | `firestore.rules` | `[x]` Done — deployed 2026-02-08 |
+| #   | Task                                              | File                 | Status                           |
+| --- | ------------------------------------------------- | -------------------- | -------------------------------- |
+| 1   | Add input validation to `handleInputChange`       | `RunPayroll.tsx`     | `[x]` Done                       |
+| 2   | Call `validateTLPayrollInput()` before submission | `RunPayroll.tsx`     | `[x]` Done                       |
+| 3   | Add negative salary rejection                     | `calculations-tl.ts` | `[x]` Done                       |
+| 4   | Add payroll record batch size limit               | `payrollService.ts`  | `[x]` Done                       |
+| 5   | Add date range validation                         | `RunPayroll.tsx`     | `[x]` Done                       |
+| 6   | Validate compliance override reason length        | `RunPayroll.tsx`     | `[x]` Done                       |
+| 7   | Deploy production Firestore rules                 | `firestore.rules`    | `[x]` Done — deployed 2026-02-08 |
 
 ### Week 2 — Calculation Safety
 
-| # | Task | File | Status |
-|---|------|------|--------|
-| 8 | Add minimum wage warning in payroll | `RunPayroll.tsx` | `[x]` Done |
-| 9 | Add working hours limit warning | `RunPayroll.tsx` | `[x]` Done |
-| 10 | Add deduction cap (if required by law) | `calculations-tl.ts` | `[x]` 30% CONFIRMED — Lei 4/2012 Art. 42(3) (primary source); the 1/6/Art.279 figure was Portugal's law, not TL |
-| 11 | Fix non-resident tax rate comments | `constants-tl.ts`, `calculations-tl.ts` | `[x]` Done — Verified 10% correct |
+| #   | Task                                   | File                                    | Status                                                                                                          |
+| --- | -------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 8   | Add minimum wage warning in payroll    | `RunPayroll.tsx`                        | `[x]` Done                                                                                                      |
+| 9   | Add working hours limit warning        | `RunPayroll.tsx`                        | `[x]` Done                                                                                                      |
+| 10  | Add deduction cap (if required by law) | `calculations-tl.ts`                    | `[x]` 30% CONFIRMED — Lei 4/2012 Art. 42(3) (primary source); the 1/6/Art.279 figure was Portugal's law, not TL |
+| 11  | Fix non-resident tax rate comments     | `constants-tl.ts`, `calculations-tl.ts` | `[x]` Done — Verified 10% correct                                                                               |
 
 ### Week 3 — Production Hardening
 
-| # | Task | File | Status |
-|---|------|------|--------|
-| 12 | Strip console logs in prod build | `vite.config.ts` | `[x]` Done |
-| 13 | Use crypto.getRandomValues for tokens | `invoiceService.ts` | `[x]` Done |
-| 14 | Switch impersonation to sessionStorage | `TenantContext.tsx` | `[x]` Done |
-| 15 | Add Tetum to PayslipPDF | `PayslipPDF.tsx` | `[x]` Done — 36 strings translated |
-| 16 | Fix PayslipPDF date format | `PayslipPDF.tsx` | `[x]` Done |
+| #   | Task                                   | File                | Status                             |
+| --- | -------------------------------------- | ------------------- | ---------------------------------- |
+| 12  | Strip console logs in prod build       | `vite.config.ts`    | `[x]` Done                         |
+| 13  | Use crypto.getRandomValues for tokens  | `invoiceService.ts` | `[x]` Done                         |
+| 14  | Switch impersonation to sessionStorage | `TenantContext.tsx` | `[x]` Done                         |
+| 15  | Add Tetum to PayslipPDF                | `PayslipPDF.tsx`    | `[x]` Done — 36 strings translated |
+| 16  | Fix PayslipPDF date format             | `PayslipPDF.tsx`    | `[x]` Done                         |
 
 ### Week 4 — Test Coverage
 
-| # | Task | Status |
-|---|------|--------|
-| 17 | Test: Subsidio Anual pro-ration | `[x]` Done — 5 tests |
-| 18 | Test: Sick leave tiers | `[x]` Done — 3 tests |
-| 19 | Test: Weekly threshold pro-ration | `[x]` Done — 3 tests |
-| 20 | Test: Overtime/night/holiday rates | `[x]` Done — 5 tests |
-| 21 | Test: Edge cases (zero, negative, huge) | `[x]` Done — 6 tests |
-| 22 | Test: Validation function | `[x]` Done — 6 tests |
+| #   | Task                                    | Status               |
+| --- | --------------------------------------- | -------------------- |
+| 17  | Test: Subsidio Anual pro-ration         | `[x]` Done — 5 tests |
+| 18  | Test: Sick leave tiers                  | `[x]` Done — 3 tests |
+| 19  | Test: Weekly threshold pro-ration       | `[x]` Done — 3 tests |
+| 20  | Test: Overtime/night/holiday rates      | `[x]` Done — 5 tests |
+| 21  | Test: Edge cases (zero, negative, huge) | `[x]` Done — 6 tests |
+| 22  | Test: Validation function               | `[x]` Done — 6 tests |
 
 ### Feb 10 Review — Additional Fixes
 
-| # | Task | File | Status |
-|---|------|------|--------|
-| 23 | Replace vulnerable xlsx with exceljs | `attlExport.ts` | `[x]` Done — 0 npm vulns |
-| 24 | Fix barrel export defeating PDF lazy-load | `payroll/index.ts` | `[x]` Done — removed static re-export |
-| 25 | Add double-submit protection to Expenses | `Expenses.tsx` | `[x]` Done — saving state guard |
-| 26 | Fix esbuild console drop reliability | `vite.config.ts` | `[x]` Done — uses Vite `mode` param |
-| 27 | Fix package name and version | `package.json` | `[x]` Done — onit-hr-payroll v1.0.0 |
-| 28 | Patch dependency vulnerabilities | `package.json` | `[x]` Done — npm audit fix |
+| #   | Task                                      | File               | Status                                |
+| --- | ----------------------------------------- | ------------------ | ------------------------------------- |
+| 23  | Replace vulnerable xlsx with exceljs      | `attlExport.ts`    | `[x]` Done — 0 npm vulns              |
+| 24  | Fix barrel export defeating PDF lazy-load | `payroll/index.ts` | `[x]` Done — removed static re-export |
+| 25  | Add double-submit protection to Expenses  | `Expenses.tsx`     | `[x]` Done — saving state guard       |
+| 26  | Fix esbuild console drop reliability      | `vite.config.ts`   | `[x]` Done — uses Vite `mode` param   |
+| 27  | Fix package name and version              | `package.json`     | `[x]` Done — onit-hr-payroll v1.0.0   |
+| 28  | Patch dependency vulnerabilities          | `package.json`     | `[x]` Done — npm audit fix            |
 
 ### Feb 10 Review — Feature Additions
 
-| # | Task | File | Status |
-|---|------|------|--------|
-| 29 | Deploy production Firestore rules | `firestore.rules` | `[x]` Done — deployed via `firebase deploy` |
-| 30 | Add employer INSS (6%) to PayslipPDF | `PayslipPDF.tsx` | `[x]` Done — employer contributions section with i18n |
-| 31 | Add Sentry error reporting | `main.tsx`, `ErrorBoundary.tsx`, `queryCache.ts` | `[x]` Done — @sentry/react, DSN via env var |
-| 32 | Translate RunPayroll dialog strings (I18N-3) | `RunPayroll.tsx`, `translations.ts` | `[x]` Done — 30 strings in en + tet |
-| 33 | Add contract expiry alerts | `DocumentAlertsCard.tsx`, `employeeService.ts` | `[x]` Done — 90-day window, contractEndDate field |
-| 34 | Add integration test (multi-employee batch) | `payroll-integration.test.ts` | `[x]` Done — 18 tests (97 total) |
-| 35 | Add annual INSS reconciliation report | `INSSAnnual.tsx`, `routes.tsx` | `[x]` Done — aggregates monthly filings, CSV export |
-| 36 | Add 13th month accrual display | `PayslipPDF.tsx` | `[x]` Done — informational accrual on TL payslips |
+| #   | Task                                         | File                                             | Status                                                |
+| --- | -------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| 29  | Deploy production Firestore rules            | `firestore.rules`                                | `[x]` Done — deployed via `firebase deploy`           |
+| 30  | Add employer INSS (6%) to PayslipPDF         | `PayslipPDF.tsx`                                 | `[x]` Done — employer contributions section with i18n |
+| 31  | Add Sentry error reporting                   | `main.tsx`, `ErrorBoundary.tsx`, `queryCache.ts` | `[x]` Done — @sentry/react, DSN via env var           |
+| 32  | Translate RunPayroll dialog strings (I18N-3) | `RunPayroll.tsx`, `translations.ts`              | `[x]` Done — 30 strings in en + tet                   |
+| 33  | Add contract expiry alerts                   | `DocumentAlertsCard.tsx`, `employeeService.ts`   | `[x]` Done — 90-day window, contractEndDate field     |
+| 34  | Add integration test (multi-employee batch)  | `payroll-integration.test.ts`                    | `[x]` Done — 18 tests (97 total)                      |
+| 35  | Add annual INSS reconciliation report        | `INSSAnnual.tsx`, `routes.tsx`                   | `[x]` Done — aggregates monthly filings, CSV export   |
+| 36  | Add 13th month accrual display               | `PayslipPDF.tsx`                                 | `[x]` Done — informational accrual on TL payslips     |
 
 ---
 
 ## 9. REMAINING ITEMS (Non-Blocking)
 
-| Item | Severity | Notes |
-|------|----------|-------|
-| CALC-2: Night shift premium in INSS base | MEDIUM | Needs INSS guidance verification |
-| Security company features | N/A | Separate target market |
-| E2E test suite (Playwright/Cypress) | MEDIUM | Unit/integration done, no browser tests |
-| 726 `as any` type assertions | LOW | Gradual improvement over time |
-| TypeScript strict mode | LOW | `strict: false` in tsconfig |
+| Item                                     | Severity | Notes                                   |
+| ---------------------------------------- | -------- | --------------------------------------- |
+| CALC-2: Night shift premium in INSS base | MEDIUM   | Needs INSS guidance verification        |
+| Security company features                | N/A      | Separate target market                  |
+| E2E test suite (Playwright/Cypress)      | MEDIUM   | Unit/integration done, no browser tests |
+| 726 `as any` type assertions             | LOW      | Gradual improvement over time           |
+| TypeScript strict mode                   | LOW      | `strict: false` in tsconfig             |
 
 ---
 
-*Last updated: February 10, 2026*
-*Audited by: Claude Code*
+_Last updated: February 10, 2026_
+_Audited by: Claude Code_

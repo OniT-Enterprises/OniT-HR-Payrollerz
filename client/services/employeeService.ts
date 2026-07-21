@@ -63,6 +63,12 @@ export interface Employee {
     position: string;
     hireDate: string;
     employmentType: string;
+    /** Required for part-time employees; statutory full-time ceiling is 44 hours/week. */
+    contractedWeeklyHours?: number;
+    /** Explicit treatment used when checking the monthly minimum-wage floor. */
+    minimumWageTreatment?: 'full_floor' | 'pro_rata' | 'reviewed_exception';
+    /** Required explanation when a reviewed exception is selected. */
+    minimumWageReviewNote?: string;
     contractEndDate?: string;  // For fixed-term contracts (YYYY-MM-DD)
     /** Probation end date (Lei 4/2012 Art. 14) — YYYY-MM-DD */
     probationEndDate?: string;
@@ -114,6 +120,12 @@ export interface Employee {
       expiryDate: string;
       required: boolean;
     };
+    // Individual tax identification number (NIF/TIN), when issued.
+    taxIdentificationNumber?: {
+      number: string;
+      expiryDate: string;
+      required: boolean;
+    };
     // TL Electoral Card
     electoralCard: { number: string; expiryDate: string; required: boolean };
     // Generic ID Card (for non-TL nationals)
@@ -154,10 +166,8 @@ export interface Employee {
   /** Last working day captured by offboarding; required for terminated-worker filings. */
   terminationDate?: string;
   /**
-   * Cause-aware Art. 56 decision stamped by offboarding: false = the final
-   * payroll run must NOT auto-pay service compensation (e.g. resignation —
-   * real TL practice pays Art. 56 on employer-initiated endings only).
-   * Absent/true = statute-literal default, severance auto-pays.
+   * Reviewed Art. 56 decision stamped by offboarding. Only explicit true can
+   * add service compensation; false or absent stays safe-off.
    */
   severanceOnTermination?: boolean;
   createdAt?: Date | Timestamp;
@@ -269,6 +279,13 @@ function mergeEmployeeForCompliance(existing: Employee | null, updates: Partial<
         required: existing?.documents?.socialSecurityNumber?.required ?? true,
         ...existing?.documents?.socialSecurityNumber,
         ...updates.documents?.socialSecurityNumber,
+      },
+      taxIdentificationNumber: {
+        number: existing?.documents?.taxIdentificationNumber?.number ?? "",
+        expiryDate: existing?.documents?.taxIdentificationNumber?.expiryDate ?? "",
+        required: existing?.documents?.taxIdentificationNumber?.required ?? false,
+        ...existing?.documents?.taxIdentificationNumber,
+        ...updates.documents?.taxIdentificationNumber,
       },
       workContract: {
         fileUrl: existing?.documents?.workContract?.fileUrl ?? "",

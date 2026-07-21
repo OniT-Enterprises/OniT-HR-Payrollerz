@@ -1,5 +1,6 @@
 /**
- * Bank payment pack — the emailed salary-transfer workflow BNU and BNCTL
+ * Bank payment pack — verified for BNU; best-effort for BNCTL until a
+ * branch-approved sample is obtained.
  * actually use in Timor-Leste.
  *
  * Verified against real-world TL banking practice during compliance research
@@ -15,7 +16,7 @@
  * an Ordem de Pagamento sheet ready to print and sign, plus the Portuguese
  * cover email text. Bank-facing text is deliberately Portuguese regardless of
  * the app locale — that is the language the banks correspond in.
-  *
+ *
  * PROVENANCE: the 4-column transfer list is the format BNU branches accept
  * (a bank requirement, minimal by nature); the Ordem de Pagamento sheet and
  * cover email are Xefe's own composition. No client or firm workbook layout
@@ -28,12 +29,16 @@ export interface PaymentPackCompany {
   accountNumber: string;
 }
 
-const ACCOUNT_COLUMN_LABEL: Partial<Record<BankTransferSummary["bankCode"], string>> = {
+const ACCOUNT_COLUMN_LABEL: Partial<
+  Record<BankTransferSummary["bankCode"], string>
+> = {
   BNU: "Conta BNU",
   BNCTL: "Conta BNCTL",
 };
 
-const BANK_LETTER_NAME: Partial<Record<BankTransferSummary["bankCode"], string>> = {
+const BANK_LETTER_NAME: Partial<
+  Record<BankTransferSummary["bankCode"], string>
+> = {
   BNU: "Banco Nacional Ultramarino, S.A.",
   BNCTL: "Banco Nacional de Comércio de Timor-Leste",
 };
@@ -54,8 +59,18 @@ function formatUSD(amount: number): string {
 function formatDatePT(isoDate: string): string {
   const [y, m, d] = isoDate.split("-").map(Number);
   const months = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ];
   if (!y || !m || !d) return isoDate;
   return `${d} de ${months[m - 1]} de ${y}`;
@@ -125,7 +140,9 @@ export interface SinglePaymentOrder {
   extraNote?: string;
 }
 
-export function buildSinglePaymentCoverEmail(order: SinglePaymentOrder): string {
+export function buildSinglePaymentCoverEmail(
+  order: SinglePaymentOrder,
+): string {
   const date = formatDatePT(order.valueDate);
   return [
     `Assunto: Pagamento — ${order.purpose} — ${order.company.name}`,
@@ -138,7 +155,9 @@ export function buildSinglePaymentCoverEmail(order: SinglePaymentOrder): string 
     `Conta a debitar: ${order.company.accountNumber}`,
     `Beneficiário: ${order.beneficiaryName}`,
     `Conta do beneficiário: ${order.beneficiaryAccount}`,
-    ...(order.reference ? [`Descrição da transferência: ${order.reference}`] : []),
+    ...(order.reference
+      ? [`Descrição da transferência: ${order.reference}`]
+      : []),
     `Montante: ${formatUSD(order.amount)}`,
     `Data de execução pretendida: ${date}`,
     ...(order.extraNote ? ["", order.extraNote] : []),
@@ -159,12 +178,16 @@ export async function generateSinglePaymentOrderXlsx(
   sheet.columns = [{ width: 4 }, { width: 34 }, { width: 34 }, { width: 22 }];
 
   let rowCursor = 2;
-  const put = (value: string, opts?: { bold?: boolean; size?: number; gapBefore?: number }) => {
+  const put = (
+    value: string,
+    opts?: { bold?: boolean; size?: number; gapBefore?: number },
+  ) => {
     rowCursor += opts?.gapBefore ?? 0;
     sheet.mergeCells(`B${rowCursor}:D${rowCursor}`);
     const cell = sheet.getCell(`B${rowCursor}`);
     cell.value = value;
-    if (opts?.bold || opts?.size) cell.font = { bold: opts.bold, size: opts.size };
+    if (opts?.bold || opts?.size)
+      cell.font = { bold: opts.bold, size: opts.size };
     rowCursor += 1;
   };
 
@@ -175,7 +198,9 @@ export async function generateSinglePaymentOrderXlsx(
     gapBefore: 1,
   });
   put(`Ao ${order.bankDisplayName}`, { gapBefore: 1 });
-  put("Autorizamos o débito da nossa conta abaixo indicada para pagamento", { gapBefore: 1 });
+  put("Autorizamos o débito da nossa conta abaixo indicada para pagamento", {
+    gapBefore: 1,
+  });
   put(`${order.purpose}, conforme os dados seguintes.`);
   put(`Conta a debitar: ${order.company.accountNumber}`, { gapBefore: 1 });
   put(`Beneficiário: ${order.beneficiaryName}`);
@@ -188,7 +213,9 @@ export async function generateSinglePaymentOrderXlsx(
   put("_____________________________          _____________________________", {
     gapBefore: 3,
   });
-  put("Assinatura autorizada                                  Assinatura autorizada");
+  put(
+    "Assinatura autorizada                                  Assinatura autorizada",
+  );
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
@@ -205,7 +232,20 @@ export function formatPeriodLabelPT(period: string): string {
 /** Upper-case PT month abbreviation used in bank credit descriptions ("ABR 2026"). */
 export function formatPeriodRefPT(period: string): string {
   const [y, m] = period.split("-").map(Number);
-  const abbrev = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+  const abbrev = [
+    "JAN",
+    "FEV",
+    "MAR",
+    "ABR",
+    "MAI",
+    "JUN",
+    "JUL",
+    "AGO",
+    "SET",
+    "OUT",
+    "NOV",
+    "DEZ",
+  ];
   if (!y || !m) return period;
   return `${abbrev[m - 1]} ${y}`;
 }
@@ -225,32 +265,39 @@ export async function generatePaymentPackXlsx(
 
   // ---- Sheet 1: the transfer list, in the accepted 4-column layout ----
   const list = wb.addWorksheet("Transferências");
-  list.columns = [
-    { width: 8 },
-    { width: 38 },
-    { width: 18 },
-    { width: 16 },
-  ];
+  list.columns = [{ width: 8 }, { width: 38 }, { width: 18 }, { width: 16 }];
 
   list.mergeCells("A1:D1");
   list.getCell("A1").value = company.name;
   list.getCell("A1").font = { bold: true, size: 13 };
   list.mergeCells("A2:D2");
-  list.getCell("A2").value = `Transferências de pagamento de salários — ${period}`;
+  list.getCell("A2").value =
+    `Transferências de pagamento de salários — ${period}`;
   list.getCell("A2").font = { bold: true };
   list.mergeCells("A3:D3");
-  list.getCell("A3").value = `Conta a debitar: ${company.accountNumber} · Data-valor: ${formatDatePT(summary.valueDate)}`;
+  list.getCell("A3").value =
+    `Conta a debitar: ${company.accountNumber} · Data-valor: ${formatDatePT(summary.valueDate)}`;
 
   const headerRow = list.addRow([]);
   void headerRow;
-  const header = list.addRow(["Nº Ord", "Nome", accountLabel, "Salário líquido"]);
+  const header = list.addRow([
+    "Nº Ord",
+    "Nome",
+    accountLabel,
+    "Salário líquido",
+  ]);
   header.font = { bold: true };
   header.eachCell((cell) => {
     cell.border = { bottom: { style: "thin" } };
   });
 
   summary.lines.forEach((line, index) => {
-    const row = list.addRow([index + 1, line.accountName, line.accountNumber, line.amount]);
+    const row = list.addRow([
+      index + 1,
+      line.accountName,
+      line.accountNumber,
+      line.amount,
+    ]);
     row.getCell(3).numFmt = "@"; // account numbers are text, never scientific
     row.getCell(4).numFmt = "#,##0.00";
   });
@@ -266,18 +313,27 @@ export async function generatePaymentPackXlsx(
   const order = wb.addWorksheet("Ordem de Pagamento");
   order.columns = [{ width: 4 }, { width: 30 }, { width: 30 }, { width: 22 }];
 
-  const put = (rowNumber: number, value: string, opts?: { bold?: boolean; size?: number }) => {
+  const put = (
+    rowNumber: number,
+    value: string,
+    opts?: { bold?: boolean; size?: number },
+  ) => {
     order.mergeCells(`B${rowNumber}:D${rowNumber}`);
     const cell = order.getCell(`B${rowNumber}`);
     cell.value = value;
-    if (opts?.bold || opts?.size) cell.font = { bold: opts.bold, size: opts.size };
+    if (opts?.bold || opts?.size)
+      cell.font = { bold: opts.bold, size: opts.size };
   };
 
   put(2, company.name, { bold: true, size: 13 });
-  put(4, `ORDEM DE PAGAMENTO — OT n.º ________ / ${summary.valueDate.slice(0, 4)}`, {
-    bold: true,
-    size: 12,
-  });
+  put(
+    4,
+    `ORDEM DE PAGAMENTO — OT n.º ________ / ${summary.valueDate.slice(0, 4)}`,
+    {
+      bold: true,
+      size: 12,
+    },
+  );
   put(6, `Ao ${BANK_LETTER_NAME[summary.bankCode] ?? summary.bankName}`);
   put(8, "Autorizamos o débito da nossa conta abaixo indicada para pagamento");
   put(9, `dos salários de ${period}, conforme a lista em anexo.`);
@@ -286,8 +342,14 @@ export async function generatePaymentPackXlsx(
   put(13, `Montante total: ${formatUSD(summary.totalAmount)}`);
   put(14, `Data de execução pretendida: ${formatDatePT(summary.valueDate)}`);
   put(17, `Díli, ${formatDatePT(summary.valueDate)}`);
-  put(21, "_____________________________          _____________________________");
-  put(22, "Assinatura autorizada                                  Assinatura autorizada");
+  put(
+    21,
+    "_____________________________          _____________________________",
+  );
+  put(
+    22,
+    "Assinatura autorizada                                  Assinatura autorizada",
+  );
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

@@ -80,6 +80,7 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   { id: "employeeIdExpiryDate", name: "Employee ID Expiry Date", category: "Documents", required: false, type: "date" },
   { id: "nationality", name: "Nationality", category: "Documents", required: false, type: "text" },
   { id: "socialSecurityNumber", name: "Social Security Number", category: "Documents", required: false, type: "text" },
+  { id: "taxIdentificationNumber", name: "Worker NIF / TIN", category: "Documents", required: false, type: "text" },
   { id: "ssnExpiryDate", name: "SSN Expiry Date", category: "Documents", required: false, type: "date" },
   { id: "electoralCardNumber", name: "Electoral Card Number", category: "Documents", required: false, type: "text" },
   { id: "electoralCardExpiryDate", name: "Electoral Card Expiry Date", category: "Documents", required: false, type: "date" },
