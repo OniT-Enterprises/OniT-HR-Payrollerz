@@ -38,6 +38,7 @@ import {
   Loader2,
   ArrowUpRight,
   ArrowDownRight,
+  WifiOff,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
@@ -45,6 +46,9 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { addMoney } from "@/lib/currency";
+import { downloadCSVRows } from "@/lib/csvExport";
+import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
 export default function GeneralLedger() {
   const { t } = useI18n();
@@ -63,14 +67,24 @@ export default function GeneralLedger() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch accounts via React Query
-  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(needAccounts);
+  const {
+    data: accounts = [],
+    isLoading: loadingAccounts,
+    isError: accountsError,
+    refetch: refetchAccounts,
+  } = useAccounts(needAccounts);
 
   // Derive selected account from fetched accounts
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
   const accountKey = selectedAccount?.id || selectedAccount?.code;
 
   // Fetch GL entries via React Query
-  const { data: glData, isLoading: loadingEntries } = useGeneralLedgerEntries(
+  const {
+    data: glData,
+    isLoading: loadingEntries,
+    isError: entriesError,
+    refetch: refetchEntries,
+  } = useGeneralLedgerEntries(
     accountKey,
     {
       accountCode: selectedAccount?.code,
@@ -99,8 +113,8 @@ export default function GeneralLedger() {
   const totals = useMemo(() => {
     return allEntries.reduce(
       (acc, entry) => ({
-        debit: acc.debit + entry.debit,
-        credit: acc.credit + entry.credit,
+        debit: addMoney(acc.debit, entry.debit),
+        credit: addMoney(acc.credit, entry.credit),
       }),
       { debit: 0, credit: 0 }
     );
@@ -142,14 +156,11 @@ export default function GeneralLedger() {
       ]);
     }
 
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `general-ledger-${selectedAccount.code}-${startDate}-to-${endDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVRows(
+      `general-ledger-${selectedAccount.code}-${startDate}-to-${endDate}.csv`,
+      headers,
+      rows,
+    );
   };
 
   // Group accounts by type for select dropdown
@@ -171,7 +182,7 @@ export default function GeneralLedger() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.generalLedger} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title={t("accounting.generalLedger.title")}
           subtitle={t("accounting.generalLedger.subtitle")}
@@ -276,6 +287,16 @@ export default function GeneralLedger() {
         </CardContent>
       </Card>
 
+      {accountsError && needAccounts && (
+        <ReportEmptyState
+          icon={WifiOff}
+          title={t("common.connectionIssueTitle")}
+          description={t("common.connectionIssueDesc")}
+          actionLabel={t("common.retry")}
+          onAction={() => void refetchAccounts()}
+        />
+      )}
+
       {selectedAccount && (
         <MoreDetailsSection className="mb-6">
         <Card>
@@ -318,7 +339,15 @@ export default function GeneralLedger() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loadingEntries ? (
+            {entriesError ? (
+              <ReportEmptyState
+                icon={WifiOff}
+                title={t("common.connectionIssueTitle")}
+                description={t("common.connectionIssueDesc")}
+                actionLabel={t("common.retry")}
+                onAction={() => void refetchEntries()}
+              />
+            ) : loadingEntries ? (
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>

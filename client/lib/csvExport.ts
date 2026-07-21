@@ -7,6 +7,23 @@ interface CsvColumn {
   label: string;
 }
 
+/** Build an RFC-compatible CSV string (quotes, commas and newlines included). */
+export function buildCSV(headers: string[], rows: unknown[][]): string {
+  return Papa.unparse({ fields: headers, data: rows });
+}
+
+/** Download tabular rows as an Excel-friendly UTF-8 CSV. */
+export function downloadCSVRows(
+  filename: string,
+  headers: string[],
+  rows: unknown[][],
+): void {
+  const blob = new Blob(["\uFEFF" + buildCSV(headers, rows)], {
+    type: "text/csv;charset=utf-8;",
+  });
+  downloadBlob(blob, filename);
+}
+
 /**
  * Export data to a properly-formatted CSV file using papaparse.
  * Handles quoting, escaping, commas in values, and BOM for Excel compatibility.

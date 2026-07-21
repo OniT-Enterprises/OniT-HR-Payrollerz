@@ -56,12 +56,16 @@ import { departmentService, type Department } from "@/services/departmentService
 import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
 import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
 import ContractGeneratorDialog from "@/components/staff/ContractGeneratorDialog";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import { toDateStringTL } from "@/lib/dateUtils";
+import { buildCSV } from "@/lib/csvExport";
+import { buildEmployeesFromCSV } from "@/lib/employees/import";
+import { divideMoney, roundMoney } from "@/lib/currency";
 import {
   ageAt,
   isLightWorkOnlyAge,
@@ -88,7 +92,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Helper function to get monthly salary with fallback
 const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?: number }): number => {
-  return compensation.monthlySalary || Math.round((compensation.annualSalary || 0) / 12) || 0;
+  return compensation.monthlySalary || divideMoney(compensation.annualSalary || 0, 12) || 0;
 };
 
 // Normalize employment type from Firestore (may be lowercase) to enum values
@@ -171,6 +175,8 @@ export default function AddEmployee() {
       department: "",
       jobTitle: searchParams.get("jobTitle") || "",
       manager: "",
+      projectCode: "",
+      fundingSource: "",
       startDate: "",
       employmentType: "Full-time",
       contractedWeeklyHours: "",
@@ -314,6 +320,8 @@ export default function AddEmployee() {
           department: employee.jobDetails.department,
           jobTitle: employee.jobDetails.position,
           manager: employee.jobDetails.manager || "",
+          projectCode: employee.jobDetails.projectCode || "",
+          fundingSource: employee.jobDetails.fundingSource || "",
           startDate: employee.jobDetails.hireDate,
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
           contractedWeeklyHours: employee.jobDetails.contractedWeeklyHours?.toString() || "",
@@ -568,9 +576,8 @@ export default function AddEmployee() {
           emergencyContactPhone: data.emergencyContactPhone || "",
         },
         jobDetails: {
-          // Preserve fields this form doesn't edit (fundingSource,
-          // projectCode, contractRenewals, ...) — updateEmployee replaces the
-          // whole jobDetails map, so dropping them here would wipe them.
+          // Preserve lifecycle fields because updateEmployee replaces the
+          // whole jobDetails map.
           ...(previousJobDetails ?? {}),
           employeeId,
           department: data.department,
@@ -595,9 +602,11 @@ export default function AddEmployee() {
           ...(renewals ? { contractRenewals: renewals } : {}),
           workLocation: previousJobDetails?.workLocation || "Office",
           manager: data.manager || "",
+          projectCode: data.projectCode?.trim() || "",
+          fundingSource: data.fundingSource?.trim() || "",
         },
         compensation: {
-          monthlySalary: parseInt(data.salary || "0", 10) || 0,
+          monthlySalary: roundMoney(Number(data.salary || "0") || 0),
           annualLeaveDays: parseInt(data.leaveDays, 10) || 12,
           benefitsPackage: data.benefits || "standard",
           payFrequency: data.payFrequency,
@@ -686,6 +695,16 @@ export default function AddEmployee() {
                 field: "jobDetails.minimumWageReviewNote",
                 from: editingEmployee.jobDetails.minimumWageReviewNote || null,
                 to: newEmployee.jobDetails.minimumWageReviewNote || null,
+              },
+              {
+                field: "jobDetails.projectCode",
+                from: editingEmployee.jobDetails.projectCode || null,
+                to: newEmployee.jobDetails.projectCode || null,
+              },
+              {
+                field: "jobDetails.fundingSource",
+                from: editingEmployee.jobDetails.fundingSource || null,
+                to: newEmployee.jobDetails.fundingSource || null,
               },
             ],
           } : undefined,
@@ -800,9 +819,35 @@ export default function AddEmployee() {
 
   // CSV Import handlers
   const downloadTemplate = () => {
-    const headers = ["firstName", "lastName", "email", "phone", "department", "jobTitle", "startDate", "employmentType", "salary", "leaveDays"];
-    const sample = ["John", "Doe", "john@company.com", "+670123456", "Engineering", "Developer", "2024-02-01", "Full-time", "1500", "12"];
-    const csv = [headers, sample].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const headers = [
+      "firstName",
+      "lastName",
+      "email",
+      "phone",
+      "department",
+      "position",
+      "hireDate",
+      "employmentType",
+      "monthlySalary",
+      "annualLeaveDays",
+      "projectCode",
+      "fundingSource",
+    ];
+    const sample = [
+      "John",
+      "Doe",
+      "john@company.com",
+      "+670123456",
+      "Operations",
+      "Project Officer",
+      "2026-02-01",
+      "Full-time",
+      "1500.00",
+      "12",
+      "HEALTH-2026",
+      "Example Donor",
+    ];
+    const csv = buildCSV(headers, [sample]);
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -826,7 +871,27 @@ export default function AddEmployee() {
   };
 
   const handleMappingComplete = async (mappings: ColumnMapping[], csvData: Record<string, string>[]) => {
-    // Bulk import logic (simplified for wizard focus)
+    if (isSubmitting) return;
+    const importResult = buildEmployeesFromCSV(csvData, mappings, {
+      today: toDateStringTL(new Date()),
+      batchId: Date.now().toString(),
+    });
+
+    if (importResult.errors.length) {
+      const firstError = importResult.errors[0];
+      toast({
+        title: t("addEmployee.import.validationFailedTitle"),
+        description: t("addEmployee.import.validationFailedDesc", {
+          count: importResult.errors.length,
+          row: firstError.rowNumber,
+          error: firstError.messages.join("; "),
+        }),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
     setShowColumnMapper(false);
     setImportFile(null);
     toast({
@@ -835,13 +900,60 @@ export default function AddEmployee() {
         count: csvData.length,
       }),
     });
-    // ... full import logic would go here
+
+    let importedCount = 0;
+    const failures: Array<{ rowNumber: number; message: string }> = [];
+    for (const item of importResult.employees) {
+      try {
+        await employeeService.addEmployee(
+          tenantId,
+          item.employee,
+          user
+            ? {
+                tenantId,
+                userId: user.uid,
+                userEmail: user.email || "",
+                userName: user.displayName || undefined,
+              }
+            : undefined,
+        );
+        importedCount += 1;
+      } catch (error) {
+        failures.push({
+          rowNumber: item.rowNumber,
+          message: error instanceof Error ? error.message : "Import failed",
+        });
+      }
+    }
+
+    setIsSubmitting(false);
+    await loadDepartmentsAndManagers();
+    if (failures.length) {
+      toast({
+        title: t("addEmployee.import.completedWithErrorsTitle"),
+        description: t("addEmployee.import.completedWithErrorsDesc", {
+          imported: importedCount,
+          failed: failures.length,
+          row: failures[0].rowNumber,
+          error: failures[0].message,
+        }),
+        variant: importedCount === 0 ? "destructive" : "default",
+      });
+      return;
+    }
+
+    toast({
+      title: t("addEmployee.import.completedTitle"),
+      description: t("addEmployee.import.completedDesc", {
+        count: importedCount,
+      }),
+    });
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3 min-w-0">
               <Skeleton className="h-10 w-10 rounded-full shrink-0" />
@@ -922,10 +1034,10 @@ export default function AddEmployee() {
             {t("common.moreActions")}
           </Button>
         }
-        className="mx-auto max-w-screen-2xl px-6"
+        className="mx-auto max-w-screen-2xl px-4 sm:px-6"
       />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-5 -mt-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 -mt-6">
         {showBulkTools && (
           <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
             <p className="mb-3 text-sm text-muted-foreground">
@@ -1380,6 +1492,56 @@ export default function AddEmployee() {
                   </div>
                 )}
               </div>
+
+              <MoreDetailsSection
+                title={t("addEmployee.fields.allocationTitle")}
+                defaultOpen={Boolean(
+                  editingEmployee?.jobDetails.projectCode ||
+                    editingEmployee?.jobDetails.fundingSource,
+                )}
+              >
+                <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {t("addEmployee.fields.allocationHelp")}
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="projectCode">
+                        {t("addEmployee.fields.projectCode")}
+                      </Label>
+                      <Input
+                        id="projectCode"
+                        {...register("projectCode")}
+                        placeholder={t(
+                          "addEmployee.fields.projectCodePlaceholder",
+                        )}
+                      />
+                      {errors.projectCode && (
+                        <p className="text-sm text-destructive">
+                          {errors.projectCode.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="fundingSource">
+                        {t("addEmployee.fields.fundingSource")}
+                      </Label>
+                      <Input
+                        id="fundingSource"
+                        {...register("fundingSource")}
+                        placeholder={t(
+                          "addEmployee.fields.fundingSourcePlaceholder",
+                        )}
+                      />
+                      {errors.fundingSource && (
+                        <p className="text-sm text-destructive">
+                          {errors.fundingSource.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </MoreDetailsSection>
 
               {/* Work Contract Upload */}
               <div className="space-y-2">

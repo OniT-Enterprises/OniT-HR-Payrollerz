@@ -1,5 +1,5 @@
 /**
- * Annual Income Tax preparation (TADR-IT 1, "Form C"). The default flow is a
+ * Annual Income Tax preparation (TADR-IT 1). The default flow is a
  * short hand-off checklist; advanced tax mode adds the accountant workpaper.
  *
  * Maps the year's posted GL into the official form's line numbers, applies
@@ -42,6 +42,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdvancedTax, useTenantId } from "@/contexts/TenantContext";
@@ -122,22 +123,37 @@ export default function AnnualIncomeTaxPrep() {
     reviewNote: "",
   });
 
-  const { data: statement, isLoading: statementLoading } = useIncomeStatement(
+  const {
+    data: statement,
+    isLoading: statementLoading,
+    isError: statementError,
+    isFetching: statementFetching,
+    refetch: refetchStatement,
+  } = useIncomeStatement(
     `${taxYear}-01-01`,
     `${taxYear}-12-31`,
     taxYear,
     showAdvancedTax,
   );
-  const { data: assets = [], isLoading: assetsLoading } = useQuery({
+  const {
+    data: assets = [],
+    isLoading: assetsLoading,
+    isError: assetsError,
+    isFetching: assetsFetching,
+    refetch: refetchAssets,
+  } = useQuery({
     queryKey: ["tenants", tenantId, "fixedAssets", "list"],
     queryFn: () => fixedAssetService.list(tenantId),
     staleTime: 5 * 60 * 1000,
     enabled: showAdvancedTax,
   });
-  const { data: savedFiling, isLoading: filingLoading } = useTaxFilingByPeriod(
-    "annual_income_tax",
-    String(taxYear),
-  );
+  const {
+    data: savedFiling,
+    isLoading: filingLoading,
+    isError: filingError,
+    isFetching: filingFetching,
+    refetch: refetchFiling,
+  } = useTaxFilingByPeriod("annual_income_tax", String(taxYear));
 
   // Hydrate saved inputs once per loaded record; keep unsaved edits otherwise.
   const hydratedFor = useRef<string | null>(null);
@@ -219,6 +235,11 @@ export default function AnnualIncomeTaxPrep() {
   const loading =
     filingLoading ||
     (showAdvancedTax && (statementLoading || assetsLoading));
+  const loadError =
+    filingError || (showAdvancedTax && (statementError || assetsError));
+  const retrying =
+    filingFetching ||
+    (showAdvancedTax && (statementFetching || assetsFetching));
 
   const lineLabel = (code: FormCLineCode) =>
     t(`taxReports.formC.workpaper.lines.l${code}`);
@@ -417,6 +438,44 @@ export default function AnnualIncomeTaxPrep() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("taxReports.formC.title")}
+          description={t("taxReports.formC.dialogDescription")}
+        />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={
+              showAdvancedTax
+                ? t("taxReports.formC.workpaper.pageTitle")
+                : t("taxReports.formC.title")
+            }
+            subtitle={
+              showAdvancedTax
+                ? t("taxReports.formC.workpaper.pageSubtitle")
+                : t("taxReports.formC.dialogDescription")
+            }
+            icon={showAdvancedTax ? Calculator : CalendarRange}
+            iconColor="text-orange-500"
+          />
+          <DashboardLoadError
+            isRetrying={retrying}
+            onRetry={() => {
+              const retries: Promise<unknown>[] = [refetchFiling()];
+              if (showAdvancedTax) {
+                retries.push(refetchStatement(), refetchAssets());
+              }
+              return Promise.all(retries);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!showAdvancedTax) {
     return (
       <div className="min-h-screen bg-background">
@@ -425,7 +484,7 @@ export default function AnnualIncomeTaxPrep() {
           description={t("taxReports.formC.dialogDescription")}
         />
         <MainNavigation />
-        <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
           <PageHeader
             title={t("taxReports.formC.title")}
             subtitle={t("taxReports.formC.dialogDescription")}

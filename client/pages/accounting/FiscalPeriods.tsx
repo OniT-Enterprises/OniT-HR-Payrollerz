@@ -67,6 +67,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrencyTL } from '@/lib/payroll/constants-tl';
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { addMoney, compareMoney, roundMoney, subtractMoney } from "@/lib/currency";
 import {
   useAccounts,
   useFiscalYear,
@@ -126,18 +127,22 @@ export default function FiscalPeriods() {
     let totalDebit = 0;
     let totalCredit = 0;
     Object.values(obAmounts).forEach(({ debit, credit }) => {
-      totalDebit += parseFloat(debit) || 0;
-      totalCredit += parseFloat(credit) || 0;
+      totalDebit = addMoney(totalDebit, roundMoney(Number(debit) || 0));
+      totalCredit = addMoney(totalCredit, roundMoney(Number(credit) || 0));
     });
-    return { totalDebit, totalCredit, balanced: Math.abs(totalDebit - totalCredit) < 0.01 };
+    return {
+      totalDebit,
+      totalCredit,
+      balanced: compareMoney(totalDebit, totalCredit) === 0,
+    };
   }, [obAmounts]);
 
   const handlePostOpeningBalances = async () => {
     if (!fiscalYear?.id || !obTotals.balanced) return;
     const lines = bsAccounts
       .map((a: Account) => {
-        const debit = parseFloat(obAmounts[a.id!]?.debit || '0') || 0;
-        const credit = parseFloat(obAmounts[a.id!]?.credit || '0') || 0;
+        const debit = roundMoney(Number(obAmounts[a.id!]?.debit || '0') || 0);
+        const credit = roundMoney(Number(obAmounts[a.id!]?.credit || '0') || 0);
         if (debit === 0 && credit === 0) return null;
         return { accountId: a.id!, accountCode: a.code, accountName: a.name, debit, credit };
       })
@@ -280,7 +285,7 @@ export default function FiscalPeriods() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title={t("accounting.fiscalPeriods.title")}
           subtitle={t("accounting.fiscalPeriods.subtitle")}
@@ -731,7 +736,7 @@ export default function FiscalPeriods() {
                 ) : (
                   <Badge variant="destructive">
                     <AlertTriangle className="h-3 w-3 mr-1" />
-                    {t("accounting.trialBalance.notBalanced")} ({formatCurrencyTL(Math.abs(obTotals.totalDebit - obTotals.totalCredit))})
+                    {t("accounting.trialBalance.notBalanced")} ({formatCurrencyTL(Math.abs(subtractMoney(obTotals.totalDebit, obTotals.totalCredit)))})
                   </Badge>
                 )}
               </div>

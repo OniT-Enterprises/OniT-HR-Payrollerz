@@ -34,31 +34,12 @@ import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { payrollService } from "@/services/payrollService";
 import { getTodayTL } from "@/lib/dateUtils";
+import { downloadCSVRows } from "@/lib/csvExport";
 import { Download, FolderKanban, Building2, WifiOff } from "lucide-react";
-import { createEmployeeAllocationMetaMap } from "@/lib/reports/ngoReporting";
-
-interface AllocationRow {
-  projectCode: string;
-  fundingSource: string;
-  employeeCount: number;
-  grossPay: number;
-  incomeTax: number;
-  inssEmployee: number;
-  inssEmployer: number;
-  netPay: number;
-  employerCost: number;
-}
-
-interface AllocationTotals {
-  runCount: number;
-  employeeCount: number;
-  grossPay: number;
-  incomeTax: number;
-  inssEmployee: number;
-  inssEmployer: number;
-  netPay: number;
-  employerCost: number;
-}
+import {
+  createEmployeeAllocationMetaMap,
+  summarizePayrollAllocationReport,
+} from "@/lib/reports/ngoReporting";
 
 export default function PayrollAllocationReport() {
   const { toast } = useToast();
@@ -88,7 +69,9 @@ export default function PayrollAllocationReport() {
       maximumFractionDigits: 2,
     }).format(value);
 
-  const payrollRunsQuery = usePayrollRuns({ limit: 300 });
+  // Report on every run rather than silently truncating organisations with
+  // more than 300 historical payrolls.
+  const payrollRunsQuery = usePayrollRuns();
   const employeesQuery = useAllEmployees();
   const payrollRuns = useMemo(
     () => payrollRunsQuery.data ?? [],
@@ -125,11 +108,8 @@ export default function PayrollAllocationReport() {
       locale,
       runIds.join(","),
     ],
-    enabled: runIds.length > 0 && employees.length > 0,
-    queryFn: async (): Promise<{
-      rows: AllocationRow[];
-      totals: AllocationTotals;
-    }> => {
+    enabled: runIds.length > 0 && !employeesQuery.isLoading,
+    queryFn: async () => {
       const employeeMeta = createEmployeeAllocationMetaMap(employees);
 
       const recordsByRun = await Promise.all(
@@ -138,107 +118,11 @@ export default function PayrollAllocationReport() {
         ),
       );
 
-      const grouped = new Map<
-        string,
-        {
-          projectCode: string;
-          fundingSource: string;
-          employeeIds: Set<string>;
-          grossPay: number;
-          incomeTax: number;
-          inssEmployee: number;
-          inssEmployer: number;
-          netPay: number;
-          employerCost: number;
-        }
-      >();
-
-      const allEmployeeIds = new Set<string>();
-      let totalGrossPay = 0;
-      let totalIncomeTax = 0;
-      let totalINSSEmployee = 0;
-      let totalINSSEmployer = 0;
-      let totalNetPay = 0;
-      let totalEmployerCost = 0;
-
-      for (const records of recordsByRun) {
-        for (const record of records) {
-          const meta = employeeMeta.get(record.employeeId) || {
-            projectCode: t("reports.payrollAllocation.unassigned"),
-            fundingSource: t("reports.payrollAllocation.unassigned"),
-          };
-          const key = `${meta.projectCode}::${meta.fundingSource}`;
-          const incomeTax =
-            record.deductions?.find(
-              (deduction) => deduction.type === "income_tax",
-            )?.amount || 0;
-          const inssEmployee =
-            record.deductions?.find(
-              (deduction) => deduction.type === "inss_employee",
-            )?.amount || 0;
-          const inssEmployer =
-            record.employerTaxes?.find((tax) => tax.type === "inss_employer")
-              ?.amount || 0;
-
-          const row = grouped.get(key) || {
-            projectCode: meta.projectCode,
-            fundingSource: meta.fundingSource,
-            employeeIds: new Set<string>(),
-            grossPay: 0,
-            incomeTax: 0,
-            inssEmployee: 0,
-            inssEmployer: 0,
-            netPay: 0,
-            employerCost: 0,
-          };
-
-          row.employeeIds.add(record.employeeId);
-          row.grossPay += record.totalGrossPay || 0;
-          row.incomeTax += incomeTax;
-          row.inssEmployee += inssEmployee;
-          row.inssEmployer += inssEmployer;
-          row.netPay += record.netPay || 0;
-          row.employerCost += record.totalEmployerCost || 0;
-
-          grouped.set(key, row);
-
-          allEmployeeIds.add(record.employeeId);
-          totalGrossPay += record.totalGrossPay || 0;
-          totalIncomeTax += incomeTax;
-          totalINSSEmployee += inssEmployee;
-          totalINSSEmployer += inssEmployer;
-          totalNetPay += record.netPay || 0;
-          totalEmployerCost += record.totalEmployerCost || 0;
-        }
-      }
-
-      const rows: AllocationRow[] = Array.from(grouped.values())
-        .map((row) => ({
-          projectCode: row.projectCode,
-          fundingSource: row.fundingSource,
-          employeeCount: row.employeeIds.size,
-          grossPay: row.grossPay,
-          incomeTax: row.incomeTax,
-          inssEmployee: row.inssEmployee,
-          inssEmployer: row.inssEmployer,
-          netPay: row.netPay,
-          employerCost: row.employerCost,
-        }))
-        .sort((a, b) => b.grossPay - a.grossPay);
-
-      return {
-        rows,
-        totals: {
-          runCount: payrollRunsForPeriod.length,
-          employeeCount: allEmployeeIds.size,
-          grossPay: totalGrossPay,
-          incomeTax: totalIncomeTax,
-          inssEmployee: totalINSSEmployee,
-          inssEmployer: totalINSSEmployer,
-          netPay: totalNetPay,
-          employerCost: totalEmployerCost,
-        },
-      };
+      return summarizePayrollAllocationReport(
+        recordsByRun.flat(),
+        employeeMeta,
+        payrollRunsForPeriod.length,
+      );
     },
   });
 
@@ -277,7 +161,7 @@ export default function PayrollAllocationReport() {
     const body = rows.map((row) => [
       row.projectCode,
       row.fundingSource,
-      String(row.employeeCount),
+      row.employeeCount,
       row.grossPay.toFixed(2),
       row.incomeTax.toFixed(2),
       row.inssEmployee.toFixed(2),
@@ -285,19 +169,11 @@ export default function PayrollAllocationReport() {
       row.netPay.toFixed(2),
       row.employerCost.toFixed(2),
     ]);
-    const csv = [
-      header.join(","),
-      ...body.map((line) => line.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.download = `payroll-allocation-${selectedYear}-${selectedMonth}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCSVRows(
+      `payroll-allocation-${selectedYear}-${selectedMonth}.csv`,
+      header,
+      body,
+    );
     toast({
       title: t("reports.payrollAllocation.toast.title"),
       description: t("reports.payrollAllocation.toast.description"),

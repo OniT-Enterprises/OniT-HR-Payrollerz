@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useAdvancedTax, useTenantId } from "@/contexts/TenantContext";
@@ -42,7 +43,13 @@ export default function TaxReports() {
   const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
 
-  const { data: dueDates = [], isLoading: loading } = useQuery({
+  const {
+    data: dueDates = [],
+    isLoading: loading,
+    isError: loadError,
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["tenants", tenantId, "taxFilings", "dueSoon", 6],
     queryFn: () => taxFilingService.getFilingsDueSoon(tenantId, 6),
     staleTime: 5 * 60 * 1000,
@@ -196,6 +203,27 @@ export default function TaxReports() {
               </Card>
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO {...seoConfig.taxes} />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("taxReports.title")}
+            subtitle={t("taxReports.subtitle")}
+            icon={Shield}
+            iconColor="text-primary"
+          />
+          <DashboardLoadError
+            isRetrying={isFetching}
+            onRetry={() => refetch()}
+          />
         </div>
       </div>
     );

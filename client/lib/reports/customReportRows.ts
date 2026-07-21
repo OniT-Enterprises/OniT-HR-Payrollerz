@@ -44,3 +44,26 @@ export function filterEmployeeRows<
     return true;
   });
 }
+
+/** Add the real employee count to each department row. */
+export function addDepartmentHeadcounts<
+  TDepartment extends { name: string },
+  TEmployee extends { jobDetails?: { department?: string } },
+>(departments: TDepartment[], employees: TEmployee[]) {
+  const counts = employees.reduce<Record<string, number>>(
+    (headcountByDepartment, employee) => {
+      const department = employee.jobDetails?.department;
+      if (department) {
+        headcountByDepartment[department] =
+          (headcountByDepartment[department] ?? 0) + 1;
+      }
+      return headcountByDepartment;
+    },
+    {},
+  );
+
+  return departments.map((department) => ({
+    ...department,
+    headcount: counts[department.name] ?? 0,
+  }));
+}

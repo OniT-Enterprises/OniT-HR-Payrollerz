@@ -67,7 +67,10 @@ async function signUpOwner(page: Page) {
 test("invoice, bill, asset, depreciation, reconciliation, and close reach balanced books", async ({
   page,
 }) => {
-  test.setTimeout(240_000);
+  // This journey intentionally exercises every non-payroll posting chain and
+  // the resulting statements. Firebase emulator startup and serial journal
+  // polling make four minutes too tight on slower development machines.
+  test.setTimeout(480_000);
   page.on("pageerror", (error) => console.log("[pageerror]", error.message));
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -116,6 +119,16 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   expect(invoiceJournal.byCode["4100"]?.credit ?? 0).toBeCloseTo(120, 2);
   expect(invoiceJournal.totalDebit).toBeCloseTo(invoiceJournal.totalCredit, 2);
 
+  // The receivable appears in the customer aging report before settlement,
+  // with 61–90 and 90+ kept as separate columns.
+  await page.goto("/money/financials/ar-aging");
+  const customerAgingRow = page.getByRole("row").filter({ hasText: CUSTOMER });
+  await expect(customerAgingRow).toBeVisible({ timeout: 30_000 });
+  await expect(customerAgingRow.getByText("$120").first()).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "61-90" }).last()).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "90+" }).last()).toBeVisible();
+
+  await page.goto("/money/invoices");
   await page.getByText(CUSTOMER).first().click();
   await page.getByRole("button", { name: /record payment/i }).first().click();
   const receiptDialog = page.getByRole("dialog", { name: /record payment/i });
@@ -175,6 +188,15 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   expect(billJournal.byCode["2110"]?.credit ?? 0).toBeCloseTo(1000, 2);
   expect(billJournal.totalDebit).toBeCloseTo(billJournal.totalCredit, 2);
 
+  const billDetailUrl = page.url();
+  await page.goto("/money/financials/ap-aging");
+  const vendorAgingRow = page.getByRole("row").filter({ hasText: vendor.name });
+  await expect(vendorAgingRow).toBeVisible({ timeout: 30_000 });
+  await expect(vendorAgingRow.getByText("$1,000").first()).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "61-90" }).last()).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "90+" }).last()).toBeVisible();
+
+  await page.goto(billDetailUrl);
   await page.getByRole("button", { name: /record payment/i }).first().click();
   const billPaymentDialog = page.getByRole("dialog", { name: /record payment/i });
   await billPaymentDialog.locator('input[type="number"]').fill("1000");
@@ -231,6 +253,56 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   expect(depreciationJournal.byCode["5800"]?.debit ?? 0).toBeCloseTo(100, 2);
   expect(depreciationJournal.byCode["1590"]?.credit ?? 0).toBeCloseTo(100, 2);
   expect(depreciationJournal.totalDebit).toBeCloseTo(depreciationJournal.totalCredit, 2);
+
+  // ── Posted journals → statements, filters, exports, cash reconciliation ─
+  const yearStart = `${TODAY.slice(0, 4)}-01-01`;
+
+  await page.goto("/accounting/statements/trial-balance");
+  await page.locator('input[type="date"]').nth(0).fill(yearStart);
+  await page.locator('input[type="date"]').nth(1).fill(TODAY);
+  await page.getByRole("button", { name: /^generate$/i }).click();
+  await expect(page.getByText("4100", { exact: true }).last()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: /more details/i }).click();
+  await expect(page.getByText(/books are balanced/i)).toBeVisible();
+  const trialDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export csv/i }).click();
+  expect((await trialDownloadPromise).suggestedFilename()).toBe(
+    `trial-balance-${TODAY}.csv`,
+  );
+
+  await page.goto("/accounting/statements/income-statement");
+  await page.locator('input[type="date"]').nth(0).fill(yearStart);
+  await page.locator('input[type="date"]').nth(1).fill(TODAY);
+  await page.getByRole("button", { name: /^generate$/i }).click();
+  const revenueRow = page.getByRole("row").filter({ hasText: "4100" });
+  await expect(revenueRow).toBeVisible({ timeout: 30_000 });
+  await expect(revenueRow.getByText("$120.00")).toBeVisible();
+  const incomeDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export csv/i }).click();
+  expect((await incomeDownloadPromise).suggestedFilename()).toBe(
+    `income-statement-${yearStart}-to-${TODAY}.csv`,
+  );
+
+  await page.goto("/accounting/statements/balance-sheet");
+  await page.locator('input[type="date"]').fill(TODAY);
+  await page.getByRole("button", { name: /^generate$/i }).click();
+  await expect(page.getByText(/total assets/i).last()).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: /more details/i }).click();
+  await expect(page.getByText(/balance sheet is balanced/i)).toBeVisible();
+  const balanceDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export csv/i }).click();
+  expect((await balanceDownloadPromise).suggestedFilename()).toBe(
+    `balance-sheet-${TODAY}.csv`,
+  );
+
+  await page.goto("/accounting/statements/cash-flow");
+  await expect(page.getByText(/cash flow statement/i)).toBeVisible({ timeout: 30_000 });
+  const customerPaymentsRow = page.getByText(/customer payments/i).locator("..");
+  await expect(customerPaymentsRow.getByText("$120", { exact: true })).toBeVisible();
+  const vendorPaymentsRow = page.getByText(/vendor payments/i).locator("..");
+  await expect(vendorPaymentsRow.getByText("$980", { exact: true })).toBeVisible();
+  const otherOutflowsRow = page.getByText(/other outflows/i).locator("..");
+  await expect(otherOutflowsRow.getByText("$1,200", { exact: true })).toBeVisible();
 
   // ── Close the period only after every posting above is complete ─────────
   await page.goto("/accounting/statements/fiscal-periods");

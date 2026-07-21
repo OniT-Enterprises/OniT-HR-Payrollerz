@@ -4,6 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  addDepartmentHeadcounts,
   filterEmployeeRows,
   getColumnValue,
 } from '@/lib/reports/customReportRows';
@@ -82,5 +83,23 @@ describe('filterEmployeeRows', () => {
 
   it('ignores dateRange (attendance-only filter)', () => {
     expect(filterEmployeeRows(rows, { dateRange: '30' })).toHaveLength(4);
+  });
+});
+
+describe('addDepartmentHeadcounts', () => {
+  it('adds real counts while preserving empty departments', () => {
+    expect(
+      addDepartmentHeadcounts(
+        [{ id: 'ops', name: 'Operations' }, { id: 'finance', name: 'Finance' }],
+        [
+          { jobDetails: { department: 'Operations' } },
+          { jobDetails: { department: 'Operations' } },
+          { jobDetails: { department: 'Unassigned' } },
+        ],
+      ),
+    ).toEqual([
+      { id: 'ops', name: 'Operations', headcount: 2 },
+      { id: 'finance', name: 'Finance', headcount: 0 },
+    ]);
   });
 });

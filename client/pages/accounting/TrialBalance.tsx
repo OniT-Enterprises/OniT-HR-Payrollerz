@@ -35,6 +35,7 @@ import {
   Printer,
   TrendingUp,
   TrendingDown,
+  WifiOff,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
@@ -42,6 +43,9 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { addMoney, compareMoney, subtractMoney } from "@/lib/currency";
+import { downloadCSVRows } from "@/lib/csvExport";
+import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -123,20 +127,20 @@ export default function TrialBalance() {
   const totals = useMemo(() => {
     return filteredRows.reduce(
       (acc, row) => ({
-        openingDebit: acc.openingDebit + row.openingDebit,
-        openingCredit: acc.openingCredit + row.openingCredit,
-        periodDebit: acc.periodDebit + row.periodDebit,
-        periodCredit: acc.periodCredit + row.periodCredit,
-        debit: acc.debit + row.closingDebit,
-        credit: acc.credit + row.closingCredit,
+        openingDebit: addMoney(acc.openingDebit, row.openingDebit),
+        openingCredit: addMoney(acc.openingCredit, row.openingCredit),
+        periodDebit: addMoney(acc.periodDebit, row.periodDebit),
+        periodCredit: addMoney(acc.periodCredit, row.periodCredit),
+        debit: addMoney(acc.debit, row.closingDebit),
+        credit: addMoney(acc.credit, row.closingCredit),
       }),
       { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0 }
     );
   }, [filteredRows]);
 
   // Check if balanced
-  const isBalanced = Math.abs(totals.debit - totals.credit) < 0.01;
-  const difference = totals.debit - totals.credit;
+  const isBalanced = compareMoney(totals.debit, totals.credit) === 0;
+  const difference = subtractMoney(totals.debit, totals.credit);
 
   // Group rows by account type for summary
   const summaryByType = useMemo(() => {
@@ -149,12 +153,12 @@ export default function TrialBalance() {
     };
 
     filteredRows.forEach((row) => {
-      summary[row.accountType].openingDebit += row.openingDebit;
-      summary[row.accountType].openingCredit += row.openingCredit;
-      summary[row.accountType].periodDebit += row.periodDebit;
-      summary[row.accountType].periodCredit += row.periodCredit;
-      summary[row.accountType].debit += row.closingDebit;
-      summary[row.accountType].credit += row.closingCredit;
+      summary[row.accountType].openingDebit = addMoney(summary[row.accountType].openingDebit, row.openingDebit);
+      summary[row.accountType].openingCredit = addMoney(summary[row.accountType].openingCredit, row.openingCredit);
+      summary[row.accountType].periodDebit = addMoney(summary[row.accountType].periodDebit, row.periodDebit);
+      summary[row.accountType].periodCredit = addMoney(summary[row.accountType].periodCredit, row.periodCredit);
+      summary[row.accountType].debit = addMoney(summary[row.accountType].debit, row.closingDebit);
+      summary[row.accountType].credit = addMoney(summary[row.accountType].credit, row.closingCredit);
       summary[row.accountType].count++;
     });
 
@@ -195,24 +199,13 @@ export default function TrialBalance() {
     ]);
 
     // Add totals row
-    const openingDebitTotal = filteredRows.reduce((s, r) => s + r.openingDebit, 0);
-    const openingCreditTotal = filteredRows.reduce((s, r) => s + r.openingCredit, 0);
-    const periodDebitTotal = filteredRows.reduce((s, r) => s + r.periodDebit, 0);
-    const periodCreditTotal = filteredRows.reduce((s, r) => s + r.periodCredit, 0);
     rows.push(['', t("accounting.trialBalance.totalLabel"), '',
-      openingDebitTotal.toFixed(2), openingCreditTotal.toFixed(2),
-      periodDebitTotal.toFixed(2), periodCreditTotal.toFixed(2),
+      totals.openingDebit.toFixed(2), totals.openingCredit.toFixed(2),
+      totals.periodDebit.toFixed(2), totals.periodCredit.toFixed(2),
       totals.debit.toFixed(2), totals.credit.toFixed(2),
     ]);
 
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `trial-balance-${asOfDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVRows(`trial-balance-${asOfDate}.csv`, headers, rows);
   };
 
   // Print
@@ -224,7 +217,7 @@ export default function TrialBalance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.trialBalance} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title={t("accounting.trialBalance.title")}
           subtitle={t("accounting.trialBalance.subtitle")}
@@ -360,7 +353,15 @@ export default function TrialBalance() {
       )}
 
       {/* Trial Balance Table */}
-      {trialBalanceRows.length > 0 ? (
+      {trialBalanceQuery.isError ? (
+        <ReportEmptyState
+          icon={WifiOff}
+          title={t("common.connectionIssueTitle")}
+          description={t("common.connectionIssueDesc")}
+          actionLabel={t("common.retry")}
+          onAction={() => void trialBalanceQuery.refetch()}
+        />
+      ) : trialBalanceRows.length > 0 ? (
         <Card className="print:shadow-none">
           <CardHeader className="print:pb-2">
             <CardTitle className="text-lg flex items-center gap-2">

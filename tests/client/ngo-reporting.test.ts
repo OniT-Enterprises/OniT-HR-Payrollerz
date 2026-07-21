@@ -4,6 +4,7 @@ import {
   createEmployeeAllocationMetaMap,
   extractDonorLines,
   summarizeDonorLines,
+  summarizePayrollAllocationReport,
   summarizePayrollAllocations,
 } from "@/lib/reports/ngoReporting";
 
@@ -91,6 +92,93 @@ describe("NGO reporting helpers", () => {
     expect(rollup.unassignedEmployeeCount).toBe(2);
     expect(rollup.unassignedRecordCount).toBe(2);
     expect(rollup.unassignedGrossPay).toBe(1200);
+  });
+
+  it("keeps transaction-time allocation snapshots after an employee edit", () => {
+    const currentEmployeeMeta = createEmployeeAllocationMetaMap([
+      {
+        id: "emp-1",
+        jobDetails: { projectCode: "NEW-PROJECT", fundingSource: "NEW-DONOR" },
+      },
+    ]);
+
+    const rollup = summarizePayrollAllocations(
+      [
+        {
+          employeeId: "emp-1",
+          projectCode: "ORIGINAL-PROJECT",
+          fundingSource: "ORIGINAL-DONOR",
+          wagesPaid: 100.1,
+          inssEmployer: 6.01,
+        },
+      ],
+      currentEmployeeMeta,
+    );
+
+    expect(rollup.allocations).toEqual([
+      {
+        projectCode: "ORIGINAL-PROJECT",
+        fundingSource: "ORIGINAL-DONOR",
+        grossPay: 100.1,
+        inssEmployer: 6.01,
+      },
+    ]);
+  });
+
+  it("uses one precise rollup for the full allocation report", () => {
+    const report = summarizePayrollAllocationReport(
+      [
+        {
+          employeeId: "emp-1",
+          projectCode: "PRJ-A",
+          fundingSource: "FUND-1",
+          wagesPaid: 0.1,
+          incomeTax: 0.01,
+          inssEmployee: 0.02,
+          inssEmployer: 0.03,
+          netPay: 0.07,
+          totalEmployerCost: 0.13,
+        },
+        {
+          employeeId: "emp-2",
+          projectCode: "PRJ-A",
+          fundingSource: "FUND-1",
+          wagesPaid: 0.2,
+          deductions: [
+            { type: "income_tax", amount: 0.02 },
+            { type: "inss_employee", amount: 0.03 },
+          ],
+          employerTaxes: [{ type: "inss_employer", amount: 0.04 }],
+          netPay: 0.15,
+        },
+      ],
+      new Map(),
+      2,
+    );
+
+    expect(report.rows).toEqual([
+      {
+        projectCode: "PRJ-A",
+        fundingSource: "FUND-1",
+        employeeCount: 2,
+        grossPay: 0.3,
+        incomeTax: 0.03,
+        inssEmployee: 0.05,
+        inssEmployer: 0.07,
+        netPay: 0.22,
+        employerCost: 0.37,
+      },
+    ]);
+    expect(report.totals).toEqual({
+      runCount: 2,
+      employeeCount: 2,
+      grossPay: 0.3,
+      incomeTax: 0.03,
+      inssEmployee: 0.05,
+      inssEmployer: 0.07,
+      netPay: 0.22,
+      employerCost: 0.37,
+    });
   });
 
   it("extracts donor lines only from payroll expense accounts", () => {

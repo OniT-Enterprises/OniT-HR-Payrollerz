@@ -24,30 +24,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Download, FileSpreadsheet, WifiOff } from "lucide-react";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { addMoney } from "@/lib/currency";
+import { downloadCSVRows } from "@/lib/csvExport";
 import {
   extractDonorLines,
   summarizeDonorLines,
   type DonorLine,
   type DonorSummary,
 } from "@/lib/reports/ngoReporting";
-
-function downloadCsv(
-  filename: string,
-  headers: string[],
-  rows: string[][],
-): void {
-  const csv = [
-    headers.join(","),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-  ].join("\n");
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function DonorExportPack() {
   const { toast } = useToast();
@@ -82,9 +66,12 @@ export default function DonorExportPack() {
   const totals = useMemo(() => {
     return summaryRows.reduce(
       (acc, row) => {
-        acc.salaryExpense += row.salaryExpense;
-        acc.inssEmployerExpense += row.inssEmployerExpense;
-        acc.totalExpense += row.totalExpense;
+        acc.salaryExpense = addMoney(acc.salaryExpense, row.salaryExpense);
+        acc.inssEmployerExpense = addMoney(
+          acc.inssEmployerExpense,
+          row.inssEmployerExpense,
+        );
+        acc.totalExpense = addMoney(acc.totalExpense, row.totalExpense);
         return acc;
       },
       { salaryExpense: 0, inssEmployerExpense: 0, totalExpense: 0 },
@@ -102,7 +89,7 @@ export default function DonorExportPack() {
   const exportPack = () => {
     if (!donorLines.length) return;
 
-    downloadCsv(
+    downloadCSVRows(
       `donor-payroll-summary-${startDate}-to-${endDate}.csv`,
       [
         t("reports.donorExportPack.csv.projectCode"),
@@ -120,7 +107,7 @@ export default function DonorExportPack() {
       ]),
     );
 
-    downloadCsv(
+    downloadCSVRows(
       `donor-payroll-journal-lines-${startDate}-to-${endDate}.csv`,
       [
         t("reports.donorExportPack.csv.date"),

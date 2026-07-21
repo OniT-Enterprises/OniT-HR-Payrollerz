@@ -8,6 +8,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
+import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -95,7 +96,13 @@ export default function VATReturnsPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
-  const { data: vatStatus = { platformActive: false, tenantActive: false }, isLoading: platformLoading } = useQuery({
+  const {
+    data: vatStatus = { platformActive: false, tenantActive: false },
+    isLoading: platformLoading,
+    isError: platformError,
+    isFetching: platformFetching,
+    refetch: refetchPlatform,
+  } = useQuery({
     queryKey: ['config', 'vat', 'status', tenantId],
     queryFn: async () => {
       const [platformSnap, tenantSnap] = await Promise.all([
@@ -115,7 +122,13 @@ export default function VATReturnsPage() {
   const vatActive = vatStatus.platformActive && vatStatus.tenantActive;
 
   // Fetch saved VAT return for the selected period
-  const { data: savedReturn, isLoading: returnLoading } = useQuery({
+  const {
+    data: savedReturn,
+    isLoading: returnLoading,
+    isError: returnError,
+    isFetching: returnFetching,
+    refetch: refetchReturn,
+  } = useQuery({
     queryKey: ['vatReturn', tenantId, selectedPeriod],
     queryFn: async () => {
       const returnRef = doc(db, paths.vatReturn(tenantId, selectedPeriod));
@@ -138,7 +151,13 @@ export default function VATReturnsPage() {
     enabled: !!tenantId && vatActive,
   });
 
-  const { data: summary, isLoading: summaryLoading } = useQuery({
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+    isFetching: summaryFetching,
+    refetch: refetchSummary,
+  } = useQuery({
     queryKey: ['vatSummary', tenantId, selectedPeriod],
     queryFn: async (): Promise<VATSummary | null> => {
       const [year, month] = selectedPeriod.split('-').map(Number);
@@ -167,6 +186,9 @@ export default function VATReturnsPage() {
   });
 
   const loading = platformLoading || (vatActive && (summaryLoading || returnLoading));
+  const loadError = platformError || (vatActive && (summaryError || returnError));
+  const retrying =
+    platformFetching || (vatActive && (summaryFetching || returnFetching));
 
   const saveReturn = async (markAsFiled = false) => {
     if (!tenantId || !summary || !vatActive) return;
@@ -221,7 +243,7 @@ export default function VATReturnsPage() {
       <SEO title="VAT Returns - Xefe" />
       <MainNavigation />
 
-      <div className="max-w-screen-2xl mx-auto p-6 space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title="VAT Returns"
           subtitle="Build and file VAT returns for each period"
@@ -248,7 +270,16 @@ export default function VATReturnsPage() {
           }
         />
 
-        {!loading && !vatActive ? (
+        {loadError ? (
+          <DashboardLoadError
+            isRetrying={retrying}
+            onRetry={() => {
+              const retries: Promise<unknown>[] = [refetchPlatform()];
+              if (vatActive) retries.push(refetchReturn(), refetchSummary());
+              return Promise.all(retries);
+            }}
+          />
+        ) : !loading && !vatActive ? (
           <Card className="border-amber-500/30 bg-amber-500/5">
             <CardContent className="p-6 flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />

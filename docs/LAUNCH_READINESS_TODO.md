@@ -63,6 +63,30 @@ from code alone.
       depreciation question) before claiming that Xefe calculates or files
       the official TADR-IT 1. `officialFormSupported` stays `false` until then.
 
+## P1 — report ownership and end-to-end usefulness
+
+- [x] Keep Money operational: invoices, bills, expenses, customer/vendor work,
+      and A/R or A/P aging. Put the ledger, reconciliation, formal statements,
+      fiscal periods, audit trail, VAT, and annual business tax in Accounting.
+- [x] Keep WIT and INSS under Payroll because those obligations are calculated
+      from payroll. Keep the annual business-income-tax workpaper in Accounting.
+- [x] Redirect old Money financial-report URLs to their single canonical
+      Accounting destinations instead of maintaining duplicate calculations.
+- [x] Keep Reports focused on reusable workforce outputs: payroll, employees,
+      attendance, departments, NGO/donor allocation, and user-built reports.
+- [x] Make NGO dimensions editable and bulk-importable on employee records, then
+      snapshot project and funding source into each payroll record so historical
+      allocation reports do not change when an employee is reassigned later.
+- [x] Centralize payroll allocation and donor-journal aggregation in tested
+      helpers, derive donor exports from posted payroll expense lines, use
+      Decimal-based currency helpers, and emit correctly quoted CSVs.
+- [x] Make the Department Headcount template calculate real department counts,
+      rather than presenting an employee-detail export under that name.
+- [x] Show a retryable error state when report data cannot load; never present a
+      failed query as an empty report, zero balance, or inactive tax feature.
+- [x] Prove report calculations, filters, canonical navigation, and downloads in
+      focused unit tests plus complete accounting/payroll/NGO browser journeys.
+
 ## P1 — self-service operations
 
 - [x] Expose tenant member invitation, role/module editing, password reset, and
@@ -104,9 +128,16 @@ from code alone.
 
 ## Automated evidence
 
-- Unit suite: 83 files / 970 tests passed.
+- Unit suite: 87 files / 987 tests passed.
 - Rules suite: 20 files / 241 emulator tests passed.
-- Browser suite: accounting lifecycle, full taxable payroll/statutory lifecycle,
-  and real-month replay all passed. The full payroll journey also persists the
-  annual income tax (TADR-IT 1) preparation hand-off and verifies its audit entry.
+- Browser suite: 3/3 journeys passed. The accounting journey verifies invoice,
+  bill, settlement, reconciliation, fixed assets, A/R and A/P aging, trial
+  balance, income statement, balance sheet, cash flow, CSV downloads, and fiscal
+  close. The full journey verifies workforce/custom reports, real department
+  headcount, payroll approval and settlement, balanced payroll journals,
+  payslips, payroll/allocation/donor exports, WIT, monthly and annual INSS, and
+  the annual-income-tax preparation hand-off with its audit entry. The third
+  journey replays payroll using the real current month and business-day rules.
 - API suite: 9/9 authentication and tenant-isolation tests passed.
+- Production build: passed at 312.5 KiB gzip against the 314 KiB initial-page
+  budget.

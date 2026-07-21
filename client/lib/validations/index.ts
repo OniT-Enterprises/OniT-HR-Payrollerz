@@ -246,6 +246,8 @@ export const addEmployeeFormSchema = z.object({
   department: z.string().min(1, 'Department is required'),
   jobTitle: z.string().min(1, 'Job title is required'),
   manager: z.string().optional().or(z.literal('')),
+  projectCode: z.string().max(100).optional().or(z.literal('')),
+  fundingSource: z.string().max(200).optional().or(z.literal('')),
   startDate: z.string().min(1, 'Start date is required'),
   employmentType: z.preprocess(
     (val) => {
@@ -269,7 +271,10 @@ export const addEmployeeFormSchema = z.object({
   minimumWageReviewNote: z.string().max(500).optional().or(z.literal('')),
 
   // Step 3: Compensation
-  salary: z.string().optional().or(z.literal('')),
+  salary: z.string().optional().or(z.literal('')).refine(
+    (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
+    'Salary must be a non-negative number',
+  ),
   leaveDays: z.string().default('25'),
   benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
   payFrequency: z.enum(['weekly', 'monthly']).default('monthly'),

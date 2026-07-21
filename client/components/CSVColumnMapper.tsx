@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { buildCSV } from "@/lib/csvExport";
 import {
   DragDropContext,
   Droppable,
@@ -71,6 +72,17 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern", "Shareholder"] },
   { id: "workLocation", name: "Work Location", category: "Job Details", required: false, type: "select", options: ["Office", "Remote", "Hybrid", "Field"] },
   { id: "manager", name: "Manager", category: "Job Details", required: false, type: "text" },
+  { id: "projectCode", name: "Project Code", category: "Project & Donor", required: false, type: "text" },
+  { id: "fundingSource", name: "Funding Source", category: "Project & Donor", required: false, type: "text" },
+  { id: "contractedWeeklyHours", name: "Contracted Weekly Hours", category: "Job Details", required: false, type: "number" },
+  {
+    id: "minimumWageTreatment",
+    name: "Minimum Wage Treatment",
+    category: "Job Details",
+    required: false,
+    type: "select",
+    options: ["full_floor", "pro_rata", "reviewed_exception"],
+  },
   // Compensation
   { id: "monthlySalary", name: "Monthly Salary", category: "Compensation", required: false, type: "number" },
   { id: "annualLeaveDays", name: "Annual Leave Days", category: "Compensation", required: false, type: "number" },
@@ -126,18 +138,30 @@ function getMissingRequiredFieldNames(mappings: ColumnMapping[]): string {
 
 function downloadTemplate() {
   const headers = EMPLOYEE_FIELDS.map((field) => field.name);
-  const sampleData = [
-    "John", "Doe", "john.doe@company.com", "+1 (555) 123-4567",
-    "123 Main St, City, State 12345", "1985-06-15", "Jane Doe",
-    "+1 (555) 123-4568", "EMP001", "Engineering", "Software Engineer",
-    "2023-01-15", "Full-time", "Remote", "Sarah Johnson", "85000", "25",
-    "Standard", "***-**-1234", "2030-12-31", "EC123456", "2029-06-15",
-    "ID987654", "2028-03-20", "P123456789", "2030-01-15",
-  ];
-
-  const csvContent = [headers, sampleData]
-    .map((row) => row.map((cell) => `"${cell}"`).join(","))
-    .join("\n");
+  const sampleByField: Record<string, string> = {
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@company.com",
+    phone: "+670 7700 0000",
+    address: "Dili, Timor-Leste",
+    dateOfBirth: "1985-06-15",
+    emergencyContactName: "Jane Doe",
+    emergencyContactPhone: "+670 7800 0000",
+    employeeId: "EMP001",
+    department: "Operations",
+    position: "Project Officer",
+    hireDate: "2026-01-15",
+    employmentType: "Full-time",
+    workLocation: "Office",
+    projectCode: "HEALTH-2026",
+    fundingSource: "Example Donor",
+    monthlySalary: "850.00",
+    annualLeaveDays: "12",
+    benefitsPackage: "Standard",
+    nationality: "Timor-Leste",
+  };
+  const sampleData = EMPLOYEE_FIELDS.map((field) => sampleByField[field.id] || "");
+  const csvContent = buildCSV(headers, [sampleData]);
 
   const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = window.URL.createObjectURL(blob);

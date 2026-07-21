@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -27,7 +28,12 @@ import { accountService, generalLedgerService } from '@/services/accountingServi
 import { balanceSnapshotService } from '@/services/balanceSnapshotService';
 
 import { addDaysISO, toDateStringTL, formatDateTL } from '@/lib/dateUtils';
-import { addMoney, subtractMoney } from '@/lib/currency';
+import { addMoney, subtractMoney, sumMoney } from '@/lib/currency';
+import {
+  buildCashflowData,
+  summarizeCashMovements,
+  type CashflowData,
+} from '@/lib/reports/cashflow';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   ArrowDownLeft,
@@ -36,23 +42,8 @@ import {
   TrendingUp,
   TrendingDown,
   Banknote,
+  WifiOff,
 } from 'lucide-react';
-
-interface CashflowData {
-  // Inflows
-  customerPayments: number;
-  otherInflows: number;
-  totalInflows: number;
-  // Outflows
-  vendorPayments: number;
-  expenses: number;
-  otherOutflows: number;
-  totalOutflows: number;
-  // Net
-  netCashflow: number;
-  openingBalance: number;
-  closingBalance: number;
-}
 
 export default function Cashflow() {
   const { t } = useI18n();
@@ -106,7 +97,7 @@ export default function Cashflow() {
     netCashflow: 0,
     openingBalance: 0,
     closingBalance: 0,
-  }, isLoading: loading } = useQuery({
+  }, isLoading: loading, isError: loadError, refetch } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'cashflow', startStr, endStr],
     queryFn: async (): Promise<CashflowData> => {
       const openingCutoff = addDaysISO(startStr, -1);
@@ -128,41 +119,28 @@ export default function Cashflow() {
           billService.getCashPaidByDateRange(tenantId, startStr, endStr),
           expenseService.getTotalExpenses(tenantId, startStr, endStr),
         ]);
-        const cashIds = new Set(cashAccounts.map((account) => account.id));
-        const cashCodes = new Set(cashAccounts.map((account) => account.code));
-        const netByJournal = new Map<string, number>();
-        for (const entry of entries) {
-          if (!cashIds.has(entry.accountId) && !cashCodes.has(entry.accountCode)) continue;
-          netByJournal.set(
-            entry.journalEntryId,
-            addMoney(
-              netByJournal.get(entry.journalEntryId) || 0,
-              subtractMoney(entry.debit, entry.credit),
-            ),
-          );
-        }
+        const cashIds = new Set(
+          cashAccounts.flatMap((account) => (account.id ? [account.id] : [])),
+        );
+        const cashCodes = new Set(
+          cashAccounts.flatMap((account) =>
+            account.code ? [account.code] : [],
+          ),
+        );
+        const { totalInflows, totalOutflows } = summarizeCashMovements(
+          entries,
+          cashIds,
+          cashCodes,
+        );
 
-        let totalInflows = 0;
-        let totalOutflows = 0;
-        for (const netCash of netByJournal.values()) {
-          if (netCash > 0) totalInflows = addMoney(totalInflows, netCash);
-          if (netCash < 0) totalOutflows = addMoney(totalOutflows, -netCash);
-        }
-        const openingBalance = addMoney(...openingBalances);
-        const netCashflow = subtractMoney(totalInflows, totalOutflows);
-
-        return {
+        return buildCashflowData({
           customerPayments,
-          otherInflows: subtractMoney(totalInflows, customerPayments),
-          totalInflows,
           vendorPayments,
           expenses: expenseTotal,
-          otherOutflows: subtractMoney(totalOutflows, vendorPayments, expenseTotal),
+          totalInflows,
           totalOutflows,
-          netCashflow,
-          openingBalance,
-          closingBalance: addMoney(openingBalance, netCashflow),
-        };
+          openingBalance: sumMoney(openingBalances),
+        });
       }
 
       const [
@@ -183,25 +161,20 @@ export default function Cashflow() {
 
       const totalInflows = customerPayments;
       const totalOutflows = addMoney(vendorPayments, expenseTotal);
-      const netCashflow = subtractMoney(totalInflows, totalOutflows);
       const openingBalance = subtractMoney(
         priorCustomerPayments,
         priorVendorPayments,
         priorExpenses,
       );
 
-      return {
+      return buildCashflowData({
         customerPayments,
-        otherInflows: 0,
-        totalInflows,
         vendorPayments,
         expenses: expenseTotal,
-        otherOutflows: 0,
+        totalInflows,
         totalOutflows,
-        netCashflow,
         openingBalance,
-        closingBalance: addMoney(openingBalance, netCashflow),
-      };
+      });
     },
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
@@ -227,7 +200,7 @@ export default function Cashflow() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-2xl mx-auto">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-8">
             <div>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -303,12 +276,39 @@ export default function Cashflow() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title="Cashflow - Xefe" description="View your cash flow statement" />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t('money.cashflow.title') || 'Cash Flow'}
+            subtitle={t('money.cashflow.subtitle') || 'Track money in and out'}
+            icon={Banknote}
+            iconColor="text-orange-500"
+          />
+          <Card>
+            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+              <WifiOff className="h-10 w-10 text-muted-foreground" />
+              <p className="font-medium">{t('common.connectionIssueTitle') || 'Connection problem'}</p>
+              <p className="text-sm text-muted-foreground">{t('common.connectionIssueDesc') || 'Could not load this report.'}</p>
+              <Button variant="outline" onClick={() => void refetch()}>
+                {t('common.retry') || 'Retry'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Cashflow - Xefe" description="View your cash flow statement" />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-2xl mx-auto">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.cashflow.title') || 'Cash Flow'}
           subtitle={t('money.cashflow.subtitle') || 'Track money in and out'}

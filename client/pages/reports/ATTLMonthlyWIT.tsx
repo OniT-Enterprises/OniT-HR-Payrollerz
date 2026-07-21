@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import {
   FileText,
   Download,
@@ -103,12 +104,28 @@ export default function ATTLMonthlyWIT() {
   const { t } = useI18n();
 
   // React Query hooks
-  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    isError: settingsError,
+    isFetching: settingsFetching,
+    refetch: refetchSettings,
+  } = useSettings();
   const paymentProfile = useCompanyPaymentProfile();
-  const { data: filings = [], isLoading: filingsLoading } =
-    useTaxFilings("monthly_wit");
-  const { data: allDueDates = [], isLoading: duesLoading } =
-    useTaxFilingsDueSoon(6);
+  const {
+    data: filings = [],
+    isLoading: filingsLoading,
+    isError: filingsError,
+    isFetching: filingsFetching,
+    refetch: refetchFilings,
+  } = useTaxFilings("monthly_wit");
+  const {
+    data: allDueDates = [],
+    isLoading: duesLoading,
+    isError: duesError,
+    isFetching: duesFetching,
+    refetch: refetchDues,
+  } = useTaxFilingsDueSoon(6);
   const generateWIT = useGenerateMonthlyWIT();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
@@ -120,6 +137,8 @@ export default function ATTLMonthlyWIT() {
     [allDueDates],
   );
   const loading = settingsLoading || filingsLoading || duesLoading;
+  const loadError = settingsError || filingsError || duesError;
+  const retrying = settingsFetching || filingsFetching || duesFetching;
 
   // Local state
   const [selectedReturn, setSelectedReturn] = useState<MonthlyWITReturn | null>(
@@ -765,6 +784,36 @@ export default function ATTLMonthlyWIT() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("reports.attlMonthlyWit.title")}
+          description={t("reports.attlMonthlyWit.subtitle")}
+        />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("reports.attlMonthlyWit.title")}
+            subtitle={t("reports.attlMonthlyWit.subtitle")}
+            icon={Landmark}
+            iconColor="text-primary"
+          />
+          <DashboardLoadError
+            isRetrying={retrying}
+            onRetry={() =>
+              Promise.all([
+                refetchSettings(),
+                refetchFilings(),
+                refetchDues(),
+              ])
+            }
+          />
         </div>
       </div>
     );

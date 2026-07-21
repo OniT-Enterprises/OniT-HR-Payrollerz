@@ -12,7 +12,9 @@
  * (which has no inbox) and to enter the offline subscription a superadmin
  * records in production.
  */
-import { expect, Page, test } from "@playwright/test";
+import { expect, Page, test, type Download } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { getInitialPayrollDates } from "../../client/lib/payroll/payroll-schedule";
 import {
   activateSubscription,
   closeAdmin,
@@ -31,21 +33,17 @@ test.beforeAll(async () => {
 const stamp = Date.now().toString(36);
 const COMPANY = `E2E Payroll Co ${stamp}`;
 
-// The wizard schedules pay for the 25th of the current month (or next month
-// when today is past the 25th) — the INSS filing is keyed by that pay month.
-const now = new Date();
-const payDate = new Date(
-  now.getFullYear(),
-  now.getMonth() + (now.getDate() > 25 ? 1 : 0),
-  25,
-);
-const PAY_MONTH = payDate.toLocaleString("en-US", { month: "long" });
-const PAY_YEAR = String(payDate.getFullYear());
-const PAY_DATE_ISO = [
-  payDate.getFullYear(),
-  String(payDate.getMonth() + 1).padStart(2, "0"),
-  String(payDate.getDate()).padStart(2, "0"),
-].join("-");
+// Use the same schedule helper as the wizard, including the Art. 40(5)
+// preceding-business-day adjustment for weekends and public holidays.
+const PAY_DATE_ISO = getInitialPayrollDates({
+  frequency: "monthly",
+  payDay: 25,
+}).payDate;
+const [PAY_YEAR, payMonthNumber] = PAY_DATE_ISO.split("-");
+const PAY_MONTH = new Intl.DateTimeFormat("en-US", {
+  month: "long",
+  timeZone: "UTC",
+}).format(new Date(`${PAY_DATE_ISO}T12:00:00Z`));
 const OWNER = {
   name: "Elisa Owner",
   email: `owner-${stamp}@e2e.test`,
@@ -61,6 +59,8 @@ const EMPLOYEE = {
   last: "Ximenes",
   email: `maria-${stamp}@e2e.test`,
 };
+const PROJECT_CODE = `HEALTH-${stamp}`;
+const FUNDING_SOURCE = 'Donor "A", Health';
 
 test.afterAll(async () => {
   await closeAdmin();
@@ -98,7 +98,8 @@ async function signIn(page: Page, email: string, password: string) {
 test("full payroll workflow: signup → employee → payroll → approval → payslip → exports", async ({
   page,
 }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(420_000);
+  const checkpoint = (label: string) => console.log(`[e2e] ${label}`);
   const updateDepthErrors: string[] = [];
   // Surface app-side failures in the test output — a silent toast is
   // undebuggable in CI.
@@ -211,6 +212,11 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await page.getByRole("option", { name: "Operations" }).click();
   await page.getByLabel(/job title/i).fill("Barista");
   await page.getByLabel(/start date/i).fill("2026-01-05");
+  await page
+    .getByRole("button", { name: /project & donor details/i })
+    .click();
+  await page.getByLabel(/project code/i).fill(PROJECT_CODE);
+  await page.getByLabel(/funding source/i).fill(FUNDING_SOURCE);
   await page.getByRole("button", { name: "Next", exact: true }).click();
 
   // Compensation step — monthly salary above minimum wage
@@ -252,7 +258,68 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
       .first(),
   ).toBeVisible({ timeout: 20_000 });
 
+  // Workforce reporting reads the employee/department just created through
+  // the same tenant-scoped queries used in production.
+  await page.goto("/reports/employees");
+  await expect(page.getByRole("heading", { name: /employee reports/i })).toBeVisible({
+    timeout: 30_000,
+  });
+  const directoryDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export directory/i }).click();
+  const directoryDownload = await directoryDownloadPromise;
+  const directoryPath = await directoryDownload.path();
+  expect(directoryPath).toBeTruthy();
+  const directoryCsv = await readFile(directoryPath!, "utf8");
+  expect(directoryCsv).toContain(EMPLOYEE.email);
+
+  await page.goto("/reports/departments");
+  await expect(page.getByRole("heading", { name: /department reports/i })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByRole("row").filter({ hasText: "Operations" })).toBeVisible();
+
+  await page.goto("/reports/attendance");
+  await expect(page.getByRole("heading", { name: /attendance reports/i })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByText(/no attendance records found/i)).toBeVisible();
+
+  await page.goto("/reports/setup");
+  await expect(page.getByRole("heading", { name: /setup reports/i })).toBeVisible({
+    timeout: 30_000,
+  });
+  await expect(page.getByText(/setup progress/i).first()).toBeVisible();
+
+  await page.goto("/reports/custom");
+  const activeEmployeesTemplate = page
+    .getByText(/active employees directory/i)
+    .locator("..")
+    .locator("..")
+    .locator("..");
+  await expect(activeEmployeesTemplate).toBeVisible({ timeout: 30_000 });
+  await activeEmployeesTemplate.getByRole("button", { name: /^run$/i }).click();
+  await expect(page.getByText(/report preview/i)).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: EMPLOYEE.email, exact: true }),
+  ).toBeVisible();
+
+  const departmentHeadcountTemplate = page
+    .getByText(/department headcount/i)
+    .locator("..")
+    .locator("..")
+    .locator("..");
+  await departmentHeadcountTemplate
+    .getByRole("button", { name: /^run$/i })
+    .click();
+  await expect(page.getByRole("columnheader", { name: /headcount/i })).toBeVisible();
+  const departmentPreviewRow = page
+    .getByRole("row")
+    .filter({ hasText: "Operations" })
+    .last();
+  await expect(departmentPreviewRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
+
   // ── 4. Run payroll to a draft ───────────────────────────────────────────
+  checkpoint("workforce and custom reports verified; creating payroll");
   await page.goto("/payroll/run");
   await page.getByRole("button", { name: "Next", exact: true }).click(); // period
 
@@ -305,6 +372,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   });
 
   // ── 6. Independent approval by the second user ──────────────────────────
+  checkpoint("payroll drafted and approver invited; approving payroll");
   await signOut(page);
   await signIn(page, APPROVER.email, APPROVER.password);
   await page.goto("/payroll/history");
@@ -312,14 +380,10 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     .getByRole("button", { name: /^approve$/i })
     .first()
     .click();
-  // Confirm the unassigned-allocation acknowledgment when present
+  // Configured allocation must not require the unassigned-cost override.
   await expect(page.getByText(/approve payroll run/i).first()).toBeVisible();
-  // The allocation check loads async; in this journey the employee has no
-  // project tags, so the unassigned acknowledgment always appears.
   const allocationAck = page.locator("#approve-unassigned-allocation");
-  await expect(allocationAck).toBeVisible({ timeout: 20_000 });
-  await allocationAck.click();
-  await expect(allocationAck).toHaveAttribute("data-state", "checked");
+  await expect(allocationAck).toBeHidden({ timeout: 20_000 });
   await page.getByRole("button", { name: /approve & process/i }).click();
   // Success empties the pending-approval list — the one unambiguous signal
   // on this page ("YTD Total Paid" makes /approved|paid/ match vacuously).
@@ -367,7 +431,80 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await expect(nextStepsDialog).toBeHidden();
   await expect(page.locator("body")).not.toHaveCSS("pointer-events", "none");
 
-  // ── 7. Payslip PDF download from the approved run's details ─────────────
+  // ── 7. NGO allocation → accounting journal → donor exports ─────────────
+  checkpoint("payroll approved and journal balanced; verifying report exports");
+  await page.goto("/reports/payroll");
+  await expect(page.getByRole("heading", { name: /payroll reports/i })).toBeVisible({
+    timeout: 30_000,
+  });
+  const payrollReportRow = page
+    .getByRole("row")
+    .filter({ hasText: `${EMPLOYEE.first} ${EMPLOYEE.last}` });
+  await expect(payrollReportRow).toBeVisible({ timeout: 30_000 });
+  await expect(payrollReportRow.getByText("$600.00").first()).toBeVisible();
+  const payrollReportDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export reports/i }).click();
+  expect((await payrollReportDownloadPromise).suggestedFilename()).toBe(
+    `payroll-report-${PAY_DATE_ISO}.csv`,
+  );
+
+  await page.goto("/reports/payroll-allocation");
+  await page.locator("#allocation-report-year").click();
+  await page.getByRole("option", { name: PAY_YEAR, exact: true }).click();
+  await page.locator("#allocation-report-month").click();
+  await page.getByRole("option", { name: PAY_MONTH, exact: true }).click();
+  const allocationRow = page
+    .getByRole("row")
+    .filter({ hasText: PROJECT_CODE })
+    .filter({ hasText: FUNDING_SOURCE });
+  await expect(allocationRow).toBeVisible({ timeout: 30_000 });
+  await expect(allocationRow.getByText("$600.00").first()).toBeVisible();
+
+  const allocationDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export csv/i }).click();
+  const allocationDownload = await allocationDownloadPromise;
+  expect(allocationDownload.suggestedFilename()).toBe(
+    `payroll-allocation-${PAY_YEAR}-${payMonthNumber}.csv`,
+  );
+  const allocationPath = await allocationDownload.path();
+  expect(allocationPath).toBeTruthy();
+  const allocationCsv = await readFile(allocationPath!, "utf8");
+  expect(allocationCsv).toContain(PROJECT_CODE);
+  expect(allocationCsv).toContain('"Donor ""A"", Health"');
+
+  await page.goto("/reports/donor-export");
+  await page.locator("#donor-export-start").fill(PAY_DATE_ISO);
+  await page.locator("#donor-export-end").fill(PAY_DATE_ISO);
+  const donorSummaryRow = page
+    .getByRole("row")
+    .filter({ hasText: PROJECT_CODE })
+    .filter({ hasText: FUNDING_SOURCE });
+  await expect(donorSummaryRow).toBeVisible({ timeout: 30_000 });
+  await expect(donorSummaryRow.getByText("$600.00").first()).toBeVisible();
+
+  const donorDownloads: Download[] = [];
+  const collectDownload = (download: Download) => donorDownloads.push(download);
+  page.on("download", collectDownload);
+  await page.getByRole("button", { name: /export pack/i }).click();
+  await expect.poll(() => donorDownloads.length, { timeout: 15_000 }).toBe(2);
+  page.off("download", collectDownload);
+  expect(
+    donorDownloads.map((download) => download.suggestedFilename()).sort(),
+  ).toEqual([
+    `donor-payroll-journal-lines-${PAY_DATE_ISO}-to-${PAY_DATE_ISO}.csv`,
+    `donor-payroll-summary-${PAY_DATE_ISO}-to-${PAY_DATE_ISO}.csv`,
+  ]);
+  for (const download of donorDownloads) {
+    const path = await download.path();
+    expect(path).toBeTruthy();
+    const csv = await readFile(path!, "utf8");
+    expect(csv).toContain(PROJECT_CODE);
+    expect(csv).toContain('"Donor ""A"", Health"');
+  }
+
+  // ── 8. Payslip PDF download from the approved run's details ─────────────
+  checkpoint("payroll, allocation, and donor CSVs verified; downloading payslip");
+  await page.goto("/payroll/history");
   // The section filter still shows "Pending Approval" — switch to all runs
   await page
     .getByRole("combobox")
@@ -391,7 +528,8 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   expect((await payslipDownload).suggestedFilename()).toMatch(/\.pdf$/i);
   await page.keyboard.press("Escape");
 
-  // ── 8. Bank completion is the payment event and posts the cash journal ──
+  // ── 9. Bank completion is the payment event and posts the cash journal ──
+  checkpoint("payslip verified; settling payroll payment");
   await page.goto("/payroll/payments");
   await page.getByRole("button", { name: /new transfer/i }).click();
   const transferDialog = page.getByRole("dialog", {
@@ -427,7 +565,8 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   expect(settlement.byCode["1130"]?.credit ?? 0).toBeCloseTo(netPayable, 2);
   expect(settlement.totalDebit).toBeCloseTo(settlement.totalCredit, 2);
 
-  // ── 9. WIT return and payment are separate, then clear the WIT payable ──
+  // ── 10. WIT return and payment are separate, then clear WIT payable ─────
+  checkpoint("payroll settlement journal verified; filing and paying WIT");
   await page.goto("/payroll/tax/monthly-wit");
   await page.getByRole("combobox").nth(0).click();
   await page.getByRole("option", { name: PAY_YEAR, exact: true }).click();
@@ -484,14 +623,16 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   expect(witPayment.byCode["1130"]?.credit ?? 0).toBeCloseTo(10, 2);
   expect(witPayment.totalDebit).toBeCloseTo(witPayment.totalCredit, 2);
 
-  // ── 10. Statutory export + INSS liability payment clearing ──────────────
+  // ── 11. Statutory export + INSS liability payment clearing ──────────────
+  checkpoint("WIT filing/payment verified; generating and paying INSS");
   // The return is keyed by pay date (25/07), matching the page's default
   // current-month period. "Found 1 records" proves the approved+paid run
   // actually flowed into the filing — not just that the page rendered.
   await page.goto("/payroll/tax/inss-monthly");
-  // The page defaults to the previous month; our run pays out on the 25th of
-  // PAY_MONTH. (Known edge: Dec 26-31 the pay month rolls into a year the
-  // year-select doesn't offer yet — the filing page itself has the same gap.)
+  // The page defaults to the previous month; select the payroll year/month
+  // explicitly, including the supported late-December next-year rollover.
+  await page.getByRole("combobox").nth(0).click();
+  await page.getByRole("option", { name: PAY_YEAR, exact: true }).click();
   await page.getByRole("combobox").nth(1).click();
   await page.getByRole("option", { name: PAY_MONTH, exact: true }).click();
   await page
@@ -539,8 +680,30 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
     2,
   );
 
+  await page.goto("/payroll/tax/inss-annual");
+  await page.getByRole("combobox").click();
+  await page.getByRole("option", { name: PAY_YEAR, exact: true }).click();
+  await page.getByRole("button", { name: /generate annual summary/i }).click();
+  const annualInssRow = page
+    .getByRole("row")
+    .filter({ hasText: `${EMPLOYEE.first} ${EMPLOYEE.last}` });
+  await expect(annualInssRow).toBeVisible({ timeout: 30_000 });
+  await expect(annualInssRow.getByText("$600.00")).toBeVisible();
+  await expect(annualInssRow.getByText("$24.00")).toBeVisible();
+  await expect(annualInssRow.getByText("$36.00")).toBeVisible();
+  const annualInssDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /export csv/i }).click();
+  const annualInssDownload = await annualInssDownloadPromise;
+  expect(annualInssDownload.suggestedFilename()).toContain(PAY_YEAR);
+  const annualInssPath = await annualInssDownload.path();
+  expect(annualInssPath).toBeTruthy();
+  expect(await readFile(annualInssPath!, "utf8")).toContain(
+    `${EMPLOYEE.first} ${EMPLOYEE.last}`,
+  );
+
   // Form C remains an honest preparation hand-off: persist the accounting
   // checklist, but never claim that Xefe generated or filed the official form.
+  checkpoint("monthly and annual INSS verified; saving Form C preparation");
   await page.goto("/accounting/tax/annual-income-tax");
   await expect(
     page.getByText(/not the official form and xefe does not file it/i),

@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { CalendarDays, Download, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
@@ -37,6 +38,8 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { MonthlyINSSReturn, TaxFiling } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
+import { addMoney, roundMoney, sumMoney } from "@/lib/currency";
+import { downloadCSVRows } from "@/lib/csvExport";
 
 interface AnnualEmployeeSummary {
   employeeId: string;
@@ -84,10 +87,22 @@ function aggregateAnnual(
       const existing = employeeMap.get(emp.employeeId);
       if (existing) {
         existing.monthsContributed += 1;
-        existing.totalContributionBase += emp.contributionBase;
-        existing.totalEmployeeContribution += emp.employeeContribution;
-        existing.totalEmployerContribution += emp.employerContribution;
-        existing.totalContribution += emp.totalContribution;
+        existing.totalContributionBase = addMoney(
+          existing.totalContributionBase,
+          emp.contributionBase,
+        );
+        existing.totalEmployeeContribution = addMoney(
+          existing.totalEmployeeContribution,
+          emp.employeeContribution,
+        );
+        existing.totalEmployerContribution = addMoney(
+          existing.totalEmployerContribution,
+          emp.employerContribution,
+        );
+        existing.totalContribution = addMoney(
+          existing.totalContribution,
+          emp.totalContribution,
+        );
       } else {
         employeeMap.set(emp.employeeId, {
           employeeId: emp.employeeId,
@@ -109,10 +124,10 @@ function aggregateAnnual(
 
   // Round all totals to 2 decimal places
   for (const emp of employees) {
-    emp.totalContributionBase = +emp.totalContributionBase.toFixed(2);
-    emp.totalEmployeeContribution = +emp.totalEmployeeContribution.toFixed(2);
-    emp.totalEmployerContribution = +emp.totalEmployerContribution.toFixed(2);
-    emp.totalContribution = +emp.totalContribution.toFixed(2);
+    emp.totalContributionBase = roundMoney(emp.totalContributionBase);
+    emp.totalEmployeeContribution = roundMoney(emp.totalEmployeeContribution);
+    emp.totalEmployerContribution = roundMoney(emp.totalEmployerContribution);
+    emp.totalContribution = roundMoney(emp.totalContribution);
   }
 
   return {
@@ -121,18 +136,18 @@ function aggregateAnnual(
     employerTIN: company.tinNumber || "",
     monthsFiled: inssFilings.length,
     totalEmployees: employees.length,
-    totalContributionBase: +employees
-      .reduce((s, e) => s + e.totalContributionBase, 0)
-      .toFixed(2),
-    totalEmployeeContributions: +employees
-      .reduce((s, e) => s + e.totalEmployeeContribution, 0)
-      .toFixed(2),
-    totalEmployerContributions: +employees
-      .reduce((s, e) => s + e.totalEmployerContribution, 0)
-      .toFixed(2),
-    totalContributions: +employees
-      .reduce((s, e) => s + e.totalContribution, 0)
-      .toFixed(2),
+    totalContributionBase: sumMoney(
+      employees.map((employee) => employee.totalContributionBase),
+    ),
+    totalEmployeeContributions: sumMoney(
+      employees.map((employee) => employee.totalEmployeeContribution),
+    ),
+    totalEmployerContributions: sumMoney(
+      employees.map((employee) => employee.totalEmployerContribution),
+    ),
+    totalContributions: sumMoney(
+      employees.map((employee) => employee.totalContribution),
+    ),
     employees,
   };
 }
@@ -142,19 +157,42 @@ export default function INSSAnnual() {
   const { t } = useI18n();
 
   // React Query hooks
-  const { data: settings, isLoading: settingsLoading } = useSettings();
-  const { data: allFilings = [], isLoading: filingsLoading } =
-    useTaxFilings("inss_monthly");
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    isError: settingsError,
+    isFetching: settingsFetching,
+    refetch: refetchSettings,
+  } = useSettings();
+  const {
+    data: allFilings = [],
+    isLoading: filingsLoading,
+    isError: filingsError,
+    isFetching: filingsFetching,
+    refetch: refetchFilings,
+  } = useTaxFilings("inss_monthly");
 
   const loading = settingsLoading || filingsLoading;
+  const loadError = settingsError || filingsError;
+  const retrying = settingsFetching || filingsFetching;
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear - 1));
   const [showSummary, setShowSummary] = useState(false);
 
   const availableYears = useMemo(() => {
-    return [currentYear, currentYear - 1, currentYear - 2].map(String);
-  }, [currentYear]);
+    const years = new Set(
+      [currentYear + 1, currentYear, currentYear - 1, currentYear - 2].map(
+        String,
+      ),
+    );
+    for (const filing of allFilings) {
+      if (/^\d{4}-\d{2}$/.test(filing.period)) {
+        years.add(filing.period.slice(0, 4));
+      }
+    }
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [allFilings, currentYear]);
 
   // Derive company from settings inside useMemo to avoid unstable deps
   const company: Partial<CompanyDetails> = useMemo(
@@ -230,19 +268,11 @@ export default function INSSAnnual() {
       summary.totalContributions.toFixed(2),
     ]);
 
-    const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-
-    const blob = new Blob(["\uFEFF" + csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `INSS_Annual_Reconciliation_${summary.year}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCSVRows(
+      `INSS_Annual_Reconciliation_${summary.year}.csv`,
+      header,
+      rows,
+    );
 
     toast({
       title: t("reports.inssAnnual.toast.exportedTitle"),
@@ -287,6 +317,30 @@ export default function INSSAnnual() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("reports.inssAnnual.title")}
+          description={t("reports.inssAnnual.subtitle")}
+        />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("reports.inssAnnual.title")}
+            subtitle={t("reports.inssAnnual.subtitle")}
+            icon={Shield}
+            iconColor="text-primary"
+          />
+          <DashboardLoadError
+            isRetrying={retrying}
+            onRetry={() => Promise.all([refetchSettings(), refetchFilings()])}
+          />
         </div>
       </div>
     );

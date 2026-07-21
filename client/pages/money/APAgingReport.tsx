@@ -16,10 +16,12 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { getDaysPastDueLenient } from '@/lib/accounting/calculations';
-import { addMoney, sumMoney } from '@/lib/currency';
+import { addMoney, compareMoney, sumMoney } from '@/lib/currency';
+import { getAgingBucketKey } from '@/lib/reports/aging';
 import { getTodayTL } from '@/lib/dateUtils';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import { ReportEmptyState } from '@/components/reports/ReportLayout';
 import type { Bill } from '@/types/money';
 import {
   Clock,
@@ -27,6 +29,7 @@ import {
   Truck,
   ChevronRight,
   FileText,
+  WifiOff,
 } from 'lucide-react';
 
 interface AgingBucket {
@@ -42,6 +45,7 @@ interface VendorAging {
   current: number;
   days30: number;
   days60: number;
+  days90: number;
   days90Plus: number;
   total: number;
 }
@@ -50,7 +54,12 @@ export default function APAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { data: allBills = [], isLoading: loading } = useQuery({
+  const {
+    data: allBills = [],
+    isLoading: loading,
+    isError: loadError,
+    refetch,
+  } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'apAging'],
     queryFn: () => billService.getUnpaidBills(tenantId),
     staleTime: 0,
@@ -100,6 +109,7 @@ export default function APAgingReport() {
           current: 0,
           days30: 0,
           days60: 0,
+          days90: 0,
           days90Plus: 0,
           total: 0,
         });
@@ -108,18 +118,13 @@ export default function APAgingReport() {
       const vendor = vendorAgingMap.get(bill.vendorId)!;
       vendor.total = addMoney(vendor.total, balance);
 
-      if (bill.daysOverdue <= 0) {
-        vendor.current = addMoney(vendor.current, balance);
-      } else if (bill.daysOverdue <= 30) {
-        vendor.days30 = addMoney(vendor.days30, balance);
-      } else if (bill.daysOverdue <= 60) {
-        vendor.days60 = addMoney(vendor.days60, balance);
-      } else {
-        vendor.days90Plus = addMoney(vendor.days90Plus, balance);
-      }
+      const bucket = getAgingBucketKey(bill.daysOverdue);
+      vendor[bucket] = addMoney(vendor[bucket], balance);
     });
 
-    const sortedVendors = Array.from(vendorAgingMap.values()).sort((a, b) => b.total - a.total);
+    const sortedVendors = Array.from(vendorAgingMap.values()).sort((a, b) =>
+      compareMoney(b.total, a.total),
+    );
 
     return {
       buckets: computedBuckets,
@@ -141,7 +146,7 @@ export default function APAgingReport() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -190,6 +195,7 @@ export default function APAgingReport() {
                       <th className="text-right py-3 font-medium">{t('money.apAging.current') || 'Current'}</th>
                       <th className="text-right py-3 font-medium">1-30</th>
                       <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">61-90</th>
                       <th className="text-right py-3 font-medium">90+</th>
                       <th className="text-right py-3 font-medium">{t('money.apAging.total') || 'Total'}</th>
                       <th className="w-10"></th>
@@ -221,12 +227,36 @@ export default function APAgingReport() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title="A/P Aging - Xefe" description="Accounts payable aging report" />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t('money.apAging.title') || 'A/P Aging Report'}
+            subtitle={t('money.apAging.subtitle') || 'Outstanding bills by age'}
+            icon={Clock}
+            iconColor="text-indigo-500"
+          />
+          <ReportEmptyState
+            icon={WifiOff}
+            title={t('common.connectionIssueTitle') || 'Connection problem'}
+            description={t('common.connectionIssueDesc') || 'Could not load this report.'}
+            actionLabel={t('common.retry') || 'Retry'}
+            onAction={() => void refetch()}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="A/P Aging - Xefe" description="Accounts payable aging report" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.apAging.title') || 'A/P Aging Report'}
           subtitle={t('money.apAging.subtitle') || 'Outstanding bills by age'}
@@ -289,6 +319,7 @@ export default function APAgingReport() {
                       <th className="text-right py-3 font-medium">{t('money.apAging.current') || 'Current'}</th>
                       <th className="text-right py-3 font-medium">1-30</th>
                       <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">61-90</th>
                       <th className="text-right py-3 font-medium">90+</th>
                       <th className="text-right py-3 font-medium">{t('money.apAging.total') || 'Total'}</th>
                       <th className="w-10"></th>
@@ -308,6 +339,7 @@ export default function APAgingReport() {
                         <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.current)}</td>
                         <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.days30)}</td>
                         <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.days60)}</td>
+                        <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(vendor.days90)}</td>
                         <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(vendor.days90Plus)}</td>
                         <td className="text-right py-3 font-semibold tabular-nums">{formatCurrency(vendor.total)}</td>
                         <td className="py-3">
@@ -328,9 +360,8 @@ export default function APAgingReport() {
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[0]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[1]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[2]?.total || 0)}</td>
-                      <td className="text-right py-3 text-red-600 tabular-nums">
-                        {formatCurrency((buckets[3]?.total || 0) + (buckets[4]?.total || 0))}
-                      </td>
+                      <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(buckets[3]?.total || 0)}</td>
+                      <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(buckets[4]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(totalPayable)}</td>
                       <td></td>
                     </tr>

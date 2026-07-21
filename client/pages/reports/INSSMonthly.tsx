@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
+import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import {
   Building,
   Calendar,
@@ -66,6 +67,7 @@ import {
 } from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { getStatutoryReviewFlag } from "@/lib/tax/statutory-payroll-record";
+import { addMoney } from "@/lib/currency";
 import type {
   FilingDueDate,
   MonthlyINSSReturn,
@@ -86,12 +88,28 @@ export default function INSSMonthly() {
   const { t } = useI18n();
 
   // React Query hooks
-  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const {
+    data: settings,
+    isLoading: settingsLoading,
+    isError: settingsError,
+    isFetching: settingsFetching,
+    refetch: refetchSettings,
+  } = useSettings();
   const paymentProfile = useCompanyPaymentProfile();
-  const { data: filings = [], isLoading: filingsLoading } =
-    useTaxFilings("inss_monthly");
-  const { data: allDueDates = [], isLoading: duesLoading } =
-    useTaxFilingsDueSoon(6);
+  const {
+    data: filings = [],
+    isLoading: filingsLoading,
+    isError: filingsError,
+    isFetching: filingsFetching,
+    refetch: refetchFilings,
+  } = useTaxFilings("inss_monthly");
+  const {
+    data: allDueDates = [],
+    isLoading: duesLoading,
+    isError: duesError,
+    isFetching: duesFetching,
+    refetch: refetchDues,
+  } = useTaxFilingsDueSoon(6);
   const generateINSS = useGenerateMonthlyINSS();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
@@ -103,6 +121,8 @@ export default function INSSMonthly() {
     [allDueDates],
   );
   const loading = settingsLoading || filingsLoading || duesLoading;
+  const loadError = settingsError || filingsError || duesError;
+  const retrying = settingsFetching || filingsFetching || duesFetching;
 
   // Local state
   const [selectedReturn, setSelectedReturn] =
@@ -471,8 +491,16 @@ export default function INSSMonthly() {
 
   const availableYears = useMemo(() => {
     const year = new Date().getFullYear();
-    return [year, year - 1, year - 2].map(String);
-  }, []);
+    // A late-December payroll can legally roll into the following filing
+    // month/year, so keep next year selectable before 1 January arrives.
+    const years = new Set([year + 1, year, year - 1, year - 2].map(String));
+    for (const filing of filings) {
+      if (/^\d{4}-\d{2}$/.test(filing.period)) {
+        years.add(filing.period.slice(0, 4));
+      }
+    }
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+  }, [filings]);
 
   const selectedFiling = filings.find((item) => item.id === selectedFilingId);
 
@@ -660,6 +688,36 @@ export default function INSSMonthly() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("reports.inssMonthly.title")}
+          description={t("reports.inssMonthly.subtitle")}
+        />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("reports.inssMonthly.title")}
+            subtitle={t("reports.inssMonthly.subtitle")}
+            icon={Shield}
+            iconColor="text-primary"
+          />
+          <DashboardLoadError
+            isRetrying={retrying}
+            onRetry={() =>
+              Promise.all([
+                refetchSettings(),
+                refetchFilings(),
+                refetchDues(),
+              ])
+            }
+          />
         </div>
       </div>
     );
@@ -1377,8 +1435,10 @@ export default function INSSMonthly() {
                 (selectedTask === "payment" && (
                   !paymentDate ||
                   !paymentAccountId ||
-                  (((selectedFiling?.totalINSSEmployee || 0) +
-                    (selectedFiling?.totalINSSEmployer || 0)) > 0 &&
+                  (addMoney(
+                    selectedFiling?.totalINSSEmployee || 0,
+                    selectedFiling?.totalINSSEmployer || 0,
+                  ) > 0 &&
                     !receiptNumber.trim())
                 ))
               }

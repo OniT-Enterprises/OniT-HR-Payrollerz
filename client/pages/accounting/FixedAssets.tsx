@@ -67,8 +67,7 @@ import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { useTableSort } from "@/hooks/useTableSort";
 import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
+import { roundMoney, subtractMoney, sumMoney } from "@/lib/currency";
 
 // Columns the fixed-asset register can be sorted by (Actions is not sortable)
 type FixedAssetSortKey =
@@ -152,14 +151,16 @@ export default function FixedAssets() {
     const live = assets.filter((a) => a.status !== "disposed");
     return {
       count: live.length,
-      cost: round2(live.reduce((s, a) => s + a.acquisitionCost, 0)),
-      accumulated: round2(
-        live.reduce((s, a) => s + (a.accumulatedDepreciation || 0), 0),
+      cost: sumMoney(live.map((asset) => asset.acquisitionCost)),
+      accumulated: sumMoney(
+        live.map((asset) => asset.accumulatedDepreciation || 0),
       ),
-      nbv: round2(
-        live.reduce(
-          (s, a) => s + a.acquisitionCost - (a.accumulatedDepreciation || 0),
-          0,
+      nbv: sumMoney(
+        live.map((asset) =>
+          subtractMoney(
+            asset.acquisitionCost,
+            asset.accumulatedDepreciation || 0,
+          ),
         ),
       ),
     };
@@ -169,7 +170,7 @@ export default function FixedAssets() {
     () => fixedAssetService.previewPeriod(assets, postPeriod),
     [assets, postPeriod],
   );
-  const postTotal = round2(postPreview.reduce((s, l) => s + l.charge, 0));
+  const postTotal = sumMoney(postPreview.map((line) => line.charge));
 
   const classLife = (key: string) =>
     ASSET_CLASSES.find((c) => c.key === key)?.defaultLifeMonths ?? 60;
@@ -411,7 +412,8 @@ export default function FixedAssets() {
       acquired: (a) => a.acquisitionDate,
       cost: (a) => a.acquisitionCost,
       accumulated: (a) => a.accumulatedDepreciation || 0,
-      nbv: (a) => round2(a.acquisitionCost - (a.accumulatedDepreciation || 0)),
+      nbv: (a) =>
+        subtractMoney(a.acquisitionCost, a.accumulatedDepreciation || 0),
       status: (a) => getAssetStatusLabel(a),
     },
   );
@@ -439,7 +441,7 @@ export default function FixedAssets() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.fixedAssets} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("accounting.fixedAssets.title")}
           subtitle={t("accounting.fixedAssets.subtitle")}
@@ -588,9 +590,11 @@ export default function FixedAssets() {
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
                             {formatCurrencyTL(
-                              round2(
-                                asset.acquisitionCost -
-                                  (asset.accumulatedDepreciation || 0),
+                              roundMoney(
+                                subtractMoney(
+                                  asset.acquisitionCost,
+                                  asset.accumulatedDepreciation || 0,
+                                ),
                               ),
                             )}
                           </TableCell>

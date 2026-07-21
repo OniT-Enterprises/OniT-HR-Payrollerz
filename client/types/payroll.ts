@@ -116,6 +116,10 @@ export interface PayrollRecord {
   department: string;
   position: string;
   isResident?: boolean;
+  /** Project allocation captured when this payroll record was created. */
+  projectCode?: string;
+  /** Donor/funding allocation captured when this payroll record was created. */
+  fundingSource?: string;
 
   // Hours worked
   regularHours: number;

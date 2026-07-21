@@ -1408,6 +1408,10 @@ export function usePayrollCalculator({
         employeeNumber: d.employee.jobDetails.employeeId,
         department: d.employee.jobDetails.department,
         position: d.employee.jobDetails.position,
+        // Keep allocation dimensions with the payroll transaction so a later
+        // employee edit cannot rewrite historical NGO/donor reporting.
+        projectCode: d.employee.jobDetails.projectCode?.trim() || "",
+        fundingSource: d.employee.jobDetails.fundingSource?.trim() || "",
         isResident:
           d.employee.compensation?.isResident ??
           (d.employee.documents?.residencyStatus

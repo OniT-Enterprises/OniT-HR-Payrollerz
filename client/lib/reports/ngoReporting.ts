@@ -1,9 +1,14 @@
 import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
-import { addMoney, maxMoney, subtractMoney } from "@/lib/currency";
+import {
+  addMoney,
+  compareMoney,
+  maxMoney,
+  subtractMoney,
+} from "@/lib/currency";
 
 export const UNASSIGNED_ALLOCATION = "Unassigned";
 
-interface EmployeeAllocationMeta {
+export interface EmployeeAllocationMeta {
   projectCode: string;
   fundingSource: string;
 }
@@ -82,12 +87,58 @@ interface PayrollAllocationRollup {
   unassignedGrossPay: number;
 }
 
-interface PayrollAllocationRecord {
+export interface PayrollAllocationRecord {
   employeeId: string;
+  projectCode?: string | null;
+  fundingSource?: string | null;
   totalGrossPay?: number;
   wagesPaid?: number;
+  incomeTax?: number;
+  inssEmployee?: number;
+  inssEmployer?: number;
+  netPay?: number;
+  totalEmployerCost?: number;
   deductions?: AmountLineLike[];
   employerTaxes?: AmountLineLike[];
+}
+
+function resolveAllocationMeta(
+  record: PayrollAllocationRecord,
+  employeeMetaById: Map<string, EmployeeAllocationMeta>,
+): EmployeeAllocationMeta {
+  // New records carry a transaction-time snapshot. The property-existence
+  // check deliberately treats an empty snapshot as Unassigned instead of
+  // falling through to the employee's current (possibly edited) allocation.
+  if (record.projectCode !== undefined || record.fundingSource !== undefined) {
+    return normalizeAllocationMeta(record.projectCode, record.fundingSource);
+  }
+  return (
+    employeeMetaById.get(record.employeeId) ||
+    normalizeAllocationMeta(undefined, undefined)
+  );
+}
+
+function wagesPaidFor(record: PayrollAllocationRecord): number {
+  const attendanceReductions = addMoney(
+    findAmountByType(record.deductions, "absence"),
+    findAmountByType(record.deductions, "late_arrival"),
+  );
+  return typeof record.wagesPaid === "number"
+    ? record.wagesPaid
+    : maxMoney(
+        0,
+        subtractMoney(record.totalGrossPay || 0, attendanceReductions),
+      );
+}
+
+function statutoryAmount(
+  directValue: number | undefined,
+  lines: AmountLineLike[] | undefined,
+  type: string,
+): number {
+  return typeof directValue === "number"
+    ? directValue
+    : findAmountByType(lines, type);
 }
 
 export function summarizePayrollAllocations(
@@ -100,17 +151,13 @@ export function summarizePayrollAllocations(
   let unassignedGrossPay = 0;
 
   for (const record of records) {
-    const meta =
-      employeeMetaById.get(record.employeeId) ||
-      normalizeAllocationMeta(undefined, undefined);
-    const attendanceReductions = addMoney(
-      findAmountByType(record.deductions, 'absence'),
-      findAmountByType(record.deductions, 'late_arrival'),
+    const meta = resolveAllocationMeta(record, employeeMetaById);
+    const grossPay = wagesPaidFor(record);
+    const inssEmployer = statutoryAmount(
+      record.inssEmployer,
+      record.employerTaxes,
+      "inss_employer",
     );
-    const grossPay = typeof record.wagesPaid === 'number'
-      ? record.wagesPaid
-      : maxMoney(0, subtractMoney(record.totalGrossPay || 0, attendanceReductions));
-    const inssEmployer = findAmountByType(record.employerTaxes, "inss_employer");
 
     if (isUnassignedAllocation(meta)) {
       unassignedEmployeeIds.add(record.employeeId);
@@ -132,11 +179,124 @@ export function summarizePayrollAllocations(
   }
 
   return {
-    allocations: Array.from(grouped.values()).sort((a, b) => b.grossPay - a.grossPay),
+    allocations: Array.from(grouped.values()).sort((a, b) =>
+      compareMoney(b.grossPay, a.grossPay),
+    ),
     unassignedEmployeeCount: unassignedEmployeeIds.size,
     unassignedRecordCount,
     unassignedGrossPay,
   };
+}
+
+export interface PayrollAllocationReportRow {
+  projectCode: string;
+  fundingSource: string;
+  employeeCount: number;
+  grossPay: number;
+  incomeTax: number;
+  inssEmployee: number;
+  inssEmployer: number;
+  netPay: number;
+  employerCost: number;
+}
+
+export interface PayrollAllocationReportTotals {
+  runCount: number;
+  employeeCount: number;
+  grossPay: number;
+  incomeTax: number;
+  inssEmployee: number;
+  inssEmployer: number;
+  netPay: number;
+  employerCost: number;
+}
+
+export function summarizePayrollAllocationReport(
+  records: PayrollAllocationRecord[],
+  employeeMetaById: Map<string, EmployeeAllocationMeta>,
+  runCount: number,
+): { rows: PayrollAllocationReportRow[]; totals: PayrollAllocationReportTotals } {
+  const grouped = new Map<
+    string,
+    Omit<PayrollAllocationReportRow, "employeeCount"> & {
+      employeeIds: Set<string>;
+    }
+  >();
+  const allEmployeeIds = new Set<string>();
+  const totals: PayrollAllocationReportTotals = {
+    runCount,
+    employeeCount: 0,
+    grossPay: 0,
+    incomeTax: 0,
+    inssEmployee: 0,
+    inssEmployer: 0,
+    netPay: 0,
+    employerCost: 0,
+  };
+
+  for (const record of records) {
+    const meta = resolveAllocationMeta(record, employeeMetaById);
+    const key = `${meta.projectCode}::${meta.fundingSource}`;
+    const grossPay = wagesPaidFor(record);
+    const incomeTax = statutoryAmount(
+      record.incomeTax,
+      record.deductions,
+      "income_tax",
+    );
+    const inssEmployee = statutoryAmount(
+      record.inssEmployee,
+      record.deductions,
+      "inss_employee",
+    );
+    const inssEmployer = statutoryAmount(
+      record.inssEmployer,
+      record.employerTaxes,
+      "inss_employer",
+    );
+    const netPay = record.netPay || 0;
+    const employerCost =
+      typeof record.totalEmployerCost === "number"
+        ? record.totalEmployerCost
+        : addMoney(grossPay, inssEmployer);
+    const existing = grouped.get(key) || {
+      projectCode: meta.projectCode,
+      fundingSource: meta.fundingSource,
+      employeeIds: new Set<string>(),
+      grossPay: 0,
+      incomeTax: 0,
+      inssEmployee: 0,
+      inssEmployer: 0,
+      netPay: 0,
+      employerCost: 0,
+    };
+
+    existing.employeeIds.add(record.employeeId);
+    existing.grossPay = addMoney(existing.grossPay, grossPay);
+    existing.incomeTax = addMoney(existing.incomeTax, incomeTax);
+    existing.inssEmployee = addMoney(existing.inssEmployee, inssEmployee);
+    existing.inssEmployer = addMoney(existing.inssEmployer, inssEmployer);
+    existing.netPay = addMoney(existing.netPay, netPay);
+    existing.employerCost = addMoney(existing.employerCost, employerCost);
+    grouped.set(key, existing);
+
+    allEmployeeIds.add(record.employeeId);
+    totals.grossPay = addMoney(totals.grossPay, grossPay);
+    totals.incomeTax = addMoney(totals.incomeTax, incomeTax);
+    totals.inssEmployee = addMoney(totals.inssEmployee, inssEmployee);
+    totals.inssEmployer = addMoney(totals.inssEmployer, inssEmployer);
+    totals.netPay = addMoney(totals.netPay, netPay);
+    totals.employerCost = addMoney(totals.employerCost, employerCost);
+  }
+
+  totals.employeeCount = allEmployeeIds.size;
+  const rows = Array.from(grouped.values())
+    .map(({ employeeIds, ...row }) => ({
+      ...row,
+      employeeCount: employeeIds.size,
+    }))
+    .sort((a, b) => compareMoney(b.grossPay, a.grossPay));
+
+  return { rows, totals };
 }
 
 export interface DonorLine {
@@ -222,5 +382,7 @@ export function summarizeDonorLines(lines: DonorLine[]): DonorSummary[] {
     grouped.set(key, existing);
   }
 
-  return Array.from(grouped.values()).sort((a, b) => b.totalExpense - a.totalExpense);
+  return Array.from(grouped.values()).sort((a, b) =>
+    compareMoney(b.totalExpense, a.totalExpense),
+  );
 }

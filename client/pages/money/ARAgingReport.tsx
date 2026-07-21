@@ -16,10 +16,12 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { getDaysPastDueLenient } from '@/lib/accounting/calculations';
-import { addMoney, sumMoney } from '@/lib/currency';
+import { addMoney, compareMoney, sumMoney } from '@/lib/currency';
+import { getAgingBucketKey } from '@/lib/reports/aging';
 import { getTodayTL } from '@/lib/dateUtils';
 
 import MoreDetailsSection from '@/components/MoreDetailsSection';
+import { ReportEmptyState } from '@/components/reports/ReportLayout';
 import type { Invoice } from '@/types/money';
 import {
   Clock,
@@ -27,6 +29,7 @@ import {
   Users,
   ChevronRight,
   FileText,
+  WifiOff,
 } from 'lucide-react';
 
 interface AgingBucket {
@@ -42,6 +45,7 @@ interface CustomerAging {
   current: number;
   days30: number;
   days60: number;
+  days90: number;
   days90Plus: number;
   total: number;
 }
@@ -50,7 +54,12 @@ export default function ARAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { data: allInvoices = [], isLoading: loading } = useQuery({
+  const {
+    data: allInvoices = [],
+    isLoading: loading,
+    isError: loadError,
+    refetch,
+  } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'arAging'],
     queryFn: () => invoiceService.getOutstandingInvoices(tenantId),
     staleTime: 0,
@@ -100,6 +109,7 @@ export default function ARAgingReport() {
           current: 0,
           days30: 0,
           days60: 0,
+          days90: 0,
           days90Plus: 0,
           total: 0,
         });
@@ -108,18 +118,13 @@ export default function ARAgingReport() {
       const customer = customerMap.get(inv.customerId)!;
       customer.total = addMoney(customer.total, balance);
 
-      if (inv.daysOverdue <= 0) {
-        customer.current = addMoney(customer.current, balance);
-      } else if (inv.daysOverdue <= 30) {
-        customer.days30 = addMoney(customer.days30, balance);
-      } else if (inv.daysOverdue <= 60) {
-        customer.days60 = addMoney(customer.days60, balance);
-      } else {
-        customer.days90Plus = addMoney(customer.days90Plus, balance);
-      }
+      const bucket = getAgingBucketKey(inv.daysOverdue);
+      customer[bucket] = addMoney(customer[bucket], balance);
     });
 
-    const sortedCustomers = Array.from(customerMap.values()).sort((a, b) => b.total - a.total);
+    const sortedCustomers = Array.from(customerMap.values()).sort((a, b) =>
+      compareMoney(b.total, a.total),
+    );
 
     return {
       buckets: computedBuckets,
@@ -141,7 +146,7 @@ export default function ARAgingReport() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-start justify-between mb-8">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-md" />
@@ -175,6 +180,7 @@ export default function ARAgingReport() {
                       <th className="text-right py-3 font-medium">{t('money.arAging.current') || 'Current'}</th>
                       <th className="text-right py-3 font-medium">1-30</th>
                       <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">61-90</th>
                       <th className="text-right py-3 font-medium">90+</th>
                       <th className="text-right py-3 font-medium">{t('money.arAging.total') || 'Total'}</th>
                       <th className="w-10"></th>
@@ -202,12 +208,36 @@ export default function ARAgingReport() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO title="A/R Aging - Xefe" description="Accounts receivable aging report" />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t('money.arAging.title') || 'A/R Aging Report'}
+            subtitle={t('money.arAging.subtitle') || 'Outstanding invoices by age'}
+            icon={Clock}
+            iconColor="text-indigo-500"
+          />
+          <ReportEmptyState
+            icon={WifiOff}
+            title={t('common.connectionIssueTitle') || 'Connection problem'}
+            description={t('common.connectionIssueDesc') || 'Could not load this report.'}
+            actionLabel={t('common.retry') || 'Retry'}
+            onAction={() => void refetch()}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="A/R Aging - Xefe" description="Accounts receivable aging report" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.arAging.title') || 'A/R Aging Report'}
           subtitle={t('money.arAging.subtitle') || 'Outstanding invoices by age'}
@@ -270,6 +300,7 @@ export default function ARAgingReport() {
                       <th className="text-right py-3 font-medium">{t('money.arAging.current') || 'Current'}</th>
                       <th className="text-right py-3 font-medium">1-30</th>
                       <th className="text-right py-3 font-medium">31-60</th>
+                      <th className="text-right py-3 font-medium">61-90</th>
                       <th className="text-right py-3 font-medium">90+</th>
                       <th className="text-right py-3 font-medium">{t('money.arAging.total') || 'Total'}</th>
                       <th className="w-10"></th>
@@ -289,6 +320,7 @@ export default function ARAgingReport() {
                         <td className="text-right py-3 tabular-nums">{formatCurrency(customer.current)}</td>
                         <td className="text-right py-3 tabular-nums">{formatCurrency(customer.days30)}</td>
                         <td className="text-right py-3 tabular-nums">{formatCurrency(customer.days60)}</td>
+                        <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(customer.days90)}</td>
                         <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(customer.days90Plus)}</td>
                         <td className="text-right py-3 font-semibold tabular-nums">{formatCurrency(customer.total)}</td>
                         <td className="py-3">
@@ -309,9 +341,8 @@ export default function ARAgingReport() {
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[0]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[1]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[2]?.total || 0)}</td>
-                      <td className="text-right py-3 text-red-600 tabular-nums">
-                        {formatCurrency((buckets[3]?.total || 0) + (buckets[4]?.total || 0))}
-                      </td>
+                      <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(buckets[3]?.total || 0)}</td>
+                      <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(buckets[4]?.total || 0)}</td>
                       <td className="text-right py-3 tabular-nums">{formatCurrency(totalOutstanding)}</td>
                       <td></td>
                     </tr>

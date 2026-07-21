@@ -25,6 +25,13 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { toast } from "sonner";
 import { getTodayTL, formatDateTL, parseDateISO } from "@/lib/dateUtils";
 import type { PayrollRecord, PayrollRun } from "@/types/payroll";
+import {
+  addMoney,
+  compareMoney,
+  maxMoney,
+  subtractMoney,
+} from "@/lib/currency";
+import { downloadCSVRows } from "@/lib/csvExport";
 
 // ── Canonical extraction (mirrors PayrollHistory/accounting posting) ──
 const witOf = (r: PayrollRecord) =>
@@ -34,7 +41,10 @@ const inssEmpOf = (r: PayrollRecord) =>
 const inssErOf = (r: PayrollRecord) =>
   r.employerTaxes?.find((t) => t.type === "inss_employer")?.amount ?? 0;
 const otherDedOf = (r: PayrollRecord) =>
-  Math.max(0, (r.totalDeductions ?? 0) - witOf(r) - inssEmpOf(r));
+  maxMoney(
+    0,
+    subtractMoney(r.totalDeductions ?? 0, witOf(r), inssEmpOf(r)),
+  );
 
 function fmt(amount: number) {
   return new Intl.NumberFormat("en-US", {
@@ -80,13 +90,17 @@ export default function PayrollReports() {
   const activeRunId = selectedRunId ?? sortedRuns[0]?.id;
   const activeRun = sortedRuns.find((r) => r.id === activeRunId);
 
-  const { data: records = [], isLoading: recordsLoading } =
-    usePayrollRecordsByRun(activeRunId);
+  const {
+    data: records = [],
+    isLoading: recordsLoading,
+    error: recordsError,
+    refetch: refetchRecords,
+  } = usePayrollRecordsByRun(activeRunId);
 
   const sortedRecords = useMemo(
     () =>
-      [...records].sort(
-        (a, b) => (b.totalGrossPay ?? 0) - (a.totalGrossPay ?? 0),
+      [...records].sort((a, b) =>
+        compareMoney(b.totalGrossPay ?? 0, a.totalGrossPay ?? 0),
       ),
     [records],
   );
@@ -94,13 +108,16 @@ export default function PayrollReports() {
   const totals = useMemo(() => {
     return records.reduce(
       (acc, r) => {
-        acc.gross += r.totalGrossPay ?? 0;
-        acc.wit += witOf(r);
-        acc.inssEmp += inssEmpOf(r);
-        acc.inssEr += inssErOf(r);
-        acc.other += otherDedOf(r);
-        acc.net += r.netPay ?? 0;
-        acc.employerCost += r.totalEmployerCost ?? 0;
+        acc.gross = addMoney(acc.gross, r.totalGrossPay ?? 0);
+        acc.wit = addMoney(acc.wit, witOf(r));
+        acc.inssEmp = addMoney(acc.inssEmp, inssEmpOf(r));
+        acc.inssEr = addMoney(acc.inssEr, inssErOf(r));
+        acc.other = addMoney(acc.other, otherDedOf(r));
+        acc.net = addMoney(acc.net, r.netPay ?? 0);
+        acc.employerCost = addMoney(
+          acc.employerCost,
+          r.totalEmployerCost ?? 0,
+        );
         return acc;
       },
       {
@@ -172,16 +189,11 @@ export default function PayrollReports() {
       otherDedOf(r).toFixed(2),
       (r.netPay ?? 0).toFixed(2),
     ]);
-    const csv = [
-      `# ${t("reports.payroll.title")} — ${runLabel(activeRun)}`,
-      headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
-    ].join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `payroll-report-${activeRun.payDate || getTodayTL()}.csv`;
-    link.click();
+    downloadCSVRows(
+      `payroll-report-${activeRun.payDate || getTodayTL()}.csv`,
+      headers,
+      rows,
+    );
     toast.success(t("reports.payroll.toast.exported"));
   };
 
@@ -300,6 +312,18 @@ export default function PayrollReports() {
               </div>
             </ReportToolbar>
 
+            {recordsError ? (
+              <ReportEmptyState
+                icon={WifiOff}
+                title={t("common.connectionIssueTitle")}
+                description={t("common.connectionIssueDesc")}
+                actionLabel={t("common.retry")}
+                onAction={() => {
+                  void refetchRecords();
+                }}
+              />
+            ) : (
+              <>
             {/* Summary report card */}
             <ReportSection
               icon={FileText}
@@ -602,6 +626,8 @@ export default function PayrollReports() {
                 </>
               )}
             </ReportSection>
+              </>
+            )}
           </div>
         )}
       </ReportPage>

@@ -50,6 +50,7 @@ import {
   useTouchCustomReportLastRun,
 } from "@/hooks/useCustomReports";
 import {
+  addDepartmentHeadcounts,
   filterEmployeeRows,
   getColumnValue,
 } from "@/lib/reports/customReportRows";
@@ -229,6 +230,12 @@ const COLUMN_OPTIONS: ColumnOption[] = [
     labelKey: "manager",
     dataSource: "departments",
   },
+  {
+    key: "headcount",
+    label: "Headcount",
+    labelKey: "headcount",
+    dataSource: "departments",
+  },
 ];
 
 const TEMPLATE_KEYS: Record<string, string> = {
@@ -274,7 +281,7 @@ const SAMPLE_REPORTS: ReportConfig[] = [
     name: "Department Headcount",
     description: "Employee count by department",
     dataSource: "departments",
-    columns: ["name", "director", "manager"],
+    columns: ["name", "director", "manager", "headcount"],
     filters: {},
     createdAt: new Date("2024-02-01"),
   },
@@ -432,7 +439,11 @@ export default function CustomReports() {
           if (result.error) throw result.error;
           departmentData = result.data ?? [];
         }
-        data = departmentData as unknown as Record<string, unknown>[];
+        const employees = await employeeService.getAllEmployees(tenantId);
+        data = addDepartmentHeadcounts(
+          departmentData,
+          employees,
+        ) as unknown as Record<string, unknown>[];
       }
 
       const columns = config.columns
@@ -605,7 +616,6 @@ export default function CustomReports() {
           title={t("reports.custom.title")}
           subtitle={t("reports.custom.subtitle")}
           icon={BarChart3}
-          maxWidth="lg"
         >
           <Card className="border-border/70 shadow-sm">
             <CardContent>
@@ -613,6 +623,36 @@ export default function CustomReports() {
                 icon={FileText}
                 title={t("reports.custom.noDataTitle")}
                 description={t("reports.custom.noDataDescription")}
+              />
+            </CardContent>
+          </Card>
+        </ReportPage>
+      </>
+    );
+  }
+
+  if (savedReportsQuery.isError || departmentQuery.isError) {
+    return (
+      <>
+        <SEO {...seoConfig.customReports} />
+        <ReportPage
+          title={t("reports.custom.title")}
+          subtitle={t("reports.custom.subtitle")}
+          icon={BarChart3}
+        >
+          <Card className="border-border/70 shadow-sm">
+            <CardContent>
+              <ReportEmptyState
+                icon={FileText}
+                title={t("common.connectionIssueTitle")}
+                description={t("common.connectionIssueDesc")}
+                actionLabel={t("common.retry")}
+                onAction={() => {
+                  void Promise.all([
+                    savedReportsQuery.refetch(),
+                    departmentQuery.refetch(),
+                  ]);
+                }}
               />
             </CardContent>
           </Card>

@@ -39,6 +39,7 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
+  WifiOff,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
@@ -46,6 +47,8 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { downloadCSVRows } from "@/lib/csvExport";
+import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
 function parseIsoDateParts(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -214,14 +217,11 @@ export default function IncomeStatement() {
       report.netIncome.toFixed(2),
     ]);
 
-    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `income-statement-${periodStart}-to-${periodEnd}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCSVRows(
+      `income-statement-${periodStart}-to-${periodEnd}.csv`,
+      headers,
+      rows,
+    );
   };
 
   const handlePrint = () => {
@@ -232,7 +232,7 @@ export default function IncomeStatement() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.incomeStatement} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title={t("accounting.incomeStatement.title")}
           subtitle={t("accounting.incomeStatement.subtitle")}
@@ -349,7 +349,15 @@ export default function IncomeStatement() {
       )}
 
       {/* Income Statement Table */}
-      {report ? (
+      {reportQuery.isError ? (
+        <ReportEmptyState
+          icon={WifiOff}
+          title={t("common.connectionIssueTitle")}
+          description={t("common.connectionIssueDesc")}
+          actionLabel={t("common.retry")}
+          onAction={() => void reportQuery.refetch()}
+        />
+      ) : report ? (
         <>
           <Card className="print:shadow-none">
           <CardHeader className="print:pb-2">
