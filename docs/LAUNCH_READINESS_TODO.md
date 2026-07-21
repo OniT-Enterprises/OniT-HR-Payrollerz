@@ -44,8 +44,8 @@ from code alone.
       `opening balance`, or `post acquisition now`.
 - [x] For `post acquisition now`, require a funding/payable account and post the
       balanced acquisition journal exactly once.
-- [x] Add an annual business-income-tax preparation record and deadline so Form C
-      cannot disappear from the compliance calendar.
+- [x] Add an annual business-income-tax preparation record and deadline so the annual
+      return (TADR-IT 1) cannot disappear from the compliance calendar.
 - [x] Obtain the current official form/instructions: **TADR-IT 1 (2023)** + its
       instructions downloaded 2026-07-21 from attl.gov.tl (EN+PT saved to
       `~/Sites/m365-mail-export/laws/2023_Income_Tax_Form_*`). Confirmed: Table A
@@ -61,7 +61,7 @@ from code alone.
 - [ ] **External — accountant sign-off:** have an accountant verify the workpaper
       mapping and tax tables against current practice (incl. the Sch. VII
       depreciation question) before claiming that Xefe calculates or files
-      Form C. `officialFormSupported` stays `false` until then.
+      the official TADR-IT 1. `officialFormSupported` stays `false` until then.
 
 ## P1 — self-service operations
 
@@ -108,5 +108,5 @@ from code alone.
 - Rules suite: 20 files / 241 emulator tests passed.
 - Browser suite: accounting lifecycle, full taxable payroll/statutory lifecycle,
   and real-month replay all passed. The full payroll journey also persists the
-  Form C preparation hand-off and verifies its audit entry.
+  annual income tax (TADR-IT 1) preparation hand-off and verifies its audit entry.
 - API suite: 9/9 authentication and tenant-isolation tests passed.

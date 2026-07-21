@@ -500,7 +500,7 @@ export default function Disciplinary() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.disciplinary} />
 
-      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Disciplinary"
           subtitle="Manage disciplinary actions and incident reports"

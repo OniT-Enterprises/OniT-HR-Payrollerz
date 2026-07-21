@@ -158,7 +158,7 @@ export default function RecurringInvoices() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <Skeleton className="h-8 w-48 mb-2" />
@@ -209,7 +209,7 @@ export default function RecurringInvoices() {
       <SEO title="Recurring Invoices - Xefe" description="Manage recurring invoice templates" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.recurring.title') || 'Recurring Invoices'}
           subtitle={t('money.recurring.subtitle') || 'Auto-generate invoices on a schedule'}

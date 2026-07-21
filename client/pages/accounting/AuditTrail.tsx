@@ -183,7 +183,7 @@ export default function AccountingAuditTrail() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 space-y-6">
         <PageHeader
           title={t("accounting.auditTrail.title")}
           subtitle={t("accounting.auditTrail.subtitle")}

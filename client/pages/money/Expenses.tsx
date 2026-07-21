@@ -510,7 +510,7 @@ export default function Expenses() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-8">
             <div>
               <Skeleton className="h-8 w-40 mb-2" />
@@ -596,7 +596,7 @@ export default function Expenses() {
       <SEO title="Expenses - Xefe" description="Track and manage business expenses" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.expenses.title') || 'Expenses'}
           subtitle={t('money.expenses.subtitle') || 'Track business expenses'}

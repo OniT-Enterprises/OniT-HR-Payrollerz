@@ -384,7 +384,7 @@ export default function Reviews() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-xl" />
@@ -440,7 +440,7 @@ export default function Reviews() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.reviews} />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Performance Reviews"
           subtitle="Manage and track employee performance evaluations"

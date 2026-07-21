@@ -40,7 +40,7 @@ export function AccountantGate({ backTo }: AccountantGateProps) {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="p-4 sm:p-6 max-w-screen-lg mx-auto">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <Card className="max-w-xl mx-auto mt-8">
           <CardContent className="py-10 text-center space-y-4">
             <div className="p-3 rounded-full bg-muted inline-flex">

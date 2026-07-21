@@ -833,7 +833,7 @@ export default function BankTransfers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-2.5">
               <Skeleton className="h-9 w-9 shrink-0 rounded-lg sm:h-10 sm:w-10" />
@@ -959,7 +959,7 @@ export default function BankTransfers() {
       <SEO {...seoConfig.bankTransfers} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("bankTransfers.title")}
           subtitle={t("bankTransfers.subtitle")}

@@ -28,7 +28,7 @@ function SchedulingDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={timeLeaveNavConfig} />
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         {/* Header */}
         <div>
           <Skeleton className="h-7 w-48 sm:h-8 sm:w-64" />
@@ -258,7 +258,7 @@ export default function SchedulingDashboard() {
       />
       <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         <PageHeader
           size="lg"
           title={t("moduleDashboards.scheduling.title")}

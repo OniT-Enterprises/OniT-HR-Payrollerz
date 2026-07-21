@@ -37,7 +37,7 @@ function PeopleHomeSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={peopleNavConfig} />
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         {/* Header + search */}
         <div className="space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -297,7 +297,7 @@ export default function PeopleDashboard() {
       />
       <ModuleSectionNav config={peopleNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         {/* Header + search */}
         <div className="space-y-5">
           <PageHeader

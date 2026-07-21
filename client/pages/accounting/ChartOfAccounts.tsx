@@ -481,7 +481,7 @@ export default function ChartOfAccounts() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:p-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-9 w-9 rounded-lg" />
@@ -563,7 +563,7 @@ export default function ChartOfAccounts() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:p-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("accounting.chartOfAccounts.title")}
           subtitle={t("accounting.chartOfAccounts.subtitle")}

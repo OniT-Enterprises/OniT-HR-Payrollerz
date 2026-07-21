@@ -36,7 +36,7 @@ export default function PayrollSettings() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center gap-3 mb-6">
             <Skeleton className="h-8 w-8 rounded-md" />
             <div className="space-y-2">
@@ -166,7 +166,7 @@ export default function PayrollSettings() {
       <SEO title="Payroll Settings | Xefe" description="Configure payroll tax rates, benefits, and deductions" />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <Link
           to="/settings"
           className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

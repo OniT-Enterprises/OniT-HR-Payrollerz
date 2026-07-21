@@ -1,5 +1,7 @@
 /**
- * Annual income tax (TADR-IT 1, colloquially "Form C") preparation workpaper —
+ * Annual income tax (TADR-IT 1) preparation workpaper. ("Form C" survives
+ * only in internal identifiers — it is not a Timor-Leste term; the official
+ * title is "Annual Income Tax Form", TADR Form No TADR-IT 1.) —
  * pure, Firebase-free builder.
  *
  * SCOPE / PROVENANCE: Xefe does NOT calculate or file the official return.

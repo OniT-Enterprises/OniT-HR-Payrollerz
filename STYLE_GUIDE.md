@@ -73,6 +73,11 @@ Use the established authenticated shell and `PageHeader`.
 </div>
 ```
 
+This container is the ONLY page shell for authenticated pages (standardized
+2026-07-21 — Tony's call). Do not introduce `max-w-7xl`, `max-w-screen-xl`,
+or other width caps at page level; narrow widths belong to inner content
+blocks (forms, empty states), never the page container.
+
 - Phone padding: 16px.
 - Desktop padding: 24px.
 - Default vertical rhythm: 24px.

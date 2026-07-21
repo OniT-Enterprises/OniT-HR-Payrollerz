@@ -2657,6 +2657,14 @@ const messages = {
       downloadedDesc: "Modelo descarregado com sucesso",
       importStartedTitle: "Importação Iniciada",
       importStartedDesc: "A processar {{count}} funcionários...",
+      validationFailedTitle: "Verifique o CSV",
+      validationFailedDesc:
+        "{{count}} linha(s) precisam de correção. Linha {{row}}: {{error}}",
+      completedTitle: "Importação concluída",
+      completedDesc: "Foram adicionados {{count}} funcionários.",
+      completedWithErrorsTitle: "Importação parcialmente concluída",
+      completedWithErrorsDesc:
+        "Adicionados {{imported}}; {{failed}} falharam. Linha {{row}}: {{error}}",
     },
     toast: {
       fixedTermMotiveTitle: "Motivo do termo não declarado",
@@ -2713,6 +2721,13 @@ const messages = {
       jobTitlePlaceholder: "ex., Engenheiro de Software",
       manager: "Gestor",
       managerPlaceholder: "Selecionar gestor",
+      allocationTitle: "Projeto e financiador",
+      allocationHelp:
+        "Opcional. Preencha quando os custos salariais devem ser reportados a um projeto ou financiador.",
+      projectCode: "Código do projeto",
+      projectCodePlaceholder: "ex.: SAUDE-2026",
+      fundingSource: "Fonte de financiamento",
+      fundingSourcePlaceholder: "ex.: Nome do doador ou subsídio",
       startDate: "Data de Início *",
       employmentType: "Tipo de Emprego",
       employmentTypes: {
@@ -4456,6 +4471,7 @@ const messages = {
         departmentName: "Nome do departamento",
         director: "Diretor",
         manager: "Gestor",
+        headcount: "Efetivo",
       },
       templates: {
         activeEmployees: {
@@ -8234,7 +8250,7 @@ const messages = {
       "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
     openInssFiling: "Abrir Declaração INSS",
     formC: {
-      title: "Imposto anual sobre o rendimento empresarial (Formulário C)",
+      title: "Imposto anual sobre o rendimento empresarial (TADR-IT 1)",
       savedTitle: "Preparação guardada",
       savedDescription:
         "A lista de preparação do imposto anual foi atualizada.",
@@ -8245,7 +8261,7 @@ const messages = {
       dialogDescription:
         "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
       externalWarning:
-        "O Xefe apenas acompanha a preparação. Não gera nem submete o Formulário C oficial; use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (TADR-IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
       checklist: {
         profitAndLoss: "Demonstração de resultados revista",
         balanceSheet: "Balanço revisto",
@@ -8269,7 +8285,7 @@ const messages = {
         depreciationUsefulLife: "Taxas de vida útil (registo de ativos)",
         depreciationFullExpensing: "100% no ano de aquisição (Anexo VII)",
         depreciationMethodHint:
-          "A dedução de 100% é o tratamento observado em declarações reais entregues; confirme a escolha com o seu contabilista.",
+          "Confirme com o seu contabilista qual o tratamento aplicável antes de entregar.",
         dueBy: "Formulário oficial até {{date}}.",
         officialFormLink: "Formulário e instruções oficiais (attl.gov.tl)",
         summaryTitle: "Resumo do cálculo",

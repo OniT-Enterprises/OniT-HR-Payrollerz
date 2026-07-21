@@ -274,7 +274,7 @@ export default function Onboarding() {
   if (employeesLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-lg px-4 py-5 sm:px-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
@@ -384,7 +384,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.onboarding} />
-      <div className="mx-auto max-w-screen-lg px-4 py-5 sm:px-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Onboarding checklist"
           subtitle="Get the employee ready for their first day."

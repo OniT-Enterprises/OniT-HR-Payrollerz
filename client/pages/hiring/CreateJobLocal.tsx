@@ -243,7 +243,7 @@ export default function CreateJobLocal() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("hiring.createJob.title")}
             subtitle={t("hiring.createJob.subtitle")}
@@ -352,7 +352,7 @@ export default function CreateJobLocal() {
   if (deptError) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
               <p className="text-destructive">{t("hiring.createJob.errors.loadDepartments")}</p>
@@ -375,7 +375,7 @@ export default function CreateJobLocal() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.jobs} />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-5">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("hiring.createJob.title")}
           subtitle={t("hiring.createJob.subtitle")}

@@ -2389,7 +2389,13 @@ export const translations = {
         "downloadedTitle": "Downloaded",
         "downloadedDesc": "Template downloaded successfully",
         "importStartedTitle": "Import Started",
-        "importStartedDesc": "Processing {{count}} employees..."
+        "importStartedDesc": "Processing {{count}} employees...",
+        "validationFailedTitle": "Check the CSV",
+        "validationFailedDesc": "{{count}} row(s) need attention. Row {{row}}: {{error}}",
+        "completedTitle": "Import complete",
+        "completedDesc": "{{count}} employees were added.",
+        "completedWithErrorsTitle": "Import partly complete",
+        "completedWithErrorsDesc": "Added {{imported}}; {{failed}} failed. Row {{row}}: {{error}}"
       },
       "toast": {
         "fixedTermMotiveTitle": "No fixed-term motive stated",
@@ -2438,6 +2444,12 @@ export const translations = {
         "jobTitlePlaceholder": "e.g., Software Engineer",
         "manager": "Manager",
         "managerPlaceholder": "Select manager",
+        "allocationTitle": "Project & donor details",
+        "allocationHelp": "Optional. Add these when payroll costs must be reported to a project or donor.",
+        "projectCode": "Project code",
+        "projectCodePlaceholder": "e.g., HEALTH-2026",
+        "fundingSource": "Funding source",
+        "fundingSourcePlaceholder": "e.g., Donor or grant name",
         "startDate": "Start Date *",
         "employmentType": "Employment Type",
         "employmentTypes": {
@@ -4066,7 +4078,8 @@ export const translations = {
           "lateMinutes": "Late minutes",
           "departmentName": "Department name",
           "director": "Director",
-          "manager": "Manager"
+          "manager": "Manager",
+          "headcount": "Headcount"
         },
         "templates": {
           "activeEmployees": {
@@ -7563,7 +7576,7 @@ export const translations = {
       "inssDesc": "Generate and export monthly INSS contribution submissions and track filing status.",
       "openInssFiling": "Open INSS Filing",
       "formC": {
-        "title": "Annual business income tax (Form C)",
+        "title": "Annual business income tax (TADR-IT 1)",
         "savedTitle": "Preparation saved",
         "savedDescription": "The annual income-tax preparation checklist was updated.",
         "saveError": "Could not save the preparation checklist.",
@@ -7571,7 +7584,7 @@ export const translations = {
         "startPreparation": "Start preparation",
         "dialogTitle": "Prepare {{year}} annual income tax",
         "dialogDescription": "Collect the accounting reports and adjustments your accountant needs for the official return.",
-        "externalWarning": "Xefe tracks preparation only. It does not generate or file the official Form C; use the current ATTL form and obtain accountant sign-off.",
+        "externalWarning": "Xefe tracks preparation only. It does not generate or file the official annual income tax form (TADR-IT 1); use the current ATTL form and obtain accountant sign-off.",
         "checklist": {
           "profitAndLoss": "Profit and loss reviewed",
           "balanceSheet": "Balance sheet reviewed",
@@ -7592,7 +7605,7 @@ export const translations = {
           "depreciationMethod": "Tax depreciation method (line 15)",
           "depreciationUsefulLife": "Useful-life rates (asset register)",
           "depreciationFullExpensing": "100% in year of purchase (Schedule VII)",
-          "depreciationMethodHint": "100% expensing is the treatment seen on real filed returns; confirm the choice with your accountant.",
+          "depreciationMethodHint": "Confirm with your accountant which treatment applies before filing.",
           "dueBy": "Official form due by {{date}}.",
           "officialFormLink": "Official form & instructions (attl.gov.tl)",
           "summaryTitle": "Calculation summary",
@@ -10652,7 +10665,13 @@ export const translations = {
         "downloadedTitle": "Download",
         "downloadedDesc": "Modelo download ho diak",
         "importStartedTitle": "Importa Hahu",
-        "importStartedDesc": "Prosesu {{count}} empregadu..."
+        "importStartedDesc": "Prosesu {{count}} empregadu...",
+        "validationFailedTitle": "Verifika CSV",
+        "validationFailedDesc": "Liña {{count}} presiza hadi'a. Liña {{row}}: {{error}}",
+        "completedTitle": "Importasaun remata",
+        "completedDesc": "Aumenta ona empregadu {{count}}.",
+        "completedWithErrorsTitle": "Importasaun remata balu",
+        "completedWithErrorsDesc": "Aumenta {{imported}}; {{failed}} falla. Liña {{row}}: {{error}}"
       },
       "toast": {
         "fixedTermMotiveTitle": "La deklara motivu kontratu ho prazu",
@@ -10701,6 +10720,12 @@ export const translations = {
         "jobTitlePlaceholder": "ez.: Injenier Software",
         "manager": "Xefe",
         "managerPlaceholder": "Hili xefe",
+        "allocationTitle": "Projetu no doadór",
+        "allocationHelp": "Opsionál. Prienxe bainhira presiza relata kustu saláriu ba projetu ka doadór.",
+        "projectCode": "Kódigu projetu",
+        "projectCodePlaceholder": "ez.: SAUDE-2026",
+        "fundingSource": "Fonte finansiamentu",
+        "fundingSourcePlaceholder": "ez.: Naran doadór ka subsídiu",
         "startDate": "Data Hahu *",
         "employmentType": "Tipu Kontratu",
         "employmentTypes": {
@@ -13389,7 +13414,8 @@ export const translations = {
           "lateMinutes": "Minutu tarde",
           "departmentName": "Naran departamentu",
           "director": "Diretór",
-          "manager": "Jestór"
+          "manager": "Jestór",
+          "headcount": "Númeru empregadu"
         },
         "templates": {
           "activeEmployees": {
@@ -15826,7 +15852,7 @@ export const translations = {
       "inssDesc": "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
       "openInssFiling": "Loke Submisaun INSS",
       "formC": {
-        "title": "Impostu rendimentu negósiu anual (Formuláriu C)",
+        "title": "Impostu rendimentu negósiu anual (TADR-IT 1)",
         "savedTitle": "Preparasaun rai ona",
         "savedDescription": "Lista preparasaun impostu rendimentu anual atualiza ona.",
         "saveError": "La konsege rai lista preparasaun.",
@@ -15834,7 +15860,7 @@ export const translations = {
         "startPreparation": "Hahu preparasaun",
         "dialogTitle": "Prepara impostu rendimentu anual {{year}}",
         "dialogDescription": "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
-        "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete Formuláriu C ofisiál; uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "externalWarning": "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (TADR-IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
         "checklist": {
           "profitAndLoss": "Lucro no prejuízu reviza ona",
           "balanceSheet": "Balansu reviza ona",
@@ -15855,7 +15881,7 @@ export const translations = {
           "depreciationMethod": "Métodu depresiasaun fiskál (liña 15)",
           "depreciationUsefulLife": "Taxa vida útil (rejistu ativu)",
           "depreciationFullExpensing": "100% iha tinan sosa (Aneksu VII)",
-          "depreciationMethodHint": "Dedusaun 100% mak tratamentu ne'ebé haree iha deklarasaun reál sira ne'ebé entrega ona; konfirma eskolla ho ita-nia kontabilista.",
+          "depreciationMethodHint": "Konfirma ho ita-nia kontabilista tratamentu ida-ne'ebé mak aplika molok entrega.",
           "dueBy": "Formuláriu ofisiál to'o {{date}}.",
           "officialFormLink": "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
           "summaryTitle": "Rezumu kálkulu",
@@ -18915,7 +18941,13 @@ export const translations = {
         "downloadedTitle": "Descarregado",
         "downloadedDesc": "Modelo descarregado com sucesso",
         "importStartedTitle": "Importação Iniciada",
-        "importStartedDesc": "A processar {{count}} funcionários..."
+        "importStartedDesc": "A processar {{count}} funcionários...",
+        "validationFailedTitle": "Verifique o CSV",
+        "validationFailedDesc": "{{count}} linha(s) precisam de correção. Linha {{row}}: {{error}}",
+        "completedTitle": "Importação concluída",
+        "completedDesc": "Foram adicionados {{count}} funcionários.",
+        "completedWithErrorsTitle": "Importação parcialmente concluída",
+        "completedWithErrorsDesc": "Adicionados {{imported}}; {{failed}} falharam. Linha {{row}}: {{error}}"
       },
       "toast": {
         "fixedTermMotiveTitle": "Motivo do termo não declarado",
@@ -18964,6 +18996,12 @@ export const translations = {
         "jobTitlePlaceholder": "ex., Engenheiro de Software",
         "manager": "Gestor",
         "managerPlaceholder": "Selecionar gestor",
+        "allocationTitle": "Projeto e financiador",
+        "allocationHelp": "Opcional. Preencha quando os custos salariais devem ser reportados a um projeto ou financiador.",
+        "projectCode": "Código do projeto",
+        "projectCodePlaceholder": "ex.: SAUDE-2026",
+        "fundingSource": "Fonte de financiamento",
+        "fundingSourcePlaceholder": "ex.: Nome do doador ou subsídio",
         "startDate": "Data de Início *",
         "employmentType": "Tipo de Emprego",
         "employmentTypes": {
@@ -20592,7 +20630,8 @@ export const translations = {
           "lateMinutes": "Minutos de atraso",
           "departmentName": "Nome do departamento",
           "director": "Diretor",
-          "manager": "Gestor"
+          "manager": "Gestor",
+          "headcount": "Efetivo"
         },
         "templates": {
           "activeEmployees": {
@@ -24089,7 +24128,7 @@ export const translations = {
       "inssDesc": "Gerar e exportar submissões mensais de contribuições INSS e acompanhar estado das declarações.",
       "openInssFiling": "Abrir Declaração INSS",
       "formC": {
-        "title": "Imposto anual sobre o rendimento empresarial (Formulário C)",
+        "title": "Imposto anual sobre o rendimento empresarial (TADR-IT 1)",
         "savedTitle": "Preparação guardada",
         "savedDescription": "A lista de preparação do imposto anual foi atualizada.",
         "saveError": "Não foi possível guardar a lista de preparação.",
@@ -24097,7 +24136,7 @@ export const translations = {
         "startPreparation": "Iniciar preparação",
         "dialogTitle": "Preparar o imposto anual de {{year}}",
         "dialogDescription": "Reúna os relatórios contabilísticos e ajustamentos necessários para a declaração oficial.",
-        "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o Formulário C oficial; use o formulário ATTL atual e obtenha a aprovação do contabilista.",
+        "externalWarning": "O Xefe apenas acompanha a preparação. Não gera nem submete o formulário oficial de imposto anual (TADR-IT 1); use o formulário ATTL atual e obtenha a aprovação do contabilista.",
         "checklist": {
           "profitAndLoss": "Demonstração de resultados revista",
           "balanceSheet": "Balanço revisto",
@@ -24118,7 +24157,7 @@ export const translations = {
           "depreciationMethod": "Método de depreciação fiscal (linha 15)",
           "depreciationUsefulLife": "Taxas de vida útil (registo de ativos)",
           "depreciationFullExpensing": "100% no ano de aquisição (Anexo VII)",
-          "depreciationMethodHint": "A dedução de 100% é o tratamento observado em declarações reais entregues; confirme a escolha com o seu contabilista.",
+          "depreciationMethodHint": "Confirme com o seu contabilista qual o tratamento aplicável antes de entregar.",
           "dueBy": "Formulário oficial até {{date}}.",
           "officialFormLink": "Formulário e instruções oficiais (attl.gov.tl)",
           "summaryTitle": "Resumo do cálculo",

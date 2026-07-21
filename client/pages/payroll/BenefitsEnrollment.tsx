@@ -409,7 +409,7 @@ export default function EmployeeAllowances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-8 w-8 rounded" />
@@ -498,7 +498,7 @@ export default function EmployeeAllowances() {
       <SEO title="Employee Allowances - Xefe" description="Manage employee allowances for transport, housing, meals, and more" />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("allowances.title")}
           subtitle={t("allowances.subtitle")}

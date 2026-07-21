@@ -113,7 +113,7 @@ export default function AccountantPortfolioDashboard() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accountantPortfolio} />
       <MainNavigation />
-      <div className="mx-auto max-w-screen-2xl px-4 py-5 pb-10 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-6 rounded-2xl border border-border bg-card p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">

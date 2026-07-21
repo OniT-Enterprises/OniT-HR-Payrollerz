@@ -276,7 +276,7 @@ export default function InvoiceSettingsPage() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="space-y-2">
               <Skeleton className="h-8 w-48" />
@@ -474,7 +474,7 @@ export default function InvoiceSettingsPage() {
       <SEO title="Invoice Settings - Xefe" description="Configure invoice settings" />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.settings.title') || 'Invoice Settings'}
           subtitle={t('money.settings.subtitle') || 'Configure your invoice defaults and company information'}

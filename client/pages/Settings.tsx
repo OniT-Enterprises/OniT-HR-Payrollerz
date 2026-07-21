@@ -120,7 +120,7 @@ export default function Settings() {
       <SEO {...seoConfig.settings} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:p-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("settings.headerTitle")}
           subtitle={t("settings.headerSubtitle")}

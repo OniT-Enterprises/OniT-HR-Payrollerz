@@ -1,5 +1,5 @@
 /**
- * Annual income tax preparation workpaper (TADR-IT 1, "Form C") Excel export.
+ * Annual income tax (TADR-IT 1) preparation workpaper Excel export.
  *
  * PROVENANCE: this is Xefe's OWN workpaper layout — it is NOT the official
  * form and is not modeled on any client or accounting firm's workbook. Only
@@ -123,7 +123,7 @@ export function buildFormCWorkpaperWorkbook(
     ['150', 'Taxable Income or Loss', totals.taxableIncome],
     ['155', 'Total losses to carry forward', totals.lossCarryForwardOut],
     ['160', 'Income subject to income tax', totals.incomeSubjectToTax],
-    ['165', 'Tax on income subject to income tax (rounded DOWN)', totals.tax],
+    ['165', 'Tax on income subject to income tax', totals.tax],
     ['170', 'Foreign tax credits', credits.foreignTaxCredits],
     ['175', 'Income tax instalments paid', credits.installmentsPaid],
     [

@@ -877,7 +877,7 @@ class TaxFilingService {
   }
 
   /**
-   * Save the Form C preparation checklist without claiming that Xefe produces
+   * Save the annual income tax (TADR-IT 1) preparation checklist without claiming that Xefe produces
    * or files the official return. The filing deadline remains visible until an
    * external submission is separately recorded.
    */

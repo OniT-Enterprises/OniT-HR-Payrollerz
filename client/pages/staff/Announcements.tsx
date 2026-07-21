@@ -398,7 +398,7 @@ export default function Announcements() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={t("announcements.title")}
             subtitle={t("announcements.subtitle")}
@@ -490,7 +490,7 @@ export default function Announcements() {
     <div className="min-h-screen bg-background">
       <SEO title={`${t("announcements.title")} - Xefe`} description={t("announcements.subtitle")} />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("announcements.title")}
           subtitle={t("announcements.subtitle")}

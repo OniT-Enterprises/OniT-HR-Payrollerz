@@ -333,7 +333,7 @@ export default function OrganizationChart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           {/* Header skeleton */}
           <div className="mb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -417,7 +417,7 @@ export default function OrganizationChart() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.orgChart} />
 
-      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("orgChart.title")}
           subtitle={

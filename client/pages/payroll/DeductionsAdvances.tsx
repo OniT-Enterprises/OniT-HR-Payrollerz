@@ -440,7 +440,7 @@ export default function DeductionsAdvances() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
 
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-3 mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-8 w-8 rounded" />
@@ -539,7 +539,7 @@ export default function DeductionsAdvances() {
       <SEO {...seoConfig.deductions} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("deductions.title")}
           subtitle={t("deductions.subtitle")}

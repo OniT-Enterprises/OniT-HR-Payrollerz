@@ -322,7 +322,7 @@ export default function GrievanceInbox() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title="Grievance Inbox"
             subtitle="Anonymous employee concerns and complaints"
@@ -391,7 +391,7 @@ export default function GrievanceInbox() {
         description="Anonymous employee grievance management"
       />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title="Grievance Inbox"
           subtitle="Anonymous employee concerns and complaints"

@@ -278,7 +278,7 @@ export default function RecurringInvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-full" />
@@ -441,7 +441,7 @@ export default function RecurringInvoiceForm() {
       />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
           subtitle={t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}

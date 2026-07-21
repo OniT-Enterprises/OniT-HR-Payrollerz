@@ -2611,6 +2611,14 @@ const messages = {
       downloadedDesc: "Template downloaded successfully",
       importStartedTitle: "Import Started",
       importStartedDesc: "Processing {{count}} employees...",
+      validationFailedTitle: "Check the CSV",
+      validationFailedDesc:
+        "{{count}} row(s) need attention. Row {{row}}: {{error}}",
+      completedTitle: "Import complete",
+      completedDesc: "{{count}} employees were added.",
+      completedWithErrorsTitle: "Import partly complete",
+      completedWithErrorsDesc:
+        "Added {{imported}}; {{failed}} failed. Row {{row}}: {{error}}",
     },
     toast: {
       fixedTermMotiveTitle: "No fixed-term motive stated",
@@ -2666,6 +2674,13 @@ const messages = {
       jobTitlePlaceholder: "e.g., Software Engineer",
       manager: "Manager",
       managerPlaceholder: "Select manager",
+      allocationTitle: "Project & donor details",
+      allocationHelp:
+        "Optional. Add these when payroll costs must be reported to a project or donor.",
+      projectCode: "Project code",
+      projectCodePlaceholder: "e.g., HEALTH-2026",
+      fundingSource: "Funding source",
+      fundingSourcePlaceholder: "e.g., Donor or grant name",
       startDate: "Start Date *",
       employmentType: "Employment Type",
       employmentTypes: {
@@ -4380,6 +4395,7 @@ const messages = {
         departmentName: "Department name",
         director: "Director",
         manager: "Manager",
+        headcount: "Headcount",
       },
       templates: {
         activeEmployees: {
@@ -8087,7 +8103,7 @@ const messages = {
       "Generate and export monthly INSS contribution submissions and track filing status.",
     openInssFiling: "Open INSS Filing",
     formC: {
-      title: "Annual business income tax (Form C)",
+      title: "Annual business income tax (TADR-IT 1)",
       savedTitle: "Preparation saved",
       savedDescription:
         "The annual income-tax preparation checklist was updated.",
@@ -8098,7 +8114,7 @@ const messages = {
       dialogDescription:
         "Collect the accounting reports and adjustments your accountant needs for the official return.",
       externalWarning:
-        "Xefe tracks preparation only. It does not generate or file the official Form C; use the current ATTL form and obtain accountant sign-off.",
+        "Xefe tracks preparation only. It does not generate or file the official annual income tax form (TADR-IT 1); use the current ATTL form and obtain accountant sign-off.",
       checklist: {
         profitAndLoss: "Profit and loss reviewed",
         balanceSheet: "Balance sheet reviewed",
@@ -8122,7 +8138,7 @@ const messages = {
         depreciationUsefulLife: "Useful-life rates (asset register)",
         depreciationFullExpensing: "100% in year of purchase (Schedule VII)",
         depreciationMethodHint:
-          "100% expensing is the treatment seen on real filed returns; confirm the choice with your accountant.",
+          "Confirm with your accountant which treatment applies before filing.",
         dueBy: "Official form due by {{date}}.",
         officialFormLink: "Official form & instructions (attl.gov.tl)",
         summaryTitle: "Calculation summary",

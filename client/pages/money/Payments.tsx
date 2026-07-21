@@ -103,7 +103,7 @@ export default function Payments() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-9 w-9 shrink-0 rounded-lg sm:h-10 sm:w-10" />
@@ -181,7 +181,7 @@ export default function Payments() {
       <SEO title="Payments - Xefe" description="View payment history" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.payments.title') || 'Payments'}
           subtitle={t('money.payments.subtitle') || 'Payment history and summaries'}

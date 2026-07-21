@@ -20,7 +20,7 @@ export function RouteLoadingFallback() {
       aria-label={loadingLabel}
     >
       <span className="sr-only">{loadingLabel}</span>
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-screen-2xl">
         <div className="space-y-2">
           <Skeleton className="h-7 w-40" />
           <Skeleton className="h-4 w-56 max-w-full" />

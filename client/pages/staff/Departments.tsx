@@ -240,7 +240,7 @@ export default function Departments() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           {/* Header Skeleton */}
           <div className="mb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -345,7 +345,7 @@ export default function Departments() {
       <SEO {...seoConfig.departments} />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-5">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("departments.title")}
           subtitle={t("departments.subtitle")}

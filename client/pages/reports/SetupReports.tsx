@@ -117,7 +117,7 @@ export default function SetupReports() {
 
   if (settingsQuery.isLoading) {
     return (
-      <ReportPageSkeleton sections={2} maxWidth="lg" showToolbar={false} />
+      <ReportPageSkeleton sections={2} showToolbar={false} />
     );
   }
 
@@ -127,7 +127,6 @@ export default function SetupReports() {
         title={t("reports.setup.title")}
         subtitle={t("reports.setup.subtitle")}
         icon={Settings}
-        maxWidth="lg"
       >
         <DashboardLoadError
           isRetrying={settingsQuery.isFetching}
@@ -148,7 +147,6 @@ export default function SetupReports() {
           title={t("reports.setup.title")}
           subtitle={t("reports.setup.subtitle")}
           icon={Settings}
-          maxWidth="lg"
         >
           <Card className="border-border/70 shadow-sm">
             <CardContent>
@@ -186,7 +184,6 @@ export default function SetupReports() {
         title={t("reports.setup.title")}
         subtitle={t("reports.setup.subtitle")}
         icon={Settings}
-        maxWidth="lg"
       >
         <ReportSection
           icon={CheckCircle2}

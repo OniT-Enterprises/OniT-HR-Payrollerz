@@ -435,7 +435,7 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
               <Skeleton className="h-9 w-9 rounded-full" />
@@ -574,7 +574,7 @@ export default function BillForm() {
         />
         <MainNavigation />
 
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <PageHeader
             title={bill.billNumber || t('money.bills.bill') || 'Bill'}
             subtitle={bill.vendorName}
@@ -928,7 +928,7 @@ export default function BillForm() {
       />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={isNew ? t('money.bills.createBill') || 'New Bill' : t('money.bills.editBill') || 'Edit Bill'}
           subtitle={t('money.bills.formDescription') || 'Enter bill details'}

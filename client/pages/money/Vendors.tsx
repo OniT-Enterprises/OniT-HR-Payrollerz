@@ -303,7 +303,7 @@ export default function Vendors() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-full" />
@@ -363,7 +363,7 @@ export default function Vendors() {
       <SEO title="Vendors - Xefe" description="Manage your vendors and suppliers" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.vendors.title') || 'Vendors'}
           subtitle={t('money.vendors.subtitle') || 'Manage your suppliers'}

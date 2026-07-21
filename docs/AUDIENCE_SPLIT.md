@@ -66,8 +66,8 @@ Monthly/Annual INSS stay visible to every manage user — INSS declarations are
 every employer's obligation, and the tax-deadline info cards remain for all.
 Annual business income tax also has a short preparation checklist for the
 simple Accounting flow; advanced mode expands the same page into the full
-GL-mapped workpaper. Wage WIT/INSS stay in Payroll, while Form C, tax clearance,
-and VAT live in Accounting.
+GL-mapped workpaper. Wage WIT/INSS stay in Payroll, while the annual income
+tax (TADR-IT 1), tax clearance, and VAT live in Accounting.
 
 ## Mixed screens — simple flow behavior (safe defaults)
 

@@ -33,7 +33,7 @@ function AccountingDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={accountingNavConfig} />
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -220,7 +220,7 @@ export default function AccountingDashboard() {
       />
       <ModuleSectionNav config={accountingNavConfig} />
 
-      <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:space-y-8 sm:px-6 sm:py-6">
         <PageHeader
           size="lg"
           title={t("moduleDashboards.accounting.title")}

@@ -213,7 +213,7 @@ export default function Customers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 mx-auto max-w-screen-2xl">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-full" />
@@ -273,7 +273,7 @@ export default function Customers() {
       <SEO title="Customers - Xefe" description="Manage your customers for invoicing" />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t('money.customers.title') || 'Customers'}
           subtitle={t('money.customers.subtitle') || 'Manage your customer list'}

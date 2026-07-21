@@ -759,7 +759,7 @@ export default function Sitemap() {
       />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

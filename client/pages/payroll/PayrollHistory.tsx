@@ -683,7 +683,7 @@ export default function PayrollHistory() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
           <div className="mb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -801,7 +801,7 @@ export default function PayrollHistory() {
       <SEO {...seoConfig.payrollHistory} />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("payrollHistory.title")}
           subtitle={t("payrollHistory.subtitle")}

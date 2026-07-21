@@ -25,7 +25,7 @@ export default function IntegrationsSettings() {
       <SEO title="Accountant & Integrations | Xefe" description="QuickBooks export, advanced tax mode, and accountant access" noIndex />
       <MainNavigation />
 
-      <div className="mx-auto max-w-screen-2xl px-4 py-6 sm:p-6">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <Link
           to="/settings"
           className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

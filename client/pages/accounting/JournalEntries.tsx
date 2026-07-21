@@ -644,9 +644,8 @@ export default function JournalEntries() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6">
-          <div className="mx-auto max-w-screen-2xl">
-            <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
+          <div className="flex items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-8 w-8 rounded" />
                 <div>
@@ -707,7 +706,6 @@ export default function JournalEntries() {
                 </div>
               </CardContent>
             </Card>
-          </div>
         </div>
       </div>
     );
@@ -717,7 +715,7 @@ export default function JournalEntries() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.journalEntries} />
       <MainNavigation />
-      <div className="p-6 mx-auto max-w-screen-2xl">
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6">
         <PageHeader
           title={t("accounting.journalEntries.title")}
           subtitle={t("accounting.journalEntries.subtitle")}

@@ -2606,6 +2606,14 @@ const messages = {
       downloadedDesc: "Modelo download ho diak",
       importStartedTitle: "Importa Hahu",
       importStartedDesc: "Prosesu {{count}} empregadu...",
+      validationFailedTitle: "Verifika CSV",
+      validationFailedDesc:
+        "Liña {{count}} presiza hadi'a. Liña {{row}}: {{error}}",
+      completedTitle: "Importasaun remata",
+      completedDesc: "Aumenta ona empregadu {{count}}.",
+      completedWithErrorsTitle: "Importasaun remata balu",
+      completedWithErrorsDesc:
+        "Aumenta {{imported}}; {{failed}} falla. Liña {{row}}: {{error}}",
     },
     toast: {
       fixedTermMotiveTitle: "La deklara motivu kontratu ho prazu",
@@ -2661,6 +2669,13 @@ const messages = {
       jobTitlePlaceholder: "ez.: Injenier Software",
       manager: "Xefe",
       managerPlaceholder: "Hili xefe",
+      allocationTitle: "Projetu no doadór",
+      allocationHelp:
+        "Opsionál. Prienxe bainhira presiza relata kustu saláriu ba projetu ka doadór.",
+      projectCode: "Kódigu projetu",
+      projectCodePlaceholder: "ez.: SAUDE-2026",
+      fundingSource: "Fonte finansiamentu",
+      fundingSourcePlaceholder: "ez.: Naran doadór ka subsídiu",
       startDate: "Data Hahu *",
       employmentType: "Tipu Kontratu",
       employmentTypes: {
@@ -5495,6 +5510,7 @@ const messages = {
         departmentName: "Naran departamentu",
         director: "Diretór",
         manager: "Jestór",
+        headcount: "Númeru empregadu",
       },
       templates: {
         activeEmployees: {
@@ -8078,7 +8094,7 @@ const messages = {
       "Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.",
     openInssFiling: "Loke Submisaun INSS",
     formC: {
-      title: "Impostu rendimentu negósiu anual (Formuláriu C)",
+      title: "Impostu rendimentu negósiu anual (TADR-IT 1)",
       savedTitle: "Preparasaun rai ona",
       savedDescription:
         "Lista preparasaun impostu rendimentu anual atualiza ona.",
@@ -8089,7 +8105,7 @@ const messages = {
       dialogDescription:
         "Halibur relatóriu kontabilidade no ajustamentu ne'ebé kontabilista presiza ba deklarasaun ofisiál.",
       externalWarning:
-        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete Formuláriu C ofisiál; uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
+        "Xefe akompaña preparasaun de'it. Xefe la kria ka submete formuláriu ofisiál impostu anual (TADR-IT 1); uza formuláriu ATTL atuál no hetan aprovasaun kontabilista.",
       checklist: {
         profitAndLoss: "Lucro no prejuízu reviza ona",
         balanceSheet: "Balansu reviza ona",
@@ -8114,7 +8130,7 @@ const messages = {
         depreciationUsefulLife: "Taxa vida útil (rejistu ativu)",
         depreciationFullExpensing: "100% iha tinan sosa (Aneksu VII)",
         depreciationMethodHint:
-          "Dedusaun 100% mak tratamentu ne'ebé haree iha deklarasaun reál sira ne'ebé entrega ona; konfirma eskolla ho ita-nia kontabilista.",
+          "Konfirma ho ita-nia kontabilista tratamentu ida-ne'ebé mak aplika molok entrega.",
         dueBy: "Formuláriu ofisiál to'o {{date}}.",
         officialFormLink:
           "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
