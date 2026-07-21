@@ -49,6 +49,12 @@ export interface AnnualIncomeTaxWorkpaperCreditEntry {
  */
 export interface AnnualIncomeTaxWorkpaperState {
   entityType: "sole_trader" | "company";
+  /**
+   * Line 15 treatment: register useful-life rates or Schedule VII 100%
+   * expensing in the acquisition year. Absent on pre-Jul-2026 records —
+   * readers default to "useful_life".
+   */
+  taxDepreciationMethod?: "useful_life" | "full_expensing";
   /** Line 145 — the TADR-verified loss carried forward. */
   lossCarriedForward: number;
   /** Line 175 — §64 instalments paid toward this year. */

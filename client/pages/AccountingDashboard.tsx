@@ -9,13 +9,17 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useAccountingBalanceHealth, useAccountingDashboard } from "@/hooks/useAccounting";
+import { useTaxFilingByPeriod } from "@/hooks/useTaxFiling";
 import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import { formatDateTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
+import { getDaysUntilDueIso } from "@/lib/tax/compliance";
+import { formCDueDate } from "@/lib/tax/form-c";
 import {
   BookOpen,
   Building2,
+  CalendarClock,
   CheckCircle2,
   ChevronRight,
   Eye,
@@ -91,6 +95,13 @@ export default function AccountingDashboard() {
   const hasPayroll = hasModule("payroll");
   const summaryQuery = useAccountingDashboard();
   const balanceQuery = useAccountingBalanceHealth();
+  const today = getTodayTL();
+  const previousTaxYear = Number(today.slice(0, 4)) - 1;
+  const annualIncomeTaxQuery = useTaxFilingByPeriod(
+    "annual_income_tax",
+    String(previousTaxYear),
+    canManageTenant,
+  );
   const dashboardQueries = [summaryQuery, balanceQuery];
 
   if (dashboardQueries.some((query) => query.isLoading)) {
@@ -115,6 +126,12 @@ export default function AccountingDashboard() {
 
   const dashboardData = summaryQuery.data!;
   const balanceHealth = balanceQuery.data!;
+  const annualIncomeTaxDueDate = formCDueDate(previousTaxYear);
+  const annualIncomeTaxDays = getDaysUntilDueIso(today, annualIncomeTaxDueDate);
+  const annualIncomeTaxNeedsAttention = canManageTenant
+    && annualIncomeTaxQuery.isSuccess
+    && annualIncomeTaxQuery.data?.status !== "filed"
+    && annualIncomeTaxDays <= 60;
 
   const lastPayrollDate = dashboardData.lastPayrollDate
     ? formatDateTL(new Date(dashboardData.lastPayrollDate), { year: "numeric", month: "short", day: "numeric" })
@@ -140,6 +157,20 @@ export default function AccountingDashboard() {
       path: "/accounting/journal",
       icon: FileSpreadsheet,
       tone: AMBER,
+    },
+    {
+      show: annualIncomeTaxNeedsAttention,
+      text: t("moduleDashboards.accounting.attention.annualIncomeTax", {
+        year: previousTaxYear,
+        date: formatDateTL(parseDateISO(annualIncomeTaxDueDate), {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      }),
+      path: "/accounting/tax/annual-income-tax",
+      icon: CalendarClock,
+      tone: annualIncomeTaxDays < 0 ? RED : AMBER,
     },
     {
       show: hasPayroll && !dashboardData.payrollPosted,

@@ -313,7 +313,7 @@ export default function Cashflow() {
           title={t('money.cashflow.title') || 'Cash Flow'}
           subtitle={t('money.cashflow.subtitle') || 'Track money in and out'}
           icon={Banknote}
-          iconColor="text-indigo-500"
+          iconColor="text-orange-500"
           actions={
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-[180px]">

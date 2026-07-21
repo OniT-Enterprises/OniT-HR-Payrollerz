@@ -949,7 +949,7 @@ service cloud.firestore {
       }
 
       match /taxClearanceRequests/{requestId} {
-        allow read: if isSuperAdmin() || canAccessPayrollRecords(tenantId) || hasTenantModule(tenantId, 'reports');
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update: if isSuperAdmin() || isTenantFinanceAdmin(tenantId);
         allow delete: if false;
       }
@@ -1654,10 +1654,19 @@ service cloud.firestore {
         (resource.data.tenantId != null && isTenantFinanceAdmin(resource.data.tenantId));
     }
 
-    // Tax filings (TL WIT + INSS tracking)
+    // Statutory filings: Payroll owns wage WIT/INSS; Accounting owns business tax.
     match /taxFilings/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          (
+            canAccessAccountingRecords(resource.data.tenantId) &&
+            resource.data.type in ['annual_income_tax', 'services_tax', 'installment_tax']
+          ) ||
+          (
+            canAccessPayrollRecords(resource.data.tenantId) &&
+            !(resource.data.type in ['annual_income_tax', 'services_tax', 'installment_tax'])
+          )
+        ));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantFinanceAdmin(request.resource.data.tenantId));

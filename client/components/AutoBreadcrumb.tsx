@@ -25,7 +25,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "time-leave": "Time & Leave",
   "payroll": "Payroll",
   "accounting": "Accounting",
-  "reports": "Reports",
+  "reports": "Workforce Reports",
   "settings": "Settings",
   "admin": "Admin",
 
@@ -57,6 +57,10 @@ const ROUTE_LABELS: Record<string, string> = {
   "payments": "Payments",
   "benefits": "Benefits",
   "deductions": "Deductions",
+  "tax": "Tax & Compliance",
+  "monthly-wit": "Monthly WIT",
+  "inss-monthly": "Monthly INSS",
+  "inss-annual": "Annual INSS",
 
   // Accounting sub-routes
   "core": "Core",
@@ -67,6 +71,9 @@ const ROUTE_LABELS: Record<string, string> = {
   "trial-balance": "Trial Balance",
   "income-statement": "Income Statement",
   "balance-sheet": "Balance Sheet",
+  "cash-flow": "Cash Flow",
+  "annual-income-tax": "Annual Income Tax",
+  "clearance": "Tax Clearance",
   "fiscal-periods": "Fiscal Periods",
   "audit-trail": "Audit Trail",
 

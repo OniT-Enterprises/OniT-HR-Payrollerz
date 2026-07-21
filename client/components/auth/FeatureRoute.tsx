@@ -29,7 +29,7 @@ interface FeatureRouteProps {
    * Accountant-only screen: without showAdvancedTax the user gets a friendly
    * explainer (AccountantGate) pointing back at the everyday module.
    */
-  requireAdvancedTax?: false | "money" | "payroll";
+  requireAdvancedTax?: false | "money" | "payroll" | "accounting";
   fallbackPath?: string;
 }
 

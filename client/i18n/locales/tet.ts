@@ -155,7 +155,7 @@ const messages = {
     payroll: "Saláriu",
     money: "Osan",
     accounting: "Kontabilidade",
-    reports: "Relatóriu",
+    reports: "Relatóriu Ekipa",
     setupBannerTitle: "Setup seidauk remata",
     setupBannerDesc:
       "Remata konfigurasaun empreza, pagamentu no saláriu. {{percent}}% kompletu.",
@@ -198,7 +198,7 @@ const messages = {
     runPayroll: "Halo Saláriu",
     history: "Istória",
     payments: "Pagamentu",
-    taxInss: "Impostu & INSS",
+    taxInss: "Impostu Saláriu & INSS",
     payrollSettings: "Konfigurasaun",
     taxRates: "Impostu & Taxa",
     benefits: "Benefísiu",
@@ -210,6 +210,8 @@ const messages = {
     expenses: "Despeza",
     cashAdvances: "Adiantamentu Osan",
     taxClearance: "Sertidaun Dívida",
+    businessTax: "Impostu Negósiu",
+    annualIncomeTax: "Impostu Rendimentu Anuál",
     financialReports: "Relatóriu Finanseiru",
     profitLoss: "Lukru & Lakon",
     balanceSheet: "Balansu",
@@ -218,6 +220,7 @@ const messages = {
     apAging: "Konta Selu",
     reconciliation: "Rekonsiliasaun",
     vatReturns: "Deklarasaun VAT",
+    vatSettings: "Konfigurasaun VAT",
     chartOfAccounts: "Planu Konta",
     journalEntries: "Lansu Jornál",
     fixedAssets: "Ativos Fixos",
@@ -5103,8 +5106,8 @@ const messages = {
       duplicateBadge: "Duplikadu?",
     },
     dashboard: {
-      title: "Relatoriu",
-      subtitle: "Kria no exporta relatoriu ba dadus HR hotu",
+      title: "Relatóriu Ekipa",
+      subtitle: "Kria no exporta relatóriu saláriu no ekipa",
       categories: {
         employee: {
           title: "Relatoriu Empregadu",
@@ -8107,6 +8110,11 @@ const messages = {
         entitySoleTrader: "Empreza individuál (na'in ida de'it)",
         disclaimer:
           "Papel servisu ne'e mapeia kontabilidade ne'ebé lansa ona ba númeru liña formuláriu ofisiál nian, hanesan apoiu ba preparasaun. La'ós formuláriu ofisiál no Xefe la submete — reviza valor ida-idak ho ita-nia kontabilista, depois transkreve ba formuláriu ofisiál ATTL nian.",
+        depreciationMethod: "Métodu depresiasaun fiskál (liña 15)",
+        depreciationUsefulLife: "Taxa vida útil (rejistu ativu)",
+        depreciationFullExpensing: "100% iha tinan sosa (Aneksu VII)",
+        depreciationMethodHint:
+          "Dedusaun 100% mak tratamentu ne'ebé haree iha deklarasaun reál sira ne'ebé entrega ona; konfirma eskolla ho ita-nia kontabilista.",
         dueBy: "Formuláriu ofisiál to'o {{date}}.",
         officialFormLink:
           "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
@@ -8203,6 +8211,10 @@ const messages = {
             "Empreza individuál la bele deduz pagamentu ba nia an rasik (Q.1 iha formuláriu). Hasai saláriu na'in husi liña 35 ho ajustamentu negativu.",
           depreciationMismatch:
             "Depresiasaun iha kontabilidade ({{gl}}) la hanesan ho mapa rejistu ativu ({{schedule}}). Rekonsilia molok transkreve liña 15.",
+          booksDepreciationReplaced:
+            "Depresiasaun kontabilidade nian {{gl}} tau iha sorin — liña 15 uza valor Aneksu VII (100% husi sosa tinan ne'e nian).",
+          expensedDisposalProceeds:
+            "{{asset}} deduz tiha ona 100% ba impostu; osan husi fa'an ({{amount}}) tenke tama ba rendimentu brutu — aumenta ba liña 05 ho ajustamentu.",
           negativeLine:
             "Liña {{line}} negativu ({{amount}}) — liña despeza la bele negativu iha formuláriu ofisiál.",
         },
@@ -8229,9 +8241,9 @@ const messages = {
     accountingTitle: "Bemvindu ba Kontabilidade.",
     accountingBody:
       "Ida ne’e ita-nia livru razãu formál — lansamantu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamantu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
-    reportsTitle: "Bemvindu ba Relatóriu.",
+    reportsTitle: "Bemvindu ba Relatóriu Ekipa.",
     reportsBody:
-      "Kria no reviza relatóriu husi ita-nia operasaun tomak — sumáriu folha pagamentu, lista empregádu, relatóriu finanseiru, no dokumentu konformidade. Hili tipu relatóriu iha kraik atu hahú.",
+      "Kria no reviza relatóriu saláriu, empregadu, prezensa, departamentu, ONG no relatóriu personalizadu. Hili família relatóriu ida atu hahú.",
   },
   moduleDashboards: {
     common: {
@@ -8359,7 +8371,7 @@ const messages = {
         bankTransfers: "Transferénsia bankária",
         readyToPay: "{{count}} prontu atu selu",
         exportPay: "Esporta & selu",
-        taxInss: "Impostu & INSS",
+        taxInss: "Impostu Saláriu & INSS",
         taxDue: "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron",
         runPayrollPurpose: "Kalkula siklu ida-ne'e no finaliza saláriu",
         runPayrollAction: "Hahú prosesu ida",
@@ -8374,7 +8386,7 @@ const messages = {
     money: {
       title: "Osan",
       seoDescription:
-        "Fatura, konta, despeza no relatóriu finanseiru iha fatin ida.",
+        "Fatura, konta, despeza no kobransa iha fatin ida.",
       summary:
         "{{collected}} simu fulan ida-ne'e · {{outstanding}} seidauk simu.",
       viewBills: "Haree konta",
@@ -8432,6 +8444,8 @@ const messages = {
         draftEntry: "Rascunhu lansu jornál {{count}} atu reviza",
         draftEntries: "Rascunhu lansu jornál {{count}} atu reviza",
         payrollNotPosted: "Saláriu ikus seidauk lança ba livru kontabilidade",
+        annualIncomeTax:
+          "Prepara impostu rendimentu negósiu {{year}} — prazu {{date}}",
       },
       cards: {
         chartOfAccounts: "Planu Konta",
@@ -8456,11 +8470,11 @@ const messages = {
       },
     },
     reports: {
-      title: "Relatóriu",
+      title: "Relatóriu Ekipa",
       seoDescription:
-        "Relatóriu saláriu, ema, prezensa, departamentu no kompliansia iha fatin ida.",
-      summarySingle: "Família relatóriu {{count}} · {{compliance}}.",
-      summaryPlural: "Família relatóriu {{count}} · {{compliance}}.",
+        "Relatóriu saláriu, ema, prezensa, departamentu, ONG no relatóriu personalizadu iha fatin ida.",
+      summarySingle: "Família relatóriu ekipa {{count}}.",
+      summaryPlural: "Família relatóriu ekipa {{count}}.",
       summaryReadOnlySingle: "Família relatóriu {{count}} disponivel.",
       summaryReadOnlyPlural: "Família relatóriu {{count}} disponivel.",
       reportSetup: "Konfigura relatóriu",

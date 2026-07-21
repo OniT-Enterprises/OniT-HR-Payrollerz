@@ -6,7 +6,7 @@
  * - INSS Monthly contribution submission
  */
 
-import React, { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -18,29 +18,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useAdvancedTax, useTenantId } from "@/contexts/TenantContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSaveAnnualIncomeTaxPreparation } from "@/hooks/useTaxFiling";
-import { useToast } from "@/hooks/use-toast";
 import { taxFilingService } from "@/services/taxFilingService";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL, parseDateISO } from "@/lib/dateUtils";
-import type { AnnualIncomeTaxPreparation } from "@/types/tax-filing";
 import {
   ArrowRight,
   Building,
@@ -56,17 +41,6 @@ export default function TaxReports() {
   const tenantId = useTenantId();
   const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const saveFormCPreparation = useSaveAnnualIncomeTaxPreparation();
-  const [showFormCPreparation, setShowFormCPreparation] = useState(false);
-  const [formCPreparation, setFormCPreparation] = useState({
-    profitAndLossReady: false,
-    balanceSheetReady: false,
-    cashFlowReady: false,
-    taxAdjustmentsReviewed: false,
-    reviewNote: "",
-  });
 
   const { data: dueDates = [], isLoading: loading } = useQuery({
     queryKey: ["tenants", tenantId, "taxFilings", "dueSoon", 6],
@@ -90,58 +64,14 @@ export default function TaxReports() {
     return outstanding[0];
   }, [dueDates]);
 
-  const annualIncomeTax = useMemo(
-    () => dueDates.find((deadline) => deadline.type === "annual_income_tax"),
-    [dueDates],
-  );
-
-  const openFormCPreparation = () => {
-    const snapshot = annualIncomeTax?.filing?.dataSnapshot as
-      | Partial<AnnualIncomeTaxPreparation>
-      | undefined;
-    setFormCPreparation({
-      profitAndLossReady: snapshot?.profitAndLossReady === true,
-      balanceSheetReady: snapshot?.balanceSheetReady === true,
-      cashFlowReady: snapshot?.cashFlowReady === true,
-      taxAdjustmentsReviewed: snapshot?.taxAdjustmentsReviewed === true,
-      reviewNote: snapshot?.reviewNote || "",
-    });
-    setShowFormCPreparation(true);
-  };
-
-  const saveFormCProgress = async () => {
-    if (!annualIncomeTax || !user) return;
-    try {
-      await saveFormCPreparation.mutateAsync({
-        taxYear: Number(annualIncomeTax.period),
-        preparation: formCPreparation,
-        userId: user.uid,
-        audit: {
-          tenantId,
-          userId: user.uid,
-          userEmail: user.email || "",
-          userName: user.displayName || undefined,
-        },
-      });
-      setShowFormCPreparation(false);
-      toast({
-        title: t("taxReports.formC.savedTitle"),
-        description: t("taxReports.formC.savedDescription"),
-      });
-    } catch (error) {
-      toast({
-        title: t("common.error"),
-        description:
-          error instanceof Error
-            ? error.message
-            : t("taxReports.formC.saveError"),
-        variant: "destructive",
-      });
-    }
-  };
-
   const hasOverdue = useMemo(
-    () => dueDates.some((d) => d.isOverdue),
+    () =>
+      dueDates.some(
+        (deadline) =>
+          (deadline.type === "monthly_wit" ||
+            deadline.type === "inss_monthly") &&
+          deadline.isOverdue,
+      ),
     [dueDates],
   );
 
@@ -363,54 +293,6 @@ export default function TaxReports() {
                 )}
               </div>
             </div>
-            {annualIncomeTax && (
-              <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <Calendar className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{t("taxReports.formC.title")}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {annualIncomeTax.period} • {t("taxReports.due")}{" "}
-                      {formatDueDate(annualIncomeTax.dueDate)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="secondary"
-                    className={`gap-1 ${annualIncomeTax.isOverdue ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" : ""}`}
-                  >
-                    <Clock className="h-3 w-3" />
-                    {getDeadlineLabel(annualIncomeTax)}
-                  </Badge>
-                  {/* Full workpaper is accountant-grade; the checklist dialog
-                      stays for the simple flow. */}
-                  {showAdvancedTax && (
-                    <Button
-                      size="sm"
-                      className="min-h-9"
-                      onClick={() =>
-                        navigate("/payroll/tax/annual-income-tax")
-                      }
-                    >
-                      {t("taxReports.formC.workpaper.openWorkpaper")}
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="min-h-9"
-                    onClick={openFormCPreparation}
-                  >
-                    {annualIncomeTax.filing?.preparationStatus ===
-                    "ready_for_accountant"
-                      ? t("taxReports.formC.reviewProgress")
-                      : t("taxReports.formC.startPreparation")}
-                  </Button>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -446,89 +328,6 @@ export default function TaxReports() {
           </Card>
         </div>
       </div>
-
-      <Dialog
-        open={showFormCPreparation}
-        onOpenChange={setShowFormCPreparation}
-      >
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {t("taxReports.formC.dialogTitle", {
-                year: annualIncomeTax?.period || "",
-              })}
-            </DialogTitle>
-            <DialogDescription>
-              {t("taxReports.formC.dialogDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-              {t("taxReports.formC.externalWarning")}
-            </p>
-            {(
-              [
-                ["profitAndLossReady", "profitAndLoss"],
-                ["balanceSheetReady", "balanceSheet"],
-                ["cashFlowReady", "cashFlow"],
-                ["taxAdjustmentsReviewed", "taxAdjustments"],
-              ] as const
-            ).map(([field, label]) => (
-              <div key={field} className="flex items-start gap-3">
-                <Checkbox
-                  id={`form-c-${field}`}
-                  checked={formCPreparation[field]}
-                  onCheckedChange={(checked) =>
-                    setFormCPreparation((current) => ({
-                      ...current,
-                      [field]: checked === true,
-                    }))
-                  }
-                />
-                <Label
-                  htmlFor={`form-c-${field}`}
-                  className="font-normal leading-5"
-                >
-                  {t(`taxReports.formC.checklist.${label}`)}
-                </Label>
-              </div>
-            ))}
-            <div className="space-y-2">
-              <Label htmlFor="form-c-review-note">
-                {t("taxReports.formC.reviewNote")}
-              </Label>
-              <Textarea
-                id="form-c-review-note"
-                value={formCPreparation.reviewNote}
-                onChange={(event) =>
-                  setFormCPreparation((current) => ({
-                    ...current,
-                    reviewNote: event.target.value,
-                  }))
-                }
-                placeholder={t("taxReports.formC.reviewNotePlaceholder")}
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowFormCPreparation(false)}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              onClick={() => void saveFormCProgress()}
-              disabled={saveFormCPreparation.isPending}
-            >
-              {saveFormCPreparation.isPending
-                ? t("common.saving")
-                : t("common.save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

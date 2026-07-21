@@ -30,7 +30,7 @@ Purpose: Switch between domains of work.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
-│  [Logo]   Dashboard   People   Time & Leave   Payroll   Money   Accounting   Reports   ⚙️  │
+│  [Logo]   Dashboard   People   Time & Leave   Payroll   Money   Accounting   Workforce Reports   ⚙️  │
 └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -51,8 +51,8 @@ Purpose: Orient users when entering a section.
 | Time & Leave | `/time-leave` | Yes | Attendance, leave, and weekly shifts |
 | Payroll Hub | `/payroll` | Yes | Power users → direct to `/payroll/run` |
 | Money Hub | `/money` | Yes | **Day-to-day AR/AP** for small businesses. Power users → `/money/invoices` |
-| Accounting Hub | `/accounting` | Yes | Ledger/compliance. Payroll-scoped. Power users → `/accounting/core/journal` |
-| Reports Hub | `/reports` | Soft | Remember last category. First visit → hub, repeat visits → last used |
+| Accounting Hub | `/accounting` | Yes | Books, statements, reconciliation, and business tax. Power users → `/accounting/journal` |
+| Workforce Reports Hub | `/reports` | Soft | Payroll, people, attendance, NGO, and custom reports |
 
 Rules:
 - Boxes/cards are GOOD here
@@ -69,23 +69,23 @@ Rules:
 **Money Hub** = Day-to-day AR/AP for business owners
 - Customer invoicing (USD)
 - Vendor bills & expenses
-- Basic financial reports (P&L, Balance Sheet, Cash Flow)
+- Receivable and payable aging
 - Receipt upload (mobile-friendly)
-- Bank reconciliation
-- Designed for: Small business owners who want QuickBooks-lite simplicity
+- Designed for: Small business owners completing day-to-day money tasks
 
 **Accounting Hub** = Advanced ledger & compliance for accountants
 - Payroll journals (auto-posted from payroll)
 - Chart of Accounts management
 - General Ledger detail
-- Trial Balance
+- Bank reconciliation and formal financial statements
+- Business tax: annual income tax, tax clearance, and VAT
 - Designed for: Accountants, auditors, and compliance officers
 - Do NOT add: Invoices, Bills, Expenses (those live in Money)
 
-**Reports Hub** = Discovery-oriented with memory
-- First visit: Show full hub for orientation
-- Repeat visits: Route to last-used category
-- Scheduled reports reduce need to browse
+**Workforce Reports Hub** = Workforce reporting and exports
+- Payroll, employee, attendance, and department reports
+- NGO/donor packs and custom reports
+- No financial statements or statutory filing workflow; those live in Accounting or Payroll
 
 ---
 
@@ -138,66 +138,62 @@ OniT HR/Payroll
 ├── Payroll (/payroll)                     [HUB - Skippable]
 │   │
 │   ├── Run Payroll (/payroll/run)         [WORK PAGE - Wizard]
-│   │
-│   ├── Setup                              [Section]
-│   │   ├── Benefits (/payroll/setup/benefits) [WORK PAGE]
-│   │   └── Deductions (/payroll/setup/deductions) [WORK PAGE]
-│   │
 │   ├── History (/payroll/history)         [WORK PAGE]
 │   ├── Payments (/payroll/payments)       [WORK PAGE]
-│   └── Reports (/payroll/reports)         [WORK PAGE]
+│   ├── Benefits (/payroll/benefits)       [WORK PAGE]
+│   ├── Deductions & Advances (/payroll/deductions) [WORK PAGE]
+│   └── Payroll Tax & INSS                 [Section]
+│       ├── Filing overview (/payroll/tax)
+│       ├── Monthly WIT (/payroll/tax/monthly-wit) [ADVANCED]
+│       ├── Monthly INSS (/payroll/tax/inss-monthly)
+│       └── Annual INSS (/payroll/tax/inss-annual)
 │
 ├── Money (/money)                         [HUB - Skippable]
 │   │
 │   ├── Invoices                           [Section]
 │   │   ├── Invoices (/money/invoices)     [WORK PAGE]
 │   │   ├── Customers (/money/customers)   [WORK PAGE]
-│   │   └── Payments (/money/payments)     [WORK PAGE]
+│   │   ├── Payments (/money/payments)     [WORK PAGE]
+│   │   └── AR Aging (/money/financials/ar-aging)
 │   │
 │   ├── Bills                              [Section]
 │   │   ├── Bills (/money/bills)           [WORK PAGE]
-│   │   └── Vendors (/money/vendors)       [WORK PAGE]
+│   │   ├── Vendors (/money/vendors)       [WORK PAGE]
+│   │   └── AP Aging (/money/financials/ap-aging)
 │   │
-│   ├── Expenses (/money/expenses)         [WORK PAGE]
-│   │
-│   └── Reports                            [Section]
-│       ├── Profit & Loss (/money/reports/profit-loss)
-│       ├── Balance Sheet (/money/reports/balance-sheet)
-│       ├── Cashflow (/money/reports/cashflow)
-│       ├── AR Aging (/money/reports/ar-aging)
-│       ├── AP Aging (/money/reports/ap-aging)
-│       ├── Reconciliation (/money/reports/reconciliation)
-│       ├── VAT Settings (/money/reports/vat-settings)
-│       └── VAT Returns (/money/reports/vat-returns)
+│   └── Expenses                           [Section]
+│       ├── Expenses (/money/expenses)     [WORK PAGE]
+│       └── Cash Advances (/money/cash-advances) [WORK PAGE]
 │
 ├── Accounting (/accounting)               [HUB - Skippable]
 │   │
-│   ├── Core                               [Section]
-│   │   ├── Chart of Accounts (/accounting/core/chart)
-│   │   ├── Journal Entries (/accounting/core/journal)
-│   │   ├── General Ledger (/accounting/core/ledger)
-│   │   └── Reconciliation (/accounting/core/reconciliation)
-│   │
-│   └── Reports                            [Section]
-│       ├── Trial Balance (/accounting/reports/trial-balance)
-│       ├── Income Statement (/accounting/reports/income-statement)
-│       ├── Balance Sheet (/accounting/reports/balance-sheet)
-│       ├── Fiscal Periods (/accounting/reports/fiscal-periods)
-│       └── Audit Trail (/accounting/reports/audit-trail)
+│   ├── Chart of Accounts (/accounting/chart)
+│   ├── Journal Entries (/accounting/journal)
+│   ├── General Ledger (/accounting/ledger)
+│   ├── Fixed Assets (/accounting/fixed-assets)
+│   ├── Reconciliation (/accounting/reconciliation)
+│   ├── Statements                         [Section]
+│   │   ├── Trial Balance (/accounting/statements/trial-balance)
+│   │   ├── Income Statement (/accounting/statements/income-statement)
+│   │   ├── Balance Sheet (/accounting/statements/balance-sheet)
+│   │   ├── Cash Flow (/accounting/statements/cash-flow)
+│   │   ├── Fiscal Periods (/accounting/statements/fiscal-periods)
+│   │   └── Audit Trail (/accounting/statements/audit-trail)
+│   └── Business Tax                       [Section]
+│       ├── Annual Income Tax (/accounting/tax/annual-income-tax)
+│       ├── Tax Clearance (/accounting/tax/clearance) [ADVANCED]
+│       ├── VAT Returns (/accounting/tax/vat-returns) [ADVANCED]
+│       └── VAT Settings (/accounting/tax/vat-settings) [ADVANCED]
 │
-├── Reports (/reports)                     [HUB]
+├── Workforce Reports (/reports)           [HUB]
 │   │
-│   ├── Standard                           [Section]
-│   │   ├── Payroll (/reports/payroll)
-│   │   ├── Employees (/reports/employees)
-│   │   ├── Attendance (/reports/attendance)
-│   │   └── Departments (/reports/departments)
-│   │
-│   ├── Compliance                         [Section]
-│   │   ├── Monthly WIT (/reports/attl-monthly-wit)
-│   │   ├── Monthly INSS (/reports/inss-monthly)
-│   │   └── Annual INSS (/reports/inss-annual)
-│   │
+│   ├── Payroll (/reports/payroll)
+│   ├── Employees (/reports/employees)
+│   ├── Attendance (/reports/attendance)
+│   ├── Departments (/reports/departments)
+│   ├── NGO & Donor                        [Section]
+│   │   ├── Payroll Allocation (/reports/payroll-allocation)
+│   │   └── Donor Export (/reports/donor-export)
 │   └── Custom                             [Section]
 │       ├── Custom Reports (/reports/custom)
 │       └── Report Setup (/reports/setup)
@@ -304,7 +300,7 @@ OniT HR/Payroll
 | Accounting Hub | Hub | Yes | Status + tool cards |
 | Chart of Accounts | Work | No | Table + filters |
 | Journal Entries | Work | No | Table + filters |
-| Reports Hub | Hub | Yes | Recent + categories |
+| Workforce Reports Hub | Hub | Yes | Workforce report families |
 | Payroll Reports | Work | No | Table + generate actions |
 | Settings | Work | No | Tabs |
 
@@ -320,7 +316,7 @@ These pages get extra optimization - keyboard shortcuts, prominent placement:
 | Run Payroll | `/payroll/run` | Monthly critical path |
 | Invoices | `/money/invoices` | Daily use for business owners |
 | Expenses | `/money/expenses` | Frequent data entry |
-| Journal Entries | `/accounting/core/journal` | Most-used accounting tool |
+| Journal Entries | `/accounting/journal` | Most-used accounting tool |
 | Payroll Reports | `/reports/payroll` | Most-used reports |
 | Leave Requests | `/time-leave/leave` | Frequent approvals |
 
@@ -337,7 +333,7 @@ What does a payroll officer click *every month*? Optimize this path mercilessly.
 3. Attendance → Check missing records and payroll-ready hours
 4. Run Payroll → Select → Review → Taxes → Confirm & Process
 5. Journal Entries → Verify payroll posted correctly
-6. Payroll Reports → Generate tax reports (WIT, INSS)
+6. Payroll Tax & INSS → Prepare WIT and INSS filings
 7. Bank Transfers → Process payments
 ```
 
@@ -373,7 +369,7 @@ Consistency builds trust in high-risk actions.
 2. **Favorites/Pinning**: Let users pin frequently-used work pages to global nav
 3. **Breadcrumbs**: Already implemented - ensure consistency
 4. **Mobile**: Hubs become more important on mobile (less screen space for side nav)
-5. **Reports Memory**: Remember last-used report category per user
+5. **Report shortcuts**: Let repeat users open their most-used workforce report directly
 
 ---
 
@@ -388,5 +384,5 @@ This map is a **contract**, not a suggestion.
 
 ---
 
-*Last updated: March 2026*
+*Last updated: July 2026*
 *Philosophy: Hubs help users decide. Work pages help users finish. Never mix the two.*

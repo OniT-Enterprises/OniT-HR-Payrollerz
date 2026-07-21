@@ -8,9 +8,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  accountingNavConfig,
   filterModuleNavConfigByPermissions,
   payrollNavConfig,
-  moneyNavConfig,
+  type ModuleNavConfig,
 } from '@/lib/moduleNav';
 import {
   getStatutoryReviewFlag,
@@ -21,35 +22,42 @@ import {
 
 const allModules = () => true;
 
-function subPagePaths(config: typeof payrollNavConfig, sectionId: string): string[] {
+function subPagePaths(config: ModuleNavConfig, sectionId: string): string[] {
   const section = config.sections.find((s) => s.id === sectionId);
   return (section?.subPages ?? []).map((p) => p.path);
 }
 
 describe('advancedTaxOnly navigation gating', () => {
-  it('hides Monthly WIT and Tax Clearance on the simple flow (default)', () => {
+  it('keeps the simple payroll flow focused on INSS', () => {
     const filtered = filterModuleNavConfigByPermissions(payrollNavConfig, allModules, true, true);
     const paths = subPagePaths(filtered, 'tax');
     expect(paths).not.toContain('/payroll/tax/monthly-wit');
-    expect(paths).not.toContain('/payroll/tax/clearance');
     // INSS filings are every employer's obligation — must stay visible
     expect(paths).toContain('/payroll/tax/inss-monthly');
     expect(paths).toContain('/payroll/tax/inss-annual');
   });
 
-  it('shows the accountant entries when showAdvancedTax is true', () => {
+  it('shows advanced payroll WIT without mixing in business tax', () => {
     const filtered = filterModuleNavConfigByPermissions(payrollNavConfig, allModules, true, true, true);
     const paths = subPagePaths(filtered, 'tax');
     expect(paths).toContain('/payroll/tax/monthly-wit');
-    expect(paths).toContain('/payroll/tax/clearance');
+    expect(paths).not.toContain('/payroll/tax/clearance');
+    expect(paths).not.toContain('/payroll/tax/annual-income-tax');
   });
 
-  it('gates VAT Returns in the money financial reports', () => {
-    const simple = filterModuleNavConfigByPermissions(moneyNavConfig, allModules, true, true);
-    expect(subPagePaths(simple, 'financial-reports')).not.toContain('/money/financials/vat-returns');
+  it('puts annual business tax in Accounting and gates specialist filings', () => {
+    const simple = filterModuleNavConfigByPermissions(accountingNavConfig, allModules, true, true);
+    const simplePaths = subPagePaths(simple, 'business-tax');
+    expect(simplePaths).toContain('/accounting/tax/annual-income-tax');
+    expect(simplePaths).not.toContain('/accounting/tax/clearance');
+    expect(simplePaths).not.toContain('/accounting/tax/vat-returns');
 
-    const advanced = filterModuleNavConfigByPermissions(moneyNavConfig, allModules, true, true, true);
-    expect(subPagePaths(advanced, 'financial-reports')).toContain('/money/financials/vat-returns');
+    const advanced = filterModuleNavConfigByPermissions(accountingNavConfig, allModules, true, true, true);
+    const advancedPaths = subPagePaths(advanced, 'business-tax');
+    expect(advancedPaths).toContain('/accounting/tax/annual-income-tax');
+    expect(advancedPaths).toContain('/accounting/tax/clearance');
+    expect(advancedPaths).toContain('/accounting/tax/vat-returns');
+    expect(advancedPaths).toContain('/accounting/tax/vat-settings');
   });
 });
 

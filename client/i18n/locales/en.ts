@@ -155,7 +155,7 @@ const messages = {
     payroll: "Payroll",
     money: "Money",
     accounting: "Accounting",
-    reports: "Reports",
+    reports: "Workforce Reports",
     setupBannerTitle: "Setup is not finished yet",
     setupBannerDesc:
       "Finish company, payment, and payroll setup. {{percent}}% complete.",
@@ -199,7 +199,7 @@ const messages = {
     runPayroll: "Run Payroll",
     history: "History",
     payments: "Payments",
-    taxInss: "Tax & INSS",
+    taxInss: "Payroll Tax & INSS",
     payrollSettings: "Settings",
     taxRates: "Tax & Rates",
     benefits: "Benefits",
@@ -211,6 +211,8 @@ const messages = {
     expenses: "Expenses",
     cashAdvances: "Cash Advances",
     taxClearance: "Tax Clearance",
+    businessTax: "Business Tax",
+    annualIncomeTax: "Annual Income Tax",
     financialReports: "Financial Reports",
     profitLoss: "Profit & Loss",
     balanceSheet: "Balance Sheet",
@@ -219,6 +221,7 @@ const messages = {
     apAging: "AP Aging",
     reconciliation: "Reconciliation",
     vatReturns: "VAT Returns",
+    vatSettings: "VAT Settings",
     chartOfAccounts: "Chart of Accounts",
     journalEntries: "Journal Entries",
     fixedAssets: "Fixed Assets",
@@ -3988,8 +3991,8 @@ const messages = {
       duplicateBadge: "Duplicate?",
     },
     dashboard: {
-      title: "Reports",
-      subtitle: "Generate and export reports for all HR data",
+      title: "Workforce Reports",
+      subtitle: "Generate and export payroll and workforce reports",
       categories: {
         employee: {
           title: "Employee Reports",
@@ -8115,6 +8118,11 @@ const messages = {
         entitySoleTrader: "Sole trader (individually-owned)",
         disclaimer:
           "This workpaper maps your posted books to the official form's line numbers as a preparation aid. It is not the official form and Xefe does not file it — review every figure with your accountant, then transcribe onto the official ATTL form.",
+        depreciationMethod: "Tax depreciation method (line 15)",
+        depreciationUsefulLife: "Useful-life rates (asset register)",
+        depreciationFullExpensing: "100% in year of purchase (Schedule VII)",
+        depreciationMethodHint:
+          "100% expensing is the treatment seen on real filed returns; confirm the choice with your accountant.",
         dueBy: "Official form due by {{date}}.",
         officialFormLink: "Official form & instructions (attl.gov.tl)",
         summaryTitle: "Calculation summary",
@@ -8208,6 +8216,10 @@ const messages = {
             "A sole trader cannot deduct payments to themself (form Q.1). Remove any owner salary from line 35 with a negative adjustment.",
           depreciationMismatch:
             "Depreciation in the books ({{gl}}) differs from the asset-register schedule ({{schedule}}). Reconcile before transcribing line 15.",
+          booksDepreciationReplaced:
+            "Books depreciation of {{gl}} was set aside — line 15 uses the Schedule VII amount (100% of in-year purchases) instead.",
+          expensedDisposalProceeds:
+            "{{asset}} was already fully expensed for tax; its disposal proceeds ({{amount}}) belong in gross income — add them to line 05 with an adjustment.",
           negativeLine:
             "Line {{line}} is negative ({{amount}}) — expense lines cannot be negative on the official form.",
         },
@@ -8234,9 +8246,9 @@ const messages = {
     accountingTitle: "Welcome to Accounting.",
     accountingBody:
       "This is your formal ledger — journal entries, chart of accounts, and financial statements. Every payroll run and invoice automatically creates entries here. Use this section to reconcile, adjust, and report.",
-    reportsTitle: "Welcome to Reports.",
+    reportsTitle: "Welcome to Workforce Reports.",
     reportsBody:
-      "Generate and review reports across your entire operation — payroll summaries, employee rosters, financial statements, and compliance documents. Pick a report type below to get started.",
+      "Generate and review payroll, employee, attendance, department, NGO, and custom reports. Pick a report family below to get started.",
   },
   moduleDashboards: {
     common: {
@@ -8359,7 +8371,7 @@ const messages = {
         bankTransfers: "Bank transfers",
         readyToPay: "{{count}} ready to pay",
         exportPay: "Export & pay",
-        taxInss: "Tax & INSS",
+        taxInss: "Payroll Tax & INSS",
         taxDue: "WIT in {{witDays}}d · INSS in {{inssDays}}d",
         runPayrollPurpose: "Calculate this cycle and finalise pay",
         runPayrollAction: "Start a run",
@@ -8374,7 +8386,7 @@ const messages = {
     money: {
       title: "Money",
       seoDescription:
-        "Invoices, bills, expenses, and financial reports in one place.",
+        "Invoices, bills, expenses, and collections in one place.",
       summary:
         "{{collected}} collected this month · {{outstanding}} outstanding.",
       viewBills: "View bills",
@@ -8429,6 +8441,8 @@ const messages = {
         draftEntry: "{{count}} draft journal entry to review",
         draftEntries: "{{count}} draft journal entries to review",
         payrollNotPosted: "Latest payroll is not yet posted to the ledger",
+        annualIncomeTax:
+          "Prepare {{year}} annual business income tax — due {{date}}",
       },
       cards: {
         chartOfAccounts: "Chart of Accounts",
@@ -8453,11 +8467,11 @@ const messages = {
       },
     },
     reports: {
-      title: "Reports",
+      title: "Workforce Reports",
       seoDescription:
-        "Payroll, people, attendance, department, and compliance reports in one place.",
-      summarySingle: "{{count}} report family · {{compliance}}.",
-      summaryPlural: "{{count}} report families · {{compliance}}.",
+        "Payroll, people, attendance, department, NGO, and custom reports in one place.",
+      summarySingle: "{{count}} workforce report family.",
+      summaryPlural: "{{count}} workforce report families.",
       summaryReadOnlySingle: "{{count}} report family available.",
       summaryReadOnlyPlural: "{{count}} report families available.",
       reportSetup: "Report setup",

@@ -98,7 +98,7 @@ describe("Form C GL mapping (TADR-IT 1 lines)", () => {
     ).toBe(true);
   });
 
-  it("rounds every line to whole dollars and foots totals from rounded lines", () => {
+  it("keeps cents on every line, matching e-filed practice", () => {
     const workpaper = build({
       glRows: [
         gl("4100", "Service Revenue", "revenue", 1000.49),
@@ -106,11 +106,11 @@ describe("Form C GL mapping (TADR-IT 1 lines)", () => {
         gl("5310", "Electricity", "expense", 50.49),
       ],
     });
-    expect(lineOf(workpaper, "05").amount).toBe(1000);
-    expect(lineOf(workpaper, "50").amount).toBe(101);
-    expect(lineOf(workpaper, "110").amount).toBe(50);
-    expect(workpaper.totals.totalExpenses).toBe(151);
-    expect(workpaper.totals.netIncome).toBe(849);
+    expect(lineOf(workpaper, "05").amount).toBe(1000.49);
+    expect(lineOf(workpaper, "50").amount).toBe(100.5);
+    expect(lineOf(workpaper, "110").amount).toBe(50.49);
+    expect(workpaper.totals.totalExpenses).toBe(150.99);
+    expect(workpaper.totals.netIncome).toBe(849.5);
   });
 
   it("lists every Other-expenses account over $1,000 (lines 115–130)", () => {
@@ -188,21 +188,22 @@ describe("Form C loss carry-forward (lines 140–155)", () => {
   });
 });
 
-describe("Form C tax tables (2023 instructions)", () => {
+describe("Form C tax tables (2023 instructions, e-Tax cent rounding)", () => {
   it("Table A sole trader: 0% to $6,000 then 10%", () => {
     expect(calculateFormCTax(6000, "sole_trader")).toBe(0);
-    expect(calculateFormCTax(6001, "sole_trader")).toBe(0); // floor(0.10)
+    expect(calculateFormCTax(6001, "sole_trader")).toBe(0.1);
     expect(calculateFormCTax(16000, "sole_trader")).toBe(1000);
   });
 
   it("Table B company: 10% flat from the first dollar", () => {
     expect(calculateFormCTax(6000, "company")).toBe(600);
-    expect(calculateFormCTax(1, "company")).toBe(0); // floor(0.10)
+    expect(calculateFormCTax(1, "company")).toBe(0.1);
   });
 
-  it("rounds tax owing DOWN to the whole dollar", () => {
-    expect(calculateFormCTax(6005, "company")).toBe(600); // 600.50 → 600
-    expect(calculateFormCTax(6009, "company")).toBe(600); // 600.90 → 600
+  it("computes to the cent, half-up — the assessed e-Tax behavior", () => {
+    // Real Aviso de Avaliação values (2024 tax year, e-filed):
+    expect(calculateFormCTax(165819.68, "company")).toBe(16581.97);
+    expect(calculateFormCTax(12880.65, "company")).toBe(1288.07);
   });
 
   it("charges nothing on zero or negative taxable income", () => {
@@ -337,6 +338,112 @@ describe("Form C depreciation schedule", () => {
         (w) => w.code === "depreciation_schedule_mismatch",
       ),
     ).toBe(false);
+  });
+});
+
+describe("Form C tax depreciation methods", () => {
+  const machine: FormCAssetInput = {
+    name: "Espresso machine",
+    acquisitionDate: "2024-06-15",
+    acquisitionCost: 3600,
+    residualValue: 0,
+    usefulLifeMonths: 36,
+    depreciationStartPeriod: "2024-06",
+    status: "active",
+  };
+  const truck: FormCAssetInput = {
+    name: "Delivery truck",
+    acquisitionDate: "2025-03-01",
+    acquisitionCost: 48100,
+    residualValue: 0,
+    usefulLifeMonths: 60,
+    depreciationStartPeriod: "2025-03",
+    status: "active",
+  };
+
+  it("full expensing: in-year additions at 100% of cost, closing 0", () => {
+    // The observed filed treatment (Sch. VII): full cost in acquisition year.
+    const rows = buildFormCDepreciationSchedule(
+      [machine, truck],
+      2025,
+      "full_expensing",
+    );
+    // machine was bought 2024 and is still held — no 2025 tax value/event.
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      description: "Delivery truck",
+      openingValue: 0,
+      purchaseCost: 48100,
+      ratePercent: 100,
+      yearDepreciation: 48100,
+      closingValue: 0,
+    });
+  });
+
+  it("full expensing: line 15 = schedule total; books depreciation excluded", () => {
+    const workpaper = build({
+      glRows: [
+        gl("4100", "Service Revenue", "revenue", 100000),
+        gl("5800", "Depreciation Expense", "expense", 9620),
+      ],
+      assets: [truck],
+      manual: {
+        ...EMPTY_FORM_C_MANUAL_INPUTS,
+        taxDepreciationMethod: "full_expensing",
+      },
+    });
+    expect(lineOf(workpaper, "15").amount).toBe(48100);
+    expect(
+      workpaper.excluded.some(
+        (entry) => entry.reason === "books_depreciation_tax_method",
+      ),
+    ).toBe(true);
+    expect(
+      workpaper.warnings.some(
+        (w) => w.code === "depreciation_schedule_mismatch",
+      ),
+    ).toBe(false);
+    expect(
+      workpaper.warnings.some(
+        (w) => w.code === "books_depreciation_replaced",
+      ),
+    ).toBe(true);
+    expect(workpaper.totals.totalExpenses).toBe(48100);
+  });
+
+  it("full expensing: disposal of an expensed asset warns to add proceeds to income", () => {
+    const disposed: FormCAssetInput = {
+      ...machine,
+      status: "disposed",
+      disposalDate: "2025-05-10",
+      disposalProceeds: 1200,
+    };
+    const workpaper = build({
+      assets: [disposed],
+      manual: {
+        ...EMPTY_FORM_C_MANUAL_INPUTS,
+        taxDepreciationMethod: "full_expensing",
+      },
+    });
+    // Fully expensed in 2024 → zero-depreciation disposal row, proceeds visible.
+    expect(workpaper.depreciationSchedule).toHaveLength(1);
+    expect(workpaper.depreciationSchedule[0].yearDepreciation).toBe(0);
+    expect(workpaper.depreciationSchedule[0].disposalProceeds).toBe(1200);
+    expect(
+      workpaper.warnings.some(
+        (w) => w.code === "expensed_disposal_proceeds" && w.amount === 1200,
+      ),
+    ).toBe(true);
+  });
+
+  it("useful life stays the default and unchanged", () => {
+    const workpaper = build({
+      glRows: [gl("5800", "Depreciation Expense", "expense", 1200)],
+      assets: [machine],
+    });
+    expect(workpaper.entityType).toBe("company");
+    expect(lineOf(workpaper, "15").amount).toBe(1200);
+    expect(workpaper.depreciationSchedule[0].yearDepreciation).toBe(1200);
   });
 });
 

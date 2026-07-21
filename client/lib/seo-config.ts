@@ -274,9 +274,9 @@ export const seoConfig = {
     noIndex: true,
   },
   taxes: {
-    title: 'Tax Reports',
-    description: 'Generate tax reports and manage payroll tax compliance.',
-    keywords: 'tax reports, payroll taxes, tax compliance, tax filings',
+    title: 'Payroll Tax & INSS',
+    description: 'Prepare payroll wage-tax and INSS filings.',
+    keywords: 'payroll tax, WIT, INSS, wage tax filings',
     url: '/payroll/tax',
   },
   benefits: {
@@ -345,9 +345,9 @@ export const seoConfig = {
 
   // Reports
   reports: {
-    title: 'Reports Dashboard',
-    description: 'Access comprehensive HR, payroll, and analytics reports.',
-    keywords: 'HR reports, analytics, workforce analytics, reporting',
+    title: 'Workforce Reports',
+    description: 'Access payroll, people, attendance, NGO, and custom reports.',
+    keywords: 'HR reports, payroll reports, workforce analytics, reporting',
     url: '/reports',
   },
   payrollReports: {

@@ -299,11 +299,8 @@ Complete accounts receivable and payable for daily business operations.
 - Accounts payable aging reports
 - Receipt attachment
 
-#### Financial Reports
+#### Operational Aging Reports
 
-- Profit & Loss statement
-- Cash flow report
-- Balance sheet
 - AR Aging report
 - AP Aging report
 
@@ -355,9 +352,23 @@ Full double-entry accounting system for formal financial management.
 - Transaction matching
 - Reconciliation reports
 
-### 8. Reports & Analytics
+#### Financial Statements
 
-Comprehensive reporting across all modules.
+- Trial balance
+- Income statement (profit and loss)
+- Balance sheet
+- Cash flow statement
+
+#### Business Tax
+
+- Annual business income-tax preparation
+- ATTL tax-clearance request tracking
+- VAT settings and returns for advanced/accountant users
+
+### 8. Workforce Reports
+
+Payroll and workforce reporting, NGO/donor packs, and custom exports. Formal
+financial statements live in Accounting; WIT and INSS filings live in Payroll.
 
 #### Payroll Reports
 
@@ -397,12 +408,6 @@ Comprehensive reporting across all modules.
 - Export to Excel, PDF, CSV
 - Scheduled report delivery
 - Report templates
-
-#### Tax Filing Reports
-
-- ATTL Monthly Withholding Tax (Imposto Retido)
-- INSS Monthly Contributions
-- Annual employee tax summaries
 
 ### 9. Administration
 

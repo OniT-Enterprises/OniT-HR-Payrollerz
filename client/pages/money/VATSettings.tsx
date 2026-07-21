@@ -187,10 +187,10 @@ export default function VATSettingsPage() {
           title="VAT Settings"
           subtitle="Configure VAT registration and preferences"
           icon={Receipt}
-          iconColor="text-indigo-500"
+          iconColor="text-orange-500"
           actions={
             <>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/money')}>
+              <Button variant="ghost" size="icon" onClick={() => navigate('/accounting')}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               {platformActive && (

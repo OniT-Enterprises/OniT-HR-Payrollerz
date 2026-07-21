@@ -267,10 +267,26 @@ const sitemapData: SitemapSection[] = [
         badge: "TL Banks",
       },
       {
-        name: "Tax Reports",
+        name: "Payroll Tax & INSS",
         path: "/payroll/tax",
         description:
-          "Generate WIT and INSS reports for ATTL and government filings",
+          "Prepare wage withholding and social-security filings",
+      },
+      {
+        name: "Monthly WIT",
+        path: "/payroll/tax/monthly-wit",
+        description: "Monthly wage withholding return for ATTL",
+        badge: "Advanced",
+      },
+      {
+        name: "Monthly INSS",
+        path: "/payroll/tax/inss-monthly",
+        description: "Monthly employee and employer INSS statement",
+      },
+      {
+        name: "Annual INSS",
+        path: "/payroll/tax/inss-annual",
+        description: "Annual INSS declaration and employee totals",
       },
       {
         name: "Benefits",
@@ -296,7 +312,7 @@ const sitemapData: SitemapSection[] = [
         name: "Money Dashboard",
         path: "/money",
         description:
-          "Financial overview with receivables, payables, and cash flow",
+          "Operational overview of receivables, payables, and expenses",
       },
       {
         name: "Customers",
@@ -343,19 +359,9 @@ const sitemapData: SitemapSection[] = [
         description: "Record and categorize business expenses with receipts",
       },
       {
-        name: "Profit & Loss",
-        path: "/money/financials/profit-loss",
-        description: "Income statement showing revenue minus expenses",
-      },
-      {
-        name: "Balance Sheet",
-        path: "/money/financials/balance-sheet",
-        description: "Assets, liabilities, and equity snapshot",
-      },
-      {
-        name: "Cash Flow",
-        path: "/money/financials/cashflow",
-        description: "Track money coming in and going out over time",
+        name: "Cash Advances",
+        path: "/money/cash-advances",
+        description: "Issue and clear accountable business cash advances",
       },
       {
         name: "AR Aging Report",
@@ -366,11 +372,6 @@ const sitemapData: SitemapSection[] = [
         name: "AP Aging Report",
         path: "/money/financials/ap-aging",
         description: "Accounts payable by age to manage vendor payments",
-      },
-      {
-        name: "Bank Reconciliation",
-        path: "/money/financials/reconciliation",
-        description: "Match bank statements with recorded transactions",
       },
     ],
   },
@@ -407,9 +408,29 @@ const sitemapData: SitemapSection[] = [
           "Complete transaction history by account with running balances",
       },
       {
+        name: "Bank Reconciliation",
+        path: "/accounting/reconciliation",
+        description: "Match bank statements with recorded transactions",
+      },
+      {
         name: "Trial Balance",
         path: "/accounting/statements/trial-balance",
         description: "Verify debits equal credits across all accounts",
+      },
+      {
+        name: "Income Statement",
+        path: "/accounting/statements/income-statement",
+        description: "Revenue, expenses, and net result for a period",
+      },
+      {
+        name: "Balance Sheet",
+        path: "/accounting/statements/balance-sheet",
+        description: "Assets, liabilities, and equity at a point in time",
+      },
+      {
+        name: "Cash Flow Statement",
+        path: "/accounting/statements/cash-flow",
+        description: "Operating, investing, and financing cash movement",
       },
       {
         name: "Fixed Assets",
@@ -417,19 +438,53 @@ const sitemapData: SitemapSection[] = [
         description:
           "Asset register with straight-line depreciation and disposals",
       },
+      {
+        name: "Fiscal Periods",
+        path: "/accounting/statements/fiscal-periods",
+        description: "Open, close, and control accounting periods",
+      },
+      {
+        name: "Audit Trail",
+        path: "/accounting/statements/audit-trail",
+        description: "Review changes and accounting activity",
+      },
+      {
+        name: "Annual Business Income Tax",
+        path: "/accounting/tax/annual-income-tax",
+        description: "Prepare the annual business income-tax filing pack",
+        badge: "Tax Filing",
+      },
+      {
+        name: "Tax Clearance",
+        path: "/accounting/tax/clearance",
+        description: "Track official ATTL tax-clearance requests",
+        badge: "Advanced",
+      },
+      {
+        name: "VAT Returns",
+        path: "/accounting/tax/vat-returns",
+        description: "Prepare VAT returns when VAT mode is enabled",
+        badge: "Advanced",
+      },
+      {
+        name: "VAT Settings",
+        path: "/accounting/tax/vat-settings",
+        description: "Configure VAT registration and reporting periods",
+        badge: "Advanced",
+      },
     ],
   },
   {
-    title: "Reports",
-    description: "Analytics, compliance reports, and data exports",
+    title: "Workforce Reports",
+    description: "Payroll, people, attendance, NGO, and custom exports",
     icon: BarChart3,
     color: "text-rose-600",
     bgColor: "bg-rose-100 dark:bg-rose-900",
     pages: [
       {
-        name: "Reports Dashboard",
+        name: "Workforce Reports Dashboard",
         path: "/reports",
-        description: "Central hub for all reports with quick generation",
+        description: "Central hub for payroll and workforce reporting",
       },
       {
         name: "Payroll Reports",
@@ -464,25 +519,6 @@ const sitemapData: SitemapSection[] = [
         name: "Department Reports",
         path: "/reports/departments",
         description: "Department-level metrics and cost center analysis",
-      },
-      {
-        name: "ATTL Monthly WIT",
-        path: "/payroll/tax/monthly-wit",
-        description: "Monthly Withholding Income Tax report for ATTL filing",
-        badge: "Tax Filing",
-      },
-      {
-        name: "INSS Monthly",
-        path: "/payroll/tax/inss-monthly",
-        description: "Monthly INSS contribution report for social security",
-        badge: "Tax Filing",
-      },
-      {
-        name: "Annual Income Tax Preparation",
-        path: "/payroll/tax/annual-income-tax",
-        description:
-          "Workpaper mapping the year's books to the official annual income tax form lines",
-        badge: "Tax Filing",
       },
       {
         name: "Setup Reports",
@@ -618,11 +654,7 @@ export default function Sitemap() {
       return hasModule("payroll") && canManageTenant;
     }
 
-    if (
-      path === "/payroll/tax/monthly-wit" ||
-      path === "/payroll/tax/clearance" ||
-      path === "/payroll/tax/annual-income-tax"
-    ) {
+    if (path === "/payroll/tax/monthly-wit") {
       return hasModule("payroll") && canManageTenant && showAdvancedTax;
     }
 
@@ -662,20 +694,7 @@ export default function Sitemap() {
       if (path === "/money/expenses") {
         return hasModule("money") && canManageTeam;
       }
-      if (
-        path === "/money/financials/profit-loss" ||
-        path === "/money/financials/balance-sheet" ||
-        path === "/money/financials/cashflow"
-      ) {
-        return hasModule("money") && canManageTeam;
-      }
-      if (
-        path === "/money/financials/vat-returns" ||
-        path === "/money/financials/vat-settings"
-      ) {
-        return hasModule("money") && canManageTenant && showAdvancedTax;
-      }
-      if (path === "/money/financials/reconciliation") {
+      if (path === "/money/cash-advances") {
         return hasModule("money") && canManageTenant;
       }
       if (
@@ -692,6 +711,18 @@ export default function Sitemap() {
       path === "/accounting/statements/fiscal-periods"
     ) {
       return hasModule("accounting") && canManageTenant;
+    }
+
+    if (path === "/accounting/tax/annual-income-tax") {
+      return hasModule("accounting") && canManageTenant;
+    }
+
+    if (
+      path === "/accounting/tax/clearance" ||
+      path === "/accounting/tax/vat-returns" ||
+      path === "/accounting/tax/vat-settings"
+    ) {
+      return hasModule("accounting") && canManageTenant && showAdvancedTax;
     }
 
     if (path.startsWith("/accounting")) {

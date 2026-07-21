@@ -155,7 +155,7 @@ const messages = {
     payroll: "Folha de Pagamento",
     money: "Dinheiro",
     accounting: "Contabilidade",
-    reports: "Relatórios",
+    reports: "Relatórios da Equipa",
     setupBannerTitle: "A configuração ainda não terminou",
     setupBannerDesc:
       "Termine a configuração da empresa, pagamentos e salários. {{percent}}% concluído.",
@@ -200,7 +200,7 @@ const messages = {
     runPayroll: "Processar Folha",
     history: "Histórico",
     payments: "Pagamentos",
-    taxInss: "Imposto & INSS",
+    taxInss: "Impostos da Folha & INSS",
     payrollSettings: "Definições",
     taxRates: "Impostos & Taxas",
     benefits: "Benefícios",
@@ -212,6 +212,8 @@ const messages = {
     expenses: "Despesas",
     cashAdvances: "Adiantamentos de Caixa",
     taxClearance: "Certidão de Dívidas",
+    businessTax: "Impostos da Empresa",
+    annualIncomeTax: "Imposto Anual sobre Rendimento",
     financialReports: "Relatórios Financeiros",
     profitLoss: "Lucros & Perdas",
     balanceSheet: "Balanço",
@@ -220,6 +222,7 @@ const messages = {
     apAging: "Contas a Pagar",
     reconciliation: "Reconciliação",
     vatReturns: "Declarações IVA",
+    vatSettings: "Definições de IVA",
     chartOfAccounts: "Plano de Contas",
     journalEntries: "Lançamentos",
     fixedAssets: "Ativos Fixos",
@@ -4059,8 +4062,8 @@ const messages = {
       duplicateBadge: "Duplicado?",
     },
     dashboard: {
-      title: "Relatórios",
-      subtitle: "Gerar e exportar relatórios para todos os dados de RH",
+      title: "Relatórios da Equipa",
+      subtitle: "Gerar e exportar relatórios de folha e da equipa",
       categories: {
         employee: {
           title: "Relatórios de Funcionários",
@@ -8262,6 +8265,11 @@ const messages = {
         entitySoleTrader: "Empresário em nome individual",
         disclaimer:
           "Este papel de trabalho mapeia a contabilidade lançada para os números de linha do formulário oficial, como apoio à preparação. Não é o formulário oficial e o Xefe não o submete — reveja cada valor com o seu contabilista e transcreva depois para o formulário oficial da ATTL.",
+        depreciationMethod: "Método de depreciação fiscal (linha 15)",
+        depreciationUsefulLife: "Taxas de vida útil (registo de ativos)",
+        depreciationFullExpensing: "100% no ano de aquisição (Anexo VII)",
+        depreciationMethodHint:
+          "A dedução de 100% é o tratamento observado em declarações reais entregues; confirme a escolha com o seu contabilista.",
         dueBy: "Formulário oficial até {{date}}.",
         officialFormLink: "Formulário e instruções oficiais (attl.gov.tl)",
         summaryTitle: "Resumo do cálculo",
@@ -8357,6 +8365,10 @@ const messages = {
             "Um empresário em nome individual não pode deduzir pagamentos a si próprio (Q.1 do formulário). Remova o salário do proprietário da linha 35 com um ajustamento negativo.",
           depreciationMismatch:
             "A depreciação na contabilidade ({{gl}}) difere do mapa do registo de ativos ({{schedule}}). Reconcilie antes de transcrever a linha 15.",
+          booksDepreciationReplaced:
+            "A depreciação contabilística de {{gl}} foi posta de lado — a linha 15 usa o valor do Anexo VII (100% das aquisições do ano).",
+          expensedDisposalProceeds:
+            "{{asset}} já foi totalmente deduzido para efeitos fiscais; o produto da alienação ({{amount}}) pertence ao rendimento bruto — adicione-o à linha 05 com um ajustamento.",
           negativeLine:
             "A linha {{line}} está negativa ({{amount}}) — as linhas de despesa não podem ser negativas no formulário oficial.",
         },
@@ -8383,9 +8395,9 @@ const messages = {
     accountingTitle: "Bem-vindo à Contabilidade.",
     accountingBody:
       "Este é o seu livro formal — lançamentos contabilísticos, plano de contas e demonstrações financeiras. Cada processamento de folha e fatura cria automaticamente lançamentos aqui. Use esta secção para reconciliar, ajustar e reportar.",
-    reportsTitle: "Bem-vindo aos Relatórios.",
+    reportsTitle: "Bem-vindo aos Relatórios da Equipa.",
     reportsBody:
-      "Gere e reveja relatórios de toda a sua operação — resumos de folha, listas de funcionários, demonstrações financeiras e documentos de conformidade. Escolha um tipo de relatório abaixo para começar.",
+      "Gere e reveja relatórios de folha, funcionários, presença, departamentos, ONG e relatórios personalizados. Escolha uma família abaixo para começar.",
   },
   moduleDashboards: {
     common: {
@@ -8513,7 +8525,7 @@ const messages = {
         bankTransfers: "Transferências bancárias",
         readyToPay: "{{count}} prontos para pagar",
         exportPay: "Exportar e pagar",
-        taxInss: "Imposto & INSS",
+        taxInss: "Impostos da Folha & INSS",
         taxDue: "WIT em {{witDays}}d · INSS em {{inssDays}}d",
         runPayrollPurpose: "Calcular este ciclo e finalizar os salários",
         runPayrollAction: "Iniciar um processamento",
@@ -8528,7 +8540,7 @@ const messages = {
     money: {
       title: "Dinheiro",
       seoDescription:
-        "Faturas, contas, despesas e relatórios financeiros num só lugar.",
+        "Faturas, contas, despesas e cobranças num só lugar.",
       summary:
         "{{collected}} recebidos este mês · {{outstanding}} por receber.",
       viewBills: "Ver contas",
@@ -8586,6 +8598,8 @@ const messages = {
         draftEntry: "{{count}} lançamento em rascunho para rever",
         draftEntries: "{{count}} lançamentos em rascunho para rever",
         payrollNotPosted: "A última folha ainda não foi lançada no razão",
+        annualIncomeTax:
+          "Preparar o imposto anual da empresa de {{year}} — prazo {{date}}",
       },
       cards: {
         chartOfAccounts: "Plano de Contas",
@@ -8610,11 +8624,11 @@ const messages = {
       },
     },
     reports: {
-      title: "Relatórios",
+      title: "Relatórios da Equipa",
       seoDescription:
-        "Relatórios de folha, pessoas, presença, departamentos e conformidade num só lugar.",
-      summarySingle: "{{count}} família de relatórios · {{compliance}}.",
-      summaryPlural: "{{count}} famílias de relatórios · {{compliance}}.",
+        "Relatórios de folha, pessoas, presença, departamentos, ONG e personalizados num só lugar.",
+      summarySingle: "{{count}} família de relatórios da equipa.",
+      summaryPlural: "{{count}} famílias de relatórios da equipa.",
       summaryReadOnlySingle: "{{count}} família de relatórios disponível.",
       summaryReadOnlyPlural: "{{count}} famílias de relatórios disponíveis.",
       reportSetup: "Configurar relatórios",

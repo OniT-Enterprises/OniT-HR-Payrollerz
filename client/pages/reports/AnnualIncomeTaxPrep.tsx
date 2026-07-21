@@ -1,6 +1,6 @@
 /**
- * Annual Income Tax preparation workpaper (TADR-IT 1, "Form C") — accountant
- * flow only (route gated by requireAdvancedTax).
+ * Annual Income Tax preparation (TADR-IT 1, "Form C"). The default flow is a
+ * short hand-off checklist; advanced tax mode adds the accountant workpaper.
  *
  * Maps the year's posted GL into the official form's line numbers, applies
  * the accountant's adjustments and credits, and computes the Table A/B tax —
@@ -44,7 +44,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAdvancedTax, useTenantId } from "@/contexts/TenantContext";
 import { useIncomeStatement } from "@/hooks/useAccounting";
 import {
   useSaveAnnualIncomeTaxPreparation,
@@ -63,7 +63,7 @@ import {
   type FormCWarning,
 } from "@/lib/tax/form-c";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import { formatDateTL, parseDateISO } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
 import { fixedAssetService } from "@/services/fixedAssetService";
 import type {
   AnnualIncomeTaxPreparation,
@@ -71,6 +71,7 @@ import type {
 } from "@/types/tax-filing";
 import {
   AlertTriangle,
+  CalendarRange,
   Calculator,
   Download,
   ExternalLink,
@@ -96,18 +97,19 @@ const numberOr = (value: string, fallback = 0): number => {
 
 export default function AnnualIncomeTaxPrep() {
   const tenantId = useTenantId();
+  const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
   const { user } = useAuth();
   const { toast } = useToast();
   const savePreparation = useSaveAnnualIncomeTaxPreparation();
 
   // Default to the year whose return is being prepared (previous calendar year).
-  const defaultYear = new Date().getFullYear() - 1;
+  const currentYear = Number(getTodayTL().slice(0, 4));
+  const defaultYear = currentYear - 1;
   const [taxYear, setTaxYear] = useState(defaultYear);
   const yearOptions = useMemo(() => {
-    const current = new Date().getFullYear();
-    return [current, current - 1, current - 2, current - 3];
-  }, []);
+    return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
+  }, [currentYear]);
 
   const [manual, setManual] = useState<FormCManualInputs>(
     EMPTY_FORM_C_MANUAL_INPUTS,
@@ -124,12 +126,13 @@ export default function AnnualIncomeTaxPrep() {
     `${taxYear}-01-01`,
     `${taxYear}-12-31`,
     taxYear,
-    true,
+    showAdvancedTax,
   );
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
     queryKey: ["tenants", tenantId, "fixedAssets", "list"],
     queryFn: () => fixedAssetService.list(tenantId),
     staleTime: 5 * 60 * 1000,
+    enabled: showAdvancedTax,
   });
   const { data: savedFiling, isLoading: filingLoading } = useTaxFilingByPeriod(
     "annual_income_tax",
@@ -156,6 +159,10 @@ export default function AnnualIncomeTaxPrep() {
     if (saved) {
       setManual({
         entityType: saved.entityType,
+        taxDepreciationMethod:
+          saved.taxDepreciationMethod === "full_expensing"
+            ? "full_expensing"
+            : "useful_life",
         lossCarriedForward: saved.lossCarriedForward,
         installmentsPaid: saved.installmentsPaid,
         foreignTaxCredits: saved.foreignTaxCredits,
@@ -209,7 +216,9 @@ export default function AnnualIncomeTaxPrep() {
     [taxYear, glRows, assets, manual],
   );
 
-  const loading = statementLoading || assetsLoading || filingLoading;
+  const loading =
+    filingLoading ||
+    (showAdvancedTax && (statementLoading || assetsLoading));
 
   const lineLabel = (code: FormCLineCode) =>
     t(`taxReports.formC.workpaper.lines.l${code}`);
@@ -233,6 +242,19 @@ export default function AnnualIncomeTaxPrep() {
           gl: formatCurrencyTL(warning.glAmount),
           schedule: formatCurrencyTL(warning.scheduleAmount),
         });
+      case "books_depreciation_replaced":
+        return t(
+          "taxReports.formC.workpaper.warnings.booksDepreciationReplaced",
+          { gl: formatCurrencyTL(warning.glAmount) },
+        );
+      case "expensed_disposal_proceeds":
+        return t(
+          "taxReports.formC.workpaper.warnings.expensedDisposalProceeds",
+          {
+            asset: warning.assetDescription,
+            amount: formatCurrencyTL(warning.amount),
+          },
+        );
       case "negative_line":
         return t("taxReports.formC.workpaper.warnings.negativeLine", {
           line: warning.line,
@@ -268,23 +290,28 @@ export default function AnnualIncomeTaxPrep() {
 
   const saveProgress = async () => {
     if (!user) return;
-    const workpaperState: AnnualIncomeTaxWorkpaperState = {
-      ...manual,
-      computed: {
-        grossIncome:
-          workpaper.lines.find((line) => line.line === "05")?.amount || 0,
-        totalExpenses: workpaper.totals.totalExpenses,
-        netIncome: workpaper.totals.netIncome,
-        taxableIncome: workpaper.totals.taxableIncome,
-        tax: workpaper.totals.tax,
-        totalCredits: workpaper.totals.totalCredits,
-        taxOwing: workpaper.totals.taxOwing,
-      },
-    };
+    const preparation = showAdvancedTax
+      ? {
+          ...checklist,
+          workpaper: {
+            ...manual,
+            computed: {
+              grossIncome:
+                workpaper.lines.find((line) => line.line === "05")?.amount || 0,
+              totalExpenses: workpaper.totals.totalExpenses,
+              netIncome: workpaper.totals.netIncome,
+              taxableIncome: workpaper.totals.taxableIncome,
+              tax: workpaper.totals.tax,
+              totalCredits: workpaper.totals.totalCredits,
+              taxOwing: workpaper.totals.taxOwing,
+            },
+          } satisfies AnnualIncomeTaxWorkpaperState,
+        }
+      : checklist;
     try {
       await savePreparation.mutateAsync({
         taxYear,
-        preparation: { ...checklist, workpaper: workpaperState },
+        preparation,
         userId: user.uid,
         audit: {
           tenantId,
@@ -390,6 +417,119 @@ export default function AnnualIncomeTaxPrep() {
     );
   }
 
+  if (!showAdvancedTax) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SEO
+          title={t("taxReports.formC.title")}
+          description={t("taxReports.formC.dialogDescription")}
+        />
+        <MainNavigation />
+        <div className="mx-auto max-w-screen-xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
+          <PageHeader
+            title={t("taxReports.formC.title")}
+            subtitle={t("taxReports.formC.dialogDescription")}
+            icon={CalendarRange}
+            iconColor="text-orange-500"
+            actions={
+              <Button
+                onClick={() => void saveProgress()}
+                disabled={savePreparation.isPending}
+              >
+                {savePreparation.isPending
+                  ? t("common.saving")
+                  : t("common.save")}
+              </Button>
+            }
+          />
+
+          <p className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            {t("taxReports.formC.externalWarning")}
+          </p>
+
+          <Card className="max-w-2xl border-border/70 shadow-sm">
+            <CardHeader>
+              <CardTitle>
+                {t("taxReports.formC.dialogTitle", { year: taxYear })}
+              </CardTitle>
+              <CardDescription>
+                {t("taxReports.formC.workpaper.dueBy", { date: dueDate })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="max-w-xs space-y-2">
+                <Label htmlFor="form-c-simple-year">
+                  {t("taxReports.formC.workpaper.taxYear")}
+                </Label>
+                <Select
+                  value={String(taxYear)}
+                  onValueChange={(value) => setTaxYear(Number(value))}
+                >
+                  <SelectTrigger id="form-c-simple-year">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {yearOptions.map((year) => (
+                      <SelectItem key={year} value={String(year)}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(
+                [
+                  ["profitAndLossReady", "profitAndLoss"],
+                  ["balanceSheetReady", "balanceSheet"],
+                  ["cashFlowReady", "cashFlow"],
+                  ["taxAdjustmentsReviewed", "taxAdjustments"],
+                ] as const
+              ).map(([field, label]) => (
+                <div key={field} className="flex items-start gap-3">
+                  <Checkbox
+                    id={`form-c-simple-${field}`}
+                    checked={checklist[field]}
+                    onCheckedChange={(checked) =>
+                      setChecklist((current) => ({
+                        ...current,
+                        [field]: checked === true,
+                      }))
+                    }
+                  />
+                  <Label
+                    htmlFor={`form-c-simple-${field}`}
+                    className="font-normal leading-5"
+                  >
+                    {t(`taxReports.formC.checklist.${label}`)}
+                  </Label>
+                </div>
+              ))}
+
+              <div className="space-y-2">
+                <Label htmlFor="form-c-simple-review-note">
+                  {t("taxReports.formC.reviewNote")}
+                </Label>
+                <Textarea
+                  id="form-c-simple-review-note"
+                  value={checklist.reviewNote}
+                  onChange={(event) =>
+                    setChecklist((current) => ({
+                      ...current,
+                      reviewNote: event.target.value,
+                    }))
+                  }
+                  placeholder={t("taxReports.formC.reviewNotePlaceholder")}
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SEO
@@ -403,7 +543,7 @@ export default function AnnualIncomeTaxPrep() {
           title={t("taxReports.formC.workpaper.pageTitle")}
           subtitle={t("taxReports.formC.workpaper.pageSubtitle")}
           icon={Calculator}
-          iconColor="text-primary"
+          iconColor="text-orange-500"
           actions={
             <div className="flex items-center gap-2">
               <Button
@@ -490,6 +630,36 @@ export default function AnnualIncomeTaxPrep() {
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>
+              {t("taxReports.formC.workpaper.depreciationMethod")}
+            </Label>
+            <Select
+              value={manual.taxDepreciationMethod}
+              onValueChange={(value) =>
+                setManual((current) => ({
+                  ...current,
+                  taxDepreciationMethod:
+                    value as FormCManualInputs["taxDepreciationMethod"],
+                }))
+              }
+            >
+              <SelectTrigger className="min-h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="useful_life">
+                  {t("taxReports.formC.workpaper.depreciationUsefulLife")}
+                </SelectItem>
+                <SelectItem value="full_expensing">
+                  {t("taxReports.formC.workpaper.depreciationFullExpensing")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {t("taxReports.formC.workpaper.depreciationMethodHint")}
+            </p>
           </div>
         </div>
 

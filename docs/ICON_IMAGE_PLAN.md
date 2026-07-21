@@ -20,10 +20,11 @@ XefeBot on every surface.
 | Payroll | primary green `#6A9C29` |
 | Money | indigo |
 | Accounting | orange |
-| Reports | violet |
+| Workforce Reports | violet |
 
-(Payroll-tax reports under Reports — WIT/INSS/allocation — intentionally keep
-payroll green to signal they're payroll artifacts; analytics reports use violet.)
+(Payroll WIT/INSS stay under Payroll and use payroll green. Workforce reports
+and NGO/custom exports use violet; business tax pages live under Accounting
+and use accounting orange.)
 
 ## Status
 - ✅ Page-header badges tinted per section (Lucide, stay icons).

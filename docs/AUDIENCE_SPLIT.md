@@ -49,7 +49,7 @@ Tests: `tests/rules/accountant-role.test.ts`.
 
 ## Gated surfaces (accountant-only)
 
-Route gate: `<FeatureRoute requireAdvancedTax="money"|"payroll">` renders
+Route gate: `<FeatureRoute requireAdvancedTax="money"|"payroll"|"accounting">` renders
 `AccountantGate` (friendly explainer + link back + "owners can enable in
 Settings" hint) instead of the screen. Nav gate: `advancedTaxOnly: true`
 entries in `moduleNav.ts`; `filterModuleNavConfigByPermissions` hides them
@@ -58,12 +58,16 @@ unless its 5th arg is true (defaults to hidden).
 | Surface | Gate |
 |---|---|
 | `/payroll/tax/monthly-wit` (ATTL WIT form + SupplierWithholdingRemittancePanel) | route + nav + TaxReports card + PayrollDashboard chip retarget |
-| `/payroll/tax/clearance` | route + nav |
-| `/money/financials/vat-returns`, `/money/financials/vat-settings` | route + nav + Sitemap |
-| `InstallmentTaxEtaxFiling` panel on ProfitLoss | inline `showAdvancedTax` |
+| `/accounting/tax/clearance` | route + nav |
+| `/accounting/tax/vat-returns`, `/accounting/tax/vat-settings` | route + nav + Sitemap |
+| `InstallmentTaxEtaxFiling` panel on the Accounting Income Statement | inline `showAdvancedTax` |
 
 Monthly/Annual INSS stay visible to every manage user — INSS declarations are
 every employer's obligation, and the tax-deadline info cards remain for all.
+Annual business income tax also has a short preparation checklist for the
+simple Accounting flow; advanced mode expands the same page into the full
+GL-mapped workpaper. Wage WIT/INSS stay in Payroll, while Form C, tax clearance,
+and VAT live in Accounting.
 
 ## Mixed screens — simple flow behavior (safe defaults)
 

@@ -172,7 +172,7 @@ export default function TaxClearance() {
       <SEO title={t('taxClearance.title') || 'Tax clearance'} description={t('taxClearance.subtitle') || 'Track ATTL tax-clearance certificate requests.'} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
-        <PageHeader title={t('taxClearance.title') || 'Tax clearance'} subtitle={t('taxClearance.subtitle') || 'Request in ATTL e-Tax, then track the official result and PDF here.'} icon={ClipboardCheck} iconColor="text-primary" />
+        <PageHeader title={t('taxClearance.title') || 'Tax clearance'} subtitle={t('taxClearance.subtitle') || 'Request in ATTL e-Tax, then track the official result and PDF here.'} icon={ClipboardCheck} iconColor="text-orange-500" />
 
         <Card>
           <CardHeader>

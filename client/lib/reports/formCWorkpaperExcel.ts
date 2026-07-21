@@ -15,7 +15,9 @@
 import ExcelJS from 'exceljs';
 import type { FormCWorkpaper, FormCLineCode } from '@/lib/tax/form-c';
 
-const MONEY_FMT = '#,##0';
+// Cents everywhere — ATTL's e-Tax system keeps cents on every line (see the
+// engine's rounding note; validated against two real Aviso assessments).
+const MONEY_FMT = '#,##0.00';
 const MONEY_CENTS_FMT = '#,##0.00';
 
 /** Official TADR-IT 1 (2023) line labels, quoted for transcription. */
@@ -54,6 +56,13 @@ function addHeader(sheet: ExcelJS.Worksheet, workpaper: FormCWorkpaper): void {
       workpaper.entityType === 'sole_trader'
         ? 'Sole trader (individually-owned) — Table A rates'
         : 'Company (Unipessoal Lda, Lda, SA) — Table B rates'
+    }`,
+  ]);
+  sheet.addRow([
+    `Tax depreciation method: ${
+      workpaper.taxDepreciationMethod === 'full_expensing'
+        ? '100% expensing in acquisition year (Schedule VII)'
+        : 'Straight-line useful-life rates (asset register)'
     }`,
   ]);
   sheet.addRow([]);
@@ -207,7 +216,9 @@ export function buildFormCWorkpaperWorkbook(
         null,
         entry.reason === 'interest_non_deductible'
           ? 'Interest — deductible only for financial institutions (TDA §31)'
-          : 'Income tax expense — not deductible',
+          : entry.reason === 'books_depreciation_tax_method'
+            ? 'Books depreciation — replaced by the Schedule VII tax schedule'
+            : 'Income tax expense — not deductible',
       ]);
       moneyCell(row, 3, MONEY_CENTS_FMT);
     }

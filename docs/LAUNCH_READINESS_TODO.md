@@ -56,7 +56,7 @@ from code alone.
 - [x] Build the preparation workpaper (accountant flow): GL→official-line
       mapping, adjustments, loss carry-forward, instalments/WHT credits with
       payer TINs, Table A/B tax, depreciation schedule from the asset register,
-      line-numbered Excel export (`/payroll/tax/annual-income-tax`, pure engine
+      line-numbered Excel export (`/accounting/tax/annual-income-tax`, pure engine
       unit-tested in `tests/client/form-c.test.ts`).
 - [ ] **External — accountant sign-off:** have an accountant verify the workpaper
       mapping and tax tables against current practice (incl. the Sch. VII

@@ -921,6 +921,13 @@ class TaxFilingService {
       ) {
         throw new Error("A valid enterprise type is required");
       }
+      if (
+        workpaper.taxDepreciationMethod !== undefined &&
+        workpaper.taxDepreciationMethod !== "useful_life" &&
+        workpaper.taxDepreciationMethod !== "full_expensing"
+      ) {
+        throw new Error("A valid tax depreciation method is required");
+      }
     }
 
     const allReady =
@@ -1457,32 +1464,6 @@ class TaxFilingService {
             : "pending";
       dueDates.push({
         type: "annual_wit",
-        period,
-        dueDate,
-        status,
-        daysUntilDue,
-        isOverdue: daysUntilDue < 0 && status !== "filed",
-        filing: filing || undefined,
-      });
-    }
-
-    // Annual business income tax (commonly Form C): always keep the previous
-    // tax year visible. After March it remains overdue until an external filing
-    // is recorded; the preparation snapshot itself never pretends to be Form C.
-    {
-      const taxYear = currentYear - 1;
-      const period = String(taxYear);
-      const [dueDate, filing] = await Promise.all([
-        this.getAnnualIncomeTaxDueDate(taxYear, tenantId),
-        this.getFilingByPeriod("annual_income_tax", period, tenantId),
-      ]);
-      const daysUntilDue = getDaysUntilDue(dueDate);
-      const status: TaxFilingStatus =
-        filing?.status === "filed"
-          ? "filed"
-          : getFilingStatusFromDays(daysUntilDue);
-      dueDates.push({
-        type: "annual_income_tax",
         period,
         dueDate,
         status,

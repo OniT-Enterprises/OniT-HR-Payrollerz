@@ -17,18 +17,25 @@ import { ArrowLeft, Landmark } from "lucide-react";
 
 interface AccountantGateProps {
   /** Which everyday module the user should use instead. */
-  backTo: "money" | "payroll";
+  backTo: "money" | "payroll" | "accounting";
 }
 
 export function AccountantGate({ backTo }: AccountantGateProps) {
   const { t } = useI18n();
   const { session } = useTenant();
 
-  const backPath = backTo === "money" ? "/money" : "/payroll";
+  const backPath =
+    backTo === "money"
+      ? "/money"
+      : backTo === "accounting"
+        ? "/accounting"
+        : "/payroll";
   const backLabel =
     backTo === "money"
       ? t("accounting.dashboard.moneyLink") || "Money"
-      : t("accounting.dashboard.payrollLink") || "Payroll";
+      : backTo === "accounting"
+        ? t("nav.accounting") || "Accounting"
+        : t("accounting.dashboard.payrollLink") || "Payroll";
 
   return (
     <div className="min-h-screen bg-background">

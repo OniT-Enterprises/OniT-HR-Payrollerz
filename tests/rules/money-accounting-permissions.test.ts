@@ -68,6 +68,11 @@ describe('Money + Accounting Rules', () => {
         role: 'viewer',
         modules: ['reports'],
       });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/members/payroll-viewer-a'), {
+        uid: 'payroll-viewer-a',
+        role: 'viewer',
+        modules: ['payroll'],
+      });
 
       // Seed global platform vatConfig
       await setDoc(doc(adminDb, 'platform/vatConfig'), { isActive: true, updatedAt: new Date() });
@@ -111,6 +116,22 @@ describe('Money + Accounting Rules', () => {
         type: 'deposit',
         status: 'unmatched',
         createdAt: new Date(),
+      });
+
+      // Seed an annual business income-tax preparation record.
+      await setDoc(doc(adminDb, 'taxFilings/tenant-a__annual_income_tax__2025'), {
+        tenantId: 'tenant-a',
+        type: 'annual_income_tax',
+        period: '2025',
+        status: 'draft',
+        dueDate: '2026-03-31',
+      });
+      await setDoc(doc(adminDb, 'taxFilings/tenant-a__monthly_wit__2026-06'), {
+        tenantId: 'tenant-a',
+        type: 'monthly_wit',
+        period: '2026-06',
+        status: 'draft',
+        dueDate: '2026-07-15',
       });
     });
   });
@@ -253,7 +274,7 @@ describe('Money + Accounting Rules', () => {
     ));
   });
 
-  it('limits tax-clearance records to report/payroll readers and admin writers', async () => {
+  it('limits tax-clearance records to accounting readers and admin writers', async () => {
     const ownerDb = testEnv.authenticatedContext('owner-a').firestore();
     const reporterDb = testEnv.authenticatedContext('reporter-a').firestore();
     const viewerDb = testEnv.authenticatedContext('viewer-a').firestore();
@@ -262,10 +283,23 @@ describe('Money + Accounting Rules', () => {
     await assertSucceeds(setDoc(requestRef, {
       purpose: 'commercial_3_months', requestedDate: '2026-07-17', status: 'requested',
     }));
-    await assertSucceeds(getDoc(doc(reporterDb, requestRef.path)));
-    await assertFails(getDoc(doc(viewerDb, requestRef.path)));
+    await assertSucceeds(getDoc(doc(viewerDb, requestRef.path)));
+    await assertFails(getDoc(doc(reporterDb, requestRef.path)));
     await assertFails(updateDoc(doc(reporterDb, requestRef.path), { status: 'issued' }));
     await assertFails(deleteDoc(requestRef));
+  });
+
+  it('allows accounting readers to read business tax filings without exposing them to reports-only users', async () => {
+    const viewerDb = testEnv.authenticatedContext('viewer-a').firestore();
+    const reporterDb = testEnv.authenticatedContext('reporter-a').firestore();
+    const payrollViewerDb = testEnv.authenticatedContext('payroll-viewer-a').firestore();
+    const filingPath = 'taxFilings/tenant-a__annual_income_tax__2025';
+
+    await assertSucceeds(getDoc(doc(viewerDb, filingPath)));
+    await assertFails(getDoc(doc(reporterDb, filingPath)));
+    await assertFails(getDoc(doc(payrollViewerDb, filingPath)));
+    await assertFails(getDoc(doc(viewerDb, 'taxFilings/tenant-a__monthly_wit__2026-06')));
+    await assertSucceeds(getDoc(doc(payrollViewerDb, 'taxFilings/tenant-a__monthly_wit__2026-06')));
   });
 
   it('allows only clearing totals to change on cash advances and keeps clearings immutable', async () => {

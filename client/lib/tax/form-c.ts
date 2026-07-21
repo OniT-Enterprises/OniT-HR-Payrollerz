@@ -22,22 +22,32 @@
  *   forward indefinitely.
  * - Line 165 rates per the instructions: Table A (sole trader) 0% to $6,000
  *   then 10% above; Table B (Unipessoal Lda / Lda / SA etc.) 10% flat.
- *   "Round any tax owing down to the nearest dollar" — floor, not half-up.
  * - Line 110 note: only financial institutions may deduct interest expense
  *   (TDA §31) — interest accounts are excluded with a warning, never
  *   silently dropped.
  * - Q1 instructions: a sole trader cannot deduct payments to themself.
  *
- * The form is completed in whole US dollars ("do not show cents"), so every
- * line amount is rounded to whole dollars FIRST and all totals are computed
- * from the rounded lines — the workpaper always foots the way the paper form
- * would.
+ * ROUNDING — cents, half-up, validated against ATTL's own output: the paper
+ * instructions say whole dollars with tax owing rounded DOWN, but two real
+ * e-filed "Aviso de Avaliação" assessments (2024 tax year) show the e-Tax
+ * system keeping cents on every line and computing the 10% to the cent,
+ * half-up (165,819.68 → 16,581.97; 12,880.65 → 1,288.07), and filed
+ * practitioner workbooks carry cents on the form lines too. Returns are
+ * e-filed now, so the workpaper matches the assessed behavior — golden
+ * tests in tests/client/form-c-assessments.test.ts pin both assessments.
+ *
+ * TAX DEPRECIATION METHOD — the register's straight-line useful-life rates
+ * ('useful_life', conservative default) or Schedule VII's 100% expensing in
+ * the year of acquisition ('full_expensing', the treatment observed on real
+ * filed returns and assessed by ATTL). Accountant sign-off on the default is
+ * still an open launch gate; the method is an explicit per-year choice.
  */
 
 import {
+  addMoney,
   maxMoney,
+  multiplyMoney,
   roundMoney,
-  roundWholeMoney,
   subtractMoney,
   sumMoney,
 } from '@/lib/currency';
@@ -76,6 +86,13 @@ export type FormCLineCode = (typeof FORM_C_LINE_CODES)[number];
 const EXPENSE_LINE_CODES = FORM_C_LINE_CODES.filter((code) => code !== '05');
 
 export type FormCEntityType = 'sole_trader' | 'company';
+
+/**
+ * Line 15 treatment: register useful-life rates (conservative default) or
+ * Schedule VII 100% expensing in the acquisition year (observed filed
+ * practice — see the module header).
+ */
+export type FormCTaxDepreciationMethod = 'useful_life' | 'full_expensing';
 
 /** One P&L row as read from the GL income statement (cents-accurate). */
 export interface FormCGlRow {
@@ -123,6 +140,7 @@ export interface FormCLineAdjustment {
 /** Accountant-entered values the GL cannot supply. */
 export interface FormCManualInputs {
   entityType: FormCEntityType;
+  taxDepreciationMethod: FormCTaxDepreciationMethod;
   /** Line 145 — must be the TADR-verified carried-forward loss. */
   lossCarriedForward: number;
   /** Line 175 — §64 instalments paid toward this year. */
@@ -142,9 +160,9 @@ export interface FormCContributingAccount {
 
 export interface FormCLine {
   line: FormCLineCode;
-  /** Whole-dollar amount mapped from the books. */
+  /** Cents-accurate amount mapped from the books (or the tax schedule). */
   fromBooks: number;
-  /** Whole-dollar net of the accountant's adjustments on this line. */
+  /** Net of the accountant's adjustments on this line. */
   adjustment: number;
   /** fromBooks + adjustment — the figure to transcribe onto the form. */
   amount: number;
@@ -156,14 +174,17 @@ export interface FormCLine {
 export interface FormCOtherExpenseDetail {
   accountCode: string;
   accountName: string;
-  amount: number; // whole dollars
+  amount: number;
 }
 
 export interface FormCExcludedAccount {
   accountCode: string;
   accountName: string;
   amount: number;
-  reason: 'interest_non_deductible' | 'income_tax_expense';
+  reason:
+    | 'interest_non_deductible'
+    | 'income_tax_expense'
+    | 'books_depreciation_tax_method';
 }
 
 export interface FormCDepreciationRow {
@@ -190,14 +211,20 @@ export type FormCWarning =
       glAmount: number;
       scheduleAmount: number;
     }
+  | { code: 'books_depreciation_replaced'; glAmount: number }
+  | {
+      code: 'expensed_disposal_proceeds';
+      assetDescription: string;
+      amount: number;
+    }
   | { code: 'negative_line'; line: FormCLineCode; amount: number };
 
 export interface FormCTotals {
-  /** Line 135 = Σ lines 10–110 (whole dollars). */
+  /** Line 135 = Σ lines 10–110 (cents-accurate). */
   totalExpenses: number;
   /** Line 140 = line 05 − line 135; negative in a loss year. */
   netIncome: number;
-  /** Line 145 as entered (whole dollars, TADR-verified input). */
+  /** Line 145 as entered (TADR-verified input). */
   lossCarriedForward: number;
   /** The part of line 145 actually claimed (≤ max(netIncome, 0)). */
   lossApplied: number;
@@ -207,7 +234,7 @@ export interface FormCTotals {
   lossCarryForwardOut: number;
   /** Line 160 (= line 150, never below 0 for the tax calc). */
   incomeSubjectToTax: number;
-  /** Line 165 — floored to whole dollars per the official instructions. */
+  /** Line 165 — 10% to the cent, half-up (matches ATTL e-Tax assessments). */
   tax: number;
   /** Line 215 = Σ lines 170–205. */
   totalCredits: number;
@@ -219,13 +246,14 @@ export interface FormCTotals {
 export interface FormCWorkpaper {
   taxYear: number;
   entityType: FormCEntityType;
+  taxDepreciationMethod: FormCTaxDepreciationMethod;
   lines: FormCLine[];
   otherExpenseDetails: FormCOtherExpenseDetail[];
   excluded: FormCExcludedAccount[];
   depreciationSchedule: FormCDepreciationRow[];
   /** Cents-accurate schedule column total (form attachment shows cents). */
   scheduleTotalDepreciation: number;
-  /** Lines 170–205 echoed whole-dollar for transcription (with payer TINs). */
+  /** Lines 170–205 echoed for transcription (with payer TINs). */
   credits: {
     foreignTaxCredits: number; // 170
     installmentsPaid: number; // 175
@@ -317,11 +345,20 @@ function indexAtPeriod(asset: FormCAssetInput, period: string): number {
 
 /**
  * One official-schedule row per asset that existed during the tax year.
- * Depreciation stops at the disposal month; a disposed asset closes at 0.
+ *
+ * useful_life: straight-line register rates; depreciation stops at the
+ * disposal month and a disposed asset closes at 0.
+ *
+ * full_expensing (Schedule VII, observed filed practice): only in-year
+ * acquisitions appear, at rate 100% of cost with closing value 0 — prior
+ * years' assets are already fully written down for tax. In-year disposals of
+ * previously-expensed assets appear as zero-depreciation rows so their
+ * proceeds stay visible (they belong in gross income).
  */
 export function buildFormCDepreciationSchedule(
   assets: FormCAssetInput[],
   taxYear: number,
+  method: FormCTaxDepreciationMethod = 'useful_life',
 ): FormCDepreciationRow[] {
   const yearStart = `${taxYear}-01`;
   const yearEnd = `${taxYear}-12`;
@@ -338,6 +375,32 @@ export function buildFormCDepreciationSchedule(
 
     const acquiredInYear = acquiredPeriod >= yearStart;
     const cost = roundMoney(asset.acquisitionCost);
+    const disposedThisYear =
+      disposedPeriod !== null && disposedPeriod <= yearEnd;
+
+    if (method === 'full_expensing') {
+      // Prior-year assets carry no tax value; only surface in-year events.
+      if (!acquiredInYear && !disposedThisYear) continue;
+      rows.push({
+        description: asset.reference
+          ? `${asset.name} (${asset.reference})`
+          : asset.name,
+        openingValue: 0,
+        ...(acquiredInYear
+          ? { purchaseCost: cost, purchaseDate: asset.acquisitionDate }
+          : {}),
+        ...(disposedThisYear
+          ? {
+              disposalDate: asset.disposalDate,
+              disposalProceeds: roundMoney(asset.disposalProceeds || 0),
+            }
+          : {}),
+        ratePercent: 100,
+        yearDepreciation: acquiredInYear ? cost : 0,
+        closingValue: 0,
+      });
+      continue;
+    }
 
     const openingAccum = accumulatedThroughIndex(
       asset,
@@ -357,8 +420,7 @@ export function buildFormCDepreciationSchedule(
       subtractMoney(closingAccum, openingAccum),
     );
 
-    const disposedInYear = disposedPeriod !== null && disposedPeriod <= yearEnd;
-    const closingValue = disposedInYear
+    const closingValue = disposedThisYear
       ? 0
       : subtractMoney(cost, closingAccum);
 
@@ -375,7 +437,7 @@ export function buildFormCDepreciationSchedule(
       ...(acquiredInYear
         ? { purchaseCost: cost, purchaseDate: asset.acquisitionDate }
         : {}),
-      ...(disposedInYear
+      ...(disposedThisYear
         ? {
             disposalDate: asset.disposalDate,
             disposalProceeds: roundMoney(asset.disposalProceeds || 0),
@@ -395,8 +457,10 @@ export const SOLE_TRADER_FREE_THRESHOLD = 6000;
 export const INCOME_TAX_RATE = 0.1;
 
 /**
- * Line 165. Taxable income arrives in whole dollars; the instructions say
- * "Round any tax owing down to the nearest dollar", so the result floors.
+ * Line 165, computed to the cent (half-up) — the behavior ATTL's e-Tax
+ * system actually assesses (two real Avisos: 165,819.68 → 16,581.97;
+ * 12,880.65 → 1,288.07). The paper instructions' "round any tax owing down
+ * to the nearest dollar" applies only to hand-filed whole-dollar returns.
  */
 export function calculateFormCTax(
   taxableIncome: number,
@@ -407,7 +471,7 @@ export function calculateFormCTax(
     entityType === 'sole_trader'
       ? maxMoney(0, subtractMoney(taxableIncome, SOLE_TRADER_FREE_THRESHOLD))
       : taxableIncome;
-  return Math.floor(roundMoney(base * INCOME_TAX_RATE));
+  return multiplyMoney(base, INCOME_TAX_RATE);
 }
 
 // ── workpaper builder ───────────────────────────────────────────────────────
@@ -423,6 +487,7 @@ export const EMPTY_WHT_CREDITS: FormCWhtCredits = {
 
 export const EMPTY_FORM_C_MANUAL_INPUTS: FormCManualInputs = {
   entityType: 'company',
+  taxDepreciationMethod: 'useful_life',
   lossCarriedForward: 0,
   installmentsPaid: 0,
   foreignTaxCredits: 0,
@@ -441,10 +506,21 @@ export function buildFormCWorkpaper(
   input: BuildFormCWorkpaperInput,
 ): FormCWorkpaper {
   const { taxYear, glRows, assets, manual } = input;
+  const method = manual.taxDepreciationMethod;
   const warnings: FormCWarning[] = [];
   const excluded: FormCExcludedAccount[] = [];
 
-  // 1. Map every P&L row to a form line (or the excluded list).
+  // 1. Tax depreciation schedule (line 15 sources from it in full expensing).
+  const depreciationSchedule = buildFormCDepreciationSchedule(
+    assets,
+    taxYear,
+    method,
+  );
+  const scheduleTotalDepreciation = sumMoney(
+    depreciationSchedule.map((row) => row.yearDepreciation),
+  );
+
+  // 2. Map every P&L row to a form line (or the excluded list).
   const accountsByLine = new Map<FormCLineCode, FormCContributingAccount[]>();
   const push = (line: FormCLineCode, row: FormCGlRow) => {
     const list = accountsByLine.get(line) || [];
@@ -484,22 +560,33 @@ export function buildFormCWorkpaper(
       );
       continue;
     }
-    push(lineForExpenseAccount(row), row);
+    const line = lineForExpenseAccount(row);
+    // Full expensing replaces the books depreciation with the Schedule VII
+    // amount — the GL charge is excluded (visibly), never double-counted.
+    if (line === '15' && method === 'full_expensing') {
+      excluded.push({
+        accountCode: row.accountCode,
+        accountName: row.accountName,
+        amount: roundMoney(row.amount),
+        reason: 'books_depreciation_tax_method',
+      });
+      continue;
+    }
+    push(line, row);
   }
 
-  // 2. Whole-dollar lines with adjustments applied.
+  // 3. Cents-accurate lines with adjustments applied.
   const lines: FormCLine[] = FORM_C_LINE_CODES.map((line) => {
     const accounts = accountsByLine.get(line) || [];
-    const fromBooks = roundWholeMoney(
-      sumMoney(accounts.map((account) => account.amount)),
-    );
+    const fromBooks =
+      line === '15' && method === 'full_expensing'
+        ? roundMoney(scheduleTotalDepreciation)
+        : sumMoney(accounts.map((account) => account.amount));
     const lineAdjustments = manual.adjustments.filter(
       (adjustment) => adjustment.line === line,
     );
-    const adjustment = roundWholeMoney(
-      sumMoney(lineAdjustments.map((entry) => entry.amount)),
-    );
-    const amount = fromBooks + adjustment;
+    const adjustment = sumMoney(lineAdjustments.map((entry) => entry.amount));
+    const amount = addMoney(fromBooks, adjustment);
     if (line !== '05' && amount < 0) {
       warnings.push({ code: 'negative_line', line, amount });
     }
@@ -517,7 +604,7 @@ export function buildFormCWorkpaper(
   const lineAmount = (code: FormCLineCode): number =>
     lines.find((entry) => entry.line === code)?.amount || 0;
 
-  // 3. Lines 115–130 detail: every Other-expenses account over $1,000.
+  // 4. Lines 115–130 detail: every Other-expenses account over $1,000.
   const otherLine = lines.find((entry) => entry.line === '110');
   const otherExpenseDetails: FormCOtherExpenseDetail[] = (
     otherLine?.accounts || []
@@ -525,65 +612,86 @@ export function buildFormCWorkpaper(
     .map((account) => ({
       accountCode: account.accountCode,
       accountName: account.accountName,
-      amount: roundWholeMoney(account.amount),
+      amount: account.amount,
     }))
     .filter((detail) => detail.amount > 1000)
     .sort((a, b) => b.amount - a.amount);
 
-  // 4. Depreciation schedule + books-vs-register cross-check.
-  const depreciationSchedule = buildFormCDepreciationSchedule(assets, taxYear);
-  const scheduleTotalDepreciation = sumMoney(
-    depreciationSchedule.map((row) => row.yearDepreciation),
-  );
+  // 5. Method-specific depreciation cross-checks.
   const depreciationLine = lines.find((entry) => entry.line === '15');
-  if (
-    depreciationLine &&
-    (depreciationSchedule.length > 0 || depreciationLine.fromBooks > 0) &&
-    Math.abs(
-      subtractMoney(depreciationLine.fromBooks, scheduleTotalDepreciation),
-    ) > 1
-  ) {
-    warnings.push({
-      code: 'depreciation_schedule_mismatch',
-      glAmount: depreciationLine.fromBooks,
-      scheduleAmount: roundMoney(scheduleTotalDepreciation),
-    });
+  if (method === 'useful_life') {
+    if (
+      depreciationLine &&
+      (depreciationSchedule.length > 0 || depreciationLine.fromBooks > 0) &&
+      Math.abs(
+        subtractMoney(depreciationLine.fromBooks, scheduleTotalDepreciation),
+      ) > 1
+    ) {
+      warnings.push({
+        code: 'depreciation_schedule_mismatch',
+        glAmount: depreciationLine.fromBooks,
+        scheduleAmount: roundMoney(scheduleTotalDepreciation),
+      });
+    }
+  } else {
+    const booksDepreciation = sumMoney(
+      excluded
+        .filter((entry) => entry.reason === 'books_depreciation_tax_method')
+        .map((entry) => entry.amount),
+    );
+    if (booksDepreciation > 0) {
+      warnings.push({
+        code: 'books_depreciation_replaced',
+        glAmount: booksDepreciation,
+      });
+    }
+    // Proceeds from selling an already-expensed asset are assessable income
+    // (the instructions' rule for 100%-amortised intangibles, same logic).
+    for (const row of depreciationSchedule) {
+      if ((row.disposalProceeds || 0) > 0) {
+        warnings.push({
+          code: 'expensed_disposal_proceeds',
+          assetDescription: row.description,
+          amount: row.disposalProceeds || 0,
+        });
+      }
+    }
   }
 
-  // 5. Sole traders cannot deduct payments to themselves (Q1 instructions).
+  // 6. Sole traders cannot deduct payments to themselves (Q1 instructions).
   if (manual.entityType === 'sole_trader' && lineAmount('35') > 0) {
     warnings.push({ code: 'sole_trader_own_salary' });
   }
 
-  // 6. Totals — instructions' loss mechanics, then Table A/B tax.
-  const totalExpenses = EXPENSE_LINE_CODES.reduce(
-    (sum, code) => sum + lineAmount(code),
-    0,
+  // 7. Totals — instructions' loss mechanics, then Table A/B tax.
+  const totalExpenses = sumMoney(
+    EXPENSE_LINE_CODES.map((code) => lineAmount(code)),
   );
-  const netIncome = lineAmount('05') - totalExpenses;
-  const lossCarriedForward = roundWholeMoney(
+  const netIncome = subtractMoney(lineAmount('05'), totalExpenses);
+  const lossCarriedForward = roundMoney(
     maxMoney(0, manual.lossCarriedForward),
   );
   const lossApplied =
     netIncome > 0 ? Math.min(lossCarriedForward, netIncome) : 0;
-  const taxableIncome = netIncome > 0 ? netIncome - lossApplied : netIncome;
+  const taxableIncome =
+    netIncome > 0 ? subtractMoney(netIncome, lossApplied) : netIncome;
   const lossCarryForwardOut =
     netIncome >= 0
-      ? lossCarriedForward - lossApplied
-      : lossCarriedForward + Math.abs(netIncome);
+      ? subtractMoney(lossCarriedForward, lossApplied)
+      : addMoney(lossCarriedForward, Math.abs(netIncome));
 
-  const incomeSubjectToTax = Math.max(0, taxableIncome);
+  const incomeSubjectToTax = maxMoney(0, taxableIncome);
   const tax = calculateFormCTax(incomeSubjectToTax, manual.entityType);
 
-  const creditWhole = (value: number): number =>
-    roundWholeMoney(maxMoney(0, value || 0));
+  const creditMoney = (value: number): number =>
+    roundMoney(maxMoney(0, value || 0));
   const whtWhole = (entry: FormCWhtCreditEntry): FormCWhtCreditEntry => ({
-    amount: creditWhole(entry.amount),
+    amount: creditMoney(entry.amount),
     payerTin: entry.payerTin.trim(),
   });
   const credits = {
-    foreignTaxCredits: creditWhole(manual.foreignTaxCredits),
-    installmentsPaid: creditWhole(manual.installmentsPaid),
+    foreignTaxCredits: creditMoney(manual.foreignTaxCredits),
+    installmentsPaid: creditMoney(manual.installmentsPaid),
     wht: {
       royalties: whtWhole(manual.whtCredits.royalties),
       rentalLandBuildings: whtWhole(manual.whtCredits.rentalLandBuildings),
@@ -593,15 +701,17 @@ export function buildFormCWorkpaper(
       mining: whtWhole(manual.whtCredits.mining),
     },
   };
-  const totalCredits =
-    credits.foreignTaxCredits +
-    credits.installmentsPaid +
-    Object.values(credits.wht).reduce((sum, entry) => sum + entry.amount, 0);
-  const taxOwing = tax - totalCredits;
+  const totalCredits = sumMoney([
+    credits.foreignTaxCredits,
+    credits.installmentsPaid,
+    ...Object.values(credits.wht).map((entry) => entry.amount),
+  ]);
+  const taxOwing = subtractMoney(tax, totalCredits);
 
   return {
     taxYear,
     entityType: manual.entityType,
+    taxDepreciationMethod: method,
     lines,
     otherExpenseDetails,
     excluded,

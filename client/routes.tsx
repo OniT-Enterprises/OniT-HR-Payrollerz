@@ -128,8 +128,6 @@ const Expenses = lazyWithRetry(() => import("@/pages/money/Expenses"));
 const CashAdvances = lazyWithRetry(() => import("@/pages/money/CashAdvances"));
 const Bills = lazyWithRetry(() => import("@/pages/money/Bills"));
 const BillForm = lazyWithRetry(() => import("@/pages/money/BillForm"));
-const ProfitLoss = lazyWithRetry(() => import("@/pages/money/ProfitLoss"));
-const BalanceSheet = lazyWithRetry(() => import("@/pages/money/BalanceSheet"));
 const Cashflow = lazyWithRetry(() => import("@/pages/money/Cashflow"));
 const ARAgingReport = lazyWithRetry(() => import("@/pages/money/ARAgingReport"));
 const APAgingReport = lazyWithRetry(() => import("@/pages/money/APAgingReport"));
@@ -735,30 +733,6 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/financials/profit-loss"
-      element={
-        <FeatureRoute requiredModule="money" requireManager>
-          <ProfitLoss />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/money/financials/balance-sheet"
-      element={
-        <FeatureRoute requiredModule="money" requireManager>
-          <BalanceSheet />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/money/financials/cashflow"
-      element={
-        <FeatureRoute requiredModule="money" requireManager>
-          <Cashflow />
-        </FeatureRoute>
-      }
-    />
-    <Route
       path="/money/financials/ar-aging"
       element={
         <FeatureRoute requiredModule="money">
@@ -771,30 +745,6 @@ export const moneyRoutes = (
       element={
         <FeatureRoute requiredModule="money">
           <APAgingReport />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/money/financials/reconciliation"
-      element={
-        <FeatureRoute requiredModule="money" requireManage>
-          <BankReconciliation />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/money/financials/vat-settings"
-      element={
-        <FeatureRoute requiredModule="money" requireManage requireAdvancedTax="money">
-          <VATSettings />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/money/financials/vat-returns"
-      element={
-        <FeatureRoute requiredModule="money" requireManage requireAdvancedTax="money">
-          <VATReturns />
         </FeatureRoute>
       }
     />
@@ -881,6 +831,14 @@ export const accountingRoutes = (
       }
     />
     <Route
+      path="/accounting/statements/cash-flow"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <Cashflow />
+        </FeatureRoute>
+      }
+    />
+    <Route
       path="/accounting/statements/fiscal-periods"
       element={
         <FeatureRoute requiredModule="accounting" requireManage>
@@ -893,6 +851,40 @@ export const accountingRoutes = (
       element={
         <FeatureRoute requiredModule="accounting">
           <AccountingAuditTrail />
+        </FeatureRoute>
+      }
+    />
+
+    {/* Business tax and compliance. Wage tax + INSS remain under Payroll. */}
+    <Route
+      path="/accounting/tax/annual-income-tax"
+      element={
+        <FeatureRoute requiredModule="accounting" requireManage>
+          <AnnualIncomeTaxPrep />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/tax/clearance"
+      element={
+        <FeatureRoute requiredModule="accounting" requireManage requireAdvancedTax="accounting">
+          <TaxClearance />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/tax/vat-settings"
+      element={
+        <FeatureRoute requiredModule="accounting" requireManage requireAdvancedTax="accounting">
+          <VATSettings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/tax/vat-returns"
+      element={
+        <FeatureRoute requiredModule="accounting" requireManage requireAdvancedTax="accounting">
+          <VATReturns />
         </FeatureRoute>
       }
     />
@@ -1015,22 +1007,6 @@ export const reportsRoutes = (
         </FeatureRoute>
       }
     />
-    <Route
-      path="/payroll/tax/clearance"
-      element={
-        <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
-          <TaxClearance />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/payroll/tax/annual-income-tax"
-      element={
-        <FeatureRoute requiredModule="payroll" requireManage requireAdvancedTax="payroll">
-          <AnnualIncomeTaxPrep />
-        </FeatureRoute>
-      }
-    />
   </>
 );
 
@@ -1103,6 +1079,16 @@ export const legacyRedirects = (
     <Route path="/accounting/fiscal-periods" element={<Navigate to="/accounting/statements/fiscal-periods" replace />} />
     <Route path="/accounting/audit-trail" element={<Navigate to="/accounting/statements/audit-trail" replace />} />
     <Route path="/accounting/reports" element={<Navigate to="/accounting/statements/trial-balance" replace />} />
+
+    {/* Consolidated financial statements and business tax */}
+    <Route path="/money/financials/profit-loss" element={<Navigate to="/accounting/statements/income-statement" replace />} />
+    <Route path="/money/financials/balance-sheet" element={<Navigate to="/accounting/statements/balance-sheet" replace />} />
+    <Route path="/money/financials/cashflow" element={<Navigate to="/accounting/statements/cash-flow" replace />} />
+    <Route path="/money/financials/reconciliation" element={<Navigate to="/accounting/reconciliation" replace />} />
+    <Route path="/money/financials/vat-settings" element={<Navigate to="/accounting/tax/vat-settings" replace />} />
+    <Route path="/money/financials/vat-returns" element={<Navigate to="/accounting/tax/vat-returns" replace />} />
+    <Route path="/payroll/tax/clearance" element={<Navigate to="/accounting/tax/clearance" replace />} />
+    <Route path="/payroll/tax/annual-income-tax" element={<Navigate to="/accounting/tax/annual-income-tax" replace />} />
   </>
 );
 

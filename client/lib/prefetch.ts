@@ -46,7 +46,10 @@ const ROUTE_IMPORTS: Record<string, () => Promise<unknown>> = {
   "/accounting/chart": () => import("@/pages/accounting/ChartOfAccounts"),
   "/accounting/journal": () => import("@/pages/accounting/JournalEntries"),
   "/accounting/ledger": () => import("@/pages/accounting/GeneralLedger"),
-  "/accounting/reconciliation": () => import("@/pages/accounting/BalanceSheet"),
+  "/accounting/reconciliation": () => import("@/pages/money/BankReconciliation"),
+  "/accounting/statements/income-statement": () => import("@/pages/accounting/IncomeStatement"),
+  "/accounting/statements/balance-sheet": () => import("@/pages/accounting/BalanceSheet"),
+  "/accounting/statements/cash-flow": () => import("@/pages/money/Cashflow"),
 
   // Reports
   "/reports/payroll": () => import("@/pages/reports/PayrollReports"),

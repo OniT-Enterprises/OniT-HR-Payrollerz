@@ -20,7 +20,6 @@ import {
   FileText,
   Plus,
   Receipt,
-  TrendingUp,
   Wallet,
 } from "lucide-react";
 
@@ -61,7 +60,7 @@ function MoneyDashboardSkeleton() {
 
         {/* Module hub */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
               className="flex min-h-[8.5rem] flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 sm:min-h-0 sm:gap-3 sm:rounded-2xl sm:p-5"
@@ -210,15 +209,6 @@ export default function MoneyDashboard() {
       path: "/money/expenses",
       icon: Wallet,
     }] : []),
-    {
-      title: t("moduleDashboards.money.cards.financialReports"),
-      purpose: t("moduleDashboards.money.cards.financialReportsPurpose"),
-      action: t("moduleDashboards.money.cards.financialReportsAction"),
-      path: canManageExpenses
-        ? "/money/financials/profit-loss"
-        : "/money/financials/ar-aging",
-      icon: TrendingUp,
-    },
   ];
 
   return (
@@ -286,7 +276,7 @@ export default function MoneyDashboard() {
         </section>
 
         {/* Module hub */}
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
           {hubCards.map((card) => (
             <HubCard
               key={card.path}

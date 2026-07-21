@@ -7,9 +7,9 @@
  * Restructured for child-simple sidebar:
  *  - Flat where possible (no sub-sections for <4 items)
  *  - Rarely-used pages grouped under section headers
- *  - Reports unified into one module
- *  - Accounting merged into Money
- *  - Duplicate pages eliminated (Balance Sheet, Reconciliation)
+ *  - Workforce reports grouped separately from financial statements
+ *  - Money stays operational; Accounting owns the books and statements
+ *  - Duplicate financial pages resolve to one canonical destination
  */
 
 import type { ComponentType } from "react";
@@ -47,7 +47,7 @@ import {
   ShoppingCart,
   Store,
   CreditCard,
-  // Accounting (now under Money)
+  // Accounting
   BookOpen,
   Landmark,
   Layers,
@@ -58,7 +58,6 @@ import {
   PieChart,
   CalendarRange,
   ScrollText,
-  TrendingUp,
   Scale,
   DollarSign,
   Building,
@@ -298,27 +297,31 @@ export const payrollNavConfig: ModuleNavConfig = {
     },
     {
       id: "tax",
-      label: "Tax & INSS",
+      label: "Payroll Tax & INSS",
       labelKey: "taxInss",
       icon: FileSpreadsheet,
       path: "/payroll/tax",
-      matchPaths: ["/payroll/tax", "/payroll/tax/monthly-wit", "/payroll/tax/inss-monthly", "/payroll/tax/inss-annual", "/payroll/tax/clearance"],
+      matchPaths: [
+        "/payroll/tax",
+        "/payroll/tax/monthly-wit",
+        "/payroll/tax/inss-monthly",
+        "/payroll/tax/inss-annual",
+      ],
       subPages: [
-        { label: "Dashboard", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
+        { label: "Payroll Tax & INSS", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
         { label: "Monthly WIT", labelKey: "monthlyWit", path: "/payroll/tax/monthly-wit", icon: FileSpreadsheet, advancedTaxOnly: true },
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },
-        { label: "Tax Clearance", labelKey: "taxClearance", path: "/payroll/tax/clearance", icon: ClipboardCheck, advancedTaxOnly: true },
       ],
       manageOnly: true,
     },
   ],
 };
 
-/* ─── Money & Accounting ───
- * Merged: Money handles day-to-day (invoices, bills, expenses)
- * Accounting section handles books (chart of accounts, journal, ledger)
- * Financial reports consolidated here (no duplicate in Reports module)
+/* ─── Money ───
+ * Day-to-day money work only: invoices, bills, expenses, and the operational
+ * receivable/payable views used to collect and pay. Formal statements belong
+ * to Accounting so there is one financial source of truth.
  */
 
 export const moneyNavConfig: ModuleNavConfig = {
@@ -335,11 +338,17 @@ export const moneyNavConfig: ModuleNavConfig = {
       labelKey: "invoices",
       icon: FileText,
       path: "/money/invoices",
-      matchPaths: ["/money/invoices", "/money/customers", "/money/payments"],
+      matchPaths: [
+        "/money/invoices",
+        "/money/customers",
+        "/money/payments",
+        "/money/financials/ar-aging",
+      ],
       subPages: [
         { label: "Invoices", labelKey: "invoices", path: "/money/invoices", icon: FileText },
         { label: "Customers", labelKey: "customers", path: "/money/customers", icon: Users },
         { label: "Payments", labelKey: "payments", path: "/money/payments", icon: CreditCard },
+        { label: "AR Aging", labelKey: "arAging", path: "/money/financials/ar-aging", icon: ClipboardList },
       ],
     },
     {
@@ -348,10 +357,15 @@ export const moneyNavConfig: ModuleNavConfig = {
       labelKey: "bills",
       icon: Receipt,
       path: "/money/bills",
-      matchPaths: ["/money/bills", "/money/vendors"],
+      matchPaths: [
+        "/money/bills",
+        "/money/vendors",
+        "/money/financials/ap-aging",
+      ],
       subPages: [
         { label: "Bills", labelKey: "bills", path: "/money/bills", icon: Receipt },
         { label: "Vendors", labelKey: "vendors", path: "/money/vendors", icon: Store },
+        { label: "AP Aging", labelKey: "apAging", path: "/money/financials/ap-aging", icon: ClipboardList },
       ],
     },
     {
@@ -367,38 +381,12 @@ export const moneyNavConfig: ModuleNavConfig = {
       ],
       managerOnly: true,
     },
-    {
-      id: "financial-reports",
-      label: "Financial Reports",
-      labelKey: "financialReports",
-      icon: BarChart3,
-      path: "/money/financials/ar-aging",
-      matchPaths: [
-        "/money/financials/profit-loss",
-        "/money/financials/balance-sheet",
-        "/money/financials/cashflow",
-        "/money/financials/ar-aging",
-        "/money/financials/ap-aging",
-        "/money/financials/reconciliation",
-        "/money/financials/vat-returns",
-      ],
-      subPages: [
-        { label: "Profit & Loss", labelKey: "profitLoss", path: "/money/financials/profit-loss", icon: TrendingUp, managerOnly: true },
-        { label: "Balance Sheet", labelKey: "balanceSheet", path: "/money/financials/balance-sheet", icon: Scale, managerOnly: true },
-        { label: "Cashflow", labelKey: "cashflow", path: "/money/financials/cashflow", icon: DollarSign, managerOnly: true },
-        { label: "AR Aging", labelKey: "arAging", path: "/money/financials/ar-aging", icon: ClipboardList },
-        { label: "AP Aging", labelKey: "apAging", path: "/money/financials/ap-aging", icon: ClipboardList },
-        { label: "Reconciliation", labelKey: "reconciliation", path: "/money/financials/reconciliation", icon: CheckSquare, manageOnly: true },
-        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/financials/vat-returns", icon: FileSpreadsheet, manageOnly: true, advancedTaxOnly: true },
-      ],
-    },
   ],
 };
 
 /* ─── Accounting ───
- * Books & ledger — separate module for accountants
- * Balance Sheet and Reconciliation only here (removed from Money reports)
- * VAT Settings moved to /settings
+ * Books, ledger, reconciliation, formal financial statements, and business
+ * tax work. Payroll WIT and INSS stay with Payroll.
  */
 
 export const accountingNavConfig: ModuleNavConfig = {
@@ -465,6 +453,7 @@ export const accountingNavConfig: ModuleNavConfig = {
         "/accounting/statements/trial-balance",
         "/accounting/statements/income-statement",
         "/accounting/statements/balance-sheet",
+        "/accounting/statements/cash-flow",
         "/accounting/statements/fiscal-periods",
         "/accounting/statements/audit-trail",
       ],
@@ -472,17 +461,38 @@ export const accountingNavConfig: ModuleNavConfig = {
         { label: "Trial Balance", labelKey: "trialBalance", path: "/accounting/statements/trial-balance", icon: ClipboardList },
         { label: "Income Statement", labelKey: "incomeStatement", path: "/accounting/statements/income-statement", icon: PieChart },
         { label: "Balance Sheet", labelKey: "balanceSheet", path: "/accounting/statements/balance-sheet", icon: Scale },
+        { label: "Cash Flow", labelKey: "cashflow", path: "/accounting/statements/cash-flow", icon: DollarSign },
         { label: "Fiscal Periods", labelKey: "fiscalPeriods", path: "/accounting/statements/fiscal-periods", icon: CalendarRange, manageOnly: true },
         { label: "Audit Trail", labelKey: "auditTrail", path: "/accounting/statements/audit-trail", icon: ScrollText },
       ],
+    },
+    {
+      id: "business-tax",
+      label: "Business Tax",
+      labelKey: "businessTax",
+      icon: FileSpreadsheet,
+      path: "/accounting/tax/annual-income-tax",
+      matchPaths: [
+        "/accounting/tax/annual-income-tax",
+        "/accounting/tax/clearance",
+        "/accounting/tax/vat-returns",
+        "/accounting/tax/vat-settings",
+      ],
+      subPages: [
+        { label: "Annual Income Tax", labelKey: "annualIncomeTax", path: "/accounting/tax/annual-income-tax", icon: CalendarRange, manageOnly: true },
+        { label: "Tax Clearance", labelKey: "taxClearance", path: "/accounting/tax/clearance", icon: ClipboardCheck, manageOnly: true, advancedTaxOnly: true },
+        { label: "VAT Returns", labelKey: "vatReturns", path: "/accounting/tax/vat-returns", icon: FileSpreadsheet, manageOnly: true, advancedTaxOnly: true },
+        { label: "VAT Settings", labelKey: "vatSettings", path: "/accounting/tax/vat-settings", icon: Settings, manageOnly: true, advancedTaxOnly: true },
+      ],
+      manageOnly: true,
     },
   ],
 };
 
 /* ─── Reports ───
- * Unified: all report types in one place
- * HR reports, compliance filings, custom reports
- * Financial reports live under Money (not duplicated here)
+ * Workforce reporting only: payroll, people, attendance, NGO/donor, and
+ * custom exports. Financial statements belong to Accounting; statutory
+ * payroll filings belong to Payroll.
  */
 
 export const reportsNavConfig: ModuleNavConfig = {
@@ -533,7 +543,6 @@ export const reportsNavConfig: ModuleNavConfig = {
       subPages: [],
       requiredModule: "staff",
     },
-    // Tax & Compliance moved to Payroll > Tax & INSS
     {
       id: "ngo",
       label: "NGO & Donor",

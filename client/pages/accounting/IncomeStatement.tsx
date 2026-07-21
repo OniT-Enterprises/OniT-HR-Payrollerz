@@ -4,8 +4,13 @@
  */
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { IncomeStatement as IncomeStatementType } from '../../types/accounting';
 import { useIncomeStatement } from '@/hooks/useAccounting';
+import { useAdvancedTax, useTenantId } from '@/contexts/TenantContext';
+import { trialBalanceService } from '@/services/accountingService';
+import { InstallmentTaxEtaxFiling } from '@/components/reports/InstallmentTaxEtaxFiling';
+import { getTLIncomeTaxInstallmentFrequency } from '@/lib/tax/income-tax-installment-tl';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -39,11 +44,50 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+
+function parseIsoDateParts(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+  };
+}
+
+function lastDayOfMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function isCompleteCalendarMonth(start: string, end: string): boolean {
+  const startParts = parseIsoDateParts(start);
+  const endParts = parseIsoDateParts(end);
+  return !!startParts
+    && !!endParts
+    && startParts.day === 1
+    && startParts.year === endParts.year
+    && startParts.month === endParts.month
+    && endParts.day === lastDayOfMonth(endParts.year, endParts.month);
+}
+
+function isCompleteCalendarQuarter(start: string, end: string): boolean {
+  const startParts = parseIsoDateParts(start);
+  const endParts = parseIsoDateParts(end);
+  return !!startParts
+    && !!endParts
+    && startParts.day === 1
+    && [1, 4, 7, 10].includes(startParts.month)
+    && startParts.year === endParts.year
+    && endParts.month === startParts.month + 2
+    && endParts.day === lastDayOfMonth(endParts.year, endParts.month);
+}
 
 export default function IncomeStatement() {
   const { t } = useI18n();
+  const tenantId = useTenantId();
+  const showAdvancedTax = useAdvancedTax();
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
@@ -66,6 +110,47 @@ export default function IncomeStatement() {
 
   const report: IncomeStatementType | null = reportQuery.data ?? null;
   const generating = reportQuery.isFetching;
+
+  const requestedStart = requestedReport?.periodStart ?? "";
+  const requestedEnd = requestedReport?.periodEnd ?? "";
+  const isPotentialInstallmentPeriod = !!requestedReport
+    && (isCompleteCalendarMonth(requestedStart, requestedEnd)
+      || isCompleteCalendarQuarter(requestedStart, requestedEnd));
+  const priorTaxYear = (requestedReport?.fiscalYear ?? new Date().getFullYear()) - 1;
+  const priorYearTurnoverQuery = useQuery({
+    queryKey: ['tenants', tenantId, 'accounting', 'installmentTaxTurnover', priorTaxYear],
+    queryFn: async () => {
+      const statement = await trialBalanceService.generateIncomeStatement(
+        tenantId,
+        `${priorTaxYear}-01-01`,
+        `${priorTaxYear}-12-31`,
+        priorTaxYear,
+      );
+      return statement.totalRevenue;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: showAdvancedTax && !!report && isPotentialInstallmentPeriod,
+  });
+  const installmentFrequency = priorYearTurnoverQuery.data === undefined
+    ? null
+    : getTLIncomeTaxInstallmentFrequency(priorYearTurnoverQuery.data);
+  const isInstallmentPeriod = installmentFrequency === 'quarterly'
+    ? isCompleteCalendarQuarter(requestedStart, requestedEnd)
+    : installmentFrequency === 'monthly'
+      ? isCompleteCalendarMonth(requestedStart, requestedEnd)
+      : false;
+  const installmentPeriodLabel = requestedReport
+    ? `${formatDateTL(parseDateISO(requestedReport.periodStart), {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })} – ${formatDateTL(parseDateISO(requestedReport.periodEnd), {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })}`
+    : undefined;
 
   const handleGenerate = async () => {
     const nextRequest = {
@@ -265,7 +350,8 @@ export default function IncomeStatement() {
 
       {/* Income Statement Table */}
       {report ? (
-        <Card className="print:shadow-none">
+        <>
+          <Card className="print:shadow-none">
           <CardHeader className="print:pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -379,7 +465,21 @@ export default function IncomeStatement() {
               </TableBody>
             </Table>
           </CardContent>
-        </Card>
+          </Card>
+
+          {/* Art. 64 installment filing assistance belongs with the formal
+              income statement. It appears only for a complete month/quarter
+              and only on the accountant-grade flow. */}
+          {showAdvancedTax
+            && priorYearTurnoverQuery.isSuccess
+            && isInstallmentPeriod && (
+            <InstallmentTaxEtaxFiling
+              revenue={report.totalRevenue}
+              priorYearTurnover={priorYearTurnoverQuery.data}
+              periodLabel={installmentPeriodLabel}
+            />
+          )}
+        </>
       ) : (
         <Card>
           <CardContent className="py-12">

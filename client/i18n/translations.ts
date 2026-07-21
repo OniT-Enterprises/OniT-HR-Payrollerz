@@ -143,7 +143,7 @@ export const translations = {
       "payroll": "Payroll",
       "money": "Money",
       "accounting": "Accounting",
-      "reports": "Reports",
+      "reports": "Workforce Reports",
       "setupBannerTitle": "Setup is not finished yet",
       "setupBannerDesc": "Finish company, payment, and payroll setup. {{percent}}% complete.",
       "billingPlan": "Billing & Plan",
@@ -184,7 +184,7 @@ export const translations = {
       "runPayroll": "Run Payroll",
       "history": "History",
       "payments": "Payments",
-      "taxInss": "Tax & INSS",
+      "taxInss": "Payroll Tax & INSS",
       "payrollSettings": "Settings",
       "taxRates": "Tax & Rates",
       "benefits": "Benefits",
@@ -196,6 +196,8 @@ export const translations = {
       "expenses": "Expenses",
       "cashAdvances": "Cash Advances",
       "taxClearance": "Tax Clearance",
+      "businessTax": "Business Tax",
+      "annualIncomeTax": "Annual Income Tax",
       "financialReports": "Financial Reports",
       "profitLoss": "Profit & Loss",
       "balanceSheet": "Balance Sheet",
@@ -204,6 +206,7 @@ export const translations = {
       "apAging": "AP Aging",
       "reconciliation": "Reconciliation",
       "vatReturns": "VAT Returns",
+      "vatSettings": "VAT Settings",
       "chartOfAccounts": "Chart of Accounts",
       "journalEntries": "Journal Entries",
       "fixedAssets": "Fixed Assets",
@@ -3688,8 +3691,8 @@ export const translations = {
         "duplicateBadge": "Duplicate?"
       },
       "dashboard": {
-        "title": "Reports",
-        "subtitle": "Generate and export reports for all HR data",
+        "title": "Workforce Reports",
+        "subtitle": "Generate and export payroll and workforce reports",
         "categories": {
           "employee": {
             "title": "Employee Reports",
@@ -7586,6 +7589,10 @@ export const translations = {
           "entityCompany": "Company (Unipessoal Lda, Lda, SA)",
           "entitySoleTrader": "Sole trader (individually-owned)",
           "disclaimer": "This workpaper maps your posted books to the official form's line numbers as a preparation aid. It is not the official form and Xefe does not file it — review every figure with your accountant, then transcribe onto the official ATTL form.",
+          "depreciationMethod": "Tax depreciation method (line 15)",
+          "depreciationUsefulLife": "Useful-life rates (asset register)",
+          "depreciationFullExpensing": "100% in year of purchase (Schedule VII)",
+          "depreciationMethodHint": "100% expensing is the treatment seen on real filed returns; confirm the choice with your accountant.",
           "dueBy": "Official form due by {{date}}.",
           "officialFormLink": "Official form & instructions (attl.gov.tl)",
           "summaryTitle": "Calculation summary",
@@ -7668,6 +7675,8 @@ export const translations = {
             "incomeTaxExcluded": "{{account}} ({{amount}}) was excluded — income tax itself is not a deductible expense.",
             "soleTraderOwnSalary": "A sole trader cannot deduct payments to themself (form Q.1). Remove any owner salary from line 35 with a negative adjustment.",
             "depreciationMismatch": "Depreciation in the books ({{gl}}) differs from the asset-register schedule ({{schedule}}). Reconcile before transcribing line 15.",
+            "booksDepreciationReplaced": "Books depreciation of {{gl}} was set aside — line 15 uses the Schedule VII amount (100% of in-year purchases) instead.",
+            "expensedDisposalProceeds": "{{asset}} was already fully expensed for tax; its disposal proceeds ({{amount}}) belong in gross income — add them to line 05 with an adjustment.",
             "negativeLine": "Line {{line}} is negative ({{amount}}) — expense lines cannot be negative on the official form."
           }
         }
@@ -7687,8 +7696,8 @@ export const translations = {
       "moneyBody": "Track your daily cash flow here — invoices you’ve sent, payments you’ve received, and what’s still outstanding. Create invoices, record payments, and keep your books up to date.",
       "accountingTitle": "Welcome to Accounting.",
       "accountingBody": "This is your formal ledger — journal entries, chart of accounts, and financial statements. Every payroll run and invoice automatically creates entries here. Use this section to reconcile, adjust, and report.",
-      "reportsTitle": "Welcome to Reports.",
-      "reportsBody": "Generate and review reports across your entire operation — payroll summaries, employee rosters, financial statements, and compliance documents. Pick a report type below to get started."
+      "reportsTitle": "Welcome to Workforce Reports.",
+      "reportsBody": "Generate and review payroll, employee, attendance, department, NGO, and custom reports. Pick a report family below to get started."
     },
     "moduleDashboards": {
       "common": {
@@ -7805,7 +7814,7 @@ export const translations = {
           "bankTransfers": "Bank transfers",
           "readyToPay": "{{count}} ready to pay",
           "exportPay": "Export & pay",
-          "taxInss": "Tax & INSS",
+          "taxInss": "Payroll Tax & INSS",
           "taxDue": "WIT in {{witDays}}d · INSS in {{inssDays}}d",
           "runPayrollPurpose": "Calculate this cycle and finalise pay",
           "runPayrollAction": "Start a run",
@@ -7819,7 +7828,7 @@ export const translations = {
       },
       "money": {
         "title": "Money",
-        "seoDescription": "Invoices, bills, expenses, and financial reports in one place.",
+        "seoDescription": "Invoices, bills, expenses, and collections in one place.",
         "summary": "{{collected}} collected this month · {{outstanding}} outstanding.",
         "viewBills": "View bills",
         "newInvoice": "New invoice",
@@ -7868,7 +7877,8 @@ export const translations = {
           "trialBalance": "Trial balance is out of balance",
           "draftEntry": "{{count}} draft journal entry to review",
           "draftEntries": "{{count}} draft journal entries to review",
-          "payrollNotPosted": "Latest payroll is not yet posted to the ledger"
+          "payrollNotPosted": "Latest payroll is not yet posted to the ledger",
+          "annualIncomeTax": "Prepare {{year}} annual business income tax — due {{date}}"
         },
         "cards": {
           "chartOfAccounts": "Chart of Accounts",
@@ -7893,10 +7903,10 @@ export const translations = {
         }
       },
       "reports": {
-        "title": "Reports",
-        "seoDescription": "Payroll, people, attendance, department, and compliance reports in one place.",
-        "summarySingle": "{{count}} report family · {{compliance}}.",
-        "summaryPlural": "{{count}} report families · {{compliance}}.",
+        "title": "Workforce Reports",
+        "seoDescription": "Payroll, people, attendance, department, NGO, and custom reports in one place.",
+        "summarySingle": "{{count}} workforce report family.",
+        "summaryPlural": "{{count}} workforce report families.",
         "summaryReadOnlySingle": "{{count}} report family available.",
         "summaryReadOnlyPlural": "{{count}} report families available.",
         "reportSetup": "Report setup",
@@ -8396,7 +8406,7 @@ export const translations = {
       "payroll": "Saláriu",
       "money": "Osan",
       "accounting": "Kontabilidade",
-      "reports": "Relatóriu",
+      "reports": "Relatóriu Ekipa",
       "setupBannerTitle": "Setup seidauk remata",
       "setupBannerDesc": "Remata konfigurasaun empreza, pagamentu no saláriu. {{percent}}% kompletu.",
       "billingPlan": "Faturasaun & Planu",
@@ -8437,7 +8447,7 @@ export const translations = {
       "runPayroll": "Halo Saláriu",
       "history": "Istória",
       "payments": "Pagamentu",
-      "taxInss": "Impostu & INSS",
+      "taxInss": "Impostu Saláriu & INSS",
       "payrollSettings": "Konfigurasaun",
       "taxRates": "Impostu & Taxa",
       "benefits": "Benefísiu",
@@ -8449,6 +8459,8 @@ export const translations = {
       "expenses": "Despeza",
       "cashAdvances": "Adiantamentu Osan",
       "taxClearance": "Sertidaun Dívida",
+      "businessTax": "Impostu Negósiu",
+      "annualIncomeTax": "Impostu Rendimentu Anuál",
       "financialReports": "Relatóriu Finanseiru",
       "profitLoss": "Lukru & Lakon",
       "balanceSheet": "Balansu",
@@ -8457,6 +8469,7 @@ export const translations = {
       "apAging": "Konta Selu",
       "reconciliation": "Rekonsiliasaun",
       "vatReturns": "Deklarasaun VAT",
+      "vatSettings": "Konfigurasaun VAT",
       "chartOfAccounts": "Planu Konta",
       "journalEntries": "Lansu Jornál",
       "fixedAssets": "Ativos Fixos",
@@ -13001,8 +13014,8 @@ export const translations = {
         "duplicateBadge": "Duplikadu?"
       },
       "dashboard": {
-        "title": "Relatoriu",
-        "subtitle": "Kria no exporta relatoriu ba dadus HR hotu",
+        "title": "Relatóriu Ekipa",
+        "subtitle": "Kria no exporta relatóriu saláriu no ekipa",
         "categories": {
           "employee": {
             "title": "Relatoriu Empregadu",
@@ -15839,6 +15852,10 @@ export const translations = {
           "entityCompany": "Sosiedade (Unipessoal Lda, Lda, SA)",
           "entitySoleTrader": "Empreza individuál (na'in ida de'it)",
           "disclaimer": "Papel servisu ne'e mapeia kontabilidade ne'ebé lansa ona ba númeru liña formuláriu ofisiál nian, hanesan apoiu ba preparasaun. La'ós formuláriu ofisiál no Xefe la submete — reviza valor ida-idak ho ita-nia kontabilista, depois transkreve ba formuláriu ofisiál ATTL nian.",
+          "depreciationMethod": "Métodu depresiasaun fiskál (liña 15)",
+          "depreciationUsefulLife": "Taxa vida útil (rejistu ativu)",
+          "depreciationFullExpensing": "100% iha tinan sosa (Aneksu VII)",
+          "depreciationMethodHint": "Dedusaun 100% mak tratamentu ne'ebé haree iha deklarasaun reál sira ne'ebé entrega ona; konfirma eskolla ho ita-nia kontabilista.",
           "dueBy": "Formuláriu ofisiál to'o {{date}}.",
           "officialFormLink": "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
           "summaryTitle": "Rezumu kálkulu",
@@ -15921,6 +15938,8 @@ export const translations = {
             "incomeTaxExcluded": "{{account}} ({{amount}}) hasai ona — impostu rendimentu rasik la'ós despeza dedutível.",
             "soleTraderOwnSalary": "Empreza individuál la bele deduz pagamentu ba nia an rasik (Q.1 iha formuláriu). Hasai saláriu na'in husi liña 35 ho ajustamentu negativu.",
             "depreciationMismatch": "Depresiasaun iha kontabilidade ({{gl}}) la hanesan ho mapa rejistu ativu ({{schedule}}). Rekonsilia molok transkreve liña 15.",
+            "booksDepreciationReplaced": "Depresiasaun kontabilidade nian {{gl}} tau iha sorin — liña 15 uza valor Aneksu VII (100% husi sosa tinan ne'e nian).",
+            "expensedDisposalProceeds": "{{asset}} deduz tiha ona 100% ba impostu; osan husi fa'an ({{amount}}) tenke tama ba rendimentu brutu — aumenta ba liña 05 ho ajustamentu.",
             "negativeLine": "Liña {{line}} negativu ({{amount}}) — liña despeza la bele negativu iha formuláriu ofisiál."
           }
         }
@@ -15940,8 +15959,8 @@ export const translations = {
       "moneyBody": "Akompanha ita-nia fluxu osan lor-loron iha ne’e — fatura ne’ebé ita haruka, pagamentu ne’ebé ita simu, no saida mak sei pendente. Kria fatura, rejista pagamentu, no mantein ita-nia livru atualizadu.",
       "accountingTitle": "Bemvindu ba Kontabilidade.",
       "accountingBody": "Ida ne’e ita-nia livru razãu formál — lansamantu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamantu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
-      "reportsTitle": "Bemvindu ba Relatóriu.",
-      "reportsBody": "Kria no reviza relatóriu husi ita-nia operasaun tomak — sumáriu folha pagamentu, lista empregádu, relatóriu finanseiru, no dokumentu konformidade. Hili tipu relatóriu iha kraik atu hahú."
+      "reportsTitle": "Bemvindu ba Relatóriu Ekipa.",
+      "reportsBody": "Kria no reviza relatóriu saláriu, empregadu, prezensa, departamentu, ONG no relatóriu personalizadu. Hili família relatóriu ida atu hahú."
     },
     "moduleDashboards": {
       "common": {
@@ -16058,7 +16077,7 @@ export const translations = {
           "bankTransfers": "Transferénsia bankária",
           "readyToPay": "{{count}} prontu atu selu",
           "exportPay": "Esporta & selu",
-          "taxInss": "Impostu & INSS",
+          "taxInss": "Impostu Saláriu & INSS",
           "taxDue": "WIT iha {{witDays}} loron · INSS iha {{inssDays}} loron",
           "runPayrollPurpose": "Kalkula siklu ida-ne'e no finaliza saláriu",
           "runPayrollAction": "Hahú prosesu ida",
@@ -16072,7 +16091,7 @@ export const translations = {
       },
       "money": {
         "title": "Osan",
-        "seoDescription": "Fatura, konta, despeza no relatóriu finanseiru iha fatin ida.",
+        "seoDescription": "Fatura, konta, despeza no kobransa iha fatin ida.",
         "summary": "{{collected}} simu fulan ida-ne'e · {{outstanding}} seidauk simu.",
         "viewBills": "Haree konta",
         "newInvoice": "Fatura foun",
@@ -16121,7 +16140,8 @@ export const translations = {
           "trialBalance": "Balansu tentativa la balansu",
           "draftEntry": "Rascunhu lansu jornál {{count}} atu reviza",
           "draftEntries": "Rascunhu lansu jornál {{count}} atu reviza",
-          "payrollNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade"
+          "payrollNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade",
+          "annualIncomeTax": "Prepara impostu rendimentu negósiu {{year}} — prazu {{date}}"
         },
         "cards": {
           "chartOfAccounts": "Planu Konta",
@@ -16146,10 +16166,10 @@ export const translations = {
         }
       },
       "reports": {
-        "title": "Relatóriu",
-        "seoDescription": "Relatóriu saláriu, ema, prezensa, departamentu no kompliansia iha fatin ida.",
-        "summarySingle": "Família relatóriu {{count}} · {{compliance}}.",
-        "summaryPlural": "Família relatóriu {{count}} · {{compliance}}.",
+        "title": "Relatóriu Ekipa",
+        "seoDescription": "Relatóriu saláriu, ema, prezensa, departamentu, ONG no relatóriu personalizadu iha fatin ida.",
+        "summarySingle": "Família relatóriu ekipa {{count}}.",
+        "summaryPlural": "Família relatóriu ekipa {{count}}.",
         "summaryReadOnlySingle": "Família relatóriu {{count}} disponivel.",
         "summaryReadOnlyPlural": "Família relatóriu {{count}} disponivel.",
         "reportSetup": "Konfigura relatóriu",
@@ -16649,7 +16669,7 @@ export const translations = {
       "payroll": "Folha de Pagamento",
       "money": "Dinheiro",
       "accounting": "Contabilidade",
-      "reports": "Relatórios",
+      "reports": "Relatórios da Equipa",
       "setupBannerTitle": "A configuração ainda não terminou",
       "setupBannerDesc": "Termine a configuração da empresa, pagamentos e salários. {{percent}}% concluído.",
       "billingPlan": "Faturação & Plano",
@@ -16690,7 +16710,7 @@ export const translations = {
       "runPayroll": "Processar Folha",
       "history": "Histórico",
       "payments": "Pagamentos",
-      "taxInss": "Imposto & INSS",
+      "taxInss": "Impostos da Folha & INSS",
       "payrollSettings": "Definições",
       "taxRates": "Impostos & Taxas",
       "benefits": "Benefícios",
@@ -16702,6 +16722,8 @@ export const translations = {
       "expenses": "Despesas",
       "cashAdvances": "Adiantamentos de Caixa",
       "taxClearance": "Certidão de Dívidas",
+      "businessTax": "Impostos da Empresa",
+      "annualIncomeTax": "Imposto Anual sobre Rendimento",
       "financialReports": "Relatórios Financeiros",
       "profitLoss": "Lucros & Perdas",
       "balanceSheet": "Balanço",
@@ -16710,6 +16732,7 @@ export const translations = {
       "apAging": "Contas a Pagar",
       "reconciliation": "Reconciliação",
       "vatReturns": "Declarações IVA",
+      "vatSettings": "Definições de IVA",
       "chartOfAccounts": "Plano de Contas",
       "journalEntries": "Lançamentos",
       "fixedAssets": "Ativos Fixos",
@@ -20194,8 +20217,8 @@ export const translations = {
         "duplicateBadge": "Duplicado?"
       },
       "dashboard": {
-        "title": "Relatórios",
-        "subtitle": "Gerar e exportar relatórios para todos os dados de RH",
+        "title": "Relatórios da Equipa",
+        "subtitle": "Gerar e exportar relatórios de folha e da equipa",
         "categories": {
           "employee": {
             "title": "Relatórios de Funcionários",
@@ -24092,6 +24115,10 @@ export const translations = {
           "entityCompany": "Sociedade (Unipessoal Lda, Lda, SA)",
           "entitySoleTrader": "Empresário em nome individual",
           "disclaimer": "Este papel de trabalho mapeia a contabilidade lançada para os números de linha do formulário oficial, como apoio à preparação. Não é o formulário oficial e o Xefe não o submete — reveja cada valor com o seu contabilista e transcreva depois para o formulário oficial da ATTL.",
+          "depreciationMethod": "Método de depreciação fiscal (linha 15)",
+          "depreciationUsefulLife": "Taxas de vida útil (registo de ativos)",
+          "depreciationFullExpensing": "100% no ano de aquisição (Anexo VII)",
+          "depreciationMethodHint": "A dedução de 100% é o tratamento observado em declarações reais entregues; confirme a escolha com o seu contabilista.",
           "dueBy": "Formulário oficial até {{date}}.",
           "officialFormLink": "Formulário e instruções oficiais (attl.gov.tl)",
           "summaryTitle": "Resumo do cálculo",
@@ -24174,6 +24201,8 @@ export const translations = {
             "incomeTaxExcluded": "{{account}} ({{amount}}) foi excluída — o próprio imposto sobre o rendimento não é despesa dedutível.",
             "soleTraderOwnSalary": "Um empresário em nome individual não pode deduzir pagamentos a si próprio (Q.1 do formulário). Remova o salário do proprietário da linha 35 com um ajustamento negativo.",
             "depreciationMismatch": "A depreciação na contabilidade ({{gl}}) difere do mapa do registo de ativos ({{schedule}}). Reconcilie antes de transcrever a linha 15.",
+            "booksDepreciationReplaced": "A depreciação contabilística de {{gl}} foi posta de lado — a linha 15 usa o valor do Anexo VII (100% das aquisições do ano).",
+            "expensedDisposalProceeds": "{{asset}} já foi totalmente deduzido para efeitos fiscais; o produto da alienação ({{amount}}) pertence ao rendimento bruto — adicione-o à linha 05 com um ajustamento.",
             "negativeLine": "A linha {{line}} está negativa ({{amount}}) — as linhas de despesa não podem ser negativas no formulário oficial."
           }
         }
@@ -24193,8 +24222,8 @@ export const translations = {
       "moneyBody": "Acompanhe o seu fluxo de caixa diário aqui — faturas enviadas, pagamentos recebidos e o que ainda está pendente. Crie faturas, registe pagamentos e mantenha os seus livros atualizados.",
       "accountingTitle": "Bem-vindo à Contabilidade.",
       "accountingBody": "Este é o seu livro formal — lançamentos contabilísticos, plano de contas e demonstrações financeiras. Cada processamento de folha e fatura cria automaticamente lançamentos aqui. Use esta secção para reconciliar, ajustar e reportar.",
-      "reportsTitle": "Bem-vindo aos Relatórios.",
-      "reportsBody": "Gere e reveja relatórios de toda a sua operação — resumos de folha, listas de funcionários, demonstrações financeiras e documentos de conformidade. Escolha um tipo de relatório abaixo para começar."
+      "reportsTitle": "Bem-vindo aos Relatórios da Equipa.",
+      "reportsBody": "Gere e reveja relatórios de folha, funcionários, presença, departamentos, ONG e relatórios personalizados. Escolha uma família abaixo para começar."
     },
     "moduleDashboards": {
       "common": {
@@ -24311,7 +24340,7 @@ export const translations = {
           "bankTransfers": "Transferências bancárias",
           "readyToPay": "{{count}} prontos para pagar",
           "exportPay": "Exportar e pagar",
-          "taxInss": "Imposto & INSS",
+          "taxInss": "Impostos da Folha & INSS",
           "taxDue": "WIT em {{witDays}}d · INSS em {{inssDays}}d",
           "runPayrollPurpose": "Calcular este ciclo e finalizar os salários",
           "runPayrollAction": "Iniciar um processamento",
@@ -24325,7 +24354,7 @@ export const translations = {
       },
       "money": {
         "title": "Dinheiro",
-        "seoDescription": "Faturas, contas, despesas e relatórios financeiros num só lugar.",
+        "seoDescription": "Faturas, contas, despesas e cobranças num só lugar.",
         "summary": "{{collected}} recebidos este mês · {{outstanding}} por receber.",
         "viewBills": "Ver contas",
         "newInvoice": "Nova fatura",
@@ -24374,7 +24403,8 @@ export const translations = {
           "trialBalance": "O balancete está desequilibrado",
           "draftEntry": "{{count}} lançamento em rascunho para rever",
           "draftEntries": "{{count}} lançamentos em rascunho para rever",
-          "payrollNotPosted": "A última folha ainda não foi lançada no razão"
+          "payrollNotPosted": "A última folha ainda não foi lançada no razão",
+          "annualIncomeTax": "Preparar o imposto anual da empresa de {{year}} — prazo {{date}}"
         },
         "cards": {
           "chartOfAccounts": "Plano de Contas",
@@ -24399,10 +24429,10 @@ export const translations = {
         }
       },
       "reports": {
-        "title": "Relatórios",
-        "seoDescription": "Relatórios de folha, pessoas, presença, departamentos e conformidade num só lugar.",
-        "summarySingle": "{{count}} família de relatórios · {{compliance}}.",
-        "summaryPlural": "{{count}} famílias de relatórios · {{compliance}}.",
+        "title": "Relatórios da Equipa",
+        "seoDescription": "Relatórios de folha, pessoas, presença, departamentos, ONG e personalizados num só lugar.",
+        "summarySingle": "{{count}} família de relatórios da equipa.",
+        "summaryPlural": "{{count}} famílias de relatórios da equipa.",
         "summaryReadOnlySingle": "{{count}} família de relatórios disponível.",
         "summaryReadOnlyPlural": "{{count}} famílias de relatórios disponíveis.",
         "reportSetup": "Configurar relatórios",

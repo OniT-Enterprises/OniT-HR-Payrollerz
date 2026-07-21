@@ -95,7 +95,12 @@ function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasSt
 
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
   const blockingIssues = hasStaff ? employeeSummary?.employeesWithIssues ?? 0 : 0;
-  const overdueTaxes = filingsDue.filter((f) => f.isOverdue).length;
+  // This notification links to Payroll, so count only wage-tax and INSS
+  // obligations here. Business income/services/VAT work lives in Accounting.
+  const overdueTaxes = filingsDue.filter((filing) =>
+    filing.isOverdue
+      && ["monthly_wit", "annual_wit", "inss_monthly"].includes(filing.type),
+  ).length;
   const pendingPayroll = hasPayroll ? processingRuns.length : 0;
   const total = (overdueTaxes > 0 ? 1 : 0) + (blockingIssues > 0 ? 1 : 0) + (pendingLeave > 0 ? 1 : 0) + (pendingPayroll > 0 ? 1 : 0);
 

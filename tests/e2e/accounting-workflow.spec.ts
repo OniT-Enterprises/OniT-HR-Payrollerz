@@ -131,7 +131,7 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
 
   // Import the real bank line, link it to the receipt already recorded above,
   // then reconcile it. Linking must not create a second cash journal.
-  await page.goto("/money/financials/reconciliation");
+  await page.goto("/accounting/reconciliation");
   await page.locator('input[type="file"]').setInputFiles({
     name: "statement.csv",
     mimeType: "text/csv",
