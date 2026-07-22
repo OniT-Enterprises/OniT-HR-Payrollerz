@@ -108,6 +108,20 @@ jobs:
         env:
           FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 
+      # Indexes were the one Firestore artifact CI never deployed — the
+      # emulator auto-creates them, so a query added with a new orderBy passes
+      # every test and then throws FAILED_PRECONDITION only in production
+      # (2026-07-22: the hiring pipeline did exactly this). This deploy only
+      # CREATES missing indexes (no --force, so nothing is ever deleted); the
+      # deployer SA needs roles/datastore.indexAdmin.
+      - name: Deploy Firestore indexes
+        run: |
+          printf '%s' "$FIREBASE_DEPLOYER_JSON" > "$RUNNER_TEMP/deployer-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/deployer-sa.json"
+          npx firebase-tools deploy --only firestore:indexes --project onit-hr-payroll --non-interactive
+        env:
+          FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
+
       - name: Deploy to Hetzner (xefe.tl)
         uses: easingthemes/ssh-deploy@main
         with:
