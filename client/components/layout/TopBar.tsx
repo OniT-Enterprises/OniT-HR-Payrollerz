@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { isAppHost, MARKETING_ORIGIN } from "@/lib/hosts";
 import { useFirebase } from "@/contexts/FirebaseContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -490,6 +491,12 @@ export default function TopBar() {
   const handleSignOut = async () => {
     try {
       await signOut();
+      // Host split: signing out of the app should land on the public site in
+      // one hop, not bounce through HomeRoute's guest redirect.
+      if (import.meta.env.PROD && isAppHost()) {
+        window.location.replace(MARKETING_ORIGIN);
+        return;
+      }
       navigate("/auth/login");
     } catch (error) {
       console.error("Failed to sign out:", error);

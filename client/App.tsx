@@ -281,6 +281,17 @@ function HomeRoute() {
   }
 
   // User with tenants - show regular dashboard
+  // Host split: authenticated home is the app host. A leftover pre-split
+  // session on xefe.tl would otherwise render the dashboard on the marketing
+  // origin and then bounce confusingly on the next server hit.
+  if (
+    import.meta.env.PROD &&
+    typeof window !== "undefined" &&
+    window.location.hostname === MARKETING_HOST
+  ) {
+    window.location.replace(APP_ORIGIN);
+    return <RouteLoadingFallback />;
+  }
   return <Dashboard />;
 }
 
