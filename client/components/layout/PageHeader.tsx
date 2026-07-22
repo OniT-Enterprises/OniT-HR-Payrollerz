@@ -89,18 +89,41 @@ export default function PageHeader({
         <div className="flex min-w-0 items-center gap-3">
           {showCardIcon ? (
             <div
-              className={`flex shrink-0 items-center justify-center ${tile} ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+              className={cn(
+                "flex shrink-0 items-center justify-center",
+                tile,
+                colorKey ? TILE_BG[colorKey] : "bg-muted",
+                iconColor,
+                isLg && "animate-dashboard-header-icon",
+              )}
             >
               <CardIcon
                 name={cardIcon!}
-                className={`${cardIconSize} text-foreground ${colorKey ? ACCENT[colorKey] : ""}`}
+                className={cn(
+                  cardIconSize,
+                  "text-foreground",
+                  colorKey && ACCENT[colorKey],
+                  isLg && "animate-dashboard-header-glyph",
+                )}
               />
             </div>
           ) : Icon ? (
             <div
-              className={`flex shrink-0 items-center justify-center ${tile} ${colorKey ? TILE_BG[colorKey] : "bg-muted"}`}
+              className={cn(
+                "flex shrink-0 items-center justify-center",
+                tile,
+                colorKey ? TILE_BG[colorKey] : "bg-muted",
+                iconColor,
+                isLg && "animate-dashboard-header-icon",
+              )}
             >
-              <Icon className={`${lucideSize} ${iconColor}`} />
+              <Icon
+                className={cn(
+                  lucideSize,
+                  iconColor,
+                  isLg && "animate-dashboard-header-glyph",
+                )}
+              />
             </div>
           ) : null}
           <div className="min-w-0">
