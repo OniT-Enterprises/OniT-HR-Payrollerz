@@ -186,8 +186,10 @@ function TenantRowActions({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
+            aria-label={t("admin.tenantList.actions.viewDetails")}
             onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
           >
             <Eye className="h-4 w-4" />
@@ -198,8 +200,10 @@ function TenantRowActions({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
+            aria-label={t("admin.tenantList.actions.edit")}
             onClick={() => navigate(`/admin/tenants/${tenant.id}?edit=1`)}
           >
             <Pencil className="h-4 w-4" />
@@ -210,8 +214,10 @@ function TenantRowActions({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            type="button"
             variant="ghost"
             size="icon"
+            aria-label={t("admin.tenantList.actions.impersonate")}
             onClick={() => onImpersonate(tenant)}
             disabled={tenant.status !== "active"}
           >

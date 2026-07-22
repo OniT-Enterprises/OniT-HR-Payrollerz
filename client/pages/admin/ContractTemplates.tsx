@@ -368,6 +368,7 @@ export default function ContractTemplates() {
                               variant="ghost"
                               size="icon"
                               asChild
+                              aria-label="Download original file"
                               title="Download original file"
                             >
                               <a
@@ -380,16 +381,20 @@ export default function ContractTemplates() {
                             </Button>
                           )}
                           <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
+                            aria-label="Edit template"
                             onClick={() => openEdit(template)}
                             title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
+                            aria-label="Delete template"
                             className="text-red-600 hover:text-red-700"
                             onClick={() => setDeleteTarget(template)}
                             title="Delete"

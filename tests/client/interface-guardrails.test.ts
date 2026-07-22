@@ -1,16 +1,72 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const repoRoot = process.cwd();
 const read = (relativePath: string) =>
   readFileSync(join(repoRoot, relativePath), "utf8");
 
+const collectTsxFiles = (directory: string): string[] =>
+  readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return collectTsxFiles(path);
+    return entry.name.endsWith(".tsx") ? [path] : [];
+  });
+
 describe("interface guardrails", () => {
   it("keeps shared phone controls at a comfortable target size", () => {
     expect(read("client/components/ui/button.tsx")).toContain("min-h-11");
     expect(read("client/components/ui/select.tsx")).toContain("h-11");
     expect(read("client/components/ui/textarea.tsx")).toContain("text-base");
+  });
+
+  it("gives every icon-only button an explicit accessible name", () => {
+    const unnamedButtons: string[] = [];
+
+    for (const filePath of collectTsxFiles(join(repoRoot, "client"))) {
+      const source = readFileSync(filePath, "utf8");
+      const sourceFile = ts.createSourceFile(
+        filePath,
+        source,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TSX,
+      );
+
+      const visit = (node: ts.Node) => {
+        if (
+          (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+          node.tagName.getText(sourceFile) === "Button"
+        ) {
+          const attributes = node.attributes.properties.filter(
+            ts.isJsxAttribute,
+          );
+          const getAttribute = (name: string) =>
+            attributes.find(
+              (attribute) => attribute.name.getText(sourceFile) === name,
+            );
+          const size = getAttribute("size")
+            ?.initializer?.getText(sourceFile)
+            .replace(/["']/g, "");
+
+          if (size === "icon" && !getAttribute("aria-label")) {
+            const line =
+              sourceFile.getLineAndCharacterOfPosition(
+                node.getStart(sourceFile),
+              ).line + 1;
+            unnamedButtons.push(
+              `${filePath.slice(repoRoot.length + 1)}:${line}`,
+            );
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+
+      visit(sourceFile);
+    }
+
+    expect(unnamedButtons).toEqual([]);
   });
 
   it("does not force multi-column employee fields on phones", () => {
@@ -54,9 +110,7 @@ describe("interface guardrails", () => {
     // Compact live signals stay surfaced — recorded-attendance in the header
     // subtitle and shift/attendance counts in the attention strip — while the
     // hub cards are pure navigation (purpose + action), matching every module.
-    expect(dashboard).toContain(
-      'moduleDashboards.scheduling.subtitleRecorded',
-    );
+    expect(dashboard).toContain("moduleDashboards.scheduling.subtitleRecorded");
     expect(dashboard).toContain(
       '"moduleDashboards.scheduling.attention.draftShifts"',
     );

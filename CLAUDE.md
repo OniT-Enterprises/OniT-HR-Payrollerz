@@ -42,7 +42,7 @@ Console: https://console.firebase.google.com/project/onit-hr-payroll/overview
 
 ### Local Development
 ```bash
-npm run dev          # Start Vite dev server
+pnpm dev             # Start Vite dev server
 ```
 
 ### Deploy Commands
@@ -75,7 +75,7 @@ Functions, AND rsyncs `dist/spa` to Hetzner. Do NOT also deploy manually after
 a push. The manual fallback (CI down, hotfix without a push) is:
 
 ```bash
-npm run build   # vite → dist/spa + per-route static heads
+pnpm build      # vite → dist/spa + per-route static heads
 rsync -az --delete --exclude='.well-known' -e "ssh -i ~/.ssh/id_hetzner" \
   dist/spa/ root@65.109.173.122:/var/www/xefe.tl/dist/spa/
 ssh -i ~/.ssh/id_hetzner root@65.109.173.122 'chown -R www-data:www-data /var/www/xefe.tl/dist/spa'
@@ -106,12 +106,14 @@ routes.tsx          # All route definitions (extracted from App.tsx)
 
 ## Common Commands
 ```bash
-npm run dev          # Dev server (Vite frontend, port 8080 strict)
-npm run build        # Production build
-npm run typecheck    # TypeScript check
-npm test             # Unit tests (vitest)
-npm run emul:rules   # Firestore rules tests (emulator; needs Java 21 —
-                     #   JAVA_HOME=/opt/homebrew/opt/openjdk@21 on this machine)
+pnpm dev             # Dev server (Vite frontend, port 8080 strict)
+pnpm build           # Production build
+pnpm typecheck       # TypeScript check
+pnpm test            # Unit tests (vitest)
+pnpm emul:rules      # Firestore rules tests (emulator; needs Java 21)
+# On this machine, put Java 21 first on PATH as well as setting JAVA_HOME:
+PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
+  JAVA_HOME=/opt/homebrew/opt/openjdk@21 pnpm emul:rules
 ```
 CI (`deploy.yml`) runs typecheck, lint, unit tests, AND the rules suite before
 deploying — rules auto-deploy on push, so never skip `emul:rules` after editing
@@ -133,7 +135,7 @@ deploying — rules auto-deploy on push, so never skip `emul:rules` after editin
 
 ```bash
 # Dev server
-cd mobile/ekipa && npx expo start --clear
+cd mobile/ekipa && pnpm exec expo start --clear
 
 # Build APK (Android preview)
 cd mobile/ekipa && eas build --platform android --profile preview

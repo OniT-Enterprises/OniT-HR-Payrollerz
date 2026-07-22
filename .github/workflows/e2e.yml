@@ -20,11 +20,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Setup Java (Firestore emulator)
         uses: actions/setup-java@v4
@@ -33,7 +36,7 @@ jobs:
           java-version: 21
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install functions dependencies + build
         run: |
@@ -41,7 +44,7 @@ jobs:
           npm --prefix functions run build
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       # The app requires the VITE_FIREBASE_* variables to be non-empty; against
       # the emulators their values are never validated, so dummies suffice —
@@ -58,7 +61,7 @@ jobs:
           EOF
 
       - name: Run E2E
-        run: npm run e2e
+        run: pnpm e2e
 
       - name: Upload traces on failure
         if: failure()
@@ -76,11 +79,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Setup Java (Firestore emulator)
         uses: actions/setup-java@v4
@@ -90,8 +96,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          pnpm install --frozen-lockfile
           npm ci --prefix server/xefe-api
 
       - name: API tests (auth, tenant scoping, data)
-        run: npm run test:api
+        run: pnpm test:api

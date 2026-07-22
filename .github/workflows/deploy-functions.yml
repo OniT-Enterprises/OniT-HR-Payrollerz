@@ -17,14 +17,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Install root dependencies (firebase-tools)
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install + build functions
         run: |
@@ -37,6 +40,6 @@ jobs:
           FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 
       - name: Deploy functions
-        run: npx firebase deploy --only functions --project onit-hr-payroll --non-interactive --force
+        run: pnpm exec firebase deploy --only functions --project onit-hr-payroll --non-interactive --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json

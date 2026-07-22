@@ -11,7 +11,8 @@
 
 import React from "react";
 import type { ComponentType } from "react";
-import { CardIcon, hasCardIcon } from "@/components/ui/CardIcon";
+import { CardIcon } from "@/components/ui/CardIcon";
+import { hasCardIcon } from "@/components/ui/card-icon-registry";
 import { cn } from "@/lib/utils";
 
 // Section accent classes (literal strings so Tailwind's scanner picks them up).

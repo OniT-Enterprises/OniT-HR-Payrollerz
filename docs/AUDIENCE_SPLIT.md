@@ -107,4 +107,4 @@ Xefe never infers compliance values. Accountant screens keep raw errors.
   tighten per-member `modules` in the admin console if it bothers a real
   tenant. No real tenants existed at ship time.
 - i18n: gate strings live at `accounting.dashboard.accountantGate*`; edit
-  `client/i18n/locales/{en,pt,tet}.ts` then `npm run i18n:rebuild-master`.
+  `client/i18n/locales/{en,pt,tet}.ts` then `pnpm i18n:rebuild-master`.

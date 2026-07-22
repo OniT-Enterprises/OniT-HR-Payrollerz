@@ -8,8 +8,8 @@
  * and skips employees that have no employmentType set.
  *
  * Usage:
- *   npm run backfill:employment-type -- --dry-run
- *   npm run backfill:employment-type
+ *   pnpm backfill:employment-type -- --dry-run
+ *   pnpm backfill:employment-type
  */
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';

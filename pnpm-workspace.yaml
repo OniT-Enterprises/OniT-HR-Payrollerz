@@ -1,0 +1,23 @@
+packages:
+  - "packages/*"
+  - "mobile"
+  - "mobile/kaixa"
+  - "mobile/ekipa"
+
+# Expo/React Native tooling expects a flat node_modules layout.
+nodeLinker: hoisted
+
+# Keep dependency install scripts deny-by-default and review exact versions.
+strictDepBuilds: true
+allowBuilds:
+  "@firebase/util@1.12.1": true
+  "@swc/core@1.11.24": true
+  "esbuild@0.25.4": true
+  "protobufjs@7.6.5": true
+  "re2@1.23.0": true
+
+overrides:
+  "ajv@8.20.0>fast-uri": "3.1.4"
+  "express@5.2.1>body-parser": "2.3.0"
+  "glob@7.2.3>minimatch": "3.1.5"
+  "test-exclude@6.0.0>minimatch": "3.1.5"

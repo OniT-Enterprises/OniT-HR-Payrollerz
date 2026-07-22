@@ -679,6 +679,7 @@ export default function InvoiceSettingsPage() {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label={t('common.remove') || 'Remove'}
                         onClick={() => handleRemoveAccount(account.id)}
                         title={t('common.remove') || 'Remove'}
                       >

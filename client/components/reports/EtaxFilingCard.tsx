@@ -119,7 +119,7 @@ export function EtaxFilingCard({ title, description, accounts, steps, className 
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      aria-label={t("reports.etaxFiling.copy") || "Copy value"}
                       onClick={() => copy(line)}
                       title={t("reports.etaxFiling.copy") || "Copy value"}
                     >

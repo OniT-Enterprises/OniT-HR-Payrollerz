@@ -786,7 +786,12 @@ export default function Expenses() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('common.moreActions')}
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -1040,7 +1045,8 @@ export default function Expenses() {
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="absolute top-2 right-2 h-6 w-6"
+                    aria-label={t('common.remove')}
+                    className="absolute right-2 top-2 h-11 w-11 sm:h-9 sm:w-9"
                     onClick={clearReceipt}
                   >
                     <X className="h-4 w-4" />

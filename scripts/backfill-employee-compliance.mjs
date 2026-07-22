@@ -2,8 +2,8 @@
  * Backfill employee compliance snapshots used by dashboard aggregate queries.
  *
  * Usage:
- *   npm run backfill:employee-compliance -- --dry-run
- *   npm run backfill:employee-compliance
+ *   pnpm backfill:employee-compliance -- --dry-run
+ *   pnpm backfill:employee-compliance
  */
 
 import { initializeApp, cert } from 'firebase-admin/app';

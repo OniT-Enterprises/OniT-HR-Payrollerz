@@ -2,8 +2,8 @@
  * Backfill General Ledger rows to use account document IDs instead of account codes.
  *
  * Usage:
- *   npm run backfill:gl-ids -- --dry-run     # Dry run against production
- *   npm run backfill:gl-ids                  # Apply updates to production
+ *   pnpm backfill:gl-ids -- --dry-run     # Dry run against production
+ *   pnpm backfill:gl-ids                  # Apply updates to production
  *
  * Uses Firebase CLI credentials via firebase-tools Node.js API.
  */

@@ -301,8 +301,10 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
+                              aria-label="Send password reset"
                               onClick={() => handleSendReset(member)}
                               disabled={resettingUid === member.uid}
                             >
@@ -317,7 +319,13 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(member)}>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Edit role and modules"
+                              onClick={() => openEditDialog(member)}
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
@@ -326,8 +334,10 @@ export function TenantMembersCard({ tenantId, tenantName }: TenantMembersCardPro
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              type="button"
                               variant="ghost"
                               size="icon"
+                              aria-label="Remove from tenant"
                               className="text-red-600 hover:text-red-700"
                               onClick={() => setMemberToRemove(member)}
                             >

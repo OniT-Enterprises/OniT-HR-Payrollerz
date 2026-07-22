@@ -3,30 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "packages/*",
-    "mobile",
-    "mobile/kaixa",
-    "mobile/ekipa"
-  ],
   "pkg": {
     "assets": [
       "dist/spa/*"
     ]
   },
-  "overrides": {
-    "glob@7.2.3": {
-      "minimatch": "3.1.5"
-    },
-    "test-exclude@6.0.0": {
-      "minimatch": "3.1.5"
-    }
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/check-entry-budget.mjs && tsx scripts/generate-static-heads.ts",
     "test": "vitest --run -c tests/vitest.config.ts",
-    "test:all": "npm test && npm run emul:rules && npm --prefix functions run build",
+    "test:all": "pnpm test && pnpm emul:rules && npm --prefix functions run build",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "emul:rules": "firebase emulators:exec --config firebase.dev.json --only firestore,storage 'vitest run -c tests/vitest.rules.config.ts'",
@@ -50,6 +36,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@onit/shared": "workspace:*",
     "@radix-ui/react-popover": "^1.1.15",
     "@react-pdf/renderer": "^4.3.2",
     "@sentry/react": "^10.38.0",

@@ -32,7 +32,7 @@ const promptConfirmation = () => {
           console.log('\n🗑️  Deleting emulator data...');
           deleteFolder(DATA_PATH);
           console.log('\n✅ Emulator data deleted successfully!');
-          console.log('🔄 Restart the emulator to create fresh data: npm run emulators:ui');
+          console.log('🔄 Restart the emulator to create fresh data: pnpm emulators:ui');
         } catch (error) {
           console.error('\n❌ Error deleting data:', error.message);
         }

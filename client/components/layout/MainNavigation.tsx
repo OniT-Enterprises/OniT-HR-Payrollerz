@@ -478,8 +478,10 @@ function HeaderBar({
         <AskAIButton t={t} />
 
         <Button
+          type="button"
           variant="ghost"
           size="icon"
+          aria-label={t("common.settings")}
           onClick={() => onNavigate("/settings")}
           className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground"
           title={t("common.settings")}

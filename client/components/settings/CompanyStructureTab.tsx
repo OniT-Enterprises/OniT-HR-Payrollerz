@@ -296,8 +296,10 @@ export function CompanyStructureTab({
                       <Badge variant="secondary">{t('settings.structure.hq')}</Badge>
                     )}
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
+                      aria-label={t('common.remove')}
                       onClick={() => {
                         setStructure({
                           ...structure,

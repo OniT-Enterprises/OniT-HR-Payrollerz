@@ -1154,8 +1154,10 @@ export default function AllEmployees() {
 
             {/* Advanced filters toggle */}
             <Button
+              type="button"
               variant="outline"
               size="icon"
+              aria-label={t("employees.buttons.advanced")}
               className={`h-11 w-11 shrink-0 ${showFilters ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30" : ""}`}
               onClick={() => { setShowFilters(!showFilters); }}
               title={t("employees.buttons.advanced")}
@@ -1171,7 +1173,13 @@ export default function AllEmployees() {
             {/* CSV tools dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-11 w-11 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label={t("common.moreActions")}
+                  className="h-11 w-11 shrink-0"
+                >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

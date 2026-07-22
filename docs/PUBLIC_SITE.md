@@ -95,7 +95,7 @@ each language is crawlable at its own URL:
   **URL's** locale (crawlers have no stored preference) — localized
   title/description, self-referencing canonical per language, an hreflang
   cluster (`en`, `tet`, `pt`, `x-default` → en) and `og:locale`.
-- `scripts/generate-static-heads.ts` (runs in `npm run build`): writes a no-JS
+- `scripts/generate-static-heads.ts` (runs in `pnpm build`): writes a no-JS
   `index.html` per route **per locale** (21 files as of /security) with translated meta,
   `<html lang>`, canonical and the hreflang cluster. nginx `try_files` picks
   the directories up with zero config.
@@ -115,7 +115,7 @@ each language is crawlable at its own URL:
 5. `PublicFooter`, plus `PublicNav` `NAV_LINKS` only when the page earns a
    top-nav slot (the menu stays short; /security is deliberately footer-only).
 6. i18n strings in `client/i18n/locales/{en,tet,pt}.ts` +
-   `npm run i18n:rebuild-master`. Tetun copy needs a native-speaker pass.
+   `pnpm i18n:rebuild-master`. Tetun copy needs a native-speaker pass.
 7. `client/lib/seo-config.ts` entry **with `alternates`**.
 8. `scripts/generate-static-heads.ts` `ROUTES` list.
 9. `public/sitemap.xml` (×3 URLs with alternates) + `public/llms.txt`.

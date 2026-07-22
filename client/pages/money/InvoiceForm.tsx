@@ -1138,6 +1138,7 @@ export default function InvoiceForm() {
                             type="button"
                             variant="ghost"
                             size="icon"
+                            aria-label={t('common.remove') || 'Remove'}
                             onClick={() => removeLineItem(index)}
                             disabled={fields.length === 1}
                             className="shrink-0"

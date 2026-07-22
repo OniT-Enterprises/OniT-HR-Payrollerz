@@ -23,6 +23,7 @@ import { paths } from "@/lib/paths";
 import type { ForeignWorkerData } from "@/types/tax-filing";
 import { auditLogService } from "./auditLogService";
 import { firestoreEmployeeSchema } from "@/lib/validations";
+import { sumMoney } from "@/lib/currency";
 import {
   buildEmployeeComplianceSnapshot,
   type EmployeeComplianceSnapshot,
@@ -783,17 +784,17 @@ class EmployeeService {
       getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingDepartment", "==", true))),
     ]);
 
-    let totalMonthlySalary = 0;
+    const monthlySalaries: number[] = [];
     let totalIssues = 0;
     activeDocs.forEach((doc) => {
       const data = doc.data();
-      totalMonthlySalary += Number(data.compensation?.monthlySalary ?? 0);
+      monthlySalaries.push(Number(data.compensation?.monthlySalary ?? 0));
       totalIssues += Number(data.compliance?.issueCount ?? 0);
     });
 
     return {
       active: activeDocs.size,
-      totalMonthlySalary,
+      totalMonthlySalary: sumMoney(monthlySalaries),
       totalIssues,
       employeesWithIssues: employeesWithIssuesSnapshot.data().count,
       employeesWithBlockingIssues: employeesWithBlockingIssuesSnapshot.data().count,

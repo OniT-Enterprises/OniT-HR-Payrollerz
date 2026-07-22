@@ -682,8 +682,9 @@ export default function RecurringInvoiceForm() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
+                                aria-label={t('common.remove')}
                                 onClick={() => removeItem(index)}
-                                className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                                className="text-muted-foreground hover:text-red-500"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

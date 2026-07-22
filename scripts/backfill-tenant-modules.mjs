@@ -5,10 +5,10 @@
  * If owner/hr-admin has no modules (missing/empty/invalid), assigns full defaults.
  *
  * Usage:
- *   npm run backfill:tenant-modules -- --dry-run
- *   npm run backfill:tenant-modules -- --tenant=<tenantId>
- *   npm run backfill:tenant-modules -- --project=<projectId>
- *   npm run backfill:tenant-modules
+ *   pnpm backfill:tenant-modules -- --dry-run
+ *   pnpm backfill:tenant-modules -- --tenant=<tenantId>
+ *   pnpm backfill:tenant-modules -- --project=<projectId>
+ *   pnpm backfill:tenant-modules
  */
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app';

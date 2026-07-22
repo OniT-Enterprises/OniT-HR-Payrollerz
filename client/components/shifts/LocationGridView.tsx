@@ -313,13 +313,25 @@ export default function LocationGridView({
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("common.previous")}
+            onClick={goToPreviousWeek}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium text-foreground px-1 tabular-nums whitespace-nowrap">
             {weekDates[0]?.dayNum} {weekDates[0]?.monthName} – {weekDates[6]?.dayNum} {weekDates[6]?.monthName}
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={t("common.next")}
+            onClick={goToNextWeek}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

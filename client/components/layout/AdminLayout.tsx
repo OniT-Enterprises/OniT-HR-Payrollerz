@@ -88,8 +88,10 @@ function AdminHeaderRight({
   return (
     <div className="ml-auto flex items-center gap-3">
       <Button
+        type="button"
         variant="ghost"
         size="icon"
+        aria-label={t(isDark ? "common.switchToLight" : "common.switchToDark")}
         onClick={toggleTheme}
         className="text-muted-foreground hover:text-foreground"
       >
@@ -192,4 +194,3 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     </div>
   );
 }
-

@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { isVATConfigOperational, type VATConfig } from '@onit/shared';
@@ -47,6 +48,7 @@ const DEFAULT_VAT_SETTINGS: VATSettingsData = {
 export default function VATSettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
 
   const queryClient = useQueryClient();
@@ -190,7 +192,13 @@ export default function VATSettingsPage() {
           iconColor="text-orange-500"
           actions={
             <>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/accounting')}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('common.back')}
+                onClick={() => navigate('/accounting')}
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               {platformActive && (

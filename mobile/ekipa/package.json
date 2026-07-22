@@ -45,7 +45,7 @@
     "react-native-svg": "15.15.3",
     "react-native-view-shot": "4.0.3",
     "zustand": "^5.0.0",
-    "@xefe/mobile": "*"
+    "@xefe/mobile": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~19.2.10",

@@ -1248,6 +1248,7 @@ export function TimeOffPoliciesTab({
                           type="button"
                           variant="ghost"
                           size="icon"
+                          aria-label={t("settings.notifications.removeOverride")}
                           onClick={() => removeHolidayOverride(h.date)}
                           title={t("settings.notifications.removeOverride")}
                         >

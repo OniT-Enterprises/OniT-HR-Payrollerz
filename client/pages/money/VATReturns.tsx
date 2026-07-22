@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 
@@ -86,6 +87,7 @@ function formatCurrency(amount: number): string {
 export default function VATReturnsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
 
@@ -262,7 +264,13 @@ export default function VATReturnsPage() {
           iconColor="text-orange-500"
           actions={
             <>
-              <Button variant="ghost" size="icon" onClick={() => navigate('/accounting')}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t('common.back')}
+                onClick={() => navigate('/accounting')}
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>

@@ -123,7 +123,8 @@ export default function BillAttachmentsInput({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                aria-label={t('common.remove')}
+                className="shrink-0"
                 onClick={() => removeFile(index)}
                 disabled={disabled}
               >

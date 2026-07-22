@@ -19,29 +19,32 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Install Functions dependencies
         run: npm ci --prefix functions
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: pnpm typecheck
 
       - name: Lint
-        run: npm run lint -- --max-warnings 150
+        run: pnpm lint --max-warnings 0
 
       - name: Test
-        run: npm test
+        run: pnpm test
 
       - name: Translation coverage
-        run: npm run i18n:check
+        run: pnpm i18n:check
 
       - name: Setup Java (Firestore emulator)
         uses: actions/setup-java@v4
@@ -57,13 +60,13 @@ jobs:
 
       # Rules deploy automatically on push — never ship them untested
       - name: Firestore rules tests
-        run: npm run emul:rules
+        run: pnpm emul:rules
 
       - name: Build Cloud Functions
         run: npm --prefix functions run build
 
       - name: Build
-        run: npm run build
+        run: pnpm build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -99,12 +102,12 @@ jobs:
       #   roles/cloudbuild.builds.editor
       #   roles/iam.serviceAccountUser        (to act as the runtime SA)
       #   roles/serviceusage.serviceUsageAdmin
-      # firebase-tools is a devDependency, so npx uses the local pinned version.
+      # firebase-tools is a devDependency, so pnpm uses the local pinned version.
       - name: Deploy Cloud Functions
         run: |
           printf '%s' "$FIREBASE_DEPLOYER_JSON" > "$RUNNER_TEMP/deployer-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/deployer-sa.json"
-          npx firebase-tools deploy --only functions --project onit-hr-payroll --non-interactive --force
+          pnpm exec firebase deploy --only functions --project onit-hr-payroll --non-interactive --force
         env:
           FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 
@@ -118,7 +121,7 @@ jobs:
         run: |
           printf '%s' "$FIREBASE_DEPLOYER_JSON" > "$RUNNER_TEMP/deployer-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/deployer-sa.json"
-          npx firebase-tools deploy --only firestore:indexes --project onit-hr-payroll --non-interactive
+          pnpm exec firebase deploy --only firestore:indexes --project onit-hr-payroll --non-interactive
         env:
           FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 

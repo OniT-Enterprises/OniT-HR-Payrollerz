@@ -1166,38 +1166,46 @@ export default function PayrollHistory() {
                     {/* Mobile Card View - All Runs */}
                     <div className="md:hidden divide-y divide-border/50">
                       {sortedPayrollRuns.map((run) => (
-                        <div key={run.id} className="p-4" onClick={() => handleViewDetails(run)}>
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div>
-                              <p className="font-medium">{getPayPeriodLabel(run.periodStart, run.periodEnd)}</p>
-                              <p className="text-sm text-muted-foreground">{formatPayPeriod(run.periodStart, run.periodEnd)}</p>
+                        <div key={run.id} className="p-4">
+                          <button
+                            type="button"
+                            className="w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                            onClick={() => handleViewDetails(run)}
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div>
+                                <p className="font-medium">{getPayPeriodLabel(run.periodStart, run.periodEnd)}</p>
+                                <p className="text-sm text-muted-foreground">{formatPayPeriod(run.periodStart, run.periodEnd)}</p>
+                              </div>
+                              {getStatusBadge(run.status)}
                             </div>
-                            {getStatusBadge(run.status)}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                            <div>
-                              <span className="text-muted-foreground">{t("payrollHistory.netPay")}:</span>
-                              <span className="ml-1 font-semibold text-emerald-600 tabular-nums">{formatCurrency(run.totalNetPay)}</span>
+                            <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                              <div>
+                                <span className="text-muted-foreground">{t("payrollHistory.netPay")}:</span>
+                                <span className="ml-1 font-semibold text-emerald-600 tabular-nums">{formatCurrency(run.totalNetPay)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">{t("payrollHistory.employees")}:</span>
+                                <span className="ml-1 font-medium">{run.employeeCount}</span>
+                              </div>
                             </div>
-                            <div>
-                              <span className="text-muted-foreground">{t("payrollHistory.employees")}:</span>
-                              <span className="ml-1 font-medium">{run.employeeCount}</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">{formatDateTL(run.payDate)}</span>
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                {t("payrollHistory.viewDetails")}
+                                <Eye className="h-3.5 w-3.5" />
+                              </span>
                             </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">{formatDateTL(run.payDate)}</span>
+                          </button>
+                          <div className="mt-2 flex justify-end">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                                <Button variant="outline" size="sm">
                                   <MoreVertical className="h-4 w-4 mr-1.5" />
                                   {t("common.moreActions")}
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleViewDetails(run)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  {t("payrollHistory.viewDetails")}
-                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleExportCSV(run)}>
                                   <Download className="h-4 w-4 mr-2" />
                                   {t("payrollHistory.exportCsv")}

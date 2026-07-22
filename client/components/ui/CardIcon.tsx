@@ -1,5 +1,5 @@
-import * as React from "react";
 import { cn } from "@/lib/utils";
+import { getCardIconSvg } from "@/components/ui/card-icon-registry";
 
 /**
  * Theme-adaptive hub-card icon. The SVGs are inlined (not <img>) so their
@@ -12,27 +12,6 @@ import { cn } from "@/lib/utils";
  * Add a new icon by dropping `client/assets/card-icons/<name>.svg` (strokes
  * `currentColor`, accent `var(--card-icon-accent,#f5be32)`); it's picked up automatically.
  */
-const raw = import.meta.glob("../../assets/card-icons/*.svg", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-const ICONS: Record<string, string> = {};
-for (const [path, svg] of Object.entries(raw)) {
-  const name = path.split("/").pop()!.replace(/\.svg$/, "");
-  ICONS[name] = svg;
-}
-
-export function hasCardIcon(name?: string | null): boolean {
-  return !!name && name in ICONS;
-}
-
-/** Derive an icon key from an old `art` path, e.g. ".../xefe-card-mn-bills.webp" -> "mn-bills". */
-export function cardIconNameFromArt(art?: string | null): string | undefined {
-  return art?.match(/xefe-card-(.+)\.(?:webp|png|svg)$/)?.[1];
-}
-
 export function CardIcon({
   name,
   className,
@@ -40,7 +19,7 @@ export function CardIcon({
   name: string;
   className?: string;
 }) {
-  const svg = ICONS[name];
+  const svg = getCardIconSvg(name);
   if (!svg) return null;
   return (
     <span
