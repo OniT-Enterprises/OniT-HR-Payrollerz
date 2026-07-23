@@ -11,7 +11,6 @@ import {
   FileText,
   Landmark,
   Languages,
-  ClipboardList,
   Lock,
   MessageCircle,
   Scale,
@@ -49,9 +48,7 @@ function formatUSD(amount: number, locale: Locale): string {
 interface WorkflowItem {
   icon: LucideIcon;
   title: string;
-  you: string;
-  xefe: string;
-  verify: string;
+  description: string;
 }
 
 interface JournalLine {
@@ -120,30 +117,22 @@ export default function ProductDetails() {
     {
       icon: UsersRound,
       title: t("howItWorks.workflow.people.title"),
-      you: t("howItWorks.workflow.people.you"),
-      xefe: t("howItWorks.workflow.people.xefe"),
-      verify: t("howItWorks.workflow.people.verify"),
+      description: t("howItWorks.workflow.people.description"),
     },
     {
       icon: Calculator,
       title: t("howItWorks.workflow.payroll.title"),
-      you: t("howItWorks.workflow.payroll.you"),
-      xefe: t("howItWorks.workflow.payroll.xefe"),
-      verify: t("howItWorks.workflow.payroll.verify"),
+      description: t("howItWorks.workflow.payroll.description"),
     },
     {
       icon: Landmark,
       title: t("howItWorks.workflow.payments.title"),
-      you: t("howItWorks.workflow.payments.you"),
-      xefe: t("howItWorks.workflow.payments.xefe"),
-      verify: t("howItWorks.workflow.payments.verify"),
+      description: t("howItWorks.workflow.payments.description"),
     },
     {
       icon: BookOpen,
       title: t("howItWorks.workflow.accounting.title"),
-      you: t("howItWorks.workflow.accounting.you"),
-      xefe: t("howItWorks.workflow.accounting.xefe"),
-      verify: t("howItWorks.workflow.accounting.verify"),
+      description: t("howItWorks.workflow.accounting.description"),
     },
   ];
 
@@ -210,11 +199,6 @@ export default function ProductDetails() {
       description: t("howItWorks.controls.items.approval.description"),
     },
     {
-      icon: ShieldCheck,
-      title: t("howItWorks.controls.items.noGuessing.title"),
-      description: t("howItWorks.controls.items.noGuessing.description"),
-    },
-    {
       icon: BookOpen,
       title: t("howItWorks.controls.items.journals.title"),
       description: t("howItWorks.controls.items.journals.description"),
@@ -240,29 +224,6 @@ export default function ProductDetails() {
     t("howItWorks.controls.outputs.journal"),
     t("howItWorks.controls.outputs.ledger"),
     t("howItWorks.controls.outputs.statements"),
-  ];
-
-  const evidence = [
-    {
-      icon: Scale,
-      title: t("howItWorks.evidence.items.sources.title"),
-      description: t("howItWorks.evidence.items.sources.description"),
-    },
-    {
-      icon: ClipboardList,
-      title: t("howItWorks.evidence.items.testing.title"),
-      description: t("howItWorks.evidence.items.testing.description"),
-    },
-    {
-      icon: ShieldCheck,
-      title: t("howItWorks.evidence.items.guardrails.title"),
-      description: t("howItWorks.evidence.items.guardrails.description"),
-    },
-    {
-      icon: Search,
-      title: t("howItWorks.evidence.items.review.title"),
-      description: t("howItWorks.evidence.items.review.description"),
-    },
   ];
 
   return (
@@ -353,7 +314,7 @@ export default function ProductDetails() {
               <div className="rounded-2xl border border-white/10 bg-zinc-900/90 p-5 shadow-2xl shadow-black/50 sm:p-7">
                 <div className="mb-6 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
                       {t("howItWorks.hero.proof.eyebrow")}
                     </p>
                     <h2 className="mt-2 text-lg font-bold">
@@ -461,15 +422,18 @@ export default function ProductDetails() {
                       <span className="font-mono text-sm text-zinc-700">0{index + 1}</span>
                     </div>
 
-                    <dl className="mt-6 space-y-4">
-                      <WorkflowDetail label={t("howItWorks.workflow.labels.you")} value={item.you} />
-                      <WorkflowDetail label={t("howItWorks.workflow.labels.xefe")} value={item.xefe} />
-                      <WorkflowDetail label={t("howItWorks.workflow.labels.verify")} value={item.verify} />
-                    </dl>
+                    <p className="mt-5 text-sm leading-6 text-zinc-300">
+                      {item.description}
+                    </p>
                   </article>
                 );
               })}
             </div>
+
+            <p className="mx-auto mt-8 flex max-w-3xl items-start justify-center gap-3 text-center text-sm leading-6 text-zinc-400">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
+              {t("howItWorks.workflow.verifyNote")}
+            </p>
           </div>
         </section>
 
@@ -491,7 +455,7 @@ export default function ProductDetails() {
               <article className="rounded-2xl border border-white/[0.07] bg-zinc-900/70 p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
                       {t("howItWorks.example.calculationEyebrow")}
                     </p>
                     <h3 className="mt-2 text-lg font-bold">{t("howItWorks.example.calculationTitle")}</h3>
@@ -515,17 +479,19 @@ export default function ProductDetails() {
                   ))}
                 </div>
 
-                <div className="mt-6 space-y-2 rounded-xl bg-black/25 p-4 text-xs leading-5 text-zinc-400">
-                  <p>{t("howItWorks.example.formulas.wit")}</p>
-                  <p>{t("howItWorks.example.formulas.employeeInss")}</p>
-                  <p>{t("howItWorks.example.formulas.employerInss")}</p>
-                </div>
+                <Link
+                  to="/engine"
+                  className="group mt-6 flex items-center justify-between gap-3 rounded-xl bg-black/25 p-4 text-xs leading-5 text-zinc-400 transition-colors hover:text-zinc-300"
+                >
+                  <span>{t("howItWorks.example.engineLink")}</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-lime-400 transition-transform group-hover:translate-x-0.5" />
+                </Link>
               </article>
 
               <article className="rounded-2xl border border-white/[0.07] bg-zinc-900/70 p-5 sm:p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
                       {t("howItWorks.example.journalEyebrow")}
                     </p>
                     <h3 className="mt-2 text-lg font-bold">{t("howItWorks.example.journalTitle")}</h3>
@@ -535,7 +501,7 @@ export default function ProductDetails() {
 
                 <div className="mt-6 overflow-x-auto rounded-xl border border-white/[0.07]">
                   <table className="w-full min-w-[560px] text-left text-sm">
-                    <thead className="bg-white/[0.04] text-xs uppercase tracking-wider text-zinc-500">
+                    <thead className="bg-white/[0.04] text-xs uppercase tracking-wider text-zinc-400">
                       <tr>
                         <th className="px-4 py-3 font-medium">{t("howItWorks.example.table.account")}</th>
                         <th className="px-4 py-3 text-right font-medium">{t("howItWorks.example.table.debit")}</th>
@@ -546,7 +512,7 @@ export default function ProductDetails() {
                       {journalLines.map((line) => (
                         <tr key={line.code}>
                           <td className="px-4 py-3">
-                            <span className="mr-2 font-mono text-xs text-zinc-500">{line.code}</span>
+                            <span className="mr-2 font-mono text-xs text-zinc-400">{line.code}</span>
                             <span className="text-zinc-300">{line.account}</span>
                           </td>
                           <td className="px-4 py-3 text-right font-mono text-zinc-300">
@@ -575,7 +541,7 @@ export default function ProductDetails() {
               </article>
             </div>
 
-            <p className="mx-auto mt-6 max-w-4xl text-center text-xs leading-5 text-zinc-500">
+            <p className="mx-auto mt-6 max-w-4xl text-center text-xs leading-5 text-zinc-400">
               {t("howItWorks.example.disclaimer")}
             </p>
           </div>
@@ -610,7 +576,7 @@ export default function ProductDetails() {
                     <FileText className="h-5 w-5 text-lime-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
                       {t("howItWorks.controls.outputsEyebrow")}
                     </p>
                     <h3 className="mt-1 text-lg font-bold">{t("howItWorks.controls.outputsTitle")}</h3>
@@ -626,12 +592,6 @@ export default function ProductDetails() {
                   ))}
                 </ul>
 
-                <div className="mt-6 rounded-xl border border-blue-400/15 bg-blue-400/[0.06] p-4">
-                  <p className="text-sm font-bold text-blue-200">{t("howItWorks.controls.accountantModeTitle")}</p>
-                  <p className="mt-2 text-xs leading-5 text-zinc-400">
-                    {t("howItWorks.controls.accountantModeDescription")}
-                  </p>
-                </div>
               </aside>
             </div>
           </div>
@@ -647,24 +607,20 @@ export default function ProductDetails() {
               <p className="mt-4 text-zinc-400">{t("howItWorks.evidence.description")}</p>
             </div>
 
-            <div className="mt-12 grid gap-4 md:grid-cols-2">
-              {evidence.map(({ icon: Icon, title, description }, index) => (
-                <article key={title} className="flex gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-400/10">
-                    <Icon className="h-5 w-5 text-amber-300" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-zinc-600">0{index + 1}</span>
-                      <h3 className="font-bold">{title}</h3>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-zinc-400">{description}</p>
-                  </div>
-                </article>
-              ))}
+            <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 text-center">
+              <Button
+                variant="outline"
+                asChild
+                className="h-11 border-white/10 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link to="/engine">
+                  {t("howItWorks.evidence.engineLink")}
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
 
-            <div className="mt-6 flex items-start gap-4 rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] p-6">
+            <div className="mx-auto mt-10 flex max-w-3xl items-start gap-4 rounded-2xl border border-amber-400/15 bg-amber-400/[0.06] p-6">
               <Scale className="mt-0.5 h-6 w-6 shrink-0 text-amber-300" />
               <div>
                 <h3 className="font-bold text-amber-100">{t("howItWorks.evidence.honestyTitle")}</h3>
@@ -717,11 +673,3 @@ export default function ProductDetails() {
   );
 }
 
-function WorkflowDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid gap-1 sm:grid-cols-[132px_1fr] sm:gap-4">
-      <dt className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">{label}</dt>
-      <dd className="text-sm leading-6 text-zinc-300">{value}</dd>
-    </div>
-  );
-}

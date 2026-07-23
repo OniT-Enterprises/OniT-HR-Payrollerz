@@ -1457,12 +1457,12 @@ const messages = {
         billing: {
           title: "Kobransa proteje husi mudansa",
           description:
-            "Na'in negósiu la bele fó subskrisaun ba nia an: kampu kobransa iha nia konta rasik bele muda de'it husi webhook verifikadu husi fornesedor pagamentu.",
+            "Na'in negósiu la bele fó subskrisaun ba nia an. Kampu kobransa bele muda de'it husi webhook verifikadu husi fornesedor pagamentu.",
         },
         tested: {
           title: "Testa molok kada deploy",
           description:
-            "Kada versaun halo verifikasaun tipu, teste automátiku liu 600, no suite regra-seguransa kompletu hasoru regra produsaun — automátiku, molok buat ida sai.",
+            "Molok buat ida sai, versaun ida-idak halo verifikasaun tipu, teste automátiku liu 600 no suite regra-seguransa kompletu — automátiku.",
         },
       },
     },
@@ -1486,7 +1486,7 @@ const messages = {
         isolation: {
           title: "Izolamentu tenant rigorozu",
           description:
-            "Rejistu ida-idak lori Ita-nia empreza nia identidade no regra sira halo asesu entre-empreza impossível — inklui ba XefeBot, ne'ebé nia asesu dadus fixa ba Ita-nia empreza iha servidor.",
+            "Rejistu ida-idak lori Ita-nia empreza nia identidade, no regra sira halo asesu entre-empreza impossível. Ne'e inklui XefeBot — nia asesu fixa ba Ita-nia empreza iha servidor.",
         },
         audit: {
           title: "Rejistu auditoria ne'ebé hanoin",
@@ -1514,7 +1514,7 @@ const messages = {
         roles: {
           title: "Papel tuir servisu loloos",
           description:
-            "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree de'it saida mak sira-nia servisu presiza — kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu.",
+            "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree saida mak sira-nia servisu presiza. Kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu.",
         },
         payslips: {
           title: "Payslip to'o de'it nia na'in",
@@ -1601,7 +1601,7 @@ const messages = {
       },
       configTitle: "Konfigurável, maibé nunka inventa",
       configDescription:
-        "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para. Xefe nunka adivinha valór konformidade.",
+        "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para.",
     },
     proof: {
       eyebrow: "Evidénsia",
@@ -1651,7 +1651,7 @@ const messages = {
         guard: {
           title: "Proteje",
           description:
-            "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Aprovasaun presiza ema rua — regra ne'e iha regra seguransa rasik — no finaliza folha mak buat úniku iha Xefe ne'ebé presiza subskrisaun.",
+            "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Ema segundu ida aprova folha molok selu buat ruma.",
         },
         post: {
           title: "Lansa",
@@ -1681,26 +1681,17 @@ const messages = {
       description:
         "Software osan nian hetan konfiansa iha parte ne'ebé ema la haree.",
       cards: {
-        rules: {
-          title: "Regra, la'ós promesa",
-          description:
-            "Izolamentu empreza nian, paywall folha no regra aprovasaun ema-rua obriga iha regra seguransa servidor nian, la'ós de'it iha interface. Na'in empreza la bele fó subskrisaun ba nia an — kampu kobransa proteje husi mudansa.",
-        },
-        roles: {
-          title: "Papel kontabilista loloos",
-          description:
-            "Kontabilista bele halo folha, livru no deklarasaun sein poder administrativu — la iha membru, la iha konfigurasaun, la iha kobransa. Forma loloos ne'ebé kontabilista esternu presiza.",
-        },
         scale: {
           title: "Seguru iha eskala",
           description:
-            "Gravasaun folha halo iha lote no bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun lei nian testa ho trabalhador atus ba atus, no totál tinan nian sempre kalkula fila fali husi rejistu orijinál.",
+            "Gravasaun folha bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun sira testa ho trabalhador atus ba atus.",
         },
-        privacy: {
-          title: "Privadu husi konstrusaun",
-          description:
-            "Email ida-idak sai ba simu-na'in ida de'it — funsionáriu nunka haree malu nia enderesu. Ligasaun fatura la bele adivinha no la bele lista, no payslip to'o de'it nia na'in.",
-        },
+      },
+      securityLink: {
+        title: "Proteje iha servidor",
+        description:
+          "Izolamentu empreza nian, aprovasaun ema-rua no kobransa protejidu mak regra iha baze dadus rasik — pájina seguransa esplika kontrolu ida-idak.",
+        cta: "Oinsá Xefe proteje Ita-nia negósiu",
       },
     },
     cta: {
@@ -1833,7 +1824,7 @@ const messages = {
       title: "Simples atu uza rasik.",
       titleAccent: "Detallu natoon ba ita-nia kontabilista.",
       description:
-        "Xefe orienta folha pagamentu, jestaun ema no osan loron-loron ho liafuan klaru, no rai kalkulasaun, relatóriu no lansu kontabil hotu atu profisionál bele haree.",
+        "Xefe orienta folha pagamentu no servisu osan ho liafuan klaru. Kalkulasaun, relatóriu no lansu hotu prontu ba Ita-nia kontabilista atu reviza.",
       primary: "Hahú grátis",
       secondary: "Haree fluxu servisu",
       trust: {
@@ -1903,40 +1894,29 @@ const messages = {
       eyebrow: "Oinsá servisu lao iha Xefe",
       title: "Halo tarefa dala ida. Rai evidénsia hotu ligadu.",
       description:
-        "Kada etapa hahú ho asaun loron-loron, depois hatudu saida mak Xefe trata no saida mak profisionál bele verifika.",
-      labels: {
-        you: "Saida mak ita halo",
-        xefe: "Saida mak Xefe trata",
-        verify: "Saida mak bele verifika",
-      },
+        "Etapa haat, rejistu ida ne'ebé ligadu — Ita halo parte loron-loron nian, Xefe halo restu.",
       people: {
         title: "Rai dadus ema no oras hamutuk",
-        you: "Hatama trabalhador, saláriu, oráriu, dadus banku, prezensa no lisensa.",
-        xefe: "Xefe rai rejistu empregu no dadus folha iha fatin ida.",
-        verify:
-          "Kontratu, konfigurasaun saláriu, mudansa prezensa no fonte ba kada dadus folha.",
+        description:
+          "Hatama trabalhador ida-idak dala ida de'it — saláriu, oráriu no dadus banku. Prezensa no lisensa hela iha rejistu hanesan.",
       },
       payroll: {
         title: "Reviza no aprova folha",
-        you: "Hili períodu, reviza mudansa no aprova bainhira trabalhador hotu prontu.",
-        xefe: "Xefe kalkula saláriu brutu, WIT, INSS trabalhador no empregador, oras extra, dedusaun no saláriu líquidu.",
-        verify:
-          "Kalkulasaun kada trabalhador, base legal, arredondamentu no rejistu aprovasaun.",
+        description:
+          "Hili períodu no reviza. Xefe kalkula saláriu brutu, WIT, INSS, oras extra no saláriu líquidu ba trabalhador ida-idak.",
       },
       payments: {
         title: "Selu trabalhador no prepara deklarasaun",
-        you: "Konfirma data pagamentu no download rezultadu ne'ebé ita presiza.",
-        xefe: "Xefe prepara resibu klaru, ficheiru banku lokál no dokumentu WIT no INSS husi folha aprovada.",
-        verify:
-          "Total folha konkorda ho trabalhador, pagamentu banku no dívida legal sira.",
+        description:
+          "Konfirma data pagamentu. Resibu, ficheiru banku no dokumentu WIT no INSS sai husi folha aprovada.",
       },
       accounting: {
         title: "Mantén livru kontabil atualizadu",
-        you: "Reviza lansu ne'ebé sistema kria no kontinua rekonsiliasaun no reviza períodu.",
-        xefe: "Xefe lansa despeza saláriu, INSS empregador, saláriu líquidu no dívida legal hanesan liña kontabil balansadu.",
-        verify:
-          "Fonte lansu, kódigu konta, débitu, kréditu, livru jerál no balansu prova.",
+        description:
+          "Folha aprovada lansa hanesan lansu kontabil balansadu. Livru jerál, balansu prova no demonstrasaun sira atualizadu nafatin.",
       },
+      verifyNote:
+        "Kada etapa rai nia evidénsia — konfigurasaun saláriu, kalkulasaun, aprovasaun no liña lansu bele verifika depois, liña ba liña.",
     },
     example: {
       eyebrow: "Kalkulasaun ne'ebé ita bele inspeksiona",
@@ -1948,11 +1928,8 @@ const messages = {
       employerCost: "Kustu total empregador",
       calculationEyebrow: "Ezemplu folha fulan ida",
       calculationTitle: "Kalkulasaun trabalhador rezidente",
-      formulas: {
-        wit: "WIT: 10% × ($1,413.22 − $500) = $91.32",
-        employeeInss: "INSS trabalhador: 4% × $1,200 = $48.00",
-        employerInss: "INSS empregador: 6% × $1,200 = $72.00",
-      },
+      engineLink:
+        "Fórmula ida-idak iha kotuk númeru sira-ne'e — ho nia artigu lei — iha pájina motór.",
       journalEyebrow: "Lansu kontabil ne'ebé sistema kria",
       journalTitle: "Lansu folha balansadu",
       accounts: {
@@ -1978,37 +1955,32 @@ const messages = {
       eyebrow: "Kontrolu no rezultadu útil",
       title: "Fásil atu opera. Sériu atu reviza.",
       description:
-        "Fluxu normal nafatin badak, no kontrolu ho relatóriu rai dalan evidénsia ba kada rezultadu.",
+        "Fluxu loron-loron nafatin badak. Kontrolu no relatóriu rai dalan evidénsia ba kada rezultadu.",
       items: {
         visible: {
           title: "Kalkulasaun vizível",
           description:
-            "Saláriu brutu, rendimentu, dedusaun, montante legal no saláriu líquidu bele reviza antes finaliza.",
+            "Verifika saláriu brutu, rendimentu ida-idak, dedusaun ida-idak no saláriu líquidu molok finaliza.",
         },
         approval: {
           title: "Kontrolu aprovasaun",
           description:
-            "Folha rejista sé mak prepara no aprova, ho opsaun ema rua ba ekipa ne'ebé presiza.",
-        },
-        noGuessing: {
-          title: "La inventa valór konformidade",
-          description:
-            "Bainhira dadus legal falta, Xefe husu reviza no la halo estimativa iha subar.",
+            "Xefe rejista sé mak prepara no sé mak aprova kada folha.",
         },
         journals: {
           title: "Lansu ligadu ba fonte",
           description:
-            "Folha aprovada kria liña kontabil balansadu ne'ebé ligadu fali ba folha orijinal.",
+            "Folha aprovada kria liña kontabil balansadu, ligadu fali ba folha orijinal.",
         },
         audit: {
           title: "Auditoria no disiplina períodu",
           description:
-            "Istória auditoria, estadu lansu no kontrolu períodu fiskál proteje servisu kontabil kompletu.",
+            "Istória auditoria no xave períodu proteje servisu kontabil ne'ebé remata ona.",
         },
         exports: {
           title: "Esportasaun prátiku",
           description:
-            "PDF, spreadsheet no ficheiru banku ajuda negósiu no konselleiru kontinua servisu esternu.",
+            "PDF, spreadsheet no ficheiru banku ba servisu iha liur husi Xefe.",
         },
       },
       outputsEyebrow: "Husi rejistu hanesan",
@@ -2024,40 +1996,16 @@ const messages = {
         ledger: "Livru jerál no balansu prova",
         statements: "Demonstrasaun rezultadu, balansu no fluxu caixa",
       },
-      accountantModeTitle: "Modu kontabilista sem kompleksidade ba ema hotu",
-      accountantModeDescription:
-        "Retensaun fornesedór, taxa tratadu, VAT no kontrolu deklarasaun espesialista la mosu iha fluxu loron-loron. Sira mosu ba papel kontabilista ka bainhira na'in liga modu impostu avansadu.",
     },
     evidence: {
       eyebrow: "Oinsá Xefe hetan fiar",
       title: "Evidénsia antes de halo afirmasaun",
       description:
-        "Software kontabilidade tenke hatudu nia baze, liuliu bainhira rezultadu afeta saláriu, impostu ka livru kontabil.",
-      items: {
-        sources: {
-          title: "Regra husi fonte primária",
-          description:
-            "Regra folha Timor-Leste verifika ho lei no orientasaun ofisiál ATTL ka INSS antes tama ba lójika produtu.",
-        },
-        testing: {
-          title: "Teste ne'ebé bele repete",
-          description:
-            "Motor kalkulasaun hetan teste regressaun ho kazu sintétiku normál no kazu limite. Rezultadu ne'ebé espera rai nafatin atu mudansa la bele muda folha ho nonook.",
-        },
-        guardrails: {
-          title: "Exsepsaun nafatin vizível",
-          description:
-            "Kazu legal ne'ebé seidauk suportadu ka falta dadus marka atu reviza, la transforma ba resposta fásil maibé laiha baze.",
-        },
-        review: {
-          title: "Julgamentu profisionál iha fatin",
-          description:
-            "Kontabilista bele inspeksiona dadus, konvensaun, relatóriu no lansu, la presiza simu total husi sistema ne'ebé la hatudu nia lójika.",
-        },
-      },
+        "Regra sira iha Xefe mai husi lei Timor-Leste no orientasaun ofisiál, no teste automátiku atus ba atus rai rezultadu ida-idak fiksu. Pájina motór hatudu oinsá regra ida-idak verifika.",
+      engineLink: "Haree oinsá motór valida",
       honestyTitle: "Saida mak Xefe la pretende halo",
       honestyDescription:
-        "Xefe kalkula no rejista tuir informasaun ne'ebé hatama. Kontratu la komún, izensaun, pozisaun tratadu, klasifikasaun ho disputa no mudansa lei foun bele presiza konsellu husi profisionál kualifikadu iha Timor-Leste.",
+        "Xefe kalkula no rejista tuir informasaun ne'ebé Ita fó. Kontratu la komún, izensaun ka mudansa lei foun bele presiza nafatin konsellu husi profisionál kualifikadu iha Timor-Leste.",
     },
     cta: {
       eyebrow: "Uza de'it detallu ne'ebé ita presiza",
@@ -8824,7 +8772,7 @@ const messages = {
       title: "Jere servisu loroloron rasik.",
       titleAccent: "Husu kontabilista atu reviza.",
       description:
-        "Hili parseiru kontabilidade iha Xefe, konkorda servisu diretamente, no fó asesu seguru de'it bainhira ita prontu.",
+        "Hili firma parseira iha Xefe no konkorda servisu diretamente ho sira. Ita loke asesu ba Ita-nia rekordu de'it bainhira Ita prontu.",
       primary: "Koñese parseiru preferidu",
       secondary: "Haree oinsá Xefe servisu",
       trust: {
@@ -8841,10 +8789,10 @@ const messages = {
       eyebrow: "Kontabilista preferidu Xefe",
       title: "Koñese ami-nia firma parseira",
       description:
-        "Firma kontabilidade no auditoria Timor-Leste nian ba negósiu ne'ebé hakarak apoiu profisionál ba kontabilidade, folha, impostu ka revizaun finanseira.",
+        "Firma Timor-Leste nian ne'ebé estabelesidu ona ba kontabilidade, folha, impostu no auditoria.",
       preferred: "Parseiru kontabilidade preferidu Xefe",
       profile:
-        "Ami-nia parseiru mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
+        "Ami-nia parseiru mak firma estabelesidu ida iha Dili. Sira servisu ho negósiu no ONG sira iha Timor-Leste tomak iha kontabilidade, auditoria no servisu korporativu.",
       website: "Detallu kompletu iha anúnsiu parseria",
       servicesTitle: "Servisu ne'ebé bele diskute",
       services: {
@@ -8857,13 +8805,13 @@ const messages = {
       },
       beforeAccessTitle: "Hili mak pasu dahuluk de'it.",
       beforeAccessDescription:
-        "Firma parseira konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois.",
+        "Firma konfirma uluk servisu no folin ho Ita. Ita-nia rekordu Xefe hela privadu to'o na'in fó asesu.",
     },
     process: {
       eyebrow: "Ligasaun ho konsentimentu uluk",
       title: "Hili, konkorda, depois liga",
       description:
-        "Firma kontabilidade no negósiu hotu-hotu aprova relasaun molok rekordu bele haree.",
+        "Ita no firma rua-rua konkorda molok rekordu ruma loke.",
       steps: {
         choose: {
           title: "Husu konsultasaun",
@@ -8886,9 +8834,9 @@ const messages = {
       eyebrow: "Ita-nia negósiu nafatin kontrola",
       title: "Asesu útil, limite klaru",
       description:
-        "Kontabilista ne'ebé liga simu ferramenta finanseira ba revizaun, maibé la bele administra plataforma.",
+        "Kontabilista ne'ebé liga simu ferramenta atu reviza Ita-nia livru — ne'e de'it.",
       consentNote:
-        "Hili ka simu konsultasaun la fó asesu automaticamente. Na'in negósiu tenke hanehan Fó asesu iha Xefe.",
+        "Hili firma nunka loke Ita-nia rekordu mesak. Na'in de'it mak bele hanehan Fó asesu iha Xefe.",
       canTitle: "Kontabilista bele",
       cannotTitle: "Kontabilista la bele",
       can: {

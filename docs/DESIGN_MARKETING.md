@@ -35,7 +35,7 @@ illustration — that stays our signature.
 | Gold text | `amber-300` | Eyebrows, active nav, inline accents on dark |
 | Brand green | `#6A9C29` / `lime-400` | How-it-works page accent, success ticks |
 | Sky | `sky-300/400` | For-accountants page accent only |
-| Ink text | `white` / `zinc-400` / `zinc-500` | Headings / body / captions |
+| Ink text | `white` / `zinc-400` | Headings / body AND captions. **Small text (≤13px/text-xs) must be `zinc-400`, never `zinc-500`** — zinc-500 fails WCAG 4.5:1 on the dark canvas (3.7–4.1:1). `zinc-500` is allowed only at ≥18px. |
 | Hairlines | `white/[0.06–0.10]` | Borders, section dividers |
 | Panels | `white/[0.025–0.04]` | Cards; never pure gray fills |
 
@@ -94,8 +94,9 @@ diacritics). Distinctiveness comes from treatment, not from adding fonts:
   reintroduce a second accent (see §2, §7).
 - **FAQ accordion** (`components/marketing/MarketingFaq.tsx`): native
   `<details>`/`<summary>` cards, single page accent, a `Plus` glyph that rotates
-  to `×` on open. Emits **FAQPage JSON-LD via Helmet built from the same visible
-  strings**, so structured data can't drift from the copy. Content in
+  to `×` on open. **No FAQPage JSON-LD** (removed 2026-07-23 — Google restricted
+  FAQ rich results to gov/health sites in Aug 2023, so it earned nothing; the
+  visible Q&A stays as an AI-answer-engine surface). Content in
   `landing.simple.faq.*` (6 Q&A). No emoji, no gradient — on-palette.
 
 ## 6. Motion

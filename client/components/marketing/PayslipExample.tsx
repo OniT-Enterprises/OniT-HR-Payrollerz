@@ -69,14 +69,14 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
       <div className="flex flex-col items-start justify-between gap-3 border-b-2 border-blue-600 px-4 py-4 sm:flex-row sm:gap-4 sm:px-6">
         <div>
           <div className="text-lg font-bold text-blue-800">Café Timor, Lda</div>
-          <div className="text-[11px] leading-tight text-zinc-500">
+          <div className="text-[11px] leading-tight text-zinc-400">
             Rua de Nu&apos;u Laran, Dili, Timor-Leste
             <br />
             +670 7723 4567 | folha@cafetimor.tl
           </div>
         </div>
         <div className="rounded bg-zinc-100 px-3 py-1.5 text-left sm:text-right">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
             {s.monthOf}
           </div>
           <div className="text-sm font-bold text-zinc-900">
@@ -85,7 +85,7 @@ export function PayslipExample({ locale = "en" }: { locale?: PayslipLocale }) {
               { month: "long", year: "numeric" },
             )}
           </div>
-          <div className="mt-0.5 text-[10px] text-zinc-500">
+          <div className="mt-0.5 text-[10px] text-zinc-400">
             {s.payDate} 25/02/2026
           </div>
         </div>

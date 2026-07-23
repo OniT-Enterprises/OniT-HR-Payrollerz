@@ -206,7 +206,7 @@ export default function Landing() {
               <Crescent className="absolute -left-7 -top-14 h-16 w-16 -rotate-[25deg] text-amber-400/80 drop-shadow-[0_0_20px_rgba(251,191,36,0.25)]" />
               <div className="relative rounded-2xl border border-white/10 bg-zinc-900 p-5 shadow-2xl shadow-black/50 sm:p-7">
                 <div className="mb-5 flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
                     {t("landing.tax.example.title")}
                   </p>
                   <span className="shrink-0 rounded-full bg-lime-400 px-2.5 py-1 text-[11px] font-bold text-zinc-950">
@@ -253,7 +253,7 @@ export default function Landing() {
                   />
                 </div>
 
-                <p className="mt-5 border-t border-white/[0.07] pt-4 text-xs leading-5 text-zinc-500">
+                <p className="mt-5 border-t border-white/[0.07] pt-4 text-xs leading-5 text-zinc-400">
                   {t("landing.simple.hero.calculationNote")}
                 </p>
               </div>

@@ -1450,7 +1450,7 @@ const messages = {
         rules: {
           title: "Server-side security rules",
           description:
-            "Every single read and write passes tenant-isolation rules enforced by the database itself. The interface is never the only gate.",
+            "Every read and write passes company-isolation rules in the database itself. The screen is never the only gate.",
         },
         twoPerson: {
           title: "Two people to finalize payroll",
@@ -1460,12 +1460,12 @@ const messages = {
         billing: {
           title: "Tamper-protected billing",
           description:
-            "A business owner cannot grant themselves a subscription: billing fields on their own account are writable only by the payment provider's verified webhook.",
+            "An owner cannot give themselves a subscription. Billing fields can only be written by the payment provider's verified webhook.",
         },
         tested: {
           title: "Tested before every deploy",
           description:
-            "Every release runs type checks, six hundred plus automated tests, and the full security-rules suite against the production rules — automatically, before anything ships.",
+            "Before anything ships, every release runs its type checks, 600+ automated tests and the full security-rules suite — automatically.",
         },
       },
     },
@@ -1489,7 +1489,7 @@ const messages = {
         isolation: {
           title: "Strict tenant isolation",
           description:
-            "Every record carries your company's identity and the rules make cross-company access impossible — including for XefeBot, whose data access is pinned to your company on the server.",
+            "Every record carries your company's identity, and the rules make cross-company access impossible. That includes XefeBot — its access is pinned to your company on the server.",
         },
         audit: {
           title: "An audit trail that remembers",
@@ -1517,7 +1517,7 @@ const messages = {
         roles: {
           title: "Roles that match real jobs",
           description:
-            "Owners, HR admins, accountants, managers, and staff each see exactly what their job needs — an accountant gets the books without member management; a manager sees only their department.",
+            "Owners, HR admins, accountants, managers and staff each see what their job needs. An accountant gets the books without member management; a manager sees only their department.",
         },
         payslips: {
           title: "Payslips reach only their owner",
@@ -1601,7 +1601,7 @@ const messages = {
       },
       configTitle: "Configurable, never inventive",
       configDescription:
-        "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops. It never guesses a compliance figure.",
+        "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops.",
     },
     proof: {
       eyebrow: "Evidence",
@@ -1651,7 +1651,7 @@ const messages = {
         guard: {
           title: "Guard",
           description:
-            "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. Approval is a two-person rule enforced in the security rules themselves — and finalizing a run is the only thing in Xefe that needs a subscription.",
+            "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. A second person approves the run before anything is paid.",
         },
         post: {
           title: "Post",
@@ -1680,26 +1680,17 @@ const messages = {
       title: "Built to be trusted",
       description: "Money software earns its trust in the parts nobody sees.",
       cards: {
-        rules: {
-          title: "Rules, not promises",
-          description:
-            "Tenant isolation, the payroll paywall and the two-person approval rule are enforced in server-side security rules, not just in the interface. A business owner cannot even grant themselves a subscription — billing fields are tamper-protected.",
-        },
-        roles: {
-          title: "A real accountant role",
-          description:
-            "An accountant can run payroll, books and filings with no administrative power — no members, no settings, no billing. Exactly the shape an external bookkeeper needs.",
-        },
         scale: {
           title: "Fails safe at scale",
           description:
-            "Payroll writes are batched and recoverable — a half-written run is detected and repaired, never silently wrong. Statutory exports are scale-tested against hundreds of employees, and year-to-date totals always re-aggregate from source records.",
+            "Payroll writes are recoverable — a half-written run is detected and repaired, never silently wrong. Exports are tested against hundreds of employees.",
         },
-        privacy: {
-          title: "Private by construction",
-          description:
-            "Every email goes out to one recipient at a time — staff never see each other's addresses. Invoice links are unguessable and never listable, and payslips reach only their owner.",
-        },
+      },
+      securityLink: {
+        title: "Guarded on the server",
+        description:
+          "Company isolation, two-person approval and protected billing are rules in the database itself — the security page walks through every control.",
+        cta: "How Xefe protects your business",
       },
     },
     cta: {
@@ -1832,7 +1823,7 @@ const messages = {
       title: "Simple enough to run yourself.",
       titleAccent: "Detailed enough for your accountant.",
       description:
-        "Xefe guides everyday payroll, people and money work in plain language, while keeping every calculation, report and journal available for professional review.",
+        "Xefe guides everyday payroll and money work in plain language. Every calculation, report and journal stays ready for your accountant to review.",
       primary: "Start free",
       secondary: "Follow the workflow",
       trust: {
@@ -1872,7 +1863,7 @@ const messages = {
       everyday: {
         title: "For everyday business work",
         description:
-          "Owners and staff get guided tasks, clear words and one next action at a time.",
+          "Owners and staff get guided tasks, clear words and one next step at a time.",
         points: {
           guided: "Guided employee, payroll, invoice and payment screens",
           defaults:
@@ -1894,46 +1885,35 @@ const messages = {
       },
       modeTitle: "Advanced detail appears only when it helps.",
       modeDescription:
-        "Accountants see specialist tax controls automatically. An owner can enable the same mode when their accountant asks for it; everyone else keeps the simpler workflow.",
+        "Accountants see specialist tax controls automatically. An owner can turn on the same mode if their accountant asks. Everyone else keeps the simple flow.",
     },
     workflow: {
       eyebrow: "How work moves through Xefe",
       title: "Do the task once. Keep the evidence connected.",
       description:
-        "Each step begins with the everyday action, then shows what Xefe handles and what a professional can verify.",
-      labels: {
-        you: "What you do",
-        xefe: "What Xefe handles",
-        verify: "What can be verified",
-      },
+        "Four steps, one connected record — you do the everyday part, Xefe does the rest.",
       people: {
         title: "Keep people and time together",
-        you: "Add the employee, salary, schedule, bank details, attendance and leave.",
-        xefe: "Xefe keeps the employment record and payroll inputs in one place.",
-        verify:
-          "Contracts, pay settings, attendance changes and the source of each payroll input.",
+        description:
+          "Add each employee once — salary, schedule and bank details. Attendance and leave stay on the same record.",
       },
       payroll: {
         title: "Review and approve payroll",
-        you: "Choose the period, review changes and approve when every employee is ready.",
-        xefe: "Xefe calculates gross pay, WIT, employee and employer INSS, overtime, deductions and net pay.",
-        verify:
-          "Every employee calculation, statutory basis, rounding result and approval record.",
+        description:
+          "Choose the period and review. Xefe calculates gross pay, WIT, INSS, overtime and net pay for every employee.",
       },
       payments: {
         title: "Pay people and prepare filings",
-        you: "Confirm the payment date and download the outputs you need.",
-        xefe: "Xefe prepares clear payslips, local bank files and WIT and INSS reports from the approved run.",
-        verify:
-          "Payroll totals reconcile to employees, bank payments and statutory liabilities.",
+        description:
+          "Confirm the payment date. Payslips, bank files and WIT and INSS reports come from the approved run.",
       },
       accounting: {
         title: "Keep the books in step",
-        you: "Review the generated entry and continue normal reconciliation and period review.",
-        xefe: "Xefe posts salary expense, employer INSS, net salaries and statutory payables as balanced journal lines.",
-        verify:
-          "Journal source, account codes, debits, credits, general ledger and trial balance.",
+        description:
+          "The approved run posts as a balanced journal. Your ledger, trial balance and statements stay current.",
       },
+      verifyNote:
+        "Every step keeps its evidence — pay settings, calculations, approvals and journal lines can all be checked later, line by line.",
     },
     example: {
       eyebrow: "A calculation you can inspect",
@@ -1945,11 +1925,8 @@ const messages = {
       employerCost: "Total employer cost",
       calculationEyebrow: "Monthly payroll example",
       calculationTitle: "Resident employee calculation",
-      formulas: {
-        wit: "WIT: 10% × ($1,413.22 − $500) = $91.32",
-        employeeInss: "Employee INSS: 4% × $1,200 = $48.00",
-        employerInss: "Employer INSS: 6% × $1,200 = $72.00",
-      },
+      engineLink:
+        "Every formula behind these numbers — with its statute — is on the engine page.",
       journalEyebrow: "Generated accounting entry",
       journalTitle: "Balanced payroll journal",
       accounts: {
@@ -1975,37 +1952,32 @@ const messages = {
       eyebrow: "Controls and useful outputs",
       title: "Easy to operate. Serious about review.",
       description:
-        "The normal workflow stays short, while controls and reports preserve the trail behind each result.",
+        "The everyday flow stays short. Controls and reports keep the trail behind each result.",
       items: {
         visible: {
           title: "Visible calculations",
           description:
-            "Gross pay, each earning, deduction, statutory amount and net pay can be reviewed before finalizing.",
+            "Check gross pay, each earning, each deduction and net pay before you finalize.",
         },
         approval: {
           title: "Approval controls",
           description:
-            "Payroll records who prepared and approved a run, with a two-person option for teams that require it.",
-        },
-        noGuessing: {
-          title: "No invented compliance values",
-          description:
-            "When required statutory data is missing, Xefe asks for review instead of silently estimating it.",
+            "Xefe records who prepared and who approved each run.",
         },
         journals: {
           title: "Source-linked journals",
           description:
-            "Approved payroll creates balanced accounting lines tied back to the originating run.",
+            "Approved payroll creates balanced accounting lines, linked back to the run they came from.",
         },
         audit: {
           title: "Audit and period discipline",
           description:
-            "Audit history, posting status and fiscal-period controls help protect completed accounting work.",
+            "Audit history and period locks protect finished accounting work.",
         },
         exports: {
           title: "Practical exports",
           description:
-            "PDF, spreadsheet and bank-ready outputs let businesses and advisers continue required external work.",
+            "PDF, spreadsheet and bank-ready files for the work you do outside Xefe.",
         },
       },
       outputsEyebrow: "From the same records",
@@ -2020,40 +1992,16 @@ const messages = {
         ledger: "General ledger and trial balance",
         statements: "Income statement, balance sheet and cash-flow reports",
       },
-      accountantModeTitle: "Accountant mode without accountant clutter",
-      accountantModeDescription:
-        "Supplier withholding, treaty rates, VAT and specialist filing controls stay out of the everyday path. They appear for the accountant role or when an owner deliberately enables advanced tax mode.",
     },
     evidence: {
       eyebrow: "How Xefe earns trust",
       title: "Evidence before confident claims",
       description:
-        "Accounting software should make its basis clear, especially when a result affects pay, tax or the ledger.",
-      items: {
-        sources: {
-          title: "Primary-source rules",
-          description:
-            "Timor-Leste payroll rules are checked against legislation and official ATTL or INSS guidance before they become product logic.",
-        },
-        testing: {
-          title: "Repeatable test coverage",
-          description:
-            "The calculation engine is regression-tested with fully synthetic standard and edge cases. Expected results stay fixed so changes cannot silently alter payroll.",
-        },
-        guardrails: {
-          title: "Exceptions stay visible",
-          description:
-            "Unsupported or incomplete statutory cases are marked for review rather than converted into a convenient but unsupported answer.",
-        },
-        review: {
-          title: "Professional judgment has a place",
-          description:
-            "Accountants can inspect the inputs, conventions, reports and resulting entries instead of accepting a black-box total.",
-        },
-      },
+        "The rules in Xefe come from Timor-Leste law and official guidance, and hundreds of automated tests keep every result fixed. The engine page shows how each rule is checked.",
+      engineLink: "See how the engine is validated",
       honestyTitle: "What Xefe does not pretend to do",
       honestyDescription:
-        "Xefe calculates and records from the information provided. Unusual contracts, exemptions, treaty positions, disputed classifications and new legal changes may still require advice from a qualified Timor-Leste professional.",
+        "Xefe calculates and records from the information you give it. Unusual contracts, exemptions or new legal changes may still need advice from a qualified Timor-Leste professional.",
     },
     cta: {
       eyebrow: "Use only the detail you need",
@@ -8823,7 +8771,7 @@ const messages = {
       title: "Run the day-to-day yourself.",
       titleAccent: "Bring in an accountant for review.",
       description:
-        "Choose an accounting partner in Xefe, agree the service directly, and grant secure access only when you are ready.",
+        "Pick a partner firm in Xefe and agree the work with them directly. You open access to your records only when you are ready.",
       primary: "Meet the preferred partner",
       secondary: "See how Xefe works",
       trust: {
@@ -8840,10 +8788,10 @@ const messages = {
       eyebrow: "Xefe preferred accountant",
       title: "Meet our partner firm",
       description:
-        "A Timor-Leste accounting and audit firm for businesses that want professional bookkeeping, payroll, tax or financial review.",
+        "An established Timor-Leste firm for bookkeeping, payroll, tax and audit.",
       preferred: "Preferred Xefe accounting partner",
       profile:
-        "Our selected partner is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
+        "Our selected partner is an established firm in Dili. They work with businesses and NGOs across Timor-Leste on accounting, audit and corporate services.",
       website: "Full details at the partnership announcement",
       servicesTitle: "Services you can discuss",
       services: {
@@ -8856,13 +8804,13 @@ const messages = {
       },
       beforeAccessTitle: "Selecting is only the first step.",
       beforeAccessDescription:
-        "The partner firm confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access.",
+        "The firm confirms scope and fees with you first. Your Xefe records stay private until the owner grants access.",
     },
     process: {
       eyebrow: "A consent-first connection",
       title: "Choose, agree, then connect",
       description:
-        "The accounting firm and the business both approve the relationship before records become available.",
+        "You and the firm both agree before any records open.",
       steps: {
         choose: {
           title: "Request a consultation",
@@ -8885,9 +8833,9 @@ const messages = {
       eyebrow: "Your business stays in control",
       title: "Useful access, clear boundaries",
       description:
-        "A connected accountant gets the financial tools needed for review, without platform administration.",
+        "A connected accountant gets the tools to review your books — nothing more.",
       consentNote:
-        "A selection or accepted consultation never grants access by itself. The business owner must press Grant access in Xefe.",
+        "Selecting a firm never opens your records by itself. Only the owner can press Grant access in Xefe.",
       canTitle: "Accountant can",
       cannotTitle: "Accountant cannot",
       can: {

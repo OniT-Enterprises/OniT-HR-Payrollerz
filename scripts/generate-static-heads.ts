@@ -142,7 +142,23 @@ function buildHtml(
     );
   }
 
-  return html.replace("</head>", `    ${routeTags.join("\n    ")}\n  </head>`);
+  html = html.replace("</head>", `    ${routeTags.join("\n    ")}\n  </head>`);
+
+  // No-JS crawlers otherwise see zero internal links (the nav is
+  // client-rendered). A minimal <noscript> nav gives them real anchors;
+  // browsers with JS never show it.
+  const navLinks = ROUTES.filter((r) => r.url !== "/auth/signup")
+    .map((r) => {
+      const label = escapeAttr(
+        (locale !== "en" && r.alternates?.[locale]?.title) || r.title,
+      );
+      return `<a href="${prefixedUrl(r.url, r.alternates ? locale : "en")}">${label}</a>`;
+    })
+    .join(" · ");
+  return html.replace(
+    /(<body[^>]*>)/,
+    `$1\n    <noscript><nav aria-label="Site">${navLinks}</nav></noscript>`,
+  );
 }
 
 function writeRoute(html: string, path: string) {

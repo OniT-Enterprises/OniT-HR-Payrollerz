@@ -125,8 +125,9 @@ each language is crawlable at its own URL:
 ## Content invariants
 
 - **Worked payroll figures on public pages must be engine-exact.** The current
-  example set (PayslipExample, Landing calc card, ProductDetails journal,
-  `howItWorks.example.formulas` in all three locales, and the /engine trace):
+  example set (PayslipExample, Landing calc card, ProductDetails payslip +
+  journal, and the /engine trace — the full formula derivation lives ONLY on
+  /engine since the 2026-07-23 de-dup pass):
   $1,200 base · hourly $6.29 (annualized 44×52÷12) · overtime 12 h ×1.5 =
   $113.22 · food allowance $100 · gross $1,413.22 · WIT −$91.32 · employee
   INSS −$48.00 (4% × $1,200 — **overtime and the food allowance are outside

@@ -48,7 +48,7 @@ export function FoundingOffer({ className }: { className?: string }) {
         </Button>
       </div>
 
-      <p className="mt-4 max-w-xl text-xs leading-5 text-zinc-500">
+      <p className="mt-4 max-w-xl text-xs leading-5 text-zinc-400">
         {t("landing.simple.founding.note")}
       </p>
     </div>
