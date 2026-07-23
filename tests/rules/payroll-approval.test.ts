@@ -86,6 +86,31 @@ describe('Payroll run approval rules (two-person rule + solo self-approval)', ()
         }),
       );
     });
+
+    // Regression for the two-person bypass (security scan F10): the creator
+    // authenticates as themselves but forges approvedBy to a colleague's uid.
+    // The != createdBy check alone would pass; binding approvedBy to auth.uid
+    // is what blocks it.
+    it('blocks the creator from forging a colleague as approver', async () => {
+      const db = testEnv.authenticatedContext('owner-a').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'admin-b',
+        }),
+      );
+    });
+
+    // A genuine second approver cannot forge the record to name someone else.
+    it('blocks an approver from recording a different uid as approvedBy', async () => {
+      const db = testEnv.authenticatedContext('admin-b').firestore();
+      await assertFails(
+        updateDoc(doc(db, 'payrollRuns/run-1'), {
+          status: 'approved',
+          approvedBy: 'owner-a',
+        }),
+      );
+    });
   });
 
   describe('allowSelfApproval = false (explicit)', () => {

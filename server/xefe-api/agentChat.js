@@ -59,7 +59,16 @@ const ENDPOINT_AREA_MODULE = {
   accounts: 'accounting', 'journal-entries': 'accounting', journals: 'accounting',
   'trial-balance': 'accounting', 'fiscal-years': 'accounting',
   reports: 'reports',
-  verify: null,
+  // 'verify' is NOT ungated: its sub-areas return the same payroll/accounting/
+  // PII data as the gated areas above, so they resolve by second segment via
+  // VERIFY_AREA_MODULE below. Unknown verify paths fail closed.
+};
+
+// The /verify/* family mirrors finance data and must honor the same modules.
+const VERIFY_AREA_MODULE = {
+  payroll: 'payroll',
+  'trial-balance': 'accounting',
+  compliance: 'staff',
 };
 
 // Mirrors client/types/tenant.ts DEFAULT_ROLE_PERMISSIONS — the effective
@@ -75,8 +84,16 @@ const DEFAULT_ROLE_MODULES = {
 
 // Whether the caller (req.tenantAccess) may read a given endpoint area.
 function accessAllowsEndpoint(access, endpoint) {
-  const first = String(endpoint).slice(1).split(/[/?]/)[0];
-  const required = ENDPOINT_AREA_MODULE[first];
+  const segments = String(endpoint).slice(1).split(/[/?]/);
+  const first = segments[0];
+  let required;
+  if (first === 'verify') {
+    // Resolve by the second segment; an unmapped verify path is denied.
+    required = VERIFY_AREA_MODULE[segments[1]];
+    if (required === undefined) return false;
+  } else {
+    required = ENDPOINT_AREA_MODULE[first];
+  }
   if (required === null || required === undefined) return true; // ungated area
   if (!access) return false; // fail closed if access wasn't threaded through
   if (access.isSuperAdmin || access.role === 'owner' || access.role === 'hr-admin') return true;
@@ -174,6 +191,11 @@ function clearSession(tenantId, userId, sessionKey) {
 function validateEndpoint(endpoint) {
   if (typeof endpoint !== 'string' || !endpoint.startsWith('/')) return 'Endpoint must start with /';
   if (endpoint.includes('..') || endpoint.includes('//') || /\s/.test(endpoint)) return 'Invalid endpoint';
+  // Reject percent-encoded dot/slash/backslash. A literal ".." is caught above,
+  // but the WHATWG URL parser also collapses %2e%2e (and %2f / %5c) once the
+  // string reaches fetch(), which would rewrite the pinned tenant prefix and
+  // reach another tenant. Block the encoded forms before they get there.
+  if (/%2e|%2f|%5c/i.test(endpoint)) return 'Invalid endpoint';
   const first = endpoint.slice(1).split(/[/?]/)[0];
   if (!ALLOWED_FIRST_SEGMENTS.has(first)) return `Unknown endpoint area "${first}" — see the catalog in your instructions`;
   return null;
@@ -209,7 +231,17 @@ async function buildXefeMcpServer(tenantId, onToolCall, access) {
       onToolCall?.(endpoint);
       try {
         const { INTERNAL_AGENT_KEY } = require('./internalAuth');
-        const response = await fetch(`${SELF_BASE}/api/tenants/${tenantId}${endpoint}`, {
+        // Resolve the final URL and confirm it still points inside this
+        // tenant's namespace after the parser normalizes the path. This is the
+        // backstop for any traversal that slips past validateEndpoint.
+        const target = new URL(`${SELF_BASE}/api/tenants/${tenantId}${endpoint}`);
+        if (!target.pathname.startsWith(`/api/tenants/${tenantId}/`)) {
+          return {
+            content: [{ type: 'text', text: 'Error: invalid endpoint' }],
+            isError: true,
+          };
+        }
+        const response = await fetch(target, {
           headers: { 'X-Internal-Agent-Key': INTERNAL_AGENT_KEY },
         });
         const text = await response.text();

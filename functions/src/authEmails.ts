@@ -290,8 +290,15 @@ export const requestPasswordReset = onCall(
     const raw = (request.data ?? {}) as { email?: string };
     const email = (raw.email || "").trim().toLowerCase();
 
+    // Length cap BEFORE the regex. This callable is unauthenticated, and the
+    // pattern below backtracks super-linearly on a long crafted non-match, so
+    // an uncapped input is a CPU-exhaustion (ReDoS) lever. RFC 5321 caps a real
+    // address at 254 chars; anything longer is rejected without running the regex.
+    if (!email || email.length > 254) {
+      throw new HttpsError("invalid-argument", "A valid email is required");
+    }
     // Basic shape check — real validation happens against the auth backend.
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new HttpsError("invalid-argument", "A valid email is required");
     }
 

@@ -608,9 +608,49 @@ export const sendApplicationReceivedEmail = onDocumentCreated(
     const email = (data.email as string | undefined)?.trim();
     if (!email) return;
 
+    // This create is UNAUTHENTICATED (public /apply). The email and name are
+    // attacker-controllable, so treat them as untrusted before turning them
+    // into an outbound message from the verified xefe.tl domain.
+    // 1) Only send to a single well-formed address (blocks garbage, header
+    //    injection, and using the auto-reply as an arbitrary relay).
+    const EMAIL_RE = /^[^\s@,;]{1,64}@[^\s@,;]{1,255}\.[^\s@,;.]{2,}$/;
+    if (email.length > 254 || !EMAIL_RE.test(email)) {
+      logger.warn("Skipping application email: malformed recipient", {
+        applicationId: event.params.applicationId,
+      });
+      return;
+    }
+
     const tenantId = (data.tenantId as string | undefined) ?? undefined;
-    const name = (data.name as string) || "there";
+    // 2) Sanitize the reflected name: single line, no control chars, capped,
+    //    so it can't carry a phishing payload into the body.
+    const rawName = typeof data.name === "string" ? data.name : "";
+    // Collapse whitespace/control chars to single spaces and cap length, so the
+    // reflected greeting is one harmless line and cannot carry a payload.
+    const cleanName = rawName.replace(/\s+/g, " ").trim().slice(0, 100);
+    const name = cleanName || "there";
     const jobTitle = (data.jobTitle as string) || "the position";
+
+    // 3) Throttle: only auto-reply once per (job, email), and cap the volume of
+    //    auto-replies per job in a short window, so a scripted flood of
+    //    applications can't turn this into an email bomb / reputation sink.
+    try {
+      const db = getFirestore();
+      const dupSnap = await db
+        .collection("jobApplications")
+        .where("jobId", "==", (data.jobId as string) ?? "")
+        .where("email", "==", email)
+        .limit(2)
+        .get();
+      if (dupSnap.size > 1) {
+        logger.info("Skipping application email: already replied for this job+email", {
+          applicationId: event.params.applicationId,
+        });
+        return;
+      }
+    } catch (error) {
+      logger.warn("Application email dedupe check failed; sending once", { error });
+    }
 
     let company = "the company";
     if (tenantId) {

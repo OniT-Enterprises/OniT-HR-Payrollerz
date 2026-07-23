@@ -109,6 +109,22 @@ async function main() {
   });
   console.log(`✓ custom claim superadmin = ${target}`);
 
+  // 3) On grant, mark the system bootstrapped so bootstrapFirstAdmin (the
+  //    self-serve superadmin path) can never run — this script IS the
+  //    provisioning path, so the sentinel must exist once a superadmin does.
+  if (target) {
+    const bootstrapRef = db.doc("_bootstrap/initialized");
+    if (!(await bootstrapRef.get()).exists) {
+      await bootstrapRef.set({
+        initializedAt: FieldValue.serverTimestamp(),
+        initializedBy: user.uid,
+        initializedEmail: user.email,
+        source: "set-superadmin.mjs",
+      });
+      console.log("✓ _bootstrap/initialized created (bootstrapFirstAdmin now disabled)");
+    }
+  }
+
   console.log(
     `\n${target ? "Granted" : "Revoked"} superadmin for ${user.email}.\n` +
       `They must sign out and back in (or refresh their token) for the claim to apply.\n`,
