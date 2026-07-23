@@ -1356,7 +1356,7 @@ export const translations = {
         "cards": {
           "rules": {
             "title": "Server-side security rules",
-            "description": "Every single read and write passes tenant-isolation rules enforced by the database itself. The interface is never the only gate."
+            "description": "Every read and write passes company-isolation rules in the database itself. The screen is never the only gate."
           },
           "twoPerson": {
             "title": "Two people to finalize payroll",
@@ -1364,11 +1364,11 @@ export const translations = {
           },
           "billing": {
             "title": "Tamper-protected billing",
-            "description": "A business owner cannot grant themselves a subscription: billing fields on their own account are writable only by the payment provider's verified webhook."
+            "description": "An owner cannot give themselves a subscription. Billing fields can only be written by the payment provider's verified webhook."
           },
           "tested": {
             "title": "Tested before every deploy",
-            "description": "Every release runs type checks, six hundred plus automated tests, and the full security-rules suite against the production rules — automatically, before anything ships."
+            "description": "Before anything ships, every release runs its type checks, 600+ automated tests and the full security-rules suite — automatically."
           }
         }
       },
@@ -1388,7 +1388,7 @@ export const translations = {
           },
           "isolation": {
             "title": "Strict tenant isolation",
-            "description": "Every record carries your company's identity and the rules make cross-company access impossible — including for XefeBot, whose data access is pinned to your company on the server."
+            "description": "Every record carries your company's identity, and the rules make cross-company access impossible. That includes XefeBot — its access is pinned to your company on the server."
           },
           "audit": {
             "title": "An audit trail that remembers",
@@ -1411,7 +1411,7 @@ export const translations = {
           },
           "roles": {
             "title": "Roles that match real jobs",
-            "description": "Owners, HR admins, accountants, managers, and staff each see exactly what their job needs — an accountant gets the books without member management; a manager sees only their department."
+            "description": "Owners, HR admins, accountants, managers and staff each see what their job needs. An accountant gets the books without member management; a manager sees only their department."
           },
           "payslips": {
             "title": "Payslips reach only their owner",
@@ -1484,7 +1484,7 @@ export const translations = {
           "bonus": "Bonuses must be classified before they contribute — the engine will not guess"
         },
         "configTitle": "Configurable, never inventive",
-        "configDescription": "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops. It never guesses a compliance figure."
+        "configDescription": "Rates, thresholds and rounding conventions are settings, with the law as their default — a rate change never needs a new version of Xefe. What is never configurable is inventing a value: if a statutory input is missing, Xefe says so and stops."
       },
       "proof": {
         "eyebrow": "Evidence",
@@ -1526,7 +1526,7 @@ export const translations = {
           },
           "guard": {
             "title": "Guard",
-            "description": "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. Approval is a two-person rule enforced in the security rules themselves — and finalizing a run is the only thing in Xefe that needs a subscription."
+            "description": "Validation flags missing salaries, zero-hour staff and overtime past the legal 16 h/week cap. A second person approves the run before anything is paid."
           },
           "post": {
             "title": "Post",
@@ -1551,22 +1551,15 @@ export const translations = {
         "title": "Built to be trusted",
         "description": "Money software earns its trust in the parts nobody sees.",
         "cards": {
-          "rules": {
-            "title": "Rules, not promises",
-            "description": "Tenant isolation, the payroll paywall and the two-person approval rule are enforced in server-side security rules, not just in the interface. A business owner cannot even grant themselves a subscription — billing fields are tamper-protected."
-          },
-          "roles": {
-            "title": "A real accountant role",
-            "description": "An accountant can run payroll, books and filings with no administrative power — no members, no settings, no billing. Exactly the shape an external bookkeeper needs."
-          },
           "scale": {
             "title": "Fails safe at scale",
-            "description": "Payroll writes are batched and recoverable — a half-written run is detected and repaired, never silently wrong. Statutory exports are scale-tested against hundreds of employees, and year-to-date totals always re-aggregate from source records."
-          },
-          "privacy": {
-            "title": "Private by construction",
-            "description": "Every email goes out to one recipient at a time — staff never see each other's addresses. Invoice links are unguessable and never listable, and payslips reach only their owner."
+            "description": "Payroll writes are recoverable — a half-written run is detected and repaired, never silently wrong. Exports are tested against hundreds of employees."
           }
+        },
+        "securityLink": {
+          "title": "Guarded on the server",
+          "description": "Company isolation, two-person approval and protected billing are rules in the database itself — the security page walks through every control.",
+          "cta": "How Xefe protects your business"
         }
       },
       "cta": {
@@ -1696,7 +1689,7 @@ export const translations = {
         "eyebrow": "For businesses and accountants",
         "title": "Simple enough to run yourself.",
         "titleAccent": "Detailed enough for your accountant.",
-        "description": "Xefe guides everyday payroll, people and money work in plain language, while keeping every calculation, report and journal available for professional review.",
+        "description": "Xefe guides everyday payroll and money work in plain language. Every calculation, report and journal stays ready for your accountant to review.",
         "primary": "Start free",
         "secondary": "Follow the workflow",
         "trust": {
@@ -1732,7 +1725,7 @@ export const translations = {
         "description": "Xefe keeps the normal path calm without hiding the evidence an accountant needs.",
         "everyday": {
           "title": "For everyday business work",
-          "description": "Owners and staff get guided tasks, clear words and one next action at a time.",
+          "description": "Owners and staff get guided tasks, clear words and one next step at a time.",
           "points": {
             "guided": "Guided employee, payroll, invoice and payment screens",
             "defaults": "Safe defaults keep specialist tax decisions out of the normal flow",
@@ -1749,41 +1742,29 @@ export const translations = {
           }
         },
         "modeTitle": "Advanced detail appears only when it helps.",
-        "modeDescription": "Accountants see specialist tax controls automatically. An owner can enable the same mode when their accountant asks for it; everyone else keeps the simpler workflow."
+        "modeDescription": "Accountants see specialist tax controls automatically. An owner can turn on the same mode if their accountant asks. Everyone else keeps the simple flow."
       },
       "workflow": {
         "eyebrow": "How work moves through Xefe",
         "title": "Do the task once. Keep the evidence connected.",
-        "description": "Each step begins with the everyday action, then shows what Xefe handles and what a professional can verify.",
-        "labels": {
-          "you": "What you do",
-          "xefe": "What Xefe handles",
-          "verify": "What can be verified"
-        },
+        "description": "Four steps, one connected record — you do the everyday part, Xefe does the rest.",
         "people": {
           "title": "Keep people and time together",
-          "you": "Add the employee, salary, schedule, bank details, attendance and leave.",
-          "xefe": "Xefe keeps the employment record and payroll inputs in one place.",
-          "verify": "Contracts, pay settings, attendance changes and the source of each payroll input."
+          "description": "Add each employee once — salary, schedule and bank details. Attendance and leave stay on the same record."
         },
         "payroll": {
           "title": "Review and approve payroll",
-          "you": "Choose the period, review changes and approve when every employee is ready.",
-          "xefe": "Xefe calculates gross pay, WIT, employee and employer INSS, overtime, deductions and net pay.",
-          "verify": "Every employee calculation, statutory basis, rounding result and approval record."
+          "description": "Choose the period and review. Xefe calculates gross pay, WIT, INSS, overtime and net pay for every employee."
         },
         "payments": {
           "title": "Pay people and prepare filings",
-          "you": "Confirm the payment date and download the outputs you need.",
-          "xefe": "Xefe prepares clear payslips, local bank files and WIT and INSS reports from the approved run.",
-          "verify": "Payroll totals reconcile to employees, bank payments and statutory liabilities."
+          "description": "Confirm the payment date. Payslips, bank files and WIT and INSS reports come from the approved run."
         },
         "accounting": {
           "title": "Keep the books in step",
-          "you": "Review the generated entry and continue normal reconciliation and period review.",
-          "xefe": "Xefe posts salary expense, employer INSS, net salaries and statutory payables as balanced journal lines.",
-          "verify": "Journal source, account codes, debits, credits, general ledger and trial balance."
-        }
+          "description": "The approved run posts as a balanced journal. Your ledger, trial balance and statements stay current."
+        },
+        "verifyNote": "Every step keeps its evidence — pay settings, calculations, approvals and journal lines can all be checked later, line by line."
       },
       "example": {
         "eyebrow": "A calculation you can inspect",
@@ -1794,11 +1775,7 @@ export const translations = {
         "employerCost": "Total employer cost",
         "calculationEyebrow": "Monthly payroll example",
         "calculationTitle": "Resident employee calculation",
-        "formulas": {
-          "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
-          "employeeInss": "Employee INSS: 4% × $1,200 = $48.00",
-          "employerInss": "Employer INSS: 6% × $1,200 = $72.00"
-        },
+        "engineLink": "Every formula behind these numbers — with its statute — is on the engine page.",
         "journalEyebrow": "Generated accounting entry",
         "journalTitle": "Balanced payroll journal",
         "accounts": {
@@ -1821,31 +1798,27 @@ export const translations = {
       "controls": {
         "eyebrow": "Controls and useful outputs",
         "title": "Easy to operate. Serious about review.",
-        "description": "The normal workflow stays short, while controls and reports preserve the trail behind each result.",
+        "description": "The everyday flow stays short. Controls and reports keep the trail behind each result.",
         "items": {
           "visible": {
             "title": "Visible calculations",
-            "description": "Gross pay, each earning, deduction, statutory amount and net pay can be reviewed before finalizing."
+            "description": "Check gross pay, each earning, each deduction and net pay before you finalize."
           },
           "approval": {
             "title": "Approval controls",
-            "description": "Payroll records who prepared and approved a run, with a two-person option for teams that require it."
-          },
-          "noGuessing": {
-            "title": "No invented compliance values",
-            "description": "When required statutory data is missing, Xefe asks for review instead of silently estimating it."
+            "description": "Xefe records who prepared and who approved each run."
           },
           "journals": {
             "title": "Source-linked journals",
-            "description": "Approved payroll creates balanced accounting lines tied back to the originating run."
+            "description": "Approved payroll creates balanced accounting lines, linked back to the run they came from."
           },
           "audit": {
             "title": "Audit and period discipline",
-            "description": "Audit history, posting status and fiscal-period controls help protect completed accounting work."
+            "description": "Audit history and period locks protect finished accounting work."
           },
           "exports": {
             "title": "Practical exports",
-            "description": "PDF, spreadsheet and bank-ready outputs let businesses and advisers continue required external work."
+            "description": "PDF, spreadsheet and bank-ready files for the work you do outside Xefe."
           }
         },
         "outputsEyebrow": "From the same records",
@@ -1859,34 +1832,15 @@ export const translations = {
           "journal": "Balanced payroll journal entries",
           "ledger": "General ledger and trial balance",
           "statements": "Income statement, balance sheet and cash-flow reports"
-        },
-        "accountantModeTitle": "Accountant mode without accountant clutter",
-        "accountantModeDescription": "Supplier withholding, treaty rates, VAT and specialist filing controls stay out of the everyday path. They appear for the accountant role or when an owner deliberately enables advanced tax mode."
+        }
       },
       "evidence": {
         "eyebrow": "How Xefe earns trust",
         "title": "Evidence before confident claims",
-        "description": "Accounting software should make its basis clear, especially when a result affects pay, tax or the ledger.",
-        "items": {
-          "sources": {
-            "title": "Primary-source rules",
-            "description": "Timor-Leste payroll rules are checked against legislation and official ATTL or INSS guidance before they become product logic."
-          },
-          "testing": {
-            "title": "Repeatable test coverage",
-            "description": "The calculation engine is regression-tested with fully synthetic standard and edge cases. Expected results stay fixed so changes cannot silently alter payroll."
-          },
-          "guardrails": {
-            "title": "Exceptions stay visible",
-            "description": "Unsupported or incomplete statutory cases are marked for review rather than converted into a convenient but unsupported answer."
-          },
-          "review": {
-            "title": "Professional judgment has a place",
-            "description": "Accountants can inspect the inputs, conventions, reports and resulting entries instead of accepting a black-box total."
-          }
-        },
+        "description": "The rules in Xefe come from Timor-Leste law and official guidance, and hundreds of automated tests keep every result fixed. The engine page shows how each rule is checked.",
+        "engineLink": "See how the engine is validated",
         "honestyTitle": "What Xefe does not pretend to do",
-        "honestyDescription": "Xefe calculates and records from the information provided. Unusual contracts, exemptions, treaty positions, disputed classifications and new legal changes may still require advice from a qualified Timor-Leste professional."
+        "honestyDescription": "Xefe calculates and records from the information you give it. Unusual contracts, exemptions or new legal changes may still need advice from a qualified Timor-Leste professional."
       },
       "cta": {
         "eyebrow": "Use only the detail you need",
@@ -8230,7 +8184,7 @@ export const translations = {
         "eyebrow": "Professional help, when you want it",
         "title": "Run the day-to-day yourself.",
         "titleAccent": "Bring in an accountant for review.",
-        "description": "Choose an accounting partner in Xefe, agree the service directly, and grant secure access only when you are ready.",
+        "description": "Pick a partner firm in Xefe and agree the work with them directly. You open access to your records only when you are ready.",
         "primary": "Meet the preferred partner",
         "secondary": "See how Xefe works",
         "trust": {
@@ -8246,9 +8200,9 @@ export const translations = {
         "accountingAudit": "Accounting and audit",
         "eyebrow": "Xefe preferred accountant",
         "title": "Meet our partner firm",
-        "description": "A Timor-Leste accounting and audit firm for businesses that want professional bookkeeping, payroll, tax or financial review.",
+        "description": "An established Timor-Leste firm for bookkeeping, payroll, tax and audit.",
         "preferred": "Preferred Xefe accounting partner",
-        "profile": "Our selected partner is a Dili-based accounting, auditing and corporate-services firm serving businesses, NGOs and other organizations across Timor-Leste.",
+        "profile": "Our selected partner is an established firm in Dili. They work with businesses and NGOs across Timor-Leste on accounting, audit and corporate services.",
         "website": "Full details at the partnership announcement",
         "servicesTitle": "Services you can discuss",
         "services": {
@@ -8260,12 +8214,12 @@ export const translations = {
           "advisory": "Management accounting and financial advice"
         },
         "beforeAccessTitle": "Selecting is only the first step.",
-        "beforeAccessDescription": "The partner firm confirms availability, scope and fees with you. No Xefe records are shared until the business owner later grants access."
+        "beforeAccessDescription": "The firm confirms scope and fees with you first. Your Xefe records stay private until the owner grants access."
       },
       "process": {
         "eyebrow": "A consent-first connection",
         "title": "Choose, agree, then connect",
-        "description": "The accounting firm and the business both approve the relationship before records become available.",
+        "description": "You and the firm both agree before any records open.",
         "steps": {
           "choose": {
             "title": "Request a consultation",
@@ -8284,8 +8238,8 @@ export const translations = {
       "access": {
         "eyebrow": "Your business stays in control",
         "title": "Useful access, clear boundaries",
-        "description": "A connected accountant gets the financial tools needed for review, without platform administration.",
-        "consentNote": "A selection or accepted consultation never grants access by itself. The business owner must press Grant access in Xefe.",
+        "description": "A connected accountant gets the tools to review your books — nothing more.",
+        "consentNote": "Selecting a firm never opens your records by itself. Only the owner can press Grant access in Xefe.",
         "canTitle": "Accountant can",
         "cannotTitle": "Accountant cannot",
         "can": {
@@ -9757,11 +9711,11 @@ export const translations = {
           },
           "billing": {
             "title": "Kobransa proteje husi mudansa",
-            "description": "Na'in negósiu la bele fó subskrisaun ba nia an: kampu kobransa iha nia konta rasik bele muda de'it husi webhook verifikadu husi fornesedor pagamentu."
+            "description": "Na'in negósiu la bele fó subskrisaun ba nia an. Kampu kobransa bele muda de'it husi webhook verifikadu husi fornesedor pagamentu."
           },
           "tested": {
             "title": "Testa molok kada deploy",
-            "description": "Kada versaun halo verifikasaun tipu, teste automátiku liu 600, no suite regra-seguransa kompletu hasoru regra produsaun — automátiku, molok buat ida sai."
+            "description": "Molok buat ida sai, versaun ida-idak halo verifikasaun tipu, teste automátiku liu 600 no suite regra-seguransa kompletu — automátiku."
           }
         }
       },
@@ -9781,7 +9735,7 @@ export const translations = {
           },
           "isolation": {
             "title": "Izolamentu tenant rigorozu",
-            "description": "Rejistu ida-idak lori Ita-nia empreza nia identidade no regra sira halo asesu entre-empreza impossível — inklui ba XefeBot, ne'ebé nia asesu dadus fixa ba Ita-nia empreza iha servidor."
+            "description": "Rejistu ida-idak lori Ita-nia empreza nia identidade, no regra sira halo asesu entre-empreza impossível. Ne'e inklui XefeBot — nia asesu fixa ba Ita-nia empreza iha servidor."
           },
           "audit": {
             "title": "Rejistu auditoria ne'ebé hanoin",
@@ -9804,7 +9758,7 @@ export const translations = {
           },
           "roles": {
             "title": "Papel tuir servisu loloos",
-            "description": "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree de'it saida mak sira-nia servisu presiza — kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu."
+            "description": "Na'in, admin RH, kontabilista, jestor no funsionáriu ida-idak haree saida mak sira-nia servisu presiza. Kontabilista hetan livru sein jere membru; jestor haree de'it nia departamentu."
           },
           "payslips": {
             "title": "Payslip to'o de'it nia na'in",
@@ -9877,7 +9831,7 @@ export const translations = {
           "bonus": "Bónus tenke klasifika uluk molok tama base — motór la adivinha"
         },
         "configTitle": "Konfigurável, maibé nunka inventa",
-        "configDescription": "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para. Xefe nunka adivinha valór konformidade."
+        "configDescription": "Taxa, limite no konvensaun arredondamentu bele konfigura, ho lei nudar padraun — mudansa taxa la presiza versaun foun Xefe. Maibé buat ida la bele konfigura: inventa valór. Se dadus lei nian falta, Xefe hatete no para."
       },
       "proof": {
         "eyebrow": "Evidénsia",
@@ -9919,7 +9873,7 @@ export const translations = {
           },
           "guard": {
             "title": "Proteje",
-            "description": "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Aprovasaun presiza ema rua — regra ne'e iha regra seguransa rasik — no finaliza folha mak buat úniku iha Xefe ne'ebé presiza subskrisaun."
+            "description": "Validasaun hatudu saláriu falta, trabalhador oras zero no oras extra liu limite legál oras 16 kada semana. Ema segundu ida aprova folha molok selu buat ruma."
           },
           "post": {
             "title": "Lansa",
@@ -9944,22 +9898,15 @@ export const translations = {
         "title": "Harii atu hetan konfiansa",
         "description": "Software osan nian hetan konfiansa iha parte ne'ebé ema la haree.",
         "cards": {
-          "rules": {
-            "title": "Regra, la'ós promesa",
-            "description": "Izolamentu empreza nian, paywall folha no regra aprovasaun ema-rua obriga iha regra seguransa servidor nian, la'ós de'it iha interface. Na'in empreza la bele fó subskrisaun ba nia an — kampu kobransa proteje husi mudansa."
-          },
-          "roles": {
-            "title": "Papel kontabilista loloos",
-            "description": "Kontabilista bele halo folha, livru no deklarasaun sein poder administrativu — la iha membru, la iha konfigurasaun, la iha kobransa. Forma loloos ne'ebé kontabilista esternu presiza."
-          },
           "scale": {
             "title": "Seguru iha eskala",
-            "description": "Gravasaun folha halo iha lote no bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun lei nian testa ho trabalhador atus ba atus, no totál tinan nian sempre kalkula fila fali husi rejistu orijinál."
-          },
-          "privacy": {
-            "title": "Privadu husi konstrusaun",
-            "description": "Email ida-idak sai ba simu-na'in ida de'it — funsionáriu nunka haree malu nia enderesu. Ligasaun fatura la bele adivinha no la bele lista, no payslip to'o de'it nia na'in."
+            "description": "Gravasaun folha bele rekupera — folha ne'ebé para iha klaran deteta no hadi'a, nunka sala subar. Esportasaun sira testa ho trabalhador atus ba atus."
           }
+        },
+        "securityLink": {
+          "title": "Proteje iha servidor",
+          "description": "Izolamentu empreza nian, aprovasaun ema-rua no kobransa protejidu mak regra iha baze dadus rasik — pájina seguransa esplika kontrolu ida-idak.",
+          "cta": "Oinsá Xefe proteje Ita-nia negósiu"
         }
       },
       "cta": {
@@ -10089,7 +10036,7 @@ export const translations = {
         "eyebrow": "Ba negósiu no kontabilista",
         "title": "Simples atu uza rasik.",
         "titleAccent": "Detallu natoon ba ita-nia kontabilista.",
-        "description": "Xefe orienta folha pagamentu, jestaun ema no osan loron-loron ho liafuan klaru, no rai kalkulasaun, relatóriu no lansu kontabil hotu atu profisionál bele haree.",
+        "description": "Xefe orienta folha pagamentu no servisu osan ho liafuan klaru. Kalkulasaun, relatóriu no lansu hotu prontu ba Ita-nia kontabilista atu reviza.",
         "primary": "Hahú grátis",
         "secondary": "Haree fluxu servisu",
         "trust": {
@@ -10147,36 +10094,24 @@ export const translations = {
       "workflow": {
         "eyebrow": "Oinsá servisu lao iha Xefe",
         "title": "Halo tarefa dala ida. Rai evidénsia hotu ligadu.",
-        "description": "Kada etapa hahú ho asaun loron-loron, depois hatudu saida mak Xefe trata no saida mak profisionál bele verifika.",
-        "labels": {
-          "you": "Saida mak ita halo",
-          "xefe": "Saida mak Xefe trata",
-          "verify": "Saida mak bele verifika"
-        },
+        "description": "Etapa haat, rejistu ida ne'ebé ligadu — Ita halo parte loron-loron nian, Xefe halo restu.",
         "people": {
           "title": "Rai dadus ema no oras hamutuk",
-          "you": "Hatama trabalhador, saláriu, oráriu, dadus banku, prezensa no lisensa.",
-          "xefe": "Xefe rai rejistu empregu no dadus folha iha fatin ida.",
-          "verify": "Kontratu, konfigurasaun saláriu, mudansa prezensa no fonte ba kada dadus folha."
+          "description": "Hatama trabalhador ida-idak dala ida de'it — saláriu, oráriu no dadus banku. Prezensa no lisensa hela iha rejistu hanesan."
         },
         "payroll": {
           "title": "Reviza no aprova folha",
-          "you": "Hili períodu, reviza mudansa no aprova bainhira trabalhador hotu prontu.",
-          "xefe": "Xefe kalkula saláriu brutu, WIT, INSS trabalhador no empregador, oras extra, dedusaun no saláriu líquidu.",
-          "verify": "Kalkulasaun kada trabalhador, base legal, arredondamentu no rejistu aprovasaun."
+          "description": "Hili períodu no reviza. Xefe kalkula saláriu brutu, WIT, INSS, oras extra no saláriu líquidu ba trabalhador ida-idak."
         },
         "payments": {
           "title": "Selu trabalhador no prepara deklarasaun",
-          "you": "Konfirma data pagamentu no download rezultadu ne'ebé ita presiza.",
-          "xefe": "Xefe prepara resibu klaru, ficheiru banku lokál no dokumentu WIT no INSS husi folha aprovada.",
-          "verify": "Total folha konkorda ho trabalhador, pagamentu banku no dívida legal sira."
+          "description": "Konfirma data pagamentu. Resibu, ficheiru banku no dokumentu WIT no INSS sai husi folha aprovada."
         },
         "accounting": {
           "title": "Mantén livru kontabil atualizadu",
-          "you": "Reviza lansu ne'ebé sistema kria no kontinua rekonsiliasaun no reviza períodu.",
-          "xefe": "Xefe lansa despeza saláriu, INSS empregador, saláriu líquidu no dívida legal hanesan liña kontabil balansadu.",
-          "verify": "Fonte lansu, kódigu konta, débitu, kréditu, livru jerál no balansu prova."
-        }
+          "description": "Folha aprovada lansa hanesan lansu kontabil balansadu. Livru jerál, balansu prova no demonstrasaun sira atualizadu nafatin."
+        },
+        "verifyNote": "Kada etapa rai nia evidénsia — konfigurasaun saláriu, kalkulasaun, aprovasaun no liña lansu bele verifika depois, liña ba liña."
       },
       "example": {
         "eyebrow": "Kalkulasaun ne'ebé ita bele inspeksiona",
@@ -10187,11 +10122,7 @@ export const translations = {
         "employerCost": "Kustu total empregador",
         "calculationEyebrow": "Ezemplu folha fulan ida",
         "calculationTitle": "Kalkulasaun trabalhador rezidente",
-        "formulas": {
-          "wit": "WIT: 10% × ($1,413.22 − $500) = $91.32",
-          "employeeInss": "INSS trabalhador: 4% × $1,200 = $48.00",
-          "employerInss": "INSS empregador: 6% × $1,200 = $72.00"
-        },
+        "engineLink": "Fórmula ida-idak iha kotuk númeru sira-ne'e — ho nia artigu lei — iha pájina motór.",
         "journalEyebrow": "Lansu kontabil ne'ebé sistema kria",
         "journalTitle": "Lansu folha balansadu",
         "accounts": {
@@ -10214,31 +10145,27 @@ export const translations = {
       "controls": {
         "eyebrow": "Kontrolu no rezultadu útil",
         "title": "Fásil atu opera. Sériu atu reviza.",
-        "description": "Fluxu normal nafatin badak, no kontrolu ho relatóriu rai dalan evidénsia ba kada rezultadu.",
+        "description": "Fluxu loron-loron nafatin badak. Kontrolu no relatóriu rai dalan evidénsia ba kada rezultadu.",
         "items": {
           "visible": {
             "title": "Kalkulasaun vizível",
-            "description": "Saláriu brutu, rendimentu, dedusaun, montante legal no saláriu líquidu bele reviza antes finaliza."
+            "description": "Verifika saláriu brutu, rendimentu ida-idak, dedusaun ida-idak no saláriu líquidu molok finaliza."
           },
           "approval": {
             "title": "Kontrolu aprovasaun",
-            "description": "Folha rejista sé mak prepara no aprova, ho opsaun ema rua ba ekipa ne'ebé presiza."
-          },
-          "noGuessing": {
-            "title": "La inventa valór konformidade",
-            "description": "Bainhira dadus legal falta, Xefe husu reviza no la halo estimativa iha subar."
+            "description": "Xefe rejista sé mak prepara no sé mak aprova kada folha."
           },
           "journals": {
             "title": "Lansu ligadu ba fonte",
-            "description": "Folha aprovada kria liña kontabil balansadu ne'ebé ligadu fali ba folha orijinal."
+            "description": "Folha aprovada kria liña kontabil balansadu, ligadu fali ba folha orijinal."
           },
           "audit": {
             "title": "Auditoria no disiplina períodu",
-            "description": "Istória auditoria, estadu lansu no kontrolu períodu fiskál proteje servisu kontabil kompletu."
+            "description": "Istória auditoria no xave períodu proteje servisu kontabil ne'ebé remata ona."
           },
           "exports": {
             "title": "Esportasaun prátiku",
-            "description": "PDF, spreadsheet no ficheiru banku ajuda negósiu no konselleiru kontinua servisu esternu."
+            "description": "PDF, spreadsheet no ficheiru banku ba servisu iha liur husi Xefe."
           }
         },
         "outputsEyebrow": "Husi rejistu hanesan",
@@ -10252,34 +10179,15 @@ export const translations = {
           "journal": "Lansu kontabil folha balansadu",
           "ledger": "Livru jerál no balansu prova",
           "statements": "Demonstrasaun rezultadu, balansu no fluxu caixa"
-        },
-        "accountantModeTitle": "Modu kontabilista sem kompleksidade ba ema hotu",
-        "accountantModeDescription": "Retensaun fornesedór, taxa tratadu, VAT no kontrolu deklarasaun espesialista la mosu iha fluxu loron-loron. Sira mosu ba papel kontabilista ka bainhira na'in liga modu impostu avansadu."
+        }
       },
       "evidence": {
         "eyebrow": "Oinsá Xefe hetan fiar",
         "title": "Evidénsia antes de halo afirmasaun",
-        "description": "Software kontabilidade tenke hatudu nia baze, liuliu bainhira rezultadu afeta saláriu, impostu ka livru kontabil.",
-        "items": {
-          "sources": {
-            "title": "Regra husi fonte primária",
-            "description": "Regra folha Timor-Leste verifika ho lei no orientasaun ofisiál ATTL ka INSS antes tama ba lójika produtu."
-          },
-          "testing": {
-            "title": "Teste ne'ebé bele repete",
-            "description": "Motor kalkulasaun hetan teste regressaun ho kazu sintétiku normál no kazu limite. Rezultadu ne'ebé espera rai nafatin atu mudansa la bele muda folha ho nonook."
-          },
-          "guardrails": {
-            "title": "Exsepsaun nafatin vizível",
-            "description": "Kazu legal ne'ebé seidauk suportadu ka falta dadus marka atu reviza, la transforma ba resposta fásil maibé laiha baze."
-          },
-          "review": {
-            "title": "Julgamentu profisionál iha fatin",
-            "description": "Kontabilista bele inspeksiona dadus, konvensaun, relatóriu no lansu, la presiza simu total husi sistema ne'ebé la hatudu nia lójika."
-          }
-        },
+        "description": "Regra sira iha Xefe mai husi lei Timor-Leste no orientasaun ofisiál, no teste automátiku atus ba atus rai rezultadu ida-idak fiksu. Pájina motór hatudu oinsá regra ida-idak verifika.",
+        "engineLink": "Haree oinsá motór valida",
         "honestyTitle": "Saida mak Xefe la pretende halo",
-        "honestyDescription": "Xefe kalkula no rejista tuir informasaun ne'ebé hatama. Kontratu la komún, izensaun, pozisaun tratadu, klasifikasaun ho disputa no mudansa lei foun bele presiza konsellu husi profisionál kualifikadu iha Timor-Leste."
+        "honestyDescription": "Xefe kalkula no rejista tuir informasaun ne'ebé Ita fó. Kontratu la komún, izensaun ka mudansa lei foun bele presiza nafatin konsellu husi profisionál kualifikadu iha Timor-Leste."
       },
       "cta": {
         "eyebrow": "Uza de'it detallu ne'ebé ita presiza",
@@ -16623,7 +16531,7 @@ export const translations = {
         "eyebrow": "Ajuda profisionál bainhira ita hakarak",
         "title": "Jere servisu loroloron rasik.",
         "titleAccent": "Husu kontabilista atu reviza.",
-        "description": "Hili parseiru kontabilidade iha Xefe, konkorda servisu diretamente, no fó asesu seguru de'it bainhira ita prontu.",
+        "description": "Hili firma parseira iha Xefe no konkorda servisu diretamente ho sira. Ita loke asesu ba Ita-nia rekordu de'it bainhira Ita prontu.",
         "primary": "Koñese parseiru preferidu",
         "secondary": "Haree oinsá Xefe servisu",
         "trust": {
@@ -16639,9 +16547,9 @@ export const translations = {
         "accountingAudit": "Kontabilidade no auditoria",
         "eyebrow": "Kontabilista preferidu Xefe",
         "title": "Koñese ami-nia firma parseira",
-        "description": "Firma kontabilidade no auditoria Timor-Leste nian ba negósiu ne'ebé hakarak apoiu profisionál ba kontabilidade, folha, impostu ka revizaun finanseira.",
+        "description": "Firma Timor-Leste nian ne'ebé estabelesidu ona ba kontabilidade, folha, impostu no auditoria.",
         "preferred": "Parseiru kontabilidade preferidu Xefe",
-        "profile": "Ami-nia parseiru mak firma kontabilidade, auditoria no servisu korporativu iha Dili, ne'ebé atende negósiu, ONG no organizasaun sira iha Timor-Leste.",
+        "profile": "Ami-nia parseiru mak firma estabelesidu ida iha Dili. Sira servisu ho negósiu no ONG sira iha Timor-Leste tomak iha kontabilidade, auditoria no servisu korporativu.",
         "website": "Detallu kompletu iha anúnsiu parseria",
         "servicesTitle": "Servisu ne'ebé bele diskute",
         "services": {
@@ -16653,12 +16561,12 @@ export const translations = {
           "advisory": "Kontabilidade jestaun no konsellu finanseiru"
         },
         "beforeAccessTitle": "Hili mak pasu dahuluk de'it.",
-        "beforeAccessDescription": "Firma parseira konfirma disponibilidade, servisu no folin ho ita. Rekordu Xefe ida la fahe to'o na'in negósiu fó asesu depois."
+        "beforeAccessDescription": "Firma konfirma uluk servisu no folin ho Ita. Ita-nia rekordu Xefe hela privadu to'o na'in fó asesu."
       },
       "process": {
         "eyebrow": "Ligasaun ho konsentimentu uluk",
         "title": "Hili, konkorda, depois liga",
-        "description": "Firma kontabilidade no negósiu hotu-hotu aprova relasaun molok rekordu bele haree.",
+        "description": "Ita no firma rua-rua konkorda molok rekordu ruma loke.",
         "steps": {
           "choose": {
             "title": "Husu konsultasaun",
@@ -16677,8 +16585,8 @@ export const translations = {
       "access": {
         "eyebrow": "Ita-nia negósiu nafatin kontrola",
         "title": "Asesu útil, limite klaru",
-        "description": "Kontabilista ne'ebé liga simu ferramenta finanseira ba revizaun, maibé la bele administra plataforma.",
-        "consentNote": "Hili ka simu konsultasaun la fó asesu automaticamente. Na'in negósiu tenke hanehan Fó asesu iha Xefe.",
+        "description": "Kontabilista ne'ebé liga simu ferramenta atu reviza Ita-nia livru — ne'e de'it.",
+        "consentNote": "Hili firma nunka loke Ita-nia rekordu mesak. Na'in de'it mak bele hanehan Fó asesu iha Xefe.",
         "canTitle": "Kontabilista bele",
         "cannotTitle": "Kontabilista la bele",
         "can": {
@@ -18150,11 +18058,11 @@ export const translations = {
           },
           "billing": {
             "title": "Faturação protegida contra alterações",
-            "description": "Um dono não consegue atribuir-se uma subscrição: os campos de faturação da própria conta só podem ser escritos pelo webhook verificado do fornecedor de pagamentos."
+            "description": "Um dono não consegue atribuir-se uma subscrição. Os campos de faturação só podem ser escritos pelo webhook verificado do fornecedor de pagamentos."
           },
           "tested": {
             "title": "Testado antes de cada deploy",
-            "description": "Cada versão corre verificação de tipos, mais de seiscentos testes automáticos e a suite completa de regras de segurança contra as regras de produção — automaticamente, antes de sair."
+            "description": "Antes de qualquer versão sair, correm as verificações de tipos, mais de 600 testes automáticos e a suite completa de regras de segurança — automaticamente."
           }
         }
       },
@@ -18174,7 +18082,7 @@ export const translations = {
           },
           "isolation": {
             "title": "Isolamento estrito por empresa",
-            "description": "Cada registo carrega a identidade da sua empresa e as regras tornam impossível o acesso entre empresas — incluindo para o XefeBot, cujo acesso a dados é fixado à sua empresa no servidor."
+            "description": "Cada registo carrega a identidade da sua empresa, e as regras tornam impossível o acesso entre empresas. Isso inclui o XefeBot — o seu acesso está fixado à sua empresa no servidor."
           },
           "audit": {
             "title": "Um rasto de auditoria com memória",
@@ -18197,7 +18105,7 @@ export const translations = {
           },
           "roles": {
             "title": "Papéis que espelham funções reais",
-            "description": "Donos, administradores de RH, contabilistas, gestores e funcionários veem exatamente o que a sua função exige — o contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento."
+            "description": "Donos, administradores de RH, contabilistas, gestores e funcionários veem o que a sua função exige. O contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento."
           },
           "payslips": {
             "title": "Recibos só chegam ao seu dono",
@@ -18270,7 +18178,7 @@ export const translations = {
           "bonus": "Os bónus têm de ser classificados antes de contribuir — o motor não adivinha"
         },
         "configTitle": "Configurável, nunca inventivo",
-        "configDescription": "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para. Nunca adivinha um valor de conformidade."
+        "configDescription": "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para."
       },
       "proof": {
         "eyebrow": "Evidência",
@@ -18312,7 +18220,7 @@ export const translations = {
           },
           "guard": {
             "title": "Proteger",
-            "description": "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. A aprovação exige duas pessoas — imposta nas próprias regras de segurança — e finalizar a folha é a única coisa no Xefe que exige subscrição."
+            "description": "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. Uma segunda pessoa aprova a folha antes de qualquer pagamento."
           },
           "post": {
             "title": "Lançar",
@@ -18337,22 +18245,15 @@ export const translations = {
         "title": "Feito para merecer confiança",
         "description": "O software de dinheiro ganha confiança nas partes que ninguém vê.",
         "cards": {
-          "rules": {
-            "title": "Regras, não promessas",
-            "description": "O isolamento de cada empresa, o paywall da folha e a regra de aprovação a duas pessoas são impostos nas regras de segurança do servidor, não apenas na interface. Um dono nem sequer consegue atribuir-se uma subscrição — os campos de faturação estão protegidos contra alteração."
-          },
-          "roles": {
-            "title": "Um papel de contabilista a sério",
-            "description": "Um contabilista pode tratar da folha, dos livros e das declarações sem qualquer poder administrativo — sem membros, sem definições, sem faturação. Exatamente a forma de que um contabilista externo precisa."
-          },
           "scale": {
             "title": "Seguro em escala",
-            "description": "As gravações da folha são feitas em lotes e são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações legais são testadas com centenas de trabalhadores e os totais do ano recalculam-se sempre a partir dos registos de origem."
-          },
-          "privacy": {
-            "title": "Privado por construção",
-            "description": "Cada email sai para um destinatário de cada vez — os funcionários nunca veem os endereços uns dos outros. Os links de faturas são impossíveis de adivinhar e não são listáveis, e cada recibo chega só ao seu dono."
+            "description": "As gravações da folha são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações são testadas com centenas de trabalhadores."
           }
+        },
+        "securityLink": {
+          "title": "Guardado no servidor",
+          "description": "O isolamento por empresa, a aprovação a duas pessoas e a faturação protegida são regras na própria base de dados — a página de segurança explica cada controlo.",
+          "cta": "Como o Xefe protege o seu negócio"
         }
       },
       "cta": {
@@ -18482,7 +18383,7 @@ export const translations = {
         "eyebrow": "Para empresas e contabilistas",
         "title": "Simples para usar por conta própria.",
         "titleAccent": "Detalhado para o seu contabilista.",
-        "description": "O Xefe orienta o trabalho diário de folha de pagamento, pessoas e dinheiro em linguagem clara, mantendo cada cálculo, relatório e lançamento disponível para revisão profissional.",
+        "description": "O Xefe orienta a folha e o trabalho do dinheiro em linguagem clara. Cada cálculo, relatório e lançamento fica pronto para o seu contabilista rever.",
         "primary": "Começar grátis",
         "secondary": "Seguir o fluxo",
         "trust": {
@@ -18540,36 +18441,24 @@ export const translations = {
       "workflow": {
         "eyebrow": "Como o trabalho passa pelo Xefe",
         "title": "Faça a tarefa uma vez. Mantenha a evidência ligada.",
-        "description": "Cada etapa começa pela ação quotidiana e mostra depois o que o Xefe trata e o que um profissional pode verificar.",
-        "labels": {
-          "you": "O que faz",
-          "xefe": "O que o Xefe trata",
-          "verify": "O que pode ser verificado"
-        },
+        "description": "Quatro etapas, um registo ligado — faz a parte do dia a dia e o Xefe trata do resto.",
         "people": {
           "title": "Mantenha pessoas e tempo juntos",
-          "you": "Adicione o trabalhador, salário, horário, dados bancários, assiduidade e licenças.",
-          "xefe": "O Xefe mantém o registo laboral e os dados da folha num só lugar.",
-          "verify": "Contratos, definições salariais, alterações de assiduidade e origem de cada dado da folha."
+          "description": "Adicione cada trabalhador uma vez — salário, horário e dados bancários. A assiduidade e as licenças ficam no mesmo registo."
         },
         "payroll": {
           "title": "Reveja e aprove a folha",
-          "you": "Escolha o período, reveja alterações e aprove quando todos os trabalhadores estiverem prontos.",
-          "xefe": "O Xefe calcula bruto, IRT, INSS do trabalhador e empregador, horas extra, deduções e líquido.",
-          "verify": "Cada cálculo por trabalhador, base legal, arredondamento e registo de aprovação."
+          "description": "Escolha o período e reveja. O Xefe calcula o bruto, o IRT, o INSS, as horas extra e o líquido de cada trabalhador."
         },
         "payments": {
           "title": "Pague à equipa e prepare declarações",
-          "you": "Confirme a data de pagamento e descarregue os resultados necessários.",
-          "xefe": "O Xefe prepara recibos claros, ficheiros bancários locais e mapas de IRT e INSS a partir da folha aprovada.",
-          "verify": "Os totais da folha reconciliam com trabalhadores, pagamentos bancários e passivos legais."
+          "description": "Confirme a data de pagamento. Os recibos, os ficheiros bancários e os mapas de IRT e INSS saem da folha aprovada."
         },
         "accounting": {
           "title": "Mantenha a contabilidade alinhada",
-          "you": "Reveja o lançamento gerado e continue a reconciliação e revisão do período.",
-          "xefe": "O Xefe lança despesa salarial, INSS do empregador, salários líquidos e passivos legais em linhas equilibradas.",
-          "verify": "Origem do lançamento, códigos de conta, débitos, créditos, razão geral e balancete."
-        }
+          "description": "A folha aprovada lança-se como um lançamento equilibrado. O razão, o balancete e as demonstrações ficam atualizados."
+        },
+        "verifyNote": "Cada etapa guarda a sua evidência — definições salariais, cálculos, aprovações e linhas de lançamento podem ser verificados mais tarde, linha a linha."
       },
       "example": {
         "eyebrow": "Um cálculo que pode inspecionar",
@@ -18580,11 +18469,7 @@ export const translations = {
         "employerCost": "Custo total do empregador",
         "calculationEyebrow": "Exemplo mensal de folha",
         "calculationTitle": "Cálculo de trabalhador residente",
-        "formulas": {
-          "wit": "IRT: 10% × ($1,413.22 − $500) = $91.32",
-          "employeeInss": "INSS do trabalhador: 4% × $1,200 = $48.00",
-          "employerInss": "INSS do empregador: 6% × $1,200 = $72.00"
-        },
+        "engineLink": "Cada fórmula por trás destes números — com o seu artigo de lei — está na página do motor.",
         "journalEyebrow": "Lançamento contabilístico gerado",
         "journalTitle": "Lançamento de folha equilibrado",
         "accounts": {
@@ -18607,31 +18492,27 @@ export const translations = {
       "controls": {
         "eyebrow": "Controlos e resultados úteis",
         "title": "Fácil de operar. Sério na revisão.",
-        "description": "O fluxo normal permanece curto, enquanto os controlos e relatórios preservam o percurso por trás de cada resultado.",
+        "description": "O fluxo do dia a dia continua curto. Os controlos e relatórios guardam o percurso por trás de cada resultado.",
         "items": {
           "visible": {
             "title": "Cálculos visíveis",
-            "description": "Salário bruto, cada rendimento, dedução, valor legal e líquido podem ser revistos antes de finalizar."
+            "description": "Verifique o bruto, cada rendimento, cada dedução e o líquido antes de finalizar."
           },
           "approval": {
             "title": "Controlos de aprovação",
-            "description": "A folha regista quem preparou e aprovou, com opção de duas pessoas para equipas que o exigem."
-          },
-          "noGuessing": {
-            "title": "Sem valores de conformidade inventados",
-            "description": "Quando faltam dados legais obrigatórios, o Xefe pede revisão em vez de estimar silenciosamente."
+            "description": "O Xefe regista quem preparou e quem aprovou cada folha."
           },
           "journals": {
             "title": "Lançamentos ligados à origem",
-            "description": "A folha aprovada cria linhas equilibradas ligadas ao processamento de origem."
+            "description": "A folha aprovada cria linhas equilibradas, ligadas à folha de origem."
           },
           "audit": {
             "title": "Auditoria e disciplina de períodos",
-            "description": "Histórico de auditoria, estado de lançamento e controlos de período ajudam a proteger o trabalho concluído."
+            "description": "O histórico de auditoria e os bloqueios de período protegem o trabalho concluído."
           },
           "exports": {
             "title": "Exportações práticas",
-            "description": "PDF, folhas de cálculo e ficheiros bancários permitem continuar o trabalho externo obrigatório."
+            "description": "PDF, folhas de cálculo e ficheiros bancários para o trabalho fora do Xefe."
           }
         },
         "outputsEyebrow": "A partir dos mesmos registos",
@@ -18645,34 +18526,15 @@ export const translations = {
           "journal": "Lançamentos de folha equilibrados",
           "ledger": "Razão geral e balancete",
           "statements": "Demonstração de resultados, balanço e fluxo de caixa"
-        },
-        "accountantModeTitle": "Modo contabilista sem complexidade para todos",
-        "accountantModeDescription": "Retenção a fornecedores, taxas de tratado, IVA e controlos especializados ficam fora do fluxo diário. Aparecem para o papel de contabilista ou quando um proprietário ativa deliberadamente o modo fiscal avançado."
+        }
       },
       "evidence": {
         "eyebrow": "Como o Xefe ganha confiança",
         "title": "Evidência antes de afirmações confiantes",
-        "description": "O software contabilístico deve tornar clara a sua base, sobretudo quando um resultado afeta salários, impostos ou o razão.",
-        "items": {
-          "sources": {
-            "title": "Regras de fontes primárias",
-            "description": "As regras salariais de Timor-Leste são verificadas com a legislação e orientação oficial da ATTL ou INSS antes de se tornarem lógica do produto."
-          },
-          "testing": {
-            "title": "Cobertura de testes repetível",
-            "description": "O motor de cálculo é testado por regressão com casos padrão e extremos totalmente sintéticos. Os resultados esperados ficam fixos para que alterações não modifiquem a folha silenciosamente."
-          },
-          "guardrails": {
-            "title": "As exceções ficam visíveis",
-            "description": "Casos legais não suportados ou incompletos são marcados para revisão, em vez de produzirem uma resposta conveniente sem base."
-          },
-          "review": {
-            "title": "Há lugar para julgamento profissional",
-            "description": "Os contabilistas podem inspecionar dados, convenções, relatórios e lançamentos em vez de aceitar um total de caixa-preta."
-          }
-        },
+        "description": "As regras do Xefe vêm da lei de Timor-Leste e da orientação oficial, e centenas de testes automáticos mantêm cada resultado fixo. A página do motor mostra como cada regra é verificada.",
+        "engineLink": "Veja como o motor é validado",
         "honestyTitle": "O que o Xefe não finge fazer",
-        "honestyDescription": "O Xefe calcula e regista com a informação fornecida. Contratos invulgares, isenções, posições de tratado, classificações disputadas e alterações legais novas podem exigir aconselhamento de um profissional qualificado de Timor-Leste."
+        "honestyDescription": "O Xefe calcula e regista com a informação que lhe dá. Contratos invulgares, isenções ou alterações legais novas podem ainda exigir o conselho de um profissional qualificado de Timor-Leste."
       },
       "cta": {
         "eyebrow": "Use apenas o detalhe de que precisa",
@@ -25016,7 +24878,7 @@ export const translations = {
         "eyebrow": "Apoio profissional, quando quiser",
         "title": "Faça a gestão diária por si.",
         "titleAccent": "Peça a um contabilista para rever.",
-        "description": "Escolha um parceiro contabilístico no Xefe, combine o serviço diretamente e conceda acesso seguro apenas quando estiver preparado.",
+        "description": "Escolha uma firma parceira no Xefe e combine o trabalho diretamente com ela. Só abre acesso aos seus registos quando estiver pronto.",
         "primary": "Conhecer o parceiro preferencial",
         "secondary": "Ver como o Xefe funciona",
         "trust": {
@@ -25032,9 +24894,9 @@ export const translations = {
         "accountingAudit": "Contabilidade e auditoria",
         "eyebrow": "Contabilista preferencial Xefe",
         "title": "Conheça a firma parceira",
-        "description": "Uma firma timorense de contabilidade e auditoria para empresas que procuram escrituração, processamento salarial, fiscalidade ou revisão financeira profissional.",
+        "description": "Uma firma timorense estabelecida para escrituração, folha, impostos e auditoria.",
         "preferred": "Parceiro contabilístico preferencial Xefe",
-        "profile": "A nossa parceira é uma firma de contabilidade, auditoria e serviços empresariais sediada em Díli, que serve empresas, ONG e outras organizações em Timor-Leste.",
+        "profile": "A nossa parceira é uma firma estabelecida em Díli. Trabalha com empresas e ONG em todo o Timor-Leste em contabilidade, auditoria e serviços empresariais.",
         "website": "Detalhes completos no anúncio da parceria",
         "servicesTitle": "Serviços que pode discutir",
         "services": {
@@ -25046,12 +24908,12 @@ export const translations = {
           "advisory": "Contabilidade de gestão e aconselhamento financeiro"
         },
         "beforeAccessTitle": "A escolha é apenas o primeiro passo.",
-        "beforeAccessDescription": "A firma parceira confirma consigo a disponibilidade, o âmbito e os honorários. Nenhum registo do Xefe é partilhado até o proprietário conceder acesso mais tarde."
+        "beforeAccessDescription": "A firma confirma primeiro consigo o âmbito e os honorários. Os seus registos no Xefe ficam privados até o proprietário conceder acesso."
       },
       "process": {
         "eyebrow": "Uma ligação baseada em consentimento",
         "title": "Escolha, combine e depois ligue",
-        "description": "A firma contabilística e a empresa aprovam a relação antes de qualquer registo ficar disponível.",
+        "description": "Ambos concordam antes de qualquer registo abrir.",
         "steps": {
           "choose": {
             "title": "Pedir uma consulta",
@@ -25070,8 +24932,8 @@ export const translations = {
       "access": {
         "eyebrow": "A sua empresa mantém o controlo",
         "title": "Acesso útil, limites claros",
-        "description": "Um contabilista ligado recebe as ferramentas financeiras necessárias para a revisão, sem administração da plataforma.",
-        "consentNote": "Uma escolha ou consulta aceite nunca concede acesso por si só. O proprietário deve premir Conceder acesso no Xefe.",
+        "description": "Um contabilista ligado recebe as ferramentas para rever os seus livros — nada mais.",
+        "consentNote": "Escolher uma firma nunca abre os seus registos por si só. Só o proprietário pode premir Conceder acesso no Xefe.",
         "canTitle": "O contabilista pode",
         "cannotTitle": "O contabilista não pode",
         "can": {

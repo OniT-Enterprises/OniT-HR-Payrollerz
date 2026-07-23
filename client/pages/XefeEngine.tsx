@@ -14,10 +14,8 @@ import {
   ChevronRight,
   Cog,
   Landmark,
-  Lock,
   Scale,
   ShieldCheck,
-  UsersRound,
 } from "lucide-react";
 import { Crescent } from "@/components/marketing/Crescent";
 import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
@@ -52,7 +50,7 @@ function TraceRow({
       <span
         className={cn(
           "min-w-0",
-          variant === "sub" ? "text-xs text-zinc-500" : "text-zinc-300",
+          variant === "sub" ? "text-xs text-zinc-400" : "text-zinc-300",
           variant === "total" && "text-white",
         )}
       >
@@ -70,7 +68,7 @@ function TraceRow({
       <span
         className={cn(
           "ml-auto shrink-0 font-mono tabular-nums sm:ml-0",
-          variant === "sub" ? "text-xs text-zinc-500" : "text-zinc-100",
+          variant === "sub" ? "text-xs text-zinc-400" : "text-zinc-100",
           variant === "total" && "text-lg text-amber-300",
         )}
       >
@@ -149,12 +147,7 @@ export default function XefeEngine() {
 
   const steps = ["compile", "guard", "post", "deliver", "file", "pay"];
 
-  const trustCards = [
-    { key: "rules", icon: ShieldCheck },
-    { key: "roles", icon: UsersRound },
-    { key: "scale", icon: Cog },
-    { key: "privacy", icon: Lock },
-  ];
+  const trustCards = [{ key: "scale", icon: Cog }];
 
   return (
     <div className="public-grain min-h-screen overflow-x-hidden text-white">
@@ -206,7 +199,7 @@ export default function XefeEngine() {
                       <div className="font-mono text-[1.7rem] font-light tabular-nums leading-none text-white">
                         {stat.value}
                       </div>
-                      <div className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                      <div className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                         {t(stat.labelKey)}
                       </div>
                     </div>
@@ -222,7 +215,7 @@ export default function XefeEngine() {
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">
                       {t("enginePage.trace.heading")}
                     </p>
-                    <span className="hidden shrink-0 text-[11px] text-zinc-500 sm:block">
+                    <span className="hidden shrink-0 text-[11px] text-zinc-400 sm:block">
                       {t("enginePage.trace.profile")}
                     </span>
                   </div>
@@ -283,7 +276,7 @@ export default function XefeEngine() {
                       value={`$100.00${t("enginePage.trace.perMonth")}`}
                     />
                   </div>
-                  <p className="mt-4 border-t border-white/[0.07] pt-4 text-xs leading-5 text-zinc-500">
+                  <p className="mt-4 border-t border-white/[0.07] pt-4 text-xs leading-5 text-zinc-400">
                     {t("enginePage.trace.footCeiling")}{" "}
                     {t("enginePage.trace.footPrecision")}
                   </p>
@@ -314,7 +307,7 @@ export default function XefeEngine() {
                     <Scale className="h-5 w-5 text-amber-300" />
                   </div>
                   <h3 className="mt-5 font-bold">{card.title}</h3>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
                     {t(card.subKey)}
                   </p>
                   <ul className="mt-4 divide-y divide-white/[0.06]">
@@ -395,7 +388,7 @@ export default function XefeEngine() {
               <div className="mt-4 overflow-x-auto rounded-2xl border border-white/[0.07] bg-white/[0.025]">
                 <table className="w-full min-w-[540px] text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <tr className="border-b border-white/10 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">
                       <th className="px-5 py-3">{t("enginePage.proof.rateCategory")}</th>
                       <th className="px-5 py-3 text-right">{t("enginePage.proof.rateRate")}</th>
                       <th className="px-5 py-3">{t("enginePage.proof.rateBasis")}</th>
@@ -497,6 +490,24 @@ export default function XefeEngine() {
                   </p>
                 </article>
               ))}
+              <Link
+                to={to("/security")}
+                className="group rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 transition-colors hover:border-white/[0.14]"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400/10">
+                  <ShieldCheck className="h-5 w-5 text-amber-300" />
+                </div>
+                <h3 className="mt-5 font-bold">
+                  {t("enginePage.trust.securityLink.title")}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
+                  {t("enginePage.trust.securityLink.description")}
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-amber-300">
+                  {t("enginePage.trust.securityLink.cta")}
+                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
             </div>
           </div>
         </section>
@@ -535,7 +546,7 @@ export default function XefeEngine() {
                 </Link>
               </Button>
             </div>
-            <p className="mx-auto mt-8 flex items-center justify-center gap-2 text-xs text-zinc-500">
+            <p className="mx-auto mt-8 flex items-center justify-center gap-2 text-xs text-zinc-400">
               <BookOpenCheck className="h-4 w-4" />
               {t("enginePage.cta.footnote")}
             </p>

@@ -50,7 +50,7 @@ export default function DocsIndex() {
           if (entries.length === 0) return null;
           return (
             <div key={group.key} className="mt-10 first:mt-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+              <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-zinc-400">
                 {group.label}
               </p>
               <div className="mt-4 grid gap-5 md:grid-cols-2">

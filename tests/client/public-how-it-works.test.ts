@@ -42,9 +42,10 @@ describe("public how Xefe works page", () => {
       expect(locale.howItWorks.hero.title).toBeTruthy();
       expect(locale.howItWorks.audience.everyday.title).toBeTruthy();
       expect(locale.howItWorks.audience.professional.title).toBeTruthy();
-      expect(locale.howItWorks.workflow.accounting.verify).toBeTruthy();
+      expect(locale.howItWorks.workflow.accounting.description).toBeTruthy();
+      expect(locale.howItWorks.workflow.verifyNote).toBeTruthy();
       expect(locale.howItWorks.example.synthetic).toBeTruthy();
-      expect(locale.howItWorks.evidence.items.testing.description).toBeTruthy();
+      expect(locale.howItWorks.evidence.description).toBeTruthy();
       expect(locale.howItWorks.evidence.honestyDescription).toBeTruthy();
       expect(JSON.stringify(locale.howItWorks)).not.toMatch(
         /email data|de-identified|deidentified|firm workpapers|client data|live payroll data/i,

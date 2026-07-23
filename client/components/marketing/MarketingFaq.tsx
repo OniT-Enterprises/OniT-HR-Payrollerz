@@ -3,11 +3,10 @@
  * questions people actually search ("does it do WIT/INSS?", "which banks?",
  * "is it in Tetun?", "how much?"). Doubles as an AI-answer-engine surface.
  *
- * Emits FAQPage JSON-LD built from the exact same visible strings, so the
- * structured data can never drift from what the page shows. Copy lives under
- * `landing.simple.faq.*` (en / tet / pt).
+ * No FAQPage JSON-LD: Google restricted FAQ rich results to government and
+ * health sites in Aug 2023, so the markup earned nothing (removed 2026-07-23).
+ * Copy lives under `landing.simple.faq.*` (en / tet / pt).
  */
-import { Helmet } from "react-helmet-async";
 import { Plus } from "lucide-react";
 
 import { SectionEyebrow } from "@/components/marketing/SectionEyebrow";
@@ -26,26 +25,8 @@ export function MarketingFaq() {
     };
   }).filter((item) => item.q && item.a);
 
-  const faqLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: items.map((item) => ({
-      "@type": "Question",
-      name: item.q,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: item.a,
-      },
-    })),
-  };
-
   return (
     <section className="lp-defer border-t border-white/[0.06] py-20 lg:py-24">
-      {items.length > 0 && (
-        <Helmet>
-          <script type="application/ld+json">{JSON.stringify(faqLd)}</script>
-        </Helmet>
-      )}
       <div
         data-reveal
         className="public-reveal mx-auto max-w-3xl px-5 sm:px-6 lg:px-8"

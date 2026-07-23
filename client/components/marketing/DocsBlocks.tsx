@@ -86,14 +86,14 @@ export function DocBlockRenderer({ block }: { block: DocBlock }) {
             >
               <p className="font-mono text-3xl font-bold tabular-nums tracking-tight text-lime-300">
                 {deadline.day}
-                <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
                   {deadline.small}
                 </span>
               </p>
               <h3 className="mt-2 text-[15px] font-bold text-white">
                 {deadline.title}
               </h3>
-              <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">
+              <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">
                 {deadline.body}
               </p>
             </div>
@@ -105,7 +105,7 @@ export function DocBlockRenderer({ block }: { block: DocBlock }) {
         <div className="mt-6 max-w-md rounded-2xl border border-white/[0.07] bg-white/[0.025]">
           <div className="flex items-baseline justify-between gap-3 border-b border-white/[0.07] px-5 py-3.5">
             <h3 className="text-sm font-bold text-white">{block.title}</h3>
-            <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
               {block.when}
             </span>
           </div>
@@ -136,7 +136,7 @@ export function DocBlockRenderer({ block }: { block: DocBlock }) {
               </div>
             ))}
           </div>
-          <p className="border-t border-white/[0.07] px-5 py-3 text-xs leading-relaxed text-zinc-500">
+          <p className="border-t border-white/[0.07] px-5 py-3 text-xs leading-relaxed text-zinc-400">
             {block.foot}
           </p>
         </div>
@@ -150,7 +150,7 @@ export function DocBlockRenderer({ block }: { block: DocBlock }) {
                 {block.headers.map((header, index) => (
                   <th
                     key={index}
-                    className="border-b border-white/15 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500"
+                    className="border-b border-white/15 px-3 py-2 text-left text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-400"
                   >
                     {header}
                   </th>

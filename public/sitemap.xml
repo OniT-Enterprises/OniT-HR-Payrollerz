@@ -182,12 +182,6 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://xefe.tl/security"/>
   </url>
   <url>
-    <loc>https://xefe.tl/auth/signup</loc>
-    <lastmod>2026-07-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://xefe.tl/privacy</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>yearly</changefreq>

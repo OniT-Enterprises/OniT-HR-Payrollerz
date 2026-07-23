@@ -45,7 +45,7 @@ function StatePill({
       >
         {label}
       </span>
-      <p className="mt-2 px-1 text-[11.5px] leading-snug text-zinc-500">
+      <p className="mt-2 px-1 text-[11.5px] leading-snug text-zinc-400">
         {note}
       </p>
     </div>
@@ -67,7 +67,7 @@ function LedgerCard({
     <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025]">
       <div className="flex items-baseline justify-between gap-3 border-b border-white/[0.07] px-5 py-3.5">
         <h3 className="text-sm font-bold text-white">{title}</h3>
-        <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
           {when}
         </span>
       </div>
@@ -94,7 +94,7 @@ function LedgerCard({
           </div>
         ))}
       </div>
-      <p className="border-t border-white/[0.07] px-5 py-3 text-xs leading-relaxed text-zinc-500">
+      <p className="border-t border-white/[0.07] px-5 py-3 text-xs leading-relaxed text-zinc-400">
         {foot}
       </p>
     </div>
@@ -263,14 +263,14 @@ export default function DocsMoneyChain() {
             >
               <p className="font-mono text-3xl font-bold tabular-nums tracking-tight text-lime-300">
                 {deadline.day}
-                <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                <span className="ml-1.5 align-middle text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400">
                   {t(`publicDocs.chain.s3.${deadline.key}Small`)}
                 </span>
               </p>
               <h3 className="mt-2 text-[15px] font-bold text-white">
                 {t(`publicDocs.chain.s3.${deadline.key}Title`)}
               </h3>
-              <p className="mt-1 text-[13px] leading-relaxed text-zinc-500">
+              <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">
                 {t(`publicDocs.chain.s3.${deadline.key}Body`)}
               </p>
             </div>
@@ -305,7 +305,7 @@ export default function DocsMoneyChain() {
                 <p className="text-sm font-semibold text-zinc-200">
                   {t(`publicDocs.chain.s4.g${n}`)}
                 </p>
-                <p className="mt-0.5 text-[12.5px] text-zinc-500">
+                <p className="mt-0.5 text-[12.5px] text-zinc-400">
                   {t(`publicDocs.chain.s4.g${n}By`)}
                 </p>
               </div>

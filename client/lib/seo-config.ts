@@ -5,17 +5,17 @@ export const seoConfig = {
   // Landing & Auth
   landing: {
     title: 'HR, Payroll & Accounting for Timor-Leste',
-    description: 'Xefe is HR, payroll and accounting software built for Timor-Leste — INSS, WIT, subsídio anual and Lei Trabalho compliance, bank payroll files, and double-entry accounting. In Tetun, English and Portuguese.',
+    description: 'HR, payroll and accounting software built for Timor-Leste — WIT, INSS, subsídio anual, bank files and double-entry books. In Tetun, English and Portuguese.',
     keywords: 'HR software Timor-Leste, payroll software Timor-Leste, sistema folha de pagamento, INSS, WIT, subsidio anual, Lei Trabalho, accounting software Timor-Leste, Tetun payroll',
     url: '/',
     alternates: {
       tet: {
         title: 'RH, Folha Pagamentu no Kontabilidade ba Timor-Leste',
-        description: 'Xefe mak software RH, folha pagamentu no kontabilidade ba Timor-Leste — INSS, WIT, subsídiu anuál no konformidade Lei Laboral, ficheiru banku, no kontabilidade double-entry. Iha Tetun, Inglés no Portugés.',
+        description: 'Software RH, folha pagamentu no kontabilidade ba Timor-Leste — WIT, INSS, subsídiu anuál no ficheiru banku. Iha Tetun, Inglés no Portugés.',
       },
       pt: {
         title: 'RH, Folha de Pagamento e Contabilidade para Timor-Leste',
-        description: 'O Xefe é software de RH, folha de pagamento e contabilidade para Timor-Leste — INSS, WIT, subsídio anual e conformidade com a Lei do Trabalho, ficheiros bancários e contabilidade de dupla entrada. Em tétum, inglês e português.',
+        description: 'Software de RH, folha de pagamento e contabilidade para Timor-Leste — WIT, INSS, subsídio anual e ficheiros bancários. Em tétum, inglês e português.',
       },
     },
   },
@@ -84,7 +84,7 @@ export const seoConfig = {
     },
   },
   engine: {
-    title: 'The Xefe Engine — Verified Timor-Leste Payroll & Accounting',
+    title: 'Verified Timor-Leste Payroll & Accounting Engine',
     description: "Inside Xefe's payroll and accounting engine: Timor-Leste labour, tax and INSS law implemented rule by rule, checked against real-world practice and official tax-authority assessments to the cent.",
     keywords: 'Timor-Leste payroll engine, WIT calculation, INSS calculation, payroll compliance Timor-Leste, double-entry payroll accounting, withholding tax Timor-Leste, Xefe engine',
     url: '/engine',

@@ -1477,12 +1477,12 @@ const messages = {
         billing: {
           title: "Faturação protegida contra alterações",
           description:
-            "Um dono não consegue atribuir-se uma subscrição: os campos de faturação da própria conta só podem ser escritos pelo webhook verificado do fornecedor de pagamentos.",
+            "Um dono não consegue atribuir-se uma subscrição. Os campos de faturação só podem ser escritos pelo webhook verificado do fornecedor de pagamentos.",
         },
         tested: {
           title: "Testado antes de cada deploy",
           description:
-            "Cada versão corre verificação de tipos, mais de seiscentos testes automáticos e a suite completa de regras de segurança contra as regras de produção — automaticamente, antes de sair.",
+            "Antes de qualquer versão sair, correm as verificações de tipos, mais de 600 testes automáticos e a suite completa de regras de segurança — automaticamente.",
         },
       },
     },
@@ -1506,7 +1506,7 @@ const messages = {
         isolation: {
           title: "Isolamento estrito por empresa",
           description:
-            "Cada registo carrega a identidade da sua empresa e as regras tornam impossível o acesso entre empresas — incluindo para o XefeBot, cujo acesso a dados é fixado à sua empresa no servidor.",
+            "Cada registo carrega a identidade da sua empresa, e as regras tornam impossível o acesso entre empresas. Isso inclui o XefeBot — o seu acesso está fixado à sua empresa no servidor.",
         },
         audit: {
           title: "Um rasto de auditoria com memória",
@@ -1534,7 +1534,7 @@ const messages = {
         roles: {
           title: "Papéis que espelham funções reais",
           description:
-            "Donos, administradores de RH, contabilistas, gestores e funcionários veem exatamente o que a sua função exige — o contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento.",
+            "Donos, administradores de RH, contabilistas, gestores e funcionários veem o que a sua função exige. O contabilista tem os livros sem gestão de membros; o gestor vê apenas o seu departamento.",
         },
         payslips: {
           title: "Recibos só chegam ao seu dono",
@@ -1622,7 +1622,7 @@ const messages = {
       },
       configTitle: "Configurável, nunca inventivo",
       configDescription:
-        "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para. Nunca adivinha um valor de conformidade.",
+        "Taxas, limiares e convenções de arredondamento são configurações, com a lei como padrão — uma mudança de taxa nunca exige uma nova versão do Xefe. O que nunca é configurável é inventar um valor: se faltar um dado legal, o Xefe di-lo e para.",
     },
     proof: {
       eyebrow: "Evidência",
@@ -1672,7 +1672,7 @@ const messages = {
         guard: {
           title: "Proteger",
           description:
-            "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. A aprovação exige duas pessoas — imposta nas próprias regras de segurança — e finalizar a folha é a única coisa no Xefe que exige subscrição.",
+            "A validação sinaliza salários em falta, trabalhadores a zero horas e horas extra acima do limite legal de 16 h/semana. Uma segunda pessoa aprova a folha antes de qualquer pagamento.",
         },
         post: {
           title: "Lançar",
@@ -1702,26 +1702,17 @@ const messages = {
       description:
         "O software de dinheiro ganha confiança nas partes que ninguém vê.",
       cards: {
-        rules: {
-          title: "Regras, não promessas",
-          description:
-            "O isolamento de cada empresa, o paywall da folha e a regra de aprovação a duas pessoas são impostos nas regras de segurança do servidor, não apenas na interface. Um dono nem sequer consegue atribuir-se uma subscrição — os campos de faturação estão protegidos contra alteração.",
-        },
-        roles: {
-          title: "Um papel de contabilista a sério",
-          description:
-            "Um contabilista pode tratar da folha, dos livros e das declarações sem qualquer poder administrativo — sem membros, sem definições, sem faturação. Exatamente a forma de que um contabilista externo precisa.",
-        },
         scale: {
           title: "Seguro em escala",
           description:
-            "As gravações da folha são feitas em lotes e são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações legais são testadas com centenas de trabalhadores e os totais do ano recalculam-se sempre a partir dos registos de origem.",
+            "As gravações da folha são recuperáveis — uma folha a meio é detetada e reparada, nunca fica errada em silêncio. As exportações são testadas com centenas de trabalhadores.",
         },
-        privacy: {
-          title: "Privado por construção",
-          description:
-            "Cada email sai para um destinatário de cada vez — os funcionários nunca veem os endereços uns dos outros. Os links de faturas são impossíveis de adivinhar e não são listáveis, e cada recibo chega só ao seu dono.",
-        },
+      },
+      securityLink: {
+        title: "Guardado no servidor",
+        description:
+          "O isolamento por empresa, a aprovação a duas pessoas e a faturação protegida são regras na própria base de dados — a página de segurança explica cada controlo.",
+        cta: "Como o Xefe protege o seu negócio",
       },
     },
     cta: {
@@ -1854,7 +1845,7 @@ const messages = {
       title: "Simples para usar por conta própria.",
       titleAccent: "Detalhado para o seu contabilista.",
       description:
-        "O Xefe orienta o trabalho diário de folha de pagamento, pessoas e dinheiro em linguagem clara, mantendo cada cálculo, relatório e lançamento disponível para revisão profissional.",
+        "O Xefe orienta a folha e o trabalho do dinheiro em linguagem clara. Cada cálculo, relatório e lançamento fica pronto para o seu contabilista rever.",
       primary: "Começar grátis",
       secondary: "Seguir o fluxo",
       trust: {
@@ -1926,40 +1917,29 @@ const messages = {
       eyebrow: "Como o trabalho passa pelo Xefe",
       title: "Faça a tarefa uma vez. Mantenha a evidência ligada.",
       description:
-        "Cada etapa começa pela ação quotidiana e mostra depois o que o Xefe trata e o que um profissional pode verificar.",
-      labels: {
-        you: "O que faz",
-        xefe: "O que o Xefe trata",
-        verify: "O que pode ser verificado",
-      },
+        "Quatro etapas, um registo ligado — faz a parte do dia a dia e o Xefe trata do resto.",
       people: {
         title: "Mantenha pessoas e tempo juntos",
-        you: "Adicione o trabalhador, salário, horário, dados bancários, assiduidade e licenças.",
-        xefe: "O Xefe mantém o registo laboral e os dados da folha num só lugar.",
-        verify:
-          "Contratos, definições salariais, alterações de assiduidade e origem de cada dado da folha.",
+        description:
+          "Adicione cada trabalhador uma vez — salário, horário e dados bancários. A assiduidade e as licenças ficam no mesmo registo.",
       },
       payroll: {
         title: "Reveja e aprove a folha",
-        you: "Escolha o período, reveja alterações e aprove quando todos os trabalhadores estiverem prontos.",
-        xefe: "O Xefe calcula bruto, IRT, INSS do trabalhador e empregador, horas extra, deduções e líquido.",
-        verify:
-          "Cada cálculo por trabalhador, base legal, arredondamento e registo de aprovação.",
+        description:
+          "Escolha o período e reveja. O Xefe calcula o bruto, o IRT, o INSS, as horas extra e o líquido de cada trabalhador.",
       },
       payments: {
         title: "Pague à equipa e prepare declarações",
-        you: "Confirme a data de pagamento e descarregue os resultados necessários.",
-        xefe: "O Xefe prepara recibos claros, ficheiros bancários locais e mapas de IRT e INSS a partir da folha aprovada.",
-        verify:
-          "Os totais da folha reconciliam com trabalhadores, pagamentos bancários e passivos legais.",
+        description:
+          "Confirme a data de pagamento. Os recibos, os ficheiros bancários e os mapas de IRT e INSS saem da folha aprovada.",
       },
       accounting: {
         title: "Mantenha a contabilidade alinhada",
-        you: "Reveja o lançamento gerado e continue a reconciliação e revisão do período.",
-        xefe: "O Xefe lança despesa salarial, INSS do empregador, salários líquidos e passivos legais em linhas equilibradas.",
-        verify:
-          "Origem do lançamento, códigos de conta, débitos, créditos, razão geral e balancete.",
+        description:
+          "A folha aprovada lança-se como um lançamento equilibrado. O razão, o balancete e as demonstrações ficam atualizados.",
       },
+      verifyNote:
+        "Cada etapa guarda a sua evidência — definições salariais, cálculos, aprovações e linhas de lançamento podem ser verificados mais tarde, linha a linha.",
     },
     example: {
       eyebrow: "Um cálculo que pode inspecionar",
@@ -1971,11 +1951,8 @@ const messages = {
       employerCost: "Custo total do empregador",
       calculationEyebrow: "Exemplo mensal de folha",
       calculationTitle: "Cálculo de trabalhador residente",
-      formulas: {
-        wit: "IRT: 10% × ($1,413.22 − $500) = $91.32",
-        employeeInss: "INSS do trabalhador: 4% × $1,200 = $48.00",
-        employerInss: "INSS do empregador: 6% × $1,200 = $72.00",
-      },
+      engineLink:
+        "Cada fórmula por trás destes números — com o seu artigo de lei — está na página do motor.",
       journalEyebrow: "Lançamento contabilístico gerado",
       journalTitle: "Lançamento de folha equilibrado",
       accounts: {
@@ -2001,37 +1978,32 @@ const messages = {
       eyebrow: "Controlos e resultados úteis",
       title: "Fácil de operar. Sério na revisão.",
       description:
-        "O fluxo normal permanece curto, enquanto os controlos e relatórios preservam o percurso por trás de cada resultado.",
+        "O fluxo do dia a dia continua curto. Os controlos e relatórios guardam o percurso por trás de cada resultado.",
       items: {
         visible: {
           title: "Cálculos visíveis",
           description:
-            "Salário bruto, cada rendimento, dedução, valor legal e líquido podem ser revistos antes de finalizar.",
+            "Verifique o bruto, cada rendimento, cada dedução e o líquido antes de finalizar.",
         },
         approval: {
           title: "Controlos de aprovação",
           description:
-            "A folha regista quem preparou e aprovou, com opção de duas pessoas para equipas que o exigem.",
-        },
-        noGuessing: {
-          title: "Sem valores de conformidade inventados",
-          description:
-            "Quando faltam dados legais obrigatórios, o Xefe pede revisão em vez de estimar silenciosamente.",
+            "O Xefe regista quem preparou e quem aprovou cada folha.",
         },
         journals: {
           title: "Lançamentos ligados à origem",
           description:
-            "A folha aprovada cria linhas equilibradas ligadas ao processamento de origem.",
+            "A folha aprovada cria linhas equilibradas, ligadas à folha de origem.",
         },
         audit: {
           title: "Auditoria e disciplina de períodos",
           description:
-            "Histórico de auditoria, estado de lançamento e controlos de período ajudam a proteger o trabalho concluído.",
+            "O histórico de auditoria e os bloqueios de período protegem o trabalho concluído.",
         },
         exports: {
           title: "Exportações práticas",
           description:
-            "PDF, folhas de cálculo e ficheiros bancários permitem continuar o trabalho externo obrigatório.",
+            "PDF, folhas de cálculo e ficheiros bancários para o trabalho fora do Xefe.",
         },
       },
       outputsEyebrow: "A partir dos mesmos registos",
@@ -2048,40 +2020,16 @@ const messages = {
         ledger: "Razão geral e balancete",
         statements: "Demonstração de resultados, balanço e fluxo de caixa",
       },
-      accountantModeTitle: "Modo contabilista sem complexidade para todos",
-      accountantModeDescription:
-        "Retenção a fornecedores, taxas de tratado, IVA e controlos especializados ficam fora do fluxo diário. Aparecem para o papel de contabilista ou quando um proprietário ativa deliberadamente o modo fiscal avançado.",
     },
     evidence: {
       eyebrow: "Como o Xefe ganha confiança",
       title: "Evidência antes de afirmações confiantes",
       description:
-        "O software contabilístico deve tornar clara a sua base, sobretudo quando um resultado afeta salários, impostos ou o razão.",
-      items: {
-        sources: {
-          title: "Regras de fontes primárias",
-          description:
-            "As regras salariais de Timor-Leste são verificadas com a legislação e orientação oficial da ATTL ou INSS antes de se tornarem lógica do produto.",
-        },
-        testing: {
-          title: "Cobertura de testes repetível",
-          description:
-            "O motor de cálculo é testado por regressão com casos padrão e extremos totalmente sintéticos. Os resultados esperados ficam fixos para que alterações não modifiquem a folha silenciosamente.",
-        },
-        guardrails: {
-          title: "As exceções ficam visíveis",
-          description:
-            "Casos legais não suportados ou incompletos são marcados para revisão, em vez de produzirem uma resposta conveniente sem base.",
-        },
-        review: {
-          title: "Há lugar para julgamento profissional",
-          description:
-            "Os contabilistas podem inspecionar dados, convenções, relatórios e lançamentos em vez de aceitar um total de caixa-preta.",
-        },
-      },
+        "As regras do Xefe vêm da lei de Timor-Leste e da orientação oficial, e centenas de testes automáticos mantêm cada resultado fixo. A página do motor mostra como cada regra é verificada.",
+      engineLink: "Veja como o motor é validado",
       honestyTitle: "O que o Xefe não finge fazer",
       honestyDescription:
-        "O Xefe calcula e regista com a informação fornecida. Contratos invulgares, isenções, posições de tratado, classificações disputadas e alterações legais novas podem exigir aconselhamento de um profissional qualificado de Timor-Leste.",
+        "O Xefe calcula e regista com a informação que lhe dá. Contratos invulgares, isenções ou alterações legais novas podem ainda exigir o conselho de um profissional qualificado de Timor-Leste.",
     },
     cta: {
       eyebrow: "Use apenas o detalhe de que precisa",
@@ -8980,7 +8928,7 @@ const messages = {
       title: "Faça a gestão diária por si.",
       titleAccent: "Peça a um contabilista para rever.",
       description:
-        "Escolha um parceiro contabilístico no Xefe, combine o serviço diretamente e conceda acesso seguro apenas quando estiver preparado.",
+        "Escolha uma firma parceira no Xefe e combine o trabalho diretamente com ela. Só abre acesso aos seus registos quando estiver pronto.",
       primary: "Conhecer o parceiro preferencial",
       secondary: "Ver como o Xefe funciona",
       trust: {
@@ -8997,10 +8945,10 @@ const messages = {
       eyebrow: "Contabilista preferencial Xefe",
       title: "Conheça a firma parceira",
       description:
-        "Uma firma timorense de contabilidade e auditoria para empresas que procuram escrituração, processamento salarial, fiscalidade ou revisão financeira profissional.",
+        "Uma firma timorense estabelecida para escrituração, folha, impostos e auditoria.",
       preferred: "Parceiro contabilístico preferencial Xefe",
       profile:
-        "A nossa parceira é uma firma de contabilidade, auditoria e serviços empresariais sediada em Díli, que serve empresas, ONG e outras organizações em Timor-Leste.",
+        "A nossa parceira é uma firma estabelecida em Díli. Trabalha com empresas e ONG em todo o Timor-Leste em contabilidade, auditoria e serviços empresariais.",
       website: "Detalhes completos no anúncio da parceria",
       servicesTitle: "Serviços que pode discutir",
       services: {
@@ -9013,13 +8961,13 @@ const messages = {
       },
       beforeAccessTitle: "A escolha é apenas o primeiro passo.",
       beforeAccessDescription:
-        "A firma parceira confirma consigo a disponibilidade, o âmbito e os honorários. Nenhum registo do Xefe é partilhado até o proprietário conceder acesso mais tarde.",
+        "A firma confirma primeiro consigo o âmbito e os honorários. Os seus registos no Xefe ficam privados até o proprietário conceder acesso.",
     },
     process: {
       eyebrow: "Uma ligação baseada em consentimento",
       title: "Escolha, combine e depois ligue",
       description:
-        "A firma contabilística e a empresa aprovam a relação antes de qualquer registo ficar disponível.",
+        "Ambos concordam antes de qualquer registo abrir.",
       steps: {
         choose: {
           title: "Pedir uma consulta",
@@ -9042,9 +8990,9 @@ const messages = {
       eyebrow: "A sua empresa mantém o controlo",
       title: "Acesso útil, limites claros",
       description:
-        "Um contabilista ligado recebe as ferramentas financeiras necessárias para a revisão, sem administração da plataforma.",
+        "Um contabilista ligado recebe as ferramentas para rever os seus livros — nada mais.",
       consentNote:
-        "Uma escolha ou consulta aceite nunca concede acesso por si só. O proprietário deve premir Conceder acesso no Xefe.",
+        "Escolher uma firma nunca abre os seus registos por si só. Só o proprietário pode premir Conceder acesso no Xefe.",
       canTitle: "O contabilista pode",
       cannotTitle: "O contabilista não pode",
       can: {
