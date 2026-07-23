@@ -231,6 +231,34 @@ describe('Accountant role rules', () => {
       );
     });
 
+    // Regression for sender spoofing (security scan F3/F8/F14): a client-set
+    // `from` (or `cc`) must be rejected by the hasOnly allowlist, so mail can
+    // only ever send from the server-derived address.
+    it('rejects a mail doc carrying a client-supplied from or cc', async () => {
+      await assertFails(
+        setDoc(doc(asAccountant(), 'mail/mail-spoof-from'), {
+          tenantId: 'tenant-a',
+          to: ['victim@example.com'],
+          subject: 'Reset your password',
+          html: '<a href="https://evil">reset</a>',
+          status: 'pending',
+          purpose: 'phish',
+          from: 'security@xefe.tl',
+        }),
+      );
+      await assertFails(
+        setDoc(doc(asAccountant(), 'mail/mail-spoof-cc'), {
+          tenantId: 'tenant-a',
+          to: ['customer@example.com'],
+          subject: 'x',
+          html: '<p>x</p>',
+          status: 'pending',
+          purpose: 'invoice-send',
+          cc: ['extra@example.com'],
+        }),
+      );
+    });
+
     it('accountant can create an invoice link', async () => {
       await assertSucceeds(
         setDoc(doc(asAccountant(), 'invoice_links/token-abc'), {

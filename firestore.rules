@@ -560,6 +560,11 @@ service cloud.firestore {
         allow update: if isSuperAdmin() || (
           isTenantFinanceAdmin(tenantId) &&
           request.resource.data.createdBy == resource.data.createdBy &&
+          // Bind the approver to the caller so approvedBy can't be forged to a
+          // colleague's id — without this the two-person check below (approvedBy
+          // != createdBy) is defeated by the creator writing any other value.
+          (request.resource.data.status != 'approved' ||
+           request.resource.data.approvedBy == request.auth.uid) &&
           (request.resource.data.status != 'approved' ||
            request.resource.data.approvedBy != resource.data.createdBy ||
            allowsSelfApproval(tenantId)) &&
@@ -1843,6 +1848,10 @@ service cloud.firestore {
         // Prevent createdBy tampering + two-person approval rule
         // (unless tenant opted in to solo self-approval)
         request.resource.data.createdBy == resource.data.createdBy &&
+        // Bind the approver to the caller (see payrollRuns rule) so approvedBy
+        // can't be forged to satisfy the two-person check below.
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy == request.auth.uid) &&
         (request.resource.data.status != 'approved' ||
          request.resource.data.approvedBy != resource.data.createdBy ||
          allowsSelfApproval(resource.data.tenantId)) &&
@@ -1898,6 +1907,12 @@ service cloud.firestore {
         isTenantFinanceAdmin(resource.data.tenantId) &&
         // Prevent createdBy tampering - field is immutable after creation
         request.resource.data.createdBy == resource.data.createdBy &&
+        // Bind the approver to the caller. Without this, approvedBy is a plain
+        // client-controlled field, so a creator could self-finalize by writing
+        // any other uid — defeating the two-person rule and forging the audit
+        // trail. The approver is always the authenticated caller.
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy == request.auth.uid) &&
         // Two-person rule: approver must differ from creator
         // (unless tenant opted in to solo self-approval)
         (request.resource.data.status != 'approved' ||
@@ -2253,7 +2268,16 @@ service cloud.firestore {
         request.resource.data.purpose.size() > 0 &&
         request.resource.data.to is list &&
         request.resource.data.to.size() > 0 &&
-        request.resource.data.to.size() <= 50
+        request.resource.data.to.size() <= 50 &&
+        // Allowlist the fields notificationService.queueEmail produces. This
+        // rejects a client-supplied `from` (sender spoofing) and `cc`
+        // (unbounded extra recipients) at the boundary — the sender is
+        // derived server-side in sendQueuedEmail, never from the doc.
+        request.resource.data.keys().hasOnly([
+          'tenantId', 'subject', 'status', 'purpose', 'createdAt',
+          'text', 'html', 'replyTo', 'fromName', 'attachments',
+          'relatedId', 'createdBy', 'deliveryAttemptId', 'to'
+        ])
       );
 
       // Tenant admins can read email history for their tenant
@@ -2376,6 +2400,10 @@ service cloud.firestore {
         get(/databases/$(database)/documents/jobs/$(request.resource.data.jobId)).data.title == request.resource.data.jobTitle &&
         request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 200 &&
         request.resource.data.email is string && request.resource.data.email.size() < 200 &&
+        // Public (unauthenticated) create: require a well-formed single address
+        // so the application-received auto-reply can't be pointed at garbage or
+        // used to inject headers. A Cloud Function further validates + throttles.
+        request.resource.data.email.matches('[^\\s@,;]+@[^\\s@,;]+[.][^\\s@,;.]+') &&
         request.resource.data.phone is string && request.resource.data.phone.size() < 80 &&
         request.resource.data.tenantId is string && request.resource.data.tenantId.size() < 200 &&
         request.resource.data.jobId is string && request.resource.data.jobId.size() < 200 &&

@@ -2355,14 +2355,19 @@ router.post('/payroll/runs', async (req, res) => {
  * Body: { approvedBy }
  * Guards: Two-person rule (approver ≠ creator), status must be draft/processing
  */
-router.put('/payroll/runs/:runId/approve', async (req, res) => {
+router.put('/payroll/runs/:runId/approve', authenticateFirebaseToken, async (req, res) => {
   try {
     const { runId } = req.params;
-    const { approvedBy } = req.body;
     const tid = req.tenantId;
 
+    // The approver is the VERIFIED caller, never a body-supplied string.
+    // A shared API key carries no per-user identity, so this route now
+    // requires a real Firebase user token: without it the two-person rule
+    // below is meaningless (one key-holder could set createdBy and approvedBy
+    // to any two strings and self-approve). approvedBy is derived, not trusted.
+    const approvedBy = req.user && req.user.uid;
     if (!approvedBy) {
-      return res.status(400).json({ success: false, message: 'approvedBy is required' });
+      return res.status(401).json({ success: false, message: 'Authenticated approver required' });
     }
 
     const runRef = tenantCol(tid, 'payrollRuns').doc(runId);
@@ -2376,7 +2381,7 @@ router.put('/payroll/runs/:runId/approve', async (req, res) => {
       return res.status(400).json({ success: false, message: `Cannot approve run with status '${run.status}'` });
     }
 
-    // Two-person rule
+    // Two-person rule: the verified approver must differ from the creator.
     if (run.createdBy && run.createdBy === approvedBy) {
       return res.status(400).json({ success: false, message: 'Approver must be different from creator (two-person rule)' });
     }

@@ -125,8 +125,17 @@ jobs:
         env:
           FIREBASE_DEPLOYER_JSON: ${{ secrets.FIREBASE_DEPLOYER_JSON }}
 
+      # Scrub the deployer SA before any third-party action runs, so a
+      # compromised later step cannot read it off the runner disk.
+      - name: Remove deployer credentials from runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/deployer-sa.json"
+
       - name: Deploy to Hetzner (xefe.tl)
-        uses: easingthemes/ssh-deploy@main
+        # Pinned to a full commit SHA (v6.0.1), not a mutable branch: a branch
+        # ref lets a compromised upstream run arbitrary code with the prod SSH
+        # key. Bump deliberately after reviewing upstream changes.
+        uses: easingthemes/ssh-deploy@5d8aeab1a56041e269567e67a08ce00df324a617 # v6.0.1
         with:
           SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HETZNER_HOST }}

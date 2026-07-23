@@ -66,15 +66,20 @@ export const sendQueuedEmail = onDocumentCreated(
       return;
     }
 
+    // The sender is ALWAYS derived server-side. A client-supplied `from` is
+    // ignored: honoring it let any tenant manager send DKIM-signed mail from an
+    // arbitrary @xefe.tl address (spoofing/phishing). Branding still works via
+    // the sanitized fromName ("{Business} via Xefe <invoices@xefe.tl>").
     const payload: Record<string, unknown> = {
-      from: (data.from as string) || businessFrom(data.fromName) || DEFAULT_FROM,
+      from: businessFrom(data.fromName) || DEFAULT_FROM,
       to,
       subject: (data.subject as string) || "(no subject)",
     };
     if (html) payload.html = html;
     if (text) payload.text = text;
     if (typeof data.replyTo === "string") payload.reply_to = data.replyTo;
-    if (typeof data.cc !== "undefined") payload.cc = data.cc;
+    // `cc` is intentionally not forwarded from the doc — no sanctioned caller
+    // sets it, and honoring it added an unbounded extra recipient list.
 
     // Attachments: {filename, url|content} → Resend {filename, path|content}.
     // (Previously ignored — payslip PDFs never actually rode along.)
