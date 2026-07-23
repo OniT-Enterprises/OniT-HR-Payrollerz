@@ -27,7 +27,13 @@ jobs:
           REMOTE_USER: ${{ secrets.HETZNER_USER }}
           SOURCE: "server/xefe-api/"
           TARGET: "/opt/xefe-api/"
-          ARGS: "-avz --delete --exclude .env --exclude serviceAccountKey.json --exclude node_modules --exclude .DS_Store"
+          # v6 takes excludes via the dedicated EXCLUDE input (comma-separated),
+          # NOT as repeated --exclude flags in ARGS (v6 stopped parsing those,
+          # which broke the deploy). These excludes are load-bearing: /opt/xefe-api
+          # holds the prod .env + serviceAccountKey.json, which exist ONLY on the
+          # server — a bare --delete without them would destroy prod secrets.
+          ARGS: "-avz --delete"
+          EXCLUDE: ".env, serviceAccountKey.json, node_modules, .DS_Store"
           SCRIPT_AFTER: |
             cd /opt/xefe-api
             npm ci --omit=dev
