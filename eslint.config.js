@@ -12,6 +12,7 @@ export default [
     ignores: [
       "dist/",
       "node_modules/",
+      ".claude/", // agent scratch space incl. throwaway git worktrees (full repo copies)
       "functions/",
       "firebaseemulator_payroll/",
       "scripts/",

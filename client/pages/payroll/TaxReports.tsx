@@ -10,13 +10,16 @@ import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { useAdvancedTax } from "@/contexts/TenantContext";
-import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import {
+  TAX_DEADLINE_WINDOW_MONTHS,
+  useTaxFilingsDueSoon,
+} from "@/hooks/useTaxFiling";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function TaxReports() {
   const showAdvancedTax = useAdvancedTax();
   const { t } = useI18n();
-  const { data: dueDates = [], isLoading } = useTaxFilingsDueSoon(6);
+  const { data: dueDates = [], isLoading } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
 
   const mostUrgent = dueDates
     .filter(
