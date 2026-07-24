@@ -8153,6 +8153,10 @@ const messages = {
     company: "Company",
   },
   taxReports: {
+    historyCapped: "Showing the most recent {{count}} periods.",
+    filedFiguresFrozenTitle: "Already filed — figures kept",
+    filedFiguresFrozenDescription:
+      "{{period}} was filed, so the declared figures stay as submitted. What you see is a preview of current payroll, not the filed return.",
     inssArrearsMonth: "month",
     inssArrearsMonths: "months",
     inssArrearsNotice:

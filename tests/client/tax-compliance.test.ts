@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  areDeclaredFiguresFrozen,
   getAnnualIncomeTaxDueDateBase,
   getDaysUntilDueIso,
   getNextAnnualAdjustedDeadline,
@@ -119,6 +120,31 @@ describe("Tax compliance status helpers", () => {
         daysUntilDue: 3,
       }),
     ).toEqual({ statement: "pending", payment: "filed" });
+  });
+});
+
+describe("Declared figures freeze", () => {
+  it("freezes the figures once the statement is filed", () => {
+    expect(areDeclaredFiguresFrozen({ statementStatus: "filed" })).toBe(true);
+  });
+
+  it("honours a legacy top-level filed status", () => {
+    // Pre-task-split rows only carry `status`; it still proves the return went out.
+    expect(areDeclaredFiguresFrozen({ status: "filed" })).toBe(true);
+  });
+
+  it("leaves a draft or overdue period editable", () => {
+    expect(areDeclaredFiguresFrozen({})).toBe(false);
+    expect(
+      areDeclaredFiguresFrozen({ statementStatus: "draft", status: "overdue" }),
+    ).toBe(false);
+  });
+
+  it("does not freeze on payment evidence alone", () => {
+    // Paying without filing the return is possible; the return is still editable.
+    expect(
+      areDeclaredFiguresFrozen({ statementStatus: "pending" }),
+    ).toBe(false);
   });
 });
 

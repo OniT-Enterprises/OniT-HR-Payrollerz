@@ -7626,6 +7626,9 @@ export const translations = {
       "company": "Company"
     },
     "taxReports": {
+      "historyCapped": "Showing the most recent {{count}} periods.",
+      "filedFiguresFrozenTitle": "Already filed — figures kept",
+      "filedFiguresFrozenDescription": "{{period}} was filed, so the declared figures stay as submitted. What you see is a preview of current payroll, not the filed return.",
       "inssArrearsMonth": "month",
       "inssArrearsMonths": "months",
       "inssArrearsNotice": "Late INSS payment accrues 1% interest per month or fraction (DL 20/2017 Art. 39).",
@@ -15981,6 +15984,9 @@ export const translations = {
       "company": "Empresa"
     },
     "taxReports": {
+      "historyCapped": "Hatudu períodu {{count}} ne'ebé foun liu.",
+      "filedFiguresFrozenTitle": "Hatama tiha ona — númeru sira nafatin",
+      "filedFiguresFrozenDescription": "{{period}} hatama tiha ona, tan ne'e númeru deklaradu sira nafatin hanesan submete ona. Ida ne'ebé ita haree mak previzaun husi folha atuál, la'ós deklarasaun ne'ebé hatama ona.",
       "inssArrearsMonth": "fulan",
       "inssArrearsMonths": "fulan",
       "inssArrearsNotice": "Pagamentu INSS atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
@@ -24336,6 +24342,9 @@ export const translations = {
       "company": "Empresa"
     },
     "taxReports": {
+      "historyCapped": "A mostrar os {{count}} períodos mais recentes.",
+      "filedFiguresFrozenTitle": "Já entregue — valores mantidos",
+      "filedFiguresFrozenDescription": "{{period}} já foi entregue, por isso os valores declarados mantêm-se como foram submetidos. O que vê é uma pré-visualização da folha atual, não a declaração entregue.",
       "inssArrearsMonth": "mês",
       "inssArrearsMonths": "meses",
       "inssArrearsNotice": "O pagamento em atraso à Segurança Social vence juros de 1% por mês ou fração (DL 20/2017, art. 39.º).",

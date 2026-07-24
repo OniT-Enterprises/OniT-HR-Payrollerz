@@ -58,6 +58,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
+  FILING_HISTORY_LIMIT,
   TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
   useTaxFilingsDueSoon,
@@ -231,12 +232,25 @@ export default function INSSMonthly() {
       const returnData = await generateINSS.mutateAsync({ period, company });
       setSelectedReturn(returnData);
 
-      await saveFiling.mutateAsync({
+      const { declaredFiguresFrozen } = await saveFiling.mutateAsync({
         type: "inss_monthly",
         period,
         dataSnapshot: returnData,
         userId: user?.uid || "",
       });
+
+      // Generating is allowed for any period, including one already filed —
+      // but the figures that went to the INSS portal stay on record, and the
+      // user needs to know the preview above is not that declaration.
+      if (declaredFiguresFrozen) {
+        toast({
+          title: t("taxReports.filedFiguresFrozenTitle"),
+          description: t("taxReports.filedFiguresFrozenDescription", {
+            period: formatPeriodLabel(period),
+          }),
+        });
+        return;
+      }
 
       toast({
         title: t("reports.inssMonthly.toast.generatedTitle"),
@@ -1315,6 +1329,13 @@ export default function INSSMonthly() {
                 </TableBody>
               </Table>
             </div>
+            {filings.length >= FILING_HISTORY_LIMIT && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("taxReports.historyCapped", {
+                  count: FILING_HISTORY_LIMIT,
+                })}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

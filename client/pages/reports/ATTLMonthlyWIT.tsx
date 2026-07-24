@@ -76,6 +76,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
+  FILING_HISTORY_LIMIT,
   TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
   useTaxFilingsDueSoon,
@@ -281,12 +282,24 @@ export default function ATTLMonthlyWIT() {
       setSelectedReturn(returnData);
 
       // Save as draft
-      await saveFiling.mutateAsync({
+      const { declaredFiguresFrozen } = await saveFiling.mutateAsync({
         type: "monthly_wit",
         period,
         dataSnapshot: returnData,
         userId: user?.uid || "",
       });
+
+      // The service refuses to rewrite a filed period's figures. The menus
+      // don't offer that, but say so plainly if it ever happens.
+      if (declaredFiguresFrozen) {
+        toast({
+          title: t("taxReports.filedFiguresFrozenTitle"),
+          description: t("taxReports.filedFiguresFrozenDescription", {
+            period: formatPeriodLabel(period),
+          }),
+        });
+        return;
+      }
 
       toast({
         title: t(
@@ -1670,6 +1683,13 @@ export default function ATTLMonthlyWIT() {
                 </TableBody>
               </Table>
             </div>
+            {filings.length >= FILING_HISTORY_LIMIT && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {t("taxReports.historyCapped", {
+                  count: FILING_HISTORY_LIMIT,
+                })}
+              </p>
+            )}
           </CardContent>
         </Card>
 
