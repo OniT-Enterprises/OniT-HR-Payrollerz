@@ -52,7 +52,7 @@ import { useIsSubscribed } from "@/hooks/useBilling";
 import { useChatStore } from "@/stores/chatStore";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { usePayrollRuns } from "@/hooks/usePayroll";
-import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import { TAX_DEADLINE_WINDOW_MONTHS, useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 
@@ -90,7 +90,7 @@ function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasSt
   }, []);
 
   const { data: leaveStats } = useLeaveStats(hasTimeleave && notificationsReady);
-  const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll && notificationsReady);
+  const { data: filingsDue = [] } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS, hasPayroll && notificationsReady);
   const { data: employeeSummary } = useActiveEmployeeSummary(hasStaff && notificationsReady);
   const { data: processingRuns = [] } = usePayrollRuns({ status: "processing", limit: 10 }, hasPayroll && notificationsReady);
 

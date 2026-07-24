@@ -48,8 +48,19 @@ export function useTaxFilingByPeriod(
   });
 }
 
+/**
+ * How far ahead the deadline sweep looks. `months` is part of the query key,
+ * so every screen must ask for the SAME window or React Query caches (and
+ * re-fetches) one sweep per distinct value — the payroll dashboard used to run
+ * a 2-month and a 6-month sweep side by side. Callers pass this constant.
+ */
+export const TAX_DEADLINE_WINDOW_MONTHS = 6;
+
 /** Fetch filings due soon */
-export function useTaxFilingsDueSoon(months: number = 6, enabled: boolean = true) {
+export function useTaxFilingsDueSoon(
+  months: number = TAX_DEADLINE_WINDOW_MONTHS,
+  enabled: boolean = true,
+) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: taxFilingKeys.dueSoon(tenantId, months),

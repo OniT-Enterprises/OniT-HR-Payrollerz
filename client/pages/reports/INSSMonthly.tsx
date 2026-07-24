@@ -58,6 +58,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
+  TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
   useTaxFilingsDueSoon,
   useGenerateMonthlyINSS,
@@ -109,7 +110,7 @@ export default function INSSMonthly() {
     isError: duesError,
     isFetching: duesFetching,
     refetch: refetchDues,
-  } = useTaxFilingsDueSoon(6);
+  } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
   const generateINSS = useGenerateMonthlyINSS();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
