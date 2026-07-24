@@ -5,6 +5,7 @@ import {
   getNextAnnualAdjustedDeadline,
   getNextMonthlyAdjustedDeadline,
   getUrgencyFromDays,
+  isActionableDeadline,
   resolveMonthlyWITTaskStatuses,
   resolveTaskStatus,
 } from "@/lib/tax/compliance";
@@ -118,5 +119,48 @@ describe("Tax compliance status helpers", () => {
         daysUntilDue: 3,
       }),
     ).toEqual({ statement: "pending", payment: "filed" });
+  });
+});
+
+describe("Actionable past deadlines", () => {
+  const base = {
+    period: "2026-05",
+    daysUntilDue: -40,
+    status: "overdue" as const,
+    hasFilingRecord: false,
+    periodsWithPayroll: new Set<string>(["2026-06", "2026-07"]),
+  };
+
+  it("hides a past month a new tenant never ran payroll for", () => {
+    // Onboarded in June: May is not this tenant's unfiled return.
+    expect(isActionableDeadline(base)).toBe(false);
+  });
+
+  it("keeps a past month that has paid payroll to declare", () => {
+    expect(isActionableDeadline({ ...base, period: "2026-06" })).toBe(true);
+  });
+
+  it("keeps a past month whose filing was already started", () => {
+    expect(isActionableDeadline({ ...base, hasFilingRecord: true })).toBe(true);
+  });
+
+  it("keeps every current and future deadline regardless of payroll", () => {
+    expect(isActionableDeadline({ ...base, daysUntilDue: 0 })).toBe(true);
+    expect(isActionableDeadline({ ...base, daysUntilDue: 12 })).toBe(true);
+  });
+
+  it("keeps filed history so the tracker can still show it", () => {
+    expect(isActionableDeadline({ ...base, status: "filed" })).toBe(true);
+  });
+
+  it("keeps everything when payroll evidence could not be resolved", () => {
+    // A failed runs query must never mute a real obligation.
+    expect(isActionableDeadline({ ...base, periodsWithPayroll: null })).toBe(
+      true,
+    );
+  });
+
+  it("never judges non-monthly periods by the monthly payroll window", () => {
+    expect(isActionableDeadline({ ...base, period: "2025" })).toBe(true);
   });
 });
