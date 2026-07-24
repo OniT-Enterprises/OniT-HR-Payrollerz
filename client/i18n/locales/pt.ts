@@ -115,7 +115,6 @@ const messages = {
     expandSidebar: "Expandir barra lateral",
     collapseSidebar: "Recolher barra lateral",
     of: "de",
-    basicMode: "Modo Básico",
     adminConsole: "Consola Admin",
     sitemap: "Mapa do Site",
     guidance: "Orientação",
@@ -760,13 +759,10 @@ const messages = {
   landing: {
     nav: {
       features: "Funcionalidades",
-      laborLaw: "Lei do Trabalho",
-      apps: "Apps",
       pricing: "Preços",
       getStarted: "Começar",
       forAccountants: "Para contabilistas",
       menu: "Menu",
-      overview: "Visão geral",
       home: "Início",
       engine: "O motor",
     },
@@ -923,199 +919,21 @@ const messages = {
       },
     },
     hero: {
-      badge: "Feito para",
-      badgeHighlight: "Timor-Leste",
-      headline: "O Sistema Operativo",
-      headlineAccent: "Para Empresas de TL",
-      subheadline: {
-        before:
-          "RH, folha de pagamento, contabilidade e faturação — criado especificamente para Timor-Leste em torno da",
-        highlight1: "Lei do Trabalho",
-        middle: ", IRT/INSS, e",
-        highlight2: "contabilidade de dupla entrada real",
-        after: ".",
-      },
-      points: {
-        labor: "Regras centrais da Lei do Trabalho integradas",
-        tax: "IRT e INSS integrados",
-        languages: "Tétum, Inglês, Português",
-        accounting: "Contabilidade de dupla entrada",
-      },
-      ctaPrimary: "Começar Agora",
       trust: {
         trial: "Plano grátis — sem cartão",
-        usd: "Suporte a moeda USD",
-        transfers: "Transferências bancárias locais",
       },
     },
     mock: {
-      stats: {
-        totalEmployees: "Total de Funcionários",
-        totalEmployeesChange: "+12 este mês",
-        monthlyPayroll: "Folha Mensal",
-        monthlyPayrollChange: "Vence em 5 dias",
-        inssContribution: "Contribuição INSS",
-        inssContributionChange: "4% + 6%",
-        thirteenth: "Subsídio Anual",
-        thirteenthChange: "Vence a 20 Dez",
-      },
-      payrollByDept: "Folha por Departamento",
-      currency: "USD",
-      departments: {
-        security: "Segurança",
-        admin: "Administração",
-        finance: "Finanças",
-        operations: "Operações",
-        hr: "RH",
-        it: "TI",
-      },
-      upcomingHolidays: "Feriados Próximos",
-      holidays: {
-        nov12: {
-          date: "12 Nov",
-          name: "Dia da Juventude",
-        },
-        nov28: {
-          date: "28 Nov",
-          name: "Proclamação",
-        },
-        dec7: {
-          date: "7 Dez",
-          name: "Dia dos Heróis",
-        },
-        dec25: {
-          date: "25 Dez",
-          name: "Natal",
-        },
-      },
+      holidays: {},
     },
-    features: {
-      badge: "Feito para Timor-Leste",
-      title: "Tudo o que precisa",
-      titleAccent: "Feito para Timor-Leste",
-      description:
-        "Construído de raiz para empresas de Timor-Leste. Não adaptado - desenhado especificamente para a Lei do Trabalho, IRT, INSS e banca local.",
-    },
-    tlFeatures: {
-      laborLaw: {
-        title: "Lei do Trabalho de Timor",
-        subtitle: "Código do Trabalho de Timor-Leste",
-        description:
-          "Aplica regras centrais revistas do Código do Trabalho de Timor-Leste, incluindo semanas de 44 horas, horas extra a 150%/200% e descanso. Casos excecionais continuam sujeitos a revisão jurídica.",
-      },
-      witInss: {
-        title: "IRT e INSS",
-        subtitle: "Impostos e Segurança Social",
-        description:
-          "Cálculos automáticos de IRT com limiar de $500 para residentes. INSS a 4% funcionário + 6% empregador.",
-      },
-      thirteenth: {
-        title: "Subsídio Anual",
-        subtitle: "13.º Mês de Salário",
-        description:
-          "Cálculos automatizados do 13.º mês. Pro-rata para novos funcionários, com acompanhamento do prazo de 20 de Dezembro.",
-      },
-      sefope: {
-        title: "Pronto para SEFOPE",
-        subtitle: "Relatórios do Ministério do Trabalho",
-        description:
-          "Geração de PDF SEFOPE com um clique para registo de trabalhadores estrangeiros. Acompanhe vistos Tipo C, prazos de renovação e submissões ao ministério do trabalho — o maior problema de conformidade, resolvido.",
-      },
-    },
-    banks: {
-      title: "Ficheiros Bancários de Folha com Um Clique",
-      subtitle:
-        "Gere o formato exato que cada banco requer — sem introdução manual de dados",
-      bnu: "Ficheiro CSV de folha",
-      bnctl: "Ficheiro CSV de folha",
-      mandiri: "Ficheiro TXT de largura fixa",
-      anz: "Ficheiro CSV de folha",
-      tagline:
-        "Carregue no portal do banco e pague toda a equipa em minutos, não horas",
-    },
-    performance: {
-      badge: "Feito para Internet de TL",
-      title: "Rápido Mesmo em Conexões Lentas",
-      description:
-        "O Xefe faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
-      features: {
-        cache:
-          "Cache local inteligente — funciona instantaneamente em visitas repetidas",
-        lazy: "Funcionalidades pesadas carregam apenas quando necessário",
-        small:
-          "Aplicação leve, desenhada para ambientes de baixa largura de banda",
-      },
-    },
+    tlFeatures: {},
+    performance: {},
     laborLaw: {
-      badge: "Lei do Trabalho Timor-Leste",
-      title: "Regras Laborais Centrais",
-      titleAccent: "Integradas",
-      description:
-        "As regras centrais revistas estão integradas na folha. Casos excecionais, incluindo indemnizações, exigem uma revisão profissional explicitamente reconhecida.",
-      features: {
-        workWeek: {
-          title: "Semana de 44 Horas",
-          description:
-            "44 horas/semana padrão com 8 horas/dia conforme a lei laboral de Timor",
-        },
-        overtime: {
-          title: "Taxas de Horas Extra",
-          description:
-            "150% para horas extra normais, 200% para domingos e feriados",
-        },
-        sick: {
-          title: "Licença por Doença",
-          description:
-            "12 dias/ano - primeiros 6 a 100%, restantes 6 a 50% do salário",
-        },
-        maternity: {
-          title: "Licença de Maternidade",
-          description: "12 semanas de licença paga (84 dias)",
-        },
-        annual: {
-          title: "Férias Anuais",
-          description:
-            "Mínimo legal de 12 dias, sem escalões inventados por antiguidade",
-        },
-        severance: {
-          title: "Indemnização",
-          description:
-            "Calculada apenas após confirmação de revisão jurídica ou contabilística do caso",
-        },
-      },
-    },
-    holidays: {
-      title: "Feriados Nacionais (13 feriados públicos)",
-      more: "+ 6 mais...",
-      newYear: "Loron Tinan Foun (Ano Novo)",
-      laborDay: "Loron Trabalhador (Dia do Trabalhador)",
-      restoration: "Loron Restaurasaun Independensia",
-      popularConsultation: "Loron Konsulta Popular",
-      proclamation: "Loron Proklamasaun Independensia",
-      heroesDay: "Loron Heroi Nasional",
-      christmas: "Loron Natal (Natal)",
+      features: {},
     },
     tax: {
-      badge: "Cálculos Automáticos",
-      titleAccent: "Feito Corretamente",
-      wit: {
-        title: "Imposto sobre Rendimento do Trabalho (IRT)",
-        points: {
-          threshold: "Limiar de $500/mês para residentes",
-          rate: "Taxa fixa de 10% sobre rendimento tributável",
-          nonResident: "Regras para não-residentes tratadas separadamente",
-          perDiem: "Per diem e viagens excluídos",
-        },
-      },
-      inss: {
-        title: "Segurança Social (INSS)",
-        points: {
-          employee: "Contribuição do funcionário 4%",
-          employer: "Contribuição do empregador 6%",
-          smallBusiness: "Reduções para pequenas empresas disponíveis",
-          foodAllowance: "Subsídio de alimentação excluído da base",
-        },
-      },
+      wit: {},
+      inss: {},
       example: {
         title: "Exemplo de Cálculo de Recibo",
         basicSalary: "Salário Base",
@@ -1128,22 +946,7 @@ const messages = {
         badge: "Calculado automaticamente",
       },
     },
-    payslip: {
-      eyebrow: "Recibos de Vencimento",
-      title: "Um recibo que a sua equipa",
-      titleAccent: "consegue mesmo ler",
-      subtitle:
-        "Cada processamento gera um recibo pronto para revisão — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa.",
-    },
-    cta: {
-      title: "Pronto para Começar?",
-      titleAccent: "Comece Hoje",
-      description:
-        "Junte-se às empresas de Timor-Leste que usam o Xefe para fluxos de RH e folha claros e fáceis de rever.",
-      primary: "Começar Grátis",
-    },
     footer: {
-      brand: "Xefe",
       location: "Timor-Leste",
       links: {
         howItWorks: "Como o Xefe funciona",
@@ -1155,293 +958,23 @@ const messages = {
       },
       copyright: "© 2026 OniT Enterprises. Díli, Timor-Leste.",
     },
-    segments: {
-      subtitle: "Confiado por organizações em todo o Timor-Leste",
-      title: "Feito para empresas que precisam de conformidade",
-      security: {
-        label: "Empresas de Segurança",
-        desc: "Grandes escalas, escalonamento de turnos",
-      },
-      restaurants: {
-        label: "Restaurantes e Cafés",
-        desc: "Gorjetas, horas extra, alta rotatividade",
-      },
-      ngos: {
-        label: "ONGs e INGOs",
-        desc: "Conformidade com doadores e trilhas de auditoria",
-      },
-      hotels: {
-        label: "Hotéis e Turismo",
-        desc: "Gestão de pessoal sazonal",
-      },
-      consulting: {
-        label: "Consultoria e TI",
-        desc: "Faturação por projeto, multi-moeda",
-      },
-      construction: {
-        label: "Construção",
-        desc: "Trabalho diário, rastreio de segurança",
-      },
-    },
-    painPoints: {
-      paper: {
-        title: "Ainda usa papel?",
-        desc: "Cálculos manuais levam a erros de IRT que lhe custam dinheiro. Uma dedução errada = risco de auditoria.",
-      },
-      excel: {
-        title: "O Excel está a falhar?",
-        desc: "Fórmulas falham. Ficheiros corrompem. Sem trilha de auditoria para doadores. Sem cálculos automáticos do 13.º mês.",
-      },
-      foreign: {
-        title: "Software estrangeiro que não se adapta?",
-        desc: "Lançamentos manuais de IRT todos os meses. Sem relatórios SEFOPE. Sem Tétum. Feito para mercados que não são os seus.",
-      },
-      solution: {
-        title: "O Xefe resolve isto",
-        desc: "IRT/INSS automático. Transferências bancárias para BNU/BNCTL. Relatórios para SEFOPE. Interface em Tétum.",
-      },
-    },
-    modules: {
-      badge: "Plataforma Completa",
-      title: "9 Módulos Integrados",
-      titleAccent: "Um Sistema Completo",
-      description:
-        "Da contratação à reforma, da folha de pagamento à contabilidade - tudo o que a sua equipa de RH precisa num só lugar.",
-      people: {
-        name: "Gestão de Pessoas",
-        desc: "Perfis de funcionários, departamentos, organogramas, acompanhamento de documentos",
-      },
-      hiring: {
-        name: "Contratação e Recrutamento",
-        desc: "Publicação de vagas, acompanhamento de candidatos, integração, desvinculação",
-      },
-      time: {
-        name: "Tempo e Assiduidade",
-        desc: "Registo de ponto, folhas de presença, pedidos de licença, escalonamento de turnos",
-      },
-      performance: {
-        name: "Desempenho",
-        desc: "Objetivos, avaliações, formação, certificações, disciplinar",
-      },
-      payroll: {
-        name: "Folha de Pagamento",
-        desc: "INSS, impostos, horas extra, transferências bancárias, recibos",
-      },
-      money: {
-        name: "Dinheiro (Faturação)",
-        desc: "Clientes, faturas, contas, despesas, pagamentos",
-      },
-      accounting: {
-        name: "Contabilidade",
-        desc: "Livro de dupla entrada, balancete, exportação QuickBooks",
-      },
-      reports: {
-        name: "Relatórios e Análises",
-        desc: "Relatórios de folha, análises de RH, construtor de relatórios personalizado",
-      },
-      compliance: {
-        name: "Conformidade",
-        desc: "Trabalhadores estrangeiros, autorizações de trabalho, alertas de documentos",
-      },
-      viewAll: "Ver Todas as 65+ Funcionalidades",
-    },
-    apps: {
-      badge: "Apps Móveis",
-      title: "Xefe no seu bolso",
-      description:
-        "Ekipa para a sua equipa, Kaixa para o caixa do dia-a-dia — funcionam offline, em Tétum, feitos para o terreno.",
-    },
+    segments: {},
+    painPoints: {},
+    modules: {},
     kaixa: {
-      badge: "Aplicação Móvel",
-      title: "Kaixa",
-      titleAccent: "A Sua Caixa Digital",
-      description:
-        "Rastreio de dinheiro e POS simples para todos em Timor-Leste. De vendedores de quiosque a pequenas lojas — acompanhe cada dólar, venda produtos e imprima recibos. Funciona offline, fala Tétum.",
-      tagline: '"Kaixa" — Tétum para caixa',
-      features: {
-        tamasai: {
-          title: "Tama / Sai",
-          desc: "Dois botões grandes — dinheiro entra, dinheiro sai. Acompanhe cada dólar que passa pelo seu negócio.",
-        },
-        pos: {
-          title: "POS Simples",
-          desc: "Catálogo de produtos, toque para vender e contagens de inventário. Saiba o que tem e o que vendeu.",
-        },
-        offline: {
-          title: "Funciona Offline",
-          desc: "Funcionalidade completa sem internet. Tudo sincroniza automaticamente quando se reconectar.",
-        },
-        tetum: {
-          title: "Tétum Primeiro",
-          desc: "Interface na sua língua. Alvos de toque grandes desenhados para velocidade, não complexidade.",
-        },
-        bluetooth: {
-          title: "Recibos Bluetooth",
-          desc: "Impressora térmica de $30 transforma o seu telefone numa caixa registadora. Recibos profissionais instantaneamente.",
-        },
-        vat: {
-          title: "Pronto para IVA",
-          desc: "Construído para o IVA de Timor-Leste de 2027. Quando se tornar lei, basta ligar um interruptor — sem necessidade de atualização.",
-        },
-      },
-      cta: "Em Breve no Google Play",
-      ctaNote: "Android primeiro · Plano gratuito disponível",
-      free: {
-        badge: "Grátis",
-        title: "Rastreio de Dinheiro",
-        desc: "Não é contabilidade. **Rastreio de dinheiro.** Substitua o caderno.",
-        descHighlight: "Rastreio de dinheiro.",
-        features: {
-          moneyInOut: "Dinheiro Entra / Dinheiro Sai — dois botões, é isso",
-          summaries: "Resumos diários, semanais e mensais com gráficos",
-          photoReceipts:
-            "Recibos fotográficos — tire foto da página do caderno",
-          categories: "Etiquetagem por categoria (stock, vendas, pessoal)",
-          offline: "Funciona totalmente offline, sincroniza por wifi",
-          tetum: "Interface em Tétum com alvos de toque grandes",
-        },
-      },
-      upgrade: {
-        badge: "Upgrade",
-        title: "POS Simples",
-        desc: "Tudo no Grátis, mais um **ponto de venda completo** a partir do seu telefone.",
-        descHighlight: "ponto de venda completo",
-        features: {
-          catalog: "Catálogo de produtos — nome, preço, foto opcional",
-          tapToSell:
-            "Toque para vender — botões de produto grandes, quantidade, total",
-          inventory: "Inventário — comprou 50, vendeu 30, tem 20 restantes",
-          customerTabs: 'Contas de clientes — "O João deve-me $15"',
-          printer: "Impressora térmica Bluetooth ($30) para recibos",
-          whatsapp: "Partilha de recibos por WhatsApp — toda a gente usa",
-          monthlyReport:
-            "Relatório resumo mensal — PDF imprimível para impostos",
-        },
-      },
-      personas: {
-        maria: {
-          name: "Maria",
-          role: "Dona de Quiosque",
-          desc: 'Vende crédito de telefone, snacks, cigarros. Usa um caderno hoje. Precisa de: "Quanto é que ganhei hoje?"',
-        },
-        ana: {
-          name: "Ana",
-          role: "Dona de Café",
-          desc: "Gere um café com 5 funcionários. Usa o Xefe para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Ekipa.",
-        },
-        tomas: {
-          name: "Tomás",
-          role: "Dono de Loja",
-          desc: "Loja de retalho em crescimento. Contas de clientes, rastreio de inventário. Pronto para o IVA quando chegar.",
-        },
-      },
+      features: {},
+      free: {},
+      upgrade: {},
+      personas: {},
     },
     ekipa: {
-      badge: "Aplicação para Funcionários",
-      title: "Ekipa",
-      titleAccent: "O Companheiro Móvel da Sua Equipa",
-      description:
-        "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Xefe.",
-      tagline: '"Ekipa" — Tétum para equipa',
-      features: {
-        payslips: {
-          title: "Recibos no Telefone",
-          desc: "Funcionários veem o detalhe do recibo, descarregam PDF e partilham via WhatsApp. Sem mais impressões.",
-        },
-        leave: {
-          title: "Pedidos de Licença",
-          desc: "Peça férias, licença por doença ou maternidade. Veja saldos e acompanhe o estado de aprovação em tempo real.",
-        },
-        crewClock: {
-          title: "Registo de Ponto da Equipa",
-          desc: "Modo supervisor com GPS + prova por câmara. Sistema anti-funcionário fantasma para equipas de construção e segurança.",
-        },
-        offline: {
-          title: "Funciona Offline",
-          desc: "Base de dados local SQLite sincroniza dados da equipa quando reconectada. Perfeito para locais remotos.",
-        },
-        bilingual: {
-          title: "Tétum e Inglês",
-          desc: "Interface completa em ambas as línguas. Funcionários mudam instantaneamente — sem reinício necessário.",
-        },
-        selfService: {
-          title: "Perfil Self-Service",
-          desc: "Veja dados pessoais, informação de emprego, documentos e histórico de assiduidade. Menos perguntas para o RH.",
-        },
-      },
-      cta: "Incluído com o Xefe",
-      ctaNote: "Android · Grátis para todos os funcionários Xefe",
-      shipped: {
-        badge: "Disponível Agora",
-        title: "O que Está Disponível",
-        features: {
-          login: "Autenticação por email/palavra-passe",
-          dashboard:
-            "Página inicial com contagem regressiva para pagamento e saldo de licenças",
-          payslips: "Histórico de recibos de 12 meses com exportação PDF",
-          leave: "Saldos de licença, histórico e formulário de pedido",
-          crewClock: "Registo de ponto com GPS e câmara",
-          profile: "Perfil completo do funcionário e resumo de assiduidade",
-        },
-      },
-      coming: {
-        badge: "Em Breve",
-        title: "No Roteiro",
-        features: {
-          push: "Notificações push para recibos e aprovações",
-          attendance: "Histórico pessoal de assiduidade e verificação de horas",
-          documents: "Visualizador de documentos para contratos e certificados",
-          shifts: "Visualizador de escala de turnos",
-        },
-      },
+      features: {},
+      shipped: {},
+      coming: {},
     },
-    mobilePay: {
-      title: "Pronto para Dinheiro Móvel",
-      subtitle: "Pague funcionários sem conta bancária",
-      comingSoon: "Em Breve",
-      note: "Desembolso diretamente para carteiras móveis dos funcionários. Sem necessidade de conta bancária.",
-    },
-    localSupport: {
-      badge: "Baseado em Díli",
-      title: "Suporte local,",
-      titleAccent: "em Tétum e Inglês",
-      description:
-        "Não somos uma empresa estrangeira com suporte offshore. O Xefe é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
-      items: {
-        whatsapp: "Suporte por WhatsApp em Tétum e Inglês",
-        training: "Formação presencial disponível em Díli",
-        sefope: "Ajuda com submissões SEFOPE",
-        bank: "Assistência na integração bancária (BNU, BNCTL)",
-      },
-      cta: {
-        title: "Precisa de ajuda para começar?",
-        subtitle: "Consulta de configuração gratuita",
-      },
-    },
+    localSupport: {},
     accounting: {
-      badge: "Contabilidade Real",
-      title: "Contabilidade que realmente",
-      titleAccent: "compreende TL",
-      description:
-        "Mantenha o QuickBooks para inventário se quiser — o Xefe trata da conformidade de TL.",
-      features: {
-        doubleEntry: {
-          title: "Dupla Entrada Verdadeira",
-          desc: "Cada transação cria débitos e créditos equilibrados. Pronto para auditoria desde o primeiro dia.",
-        },
-        glTrial: {
-          title: "Razão Geral e Balancete",
-          desc: "Razão geral completo, plano de contas e balancete — os relatórios que o seu contabilista realmente precisa.",
-        },
-        autoPost: {
-          title: "Lançamento Automático da Folha",
-          desc: "Processe a folha e os lançamentos contabilísticos escrevem-se sozinhos. Responsabilidade de IRT, INSS a pagar, despesas salariais — tudo lançado.",
-        },
-        qbExport: {
-          title: "Exportação QuickBooks",
-          desc: "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo.",
-        },
-      },
+      features: {},
     },
   },
   securityPage: {
@@ -1730,10 +1263,6 @@ const messages = {
       titleTop: "Como o Xefe",
       titleAccent: "funciona por dentro",
       lede: "Documentação em linguagem simples da maquinaria por baixo do Xefe — o que acontece ao seu dinheiro, quando caem os prazos e que garantias o próprio sistema impõe.",
-      article1Tag: "Folha de pagamento & contabilidade",
-      article1Title: "A cadeia do dinheiro da folha",
-      article1Desc:
-        "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
       readArticle: "Ler o artigo",
       guides: "Guias",
       architecture: "Por dentro",
@@ -2049,9 +1578,6 @@ const messages = {
         "Configure a empresa e explore todas as funcionalidades gratuitamente. O Xefe mantém o trabalho diário claro e a evidência profissional pronta.",
       primary: "Começar grátis",
       whatsapp: "Pedir uma demonstração",
-    },
-    footer: {
-      home: "Visão geral do produto",
     },
   },
   settings: {
@@ -2661,15 +2187,7 @@ const messages = {
   orgChart: {
     title: "Organograma",
     subtitle: "Visualize a estrutura da sua empresa e linhas de reporte",
-    reorganize: "Reorganizar",
-    exitReorganize: "Sair da Reorganização",
     manage: "Gerir",
-    stats: {
-      executives: "Executivos",
-      managers: "Gestores",
-      seniorStaff: "Pessoal Sénior",
-      totalEmployees: "Total de Funcionários",
-    },
     emptyTitle: "Sem Dados da Organização",
     emptyDesc: "Adicione funcionários para ver o organograma",
     addFirstEmployee: "Adicionar Primeiro Funcionário",
@@ -2680,8 +2198,6 @@ const messages = {
       loadFailed:
         "Falha ao carregar dados da organização. Por favor tente novamente.",
       unexpected: "Ocorreu um erro inesperado ao carregar os dados.",
-      updatedTitle: "Organização Atualizada",
-      updatedDesc: "Posição movida com sucesso",
       refreshedTitle: "Dados Atualizados",
       refreshedDesc:
         "Organograma atualizado com as últimas alterações de departamento",
@@ -2818,11 +2334,6 @@ const messages = {
       minimumWageReviewNote: "Nota de revisão *",
       minimumWageReviewNotePlaceholder:
         "Quem reviu e por que se aplica este tratamento",
-      sefopeTitle: "Registo SEFOPE (Ministério do Trabalho)",
-      sefopeTooltip: "Obrigatório para todos os funcionários de TL",
-      sefopeNumber: "Número SEFOPE",
-      sefopeNumberPlaceholder: "SEFOPE-2024-XXXXX",
-      sefopeDate: "Data de Registo",
       workContract: "Documento de Contrato de Trabalho",
       workContractHelp: "Carregar contrato de trabalho (PDF/DOC)",
     },
@@ -2868,10 +2379,7 @@ const messages = {
         premium: "Premium",
         executive: "Executivo",
       },
-      taxInfoTitle: "Informação Fiscal",
       taxResidentLabel: "Residente fiscal de Timor-Leste",
-      taxResidentHint:
-        "Residente para efeitos fiscais (Lei 8/2008: presente 183+ dias em qualquer período de 12 meses, salvo se a habitação permanente estiver no estrangeiro). Residentes pagam 10% de IRT acima de $500/mês; não residentes pagam 10% desde o primeiro dólar.",
       incomeTaxTitle: "Imposto sobre Rendimento (IRT)",
       incomeTaxDesc: "10% sobre rendimento acima de $500/mês",
       socialSecurityTitle: "Segurança Social (INSS)",
@@ -5428,180 +4936,12 @@ const messages = {
     },
   },
   dashboards: {
-    staff: {
-      title: "Painel de Pessoal",
-      subtitle: "Visão geral dos funcionários e organização",
-      actions: {
-        viewAll: "Ver Todos",
-        addEmployee: "Adicionar Funcionário",
-      },
-      stats: {
-        totalEmployees: "Total de Funcionários",
-        inDatabase: "Na base de dados",
-        activeEmployees: "Funcionários Ativos",
-        activeRate: "{{rate}}% taxa de ativos",
-        departments: "Departamentos",
-        activeDepartments: "Departamentos ativos",
-        inactive: "Inativos",
-        inactiveRate: "{{rate}}% da força de trabalho",
-      },
-      labels: {
-        unknown: "Desconhecido",
-      },
-      departments: {
-        distribution: "Distribuição de funcionários ({{total}} total)",
-        emptyEmployees: "Sem funcionários na base de dados",
-        seedDatabase: "Preencher base de dados",
-        emptyDepartments: "Sem dados de departamento",
-        count: "{{count}} ({{percent}}%)",
-      },
-      status: {
-        title: "Visão Geral de Estado",
-        description: "Análise do estado dos funcionários",
-        live: "Em Direto",
-        activeTitle: "Funcionários Ativos",
-        activeDescription: "Atualmente empregados",
-        inactiveTitle: "Funcionários Inativos",
-        inactiveDescription: "Terminados ou de licença",
-        departmentsTitle: "Departamentos",
-        departmentsDescription: "Unidades de trabalho ativas",
-      },
-      quickActions: {
-        title: "Ações Rápidas",
-        allEmployees: "Todos os Funcionários",
-        addEmployee: "Adicionar Funcionário",
-        departments: "Departamentos",
-        orgChart: "Organograma",
-      },
-      toast: {
-        errorTitle: "Erro",
-        loadFailed: "Falha ao carregar dados dos funcionários",
-      },
-    },
+    staff: {},
     timeLeave: {
-      title: "Tempo e Licenças",
-      subtitle: "Assiduidade, registo de tempo e gestão de licenças",
-      actions: {
-        trackTime: "Registar Tempo",
-        newRequest: "Novo Pedido",
-      },
-      stats: {
-        totalEmployees: "Total de Funcionários",
-        inDatabase: "Na base de dados",
-        activeEmployees: "Funcionários Ativos",
-        availableTracking: "Disponíveis para registo",
-        timeEntries: "Registos de Tempo",
-        noData: "Sem dados ainda",
-        leaveRequests: "Pedidos de Licença",
-        noRequests: "Sem pedidos ainda",
-      },
-      status: {
-        title: "Estado",
-        description: "Dados de funcionários em tempo real",
-        live: "Em Direto",
-        databaseConnected: "Base de Dados Conectada",
-        firebaseConnected: "Conectado ao Firebase",
-        employeesAvailable: "Funcionários Disponíveis",
-        activeEmployees: "{{count}} funcionários ativos",
-        noEmployees: "Sem Dados de Funcionários",
-        noEmployeesDesc: "Adicione funcionários para ativar o registo",
-        empty: "Vazio",
-      },
-      setup: {
-        addEmployees: {
-          title: "Adicionar Funcionários",
-          description: "Importar ou adicionar funcionários à sua base de dados",
-        },
-        configureTime: {
-          title: "Configurar Registo de Tempo",
-          description: "Configurar políticas e regras de registo de tempo",
-        },
-        setupLeave: {
-          title: "Configurar Políticas de Licença",
-          description: "Definir tipos de licença e fluxos de aprovação",
-        },
-      },
-      gettingStarted: {
-        title: "Começar",
-        description: "Configurar registo de tempo e licenças",
-        done: "Concluído",
-        pending: "Pendente",
-      },
-      quickActions: {
-        title: "Ações Rápidas",
-        timeTracking: "Registo de Tempo",
-        attendance: "Assiduidade",
-        leaveRequests: "Pedidos de Licença",
-        scheduling: "Escalonamento",
-      },
-      toast: {
-        errorTitle: "Erro",
-        loadFailed: "Falha ao carregar dados dos funcionários",
-      },
+      setup: {},
     },
     hiring: {
-      title: "Painel de Recrutamento",
-      subtitle: "Visão geral das atividades de recrutamento e contratação",
-      actions: {
-        viewApplications: "Ver Candidaturas",
-        postJob: "Publicar Nova Vaga",
-        viewAll: "Ver Todos",
-      },
-      stats: {
-        openPositions: "Posições Abertas",
-        openPositionsSub: "+3 este mês",
-        totalApplications: "Total de Candidaturas",
-        totalApplicationsSub: "+18 esta semana",
-        interviewsScheduled: "Entrevistas Agendadas",
-        interviewsScheduledSub: "Próximos 7 dias",
-        pendingOffers: "Ofertas Pendentes",
-        pendingOffersSub: "A aguardar resposta",
-      },
-      recent: {
-        title: "Atividade Recente",
-        description: "Últimas atualizações no recrutamento",
-      },
-      activity: {
-        hired: {
-          title: "Sarah Johnson contratada",
-          subtitle: "Posição de Engenheiro de Software Sénior preenchida",
-        },
-        interviews: {
-          title: "3 entrevistas agendadas",
-          subtitle: "Candidatos a Gestor de Produto",
-        },
-        newJob: {
-          title: "Nova vaga publicada",
-          subtitle: "Especialista de Marketing - Remoto",
-        },
-        surge: {
-          title: "Aumento de candidaturas",
-          subtitle: "Posição de Designer UX - 45 novas candidaturas",
-        },
-        status: {
-          completed: "Concluído",
-          scheduled: "Agendado",
-          active: "Ativo",
-          trending: "Em Tendência",
-        },
-      },
-      pipeline: {
-        title: "Pipeline de Recrutamento",
-        description: "Candidatos por fase",
-        total: "{{count}} total",
-        applications: "Candidaturas Recebidas",
-        phone: "Triagem Telefónica",
-        technical: "Entrevista Técnica",
-        final: "Entrevista Final",
-      },
-      quickActions: {
-        title: "Ações Rápidas",
-        createJob: "Criar Vaga",
-        candidates: "Candidatos",
-        interviews: "Entrevistas",
-        onboarding: "Integração",
-        offboarding: "Desvinculação",
-      },
+      activity: {},
     },
   },
   payroll: {
@@ -5671,116 +5011,11 @@ const messages = {
       },
     },
   },
-  payrollDashboard: {
-    readyToRun: "Folha pronta para processar",
-    allVerifiedProceed:
-      "Todos os itens da lista verificados. Pode prosseguir com a folha.",
-    runPayrollBtn: "Processar Folha",
-    payrollFor: "Folha de {{month}}",
-    payDate: "Data de pagamento:",
-    daysRemaining: "{{days}} dias restantes",
-    employees: "{{count}} funcionários",
-    confirmRunPayroll: "Confirmar e Processar Folha",
-    reviewPayroll: "Rever Folha",
-    viewChecklist: "Ver Lista de Verificação",
-    checklistTitle: "Lista de Verificação da Folha",
-    allVerifiedReady:
-      "Todos os itens verificados. A folha está pronta para processar.",
-    checklistProgress: "{{done}} de {{total}} itens completos",
-    pending: "pendente",
-    grossPayroll: "Folha Bruta",
-    employerINSS: "INSS Empregador ({{rate}}%)",
-    employeeINSS: "INSS Funcionário ({{rate}}%)",
-    estNetToEmployees: "Líquido Est. para Funcionários",
-    employeesNeedAttention: "Funcionários Requerem Atenção",
-    payrollCoverage: "Cobertura da Folha",
-    missingContractsINSS: "Contratos ou INSS em falta",
-    allEmployeesReady: "Todos os funcionários prontos",
-    lastPayroll: "Última Folha",
-    completed: "Concluída",
-    noPayrollYet: "Nenhuma folha processada ainda",
-    manage: "Gerir",
-    ngoReporting: "Relatórios para ONGs e Doadores",
-    ngoReportingHint:
-      "Acesso rápido a ferramentas de alocação e exportação para doadores.",
-    pastReports: "Histórico e Relatórios",
-    complianceDeadlines: "Prazos de Conformidade",
-    witDue: "IRT vence:",
-    inssDue: "INSS vence:",
-    inssStatementDue: "Declaração INSS vence:",
-    inssPaymentDue: "Pagamento INSS vence:",
-    minimumWage: "Salário mínimo:",
-    minimumWageAmount: "$115 USD",
-    lastReviewedBy: "Última revisão por {{name}}",
-    simpleFlowTitle: "Fluxo simples da folha",
-    simpleFlowDesc: "Siga estes passos por ordem no dia de pagamento.",
-    simpleFlow: {
-      peopleTitle: "Verificar registos dos funcionários",
-      peoplePending:
-        "{{count}} registos de funcionários ainda precisam de contrato ou dados INSS.",
-      peopleReady:
-        "Os registos dos funcionários parecem prontos para esta folha.",
-      timeTitle: "Verificar tempo e licenças",
-      timePending:
-        "{{count}} pedidos de licença ainda precisam de revisão antes da folha.",
-      timeReady:
-        "Licenças e assiduidade parecem atualizadas para este período.",
-      runTitle: "Processar folha",
-      runPending:
-        "Conclua os itens da lista de verificação antes de processar a folha.",
-      payTitle: "Pagar salários",
-      payDesc:
-        "Abra as transferências bancárias depois de a folha ser aprovada.",
-    },
-    checklist: {
-      attendanceLabel: "Assiduidade finalizada",
-      attendanceIssue: "folha de presença pendente de aprovação",
-      attendanceDesc: "Todas as folhas de presença submetidas e aprovadas",
-      attendanceLink: "Rever folhas de presença",
-      leaveLabel: "Pedidos de licença aprovados",
-      leaveIssue: "pedido de licença pendente de aprovação",
-      leaveDesc: "Sem pedidos de licença pendentes para o período",
-      leaveLink: "Rever pedidos de licença",
-      contractsLabel: "Contratos de funcionários completos",
-      contractsIssue: "funcionário sem contrato",
-      contractsDesc: "Todos os funcionários têm contratos válidos",
-      contractsLink: "Ver funcionários",
-      salariesLabel: "Dados salariais verificados",
-      salariesIssue: "funcionário sem dados salariais",
-      salariesDesc: "Dados de remuneração atualizados",
-      salariesLink: "Rever salários",
-    },
-    status: {
-      gettingReady: "A Preparar",
-      almostReady: "Quase Pronto",
-      readyToRun: "Pronto para Processar",
-      processing: "A Processar",
-      completed: "Concluído",
-    },
-    links: {
-      allowances: "Subsídios",
-      allowancesDesc: "Transporte, habitação, refeições e mais",
-      deductions: "Deduções",
-      deductionsDesc: "Empréstimos, adiantamentos e deduções",
-      payrollHistory: "Histórico da Folha",
-      payrollHistoryDesc: "Ver folhas anteriores",
-      bankTransfers: "Transferências Bancárias",
-      bankTransfersDesc: "Gerir pagamentos de salários",
-      taxReports: "Relatórios Fiscais",
-      taxReportsDesc: "Relatórios de IRT e INSS",
-      payrollAllocation: "Relatório de Alocação da Folha",
-      payrollAllocationDesc:
-        "Divisão da folha por projeto e fonte de financiamento",
-      donorExport: "Pacote de Exportação para Doadores",
-      donorExportDesc:
-        "Exportar CSVs contabilísticos de folha prontos para doadores",
-    },
-  },
+  payrollDashboard: {},
   setupWizard: {
     steps: {
       companyDetails: "Dados da Empresa",
       bankAccounts: "Contas Bancárias",
-      leavePolicies: "Políticas de Licença",
       payrollConfig: "Config. da Folha",
       complete: "Completo",
     },
@@ -5789,10 +5024,6 @@ const messages = {
     companyIntro:
       "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
     progressTitle: "Progresso da configuração",
-    progressHint:
-      "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
-    savedAutomaticallyTitle:
-      "Os passos concluídos ficam guardados automaticamente",
     savedAutomaticallyDesc:
       "Pode sair e voltar mais tarde. A Xefe retoma onde parou.",
     stepOf: "Passo {{current}} de {{total}}",
@@ -5803,7 +5034,6 @@ const messages = {
     error: "Erro",
     failedSaveCompany: "Falha ao guardar dados da empresa.",
     failedSaveBank: "Falha ao guardar conta bancária.",
-    failedSaveLeave: "Falha ao guardar políticas de licença.",
     failedSavePayroll: "Falha ao guardar config. da folha.",
     setupComplete: "Configuração Completa",
     accountReady: "A sua conta está pronta a usar!",
@@ -5818,22 +5048,8 @@ const messages = {
     legalName: "Nome Legal *",
     legalNamePlaceholder: "Sua Empresa Lda.",
     tradingName: "Nome Comercial",
-    tradingNamePlaceholder: "Sua Empresa",
     tinNumber: "N.º Único SERVE / NIF *",
     tinPlaceholder: "Número Único da Empresa / NIF",
-    teamSize: "Dimensão Aproximada da Equipa",
-    selectTeamSize: "Selecionar dimensão da equipa",
-    teamSizeHint:
-      "Isto ajuda o Xefe a escolher melhores padrões para equipas pequenas ou maiores.",
-    address: "Morada",
-    addressPlaceholder: "Rua",
-    city: "Cidade",
-    cityPlaceholder: "Díli",
-    country: "País",
-    phone: "Telefone",
-    phonePlaceholder: "+670 ...",
-    email: "Email",
-    emailPlaceholder: "info@empresa.tl",
     bankIntro:
       "Escolha como paga normalmente os salários. Pode alterar isto mais tarde nas Definições.",
     paymentMethod: "Método de pagamento salarial",
@@ -5849,20 +5065,10 @@ const messages = {
     accountNumberPlaceholder: "Número da conta",
     leaveIntro:
       "Políticas de licença padrão baseadas na lei laboral de Timor-Leste serão aplicadas. Pode personalizar depois.",
-    annualLeave: "Férias Anuais",
-    annualLeaveValue: "12 dias/ano",
-    sickLeave: "Licença por Doença",
-    sickLeaveValue: "12 dias/ano",
-    maternityLeave: "Licença de Maternidade",
-    maternityLeaveValue: "12 semanas",
-    paternityLeave: "Licença de Paternidade",
-    paternityLeaveValue: "5 dias",
     leaveNote:
       "Estes padrões cumprem o Código do Trabalho de TL. Personalize nas Definições após a configuração.",
     payFrequency: "Frequência de Pagamento",
     monthly: "Mensal",
-    biWeekly: "Quinzenal",
-    weekly: "Semanal",
     payDay: "Dia de Pagamento (dia do mês)",
     currency: "Moeda",
     usdCurrency: "USD (Dólar Americano)",
@@ -5876,8 +5082,6 @@ const messages = {
       "A sua conta foi configurada. Agora pode começar a adicionar funcionários, processar folha de pagamento e gerir a sua equipa.",
     back: "Voltar",
     doLater: "Ir para o painel por agora",
-    finishLaterHint:
-      "Pode voltar à configuração em qualquer altura a partir do painel antes de processar a sua primeira folha.",
     saving: "A guardar...",
     goToDashboard: "Ir para o Painel",
     next: "Seguinte",
@@ -8114,7 +7318,6 @@ const messages = {
       "O processamento foi rejeitado e devolvido para revisão.",
     toastRejectionFailed: "Falha na Rejeição",
     toastRejectionFailedDesc: "Falha ao rejeitar processamento.",
-    toastLoadError: "Falha ao carregar histórico. Por favor atualize a página.",
     toastDetailsError: "Falha ao carregar detalhes.",
     toastRecordsError: "Falha ao carregar registos.",
     toastExportStarted: "Exportação Iniciada",
@@ -8537,15 +7740,9 @@ const messages = {
       },
       cards: {
         staff: "Funcionários",
-        active: "{{count}} ativos",
         hiring: "Recrutamento",
-        interviewScheduled: "{{count}} entrevista agendada",
-        interviewsScheduled: "{{count}} entrevistas agendadas",
         timeLeave: "Tempo & Licença",
-        onLeaveToday: "{{count}} de licença hoje",
         performance: "Desempenho",
-        activeGoal: "{{count}} objetivo ativo",
-        activeGoals: "{{count}} objetivos ativos",
         staffPurpose: "Gerir a sua equipa e os seus dados",
         staffAction: "Ver pessoal",
         hiringPurpose: "Publicar vagas e acompanhar candidatos",
@@ -8560,13 +7757,9 @@ const messages = {
       title: "Tempo & Licença",
       seoDescription:
         "Cobertura, presença, aprovações de licença e planeamento de turnos num só lugar.",
-      subtitle:
-        "{{available}} de {{total}} funcionários disponíveis hoje ({{rate}}% de cobertura).",
       subtitleRecorded:
         "A presença foi registada para {{recorded}} de {{total}} funcionários hoje.",
       subtitleEmpty: "Aprove licenças, acompanhe a presença e planeie turnos.",
-      attendanceAction: "Presença",
-      shiftsAction: "Horários de turnos",
       allGood: "Nada precisa da sua atenção agora.",
       attention: {
         leaveRequest: "pedido de licença à espera de aprovação",
@@ -8581,16 +7774,8 @@ const messages = {
       },
       cards: {
         attendance: "Presença",
-        availableToday: "{{rate}}% disponíveis hoje",
-        recordedToday: "presença registada hoje",
         leave: "Licença",
-        onLeaveToday: "{{count}} de licença hoje",
-        onLeaveTodayLabel: "de licença hoje",
-        attendanceMeta: "Entradas e horas",
-        hoursRecordedToday: "horas registadas hoje",
         shifts: "Turnos",
-        shiftsMeta: "Planear escalas semanais",
-        shiftsThisWeek: "turnos esta semana",
         attendancePurpose: "Registar horas e marcações de ponto",
         attendanceAction: "Ver assiduidade",
         leavePurpose: "Aprovar pedidos e acompanhar saldos",
@@ -8665,23 +7850,14 @@ const messages = {
       },
       cards: {
         invoices: "Faturas",
-        outstanding: "{{amount}} por receber",
         bills: "Contas",
-        overdue: "{{count}} em atraso",
-        dueThisWeek: "{{amount}} a vencer esta semana",
         expenses: "Despesas",
-        expensesMeta: "Acompanhar gastos",
-        financialReports: "Relatórios Financeiros",
-        financialReportsMeta: "Lucros e perdas · fluxo de caixa · IVA",
         invoicesPurpose: "Criar, enviar e acompanhar faturas",
         invoicesAction: "Ver faturas",
         billsPurpose: "Registar faturas de fornecedores e pagá-las",
         billsAction: "Ver contas",
         expensesPurpose: "Registar e categorizar despesas do negócio",
         expensesAction: "Ver despesas",
-        financialReportsPurpose:
-          "Demonstrações de resultados, fluxo de caixa e IVA",
-        financialReportsAction: "Ver relatórios",
       },
     },
     accounting: {
@@ -8707,16 +7883,9 @@ const messages = {
       },
       cards: {
         chartOfAccounts: "Plano de Contas",
-        ledgerStructure: "Estrutura do razão",
         journalEntries: "Lançamentos",
-        pending: "{{count}} pendentes",
         trialBalance: "Balancete",
-        balanced: "Equilibrado",
-        outOfBalance: "Desequilibrado",
         balanceSheet: "Balanço",
-        live: "Atualizado",
-        pendingPayroll: "Folha pendente",
-        financialPosition: "Posição financeira",
         chartOfAccountsPurpose: "As suas contas e a estrutura do razão",
         chartOfAccountsAction: "Ver plano de contas",
         journalEntriesPurpose: "Lançar e rever entradas do diário",
@@ -8733,38 +7902,8 @@ const messages = {
         "Relatórios de folha, pessoas, presença, departamentos, ONG e personalizados num só lugar.",
       summarySingle: "{{count}} família de relatórios da equipa.",
       summaryPlural: "{{count}} famílias de relatórios da equipa.",
-      summaryReadOnlySingle: "{{count}} família de relatórios disponível.",
-      summaryReadOnlyPlural: "{{count}} famílias de relatórios disponíveis.",
-      reportSetup: "Configurar relatórios",
-      customReports: "Relatórios personalizados",
-      filingRunway: "Próximas declarações",
-      allGood:
-        "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
       browseReports: "Explorar relatórios",
       browseAction: "Ver relatórios",
-      compliance: {
-        filingOverdue: "{{count}} declaração em atraso",
-        filingsOverdue: "{{count}} declarações em atraso",
-        filingDueThisWeek: "{{count}} declaração vence esta semana",
-        filingsDueThisWeek: "{{count}} declarações vencem esta semana",
-        noneDue: "sem declarações a vencer",
-      },
-      filings: {
-        monthlyWit: "WIT {{period}}",
-        monthlyWitReturn: "Declaração WIT {{period}}",
-        monthlyWitPayment: "Pagamento WIT {{period}}",
-        annualWit: "WIT anual {{period}}",
-        annualIncomeTax: "Imposto anual sobre o rendimento {{period}}",
-        servicesTax: "Imposto sobre serviços {{period}}",
-        installmentTax: "Prestação do imposto sobre o rendimento {{period}}",
-        inssPayment: "Pagamento de INSS {{period}}",
-        inssStatement: "Declaração de INSS {{period}}",
-        overdue: "{{days}}d em atraso",
-        dueToday: "vence hoje",
-        dueTomorrow: "vence amanhã",
-        daysLeft: "faltam {{days}}d",
-        line: "{{label}} — {{descriptor}} (vence em {{date}})",
-      },
       families: {
         "payroll-reports":
           "Recibos, impostos, detalhe anual e resumos da folha de pagamento.",
@@ -9054,7 +8193,6 @@ const messages = {
       failed: "Não foi possível enviar o pedido. Tente novamente.",
     },
     connection: {
-      title: "Ligação ao contabilista",
       description: "Peça apoio profissional ou gira o acesso já concedido.",
       none: "Nenhum parceiro contabilístico selecionado.",
       view: "Ver perfil do parceiro",
@@ -9095,7 +8233,6 @@ const messages = {
       bannerAction: "Saber mais",
     },
     landing: {
-      nav: "Apoio contabilístico",
       eyebrow: "Apoio contabilístico opcional",
       title: "Faça por si — ou peça revisão a um contabilista",
       description:
@@ -9115,7 +8252,6 @@ const messages = {
       "Está a ver o mesmo espaço de parceiro que a equipa da firma parceira utilizará.",
     cards: {
       requests: "Novos pedidos",
-      awaitingAccess: "A aguardar acesso do cliente",
       connected: "Clientes ligados",
     },
     needsAttention: "Precisa de atenção",
