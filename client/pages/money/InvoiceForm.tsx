@@ -854,7 +854,10 @@ export default function InvoiceForm() {
                 <Send className="h-4 w-4 mr-2" />
                 {t('money.invoices.saveAndSend') || 'Save & Send'}
               </Button>
-              <DropdownMenu>
+              {/* Non-modal: a menu item here opens a Dialog. A modal DropdownMenu puts
+                  `pointer-events: none` on <body> and that lock can outlive both, freezing
+                  the page (see 9172b0c). */}
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon" className="sm:hidden" aria-label={t('common.more') || 'More'}>
                     <MoreHorizontal className="h-4 w-4" />

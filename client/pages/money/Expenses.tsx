@@ -784,7 +784,10 @@ export default function Expenses() {
                           {formatDate(expense.date)}
                         </p>
                       </div>
-                      <DropdownMenu>
+                      {/* Non-modal: a menu item here opens a Dialog. A modal DropdownMenu puts
+                          `pointer-events: none` on <body> and that lock can outlive both, freezing
+                          the page (see 9172b0c). */}
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button
                             type="button"

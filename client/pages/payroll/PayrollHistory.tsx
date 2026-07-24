@@ -1198,7 +1198,10 @@ export default function PayrollHistory() {
                             </div>
                           </button>
                           <div className="mt-2 flex justify-end">
-                            <DropdownMenu>
+                            {/* Non-modal: a menu item here opens a Dialog. A modal DropdownMenu puts
+                                `pointer-events: none` on <body> and that lock can outlive both, freezing
+                                the page (see 9172b0c). */}
+                            <DropdownMenu modal={false}>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm">
                                   <MoreVertical className="h-4 w-4 mr-1.5" />
@@ -1261,7 +1264,10 @@ export default function PayrollHistory() {
                               </TableCell>
                               <TableCell className="whitespace-nowrap">{getStatusBadge(run.status)}</TableCell>
                               <TableCell className="text-right">
-                                <DropdownMenu>
+                                {/* Non-modal: a menu item here opens a Dialog. A modal DropdownMenu puts
+                                    `pointer-events: none` on <body> and that lock can outlive both, freezing
+                                    the page (see 9172b0c). */}
+                                <DropdownMenu modal={false}>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="outline" size="sm">
                                       <MoreVertical className="h-4 w-4 mr-1.5" />
