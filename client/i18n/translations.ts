@@ -4730,6 +4730,8 @@ export const translations = {
           "etaxPortal": "e-Tax Portal",
           "officialForm": "Official Form",
           "view": "View",
+          "viewReturn": "View return",
+          "continueReturn": "Continue return",
           "markFiled": "Mark Filed",
           "recordPayment": "Record Payment"
         },
@@ -4774,6 +4776,7 @@ export const translations = {
           "tin": "TIN:",
           "address": "Address:",
           "notSet": "Not set",
+          "tinReady": "TIN added",
           "tinHint": "Please update company TIN in Settings before filing."
         },
         "summary": {
@@ -14137,6 +14140,8 @@ export const translations = {
           "etaxPortal": "Portal e-Tax",
           "officialForm": "Formuláriu Ofisiál",
           "view": "Haree",
+          "viewReturn": "Haree deklarasaun",
+          "continueReturn": "Kontinua deklarasaun",
           "markFiled": "Marka hatama",
           "recordPayment": "Rejista pagamentu"
         },
@@ -14181,6 +14186,7 @@ export const translations = {
           "tin": "TIN:",
           "address": "Enderesu:",
           "notSet": "Seidauk define",
+          "tinReady": "TIN hatama ona",
           "tinHint": "Favór atualiza TIN empreza iha Settings antes arkiva."
         },
         "summary": {
@@ -21424,6 +21430,8 @@ export const translations = {
           "etaxPortal": "Portal e-Tax",
           "officialForm": "Formulário Oficial",
           "view": "Ver",
+          "viewReturn": "Ver declaração",
+          "continueReturn": "Continuar declaração",
           "markFiled": "Marcar Entregue",
           "recordPayment": "Registar Pagamento"
         },
@@ -21468,6 +21476,7 @@ export const translations = {
           "tin": "NIF:",
           "address": "Morada:",
           "notSet": "Não definido",
+          "tinReady": "NIF adicionado",
           "tinHint": "Atualize o NIF da empresa em Settings antes de entregar."
         },
         "summary": {

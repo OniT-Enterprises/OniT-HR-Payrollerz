@@ -1732,7 +1732,8 @@ const messages = {
       lede: "Documentação em linguagem simples da maquinaria por baixo do Xefe — o que acontece ao seu dinheiro, quando caem os prazos e que garantias o próprio sistema impõe.",
       article1Tag: "Folha de pagamento & contabilidade",
       article1Title: "A cadeia do dinheiro da folha",
-      article1Desc: "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
+      article1Desc:
+        "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
       readArticle: "Ler o artigo",
       guides: "Guias",
       architecture: "Por dentro",
@@ -1757,13 +1758,16 @@ const messages = {
         draft: "rascunho",
         draftNote: "qualquer pessoa da equipa com acesso à folha",
         processing: "processamento",
-        processingNote: "finalizar é o único passo que exige uma subscrição ativa",
+        processingNote:
+          "finalizar é o único passo que exige uma subscrição ativa",
         approved: "aprovado",
         approvedNote: "uma segunda pessoa aprova — nunca quem processou",
         paid: "pago",
-        paidNote: "só a partir de aprovado, com evidência completa do pagamento",
+        paidNote:
+          "só a partir de aprovado, com evidência completa do pagamento",
         closed: "livros fechados",
-        closedNote: "correções por lançamentos de estorno, nunca editando o histórico",
+        closedNote:
+          "correções por lançamentos de estorno, nunca editando o histórico",
         gate: "Marcar um processamento como pago exige a data do pagamento, uma referência bancária, quem pagou e o lançamento de liquidação associado — e, uma vez ligada, essa evidência nunca pode ser alterada. Um pagamento errado corrige-se com um estorno, nunca reescrevendo o registo.",
       },
       s2: {
@@ -1772,13 +1776,16 @@ const messages = {
         body: "Cada valor é calculado com aritmética decimal exata e registado exatamente uma vez — uma repetição devolve o mesmo lançamento, nunca um duplicado.",
         accrual: "Acréscimo",
         accrualWhen: "na aprovação",
-        accrualFoot: "Os livros reconhecem o custo total da folha — ainda nada saiu do banco.",
+        accrualFoot:
+          "Os livros reconhecem o custo total da folha — ainda nada saiu do banco.",
         settlement: "Liquidação",
         settlementWhen: "no pagamento",
-        settlementFoot: "Os salários saem do banco pelo processo de lote salarial do próprio banco, com ordem de pagamento assinada.",
+        settlementFoot:
+          "Os salários saem do banco pelo processo de lote salarial do próprio banco, com ordem de pagamento assinada.",
         clearing: "Regularização legal",
         clearingWhen: "na entrega",
-        clearingFoot: "Imposto e segurança social são dois pagamentos separados, cada um com o seu lançamento — as contas de passivo voltam a zero no período.",
+        clearingFoot:
+          "Imposto e segurança social são dois pagamentos separados, cada um com o seu lançamento — as contas de passivo voltam a zero no período.",
       },
       acct: {
         salaries: "Salários e vencimentos (bruto)",
@@ -1795,16 +1802,20 @@ const messages = {
         body: "Uma declaração entregue com imposto por pagar continua visivelmente em atraso no Xefe. As obrigações salariais vivem na Folha; a declaração anual da empresa vive na Contabilidade.",
         d10Small: "mês seguinte",
         d10Title: "Declaração INSS",
-        d10Body: "A declaração de remunerações, no modelo oficial, submetida pelo portal do empregador do INSS.",
+        d10Body:
+          "A declaração de remunerações, no modelo oficial, submetida pelo portal do empregador do INSS.",
         d15Small: "mês seguinte",
         d15Title: "Imposto sobre salários",
-        d15Body: "A declaração mensal à ATTL e o respetivo pagamento — ambos até ao dia 15.",
+        d15Body:
+          "A declaração mensal à ATTL e o respetivo pagamento — ambos até ao dia 15.",
         d20Small: "mês seguinte",
         d20Title: "Pagamento INSS",
-        d20Body: "O atraso acumula 1% por mês ou fração (Decreto-Lei 20/2017, art. 39) — o Xefe avisa com uma estimativa ao vivo.",
+        d20Body:
+          "O atraso acumula 1% por mês ou fração (Decreto-Lei 20/2017, art. 39) — o Xefe avisa com uma estimativa ao vivo.",
         d31Small: "ano seguinte",
         d31Title: "Declarações anuais",
-        d31Body: "A reconciliação anual do imposto sobre salários e o formulário anual de rendimentos — o Xefe prepara os valores de trabalho para o seu contabilista rever e entregar.",
+        d31Body:
+          "A reconciliação anual do imposto sobre salários e o formulário anual de rendimentos — o Xefe prepara os valores de trabalho para o seu contabilista rever e entregar.",
       },
       s4: {
         eyebrow: "4 · Garantias",
@@ -5149,6 +5160,8 @@ const messages = {
         etaxPortal: "Portal e-Tax",
         officialForm: "Formulário Oficial",
         view: "Ver",
+        viewReturn: "Ver declaração",
+        continueReturn: "Continuar declaração",
         markFiled: "Marcar Entregue",
         recordPayment: "Registar Pagamento",
       },
@@ -5201,6 +5214,7 @@ const messages = {
         tin: "NIF:",
         address: "Morada:",
         notSet: "Não definido",
+        tinReady: "NIF adicionado",
         tinHint: "Atualize o NIF da empresa em Settings antes de entregar.",
       },
       summary: {
@@ -8392,8 +8406,7 @@ const messages = {
           l80: "Perdas na venda/transmissão de bens",
           l110: "Outras despesas dedutíveis",
         },
-        otherDetailTitle:
-          "Outras despesas acima de $1.000 (linhas 115–130)",
+        otherDetailTitle: "Outras despesas acima de $1.000 (linhas 115–130)",
         excludedTitle: "Excluídas como não dedutíveis — rever",
         adjustmentsTitle: "Ajustamentos do contabilista",
         adjustmentsDesc:
@@ -8620,8 +8633,7 @@ const messages = {
     },
     money: {
       title: "Dinheiro",
-      seoDescription:
-        "Faturas, contas, despesas e cobranças num só lugar.",
+      seoDescription: "Faturas, contas, despesas e cobranças num só lugar.",
       summary:
         "{{collected}} recebidos este mês · {{outstanding}} por receber.",
       viewBills: "Ver contas",
@@ -8966,8 +8978,7 @@ const messages = {
     process: {
       eyebrow: "Uma ligação baseada em consentimento",
       title: "Escolha, combine e depois ligue",
-      description:
-        "Ambos concordam antes de qualquer registo abrir.",
+      description: "Ambos concordam antes de qualquer registo abrir.",
       steps: {
         choose: {
           title: "Pedir uma consulta",

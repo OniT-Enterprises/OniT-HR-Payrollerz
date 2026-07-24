@@ -1711,7 +1711,8 @@ const messages = {
       lede: "Dokumentasaun ho lian simples kona-ba mákina iha Xefe nia okos — saida mak akontese ho ita-nia osan, bainhira prazu sira monu, no garantia sira-ne'ebé sistema rasik impoin.",
       article1Tag: "Folha pagamentu & kontabilidade",
       article1Title: "Kadeia osan folha pagamentu nian",
-      article1Desc: "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
+      article1Desc:
+        "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
       readArticle: "Lee artigu",
       guides: "Gía sira",
       architecture: "Iha laran",
@@ -1736,7 +1737,8 @@ const messages = {
         draft: "rascunho",
         draftNote: "ema ruma iha ekipa ho asesu ba folha",
         processing: "prosesamentu",
-        processingNote: "finaliza mak pasu úniku ne'ebé presiza subskrisaun ativu",
+        processingNote:
+          "finaliza mak pasu úniku ne'ebé presiza subskrisaun ativu",
         approved: "aprovadu",
         approvedNote: "ema segundu ida aprova — nunka ema ne'ebé prosesa",
         paid: "selu ona",
@@ -1751,13 +1753,16 @@ const messages = {
         body: "Valor ida-idak kalkula ho aritmétika desimál loloos no rejista dala ida de'it — repete fila fali fó lansamentu hanesan, nunka duplikadu.",
         accrual: "Akréssimu",
         accrualWhen: "iha aprovasaun",
-        accrualFoot: "Livru sira rekoñese kustu totál folha nian — seidauk iha buat ida sai husi banku.",
+        accrualFoot:
+          "Livru sira rekoñese kustu totál folha nian — seidauk iha buat ida sai husi banku.",
         settlement: "Likidasaun",
         settlementWhen: "iha pagamentu",
-        settlementFoot: "Saláriu sira sai husi banku liuhusi prosesu lote saláriu banku nian rasik, ho orden pagamentu asinadu.",
+        settlementFoot:
+          "Saláriu sira sai husi banku liuhusi prosesu lote saláriu banku nian rasik, ho orden pagamentu asinadu.",
         clearing: "Regularizasaun legál",
         clearingWhen: "iha entrega",
-        clearingFoot: "Impostu no seguransa sosiál mak pagamentu rua ketak, ida-idak ho nia lansamentu rasik — konta pasivu sira fila ba zero iha períodu.",
+        clearingFoot:
+          "Impostu no seguransa sosiál mak pagamentu rua ketak, ida-idak ho nia lansamentu rasik — konta pasivu sira fila ba zero iha períodu.",
       },
       acct: {
         salaries: "Saláriu no vensimentu (brutu)",
@@ -1774,16 +1779,20 @@ const messages = {
         body: "Deklarasaun ne'ebé entrega ona maibé impostu seidauk selu kontinua atrazadu ho klaru iha Xefe. Obrigasaun saláriu sira moris iha Folha; deklarasaun anuál empreza nian moris iha Kontabilidade.",
         d10Small: "fulan tuir mai",
         d10Title: "Deklarasaun INSS",
-        d10Body: "Deklarasaun remunerasaun, iha modelu ofisiál, submete liuhusi portál empregadór INSS nian.",
+        d10Body:
+          "Deklarasaun remunerasaun, iha modelu ofisiál, submete liuhusi portál empregadór INSS nian.",
         d15Small: "fulan tuir mai",
         d15Title: "Impostu saláriu",
-        d15Body: "Deklarasaun mensál ba ATTL no nia pagamentu — rua-rua to'o loron 15.",
+        d15Body:
+          "Deklarasaun mensál ba ATTL no nia pagamentu — rua-rua to'o loron 15.",
         d20Small: "fulan tuir mai",
         d20Title: "Pagamentu INSS",
-        d20Body: "Atrazu akumula 1% kada fulan ka frasaun (Dekretu-Lei 20/2017, art. 39) — Xefe avizu ho estimativa moris.",
+        d20Body:
+          "Atrazu akumula 1% kada fulan ka frasaun (Dekretu-Lei 20/2017, art. 39) — Xefe avizu ho estimativa moris.",
         d31Small: "tinan tuir mai",
         d31Title: "Deklarasaun anuál sira",
-        d31Body: "Rekonsiliasaun anuál impostu saláriu no formuláriu anuál rendimentu — Xefe prepara valor servisu ba ita-nia kontabilista atu reviza no entrega.",
+        d31Body:
+          "Rekonsiliasaun anuál impostu saláriu no formuláriu anuál rendimentu — Xefe prepara valor servisu ba ita-nia kontabilista atu reviza no entrega.",
       },
       s4: {
         eyebrow: "4 · Garantia",
@@ -6179,6 +6188,8 @@ const messages = {
         etaxPortal: "Portal e-Tax",
         officialForm: "Formuláriu Ofisiál",
         view: "Haree",
+        viewReturn: "Haree deklarasaun",
+        continueReturn: "Kontinua deklarasaun",
         markFiled: "Marka hatama",
         recordPayment: "Rejista pagamentu",
       },
@@ -6231,6 +6242,7 @@ const messages = {
         tin: "TIN:",
         address: "Enderesu:",
         notSet: "Seidauk define",
+        tinReady: "TIN hatama ona",
         tinHint: "Favór atualiza TIN empreza iha Settings antes arkiva.",
       },
       summary: {
@@ -8197,8 +8209,7 @@ const messages = {
         depreciationMethodHint:
           "Konfirma ho ita-nia kontabilista tratamentu ida-ne'ebé mak aplika molok entrega.",
         dueBy: "Formuláriu ofisiál to'o {{date}}.",
-        officialFormLink:
-          "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
+        officialFormLink: "Formuláriu no instrusaun ofisiál (attl.gov.tl)",
         summaryTitle: "Rezumu kálkulu",
         summaryDesc:
           "Liña 135–220 kalkula husi kontabilidade ne'ebé mapeia ona, ajustamentu no créditu sira",
@@ -8238,8 +8249,7 @@ const messages = {
           l80: "Perda husi fa'an/transfere sasán",
           l110: "Despeza dedutível seluk",
         },
-        otherDetailTitle:
-          "Despeza seluk liu $1.000 (liña 115–130)",
+        otherDetailTitle: "Despeza seluk liu $1.000 (liña 115–130)",
         excludedTitle: "Hasai tanba la dedutível — reviza",
         adjustmentsTitle: "Ajustamentu kontabilista nian",
         adjustmentsDesc:
@@ -8466,8 +8476,7 @@ const messages = {
     },
     money: {
       title: "Osan",
-      seoDescription:
-        "Fatura, konta, despeza no kobransa iha fatin ida.",
+      seoDescription: "Fatura, konta, despeza no kobransa iha fatin ida.",
       summary:
         "{{collected}} simu fulan ida-ne'e · {{outstanding}} seidauk simu.",
       viewBills: "Haree konta",
@@ -8810,8 +8819,7 @@ const messages = {
     process: {
       eyebrow: "Ligasaun ho konsentimentu uluk",
       title: "Hili, konkorda, depois liga",
-      description:
-        "Ita no firma rua-rua konkorda molok rekordu ruma loke.",
+      description: "Ita no firma rua-rua konkorda molok rekordu ruma loke.",
       steps: {
         choose: {
           title: "Husu konsultasaun",

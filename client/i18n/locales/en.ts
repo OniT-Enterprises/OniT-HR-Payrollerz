@@ -1710,7 +1710,8 @@ const messages = {
       lede: "Plain-language documentation of the machinery under Xefe — what happens to your money, when the deadlines fall, and which guarantees are enforced by the system itself.",
       article1Tag: "Payroll & accounting",
       article1Title: "The payroll money chain",
-      article1Desc: "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
+      article1Desc:
+        "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
       readArticle: "Read the article",
       guides: "Guides",
       architecture: "Under the hood",
@@ -1735,13 +1736,16 @@ const messages = {
         draft: "draft",
         draftNote: "anyone on your team with payroll access",
         processing: "processing",
-        processingNote: "finalizing is the one step that needs an active subscription",
+        processingNote:
+          "finalizing is the one step that needs an active subscription",
         approved: "approved",
-        approvedNote: "a second person approves — never the same person who ran it",
+        approvedNote:
+          "a second person approves — never the same person who ran it",
         paid: "paid",
         paidNote: "only from approved, with full payment evidence",
         closed: "books closed",
-        closedNote: "corrections happen by reversing journals, never by editing history",
+        closedNote:
+          "corrections happen by reversing journals, never by editing history",
         gate: "Marking a run paid requires the payment date, a bank reference, the person who paid, and the linked settlement journal — and once linked, that evidence can never be changed. A wrong payment is fixed with a reversing journal, never by rewriting the record.",
       },
       s2: {
@@ -1750,13 +1754,16 @@ const messages = {
         body: "Every amount is computed with exact decimal arithmetic and posted exactly once — a retry returns the same journal, never a duplicate.",
         accrual: "Accrual",
         accrualWhen: "on approval",
-        accrualFoot: "Your books recognize the full cost of the payroll — nothing has left the bank yet.",
+        accrualFoot:
+          "Your books recognize the full cost of the payroll — nothing has left the bank yet.",
         settlement: "Settlement",
         settlementWhen: "on payment",
-        settlementFoot: "Salaries leave the bank through the bank's own salary-batch process, with a signed payment order.",
+        settlementFoot:
+          "Salaries leave the bank through the bank's own salary-batch process, with a signed payment order.",
         clearing: "Statutory clearing",
         clearingWhen: "on remittance",
-        clearingFoot: "Tax and social security are two separate payments, each with its own journal — the liability accounts return to zero for the period.",
+        clearingFoot:
+          "Tax and social security are two separate payments, each with its own journal — the liability accounts return to zero for the period.",
       },
       acct: {
         salaries: "Salaries & wages (gross)",
@@ -1773,16 +1780,20 @@ const messages = {
         body: "A filed return with unpaid tax stays visibly overdue in Xefe. Wage filings live in Payroll; the annual business return lives in Accounting.",
         d10Small: "following month",
         d10Title: "INSS statement",
-        d10Body: "The remuneration statement, in the official template, submitted through the INSS employer portal.",
+        d10Body:
+          "The remuneration statement, in the official template, submitted through the INSS employer portal.",
         d15Small: "following month",
         d15Title: "Wage income tax",
-        d15Body: "The monthly ATTL return and its payment — both due on the 15th.",
+        d15Body:
+          "The monthly ATTL return and its payment — both due on the 15th.",
         d20Small: "following month",
         d20Title: "INSS payment",
-        d20Body: "Late payment accrues 1% per month or fraction (Decree-Law 20/2017, art. 39) — Xefe warns you with a live estimate.",
+        d20Body:
+          "Late payment accrues 1% per month or fraction (Decree-Law 20/2017, art. 39) — Xefe warns you with a live estimate.",
         d31Small: "following year",
         d31Title: "Annual returns",
-        d31Body: "The employer wage-tax reconciliation and the annual income tax form — Xefe prepares the working figures for your accountant to review and file.",
+        d31Body:
+          "The employer wage-tax reconciliation and the annual income tax form — Xefe prepares the working figures for your accountant to review and file.",
       },
       s4: {
         eyebrow: "4 · Guarantees",
@@ -1961,8 +1972,7 @@ const messages = {
         },
         approval: {
           title: "Approval controls",
-          description:
-            "Xefe records who prepared and who approved each run.",
+          description: "Xefe records who prepared and who approved each run.",
         },
         journals: {
           title: "Source-linked journals",
@@ -5063,6 +5073,8 @@ const messages = {
         etaxPortal: "e-Tax Portal",
         officialForm: "Official Form",
         view: "View",
+        viewReturn: "View return",
+        continueReturn: "Continue return",
         markFiled: "Mark Filed",
         recordPayment: "Record Payment",
       },
@@ -5114,6 +5126,7 @@ const messages = {
         tin: "TIN:",
         address: "Address:",
         notSet: "Not set",
+        tinReady: "TIN added",
         tinHint: "Please update company TIN in Settings before filing.",
       },
       summary: {
@@ -8809,8 +8822,7 @@ const messages = {
     process: {
       eyebrow: "A consent-first connection",
       title: "Choose, agree, then connect",
-      description:
-        "You and the firm both agree before any records open.",
+      description: "You and the firm both agree before any records open.",
       steps: {
         choose: {
           title: "Request a consultation",

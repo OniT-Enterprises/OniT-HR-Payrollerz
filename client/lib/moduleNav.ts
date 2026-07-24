@@ -312,7 +312,6 @@ export const payrollNavConfig: ModuleNavConfig = {
         "/payroll/tax/inss-annual",
       ],
       subPages: [
-        { label: "Payroll Tax & INSS", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
         { label: "Monthly WIT", labelKey: "monthlyWit", path: "/payroll/tax/monthly-wit", icon: FileSpreadsheet, advancedTaxOnly: true },
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },

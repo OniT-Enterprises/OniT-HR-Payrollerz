@@ -261,12 +261,6 @@ const sitemapData: SitemapSection[] = [
         badge: "TL Banks",
       },
       {
-        name: "Payroll Tax & INSS",
-        path: "/payroll/tax",
-        description:
-          "Prepare wage withholding and social-security filings",
-      },
-      {
         name: "Monthly WIT",
         path: "/payroll/tax/monthly-wit",
         description: "Monthly wage withholding return for ATTL",

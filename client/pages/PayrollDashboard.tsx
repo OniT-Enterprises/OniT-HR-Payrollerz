@@ -10,6 +10,7 @@ import { payrollNavConfig } from "@/lib/moduleNav";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useSettings } from "@/hooks/useSettings";
+import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { leaveService } from "@/services/leaveService";
@@ -116,6 +117,7 @@ export default function PayrollDashboard() {
   );
   const payrollRunsQuery = usePayrollRuns({ limit: 6 });
   const settingsQuery = useSettings();
+  const taxDueQuery = useTaxFilingsDueSoon(6, canManageTenant);
   const leaveStatsQuery = useQuery({
     // Nested under leaveKeys.stats ON PURPOSE: leave create/approve/reject/
     // cancel invalidate that prefix, so the pending-leave number here refreshes
@@ -169,6 +171,32 @@ export default function PayrollDashboard() {
     (run) => run.status === "approved",
   ).length;
   const hasComplianceContext = activeEmployees > 0 || payrollRuns.length > 0;
+  const taxDeadlines = taxDueQuery.data ?? [];
+  const taxDeadlineDataReady = taxDueQuery.data !== undefined;
+  const getNextTaxDeadline = (type: "monthly_wit" | "inss_monthly") =>
+    taxDeadlines
+      .filter(
+        (deadline) => deadline.type === type && deadline.status !== "filed",
+      )
+      .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+  const nextWitDeadline = getNextTaxDeadline("monthly_wit");
+  const nextInssDeadline = getNextTaxDeadline("inss_monthly");
+  const nextActionableTaxDeadline = taxDeadlines
+    .filter(
+      (deadline) =>
+        deadline.status !== "filed" &&
+        (deadline.type === "inss_monthly" ||
+          (showAdvancedTax && deadline.type === "monthly_wit")),
+    )
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+  const taxWorkflowPath =
+    nextActionableTaxDeadline?.type === "monthly_wit"
+      ? "/payroll/tax/monthly-wit"
+      : nextActionableTaxDeadline?.type === "inss_monthly"
+        ? "/payroll/tax/inss-monthly"
+        : showAdvancedTax
+          ? "/payroll/tax/monthly-wit"
+          : "/payroll/tax/inss-monthly";
 
   const todayIso = getTodayTL();
   const nextPayDateIso = getNextPayDateIso(payrollSchedule, todayIso);
@@ -192,7 +220,65 @@ export default function PayrollDashboard() {
       ? "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300"
       : "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300";
 
-  // Triage: only what needs a decision before payday (and tax deadlines only when approaching)
+  const formatTaxPeriod = (period: string) => {
+    const [year, month] = period.split("-");
+    if (!year || !month) return period;
+    return `${t(`common.months.${Number(month)}`)} ${year}`;
+  };
+  const getTaxDeadlineState = (deadline: (typeof taxDeadlines)[number]) => {
+    if (deadline.isOverdue || deadline.daysUntilDue < 0) {
+      return t("taxReports.daysOverdue", {
+        days: Math.abs(deadline.daysUntilDue),
+      });
+    }
+    if (deadline.daysUntilDue === 0) return t("taxReports.dueToday");
+    return t("taxReports.daysRemaining", {
+      days: deadline.daysUntilDue,
+    });
+  };
+  const renderTaxDeadline = (
+    deadline: (typeof taxDeadlines)[number],
+    kind: "wit" | "inss",
+  ) => {
+    const title =
+      kind === "wit" ? t("taxReports.monthlyWit") : t("taxReports.monthlyInss");
+    const task =
+      kind === "wit"
+        ? deadline.task === "payment"
+          ? t("taxReports.witPaymentTask")
+          : t("taxReports.witStatementTask")
+        : deadline.task === "payment"
+          ? t("taxReports.inssPaymentTask")
+          : t("taxReports.inssStatementTask");
+
+    return (
+      <>
+        <span className="font-semibold">{title}</span>{" "}
+        {formatTaxPeriod(deadline.period)} · {task} —{" "}
+        <span className="font-semibold">{getTaxDeadlineState(deadline)}</span> (
+        {formatDateTL(parseDateISO(deadline.dueDate), {
+          month: "short",
+          day: "numeric",
+        })}
+        )
+      </>
+    );
+  };
+  const witAttentionUrgency = nextWitDeadline
+    ? getUrgencyFromDays(
+        nextWitDeadline.daysUntilDue,
+        nextWitDeadline.isOverdue,
+      )
+    : witUrgency;
+  const inssAttentionUrgency = nextInssDeadline
+    ? getUrgencyFromDays(
+        nextInssDeadline.daysUntilDue,
+        nextInssDeadline.isOverdue,
+      )
+    : inssUrgency;
+
+  // Triage: only what needs a decision before payday. Actual filing state
+  // replaces the former intermediate tax hub when it is available.
   const attention = [
     {
       // Brand-new tenant: "payroll is on track" would be misleading with no
@@ -237,8 +323,16 @@ export default function PayrollDashboard() {
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
-      show: canManageTenant && hasComplianceContext && witUrgency !== "ok",
-      content: (
+      show:
+        canManageTenant &&
+        hasComplianceContext &&
+        showAdvancedTax &&
+        (taxDeadlineDataReady
+          ? Boolean(nextWitDeadline) && witAttentionUrgency !== "ok"
+          : witUrgency !== "ok"),
+      content: nextWitDeadline ? (
+        renderTaxDeadline(nextWitDeadline, "wit")
+      ) : (
         <>
           {t("moduleDashboards.payroll.attention.monthlyWitDueIn")}{" "}
           <span className="font-semibold tabular-nums">{witDays}</span>{" "}
@@ -250,14 +344,20 @@ export default function PayrollDashboard() {
           — {formatDateTL(witDate, { month: "short", day: "numeric" })}
         </>
       ),
-      // The ATTL WIT form is accountant-only; the simple flow lands on the tax hub
-      path: showAdvancedTax ? "/payroll/tax/monthly-wit" : "/payroll/tax",
+      path: "/payroll/tax/monthly-wit",
       icon: FileSpreadsheet,
-      tone: urgencyTone(witUrgency),
+      tone: urgencyTone(witAttentionUrgency),
     },
     {
-      show: canManageTenant && hasComplianceContext && inssUrgency !== "ok",
-      content: (
+      show:
+        canManageTenant &&
+        hasComplianceContext &&
+        (taxDeadlineDataReady
+          ? Boolean(nextInssDeadline) && inssAttentionUrgency !== "ok"
+          : inssUrgency !== "ok"),
+      content: nextInssDeadline ? (
+        renderTaxDeadline(nextInssDeadline, "inss")
+      ) : (
         <>
           {t("moduleDashboards.payroll.attention.inssDueIn")}{" "}
           <span className="font-semibold tabular-nums">{inssDays}</span>{" "}
@@ -271,7 +371,7 @@ export default function PayrollDashboard() {
       ),
       path: "/payroll/tax/inss-monthly",
       icon: FileSpreadsheet,
-      tone: urgencyTone(inssUrgency),
+      tone: urgencyTone(inssAttentionUrgency),
     },
   ].filter((item) => item.show);
 
@@ -287,6 +387,7 @@ export default function PayrollDashboard() {
       action: t("moduleDashboards.payroll.cards.runPayrollAction"),
       path: "/payroll/run",
       icon: Play,
+      manageOnly: true,
     },
     {
       title: t("moduleDashboards.payroll.cards.history"),
@@ -331,14 +432,11 @@ export default function PayrollDashboard() {
       }),
       purpose: t("moduleDashboards.payroll.cards.taxInssPurpose"),
       action: t("moduleDashboards.payroll.cards.taxInssAction"),
-      path: "/payroll/tax",
+      path: taxWorkflowPath,
       icon: FileSpreadsheet,
+      manageOnly: true,
     },
-  ].filter(
-    (card) =>
-      canManageTenant ||
-      (card.path !== "/payroll/run" && card.path !== "/payroll/tax"),
-  );
+  ].filter((card) => canManageTenant || !card.manageOnly);
 
   return (
     <div className="min-h-screen bg-background">

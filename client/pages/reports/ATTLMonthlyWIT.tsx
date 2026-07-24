@@ -8,7 +8,7 @@
  * Submission: e-Tax portal or BNU bank branches
  */
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -38,6 +38,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -55,9 +66,10 @@ import {
   AlertTriangle,
   Loader2,
   FileSpreadsheet,
-  ExternalLink,
   Building,
   Landmark,
+  MoreVertical,
+  ChevronDown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
@@ -87,7 +99,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { downloadBlob } from "@/lib/downloadBlob";
 import { SupplierWithholdingRemittancePanel } from "@/components/reports/SupplierWithholdingRemittancePanel";
-import { getTodayTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
 import {
   getDaysUntilDueIso,
   resolveMonthlyWITTaskStatuses,
@@ -162,6 +174,9 @@ export default function ATTLMonthlyWIT() {
   );
   const [selectedYear, setSelectedYear] = useState(String(defaultYear));
   const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
+  const attentionPeriodApplied = useRef(false);
+  const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+  const [showSupplierWithholding, setShowSupplierWithholding] = useState(false);
 
   // Form state for mark as filed
   const [filedMethod, setFiledMethod] = useState<SubmissionMethod>("etax");
@@ -195,6 +210,12 @@ export default function ATTLMonthlyWIT() {
     if (!year || !month) return period;
     return `${getMonthLabel(month)} ${year}`;
   };
+  const formatDisplayDate = (date: string) =>
+    formatDateTL(date, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
 
   const getStatusConfig = (status: TaxFilingStatus) => {
     switch (status) {
@@ -237,15 +258,6 @@ export default function ATTLMonthlyWIT() {
         filing.paymentDueDate || filing.dueDate,
       ),
     });
-
-  // Preload PDF/Excel modules so downloads resolve instantly from cache
-  const preloaded = useRef(false);
-  useEffect(() => {
-    if (preloaded.current) return;
-    preloaded.current = true;
-    import("@/components/reports/WITReturnPDF");
-    import("@/lib/excel/attlExport");
-  }, []);
 
   // ============================================
   // ACTIONS
@@ -660,12 +672,154 @@ export default function ATTLMonthlyWIT() {
     }));
   }, []);
 
-  const upcomingDue = dueDates.find(
-    (d) => d.status === "pending" && d.daysUntilDue >= 0,
-  );
   const overdueFiling = dueDates.find((d) => d.isOverdue);
+  const selectedPeriod = `${selectedYear}-${selectedMonth}`;
+  const selectedPeriodFiling = filings.find(
+    (filing) => filing.period === selectedPeriod,
+  );
+  const selectedPeriodStatuses = selectedPeriodFiling
+    ? getTaskStatuses(selectedPeriodFiling)
+    : null;
+  const selectedPeriodDue =
+    dueDates.find((due) => due.period === selectedPeriod && due.isOverdue) ||
+    dueDates.find(
+      (due) =>
+        due.period === selectedPeriod &&
+        due.task === "statement" &&
+        due.status === "pending",
+    );
 
   const generating = generateWIT.isPending || saveFiling.isPending;
+
+  useEffect(() => {
+    if (attentionPeriodApplied.current || !overdueFiling?.period) return;
+    const [year, month] = overdueFiling.period.split("-");
+    if (!year || !month) return;
+    setSelectedYear(year);
+    setSelectedMonth(month);
+    attentionPeriodApplied.current = true;
+  }, [overdueFiling?.period]);
+
+  const getFilingPrimaryAction = (filing: TaxFiling) => {
+    const taskStatuses = getTaskStatuses(filing);
+
+    if (taskStatuses.statement !== "filed") {
+      return {
+        kind: "view" as const,
+        label: t("reports.attlMonthlyWit.actions.continueReturn"),
+        icon: FileText,
+      };
+    }
+
+    if (taskStatuses.payment !== "filed") {
+      return {
+        kind: "payment" as const,
+        label: t("reports.attlMonthlyWit.actions.recordPayment"),
+        icon: DollarSign,
+      };
+    }
+
+    return {
+      kind: "view" as const,
+      label: t("reports.attlMonthlyWit.actions.viewReturn"),
+      icon: FileText,
+    };
+  };
+
+  const handleFilingPrimaryAction = async (filing: TaxFiling) => {
+    const action = getFilingPrimaryAction(filing);
+    if (action.kind === "payment") {
+      openMarkFiledDialog(filing.id, "payment");
+      return;
+    }
+    await handleViewReturn(filing);
+  };
+
+  const handleSelectedPeriodAction = async () => {
+    if (!selectedPeriodFiling) {
+      await handleGenerateReturn();
+      return;
+    }
+    await handleFilingPrimaryAction(selectedPeriodFiling);
+  };
+
+  const selectedPeriodAction = selectedPeriodFiling
+    ? getFilingPrimaryAction(selectedPeriodFiling)
+    : {
+        kind: "generate" as const,
+        label: t("reports.attlMonthlyWit.generate.button"),
+        icon: FileText,
+      };
+  const SelectedPeriodActionIcon = selectedPeriodAction.icon;
+
+  const renderFilingActions = (filing: TaxFiling, mobile = false) => {
+    const taskStatuses = getTaskStatuses(filing);
+    const primaryAction = getFilingPrimaryAction(filing);
+    const PrimaryActionIcon = primaryAction.icon;
+    const hasMoreActions =
+      taskStatuses.statement !== "filed" || taskStatuses.payment !== "filed";
+
+    return (
+      <div
+        className={
+          mobile
+            ? "flex w-full items-center gap-2"
+            : "flex items-center justify-end gap-1"
+        }
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          className={mobile ? "min-h-11 flex-1" : undefined}
+          onClick={() => handleFilingPrimaryAction(filing)}
+        >
+          <PrimaryActionIcon className="mr-2 h-4 w-4" />
+          {primaryAction.label}
+        </Button>
+
+        {hasMoreActions && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 md:h-9 md:w-9"
+                aria-label={t("common.moreActions")}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {taskStatuses.statement === "filed" &&
+                taskStatuses.payment !== "filed" && (
+                  <DropdownMenuItem onClick={() => handleViewReturn(filing)}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    {t("reports.attlMonthlyWit.actions.viewReturn")}
+                  </DropdownMenuItem>
+                )}
+              {taskStatuses.statement !== "filed" && (
+                <DropdownMenuItem
+                  onClick={() => openMarkFiledDialog(filing.id, "statement")}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  {t("reports.attlMonthlyWit.actions.markFiled")}
+                </DropdownMenuItem>
+              )}
+              {taskStatuses.statement !== "filed" &&
+                taskStatuses.payment !== "filed" && (
+                  <DropdownMenuItem
+                    onClick={() => openMarkFiledDialog(filing.id, "payment")}
+                  >
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    {t("reports.attlMonthlyWit.actions.recordPayment")}
+                  </DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    );
+  };
 
   // ============================================
   // RENDER
@@ -676,7 +830,7 @@ export default function ATTLMonthlyWIT() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="mx-auto max-w-screen-2xl space-y-6 px-4 py-5 sm:px-6 sm:py-6">
-          <div className="flex flex-col gap-4 border-b border-border/70 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 border-b border-border/70 pb-4">
             <div className="flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-lg" />
               <div className="space-y-2">
@@ -684,45 +838,26 @@ export default function ATTLMonthlyWIT() {
                 <Skeleton className="h-4 w-72 max-w-full" />
               </div>
             </div>
-            <Skeleton className="h-10 w-full sm:w-44" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }, (_, i) => (
-              <Card key={i}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-10 w-10 rounded-lg" />
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-3 w-36" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="mt-2 h-3 w-72 max-w-full" />
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <div key={i} className="flex justify-between gap-4">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-36" />
-                  </div>
-                ))}
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-44" />
+                  <Skeleton className="h-3 w-64 max-w-full" />
+                </div>
               </div>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,220px)_minmax(0,240px)_max-content]">
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-11 w-full lg:w-48" />
+              </div>
+              <Skeleton className="h-16 w-full rounded-lg" />
             </CardContent>
           </Card>
 
@@ -807,11 +942,7 @@ export default function ATTLMonthlyWIT() {
           <DashboardLoadError
             isRetrying={retrying}
             onRetry={() =>
-              Promise.all([
-                refetchSettings(),
-                refetchFilings(),
-                refetchDues(),
-              ])
+              Promise.all([refetchSettings(), refetchFilings(), refetchDues()])
             }
           />
         </div>
@@ -832,486 +963,280 @@ export default function ATTLMonthlyWIT() {
           subtitle={t("reports.attlMonthlyWit.subtitle")}
           icon={Landmark}
           iconColor="text-primary"
-          actions={
-            <Button
-              variant="outline"
-              onClick={() =>
-                window.open("https://e-tax.mof.gov.tl/login", "_blank")
-              }
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              {t("reports.attlMonthlyWit.actions.etaxPortal")}
-            </Button>
-          }
         />
-        {/* Alert Banner */}
-        {overdueFiling && (
-          <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50">
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                <div>
-                  <p className="font-medium text-red-800 dark:text-red-200">
-                    {t("reports.attlMonthlyWit.alerts.overdueTitle")}
-                  </p>
-                  <p className="text-sm text-red-600 dark:text-red-400">
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader className="pb-4">
+            <ReportCardHeader
+              icon={FileText}
+              accent="amber"
+              title={t("reports.attlMonthlyWit.generate.title")}
+              description={t("reports.attlMonthlyWit.generate.description")}
+            />
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {selectedPeriodDue && (
+              <div
+                role="alert"
+                className={
+                  selectedPeriodDue.isOverdue
+                    ? "flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
+                    : "flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+                }
+              >
+                {selectedPeriodDue.isOverdue ? (
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                ) : (
+                  <Clock className="mt-0.5 h-5 w-5 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">
                     {t(
-                      overdueFiling.task === "payment"
-                        ? "reports.attlMonthlyWit.alerts.paymentOverdueDescription"
-                        : "reports.attlMonthlyWit.alerts.overdueDescription",
+                      selectedPeriodDue.isOverdue
+                        ? "reports.attlMonthlyWit.alerts.overdueTitle"
+                        : "reports.attlMonthlyWit.alerts.upcomingTitle",
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-sm">
+                    {t(
+                      selectedPeriodDue.task === "payment"
+                        ? selectedPeriodDue.isOverdue
+                          ? "reports.attlMonthlyWit.alerts.paymentOverdueDescription"
+                          : "reports.attlMonthlyWit.alerts.paymentUpcomingDescription"
+                        : selectedPeriodDue.isOverdue
+                          ? "reports.attlMonthlyWit.alerts.overdueDescription"
+                          : "reports.attlMonthlyWit.alerts.upcomingDescription",
                       {
-                        period: formatPeriodLabel(overdueFiling.period),
-                        dueDate: overdueFiling.dueDate,
+                        period: formatPeriodLabel(selectedPeriodDue.period),
+                        dueDate: formatDisplayDate(selectedPeriodDue.dueDate),
+                        days: selectedPeriodDue.daysUntilDue,
                       },
                     )}
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
 
-        {upcomingDue && !overdueFiling && (
-          <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/50">
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                <div>
-                  <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                    {t("reports.attlMonthlyWit.alerts.upcomingTitle")}
-                  </p>
-                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                    {t(
-                      upcomingDue.task === "payment"
-                        ? "reports.attlMonthlyWit.alerts.paymentUpcomingDescription"
-                        : "reports.attlMonthlyWit.alerts.upcomingDescription",
-                      {
-                        period: formatPeriodLabel(upcomingDue.period),
-                        dueDate: upcomingDue.dueDate,
-                        days: upcomingDue.daysUntilDue,
-                      },
-                    )}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Generate Return Card */}
-          <Card>
-            <CardHeader className="pb-4">
-              <ReportCardHeader
-                icon={FileText}
-                accent="amber"
-                title={t("reports.attlMonthlyWit.generate.title")}
-                description={t("reports.attlMonthlyWit.generate.description")}
-              />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="wit-report-year">
-                    {t("reports.attlMonthlyWit.generate.year")}
-                  </Label>
-                  <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger id="wit-report-year">
-                      <SelectValue
-                        placeholder={t(
-                          "reports.attlMonthlyWit.generate.selectYear",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((y) => (
-                        <SelectItem key={y.value} value={y.value}>
-                          {y.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="wit-report-month">
-                    {t("reports.attlMonthlyWit.generate.month")}
-                  </Label>
-                  <Select
-                    value={selectedMonth}
-                    onValueChange={setSelectedMonth}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,220px)_minmax(0,240px)_max-content] lg:items-end">
+              <div>
+                <Label className="mb-2 block" htmlFor="wit-report-year">
+                  {t("reports.attlMonthlyWit.generate.year")}
+                </Label>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger
+                    id="wit-report-year"
+                    className="min-h-11 text-base sm:text-sm"
                   >
-                    <SelectTrigger id="wit-report-month">
-                      <SelectValue
-                        placeholder={t(
-                          "reports.attlMonthlyWit.generate.selectMonth",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <SelectValue
+                      placeholder={t(
+                        "reports.attlMonthlyWit.generate.selectYear",
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year.value} value={year.value}>
+                        {year.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="mb-2 block" htmlFor="wit-report-month">
+                  {t("reports.attlMonthlyWit.generate.month")}
+                </Label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger
+                    id="wit-report-month"
+                    className="min-h-11 text-base sm:text-sm"
+                  >
+                    <SelectValue
+                      placeholder={t(
+                        "reports.attlMonthlyWit.generate.selectMonth",
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month) => (
+                      <SelectItem key={month.value} value={month.value}>
+                        {month.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <Button
-                className="w-full"
-                onClick={handleGenerateReturn}
+                className="min-h-11 w-full lg:w-auto lg:justify-self-start"
+                variant={
+                  selectedPeriodStatuses?.statement === "filed" &&
+                  selectedPeriodStatuses?.payment === "filed"
+                    ? "outline"
+                    : "default"
+                }
+                onClick={handleSelectedPeriodAction}
                 disabled={generating}
               >
                 {generating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("reports.attlMonthlyWit.generate.generating")}
-                  </>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <FileText className="h-4 w-4 mr-2" />
-                    {t("reports.attlMonthlyWit.generate.button")}
-                  </>
+                  <SelectedPeriodActionIcon className="mr-2 h-4 w-4" />
                 )}
+                {generating
+                  ? t("reports.attlMonthlyWit.generate.generating")
+                  : selectedPeriodAction.label}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Company Info Card */}
-          <Card>
-            <CardHeader className="pb-4">
-              <ReportCardHeader
-                icon={Building}
-                accent="blue"
-                title={t("reports.attlMonthlyWit.company.title")}
-                description={t("reports.attlMonthlyWit.company.description")}
-              />
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.company.companyName")}
-                </span>
-                <p className="font-medium">
-                  {company.legalName ||
-                    company.tradingName ||
-                    t("reports.attlMonthlyWit.company.notSet")}
-                </p>
+            <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <Building className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {company.legalName ||
+                      company.tradingName ||
+                      t("reports.attlMonthlyWit.company.notSet")}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {t("reports.attlMonthlyWit.company.tin")}{" "}
+                    <span className="font-mono">
+                      {company.tinNumber ||
+                        t("reports.attlMonthlyWit.company.notSet")}
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.company.tin")}
-                </span>
-                <p className="font-medium font-mono">
-                  {company.tinNumber ||
-                    t("reports.attlMonthlyWit.company.notSet")}
-                </p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.company.address")}
-                </span>
-                <p className="font-medium">
-                  {company.registeredAddress ||
-                    t("reports.attlMonthlyWit.company.notSet")}
-                </p>
-              </div>
-              {!company.tinNumber && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
+              {company.tinNumber ? (
+                <Badge
+                  variant="outline"
+                  className="w-fit border-green-500/30 text-green-700 dark:text-green-400"
+                >
+                  <CheckCircle className="mr-1 h-3.5 w-3.5" />
+                  {t("reports.attlMonthlyWit.company.tinReady")}
+                </Badge>
+              ) : (
+                <p className="text-xs text-amber-700 dark:text-amber-300">
                   {t("reports.attlMonthlyWit.company.tinHint")}
                 </p>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats Card */}
-          <Card>
-            <CardHeader className="pb-4">
-              <ReportCardHeader
-                icon={DollarSign}
-                accent="primary"
-                title={t("reports.attlMonthlyWit.summary.title")}
-                description={t("reports.attlMonthlyWit.summary.description")}
-              />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-muted">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.summary.totalFilings")}
-                </span>
-                <span className="font-medium">{filings.length}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-muted">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.summary.filed")}
-                </span>
-                <span className="font-medium text-green-600 dark:text-green-400">
-                  {filings.filter((f) => f.status === "filed").length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-muted">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.summary.pending")}
-                </span>
-                <span className="font-medium text-yellow-600 dark:text-yellow-400">
-                  {filings.filter((f) => f.status === "pending").length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2 px-3 rounded-lg hover:bg-muted">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.summary.overdue")}
-                </span>
-                <span className="font-medium text-red-600 dark:text-red-400">
-                  {filings.filter((f) => f.status === "overdue").length}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* How to pay — ATTL's published payment channel for wage income tax */}
-        <Card>
-          <CardHeader className="pb-4">
-            <ReportCardHeader
-              icon={Landmark}
-              accent="primary"
-              title={
-                t("reports.attlMonthlyWit.payment.title") || "How to pay (ATTL)"
-              }
-              description={
-                t("reports.attlMonthlyWit.payment.description") ||
-                "Deliver 3 copies of the Monthly Taxes Form with payment at any BNU branch, or pay by bank transfer marked “electronic payment”. Due by the 15th of the following month."
-              }
-            />
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.payment.beneficiary") ||
-                    "Beneficiary"}
-                </span>
-                <span className="font-medium text-right">
-                  {ATTL_TAX_ACCOUNTS.beneficiary}
-                </span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.payment.bank") || "Bank"}
-                </span>
-                <span className="font-medium">{ATTL_TAX_ACCOUNTS.bank}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.payment.account") ||
-                    "Wage income tax account (IBAN)"}
-                </span>
-                <span className="font-mono font-medium">
-                  {ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax}
-                </span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">
-                  {t("reports.attlMonthlyWit.payment.withholdingAccount") ||
-                    "Supplier withholding tax account (IBAN)"}
-                </span>
-                <span className="font-mono font-medium text-right">
-                  {ATTL_TAX_ACCOUNTS.accounts.specialWithholdingTax}
-                </span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">SWIFT</span>
-                <span className="font-mono font-medium">
-                  {ATTL_TAX_ACCOUNTS.swift}
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>
 
-        <SupplierWithholdingRemittancePanel
-          period={`${selectedYear}-${selectedMonth}`}
-        />
-
         {/* Return Preview */}
         {selectedReturn && (
-          <Card>
-            <CardHeader className="pb-4">
-              <ReportCardHeader
-                icon={FileText}
-                title={t("reports.attlMonthlyWit.preview.title", {
-                  period: formatPeriodLabel(selectedReturn.reportingPeriod),
-                })}
-                description={t(
-                  "reports.attlMonthlyWit.preview.periodDescription",
-                  {
-                    start: selectedReturn.periodStartDate,
-                    end: selectedReturn.periodEndDate,
-                  },
-                )}
-                actions={
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportOfficialForm}
-                    >
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      {t("reports.attlMonthlyWit.actions.officialForm")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportCSV}
-                    >
-                      <FileSpreadsheet className="h-4 w-4 mr-2" />
-                      CSV
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportPDF}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      PDF
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDownloadPaymentOrder}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      {t("paymentOrders.action")}
-                    </Button>
-                  </>
-                }
-              />
-            </CardHeader>
-            <CardContent>
-              {/* Assisted e-Tax filing — the two numbers the portal wants */}
-              <AssistedEtaxFiling ret={selectedReturn} />
+          <>
+            <Card className="border-border/70 shadow-sm">
+              <CardHeader className="pb-4">
+                <ReportCardHeader
+                  icon={FileText}
+                  title={t("reports.attlMonthlyWit.preview.title", {
+                    period: formatPeriodLabel(selectedReturn.reportingPeriod),
+                  })}
+                  description={t(
+                    "reports.attlMonthlyWit.preview.periodDescription",
+                    {
+                      start: formatDisplayDate(selectedReturn.periodStartDate),
+                      end: formatDisplayDate(selectedReturn.periodEndDate),
+                    },
+                  )}
+                  actions={
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportOfficialForm}
+                      >
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        {t("reports.attlMonthlyWit.actions.officialForm")}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="mr-2 h-4 w-4" />
+                            {t("common.moreActions")}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={handleExportCSV}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            CSV
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleExportPDF}>
+                            <Download className="mr-2 h-4 w-4" />
+                            PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleDownloadPaymentOrder}
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            {t("paymentOrders.action")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </>
+                  }
+                />
+              </CardHeader>
+              <CardContent>
+                {/* Assisted e-Tax filing — the two numbers the portal wants */}
+                <AssistedEtaxFiling ret={selectedReturn} />
 
-              {/* Summary */}
-              <dl className="mb-6 grid gap-x-8 sm:grid-cols-2">
-                <div className="border-b border-border/50 py-2.5">
-                  <dt className="text-sm text-muted-foreground">
-                    {t("reports.attlMonthlyWit.preview.totalEmployees")}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold tabular-nums">
-                    {selectedReturn.totalEmployees}
-                  </dd>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t("reports.attlMonthlyWit.preview.employeeBreakdown", {
-                      residents: selectedReturn.totalResidentEmployees,
-                      nonResidents: selectedReturn.totalNonResidentEmployees,
-                    })}
-                  </p>
-                </div>
-                <div className="border-b border-border/50 py-2.5">
-                  <dt className="text-sm text-muted-foreground">
-                    {t("reports.attlMonthlyWit.preview.totalGrossWages")}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold tabular-nums">
-                    {formatCurrencyTL(selectedReturn.totalGrossWages)}
-                  </dd>
-                </div>
-                <div className="py-2.5">
-                  <dt className="text-sm text-muted-foreground">
-                    {t("reports.attlMonthlyWit.preview.taxableWages")}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold tabular-nums">
-                    {formatCurrencyTL(selectedReturn.totalTaxableWages)}
-                  </dd>
-                </div>
-                <div className="py-2.5">
-                  <dt className="text-sm text-muted-foreground">
-                    {t("reports.attlMonthlyWit.preview.totalWit")}
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold tabular-nums">
-                    {formatCurrencyTL(selectedReturn.totalWITWithheld)}
-                  </dd>
-                </div>
-              </dl>
+                {/* Summary */}
+                <dl className="mb-6 grid gap-x-8 sm:grid-cols-2">
+                  <div className="border-b border-border/50 py-2.5">
+                    <dt className="text-sm text-muted-foreground">
+                      {t("reports.attlMonthlyWit.preview.totalEmployees")}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold tabular-nums">
+                      {selectedReturn.totalEmployees}
+                    </dd>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t("reports.attlMonthlyWit.preview.employeeBreakdown", {
+                        residents: selectedReturn.totalResidentEmployees,
+                        nonResidents: selectedReturn.totalNonResidentEmployees,
+                      })}
+                    </p>
+                  </div>
+                  <div className="border-b border-border/50 py-2.5">
+                    <dt className="text-sm text-muted-foreground">
+                      {t("reports.attlMonthlyWit.preview.totalGrossWages")}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold tabular-nums">
+                      {formatCurrencyTL(selectedReturn.totalGrossWages)}
+                    </dd>
+                  </div>
+                  <div className="py-2.5">
+                    <dt className="text-sm text-muted-foreground">
+                      {t("reports.attlMonthlyWit.preview.taxableWages")}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold tabular-nums">
+                      {formatCurrencyTL(selectedReturn.totalTaxableWages)}
+                    </dd>
+                  </div>
+                  <div className="py-2.5">
+                    <dt className="text-sm text-muted-foreground">
+                      {t("reports.attlMonthlyWit.preview.totalWit")}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold tabular-nums">
+                      {formatCurrencyTL(selectedReturn.totalWITWithheld)}
+                    </dd>
+                  </div>
+                </dl>
 
-              <div className="space-y-3 md:hidden">
-                {selectedReturn.employees.map((emp) => (
-                  <Card key={emp.employeeId}>
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">{emp.fullName}</p>
-                          <p className="font-mono text-xs text-muted-foreground">
-                            {emp.employeeId}
-                          </p>
-                        </div>
-                        <Badge
-                          variant={emp.isResident ? "default" : "secondary"}
-                        >
-                          {emp.isResident
-                            ? t("reports.attlMonthlyWit.table.residentYes")
-                            : t("reports.attlMonthlyWit.table.residentNo")}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            {t("reports.attlMonthlyWit.table.grossWages")}
-                          </p>
-                          <p>{formatCurrencyTL(emp.grossWages)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            {t("reports.attlMonthlyWit.table.taxable")}
-                          </p>
-                          <p>{formatCurrencyTL(emp.taxableWages)}</p>
-                        </div>
-                        <div className="col-span-2">
-                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            {t("reports.attlMonthlyWit.table.witWithheld")}
-                          </p>
-                          <p className="font-semibold">
-                            {formatCurrencyTL(emp.witWithheld)}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>
-                        {t("reports.attlMonthlyWit.table.employeeId")}
-                      </TableHead>
-                      <TableHead>
-                        {t("reports.attlMonthlyWit.table.name")}
-                      </TableHead>
-                      <TableHead>
-                        {t("reports.attlMonthlyWit.table.resident")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("reports.attlMonthlyWit.table.grossWages")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("reports.attlMonthlyWit.table.taxable")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("reports.attlMonthlyWit.table.witWithheld")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedReturn.employees.map((emp) => (
-                      <TableRow key={emp.employeeId}>
-                        <TableCell className="font-mono text-sm">
-                          {emp.employeeId}
-                        </TableCell>
-                        <TableCell>{emp.fullName}</TableCell>
-                        <TableCell>
+                <div className="space-y-3 md:hidden">
+                  {selectedReturn.employees.map((emp) => (
+                    <Card key={emp.employeeId}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold">{emp.fullName}</p>
+                            <p className="font-mono text-xs text-muted-foreground">
+                              {emp.employeeId}
+                            </p>
+                          </div>
                           <Badge
                             variant={emp.isResident ? "default" : "secondary"}
                           >
@@ -1319,27 +1244,178 @@ export default function ATTLMonthlyWIT() {
                               ? t("reports.attlMonthlyWit.table.residentYes")
                               : t("reports.attlMonthlyWit.table.residentNo")}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrencyTL(emp.grossWages)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrencyTL(emp.taxableWages)}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrencyTL(emp.witWithheld)}
-                        </TableCell>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.attlMonthlyWit.table.grossWages")}
+                            </p>
+                            <p>{formatCurrencyTL(emp.grossWages)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.attlMonthlyWit.table.taxable")}
+                            </p>
+                            <p>{formatCurrencyTL(emp.taxableWages)}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.attlMonthlyWit.table.witWithheld")}
+                            </p>
+                            <p className="font-semibold">
+                              {formatCurrencyTL(emp.witWithheld)}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          {t("reports.attlMonthlyWit.table.employeeId")}
+                        </TableHead>
+                        <TableHead>
+                          {t("reports.attlMonthlyWit.table.name")}
+                        </TableHead>
+                        <TableHead>
+                          {t("reports.attlMonthlyWit.table.resident")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.attlMonthlyWit.table.grossWages")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.attlMonthlyWit.table.taxable")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.attlMonthlyWit.table.witWithheld")}
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedReturn.employees.map((emp) => (
+                        <TableRow key={emp.employeeId}>
+                          <TableCell className="font-mono text-sm">
+                            {emp.employeeId}
+                          </TableCell>
+                          <TableCell>{emp.fullName}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={emp.isResident ? "default" : "secondary"}
+                            >
+                              {emp.isResident
+                                ? t("reports.attlMonthlyWit.table.residentYes")
+                                : t("reports.attlMonthlyWit.table.residentNo")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrencyTL(emp.grossWages)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrencyTL(emp.taxableWages)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrencyTL(emp.witWithheld)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Collapsible
+              open={showPaymentDetails}
+              onOpenChange={setShowPaymentDetails}
+            >
+              <Card className="border-border/70 shadow-sm">
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex min-h-11 w-full items-start justify-between gap-4 rounded-lg p-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <span className="flex min-w-0 items-start gap-3">
+                      <span
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                        aria-hidden
+                      >
+                        <Landmark className="h-[18px] w-[18px]" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-base font-semibold">
+                          {t("reports.attlMonthlyWit.payment.title")}
+                        </span>
+                        <span className="mt-1 block text-sm text-muted-foreground">
+                          {t(
+                            "reports.attlMonthlyWit.instructions.dueDateValue",
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                    <ChevronDown
+                      className={`mt-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                        showPaymentDetails ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <p className="text-sm text-muted-foreground">
+                      {t("reports.attlMonthlyWit.payment.description")}
+                    </p>
+                    <dl className="grid gap-x-8 text-sm sm:grid-cols-2">
+                      <div className="flex justify-between gap-4 border-b border-border/50 py-2.5">
+                        <dt className="text-muted-foreground">
+                          {t("reports.attlMonthlyWit.payment.beneficiary")}
+                        </dt>
+                        <dd className="text-right font-medium">
+                          {ATTL_TAX_ACCOUNTS.beneficiary}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4 border-b border-border/50 py-2.5">
+                        <dt className="text-muted-foreground">
+                          {t("reports.attlMonthlyWit.payment.bank")}
+                        </dt>
+                        <dd className="text-right font-medium">
+                          {ATTL_TAX_ACCOUNTS.bank}
+                        </dd>
+                      </div>
+                      <div className="flex flex-col gap-1 border-b border-border/50 py-2.5 sm:border-b-0">
+                        <dt className="text-muted-foreground">
+                          {t("reports.attlMonthlyWit.payment.account")}
+                        </dt>
+                        <dd className="break-all font-mono font-medium">
+                          {ATTL_TAX_ACCOUNTS.accounts.wageIncomeTax}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-4 py-2.5">
+                        <dt className="text-muted-foreground">SWIFT</dt>
+                        <dd className="font-mono font-medium">
+                          {ATTL_TAX_ACCOUNTS.swift}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="font-medium text-foreground">
+                        {t("reports.attlMonthlyWit.instructions.supportLabel")}
+                      </strong>{" "}
+                      {t("reports.attlMonthlyWit.instructions.supportValue")}
+                    </p>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          </>
         )}
 
         {/* Filing History */}
-        <Card>
+        <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-4">
             <ReportCardHeader
               icon={Calendar}
@@ -1348,108 +1424,62 @@ export default function ATTLMonthlyWIT() {
             />
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 md:hidden">
+            <div className="md:hidden">
               {filings.length === 0 ? (
-                <Card>
-                  <CardContent className="p-4 text-sm text-muted-foreground">
-                    {t("reports.attlMonthlyWit.history.empty")}
-                  </CardContent>
-                </Card>
+                <p className="rounded-lg border border-border/70 p-4 text-sm text-muted-foreground">
+                  {t("reports.attlMonthlyWit.history.empty")}
+                </p>
               ) : (
-                filings.map((filing) => {
-                  const taskStatuses = getTaskStatuses(filing);
-                  const statusConfig = getStatusConfig(taskStatuses.statement);
-                  const paymentConfig = getStatusConfig(taskStatuses.payment);
-                  const StatusIcon = statusConfig.icon;
-                  const PaymentIcon = paymentConfig.icon;
+                <div className="divide-y divide-border/70 rounded-lg border border-border/70">
+                  {filings.map((filing) => {
+                    const taskStatuses = getTaskStatuses(filing);
+                    const statusConfig = getStatusConfig(
+                      taskStatuses.statement,
+                    );
+                    const paymentConfig = getStatusConfig(taskStatuses.payment);
+                    const StatusIcon = statusConfig.icon;
+                    const PaymentIcon = paymentConfig.icon;
 
-                  return (
-                    <Card key={filing.id}>
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
+                    return (
+                      <div key={filing.id} className="space-y-3 p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
                             <p className="font-semibold">
                               {formatPeriodLabel(filing.period)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                               {t("reports.attlMonthlyWit.history.dueDate")}:{" "}
-                              {filing.dueDate}
+                              {formatDisplayDate(filing.dueDate)}
                             </p>
                           </div>
-                          <div className="space-y-1 text-right">
-                            <Badge className={statusConfig.className}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {t("reports.attlMonthlyWit.history.returnStatus")}
-                              : {statusConfig.label}
-                            </Badge>
-                            <div>
-                              <Badge className={paymentConfig.className}>
-                                <PaymentIcon className="h-3 w-3 mr-1" />
-                                {t(
-                                  "reports.attlMonthlyWit.history.paymentStatus",
-                                )}
-                                : {paymentConfig.label}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              {t("reports.attlMonthlyWit.history.totalWages")}
-                            </p>
-                            <p>{formatCurrencyTL(filing.totalWages)}</p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                          <div className="shrink-0 text-right">
+                            <p className="text-xs text-muted-foreground">
                               {t("reports.attlMonthlyWit.history.wit")}
                             </p>
-                            <p>{formatCurrencyTL(filing.totalWITWithheld)}</p>
-                          </div>
-                          <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                              {t("reports.attlMonthlyWit.history.employees")}
+                            <p className="font-semibold tabular-nums">
+                              {formatCurrencyTL(filing.totalWITWithheld)}
                             </p>
-                            <p>{filing.employeeCount}</p>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewReturn(filing)}
-                          >
-                            {t("reports.attlMonthlyWit.actions.view")}
-                          </Button>
-                          {taskStatuses.statement !== "filed" && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                openMarkFiledDialog(filing.id, "statement")
-                              }
-                            >
-                              {t("reports.attlMonthlyWit.actions.markFiled")}
-                            </Button>
-                          )}
-                          {taskStatuses.payment !== "filed" && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() =>
-                                openMarkFiledDialog(filing.id, "payment")
-                              }
-                            >
-                              {t(
-                                "reports.attlMonthlyWit.actions.recordPayment",
-                              )}
-                            </Button>
-                          )}
+                          <Badge className={statusConfig.className}>
+                            <StatusIcon className="mr-1 h-3 w-3" />
+                            {t(
+                              "reports.attlMonthlyWit.history.returnStatus",
+                            )}: {statusConfig.label}
+                          </Badge>
+                          <Badge className={paymentConfig.className}>
+                            <PaymentIcon className="mr-1 h-3 w-3" />
+                            {t(
+                              "reports.attlMonthlyWit.history.paymentStatus",
+                            )}: {paymentConfig.label}
+                          </Badge>
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                        {renderFilingActions(filing, true)}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
 
@@ -1461,21 +1491,12 @@ export default function ATTLMonthlyWIT() {
                       {t("reports.attlMonthlyWit.history.period")}
                     </TableHead>
                     <TableHead>
-                      {t("reports.attlMonthlyWit.history.dueDate")}
-                    </TableHead>
-                    <TableHead>
                       {t("reports.attlMonthlyWit.history.status")}
-                    </TableHead>
-                    <TableHead className="text-right">
-                      {t("reports.attlMonthlyWit.history.totalWages")}
                     </TableHead>
                     <TableHead className="text-right">
                       {t("reports.attlMonthlyWit.history.wit")}
                     </TableHead>
                     <TableHead className="text-right">
-                      {t("reports.attlMonthlyWit.history.employees")}
-                    </TableHead>
-                    <TableHead>
                       {t("reports.attlMonthlyWit.history.actions")}
                     </TableHead>
                   </TableRow>
@@ -1484,8 +1505,8 @@ export default function ATTLMonthlyWIT() {
                   {filings.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-muted-foreground"
+                        colSpan={4}
+                        className="py-8 text-center text-muted-foreground"
                       >
                         {t("reports.attlMonthlyWit.history.empty")}
                       </TableCell>
@@ -1504,75 +1525,38 @@ export default function ATTLMonthlyWIT() {
 
                       return (
                         <TableRow key={filing.id}>
-                          <TableCell className="font-medium">
-                            {formatPeriodLabel(filing.period)}
-                          </TableCell>
-                          <TableCell>{filing.dueDate}</TableCell>
                           <TableCell>
-                            <div className="space-y-1">
+                            <p className="font-medium">
+                              {formatPeriodLabel(filing.period)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {t("reports.attlMonthlyWit.history.dueDate")}:{" "}
+                              {formatDisplayDate(filing.dueDate)}
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
                               <Badge className={statusConfig.className}>
-                                <StatusIcon className="h-3 w-3 mr-1" />
+                                <StatusIcon className="mr-1 h-3 w-3" />
                                 {t(
                                   "reports.attlMonthlyWit.history.returnStatus",
                                 )}
                                 : {statusConfig.label}
                               </Badge>
-                              <div>
-                                <Badge className={paymentConfig.className}>
-                                  <PaymentIcon className="h-3 w-3 mr-1" />
-                                  {t(
-                                    "reports.attlMonthlyWit.history.paymentStatus",
-                                  )}
-                                  : {paymentConfig.label}
-                                </Badge>
-                              </div>
+                              <Badge className={paymentConfig.className}>
+                                <PaymentIcon className="mr-1 h-3 w-3" />
+                                {t(
+                                  "reports.attlMonthlyWit.history.paymentStatus",
+                                )}
+                                : {paymentConfig.label}
+                              </Badge>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrencyTL(filing.totalWages)}
-                          </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right font-medium tabular-nums">
                             {formatCurrencyTL(filing.totalWITWithheld)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {filing.employeeCount}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewReturn(filing)}
-                              >
-                                {t("reports.attlMonthlyWit.actions.view")}
-                              </Button>
-                              {taskStatuses.statement !== "filed" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    openMarkFiledDialog(filing.id, "statement")
-                                  }
-                                >
-                                  {t(
-                                    "reports.attlMonthlyWit.actions.markFiled",
-                                  )}
-                                </Button>
-                              )}
-                              {taskStatuses.payment !== "filed" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    openMarkFiledDialog(filing.id, "payment")
-                                  }
-                                >
-                                  {t(
-                                    "reports.attlMonthlyWit.actions.recordPayment",
-                                  )}
-                                </Button>
-                              )}
-                            </div>
+                            {renderFilingActions(filing)}
                           </TableCell>
                         </TableRow>
                       );
@@ -1584,42 +1568,45 @@ export default function ATTLMonthlyWIT() {
           </CardContent>
         </Card>
 
-        {/* Info Card */}
-        <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
-          <CardContent className="py-4">
-            <div className="flex items-start gap-3">
-              <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-sm">
-                <p className="font-medium text-foreground">
-                  {t("reports.attlMonthlyWit.instructions.title")}
-                </p>
-                <ul className="mt-2 text-muted-foreground space-y-1">
-                  <li>{t("reports.attlMonthlyWit.instructions.step1")}</li>
-                  <li>{t("reports.attlMonthlyWit.instructions.step2")}</li>
-                  <li>{t("reports.attlMonthlyWit.instructions.step3")}</li>
-                  <li>{t("reports.attlMonthlyWit.instructions.step4")}</li>
-                  <li>{t("reports.attlMonthlyWit.instructions.step5")}</li>
-                </ul>
-                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                  {t("reports.attlMonthlyWit.instructions.templateWarning")}
-                </p>
-                <p className="mt-3 text-muted-foreground">
-                  <strong className="text-foreground">
-                    {t("reports.attlMonthlyWit.instructions.dueDateLabel")}
-                  </strong>{" "}
-                  {t("reports.attlMonthlyWit.instructions.dueDateValue")}
-                  <br />
-                  <strong className="text-foreground">
-                    {t("reports.attlMonthlyWit.instructions.supportLabel")}
-                  </strong>{" "}
-                  {t("reports.attlMonthlyWit.instructions.supportValue")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Collapsible
+          open={showSupplierWithholding}
+          onOpenChange={setShowSupplierWithholding}
+          className="space-y-3"
+        >
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex min-h-11 w-full items-start justify-between gap-4 rounded-xl border border-border/70 bg-card p-4 text-left shadow-sm transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              <span className="flex min-w-0 items-start gap-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                  aria-hidden
+                >
+                  <Landmark className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-base font-semibold">
+                    {t("supplierRemittance.title")}
+                  </span>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    {t("supplierRemittance.description")}
+                  </span>
+                </span>
+              </span>
+              <ChevronDown
+                className={`mt-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                  showSupplierWithholding ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {showSupplierWithholding && (
+              <SupplierWithholdingRemittancePanel period={selectedPeriod} />
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Mark as Filed Dialog */}
