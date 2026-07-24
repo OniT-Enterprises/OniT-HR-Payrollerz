@@ -5075,6 +5075,7 @@ const messages = {
         view: "View",
         viewReturn: "View return",
         continueReturn: "Continue return",
+        rebuild: "Rebuild from payroll",
         markFiled: "Mark Filed",
         recordPayment: "Record Payment",
       },
@@ -5221,6 +5222,12 @@ const messages = {
         generatedTitle: "Return Generated",
         generatedDescription:
           "Monthly WIT return for {{period}} has been generated.",
+        rebuiltTitle: "Return Rebuilt",
+        rebuiltDescription:
+          "The {{period}} return now matches current payroll. Export the official form again before filing.",
+        noDataTitle: "No payroll data",
+        noDataDescription:
+          "Xefe has no payroll for {{period}}. Run and finalize that month's payroll first.",
         errorTitle: "Error",
         generateErrorDescription:
           "Failed to generate WIT return. Make sure you have payroll data for this period.",
