@@ -57,13 +57,24 @@ unless its 5th arg is true (defaults to hidden).
 
 | Surface | Gate |
 |---|---|
-| `/payroll/tax/monthly-wit` (ATTL WIT form + SupplierWithholdingRemittancePanel) | route + nav + TaxReports card + PayrollDashboard chip retarget |
+| `/payroll/tax/monthly-wit` (ATTL WIT form + SupplierWithholdingRemittancePanel) | route + nav only — the deadline itself is never gated (see below) |
 | `/accounting/tax/clearance` | route + nav |
 | `/accounting/tax/vat-returns`, `/accounting/tax/vat-settings` | route + nav + Sitemap |
 | `InstallmentTaxEtaxFiling` panel on the Accounting Income Statement | inline `showAdvancedTax` |
 
 Monthly/Annual INSS stay visible to every manage user — INSS declarations are
 every employer's obligation, and the tax-deadline info cards remain for all.
+
+**Deadlines are never gated, only the forms are.** The WIT *screen* is
+accountant-only, but the monthly wage-withholding *deadline* is every
+employer's duty, so the PayrollDashboard attention row shows it to every manage
+user (`showAdvancedTax` must not gate it) and links straight to
+`/payroll/tax/monthly-wit`, where `AccountantGate` explains who files it. The
+old `/payroll/tax` hub that simple-flow users were bounced to is gone: the
+route now redirects to the most urgent filing the user can act on
+(`pages/payroll/TaxReports.tsx`), so WIT-labelled entry points must link to
+`/payroll/tax/monthly-wit` directly — routing them through `/payroll/tax`
+lands a simple-flow tenant on the INSS return instead.
 Annual business income tax also has a short preparation checklist for the
 simple Accounting flow; advanced mode expands the same page into the full
 GL-mapped workpaper. Wage WIT/INSS stay in Payroll, while the annual income
