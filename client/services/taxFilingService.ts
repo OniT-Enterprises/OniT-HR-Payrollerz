@@ -18,6 +18,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
   runTransaction,
 } from "firebase/firestore";
@@ -66,6 +67,7 @@ import {
   getInstallmentTaxDueDateBase,
   getMonthlyServicesTaxDueDateBase,
   getMonthlyWITDueDateBase,
+  areDeclaredFiguresFrozen,
   isActionableDeadline,
   isQuarterEndMonth,
   resolveMonthlyWITTaskStatuses,
@@ -191,35 +193,43 @@ async function bulkFetchPayrollRecordsByTenant(
 // TAX FILING SERVICE
 // ============================================
 
+/**
+ * How many periods the filing-history screens load. Two years of monthly
+ * returns is well past what anyone reconciles on screen, and each row carries a
+ * full return snapshot.
+ */
+export const FILING_HISTORY_LIMIT = 24;
+
+/** Outcome of a saveFiling upsert. */
+export interface SaveFilingResult {
+  filingId: string;
+  /** True when the period was already filed, so its figures were left alone. */
+  declaredFiguresFrozen: boolean;
+}
+
 class TaxFilingService {
-  private holidayOverrideCache = new Map<
-    string,
-    Promise<{ additionalHolidays: Set<string>; removedHolidays: Set<string> }>
-  >();
+  /**
+   * Deriving the two Sets is trivial; the read is what costs. holidayService
+   * owns the cache and busts it whenever an override is written, so a holiday
+   * added in Settings moves the affected due dates right away — this used to
+   * hold its own copy that nothing ever invalidated.
+   */
+  private async getHolidayOverridesForYear(tenantId: string, year: number) {
+    const overrides = await holidayService.listTenantHolidayOverridesCached(
+      tenantId,
+      year,
+    );
+    const additionalHolidays = new Set<string>();
+    const removedHolidays = new Set<string>();
 
-  private getHolidayOverridesForYear(tenantId: string, year: number) {
-    const key = `${tenantId}:${year}`;
-    const cached = this.holidayOverrideCache.get(key);
-    if (cached) return cached;
+    for (const o of overrides) {
+      const date = typeof o.date === "string" ? o.date.slice(0, 10) : "";
+      if (!date) continue;
+      if (o.isHoliday) additionalHolidays.add(date);
+      else removedHolidays.add(date);
+    }
 
-    const load = holidayService
-      .listTenantHolidayOverrides(tenantId, year)
-      .then((overrides) => {
-        const additionalHolidays = new Set<string>();
-        const removedHolidays = new Set<string>();
-
-        for (const o of overrides) {
-          const date = typeof o.date === "string" ? o.date.slice(0, 10) : "";
-          if (!date) continue;
-          if (o.isHoliday) additionalHolidays.add(date);
-          else removedHolidays.add(date);
-        }
-
-        return { additionalHolidays, removedHolidays };
-      });
-
-    this.holidayOverrideCache.set(key, load);
-    return load;
+    return { additionalHolidays, removedHolidays };
   }
 
   private async adjustDueDateTL(
@@ -667,12 +677,17 @@ class TaxFilingService {
   async getAllFilings(
     tenantId: string,
     type?: TaxFilingType,
+    limitCount: number = FILING_HISTORY_LIMIT,
   ): Promise<TaxFiling[]> {
+    // Every filing embeds an employee-level dataSnapshot, so an unbounded read
+    // downloads every return ever filed just to draw a summary table. Newest
+    // first, capped — callers surface the cap rather than truncating silently.
     const q = query(
       this.collectionRef,
       where("tenantId", "==", tenantId),
       ...(type ? [where("type", "==", type)] : []),
       orderBy("period", "desc"),
+      ...(limitCount > 0 ? [limit(limitCount)] : []),
     );
 
     const snapshot = await getDocs(q);
@@ -740,7 +755,12 @@ class TaxFilingService {
   }
 
   /**
-   * Save a tax filing (create or update)
+   * Save a tax filing (create or update).
+   *
+   * Idempotent per (type, period): regenerating a period updates the existing
+   * record rather than adding a second one. If that record's statement is
+   * already filed, the declared figures are left exactly as submitted and
+   * `declaredFiguresFrozen` comes back true so the caller can say so.
    */
   async saveFiling(
     type: TaxFilingType,
@@ -749,9 +769,14 @@ class TaxFilingService {
     userId: string,
     tenantId: string,
     audit?: AuditContext,
-  ): Promise<string> {
+  ): Promise<SaveFilingResult> {
     const existing = await this.getFilingByPeriod(type, period, tenantId);
     const preserveFiled = existing?.status === "filed";
+    // A filed statement's declared figures are frozen: the caller may still
+    // show the freshly built preview, but what was submitted stays on record.
+    const declaredFiguresFrozen = existing
+      ? areDeclaredFiguresFrozen(existing)
+      : false;
 
     const statementDueDate =
       type === "inss_monthly"
@@ -841,7 +866,28 @@ class TaxFilingService {
     let filingId: string;
 
     if (existing) {
-      await updateDoc(doc(db, "taxFilings", existing.id), filingData);
+      // Keep everything except the declared figures — due dates and statuses
+      // may still legitimately move (holiday shifts, payment recorded later).
+      const {
+        dataSnapshot: _snapshot,
+        totalWages: _totalWages,
+        totalWITWithheld: _totalWIT,
+        employeeCount: _employeeCount,
+        ...nonDeclarative
+      } = filingData as typeof filingData & {
+        totalINSSEmployee?: number;
+        totalINSSEmployer?: number;
+      };
+      const frozenPayload = { ...nonDeclarative };
+      delete (frozenPayload as { totalINSSEmployee?: number })
+        .totalINSSEmployee;
+      delete (frozenPayload as { totalINSSEmployer?: number })
+        .totalINSSEmployer;
+
+      await updateDoc(
+        doc(db, "taxFilings", existing.id),
+        declaredFiguresFrozen ? frozenPayload : filingData,
+      );
       filingId = existing.id;
     } else {
       const newDoc = await addDoc(this.collectionRef, {
@@ -869,12 +915,13 @@ class TaxFilingService {
             totalWages: filingData.totalWages,
             totalWIT: filingData.totalWITWithheld,
             employeeCount: filingData.employeeCount,
+            declaredFiguresFrozen,
           },
         })
         .catch((err) => console.error("Audit log failed:", err));
     }
 
-    return filingId;
+    return { filingId, declaredFiguresFrozen };
   }
 
   /**

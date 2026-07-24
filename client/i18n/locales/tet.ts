@@ -8144,6 +8144,10 @@ const messages = {
     company: "Empresa",
   },
   taxReports: {
+    historyCapped: "Hatudu períodu {{count}} ne'ebé foun liu.",
+    filedFiguresFrozenTitle: "Hatama tiha ona — númeru sira nafatin",
+    filedFiguresFrozenDescription:
+      "{{period}} hatama tiha ona, tan ne'e númeru deklaradu sira nafatin hanesan submete ona. Ida ne'ebé ita haree mak previzaun husi folha atuál, la'ós deklarasaun ne'ebé hatama ona.",
     inssArrearsMonth: "fulan",
     inssArrearsMonths: "fulan",
     inssArrearsNotice:

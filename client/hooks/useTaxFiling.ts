@@ -4,7 +4,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
-import { taxFilingService } from '@/services/taxFilingService';
+import { FILING_HISTORY_LIMIT, taxFilingService } from '@/services/taxFilingService';
+
+export { FILING_HISTORY_LIMIT };
 import type { TaxFilingType, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSReturn, SubmissionMethod, CompanyDetails } from '@/services/taxFilingService';
 import type {
   AnnualIncomeTaxPreparation,

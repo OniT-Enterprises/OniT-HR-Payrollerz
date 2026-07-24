@@ -47,15 +47,57 @@ function mapOverride(docSnap: QueryDocumentSnapshot<DocumentData>): HolidayOverr
   };
 }
 
-export const holidayService = {
-  async listTenantHolidayOverrides(tenantId: string, year: number): Promise<HolidayOverride[]> {
-    const col = collection(db, paths.tenantHolidays(tenantId));
-    const snapshot = await getDocs(query(col, orderBy("date", "asc")));
+/**
+ * Every read pulls the tenant's whole (small) overrides collection and filters
+ * by year in memory, so a deadline sweep that asks for three years used to cost
+ * three identical reads. Cache the list per tenant for callers that opt in, and
+ * bust it here on write — the previous cache lived in taxFilingService and was
+ * never invalidated, so a holiday edited in Settings did not move a tax due
+ * date until a full page reload.
+ */
+const overrideCache = new Map<string, Promise<HolidayOverride[]>>();
 
-    const prefix = `${year}-`;
-    return snapshot.docs
-      .map(mapOverride)
-      .filter((o) => typeof o.date === "string" && o.date.startsWith(prefix));
+async function fetchOverrides(tenantId: string): Promise<HolidayOverride[]> {
+  const col = collection(db, paths.tenantHolidays(tenantId));
+  const snapshot = await getDocs(query(col, orderBy("date", "asc")));
+  return snapshot.docs.map(mapOverride);
+}
+
+const inYear = (overrides: HolidayOverride[], year: number) => {
+  const prefix = `${year}-`;
+  return overrides.filter(
+    (o) => typeof o.date === "string" && o.date.startsWith(prefix)
+  );
+};
+
+export const holidayService = {
+  /** Always hits Firestore — settings screens must see other admins' edits. */
+  async listTenantHolidayOverrides(tenantId: string, year: number): Promise<HolidayOverride[]> {
+    return inYear(await fetchOverrides(tenantId), year);
+  },
+
+  /**
+   * Cached variant for read-heavy derivations (tax deadline sweeps). Local
+   * writes bust it; a write from another session is picked up on reload.
+   */
+  async listTenantHolidayOverridesCached(
+    tenantId: string,
+    year: number
+  ): Promise<HolidayOverride[]> {
+    let load = overrideCache.get(tenantId);
+    if (!load) {
+      load = fetchOverrides(tenantId);
+      overrideCache.set(tenantId, load);
+      // Never leave a rejected promise cached — the next read must retry.
+      load.catch(() => overrideCache.delete(tenantId));
+    }
+    return inYear(await load, year);
+  },
+
+  /** Drop the cached overrides (all tenants when none is given). */
+  invalidateHolidayOverrideCache(tenantId?: string): void {
+    if (tenantId) overrideCache.delete(tenantId);
+    else overrideCache.clear();
   },
 
   async upsertTenantHolidayOverride(
@@ -82,14 +124,17 @@ export const holidayService = {
         createdAt: serverTimestamp(),
         createdBy: userId ?? null,
       });
+      overrideCache.delete(tenantId);
       return;
     }
 
     await setDoc(docRef, base, { merge: true });
+    overrideCache.delete(tenantId);
   },
 
   async deleteTenantHolidayOverride(tenantId: string, date: string): Promise<void> {
     await deleteDoc(doc(db, paths.tenantHoliday(tenantId, date)));
+    overrideCache.delete(tenantId);
   },
 };
 

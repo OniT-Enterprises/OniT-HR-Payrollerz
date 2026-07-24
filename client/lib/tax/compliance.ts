@@ -153,6 +153,24 @@ export function isActionableDeadline(params: {
   return params.periodsWithPayroll.has(params.period);
 }
 
+/**
+ * Once the statement is filed, the stored return IS the record of what was
+ * declared to ATTL/INSS. Regenerating the period afterwards is legitimate — the
+ * month's payroll may have been corrected since — but it must never rewrite the
+ * declared figures: the DR/ATTL exports have to keep matching what was
+ * submitted, and `recordPayment` clears the liability from those stored totals,
+ * so a rewrite would post the wrong amount to the ledger.
+ *
+ * A legacy top-level `filed` status counts: it proves the return went out even
+ * though it says nothing about the payment.
+ */
+export function areDeclaredFiguresFrozen(filing: {
+  status?: TaxFilingStatus;
+  statementStatus?: TaxFilingStatus;
+}): boolean {
+  return filing.statementStatus === "filed" || filing.status === "filed";
+}
+
 export function getUrgencyFromDays(
   daysUntilDue: number,
   isOverdue: boolean = false,

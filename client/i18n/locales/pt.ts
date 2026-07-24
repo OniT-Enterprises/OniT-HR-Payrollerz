@@ -8301,6 +8301,10 @@ const messages = {
     company: "Empresa",
   },
   taxReports: {
+    historyCapped: "A mostrar os {{count}} períodos mais recentes.",
+    filedFiguresFrozenTitle: "Já entregue — valores mantidos",
+    filedFiguresFrozenDescription:
+      "{{period}} já foi entregue, por isso os valores declarados mantêm-se como foram submetidos. O que vê é uma pré-visualização da folha atual, não a declaração entregue.",
     inssArrearsMonth: "mês",
     inssArrearsMonths: "meses",
     inssArrearsNotice:
