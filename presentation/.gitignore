@@ -2,5 +2,7 @@ audio/
 recordings/
 tmp/
 *.mp4
+*.srt
+*.ass
 node_modules/
 .env

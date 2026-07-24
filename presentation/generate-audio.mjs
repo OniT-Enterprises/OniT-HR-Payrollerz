@@ -1,9 +1,9 @@
 /**
  * Hotel Esplanada presentation — automated VO generation.
  *
- * Parses vo-lines.txt into per-scene blocks, calls ElevenLabs with the
+ * Parses a voiceover script into per-scene blocks, calls ElevenLabs with the
  * "Alice" British-female narration voice (same voice as the Timor-Leste
- * tourism video's English cut), writes one MP3 per scene to ./audio/.
+ * tourism video's English cut), and writes one MP3 per scene.
  *
  * Env (falls back to the media-monitor .env.local a couple of dirs up):
  *   ELEVENLABS_API_KEY          required
@@ -12,6 +12,7 @@
  * Usage:
  *   npm run audio                 # all scenes
  *   node generate-audio.mjs --only=3,5   # specific scenes
+ *   node generate-audio.mjs --script=flagship/vo-lines.txt --out=flagship/audio
  */
 
 import { readFile, mkdir, writeFile } from 'fs/promises';
@@ -50,8 +51,11 @@ function loadEnv() {
 const { key: API_KEY, model: MODEL } = loadEnv();
 
 // ── 2. Parse vo-lines.txt into scenes ─────────────────────────────────────
-const VO_FILE = path.resolve('./vo-lines.txt');
-const OUT_DIR = path.resolve('./audio');
+const args = process.argv.slice(2);
+const argValue = (name, fallback) =>
+  args.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3) || fallback;
+const VO_FILE = path.resolve(argValue('script', './vo-lines.txt'));
+const OUT_DIR = path.resolve(argValue('out', './audio'));
 
 // Narration voice — "Alice" (British female), the same voice used for the
 // Timor-Leste tourism video's English cut. Neutral, clear, engaging.
@@ -122,13 +126,12 @@ async function renderScene(scene) {
 }
 
 // ── 5. Run ────────────────────────────────────────────────────────────────
-const args = process.argv.slice(2);
 const onlyArg = args.find((a) => a.startsWith('--only='))?.split('=')[1];
 const onlyNums = onlyArg ? new Set(onlyArg.split(',').map((n) => Number(n.trim()))) : null;
 
 const raw = await readFile(VO_FILE, 'utf8');
 const scenes = parseScenes(raw);
-console.log(`Parsed ${scenes.length} scenes from vo-lines.txt`);
+console.log(`Parsed ${scenes.length} scenes from ${VO_FILE}`);
 console.log(`Voice: Alice (EN narration)   Model: ${MODEL}\n`);
 
 await mkdir(OUT_DIR, { recursive: true });

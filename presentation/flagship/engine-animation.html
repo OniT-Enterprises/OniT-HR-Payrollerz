@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Xefe calculation engine animation</title>
+  <style>
+    @font-face {
+      font-family: "Lato";
+      src: url("../fonts/Lato-Regular.ttf") format("truetype");
+      font-weight: 400;
+    }
+
+    @font-face {
+      font-family: "Lato";
+      src: url("../fonts/Lato-Bold.ttf") format("truetype");
+      font-weight: 700;
+    }
+
+    :root {
+      color-scheme: dark;
+      font-family: "Lato", sans-serif;
+      --canvas: #09090b;
+      --panel: #141417;
+      --panel-raised: #1b1b20;
+      --line: #303038;
+      --gold: #fbbf24;
+      --green: #84cc16;
+      --teal: #2dd4bf;
+      --white: #fafafa;
+      --muted: #a1a1aa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 1920px;
+      height: 1080px;
+      margin: 0;
+      overflow: hidden;
+      background: var(--canvas);
+      color: var(--white);
+    }
+
+    body {
+      position: relative;
+      background:
+        radial-gradient(circle at 50% 47%, rgb(132 204 22 / 10%), transparent 30%),
+        radial-gradient(circle at 10% 10%, rgb(251 191 36 / 8%), transparent 25%),
+        var(--canvas);
+    }
+
+    body::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      opacity: 0.22;
+      background-image:
+        linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+
+    .stage {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      padding: 52px 70px 46px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+    }
+
+    .brand img {
+      width: 126px;
+      height: auto;
+    }
+
+    .eyebrow {
+      padding-left: 24px;
+      border-left: 1px solid var(--line);
+      color: var(--gold);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    .jurisdiction {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 21px;
+      opacity: 0;
+    }
+
+    .jurisdiction-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 22px rgb(132 204 22 / 80%);
+    }
+
+    .heading {
+      margin-top: 28px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    .heading h1 {
+      margin: 0;
+      font-size: 52px;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+    }
+
+    .heading p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 24px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: 440px 120px 660px 120px 440px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 35px;
+    }
+
+    .card {
+      min-height: 572px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(145deg, rgb(255 255 255 / 2%), transparent 55%),
+        rgb(20 20 23 / 96%);
+      box-shadow: 0 28px 70px rgb(0 0 0 / 30%);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .card-number {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border: 1px solid #3f3f46;
+      border-radius: 12px;
+      color: var(--white);
+      background: #202026;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .input-row,
+    .output-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 86px;
+      margin-top: 12px;
+      padding: 18px 20px;
+      border: 1px solid #2a2a31;
+      border-radius: 18px;
+      background: var(--panel-raised);
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    .row-label {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.2;
+    }
+
+    .row-label small {
+      display: block;
+      margin-top: 5px;
+      color: #71717a;
+      font-size: 14px;
+    }
+
+    .row-value {
+      color: var(--white);
+      font-size: 25px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .input-row::before {
+      width: 8px;
+      height: 42px;
+      margin-right: 14px;
+      border-radius: 8px;
+      background: #3f3f46;
+      content: "";
+    }
+
+    .input-row .row-label {
+      flex: 1;
+    }
+
+    .connector {
+      position: relative;
+      height: 4px;
+      overflow: visible;
+      background: #2f2f35;
+      opacity: 0;
+      transform: scaleX(0);
+    }
+
+    .connector.left {
+      transform-origin: right;
+    }
+
+    .connector.right {
+      transform-origin: left;
+    }
+
+    .connector::after {
+      position: absolute;
+      top: 50%;
+      right: -1px;
+      width: 16px;
+      height: 16px;
+      border-top: 4px solid var(--green);
+      border-right: 4px solid var(--green);
+      content: "";
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    .connector .beam {
+      position: absolute;
+      top: -2px;
+      left: 0;
+      width: 36px;
+      height: 8px;
+      border-radius: 99px;
+      background: var(--green);
+      box-shadow: 0 0 22px rgb(132 204 22 / 95%);
+      opacity: 0;
+    }
+
+    .engine-card {
+      position: relative;
+      min-height: 628px;
+      padding: 30px;
+      overflow: hidden;
+      border: 1px solid rgb(132 204 22 / 30%);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 50% 18%, rgb(132 204 22 / 13%), transparent 34%),
+        linear-gradient(160deg, #17171a, #0f0f12);
+      box-shadow:
+        0 0 0 1px rgb(132 204 22 / 7%),
+        0 35px 90px rgb(0 0 0 / 38%);
+      opacity: 0;
+      transform: scale(0.96);
+    }
+
+    .engine-card::before {
+      position: absolute;
+      inset: -60%;
+      content: "";
+      background: conic-gradient(
+        from 0deg,
+        transparent 0 38%,
+        rgb(132 204 22 / 7%) 46%,
+        transparent 53% 100%
+      );
+      animation: rotate 7s linear infinite paused;
+    }
+
+    .engine-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .engine-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid #303036;
+    }
+
+    .engine-core {
+      position: relative;
+      display: grid;
+      width: 94px;
+      height: 94px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgb(132 204 22 / 45%);
+      border-radius: 50%;
+      background: rgb(132 204 22 / 9%);
+      color: var(--green);
+      font-size: 42px;
+      font-weight: 700;
+      box-shadow: inset 0 0 25px rgb(132 204 22 / 10%);
+    }
+
+    .engine-core::after {
+      position: absolute;
+      inset: -8px;
+      border: 2px solid transparent;
+      border-top-color: var(--green);
+      border-radius: 50%;
+      content: "";
+      opacity: 0;
+    }
+
+    .engine-name {
+      flex: 1;
+    }
+
+    .engine-name strong {
+      display: block;
+      font-size: 30px;
+    }
+
+    .engine-name span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 13px;
+      border: 1px solid rgb(132 204 22 / 28%);
+      border-radius: 999px;
+      color: var(--green);
+      background: rgb(132 204 22 / 7%);
+      font-size: 15px;
+      font-weight: 700;
+      opacity: 0;
+    }
+
+    .status-pill::before {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .formula-list {
+      display: grid;
+      gap: 11px;
+      margin-top: 22px;
+    }
+
+    .formula {
+      display: grid;
+      grid-template-columns: 124px 1fr 96px;
+      align-items: center;
+      min-height: 60px;
+      padding: 12px 16px;
+      overflow: hidden;
+      border: 1px solid #2e2e34;
+      border-radius: 15px;
+      background: rgb(25 25 29 / 92%);
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+
+    .formula-name {
+      color: var(--gold);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .formula-code {
+      color: #d4d4d8;
+      font-family: "Lato", sans-serif;
+      font-size: 17px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .formula-result {
+      color: var(--white);
+      font-size: 18px;
+      font-weight: 700;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      padding: 8px;
+      border: 1px solid #2d2d33;
+      border-radius: 14px;
+      color: #71717a;
+      background: #17171a;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .check::before {
+      display: grid;
+      width: 20px;
+      height: 20px;
+      margin-right: 7px;
+      place-items: center;
+      border: 1px solid #3f3f46;
+      border-radius: 50%;
+      color: transparent;
+      content: "✓";
+      font-size: 12px;
+    }
+
+    .output-row {
+      min-height: 76px;
+      padding: 15px 18px;
+    }
+
+    .output-row .row-value {
+      font-size: 23px;
+    }
+
+    .output-row.net {
+      min-height: 102px;
+      margin-top: 20px;
+      border-color: rgb(132 204 22 / 42%);
+      background: linear-gradient(110deg, rgb(132 204 22 / 10%), #1a1a1e);
+      box-shadow: inset 4px 0 0 var(--green);
+    }
+
+    .output-row.net .row-label {
+      color: var(--white);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+    }
+
+    .output-row.net .row-value {
+      color: var(--green);
+      font-size: 34px;
+    }
+
+    .balanced {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 18px;
+      color: var(--teal);
+      font-size: 16px;
+      font-weight: 700;
+      opacity: 0;
+    }
+
+    .balanced-icon {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border: 1px solid rgb(45 212 191 / 40%);
+      border-radius: 50%;
+      background: rgb(45 212 191 / 8%);
+      font-size: 13px;
+    }
+
+    .trace {
+      position: absolute;
+      right: 70px;
+      bottom: 42px;
+      left: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 82px;
+      overflow: hidden;
+      border: 1px solid rgb(251 191 36 / 28%);
+      border-radius: 22px;
+      background: linear-gradient(90deg, rgb(251 191 36 / 7%), rgb(132 204 22 / 8%));
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    .trace::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background: linear-gradient(90deg, transparent, rgb(255 255 255 / 7%), transparent);
+      transform: translateX(-100%);
+    }
+
+    .trace strong {
+      margin-right: 16px;
+      color: var(--gold);
+      font-size: 19px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .trace span {
+      color: var(--white);
+      font-size: 24px;
+    }
+
+    .synthetic-note {
+      position: absolute;
+      right: 78px;
+      bottom: 15px;
+      color: #52525b;
+      font-size: 13px;
+    }
+
+    .play .brand {
+      animation: fade-in 0.6s 0.1s ease-out forwards;
+    }
+
+    .play .jurisdiction {
+      animation: fade-in 0.6s 0.35s ease-out forwards;
+    }
+
+    .play .heading {
+      animation: reveal-up 0.7s 0.45s cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .engine-card {
+      animation: reveal-scale 0.75s 1.3s cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .engine-card::before {
+      animation-play-state: running;
+    }
+
+    .play .input-row {
+      animation: reveal-up 0.55s var(--delay) cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .input-row::before {
+      animation: input-ready 0.4s calc(var(--delay) + 0.35s) ease-out forwards;
+    }
+
+    .play .connector {
+      animation: connector-in 0.55s var(--connector-delay) ease-out forwards;
+    }
+
+    .play .connector .beam {
+      animation: beam 1.15s calc(var(--connector-delay) + 0.3s) ease-in-out 4;
+    }
+
+    .play .engine-core::after {
+      animation: core-spin 1.2s 4.25s linear 4, fade-in 0.3s 4.25s forwards;
+    }
+
+    .play .status-pill {
+      animation: fade-in 0.45s 4.35s ease-out forwards;
+    }
+
+    .play .formula {
+      animation: formula-in 0.55s var(--delay) cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .check {
+      animation: check-complete 0.45s var(--delay) ease-out forwards;
+    }
+
+    .play .check::before {
+      animation: check-icon 0.35s var(--delay) ease-out forwards;
+    }
+
+    .play .output-row {
+      animation: reveal-up 0.55s var(--delay) cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .output-row.net {
+      animation:
+        reveal-up 0.65s var(--delay) cubic-bezier(.2, .8, .2, 1) forwards,
+        net-glow 1.6s calc(var(--delay) + 0.55s) ease-out forwards;
+    }
+
+    .play .balanced {
+      animation: fade-in 0.5s 13.45s ease-out forwards;
+    }
+
+    .play .trace {
+      animation: reveal-up 0.7s 14.15s cubic-bezier(.2, .8, .2, 1) forwards;
+    }
+
+    .play .trace::before {
+      animation: trace-sweep 1.8s 14.7s ease-in-out forwards;
+    }
+
+    @keyframes fade-in {
+      to { opacity: 1; }
+    }
+
+    @keyframes reveal-up {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes reveal-scale {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes input-ready {
+      to {
+        background: var(--gold);
+        box-shadow: 0 0 16px rgb(251 191 36 / 45%);
+      }
+    }
+
+    @keyframes connector-in {
+      to {
+        opacity: 1;
+        transform: scaleX(1);
+      }
+    }
+
+    @keyframes beam {
+      0% {
+        left: 0;
+        opacity: 0;
+      }
+      15% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 1;
+      }
+      100% {
+        left: calc(100% - 30px);
+        opacity: 0;
+      }
+    }
+
+    @keyframes rotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes core-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes formula-in {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+        border-color: rgb(132 204 22 / 20%);
+      }
+    }
+
+    @keyframes check-complete {
+      to {
+        color: #d4d4d8;
+        border-color: rgb(132 204 22 / 24%);
+        background: rgb(132 204 22 / 6%);
+      }
+    }
+
+    @keyframes check-icon {
+      to {
+        color: var(--green);
+        border-color: rgb(132 204 22 / 45%);
+        background: rgb(132 204 22 / 8%);
+      }
+    }
+
+    @keyframes net-glow {
+      50% {
+        box-shadow: inset 4px 0 0 var(--green), 0 0 34px rgb(132 204 22 / 14%);
+      }
+      100% {
+        box-shadow: inset 4px 0 0 var(--green), 0 0 20px rgb(132 204 22 / 7%);
+      }
+    }
+
+    @keyframes trace-sweep {
+      to { transform: translateX(100%); }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="engine-animation">
+    <div class="topbar">
+      <div class="brand">
+        <img src="../assets/xefe-logo-light.webp" alt="Xefe">
+        <div class="eyebrow">PAYROLL CALCULATION ENGINE</div>
+      </div>
+      <div class="jurisdiction">
+        <span class="jurisdiction-dot"></span>
+        Timor-Leste rules loaded
+      </div>
+    </div>
+
+    <header class="heading">
+      <h1>One calculation. Every step visible.</h1>
+      <p>Approved payroll data becomes an explainable result.</p>
+    </header>
+
+    <section class="flow" aria-label="Calculation flow">
+      <article class="card input-card">
+        <div class="card-title">
+          Payroll inputs
+          <span class="card-number">1</span>
+        </div>
+
+        <div class="input-row" style="--delay: 1.8s">
+          <div class="row-label">Base salary<small>Monthly</small></div>
+          <div class="row-value">$1,200.00</div>
+        </div>
+        <div class="input-row" style="--delay: 2.35s">
+          <div class="row-label">Approved overtime<small>Regular workday</small></div>
+          <div class="row-value">12 h</div>
+        </div>
+        <div class="input-row" style="--delay: 2.9s">
+          <div class="row-label">Food allowance<small>Expense allowance</small></div>
+          <div class="row-value">$100.00</div>
+        </div>
+        <div class="input-row" style="--delay: 3.45s">
+          <div class="row-label">Employee profile<small>Resident · INSS enrolled</small></div>
+          <div class="row-value">Ready</div>
+        </div>
+      </article>
+
+      <div class="connector left" style="--connector-delay: 4.05s">
+        <span class="beam"></span>
+      </div>
+
+      <article class="engine-card">
+        <div class="engine-content">
+          <div class="engine-header">
+            <div class="engine-core">∑</div>
+            <div class="engine-name">
+              <strong>Timor-Leste rules</strong>
+              <span>Validated line by line</span>
+            </div>
+            <div class="status-pill">Calculating</div>
+          </div>
+
+          <div class="formula-list">
+            <div class="formula" style="--delay: 4.7s">
+              <div class="formula-name">GROSS PAY</div>
+              <div class="formula-code">$1,200 + $113.22 + $100</div>
+              <div class="formula-result">$1,413.22</div>
+            </div>
+            <div class="formula" style="--delay: 5.55s">
+              <div class="formula-name">OVERTIME</div>
+              <div class="formula-code">12 h × $6.29 × 1.5</div>
+              <div class="formula-result">$113.22</div>
+            </div>
+            <div class="formula" style="--delay: 6.4s">
+              <div class="formula-name">WIT</div>
+              <div class="formula-code">10% × ($1,413.22 − $500)</div>
+              <div class="formula-result">$91.32</div>
+            </div>
+            <div class="formula" style="--delay: 7.25s">
+              <div class="formula-name">INSS</div>
+              <div class="formula-code">4% × $1,200 contributable pay</div>
+              <div class="formula-result">$48.00</div>
+            </div>
+          </div>
+
+          <div class="checks">
+            <div class="check" style="--delay: 8.15s">Inputs valid</div>
+            <div class="check" style="--delay: 8.65s">Rates applied</div>
+            <div class="check" style="--delay: 9.15s">Bases checked</div>
+            <div class="check" style="--delay: 9.65s">Totals balanced</div>
+          </div>
+        </div>
+      </article>
+
+      <div class="connector right" style="--connector-delay: 9.85s">
+        <span class="beam"></span>
+      </div>
+
+      <article class="card output-card">
+        <div class="card-title">
+          Pay breakdown
+          <span class="card-number">3</span>
+        </div>
+
+        <div class="output-row" style="--delay: 10.25s">
+          <div class="row-label">Gross earnings</div>
+          <div class="row-value">$1,413.22</div>
+        </div>
+        <div class="output-row" style="--delay: 10.85s">
+          <div class="row-label">Wage income tax</div>
+          <div class="row-value">−$91.32</div>
+        </div>
+        <div class="output-row" style="--delay: 11.45s">
+          <div class="row-label">Employee INSS</div>
+          <div class="row-value">−$48.00</div>
+        </div>
+        <div class="output-row net" style="--delay: 12.15s">
+          <div class="row-label">NET PAY</div>
+          <div class="row-value">$1,273.90</div>
+        </div>
+        <div class="balanced">
+          <span class="balanced-icon">✓</span>
+          Calculation balanced to the cent
+        </div>
+      </article>
+    </section>
+
+    <div class="trace">
+      <strong>Trace complete</strong>
+      <span>Salary + hours → rules → deductions → net pay</span>
+    </div>
+    <div class="synthetic-note">Illustrative synthetic resident-employee example</div>
+  </main>
+
+  <script>
+    window.startEngineAnimation = () => {
+      document.body.classList.remove("play");
+      void document.body.offsetWidth;
+      document.body.classList.add("play");
+    };
+  </script>
+</body>
+</html>

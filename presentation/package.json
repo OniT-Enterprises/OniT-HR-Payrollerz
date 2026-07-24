@@ -4,12 +4,16 @@
   "type": "module",
   "scripts": {
     "audio": "node generate-audio.mjs",
+    "audio:flagship": "node generate-audio.mjs --script=flagship/vo-lines.txt --out=flagship/audio",
     "capture": "node capture.mjs",
+    "capture:flagship": "node flagship/capture.mjs",
     "capture:web": "node capture.mjs --only=web",
     "capture:pms": "node capture.mjs --only=pms",
     "render": "node render.mjs",
+    "render:flagship": "node flagship/render.mjs",
     "render:vo-only": "node render.mjs --vo-only",
-    "qa": "node qa.mjs"
+    "qa": "node qa.mjs",
+    "qa:flagship": "node flagship/qa.mjs"
   },
   "comment": "Reuses playwright + chromium from the parent presentation/ (node resolves it up the tree). If it can't be found, run `npm i playwright && npx playwright install chromium` here.",
   "dependencies": {

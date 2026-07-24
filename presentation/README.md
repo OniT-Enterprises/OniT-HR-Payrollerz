@@ -1,5 +1,8 @@
 # Xefe — Product Video (comprehensive cut, v4)
 
+For the short 2:18 customer-facing cut, see
+[`flagship/README.md`](flagship/README.md).
+
 A full product tour for **Timor-Leste business owners** (non-technical), narrated in
 English by ElevenLabs "Alice" ("Xefe" is spoken *Sheffy*). Covers every module —
 dashboard, people, hiring, time & leave, shifts, the payroll wizard, approval &
