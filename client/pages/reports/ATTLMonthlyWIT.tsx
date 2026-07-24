@@ -969,6 +969,48 @@ export default function ATTLMonthlyWIT() {
           iconColor="text-primary"
         />
 
+        {selectedPeriodDue && (
+          <div
+            role="alert"
+            className={
+              selectedPeriodDue.isOverdue
+                ? "flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
+                : "flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+            }
+          >
+            {selectedPeriodDue.isOverdue ? (
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            ) : (
+              <Clock className="mt-0.5 h-5 w-5 shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold">
+                {t(
+                  selectedPeriodDue.isOverdue
+                    ? "reports.attlMonthlyWit.alerts.overdueTitle"
+                    : "reports.attlMonthlyWit.alerts.upcomingTitle",
+                )}
+              </p>
+              <p className="mt-0.5 text-sm">
+                {t(
+                  selectedPeriodDue.task === "payment"
+                    ? selectedPeriodDue.isOverdue
+                      ? "reports.attlMonthlyWit.alerts.paymentOverdueDescription"
+                      : "reports.attlMonthlyWit.alerts.paymentUpcomingDescription"
+                    : selectedPeriodDue.isOverdue
+                      ? "reports.attlMonthlyWit.alerts.overdueDescription"
+                      : "reports.attlMonthlyWit.alerts.upcomingDescription",
+                  {
+                    period: formatPeriodLabel(selectedPeriodDue.period),
+                    dueDate: formatDisplayDate(selectedPeriodDue.dueDate),
+                    days: selectedPeriodDue.daysUntilDue,
+                  },
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         <Card className="border-border/70 shadow-sm">
           <CardHeader className="pb-4">
             <ReportCardHeader
@@ -979,48 +1021,6 @@ export default function ATTLMonthlyWIT() {
             />
           </CardHeader>
           <CardContent className="space-y-5">
-            {selectedPeriodDue && (
-              <div
-                role="alert"
-                className={
-                  selectedPeriodDue.isOverdue
-                    ? "flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200"
-                    : "flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
-                }
-              >
-                {selectedPeriodDue.isOverdue ? (
-                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-                ) : (
-                  <Clock className="mt-0.5 h-5 w-5 shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">
-                    {t(
-                      selectedPeriodDue.isOverdue
-                        ? "reports.attlMonthlyWit.alerts.overdueTitle"
-                        : "reports.attlMonthlyWit.alerts.upcomingTitle",
-                    )}
-                  </p>
-                  <p className="mt-0.5 text-sm">
-                    {t(
-                      selectedPeriodDue.task === "payment"
-                        ? selectedPeriodDue.isOverdue
-                          ? "reports.attlMonthlyWit.alerts.paymentOverdueDescription"
-                          : "reports.attlMonthlyWit.alerts.paymentUpcomingDescription"
-                        : selectedPeriodDue.isOverdue
-                          ? "reports.attlMonthlyWit.alerts.overdueDescription"
-                          : "reports.attlMonthlyWit.alerts.upcomingDescription",
-                      {
-                        period: formatPeriodLabel(selectedPeriodDue.period),
-                        dueDate: formatDisplayDate(selectedPeriodDue.dueDate),
-                        days: selectedPeriodDue.daysUntilDue,
-                      },
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,220px)_minmax(0,240px)_max-content] lg:items-end">
               <div>
                 <Label className="mb-2 block" htmlFor="wit-report-year">
