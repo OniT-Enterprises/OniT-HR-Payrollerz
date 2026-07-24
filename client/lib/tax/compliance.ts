@@ -127,6 +127,32 @@ export function getNextAnnualAdjustedDeadline(
   );
 }
 
+/**
+ * The deadline sweep starts two months in the past, so a tenant that onboarded
+ * this month would be told its pre-Xefe months are already overdue. A past
+ * monthly deadline is only actionable when the tenant has something to declare:
+ * a filing record was started (any status), or Xefe holds paid payroll for the
+ * month. `periodsWithPayroll = null` means "evidence unknown" (the lookup
+ * failed) and must keep the deadline — never mute a real obligation on a guess.
+ *
+ * Non-monthly periods (annual returns, period "2026") are always kept: the
+ * monthly payroll window says nothing about them.
+ */
+export function isActionableDeadline(params: {
+  period: string;
+  daysUntilDue: number;
+  status?: TaxFilingStatus;
+  hasFilingRecord: boolean;
+  periodsWithPayroll: ReadonlySet<string> | null;
+}): boolean {
+  if (!/^\d{4}-\d{2}$/.test(params.period)) return true;
+  if (params.daysUntilDue >= 0) return true;
+  if (params.status === "filed") return true;
+  if (params.hasFilingRecord) return true;
+  if (!params.periodsWithPayroll) return true;
+  return params.periodsWithPayroll.has(params.period);
+}
+
 export function getUrgencyFromDays(
   daysUntilDue: number,
   isOverdue: boolean = false,

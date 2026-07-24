@@ -66,6 +66,7 @@ import {
   getInstallmentTaxDueDateBase,
   getMonthlyServicesTaxDueDateBase,
   getMonthlyWITDueDateBase,
+  isActionableDeadline,
   isQuarterEndMonth,
   resolveMonthlyWITTaskStatuses,
   resolveTaskStatus,
@@ -1282,6 +1283,38 @@ class TaxFilingService {
   // ----------------------------------------
 
   /**
+   * Periods (YYYY-MM) in the sweep window where Xefe holds PAID payroll, i.e.
+   * where a WIT/INSS return could actually be produced. Keyed off `payDate` —
+   * the same basis generateMonthly{WIT,INSS}Return() uses to collect a
+   * period's runs — so "has evidence" here means "generation would find rows".
+   *
+   * Returns null when the lookup fails: unknown must never be read as "no
+   * payroll", or a transient error would silently mute real deadlines.
+   */
+  private async getPeriodsWithPaidPayroll(
+    tenantId: string,
+    periods: { period: string }[],
+  ): Promise<Set<string> | null> {
+    if (!tenantId || periods.length === 0) return null;
+    const sorted = periods.map((p) => p.period).sort();
+    try {
+      const runs = await payrollService.runs.getPaidPayrollRunsByPayDateRange(
+        tenantId,
+        `${sorted[0]}-01`,
+        `${sorted[sorted.length - 1]}-31`,
+      );
+      return new Set(
+        runs
+          .map((run) => String(run.payDate ?? "").slice(0, 7))
+          .filter((period) => /^\d{4}-\d{2}$/.test(period)),
+      );
+    } catch (error) {
+      console.error("Failed to resolve periods with paid payroll:", error);
+      return null;
+    }
+  }
+
+  /**
    * Get upcoming and overdue filings
    */
   async getFilingsDueSoon(
@@ -1310,6 +1343,13 @@ class TaxFilingService {
         period: `${year}-${String(month).padStart(2, "0")}`,
       });
     }
+
+    // The sweep starts two months in the past, so a tenant that onboarded
+    // this month would otherwise be told its pre-Xefe months are overdue.
+    const periodsWithPayroll = this.getPeriodsWithPaidPayroll(
+      tenantId,
+      periods,
+    );
 
     // Fetch all filings and due dates in parallel
     const monthlyResults = await Promise.all(
@@ -1473,10 +1513,23 @@ class TaxFilingService {
       });
     }
 
-    dueDates.sort(
+    // Drop past monthly deadlines the tenant cannot act on — nothing filed and
+    // no payroll to declare means "overdue" would be a false accusation.
+    const payrollPeriods = await periodsWithPayroll;
+    const actionable = dueDates.filter((due) =>
+      isActionableDeadline({
+        period: due.period,
+        daysUntilDue: due.daysUntilDue,
+        status: due.status,
+        hasFilingRecord: Boolean(due.filing),
+        periodsWithPayroll: payrollPeriods,
+      }),
+    );
+
+    actionable.sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
     );
-    return dueDates;
+    return actionable;
   }
 
   /**
