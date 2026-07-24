@@ -580,10 +580,16 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   ).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("$10.00").first()).toBeVisible();
 
-  await page
-    .getByRole("button", { name: /^mark filed$/i })
-    .first()
-    .click();
+  // The WIT rewrite moved the return's "Mark filed" into the filing row's
+  // overflow menu ("More actions"); the primary button is now "Continue
+  // return". Radix renders the menu content in a page-level portal, so the
+  // menuitem is queried at page scope rather than inside the row.
+  const witReturnRow = page
+    .getByRole("row")
+    .filter({ hasText: new RegExp(PAY_MONTH, "i") })
+    .last();
+  await witReturnRow.getByRole("button", { name: /more actions/i }).click();
+  await page.getByRole("menuitem", { name: /^mark filed$/i }).click();
   const witFiledDialog = page.getByRole("dialog", {
     name: /mark return as filed/i,
   });
