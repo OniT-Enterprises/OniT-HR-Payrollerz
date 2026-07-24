@@ -4732,6 +4732,7 @@ export const translations = {
           "view": "View",
           "viewReturn": "View return",
           "continueReturn": "Continue return",
+          "rebuild": "Rebuild from payroll",
           "markFiled": "Mark Filed",
           "recordPayment": "Record Payment"
         },
@@ -4865,6 +4866,10 @@ export const translations = {
         "toast": {
           "generatedTitle": "Return Generated",
           "generatedDescription": "Monthly WIT return for {{period}} has been generated.",
+          "rebuiltTitle": "Return Rebuilt",
+          "rebuiltDescription": "The {{period}} return now matches current payroll. Export the official form again before filing.",
+          "noDataTitle": "No payroll data",
+          "noDataDescription": "Xefe has no payroll for {{period}}. Run and finalize that month's payroll first.",
           "errorTitle": "Error",
           "generateErrorDescription": "Failed to generate WIT return. Make sure you have payroll data for this period.",
           "csvExportedTitle": "CSV Exported",
@@ -14142,6 +14147,7 @@ export const translations = {
           "view": "Haree",
           "viewReturn": "Haree deklarasaun",
           "continueReturn": "Kontinua deklarasaun",
+          "rebuild": "Kria fila fali husi folha",
           "markFiled": "Marka hatama",
           "recordPayment": "Rejista pagamentu"
         },
@@ -14275,6 +14281,10 @@ export const translations = {
         "toast": {
           "generatedTitle": "Deklarasaun criada",
           "generatedDescription": "Deklarasaun WIT mensal ba {{period}} cria ona.",
+          "rebuiltTitle": "Deklarasaun kria fila fali",
+          "rebuiltDescription": "Deklarasaun ba {{period}} agora tuir ona folha atuál. Exporta fila fali formuláriu ofisiál molok hatama.",
+          "noDataTitle": "Laiha dadus folha",
+          "noDataDescription": "Xefe laiha dadus folha ba {{period}}. Hala'o no finaliza uluk folha fulan ne'e.",
           "errorTitle": "Erru",
           "generateErrorDescription": "Labele kria deklarasaun WIT. Haree katak iha dadus folha ba períodu ida-ne'e.",
           "csvExportedTitle": "CSV exporta ona",
@@ -21432,6 +21442,7 @@ export const translations = {
           "view": "Ver",
           "viewReturn": "Ver declaração",
           "continueReturn": "Continuar declaração",
+          "rebuild": "Reconstruir a partir da folha",
           "markFiled": "Marcar Entregue",
           "recordPayment": "Registar Pagamento"
         },
@@ -21565,6 +21576,10 @@ export const translations = {
         "toast": {
           "generatedTitle": "Declaração Gerada",
           "generatedDescription": "A declaração mensal de IRT para {{period}} foi gerada.",
+          "rebuiltTitle": "Declaração Reconstruída",
+          "rebuiltDescription": "A declaração de {{period}} passou a refletir a folha de pagamento atual. Exporte novamente o formulário oficial antes de entregar.",
+          "noDataTitle": "Sem folha de pagamento",
+          "noDataDescription": "O Xefe não tem folha de pagamento para {{period}}. Processe e finalize primeiro esse mês.",
           "errorTitle": "Erro",
           "generateErrorDescription": "Falha ao gerar a declaração de IRT. Confirme que existe folha de pagamento para este período.",
           "csvExportedTitle": "CSV Exportado",

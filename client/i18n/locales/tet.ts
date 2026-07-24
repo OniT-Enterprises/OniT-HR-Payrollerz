@@ -6190,6 +6190,7 @@ const messages = {
         view: "Haree",
         viewReturn: "Haree deklarasaun",
         continueReturn: "Kontinua deklarasaun",
+        rebuild: "Kria fila fali husi folha",
         markFiled: "Marka hatama",
         recordPayment: "Rejista pagamentu",
       },
@@ -6336,6 +6337,12 @@ const messages = {
       toast: {
         generatedTitle: "Deklarasaun criada",
         generatedDescription: "Deklarasaun WIT mensal ba {{period}} cria ona.",
+        rebuiltTitle: "Deklarasaun kria fila fali",
+        rebuiltDescription:
+          "Deklarasaun ba {{period}} agora tuir ona folha atuál. Exporta fila fali formuláriu ofisiál molok hatama.",
+        noDataTitle: "Laiha dadus folha",
+        noDataDescription:
+          "Xefe laiha dadus folha ba {{period}}. Hala\'o no finaliza uluk folha fulan ne'e.",
         errorTitle: "Erru",
         generateErrorDescription:
           "Labele kria deklarasaun WIT. Haree katak iha dadus folha ba períodu ida-ne'e.",

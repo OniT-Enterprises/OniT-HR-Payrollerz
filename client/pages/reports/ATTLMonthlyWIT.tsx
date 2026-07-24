@@ -70,11 +70,13 @@ import {
   Landmark,
   MoreVertical,
   ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettings } from "@/hooks/useSettings";
 import { useCompanyPaymentProfile } from "@/hooks/useCompanyPaymentProfile";
 import {
+  TAX_DEADLINE_WINDOW_MONTHS,
   useTaxFilings,
   useTaxFilingsDueSoon,
   useGenerateMonthlyWIT,
@@ -137,7 +139,7 @@ export default function ATTLMonthlyWIT() {
     isError: duesError,
     isFetching: duesFetching,
     refetch: refetchDues,
-  } = useTaxFilingsDueSoon(6);
+  } = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS);
   const generateWIT = useGenerateMonthlyWIT();
   const saveFiling = useSaveTaxFiling();
   const markFiled = useMarkTaxFilingAsFiled();
@@ -263,11 +265,18 @@ export default function ATTLMonthlyWIT() {
   // ACTIONS
   // ============================================
 
-  const handleGenerateReturn = async () => {
-    const period = `${selectedYear}-${selectedMonth}`;
-
+  /**
+   * Build the period's return from payroll and store it as the draft snapshot.
+   * `mode` only changes the toast: rebuilding an existing draft is the same
+   * write, but the user needs telling that their exports are now stale.
+   * Never called for a filed statement — that snapshot is the record of what
+   * was submitted and stays frozen (see the menu/preview guards below).
+   */
+  const generateAndSaveReturn = async (
+    period: string,
+    mode: "generate" | "rebuild",
+  ) => {
     try {
-      // Generate the return data
       const returnData = await generateWIT.mutateAsync({ period, company });
       setSelectedReturn(returnData);
 
@@ -280,10 +289,17 @@ export default function ATTLMonthlyWIT() {
       });
 
       toast({
-        title: t("reports.attlMonthlyWit.toast.generatedTitle"),
-        description: t("reports.attlMonthlyWit.toast.generatedDescription", {
-          period: formatPeriodLabel(period),
-        }),
+        title: t(
+          mode === "rebuild"
+            ? "reports.attlMonthlyWit.toast.rebuiltTitle"
+            : "reports.attlMonthlyWit.toast.generatedTitle",
+        ),
+        description: t(
+          mode === "rebuild"
+            ? "reports.attlMonthlyWit.toast.rebuiltDescription"
+            : "reports.attlMonthlyWit.toast.generatedDescription",
+          { period: formatPeriodLabel(period) },
+        ),
       });
     } catch (error) {
       console.error("Failed to generate return:", error);
@@ -295,8 +311,47 @@ export default function ATTLMonthlyWIT() {
     }
   };
 
+  const handleGenerateReturn = () =>
+    generateAndSaveReturn(`${selectedYear}-${selectedMonth}`, "generate");
+
+  /** Rebuild a period picked from the filing history, and follow it in the
+   * period selectors so the card and the preview agree. */
+  const handleRebuildReturn = async (period: string) => {
+    const [year, month] = period.split("-");
+    if (year && month) {
+      attentionPeriodApplied.current = true;
+      setSelectedYear(year);
+      setSelectedMonth(month);
+    }
+    await generateAndSaveReturn(period, "rebuild");
+  };
+
   const handleViewReturn = async (filing: TaxFiling) => {
-    setSelectedReturn(filing.dataSnapshot as MonthlyWITReturn);
+    const snapshot = filing.dataSnapshot as MonthlyWITReturn | undefined;
+    if (snapshot?.employees?.length) {
+      setSelectedReturn(snapshot);
+      return;
+    }
+
+    // Legacy or interrupted rows can carry no usable snapshot. Rebuild from
+    // payroll so the period still opens — but do NOT persist it: for an
+    // already-filed row today's numbers are not what was submitted.
+    try {
+      const returnData = await generateWIT.mutateAsync({
+        period: filing.period,
+        company,
+      });
+      setSelectedReturn(returnData);
+    } catch (error) {
+      console.error("Failed to rebuild return:", error);
+      toast({
+        title: t("reports.attlMonthlyWit.toast.noDataTitle"),
+        description: t("reports.attlMonthlyWit.toast.noDataDescription", {
+          period: formatPeriodLabel(filing.period),
+        }),
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportCSV = () => {
@@ -680,6 +735,16 @@ export default function ATTLMonthlyWIT() {
   const selectedPeriodStatuses = selectedPeriodFiling
     ? getTaskStatuses(selectedPeriodFiling)
     : null;
+  // The preview can show a period other than the selected one (opened from the
+  // history list), so the rebuild guard reads the PREVIEW's filing.
+  const previewFiling = selectedReturn
+    ? filings.find((filing) => filing.period === selectedReturn.reportingPeriod)
+    : undefined;
+  const previewStatuses = previewFiling ? getTaskStatuses(previewFiling) : null;
+  // Banner priority: whatever is wrong with the period on screen first, then
+  // any OTHER overdue period — switching the month must not make an overdue
+  // filing disappear. The copy names the period, so it reads correctly either
+  // way.
   const selectedPeriodDue =
     dueDates.find((due) => due.period === selectedPeriod && due.isOverdue) ||
     dueDates.find(
@@ -687,9 +752,21 @@ export default function ATTLMonthlyWIT() {
         due.period === selectedPeriod &&
         due.task === "statement" &&
         due.status === "pending",
-    );
+    ) ||
+    overdueFiling;
 
   const generating = generateWIT.isPending || saveFiling.isPending;
+
+  // A period the user picked themselves wins over the pending auto-jump: the
+  // dues query can resolve after the first interaction.
+  const handleSelectYear = (year: string) => {
+    attentionPeriodApplied.current = true;
+    setSelectedYear(year);
+  };
+  const handleSelectMonth = (month: string) => {
+    attentionPeriodApplied.current = true;
+    setSelectedMonth(month);
+  };
 
   useEffect(() => {
     if (attentionPeriodApplied.current || !overdueFiling?.period) return;
@@ -801,6 +878,17 @@ export default function ATTLMonthlyWIT() {
                     {t("reports.attlMonthlyWit.actions.viewReturn")}
                   </DropdownMenuItem>
                 )}
+              {/* Only while the statement is unfiled: once filed, the stored
+                  snapshot IS the record of what was submitted to ATTL. */}
+              {taskStatuses.statement !== "filed" && (
+                <DropdownMenuItem
+                  disabled={generating}
+                  onClick={() => handleRebuildReturn(filing.period)}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t("reports.attlMonthlyWit.actions.rebuild")}
+                </DropdownMenuItem>
+              )}
               {taskStatuses.statement !== "filed" && (
                 <DropdownMenuItem
                   onClick={() => openMarkFiledDialog(filing.id, "statement")}
@@ -1026,7 +1114,7 @@ export default function ATTLMonthlyWIT() {
                 <Label className="mb-2 block" htmlFor="wit-report-year">
                   {t("reports.attlMonthlyWit.generate.year")}
                 </Label>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <Select value={selectedYear} onValueChange={handleSelectYear}>
                   <SelectTrigger
                     id="wit-report-year"
                     className="min-h-11 text-base sm:text-sm"
@@ -1051,7 +1139,7 @@ export default function ATTLMonthlyWIT() {
                 <Label className="mb-2 block" htmlFor="wit-report-month">
                   {t("reports.attlMonthlyWit.generate.month")}
                 </Label>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                <Select value={selectedMonth} onValueChange={handleSelectMonth}>
                   <SelectTrigger
                     id="wit-report-month"
                     className="min-h-11 text-base sm:text-sm"
@@ -1164,6 +1252,19 @@ export default function ATTLMonthlyWIT() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {previewStatuses?.statement !== "filed" && (
+                            <DropdownMenuItem
+                              disabled={generating}
+                              onClick={() =>
+                                handleRebuildReturn(
+                                  selectedReturn.reportingPeriod,
+                                )
+                              }
+                            >
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                              {t("reports.attlMonthlyWit.actions.rebuild")}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={handleExportCSV}>
                             <FileSpreadsheet className="mr-2 h-4 w-4" />
                             CSV

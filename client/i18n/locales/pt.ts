@@ -5162,6 +5162,7 @@ const messages = {
         view: "Ver",
         viewReturn: "Ver declaração",
         continueReturn: "Continuar declaração",
+        rebuild: "Reconstruir a partir da folha",
         markFiled: "Marcar Entregue",
         recordPayment: "Registar Pagamento",
       },
@@ -5311,6 +5312,12 @@ const messages = {
         generatedTitle: "Declaração Gerada",
         generatedDescription:
           "A declaração mensal de IRT para {{period}} foi gerada.",
+        rebuiltTitle: "Declaração Reconstruída",
+        rebuiltDescription:
+          "A declaração de {{period}} passou a refletir a folha de pagamento atual. Exporte novamente o formulário oficial antes de entregar.",
+        noDataTitle: "Sem folha de pagamento",
+        noDataDescription:
+          "O Xefe não tem folha de pagamento para {{period}}. Processe e finalize primeiro esse mês.",
         errorTitle: "Erro",
         generateErrorDescription:
           "Falha ao gerar a declaração de IRT. Confirme que existe folha de pagamento para este período.",
