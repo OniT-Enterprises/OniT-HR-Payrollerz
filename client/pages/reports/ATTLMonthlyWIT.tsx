@@ -778,7 +778,11 @@ export default function ATTLMonthlyWIT() {
         </Button>
 
         {hasMoreActions && (
-          <DropdownMenu>
+          // Non-modal: menu items here open dialogs (Mark filed / Record
+          // payment). A modal DropdownMenu adds `pointer-events: none` to
+          // <body> and, opening a Dialog from a menu item, can leave that
+          // lock dangling after both close — freezing the whole page.
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
