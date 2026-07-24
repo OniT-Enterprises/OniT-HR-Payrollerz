@@ -105,7 +105,6 @@ export const translations = {
       "expandSidebar": "Expand sidebar",
       "collapseSidebar": "Collapse sidebar",
       "of": "of",
-      "basicMode": "Basic mode",
       "adminConsole": "Admin Console",
       "sitemap": "Sitemap",
       "guidance": "Guidance",
@@ -703,13 +702,10 @@ export const translations = {
     "landing": {
       "nav": {
         "features": "Features",
-        "laborLaw": "Labor Law",
-        "apps": "Apps",
         "pricing": "Pricing",
         "getStarted": "Get Started",
         "forAccountants": "For accountants",
         "menu": "Menu",
-        "overview": "Overview",
         "home": "Home",
         "engine": "The engine"
       },
@@ -844,182 +840,21 @@ export const translations = {
         }
       },
       "hero": {
-        "badge": "Built for",
-        "badgeHighlight": "Timor-Leste",
-        "headline": "The Operating System",
-        "headlineAccent": "For TL Businesses",
-        "subheadline": {
-          "before": "HR, payroll, accounting & invoicing — built specifically for Timor-Leste around",
-          "highlight1": "Lei Trabalho",
-          "middle": ", WIT/INSS, and",
-          "highlight2": "real double-entry accounting",
-          "after": "."
-        },
-        "points": {
-          "labor": "Core Lei Trabalho rules built in",
-          "tax": "WIT & INSS built-in",
-          "languages": "Tetun, English, Portuguese",
-          "accounting": "Double-entry accounting"
-        },
-        "ctaPrimary": "Start Now",
         "trust": {
-          "trial": "Free plan — no card needed",
-          "usd": "USD currency support",
-          "transfers": "Local bank transfers"
+          "trial": "Free plan — no card needed"
         }
       },
       "mock": {
-        "stats": {
-          "totalEmployees": "Total Employees",
-          "totalEmployeesChange": "+12 this month",
-          "monthlyPayroll": "Monthly Payroll",
-          "monthlyPayrollChange": "Due in 5 days",
-          "inssContribution": "INSS Contribution",
-          "inssContributionChange": "4% + 6%",
-          "thirteenth": "Subsidio Anual",
-          "thirteenthChange": "Due Dec 20"
-        },
-        "payrollByDept": "Payroll by Department",
-        "currency": "USD",
-        "departments": {
-          "security": "Security",
-          "admin": "Admin",
-          "finance": "Finance",
-          "operations": "Operations",
-          "hr": "HR",
-          "it": "IT"
-        },
-        "upcomingHolidays": "Upcoming Holidays",
-        "holidays": {
-          "nov12": {
-            "date": "Nov 12",
-            "name": "Youth Day"
-          },
-          "nov28": {
-            "date": "Nov 28",
-            "name": "Proclamation"
-          },
-          "dec7": {
-            "date": "Dec 7",
-            "name": "Heroes Day"
-          },
-          "dec25": {
-            "date": "Dec 25",
-            "name": "Christmas"
-          }
-        }
+        "holidays": {}
       },
-      "features": {
-        "badge": "Made for Timor-Leste",
-        "title": "Everything you need",
-        "titleAccent": "Built for Timor-Leste",
-        "description": "Built from the ground up for Timor-Leste businesses. Not adapted - designed specifically for Lei Trabalho, WIT, INSS, and local banking."
-      },
-      "tlFeatures": {
-        "laborLaw": {
-          "title": "Lei Trabalho Timor",
-          "subtitle": "Timor-Leste Labor Code",
-          "description": "Applies reviewed core Timor-Leste Labor Code rules, including 44-hour work weeks, overtime at 150%/200%, and rest-day rules. Exceptional cases stay subject to legal review."
-        },
-        "witInss": {
-          "title": "WIT & INSS",
-          "subtitle": "Tax & Social Security",
-          "description": "Automatic WIT tax calculations with $500 resident threshold. INSS at 4% employee + 6% employer rates."
-        },
-        "thirteenth": {
-          "title": "Subsidio Anual",
-          "subtitle": "13th Month Salary",
-          "description": "Automated 13th month salary calculations. Pro-rated for new employees, with December 20th deadline tracking."
-        },
-        "sefope": {
-          "title": "SEFOPE Ready",
-          "subtitle": "Labor Ministry Reports",
-          "description": "One-click SEFOPE PDF generation for foreign worker registrations. Track Visa Type C permits, renewal deadlines, and labor ministry submissions — the biggest compliance headache, solved."
-        }
-      },
-      "banks": {
-        "title": "One-Click Bank Payroll Files",
-        "subtitle": "Generate the exact file format each bank requires — no manual data entry",
-        "bnu": "CSV payroll file",
-        "bnctl": "CSV payroll file",
-        "mandiri": "Fixed-width TXT file",
-        "anz": "CSV payroll file",
-        "tagline": "Upload to your bank portal and pay your entire staff in minutes, not hours"
-      },
-      "performance": {
-        "badge": "Built for TL Internet",
-        "title": "Fast Even on Slow Connections",
-        "description": "Xefe caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
-        "features": {
-          "cache": "Smart local caching — works instantly on repeat visits",
-          "lazy": "Heavy features load only when needed",
-          "small": "Lightweight app, designed for low-bandwidth environments"
-        }
-      },
+      "tlFeatures": {},
+      "performance": {},
       "laborLaw": {
-        "badge": "Lei Trabalho Timor-Leste",
-        "title": "Core Labor Rules",
-        "titleAccent": "Built In",
-        "description": "Reviewed core rules are built into payroll. Exceptional cases, including severance, stay behind an explicit professional-review gate.",
-        "features": {
-          "workWeek": {
-            "title": "44-Hour Work Week",
-            "description": "Standard 44 hours/week with 8 hours/day as per Timor labor law"
-          },
-          "overtime": {
-            "title": "Overtime Rates",
-            "description": "150% for regular overtime, 200% for Sundays and public holidays"
-          },
-          "sick": {
-            "title": "Sick Leave",
-            "description": "12 days/year - first 6 at 100%, remaining 6 at 50% pay"
-          },
-          "maternity": {
-            "title": "Maternity Leave",
-            "description": "12 weeks paid leave (84 days)"
-          },
-          "annual": {
-            "title": "Annual Leave",
-            "description": "12-day statutory minimum tracked without invented service tiers"
-          },
-          "severance": {
-            "title": "Severance Pay",
-            "description": "Calculated only after a case-specific legal/accountant review acknowledgement"
-          }
-        }
-      },
-      "holidays": {
-        "title": "National Holidays (13 public holidays)",
-        "more": "+ 6 more...",
-        "newYear": "Loron Tinan Foun (New Year)",
-        "laborDay": "Loron Trabalhador (Labor Day)",
-        "restoration": "Loron Restaurasaun Independensia",
-        "popularConsultation": "Loron Konsulta Popular",
-        "proclamation": "Loron Proklamasaun Independensia",
-        "heroesDay": "Loron Heroi Nasional",
-        "christmas": "Loron Natal (Christmas)"
+        "features": {}
       },
       "tax": {
-        "badge": "Automatic Calculations",
-        "titleAccent": "Done Right",
-        "wit": {
-          "title": "Withholding Income Tax (WIT)",
-          "points": {
-            "threshold": "$500/month threshold for residents",
-            "rate": "10% flat rate on taxable income",
-            "nonResident": "Non-resident rules handled separately",
-            "perDiem": "Per diem and travel excluded"
-          }
-        },
-        "inss": {
-          "title": "Social Security (INSS)",
-          "points": {
-            "employee": "4% employee contribution",
-            "employer": "6% employer contribution",
-            "smallBusiness": "Small business reductions available",
-            "foodAllowance": "Food allowance excluded from base"
-          }
-        },
+        "wit": {},
+        "inss": {},
         "example": {
           "title": "Example Payslip Calculation",
           "basicSalary": "Basic Salary",
@@ -1032,20 +867,7 @@ export const translations = {
           "badge": "Auto-calculated"
         }
       },
-      "payslip": {
-        "eyebrow": "Payslips",
-        "title": "A payslip your team can",
-        "titleAccent": "actually read",
-        "subtitle": "Every payroll run produces a review-ready payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa."
-      },
-      "cta": {
-        "title": "Ready to Start?",
-        "titleAccent": "Start Today",
-        "description": "Join Timor-Leste businesses using Xefe for clear, reviewable HR and payroll workflows.",
-        "primary": "Start Free"
-      },
       "footer": {
-        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "How Xefe works",
@@ -1057,283 +879,23 @@ export const translations = {
         },
         "copyright": "© 2026 OniT Enterprises. Dili, Timor-Leste."
       },
-      "segments": {
-        "subtitle": "Trusted by organizations across Timor-Leste",
-        "title": "Built for businesses that need compliance",
-        "security": {
-          "label": "Security Companies",
-          "desc": "Large rosters, shift scheduling"
-        },
-        "restaurants": {
-          "label": "Restaurants & Cafés",
-          "desc": "Tips, overtime, high turnover"
-        },
-        "ngos": {
-          "label": "NGOs & INGOs",
-          "desc": "Donor compliance & audit trails"
-        },
-        "hotels": {
-          "label": "Hotels & Tourism",
-          "desc": "Seasonal staff management"
-        },
-        "consulting": {
-          "label": "Consulting & IT",
-          "desc": "Project billing, multi-currency"
-        },
-        "construction": {
-          "label": "Construction",
-          "desc": "Day labor, safety tracking"
-        }
-      },
-      "painPoints": {
-        "paper": {
-          "title": "Still using paper?",
-          "desc": "Manual calculations lead to WIT errors that cost you money. One wrong deduction = audit risk."
-        },
-        "excel": {
-          "title": "Excel breaking down?",
-          "desc": "Formulas fail. Files corrupt. No audit trail for donors. No automatic 13th month calculations."
-        },
-        "foreign": {
-          "title": "Foreign software that doesn't fit?",
-          "desc": "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours."
-        },
-        "solution": {
-          "title": "Xefe solves this",
-          "desc": "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface."
-        }
-      },
-      "modules": {
-        "badge": "Complete Platform",
-        "title": "9 Integrated Modules",
-        "titleAccent": "One Complete System",
-        "description": "From hiring to retirement, payroll to accounting - everything your HR team needs in one place.",
-        "people": {
-          "name": "People Management",
-          "desc": "Employee profiles, departments, org charts, document tracking"
-        },
-        "hiring": {
-          "name": "Hiring & Recruitment",
-          "desc": "Job postings, applicant tracking, onboarding, offboarding"
-        },
-        "time": {
-          "name": "Time & Attendance",
-          "desc": "Clock in/out, timesheets, leave requests, shift scheduling"
-        },
-        "performance": {
-          "name": "Performance",
-          "desc": "Goals, reviews, training, certifications, disciplinary"
-        },
-        "payroll": {
-          "name": "Payroll",
-          "desc": "INSS, tax, overtime, bank transfers, payslips"
-        },
-        "money": {
-          "name": "Money (Invoicing)",
-          "desc": "Customers, invoices, bills, expenses, payments"
-        },
-        "accounting": {
-          "name": "Accounting",
-          "desc": "Double-entry ledger, trial balance, QuickBooks export"
-        },
-        "reports": {
-          "name": "Reports & Analytics",
-          "desc": "Payroll reports, HR analytics, custom report builder"
-        },
-        "compliance": {
-          "name": "Compliance",
-          "desc": "Foreign workers, work permits, document alerts"
-        },
-        "viewAll": "View All 65+ Features"
-      },
-      "apps": {
-        "badge": "Mobile Apps",
-        "title": "Xefe in your pocket",
-        "description": "Ekipa for your staff, Kaixa for daily cash — offline-first, Tetun-first, made for the field."
-      },
+      "segments": {},
+      "painPoints": {},
+      "modules": {},
       "kaixa": {
-        "badge": "Mobile App",
-        "title": "Kaixa",
-        "titleAccent": "Your Digital Cash Box",
-        "description": "Simple money tracking and POS for everyone in Timor-Leste. From kiosk vendors to small shops — track every dollar, sell products, and print receipts. Works offline, speaks Tetum.",
-        "tagline": "\"Kaixa\" — Tetum for cash box",
-        "features": {
-          "tamasai": {
-            "title": "Tama / Sai",
-            "desc": "Two big buttons — money in, money out. Track every dollar that flows through your business."
-          },
-          "pos": {
-            "title": "Simple POS",
-            "desc": "Product catalog, tap-to-sell, and inventory counts. Know what you have and what you sold."
-          },
-          "offline": {
-            "title": "Works Offline",
-            "desc": "Full functionality without internet. Everything syncs automatically when you reconnect."
-          },
-          "tetum": {
-            "title": "Tetum First",
-            "desc": "Interface iha ita-nia lian. Big touch targets designed for speed, not complexity."
-          },
-          "bluetooth": {
-            "title": "Bluetooth Receipts",
-            "desc": "$30 thermal printer turns your phone into a register. Professional receipts instantly."
-          },
-          "vat": {
-            "title": "VAT Ready",
-            "desc": "Built for Timor-Leste's 2027 VAT. When it becomes law, flip a switch — no update needed."
-          }
-        },
-        "cta": "Coming Soon to Google Play",
-        "ctaNote": "Android first · Free tier available",
-        "free": {
-          "badge": "Free",
-          "title": "Money Tracking",
-          "desc": "Not accounting. **Money tracking.** Replace the notebook.",
-          "descHighlight": "Money tracking.",
-          "features": {
-            "moneyInOut": "Money In / Money Out — two buttons, that's it",
-            "summaries": "Daily, weekly, monthly summaries with charts",
-            "photoReceipts": "Photo receipts — snap the notebook page",
-            "categories": "Category tagging (stock, sales, personal)",
-            "offline": "Works fully offline, syncs on wifi",
-            "tetum": "Tetum-first UI with big touch targets"
-          }
-        },
-        "upgrade": {
-          "badge": "Upgrade",
-          "title": "Simple POS",
-          "desc": "Everything in Free, plus a **complete point-of-sale** from your phone.",
-          "descHighlight": "complete point-of-sale",
-          "features": {
-            "catalog": "Product catalog — name, price, optional photo",
-            "tapToSell": "Tap-to-sell — big product buttons, quantity, total",
-            "inventory": "Inventory — bought 50, sold 30, have 20 left",
-            "customerTabs": "Customer tabs — \"João owes me $15\"",
-            "printer": "Bluetooth thermal printer ($30) for receipts",
-            "whatsapp": "WhatsApp receipt sharing — everyone uses it",
-            "monthlyReport": "Monthly summary report — printable PDF for tax"
-          }
-        },
-        "personas": {
-          "maria": {
-            "name": "Maria",
-            "role": "Kiosk Owner",
-            "desc": "Sells phone credit, snacks, cigarettes. Uses a notebook today. Needs: \"How much did I make today?\""
-          },
-          "ana": {
-            "name": "Ana",
-            "role": "Café Owner",
-            "desc": "Runs a café with 5 staff. Uses Xefe for payroll, Kaixa for daily sales. Staff use Ekipa."
-          },
-          "tomas": {
-            "name": "Tomas",
-            "role": "Shop Owner",
-            "desc": "Growing retail shop. Customer tabs, inventory tracking. Ready for VAT when it arrives."
-          }
-        }
+        "features": {},
+        "free": {},
+        "upgrade": {},
+        "personas": {}
       },
       "ekipa": {
-        "badge": "Employee App",
-        "title": "Ekipa",
-        "titleAccent": "Your Team's Mobile Companion",
-        "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Xefe customers.",
-        "tagline": "\"Ekipa\" — Tetum for team",
-        "features": {
-          "payslips": {
-            "title": "Payslips on Phone",
-            "desc": "Employees view payslip breakdown, download PDF, and share via WhatsApp. No more printing."
-          },
-          "leave": {
-            "title": "Leave Requests",
-            "desc": "Request annual, sick, or maternity leave. See balances and track approval status in real-time."
-          },
-          "crewClock": {
-            "title": "Crew Clock-In",
-            "desc": "Supervisor mode with GPS + camera proof. Anti-ghost-worker system for construction and security teams."
-          },
-          "offline": {
-            "title": "Works Offline",
-            "desc": "SQLite local database syncs crew data when reconnected. Perfect for remote sites."
-          },
-          "bilingual": {
-            "title": "Tetum & English",
-            "desc": "Full interface in both languages. Employees switch instantly — no restart needed."
-          },
-          "selfService": {
-            "title": "Self-Service Profile",
-            "desc": "View personal details, job info, documents, and attendance history. Fewer questions for HR."
-          }
-        },
-        "cta": "Included with Xefe",
-        "ctaNote": "Android · Free for all Xefe employees",
-        "shipped": {
-          "badge": "Live Now",
-          "title": "What's Shipped",
-          "features": {
-            "login": "Email/password authentication",
-            "dashboard": "Home with payday countdown & leave balance",
-            "payslips": "12-month payslip history with PDF export",
-            "leave": "Leave balances, history & request form",
-            "crewClock": "Crew clock-in/out with GPS & camera",
-            "profile": "Full employee profile & attendance summary"
-          }
-        },
-        "coming": {
-          "badge": "Coming Next",
-          "title": "On the Roadmap",
-          "features": {
-            "push": "Push notifications for payslips & approvals",
-            "attendance": "Personal attendance history & hours verification",
-            "documents": "Document viewer for contracts & certificates",
-            "shifts": "Shift schedule viewer"
-          }
-        }
+        "features": {},
+        "shipped": {},
+        "coming": {}
       },
-      "mobilePay": {
-        "title": "Mobile Money Ready",
-        "subtitle": "Pay employees without bank accounts",
-        "comingSoon": "Coming Soon",
-        "note": "Disbursement directly to employee mobile wallets. No bank account required."
-      },
-      "localSupport": {
-        "badge": "Based in Dili",
-        "title": "Local support,",
-        "titleAccent": "iha Tetun no English",
-        "description": "We're not a foreign company with offshore support. Xefe is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
-        "items": {
-          "whatsapp": "WhatsApp support in Tetun & English",
-          "training": "On-site training available in Dili",
-          "sefope": "Help with SEFOPE submissions",
-          "bank": "Bank integration assistance (BNU, BNCTL)"
-        },
-        "cta": {
-          "title": "Need help getting started?",
-          "subtitle": "Free setup consultation"
-        }
-      },
+      "localSupport": {},
       "accounting": {
-        "badge": "Real Accounting",
-        "title": "Accounting that actually",
-        "titleAccent": "understands TL",
-        "description": "Keep QuickBooks for inventory if you want — Xefe handles the TL compliance side.",
-        "features": {
-          "doubleEntry": {
-            "title": "True Double-Entry",
-            "desc": "Every transaction creates balanced debits and credits. Audit-ready from day one."
-          },
-          "glTrial": {
-            "title": "GL & Trial Balance",
-            "desc": "Full general ledger, chart of accounts, and trial balance — the reports your accountant actually needs."
-          },
-          "autoPost": {
-            "title": "Payroll Auto-Posts",
-            "desc": "Run payroll and the journal entries write themselves. WIT liability, INSS payable, salary expense — all posted."
-          },
-          "qbExport": {
-            "title": "QuickBooks Export",
-            "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting."
-          }
-        }
+        "features": {}
       }
     },
     "securityPage": {
@@ -1575,9 +1137,6 @@ export const translations = {
         "titleTop": "How Xefe",
         "titleAccent": "actually works",
         "lede": "Plain-language documentation of the machinery under Xefe — what happens to your money, when the deadlines fall, and which guarantees are enforced by the system itself.",
-        "article1Tag": "Payroll & accounting",
-        "article1Title": "The payroll money chain",
-        "article1Desc": "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
         "readArticle": "Read the article",
         "guides": "Guides",
         "architecture": "Under the hood",
@@ -1848,9 +1407,6 @@ export const translations = {
         "description": "Set up the business and explore every feature free. Xefe keeps the everyday work clear and the professional evidence ready.",
         "primary": "Start free",
         "whatsapp": "Ask for a walkthrough"
-      },
-      "footer": {
-        "home": "Product overview"
       }
     },
     "settings": {
@@ -2392,15 +1948,7 @@ export const translations = {
     "orgChart": {
       "title": "Organizational Chart",
       "subtitle": "Visualize your company structure and reporting lines",
-      "reorganize": "Reorganize",
-      "exitReorganize": "Exit Reorganize",
       "manage": "Manage",
-      "stats": {
-        "executives": "Executives",
-        "managers": "Managers",
-        "seniorStaff": "Senior Staff",
-        "totalEmployees": "Total Employees"
-      },
       "emptyTitle": "No Organization Data",
       "emptyDesc": "Add employees to see the organization chart",
       "addFirstEmployee": "Add First Employee",
@@ -2409,8 +1957,6 @@ export const translations = {
         "connectionOffline": "Unable to connect to database. Showing demo data.",
         "loadFailed": "Failed to load organization data. Please try again.",
         "unexpected": "An unexpected error occurred while loading data.",
-        "updatedTitle": "Organization Updated",
-        "updatedDesc": "Position moved successfully",
         "refreshedTitle": "Data Refreshed",
         "refreshedDesc": "Organization chart updated with latest department changes"
       },
@@ -2533,11 +2079,6 @@ export const translations = {
         },
         "minimumWageReviewNote": "Review note *",
         "minimumWageReviewNotePlaceholder": "Who reviewed it and why this treatment applies",
-        "sefopeTitle": "SEFOPE Registration (Labor Ministry)",
-        "sefopeTooltip": "Required for all TL employees",
-        "sefopeNumber": "SEFOPE Number",
-        "sefopeNumberPlaceholder": "SEFOPE-2024-XXXXX",
-        "sefopeDate": "Registration Date",
         "workContract": "Work Contract Document",
         "workContractHelp": "Upload employment contract (PDF/DOC)"
       },
@@ -2580,9 +2121,7 @@ export const translations = {
           "premium": "Premium",
           "executive": "Executive"
         },
-        "taxInfoTitle": "Tax Information",
         "taxResidentLabel": "Tax resident of Timor-Leste",
-        "taxResidentHint": "Resident for tax (Lei 8/2008: present 183+ days in any 12 months, unless the permanent home is abroad). Residents pay 10% WIT above $500/month; non-residents pay 10% flat from the first dollar.",
         "incomeTaxTitle": "Income Tax (WIT)",
         "incomeTaxDesc": "10% on income above $500/month",
         "socialSecurityTitle": "Social Security (INSS)",
@@ -4964,180 +4503,12 @@ export const translations = {
       }
     },
     "dashboards": {
-      "staff": {
-        "title": "Staff Dashboard",
-        "subtitle": "Overview of employees and organization",
-        "actions": {
-          "viewAll": "View All",
-          "addEmployee": "Add Employee"
-        },
-        "stats": {
-          "totalEmployees": "Total Employees",
-          "inDatabase": "In database",
-          "activeEmployees": "Active Employees",
-          "activeRate": "{{rate}}% active rate",
-          "departments": "Departments",
-          "activeDepartments": "Active departments",
-          "inactive": "Inactive",
-          "inactiveRate": "{{rate}}% of workforce"
-        },
-        "labels": {
-          "unknown": "Unknown"
-        },
-        "departments": {
-          "distribution": "Employee distribution ({{total}} total)",
-          "emptyEmployees": "No employees in database",
-          "seedDatabase": "Seed database",
-          "emptyDepartments": "No department data",
-          "count": "{{count}} ({{percent}}%)"
-        },
-        "status": {
-          "title": "Status Overview",
-          "description": "Employee status breakdown",
-          "live": "Live",
-          "activeTitle": "Active Employees",
-          "activeDescription": "Currently employed",
-          "inactiveTitle": "Inactive Employees",
-          "inactiveDescription": "Terminated or on leave",
-          "departmentsTitle": "Departments",
-          "departmentsDescription": "Active work units"
-        },
-        "quickActions": {
-          "title": "Quick Actions",
-          "allEmployees": "All Employees",
-          "addEmployee": "Add Employee",
-          "departments": "Departments",
-          "orgChart": "Org Chart"
-        },
-        "toast": {
-          "errorTitle": "Error",
-          "loadFailed": "Failed to load employee data"
-        }
-      },
+      "staff": {},
       "timeLeave": {
-        "title": "Time & Leave",
-        "subtitle": "Attendance, time tracking, and leave management",
-        "actions": {
-          "trackTime": "Track Time",
-          "newRequest": "New Request"
-        },
-        "stats": {
-          "totalEmployees": "Total Employees",
-          "inDatabase": "In database",
-          "activeEmployees": "Active Employees",
-          "availableTracking": "Available for tracking",
-          "timeEntries": "Time Entries",
-          "noData": "No data yet",
-          "leaveRequests": "Leave Requests",
-          "noRequests": "No requests yet"
-        },
-        "status": {
-          "title": "Status",
-          "description": "Real-time employee data",
-          "live": "Live",
-          "databaseConnected": "Database Connected",
-          "firebaseConnected": "Connected to Firebase",
-          "employeesAvailable": "Employees Available",
-          "activeEmployees": "{{count}} active employees",
-          "noEmployees": "No Employee Data",
-          "noEmployeesDesc": "Add employees to enable tracking",
-          "empty": "Empty"
-        },
-        "setup": {
-          "addEmployees": {
-            "title": "Add Employees",
-            "description": "Import or add employees to your database"
-          },
-          "configureTime": {
-            "title": "Configure Time Tracking",
-            "description": "Set up time tracking policies and rules"
-          },
-          "setupLeave": {
-            "title": "Setup Leave Policies",
-            "description": "Define leave types and approval workflows"
-          }
-        },
-        "gettingStarted": {
-          "title": "Getting Started",
-          "description": "Setup time & leave tracking",
-          "done": "Done",
-          "pending": "Pending"
-        },
-        "quickActions": {
-          "title": "Quick Actions",
-          "timeTracking": "Time Tracking",
-          "attendance": "Attendance",
-          "leaveRequests": "Leave Requests",
-          "scheduling": "Scheduling"
-        },
-        "toast": {
-          "errorTitle": "Error",
-          "loadFailed": "Failed to load employee data"
-        }
+        "setup": {}
       },
       "hiring": {
-        "title": "Hiring Dashboard",
-        "subtitle": "Overview of recruitment and hiring activities",
-        "actions": {
-          "viewApplications": "View Applications",
-          "postJob": "Post New Job",
-          "viewAll": "View All"
-        },
-        "stats": {
-          "openPositions": "Open Positions",
-          "openPositionsSub": "+3 this month",
-          "totalApplications": "Total Applications",
-          "totalApplicationsSub": "+18 this week",
-          "interviewsScheduled": "Interviews Scheduled",
-          "interviewsScheduledSub": "Next 7 days",
-          "pendingOffers": "Pending Offers",
-          "pendingOffersSub": "Awaiting response"
-        },
-        "recent": {
-          "title": "Recent Activity",
-          "description": "Latest updates in hiring"
-        },
-        "activity": {
-          "hired": {
-            "title": "Sarah Johnson hired",
-            "subtitle": "Senior Software Engineer position filled"
-          },
-          "interviews": {
-            "title": "3 interviews scheduled",
-            "subtitle": "Product Manager candidates"
-          },
-          "newJob": {
-            "title": "New job posted",
-            "subtitle": "Marketing Specialist - Remote"
-          },
-          "surge": {
-            "title": "Application surge",
-            "subtitle": "UX Designer position - 45 new applications"
-          },
-          "status": {
-            "completed": "Completed",
-            "scheduled": "Scheduled",
-            "active": "Active",
-            "trending": "Trending"
-          }
-        },
-        "pipeline": {
-          "title": "Hiring Pipeline",
-          "description": "Candidates by stage",
-          "total": "{{count}} total",
-          "applications": "Applications Received",
-          "phone": "Phone Screening",
-          "technical": "Technical Interview",
-          "final": "Final Interview"
-        },
-        "quickActions": {
-          "title": "Quick Actions",
-          "createJob": "Create Job",
-          "candidates": "Candidates",
-          "interviews": "Interviews",
-          "onboarding": "Onboarding",
-          "offboarding": "Offboarding"
-        }
+        "activity": {}
       }
     },
     "payroll": {
@@ -5200,105 +4571,11 @@ export const translations = {
         }
       }
     },
-    "payrollDashboard": {
-      "readyToRun": "Payroll ready to run",
-      "allVerifiedProceed": "All checklist items verified. You can proceed with payroll.",
-      "runPayrollBtn": "Run Payroll",
-      "payrollFor": "Payroll for {{month}}",
-      "payDate": "Pay date:",
-      "daysRemaining": "{{days}} days remaining",
-      "employees": "{{count}} employees",
-      "confirmRunPayroll": "Confirm & Run Payroll",
-      "reviewPayroll": "Review Payroll",
-      "viewChecklist": "View Checklist",
-      "checklistTitle": "Payroll Checklist",
-      "allVerifiedReady": "All items verified. Payroll is ready to run.",
-      "checklistProgress": "{{done}} of {{total}} items complete",
-      "pending": "pending",
-      "grossPayroll": "Gross Payroll",
-      "employerINSS": "Employer INSS ({{rate}}%)",
-      "employeeINSS": "Employee INSS ({{rate}}%)",
-      "estNetToEmployees": "Est. Net to Employees",
-      "employeesNeedAttention": "Employees Need Attention",
-      "payrollCoverage": "Payroll Coverage",
-      "missingContractsINSS": "Missing contracts or INSS",
-      "allEmployeesReady": "All employees ready",
-      "lastPayroll": "Last Payroll",
-      "completed": "Completed",
-      "noPayrollYet": "No payroll run yet",
-      "manage": "Manage",
-      "ngoReporting": "NGO & Donor Reporting",
-      "ngoReportingHint": "Quick access to donor-ready payroll allocation and export tools.",
-      "pastReports": "Past & Reports",
-      "complianceDeadlines": "Compliance Deadlines",
-      "witDue": "WIT due:",
-      "inssStatementDue": "INSS statement due:",
-      "inssPaymentDue": "INSS payment due:",
-      "inssDue": "INSS due:",
-      "minimumWage": "Minimum wage:",
-      "minimumWageAmount": "$115 USD",
-      "lastReviewedBy": "Last reviewed by {{name}}",
-      "simpleFlowTitle": "Simple payroll flow",
-      "simpleFlowDesc": "Work through these steps in order on payday.",
-      "simpleFlow": {
-        "peopleTitle": "Check employee records",
-        "peoplePending": "{{count}} employee records still need contracts or INSS details.",
-        "peopleReady": "Employee records look ready for this payroll.",
-        "timeTitle": "Check time and leave",
-        "timePending": "{{count}} leave requests still need review before payroll.",
-        "timeReady": "Leave and attendance look up to date for this pay period.",
-        "runTitle": "Run payroll",
-        "runPending": "Finish the checklist items before you run payroll.",
-        "payTitle": "Pay salaries",
-        "payDesc": "Open bank transfers after payroll is approved."
-      },
-      "checklist": {
-        "attendanceLabel": "Attendance finalized",
-        "attendanceIssue": "timesheet pending approval",
-        "attendanceDesc": "All timesheets submitted and approved",
-        "attendanceLink": "Review timesheets",
-        "leaveLabel": "Leave requests approved",
-        "leaveIssue": "leave request pending approval",
-        "leaveDesc": "No pending leave requests for pay period",
-        "leaveLink": "Review leave requests",
-        "contractsLabel": "Employee contracts complete",
-        "contractsIssue": "employee missing contract",
-        "contractsDesc": "All employees have valid contracts",
-        "contractsLink": "View employees",
-        "salariesLabel": "Salary data verified",
-        "salariesIssue": "employee missing salary data",
-        "salariesDesc": "Compensation data up to date",
-        "salariesLink": "Review salaries"
-      },
-      "status": {
-        "gettingReady": "Getting Ready",
-        "almostReady": "Almost Ready",
-        "readyToRun": "Ready to Run",
-        "processing": "Processing",
-        "completed": "Completed"
-      },
-      "links": {
-        "allowances": "Allowances",
-        "allowancesDesc": "Transport, housing, meals & more",
-        "deductions": "Deductions",
-        "deductionsDesc": "Loans, advances & deductions",
-        "payrollHistory": "Payroll History",
-        "payrollHistoryDesc": "View past payroll runs",
-        "bankTransfers": "Bank Transfers",
-        "bankTransfersDesc": "Manage salary payments",
-        "taxReports": "Tax Reports",
-        "taxReportsDesc": "WIT and INSS reports",
-        "payrollAllocation": "Payroll Allocation Report",
-        "payrollAllocationDesc": "Project and funding source payroll split",
-        "donorExport": "Donor Export Pack",
-        "donorExportDesc": "Export donor-ready payroll accounting CSVs"
-      }
-    },
+    "payrollDashboard": {},
     "setupWizard": {
       "steps": {
         "companyDetails": "Company Details",
         "bankAccounts": "Bank Accounts",
-        "leavePolicies": "Leave Policies",
         "payrollConfig": "Payroll Config",
         "complete": "Complete"
       },
@@ -5306,8 +4583,6 @@ export const translations = {
       "welcomeDesc": "Complete these steps to get started with Xefe",
       "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
       "progressTitle": "Setup progress",
-      "progressHint": "Complete each step once. You can adjust everything later in Settings.",
-      "savedAutomaticallyTitle": "Finished steps are saved automatically",
       "savedAutomaticallyDesc": "You can leave and come back later. Xefe will resume where you stopped.",
       "stepOf": "Step {{current}} of {{total}}",
       "requiredFields": "Required Fields",
@@ -5316,7 +4591,6 @@ export const translations = {
       "error": "Error",
       "failedSaveCompany": "Failed to save company details.",
       "failedSaveBank": "Failed to save bank account.",
-      "failedSaveLeave": "Failed to save leave policies.",
       "failedSavePayroll": "Failed to save payroll config.",
       "setupComplete": "Setup Complete",
       "accountReady": "Your account is ready to use!",
@@ -5329,21 +4603,8 @@ export const translations = {
       "legalName": "Legal Name *",
       "legalNamePlaceholder": "Your Company Lda.",
       "tradingName": "Trading Name",
-      "tradingNamePlaceholder": "Your Company",
       "tinNumber": "SERVE / NIF (TIN) *",
       "tinPlaceholder": "Unique Company Number / Tax ID",
-      "teamSize": "Approximate Team Size",
-      "selectTeamSize": "Select team size",
-      "teamSizeHint": "This helps Xefe choose better defaults for small or larger teams.",
-      "address": "Address",
-      "addressPlaceholder": "Street address",
-      "city": "City",
-      "cityPlaceholder": "Dili",
-      "country": "Country",
-      "phone": "Phone",
-      "phonePlaceholder": "+670 ...",
-      "email": "Email",
-      "emailPlaceholder": "info@company.tl",
       "bankIntro": "Choose how you usually pay salaries. You can change this later in Settings.",
       "paymentMethod": "Salary payment method",
       "cash": "Cash",
@@ -5356,19 +4617,9 @@ export const translations = {
       "accountNumber": "Account Number *",
       "accountNumberPlaceholder": "Account number",
       "leaveIntro": "Default leave policies based on Timor-Leste labor law will be applied. You can customize these later.",
-      "annualLeave": "Annual Leave",
-      "annualLeaveValue": "12 days/year",
-      "sickLeave": "Sick Leave",
-      "sickLeaveValue": "12 days/year",
-      "maternityLeave": "Maternity Leave",
-      "maternityLeaveValue": "12 weeks",
-      "paternityLeave": "Paternity Leave",
-      "paternityLeaveValue": "5 days",
       "leaveNote": "These defaults comply with TL Labor Code. Customize in Settings after setup.",
       "payFrequency": "Pay Frequency",
       "monthly": "Monthly",
-      "biWeekly": "Bi-weekly",
-      "weekly": "Weekly",
       "payDay": "Pay Day (day of month)",
       "currency": "Currency",
       "usdCurrency": "USD (US Dollar)",
@@ -5381,7 +4632,6 @@ export const translations = {
       "allSetDesc": "Your account has been configured. You can now start adding employees, running payroll, and managing your team.",
       "back": "Back",
       "doLater": "Go to dashboard for now",
-      "finishLaterHint": "You can return to setup any time from the dashboard before you run your first payroll.",
       "saving": "Saving...",
       "goToDashboard": "Go to Dashboard",
       "next": "Next"
@@ -7469,7 +6719,6 @@ export const translations = {
       "toastRejectedDesc": "Payroll run has been rejected and sent back for revision.",
       "toastRejectionFailed": "Rejection Failed",
       "toastRejectionFailedDesc": "Failed to reject payroll run.",
-      "toastLoadError": "Failed to load payroll history. Please refresh the page.",
       "toastDetailsError": "Failed to load payroll details.",
       "toastRecordsError": "Failed to load payroll records.",
       "toastExportStarted": "Export Started",
@@ -7823,15 +7072,9 @@ export const translations = {
         },
         "cards": {
           "staff": "Staff",
-          "active": "{{count}} active",
           "hiring": "Hiring",
-          "interviewScheduled": "{{count}} interview scheduled",
-          "interviewsScheduled": "{{count}} interviews scheduled",
           "timeLeave": "Time & Leave",
-          "onLeaveToday": "{{count}} on leave today",
           "performance": "Performance",
-          "activeGoal": "{{count}} active goal",
-          "activeGoals": "{{count}} active goals",
           "staffPurpose": "Manage your team and their details",
           "staffAction": "View staff",
           "hiringPurpose": "Post jobs and track candidates",
@@ -7845,11 +7088,8 @@ export const translations = {
       "scheduling": {
         "title": "Time & Leave",
         "seoDescription": "Coverage, attendance, leave approvals, and shift planning in one place.",
-        "subtitle": "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
         "subtitleRecorded": "Attendance is recorded for {{recorded}} of {{total}} staff today.",
         "subtitleEmpty": "Approve leave, track attendance, and plan shifts.",
-        "attendanceAction": "Attendance",
-        "shiftsAction": "Shift schedules",
         "allGood": "Nothing needs attention right now.",
         "attention": {
           "leaveRequest": "leave request waiting for approval",
@@ -7864,16 +7104,8 @@ export const translations = {
         },
         "cards": {
           "attendance": "Attendance",
-          "availableToday": "{{rate}}% available today",
-          "recordedToday": "attendance recorded today",
           "leave": "Leave",
-          "onLeaveToday": "{{count}} on leave today",
-          "onLeaveTodayLabel": "on leave today",
-          "attendanceMeta": "Clock-ins & hours",
-          "hoursRecordedToday": "hours recorded today",
           "shifts": "Shifts",
-          "shiftsMeta": "Plan weekly rosters",
-          "shiftsThisWeek": "shifts this week",
           "attendancePurpose": "Record hours and clock-ins",
           "attendanceAction": "View attendance",
           "leavePurpose": "Approve requests and track balances",
@@ -7940,22 +7172,14 @@ export const translations = {
         },
         "cards": {
           "invoices": "Invoices",
-          "outstanding": "{{amount}} outstanding",
           "bills": "Bills",
-          "overdue": "{{count}} overdue",
-          "dueThisWeek": "{{amount}} due this week",
           "expenses": "Expenses",
-          "expensesMeta": "Track spending",
-          "financialReports": "Financial Reports",
-          "financialReportsMeta": "P&L · cashflow · VAT",
           "invoicesPurpose": "Create, send and track invoices",
           "invoicesAction": "View invoices",
           "billsPurpose": "Record supplier bills and pay them",
           "billsAction": "View bills",
           "expensesPurpose": "Log and categorise business spending",
-          "expensesAction": "View expenses",
-          "financialReportsPurpose": "P&L, cash flow and VAT statements",
-          "financialReportsAction": "View reports"
+          "expensesAction": "View expenses"
         }
       },
       "accounting": {
@@ -7977,16 +7201,9 @@ export const translations = {
         },
         "cards": {
           "chartOfAccounts": "Chart of Accounts",
-          "ledgerStructure": "Ledger structure",
           "journalEntries": "Journal Entries",
-          "pending": "{{count}} pending",
           "trialBalance": "Trial Balance",
-          "balanced": "Balanced",
-          "outOfBalance": "Out of balance",
           "balanceSheet": "Balance Sheet",
-          "live": "Live",
-          "pendingPayroll": "Pending payroll",
-          "financialPosition": "Financial position",
           "chartOfAccountsPurpose": "Your ledger accounts and structure",
           "chartOfAccountsAction": "View chart",
           "journalEntriesPurpose": "Post and review journal entries",
@@ -8002,37 +7219,8 @@ export const translations = {
         "seoDescription": "Payroll, people, attendance, department, NGO, and custom reports in one place.",
         "summarySingle": "{{count}} workforce report family.",
         "summaryPlural": "{{count}} workforce report families.",
-        "summaryReadOnlySingle": "{{count}} report family available.",
-        "summaryReadOnlyPlural": "{{count}} report families available.",
-        "reportSetup": "Report setup",
-        "customReports": "Custom reports",
-        "filingRunway": "Filing runway",
-        "allGood": "No tax filings due — the reporting runway is clear.",
         "browseReports": "Browse reports",
         "browseAction": "View reports",
-        "compliance": {
-          "filingOverdue": "{{count}} filing overdue",
-          "filingsOverdue": "{{count}} filings overdue",
-          "filingDueThisWeek": "{{count}} filing due this week",
-          "filingsDueThisWeek": "{{count}} filings due this week",
-          "noneDue": "no filings due"
-        },
-        "filings": {
-          "monthlyWit": "WIT {{period}}",
-          "monthlyWitReturn": "WIT return {{period}}",
-          "monthlyWitPayment": "WIT payment {{period}}",
-          "annualWit": "Annual WIT {{period}}",
-          "annualIncomeTax": "Annual income tax {{period}}",
-          "servicesTax": "Services tax {{period}}",
-          "installmentTax": "Income-tax installment {{period}}",
-          "inssPayment": "INSS payment {{period}}",
-          "inssStatement": "INSS statement {{period}}",
-          "overdue": "{{days}}d overdue",
-          "dueToday": "due today",
-          "dueTomorrow": "due tomorrow",
-          "daysLeft": "{{days}}d left",
-          "line": "{{label}} — {{descriptor}} (due {{date}})"
-        },
         "families": {
           "payroll-reports": "Payslips, tax views, year-to-date detail, and payroll summaries.",
           "employee-reports": "Headcount, movement, workforce structure, and staff reporting.",
@@ -8286,7 +7474,6 @@ export const translations = {
         "failed": "Could not send the request. Please try again."
       },
       "connection": {
-        "title": "Accountant connection",
         "description": "Request professional help or manage the access already granted.",
         "none": "No accounting partner selected.",
         "view": "View partner profile",
@@ -8320,7 +7507,6 @@ export const translations = {
         "bannerAction": "Learn more"
       },
       "landing": {
-        "nav": "Accountant help",
         "eyebrow": "Optional accountant support",
         "title": "Do it yourself—or ask an accountant to review",
         "description": "Xefe stays simple for daily work. When you want professional help, choose the partner firm and control exactly when access begins.",
@@ -8337,7 +7523,6 @@ export const translations = {
       "impersonationNote": "You are viewing the same partner workspace the partner firm's team will use.",
       "cards": {
         "requests": "New requests",
-        "awaitingAccess": "Awaiting client access",
         "connected": "Connected clients"
       },
       "needsAttention": "Needs attention",
@@ -8463,7 +7648,6 @@ export const translations = {
       "expandSidebar": "Habelar sidebar",
       "collapseSidebar": "Halo sidebar ki'ik",
       "of": "hosi",
-      "basicMode": "Modu Básiku",
       "adminConsole": "Konsola Admin",
       "sitemap": "Mapa Pájina",
       "guidance": "Orientasaun",
@@ -9061,13 +8245,10 @@ export const translations = {
     "landing": {
       "nav": {
         "features": "Fitur",
-        "laborLaw": "Lei Laboral",
-        "apps": "Aplikasaun",
         "pricing": "Presu",
         "getStarted": "Hahu",
         "forAccountants": "Ba kontabilista sira",
         "menu": "Menu",
-        "overview": "Vizaun jerál",
         "home": "Inísiu",
         "engine": "Motór"
       },
@@ -9202,182 +8383,21 @@ export const translations = {
         }
       },
       "hero": {
-        "badge": "Hadia ba",
-        "badgeHighlight": "Timor-Leste",
-        "headline": "Sistema Operasaun",
-        "headlineAccent": "Ba Empresa TL",
-        "subheadline": {
-          "before": "RH, folha, kontabilidade no fatura — hadi'a ba Timor-Leste tuir",
-          "highlight1": "Lei Trabalho",
-          "middle": ", WIT/INSS, no",
-          "highlight2": "kontabilidade double-entry",
-          "after": "."
-        },
-        "points": {
-          "labor": "Regra prinsipal Lei Trabalho iha laran",
-          "tax": "WIT no INSS iha ona",
-          "languages": "Tetun, Ingles, Portugues",
-          "accounting": "Kontabilidade double-entry"
-        },
-        "ctaPrimary": "Hahu Agora",
         "trust": {
-          "trial": "Planu gratuitu — la presiza kartaun",
-          "usd": "Suporte moeda USD",
-          "transfers": "Transferensia banku lokal"
+          "trial": "Planu gratuitu — la presiza kartaun"
         }
       },
       "mock": {
-        "stats": {
-          "totalEmployees": "Total Funsionariu",
-          "totalEmployeesChange": "+12 iha fulan ida nee",
-          "monthlyPayroll": "Folha Fulan Ida",
-          "monthlyPayrollChange": "Vense iha loron 5",
-          "inssContribution": "Kontribuisaun INSS",
-          "inssContributionChange": "4% + 6%",
-          "thirteenth": "Subsidiu Anual",
-          "thirteenthChange": "Vense 20 Dez"
-        },
-        "payrollByDept": "Folha tuir departamentu",
-        "currency": "USD",
-        "departments": {
-          "security": "Seguransa",
-          "admin": "Admin",
-          "finance": "Finansa",
-          "operations": "Operasaun",
-          "hr": "RH",
-          "it": "TI"
-        },
-        "upcomingHolidays": "Feriadu sira mai",
-        "holidays": {
-          "nov12": {
-            "date": "12 Nov",
-            "name": "Loron Juventude"
-          },
-          "nov28": {
-            "date": "28 Nov",
-            "name": "Proklamasaun"
-          },
-          "dec7": {
-            "date": "7 Dez",
-            "name": "Loron Heroi"
-          },
-          "dec25": {
-            "date": "25 Dez",
-            "name": "Natal"
-          }
-        }
+        "holidays": {}
       },
-      "features": {
-        "badge": "Hadia ba Timor-Leste",
-        "title": "Hotu-hotu Ita-boot Presiza",
-        "titleAccent": "Tudo ne'e presiza",
-        "description": "Hadia husi zero ba empresa Timor-Leste. Laos adapta - desenha ba Lei Trabalho, WIT, INSS no banku lokal."
-      },
-      "tlFeatures": {
-        "laborLaw": {
-          "title": "Lei Trabalho Timor",
-          "subtitle": "Kodigu Laboral",
-          "description": "Aplika regra prinsipal Kodigu Laboral ne'ebé reviza ona, inklui semana 44 oras, oras extra 150%/200% no regra deskansu. Kazu esepsionál sei presiza reviza jurídiku."
-        },
-        "witInss": {
-          "title": "WIT no INSS",
-          "subtitle": "Impostu no Seguransa Sosial",
-          "description": "Kalkula WIT automatik ho limite $500 ba residente. INSS 4% empregadu + 6% empregador."
-        },
-        "thirteenth": {
-          "title": "Subsidiu Anual",
-          "subtitle": "Saláriu 13o Mes",
-          "description": "Kalkula 13o mes automatik. Pro-rata ba empregadu foun, prazo 20 Dez."
-        },
-        "sefope": {
-          "title": "SEFOPE Prontu",
-          "subtitle": "Relatoriu Ministeriu",
-          "description": "Halo PDF SEFOPE ho klik ida ba rejistu trabalhadór estranjeiru. Kontrola permitu Visa Tipu C, prazo renovasaun, no submisaun ministeriu — problema konformidade boot liu, rezolvidu."
-        }
-      },
-      "banks": {
-        "title": "Ficheiru Folha Banku ho Klik Ida",
-        "subtitle": "Halo formatu ficheiru ne'ebe banku ida-ida presiza — laiha data entry manual",
-        "bnu": "Ficheiru CSV folha",
-        "bnctl": "Ficheiru CSV folha",
-        "mandiri": "Ficheiru TXT fixed-width",
-        "anz": "Ficheiru CSV folha",
-        "tagline": "Upload ba portal banku no selu ita-nia staf hotu iha minutu, laos oras"
-      },
-      "performance": {
-        "badge": "Hadia ba Internet TL",
-        "title": "Lalais Maski Ligasaun Neineik",
-        "description": "Xefe rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
-        "features": {
-          "cache": "Cache lokal intelijente — servisu lalais iha vizita tuir mai",
-          "lazy": "Fitur boot karga de'it bainhira presiza",
-          "small": "App leve, hadia ba ambiente bandwidth ki'ik"
-        }
-      },
+      "tlFeatures": {},
+      "performance": {},
       "laborLaw": {
-        "badge": "Lei Trabalho Timor-Leste",
-        "title": "Regra Laboral Prinsipal",
-        "titleAccent": "Iha Sistema Laran",
-        "description": "Regra prinsipal ne'ebé reviza ona iha folha laran. Kazu esepsionál, inklui indemnizasaun, presiza reviza profisionál no konkordánsia esplísita.",
-        "features": {
-          "workWeek": {
-            "title": "Semana 44 oras",
-            "description": "Padrao 44 oras/semana ho 8 oras/loron"
-          },
-          "overtime": {
-            "title": "Taxa oras extra",
-            "description": "150% ba oras extra, 200% ba domingu no feriadu"
-          },
-          "sick": {
-            "title": "Lisensa doensa",
-            "description": "12 loron/tinan - 6 a 100%, 6 a 50%"
-          },
-          "maternity": {
-            "title": "Lisensa maternidade",
-            "description": "12 semana lisensa selu (84 loron)"
-          },
-          "annual": {
-            "title": "Lisensa anual",
-            "description": "Mínimu estatutáriu loron 12, la inventa nivel tuir tinan servisu"
-          },
-          "severance": {
-            "title": "Indemnizasaun",
-            "description": "Kalkula de'it depois reviza kazu espesífiku husi jurista ka kontabilista"
-          }
-        }
-      },
-      "holidays": {
-        "title": "Feriadu Nasional (13 feriadu publiku)",
-        "more": "+ 6 tan...",
-        "newYear": "Loron Tinan Foun",
-        "laborDay": "Loron Trabalhador",
-        "restoration": "Loron Restaurasaun Independensia",
-        "popularConsultation": "Loron Konsulta Popular",
-        "proclamation": "Loron Proklamasaun Independensia",
-        "heroesDay": "Loron Heroi Nasional",
-        "christmas": "Loron Natal"
+        "features": {}
       },
       "tax": {
-        "badge": "Kalkulasaun automatik",
-        "titleAccent": "Hadia diak",
-        "wit": {
-          "title": "Impostu Rendimentu (WIT)",
-          "points": {
-            "threshold": "Limite $500/fulan ba residente",
-            "rate": "Taxa fixa 10% ba rendimentu",
-            "nonResident": "Regra ba la residente halo ketak",
-            "perDiem": "Ajuda de custo no viajen la konta"
-          }
-        },
-        "inss": {
-          "title": "Seguransa Sosial (INSS)",
-          "points": {
-            "employee": "4% kontribuisaun empregadu",
-            "employer": "6% kontribuisaun empregador",
-            "smallBusiness": "Redusaun ba empresa ki'ik",
-            "foodAllowance": "Subsidiu ai-han la konta iha base"
-          }
-        },
+        "wit": {},
+        "inss": {},
         "example": {
           "title": "Ezemplu kalkulasaun salario",
           "basicSalary": "Saláriu Baziku",
@@ -9390,20 +8410,7 @@ export const translations = {
           "badge": "Auto-kalkuladu"
         }
       },
-      "payslip": {
-        "eyebrow": "Resibu Pagamentu",
-        "title": "Resibu pagamentu ne'ebé ita-nia ekipa",
-        "titleAccent": "bele lee duni",
-        "subtitle": "Kada prosesu folha pagamentu prodús resibu klaru atu reviza — WIT, INSS no subsídiu anuál fahe liña ba liña, iha Tetun, Inglés ka Portugés. Trabalhador sira simu sira-nian iha telefone liuhusi Ekipa."
-      },
-      "cta": {
-        "title": "Prontu atu hahu?",
-        "titleAccent": "Hahu ohin",
-        "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Xefe ba RH no Folha.",
-        "primary": "Komesa gratuitu"
-      },
       "footer": {
-        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "Oinsá Xefe servisu",
@@ -9415,283 +8422,23 @@ export const translations = {
         },
         "copyright": "© 2026 OniT Enterprises. Dili, Timor-Leste."
       },
-      "segments": {
-        "subtitle": "Fiar husi organizasaun iha Timor-Leste tomak",
-        "title": "Hadia ba empresa ne'ebe presiza konformidade",
-        "security": {
-          "label": "Empresa Seguransa",
-          "desc": "Roster boot, turnos"
-        },
-        "restaurants": {
-          "label": "Restaurante & Kafé",
-          "desc": "Gorjeta, oras extra, rotasaun"
-        },
-        "ngos": {
-          "label": "ONG & OING",
-          "desc": "Konformidade doador no auditoría"
-        },
-        "hotels": {
-          "label": "Hotel no Turizmu",
-          "desc": "Jestaun staf temporariu"
-        },
-        "consulting": {
-          "label": "Konsultoria & TI",
-          "desc": "Fatura projetu, multi-moeda"
-        },
-        "construction": {
-          "label": "Konstrusaun",
-          "desc": "Trabalhador diário, seguransa"
-        }
-      },
-      "painPoints": {
-        "paper": {
-          "title": "Sei uza papel?",
-          "desc": "Kalkulasaun manual lori erru WIT ne'ebe kustu osan. Dedusaun sala ida = risku auditoría."
-        },
-        "excel": {
-          "title": "Excel la servisu?",
-          "desc": "Formula sala. Ficheiru estraga. Laiha audit trail ba doador. Laiha kalkulasaun 13o mes automatik."
-        },
-        "foreign": {
-          "title": "Software estranjeiru la adekuadu?",
-          "desc": "Lansu kontabil manual ba WIT fulan-fulan. Laiha relatoriu SEFOPE. Laiha Tetun. Hadia ba merkadu seluk."
-        },
-        "solution": {
-          "title": "Xefe rezolve ida nee",
-          "desc": "WIT/INSS automatik. Transferensia banku ba BNU/BNCTL. Relatoriu ba SEFOPE. Interface Tetun."
-        }
-      },
-      "modules": {
-        "badge": "Plataforma Kompletu",
-        "title": "Modulu Integradu 9",
-        "titleAccent": "Sistema Ida Kompletu",
-        "description": "Husi rekrutamentu to'o reforma, folha to'o kontabilidade - hotu ne'ebe ita-nia ekipa RH presiza.",
-        "people": {
-          "name": "Jestaun Ema",
-          "desc": "Perfil empregadu, departamentu, estrutura, kontrolu dokumentu"
-        },
-        "hiring": {
-          "name": "Rekrutamentu",
-          "desc": "Anúnsiu servisu, akompaña kandidatu, onboarding, offboarding"
-        },
-        "time": {
-          "name": "Oras no Prezensa",
-          "desc": "Tama/sai, timesheet, pedidu lisensa, turnos"
-        },
-        "performance": {
-          "name": "Desempenho",
-          "desc": "Objetivu, avaliasaun, formasaun, sertifikasaun, disiplina"
-        },
-        "payroll": {
-          "name": "Folha Pagamentu",
-          "desc": "INSS, impostu, oras extra, transferensia banku, payslip"
-        },
-        "money": {
-          "name": "Osan (Fatura)",
-          "desc": "Kliente, fatura, konta, despeza, pagamentu"
-        },
-        "accounting": {
-          "name": "Kontabilidade",
-          "desc": "Livru rezaun double-entry, balansu prova, esporta QuickBooks"
-        },
-        "reports": {
-          "name": "Relatoriu no Analítika",
-          "desc": "Relatoriu folha, analítika RH, relatoriu personalizado"
-        },
-        "compliance": {
-          "name": "Konformidade",
-          "desc": "Trabalhadór estranjeiru, autorizasaun servisu, alerta dokumentu"
-        },
-        "viewAll": "Haree Fitur 65+ Hotu"
-      },
-      "apps": {
-        "badge": "Aplikasaun Móbil",
-        "title": "Xefe iha ita-nia bolsu",
-        "description": "Ekipa ba ita-nia staf, Kaixa ba osan loron-loron — serbisu offline, Tetun uluk, halo ba servisu iha terrenu."
-      },
+      "segments": {},
+      "painPoints": {},
+      "modules": {},
       "kaixa": {
-        "badge": "App Movel",
-        "title": "Kaixa",
-        "titleAccent": "Ita-nia Kaixa Dijital",
-        "description": "Kontrolu osan simples no POS ba ema hotu iha Timor-Leste. Husi vendedór kiosk to'o loja ki'ik — kontrola dollar ida-ida, fa'an produtu, no imprime resibo. Servisu offline, koalia Tetun.",
-        "tagline": "\"Kaixa\" — Tetun ba kaixa osan",
-        "features": {
-          "tamasai": {
-            "title": "Tama / Sai",
-            "desc": "Botaun rua — osan tama, osan sai. Kontrola dollar ida-ida ne'ebe liu iha ita-nia negósiu."
-          },
-          "pos": {
-            "title": "POS Simples",
-            "desc": "Katalogo produtu, toka atu fa'an, no konta stock. Hatene saida mak iha no saida mak fa'an."
-          },
-          "offline": {
-            "title": "Servisu Offline",
-            "desc": "Funsiona kompletu laiha internet. Hotu sinkroniza automatik bainhira liga fali."
-          },
-          "tetum": {
-            "title": "Tetun Primeiru",
-            "desc": "Interface iha ita-nia lian. Botaun boot hadia ba lalais, laos kompleksidade."
-          },
-          "bluetooth": {
-            "title": "Resibo Bluetooth",
-            "desc": "Printer termal $30 transforma ita-nia telefone ba rejistru. Resibo profisionál."
-          },
-          "vat": {
-            "title": "VAT Prontu",
-            "desc": "Hadia ba VAT Timor-Leste 2027. Bainhira sai lei, muda switch ida — la presiza update."
-          }
-        },
-        "cta": "Mai Sedu ba Google Play",
-        "ctaNote": "Android primeiru · Tier gratis disponível",
-        "free": {
-          "badge": "Gratis",
-          "title": "Kontrolu Osan",
-          "desc": "Laos kontabilidade. **Kontrolu osan.** Troka kaderno.",
-          "descHighlight": "Kontrolu osan.",
-          "features": {
-            "moneyInOut": "Osan Tama / Osan Sai — botaun rua, hotu",
-            "summaries": "Rezumu loron-loron, semanal, fulan ho grafiku",
-            "photoReceipts": "Resibo foto — foto pajina kaderno",
-            "categories": "Kategoria (stock, venda, pessoal)",
-            "offline": "Servisu offline kompletu, sinkroniza iha wifi",
-            "tetum": "Interface Tetun ho botaun boot"
-          }
-        },
-        "upgrade": {
-          "badge": "Upgrade",
-          "title": "POS Simples",
-          "desc": "Hotu iha Gratis, no **POS kompletu** husi ita-nia telefone.",
-          "descHighlight": "POS kompletu",
-          "features": {
-            "catalog": "Katalogo produtu — naran, folin, foto",
-            "tapToSell": "Toka atu fa'an — botaun produtu boot, kuantidade, total",
-            "inventory": "Inventáriu — sosa 50, fa'an 30, iha 20",
-            "customerTabs": "Tab kliente — \"João deve ha'u $15\"",
-            "printer": "Printer termal Bluetooth ($30) ba resibo",
-            "whatsapp": "Partilha resibo WhatsApp — ema hotu uza",
-            "monthlyReport": "Relatoriu rezumu fulan — PDF ba impostu"
-          }
-        },
-        "personas": {
-          "maria": {
-            "name": "Maria",
-            "role": "Vendedór Kiosk",
-            "desc": "Fa'an kreditu telefone, snack, sigaru. Uza kaderno ohin. Presiza: \"Ohin ha'u hetan hira?\""
-          },
-          "ana": {
-            "name": "Ana",
-            "role": "Dona Kafé",
-            "desc": "Hala'o kafé ho staf 5. Uza Xefe ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
-          },
-          "tomas": {
-            "name": "Tomas",
-            "role": "Dona Loja",
-            "desc": "Loja varejo ne'ebe kresce. Tab kliente, kontrolu stock. Prontu ba VAT bainhira mai."
-          }
-        }
+        "features": {},
+        "free": {},
+        "upgrade": {},
+        "personas": {}
       },
       "ekipa": {
-        "badge": "App Empregadu",
-        "title": "Ekipa",
-        "titleAccent": "Kompanheiru Movel Ita-nia Ekipa",
-        "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Xefe.",
-        "tagline": "\"Ekipa\" — Tetun ba ekipa",
-        "features": {
-          "payslips": {
-            "title": "Payslip iha Telefone",
-            "desc": "Empregadu haree detallu payslip, download PDF, no fahe liu WhatsApp. Laiha presiza halo print."
-          },
-          "leave": {
-            "title": "Pedidu Lisensa",
-            "desc": "Husu lisensa annual, moras, ka maternidade. Haree balansu no akompaña aprovasaun iha tempu real."
-          },
-          "crewClock": {
-            "title": "Clock-In Ekipa",
-            "desc": "Modu supervizór ho GPS + prova kamera. Sistema anti-trabalhador-fantasma ba konstrusaun no seguransa."
-          },
-          "offline": {
-            "title": "Funsiona Offline",
-            "desc": "Database lokál SQLite synka dadus ekipa bainhira liga fali. Di'ak ba fatin remotu."
-          },
-          "bilingual": {
-            "title": "Tetun & Ingles",
-            "desc": "Interface tomak iha lian rua. Empregadu muda kedas — la presiza restart."
-          },
-          "selfService": {
-            "title": "Perfil Self-Service",
-            "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensa. Pergunta menus ba RH."
-          }
-        },
-        "cta": "Inklui ho Xefe",
-        "ctaNote": "Android · Grátis ba empregadu Xefe hotu",
-        "shipped": {
-          "badge": "Ativu Ona",
-          "title": "Saida mak Prontu",
-          "features": {
-            "login": "Autentikasaun email/password",
-            "dashboard": "Uma ho countdown loron selu & balansu lisensa",
-            "payslips": "Istória payslip fulan 12 ho PDF export",
-            "leave": "Balansu lisensa, istória & formuláriu pedidu",
-            "crewClock": "Clock-in/out ekipa ho GPS & kamera",
-            "profile": "Perfil empregadu kompletu & sumáriu prezensa"
-          }
-        },
-        "coming": {
-          "badge": "Mai Tuir",
-          "title": "Iha Roadmap",
-          "features": {
-            "push": "Notifikasaun push ba payslip & aprovasaun",
-            "attendance": "Istória prezensa pesoál & verifikasaun oras",
-            "documents": "Haree dokumentu ba kontratu & sertifikadu",
-            "shifts": "Haree orário turnu"
-          }
-        }
+        "features": {},
+        "shipped": {},
+        "coming": {}
       },
-      "mobilePay": {
-        "title": "Osan Movel Prontu",
-        "subtitle": "Selu empregadu laiha konta banku",
-        "comingSoon": "Mai Sedu",
-        "note": "Pagamentu diretamente ba wallet movel empregadu. Laiha konta banku presiza."
-      },
-      "localSupport": {
-        "badge": "Baze iha Dili",
-        "title": "Suporte lokal,",
-        "titleAccent": "iha Tetun no Ingles",
-        "description": "Ami laos empresa estranjeiru ho suporte offshore. Xefe hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
-        "items": {
-          "whatsapp": "Suporte WhatsApp iha Tetun no Ingles",
-          "training": "Treinamentu iha fatin disponível iha Dili",
-          "sefope": "Ajuda ho submisaun SEFOPE",
-          "bank": "Asistensa integrasaun banku (BNU, BNCTL)"
-        },
-        "cta": {
-          "title": "Presiza ajuda atu hahu?",
-          "subtitle": "Konsulta setup gratis"
-        }
-      },
+      "localSupport": {},
       "accounting": {
-        "badge": "Kontabilidade Real",
-        "title": "Kontabilidade ne'ebe",
-        "titleAccent": "komprende TL",
-        "description": "Uza QuickBooks ba inventáriu se hakarak — Xefe rezolve konformidade TL.",
-        "features": {
-          "doubleEntry": {
-            "title": "Double-Entry Loos",
-            "desc": "Transasaun ida-ida kria debitu no kreditu balansadu. Prontu ba auditoría husi loron primeiru."
-          },
-          "glTrial": {
-            "title": "GL no Balansu Prova",
-            "desc": "Livru rezaun jerál kompletu, planu konta, no balansu prova — relatoriu ne'ebe ita-nia kontabilista presiza."
-          },
-          "autoPost": {
-            "title": "Folha Auto-Post",
-            "desc": "Halo folha no lansu kontabil hakerek rasik. WIT, INSS, despeza saláriu — hotu postadu."
-          },
-          "qbExport": {
-            "title": "Esporta QuickBooks",
-            "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu."
-          }
-        }
+        "features": {}
       }
     },
     "securityPage": {
@@ -9933,9 +8680,6 @@ export const translations = {
         "titleTop": "Oinsá Xefe",
         "titleAccent": "serbisu loloos",
         "lede": "Dokumentasaun ho lian simples kona-ba mákina iha Xefe nia okos — saida mak akontese ho ita-nia osan, bainhira prazu sira monu, no garantia sira-ne'ebé sistema rasik impoin.",
-        "article1Tag": "Folha pagamentu & kontabilidade",
-        "article1Title": "Kadeia osan folha pagamentu nian",
-        "article1Desc": "Husi prosesamentu rascunho to'o livru taka: pasu aprovasaun sira, lansamentu tolu ne'ebé book osan, prazu legál hotu, no garantia hitu ne'ebé kaer buat hotu metin.",
         "readArticle": "Lee artigu",
         "guides": "Gía sira",
         "architecture": "Iha laran",
@@ -10206,9 +8950,6 @@ export const translations = {
         "description": "Konfigura negósiu no esplora fitur hotu grátis. Xefe mantén servisu loron-loron klaru no evidénsia profisionál prontu.",
         "primary": "Hahú grátis",
         "whatsapp": "Husu demonstrasaun"
-      },
-      "footer": {
-        "home": "Vizaun jerál produtu"
       }
     },
     "settings": {
@@ -10750,15 +9491,7 @@ export const translations = {
     "orgChart": {
       "title": "Organograma",
       "subtitle": "Haree estrutura kompanhia no liña reportajen",
-      "reorganize": "Reorganiza",
-      "exitReorganize": "Sai reorganiza",
       "manage": "Gere",
-      "stats": {
-        "executives": "Ekzekutivu",
-        "managers": "Xefe",
-        "seniorStaff": "Ekipa Senior",
-        "totalEmployees": "Total Empregadu"
-      },
       "emptyTitle": "Laiha Dadus Organizasaun",
       "emptyDesc": "Tau empregadu atu hare organograma",
       "addFirstEmployee": "Tau Empregadu Primeiro",
@@ -10767,8 +9500,6 @@ export const translations = {
         "connectionOffline": "La bele conecta ba base dadus. Hatudu dadus demo.",
         "loadFailed": "La bele karrega organograma. Tenta fali.",
         "unexpected": "Iha erru inesperadu bainhira karrega dadus.",
-        "updatedTitle": "Organizasaun Atualiza",
-        "updatedDesc": "Pozisaun muda ho susesu",
         "refreshedTitle": "Dadus Atualiza",
         "refreshedDesc": "Organograma atualiza ho mudansa foun"
       },
@@ -10891,11 +9622,6 @@ export const translations = {
         },
         "minimumWageReviewNote": "Nota revizaun *",
         "minimumWageReviewNotePlaceholder": "Sé mak reviza no tanbasá tratamentu ne'e aplika",
-        "sefopeTitle": "Registu SEFOPE (Ministeriu Traballu)",
-        "sefopeTooltip": "Presiza ba empregadu TL hotu",
-        "sefopeNumber": "Numero SEFOPE",
-        "sefopeNumberPlaceholder": "SEFOPE-2024-XXXXX",
-        "sefopeDate": "Data Registu",
         "workContract": "Kontratu Servisu",
         "workContractHelp": "Upload kontratu (PDF/DOC)"
       },
@@ -10938,9 +9664,7 @@ export const translations = {
           "premium": "Premium",
           "executive": "Ekzekutivu"
         },
-        "taxInfoTitle": "Informasaun Fiskal",
         "taxResidentLabel": "Residente fiskal Timor-Leste",
-        "taxResidentHint": "Residente ba impostu (Lei 8/2008: iha Timor-Leste loron 183+ iha fulan 12, se nia hela-fatin permanente la iha rai-liur). Residente selu WIT 10% ba rendimentu liu $500/fulan; la-residente selu 10% husi dolar dahuluk.",
         "incomeTaxTitle": "Impostu Rendimentu (WIT)",
         "incomeTaxDesc": "10% ba rendimentu liu $500/fulan",
         "socialSecurityTitle": "Seguransa Sosial (INSS)",
@@ -12139,105 +10863,11 @@ export const translations = {
         }
       }
     },
-    "payrollDashboard": {
-      "readyToRun": "Saláriu prontu atu prosesu",
-      "allVerifiedProceed": "Itens hotu verifika ona. Bele kontinua ho saláriu.",
-      "runPayrollBtn": "Prosesu Saláriu",
-      "payrollFor": "Saláriu ba {{month}}",
-      "payDate": "Data pagamentu:",
-      "daysRemaining": "{{days}} loron seidauk",
-      "employees": "Trabalhador {{count}}",
-      "confirmRunPayroll": "Konfirma & Prosesu Saláriu",
-      "reviewPayroll": "Reviza Saláriu",
-      "viewChecklist": "Haree Lista Verifikasaun",
-      "checklistTitle": "Lista Verifikasaun Saláriu",
-      "allVerifiedReady": "Itens hotu verifika ona. Saláriu prontu.",
-      "checklistProgress": "{{done}} husi {{total}} itens kompletu",
-      "pending": "pendente",
-      "grossPayroll": "Saláriu Brutu",
-      "employerINSS": "INSS Empreza ({{rate}}%)",
-      "employeeINSS": "INSS Trabalhador ({{rate}}%)",
-      "estNetToEmployees": "Est. Líkidu ba Trabalhador",
-      "employeesNeedAttention": "Trabalhador Presiza Atensaun",
-      "payrollCoverage": "Kobertura Saláriu",
-      "missingContractsINSS": "Falta kontratu ka INSS",
-      "allEmployeesReady": "Trabalhador hotu prontu",
-      "lastPayroll": "Saláriu Ikus",
-      "completed": "Kompletu",
-      "noPayrollYet": "Seidauk iha saláriu",
-      "manage": "Jere",
-      "ngoReporting": "Relatoriu ONG no Doador",
-      "ngoReportingHint": "Asesu lalais ba ferramenta alokasaun no exportasaun folha ba doador.",
-      "pastReports": "Passadu & Relatoriu",
-      "complianceDeadlines": "Prazu Kompliansia",
-      "witDue": "WIT vensimentu:",
-      "inssStatementDue": "Deklarasaun INSS vensimentu:",
-      "inssPaymentDue": "Pagamentu INSS vensimentu:",
-      "inssDue": "INSS vensimentu:",
-      "minimumWage": "Saláriu mínimu:",
-      "minimumWageAmount": "$115 USD",
-      "lastReviewedBy": "Reviza ikus husi {{name}}",
-      "simpleFlowTitle": "Fluxu folha simples",
-      "simpleFlowDesc": "Halo pasu sira ne'e tuir orden iha loron selu.",
-      "simpleFlow": {
-        "peopleTitle": "Verifika rejistu trabalhador",
-        "peoplePending": "Rejistu trabalhador {{count}} seidauk kompletu ho kontratu ka detallu INSS.",
-        "peopleReady": "Rejistu trabalhador sira hanesan prontu ba folha ida-ne'e.",
-        "timeTitle": "Verifika tempu no lisensa",
-        "timePending": "Pedidu lisensa {{count}} seidauk reviza molok folha.",
-        "timeReady": "Lisensa no attendance hanesan atualiza ona ba períodu ida-ne'e.",
-        "runTitle": "Hala'o folha",
-        "runPending": "Kompleta uluk itens iha lista verifikasaun molok hala'o folha.",
-        "payTitle": "Selu saláriu",
-        "payDesc": "Loke transferénsia banku depois de folha aprova ona."
-      },
-      "checklist": {
-        "attendanceLabel": "Prezensa finaliza",
-        "attendanceIssue": "folha tempu pendente aprovasaun",
-        "attendanceDesc": "Folha tempu hotu submete no aprova ona",
-        "attendanceLink": "Reviza folha tempu",
-        "leaveLabel": "Pedidu lisensa aprova ona",
-        "leaveIssue": "pedidu lisensa pendente aprovasaun",
-        "leaveDesc": "Laiha pedidu lisensa pendente ba períodu pagamentu",
-        "leaveLink": "Reviza pedidu lisensa",
-        "contractsLabel": "Kontratu trabalhador kompletu",
-        "contractsIssue": "trabalhador falta kontratu",
-        "contractsDesc": "Trabalhador hotu iha kontratu válidu",
-        "contractsLink": "Haree trabalhador sira",
-        "salariesLabel": "Dadus saláriu verifika ona",
-        "salariesIssue": "trabalhador falta dadus saláriu",
-        "salariesDesc": "Dadus kompensasaun atualiza ona",
-        "salariesLink": "Reviza saláriu sira"
-      },
-      "status": {
-        "gettingReady": "Prepara Hela",
-        "almostReady": "Kuaze Prontu",
-        "readyToRun": "Prontu Prosesu",
-        "processing": "Prosesa Hela",
-        "completed": "Kompletu"
-      },
-      "links": {
-        "allowances": "Subsídiu",
-        "allowancesDesc": "Transporte, abrigo, han & seluk",
-        "deductions": "Dedusaun",
-        "deductionsDesc": "Empréstimu, avansu & dedusaun",
-        "payrollHistory": "Istória Saláriu",
-        "payrollHistoryDesc": "Haree prosesu saláriu pasadu",
-        "bankTransfers": "Transferénsia Banku",
-        "bankTransfersDesc": "Jere pagamentu saláriu",
-        "taxReports": "Relatoriu Impostu",
-        "taxReportsDesc": "Relatoriu WIT no INSS",
-        "payrollAllocation": "Relatoriu Alokasaun Folha",
-        "payrollAllocationDesc": "Fahe folha tuir projetu no fonte fundu",
-        "donorExport": "Pakote Exportasaun Doador",
-        "donorExportDesc": "Exporta CSV folha kontabilidade prontu ba doador"
-      }
-    },
+    "payrollDashboard": {},
     "setupWizard": {
       "steps": {
         "companyDetails": "Detállu Empreza",
         "bankAccounts": "Konta Banku",
-        "leavePolicies": "Polítika Lisensa",
         "payrollConfig": "Konfigurasaun Saláriu",
         "complete": "Kompletu"
       },
@@ -12245,8 +10875,6 @@ export const translations = {
       "welcomeDesc": "Kompleta pasu sira hodi hahú ho Xefe",
       "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
       "progressTitle": "Progresu setup",
-      "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
-      "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
       "savedAutomaticallyDesc": "Bele sai no fila depois. Xefe sei kontinua iha fatin ne'ebé ita husik.",
       "stepOf": "Pasu {{current}} husi {{total}}",
       "requiredFields": "Kampu Obrigatóriu",
@@ -12255,7 +10883,6 @@ export const translations = {
       "error": "Erru",
       "failedSaveCompany": "La konsege rai detállu empreza.",
       "failedSaveBank": "La konsege rai konta banku.",
-      "failedSaveLeave": "La konsege rai polítika lisensa.",
       "failedSavePayroll": "La konsege rai konfigurasaun saláriu.",
       "setupComplete": "Konfigurasaun Kompletu",
       "accountReady": "Ita-nia konta prontu atu uza!",
@@ -12268,21 +10895,8 @@ export const translations = {
       "legalName": "Naran Legál *",
       "legalNamePlaceholder": "Ita-nia Empreza Lda.",
       "tradingName": "Naran Komersial",
-      "tradingNamePlaceholder": "Ita-nia Empreza",
       "tinNumber": "Númeru Úniku SERVE / NIF *",
       "tinPlaceholder": "Númeru Úniku Empreza / NIF",
-      "teamSize": "Medida Ekipa Aproximadu",
-      "selectTeamSize": "Hili medida ekipa",
-      "teamSizeHint": "Ida ne'e ajuda Xefe hili padraun di'ak liu ba ekipa ki'ik ka boot.",
-      "address": "Enderesu",
-      "addressPlaceholder": "Enderesu dalan",
-      "city": "Sidade",
-      "cityPlaceholder": "Dili",
-      "country": "País",
-      "phone": "Telefone",
-      "phonePlaceholder": "+670 ...",
-      "email": "Email",
-      "emailPlaceholder": "info@empreza.tl",
       "bankIntro": "Hili oinsá Ita normalmente selu saláriu. Ita bele muda ida-ne'e iha Konfigurasaun.",
       "paymentMethod": "Métodu pagamentu saláriu",
       "cash": "Osan",
@@ -12295,19 +10909,9 @@ export const translations = {
       "accountNumber": "Numeru Konta *",
       "accountNumberPlaceholder": "Numeru konta",
       "leaveIntro": "Polítika lisensa padraun tuir lei traballu Timor-Leste sei aplika. Bele personaliza iha Konfigurasaun depois.",
-      "annualLeave": "Lisensa Anuál",
-      "annualLeaveValue": "12 loron/tinan",
-      "sickLeave": "Lisensa Moras",
-      "sickLeaveValue": "12 loron/tinan",
-      "maternityLeave": "Lisensa Maternidade",
-      "maternityLeaveValue": "12 semana",
-      "paternityLeave": "Lisensa Paternidade",
-      "paternityLeaveValue": "5 loron",
       "leaveNote": "Padraun sira ne'e tuir Lei Traballu TL. Personaliza iha Konfigurasaun depois konfigurasaun.",
       "payFrequency": "Frekuénsia Pagamentu",
       "monthly": "Mensal",
-      "biWeekly": "Kuinzenal",
-      "weekly": "Semanal",
       "payDay": "Loron Pagamentu (loron fulan nian)",
       "currency": "Moeda",
       "usdCurrency": "USD (Dólar Amerikanu)",
@@ -12320,7 +10924,6 @@ export const translations = {
       "allSetDesc": "Ita-nia konta konfigurasaun ona. Agora bele hahú hatama trabalhador, prosesu saláriu, no jere ita-nia ekipa.",
       "back": "Fila",
       "doLater": "Ba painél agora daudaun",
-      "finishLaterHint": "Ita bele fila ba setup iha dashboard bainhira deit molok hala'o ita-nia folha primeiru.",
       "saving": "Rai hela...",
       "goToDashboard": "Ba Painél",
       "next": "Tuir"
@@ -14382,180 +12985,12 @@ export const translations = {
       }
     },
     "dashboards": {
-      "staff": {
-        "title": "Painel Empregadu",
-        "subtitle": "Visaun geral empregadu no organizasaun",
-        "actions": {
-          "viewAll": "Haree hotu",
-          "addEmployee": "Tau Empregadu Foun"
-        },
-        "stats": {
-          "totalEmployees": "Total Empregadu",
-          "inDatabase": "Iha baze dadus",
-          "activeEmployees": "Empregadu aktivu",
-          "activeRate": "{{rate}}% taxa ativa",
-          "departments": "Departamentu",
-          "activeDepartments": "Departamentu aktivu",
-          "inactive": "Inativu",
-          "inactiveRate": "{{rate}}% husi ekipa"
-        },
-        "labels": {
-          "unknown": "Deskonese"
-        },
-        "departments": {
-          "distribution": "Distribuisaun empregadu ({{total}} total)",
-          "emptyEmployees": "Laiha empregadu iha baze dadus",
-          "seedDatabase": "Tau baze dadus ezemplu",
-          "emptyDepartments": "Laiha dadus departamentu",
-          "count": "{{count}} ({{percent}}%)"
-        },
-        "status": {
-          "title": "Resumo Estatutu",
-          "description": "Distribuisaun estatutu empregadu",
-          "live": "Ao vivo",
-          "activeTitle": "Empregadu aktivu",
-          "activeDescription": "Agora esta servisu",
-          "inactiveTitle": "Empregadu inativu",
-          "inactiveDescription": "Termina ka iha lisensa",
-          "departmentsTitle": "Departamentu",
-          "departmentsDescription": "Unidade servisu aktivu"
-        },
-        "quickActions": {
-          "title": "Asaun Rapidu",
-          "allEmployees": "Empregadu Hotu",
-          "addEmployee": "Tau Empregadu Foun",
-          "departments": "Departamentu",
-          "orgChart": "Organograma"
-        },
-        "toast": {
-          "errorTitle": "Erru",
-          "loadFailed": "Falha karrega dadus empregadu"
-        }
-      },
+      "staff": {},
       "timeLeave": {
-        "title": "Tempu no Lisensa",
-        "subtitle": "Prezensa, kontrola tempu, no jere lisensa",
-        "actions": {
-          "trackTime": "Regista Tempu",
-          "newRequest": "Pedido Foun"
-        },
-        "stats": {
-          "totalEmployees": "Total Empregadu",
-          "inDatabase": "Iha baze dadus",
-          "activeEmployees": "Empregadu aktivu",
-          "availableTracking": "Disponivel ba kontrolu",
-          "timeEntries": "Registu tempu",
-          "noData": "Sedauk iha dadus",
-          "leaveRequests": "Pedido lisensa",
-          "noRequests": "Sedauk iha pedido"
-        },
-        "status": {
-          "title": "Estatu",
-          "description": "Dadus empregadu real-time",
-          "live": "Ao vivo",
-          "databaseConnected": "Baze dadus konekta",
-          "firebaseConnected": "Konekta ba Firebase",
-          "employeesAvailable": "Empregadu disponivel",
-          "activeEmployees": "{{count}} empregadu aktivu",
-          "noEmployees": "Laiha dadus empregadu",
-          "noEmployeesDesc": "Tau empregadu atu ativa kontrolu",
-          "empty": "Mamuk"
-        },
-        "setup": {
-          "addEmployees": {
-            "title": "Tau Empregadu",
-            "description": "Importa ka tau empregadu ba baze dadus"
-          },
-          "configureTime": {
-            "title": "Konfigura Kontrola Tempu",
-            "description": "Hadia politika no regra kontrola tempu"
-          },
-          "setupLeave": {
-            "title": "Konfigura Politika Lisensa",
-            "description": "Define tipu lisensa no fluxo aprovasaun"
-          }
-        },
-        "gettingStarted": {
-          "title": "Hahu",
-          "description": "Hadia kontrolu tempu no lisensa",
-          "done": "Ona",
-          "pending": "Pendente"
-        },
-        "quickActions": {
-          "title": "Asaun Rapidu",
-          "timeTracking": "Kontrola Tempu",
-          "attendance": "Prezensa",
-          "leaveRequests": "Pedidos Lisensa",
-          "scheduling": "Eskala"
-        },
-        "toast": {
-          "errorTitle": "Erru",
-          "loadFailed": "Falha karrega dadus empregadu"
-        }
+        "setup": {}
       },
       "hiring": {
-        "title": "Painel Rekrutamentu",
-        "subtitle": "Resumo rekrutamentu no kontratasaun",
-        "actions": {
-          "viewApplications": "Haree Aplikasaun",
-          "postJob": "Publika Vaga Foun",
-          "viewAll": "Haree hotu"
-        },
-        "stats": {
-          "openPositions": "Vaga abertu",
-          "openPositionsSub": "+3 iha fulan ida ne'e",
-          "totalApplications": "Total aplikasaun",
-          "totalApplicationsSub": "+18 iha semana ida ne'e",
-          "interviewsScheduled": "Entrevista agendadu",
-          "interviewsScheduledSub": "Loron 7 oin",
-          "pendingOffers": "Oferta pendente",
-          "pendingOffersSub": "Hein resposta"
-        },
-        "recent": {
-          "title": "Atividade foun",
-          "description": "Atualizasaun foun iha rekrutamentu"
-        },
-        "activity": {
-          "hired": {
-            "title": "Sarah Johnson simu servisu",
-            "subtitle": "Pozisaun Engenheria Software Senior preenchidu"
-          },
-          "interviews": {
-            "title": "3 entrevista agendadu",
-            "subtitle": "Kandidatu Gerente Produtu"
-          },
-          "newJob": {
-            "title": "Vaga foun publikadu",
-            "subtitle": "Especialista Marketing - Remotu"
-          },
-          "surge": {
-            "title": "Aplikasaun barak",
-            "subtitle": "UX Designer - 45 aplikasaun foun"
-          },
-          "status": {
-            "completed": "Kompletu",
-            "scheduled": "Agendadu",
-            "active": "Ativu",
-            "trending": "Tendensia"
-          }
-        },
-        "pipeline": {
-          "title": "Pipeline Rekrutamentu",
-          "description": "Kandidatu tuir etapa",
-          "total": "{{count}} total",
-          "applications": "Aplikasaun simu",
-          "phone": "Triagem telefone",
-          "technical": "Entrevista teknika",
-          "final": "Entrevista final"
-        },
-        "quickActions": {
-          "title": "Asaun Rapidu",
-          "createJob": "Kria vaga",
-          "candidates": "Kandidatu",
-          "interviews": "Entrevista",
-          "onboarding": "Integrasaun",
-          "offboarding": "Saida"
-        }
+        "activity": {}
       }
     },
     "money": {
@@ -15827,7 +14262,6 @@ export const translations = {
       "toastRejectedDesc": "Saláriu rejeita no haruka fali ba revizaun.",
       "toastRejectionFailed": "Rejeisaun Falha",
       "toastRejectionFailedDesc": "La konsege rejeita saláriu.",
-      "toastLoadError": "La konsege karrega istória saláriu. Favór atualiza pájina.",
       "toastDetailsError": "La konsege karrega detalle saláriu.",
       "toastRecordsError": "La konsege karrega rejistru saláriu.",
       "toastExportStarted": "Exporta Hahú",
@@ -16181,15 +14615,9 @@ export const translations = {
         },
         "cards": {
           "staff": "Staf",
-          "active": "{{count}} ativu",
           "hiring": "Rekrutamentu",
-          "interviewScheduled": "entrevista {{count}} planeadu",
-          "interviewsScheduled": "entrevista {{count}} planeadu",
           "timeLeave": "Tempu & Lisensa",
-          "onLeaveToday": "{{count}} iha lisensa ohin",
           "performance": "Dezempénhu",
-          "activeGoal": "objetivu ativu {{count}}",
-          "activeGoals": "objetivu ativu {{count}}",
           "staffPurpose": "Jere ita-nia ekipa no sira-nia dadus",
           "staffAction": "Haree pessoál",
           "hiringPurpose": "Publika vaga no akompaña kandidatu",
@@ -16203,11 +14631,8 @@ export const translations = {
       "scheduling": {
         "title": "Tempu & Lisensa",
         "seoDescription": "Kobertura, prezensa, aprovasaun lisensa no planeamentu turnu iha fatin ida.",
-        "subtitle": "Staf {{available}} husi {{total}} disponível ohin (kobertura {{rate}}%).",
         "subtitleRecorded": "Ohín rejista ona prezensa ba staf {{recorded}} husi {{total}}.",
         "subtitleEmpty": "Aprova lisensa, kontrola prezensa no planeia turnu.",
-        "attendanceAction": "Prezensa",
-        "shiftsAction": "Oráriu turnu",
         "allGood": "Agora laiha buat ne'ebé presiza atensaun.",
         "attention": {
           "leaveRequest": "pedidu lisensa ida hein aprovasaun",
@@ -16222,16 +14647,8 @@ export const translations = {
         },
         "cards": {
           "attendance": "Prezensa",
-          "availableToday": "{{rate}}% disponível ohin",
-          "recordedToday": "prezensa rejistadu ohin",
           "leave": "Lisensa",
-          "onLeaveToday": "{{count}} iha lisensa ohin",
-          "onLeaveTodayLabel": "iha lisensa ohin",
-          "attendanceMeta": "Rejistu tama no oras servisu",
-          "hoursRecordedToday": "oras rejistadu ohin",
           "shifts": "Turnu",
-          "shiftsMeta": "Planeia lista turnu semanal",
-          "shiftsThisWeek": "turnu iha semana ida-ne'e",
           "attendancePurpose": "Rejista oras no marka prezensa",
           "attendanceAction": "Haree prezensa",
           "leavePurpose": "Aprova pedidu no kontrola saldu",
@@ -16298,22 +14715,14 @@ export const translations = {
         },
         "cards": {
           "invoices": "Fatura",
-          "outstanding": "{{amount}} seidauk simu",
           "bills": "Konta",
-          "overdue": "{{count}} atrasu",
-          "dueThisWeek": "{{amount}} tenke selu semana ida-ne'e",
           "expenses": "Despeza",
-          "expensesMeta": "Kontrola gastu",
-          "financialReports": "Relatóriu Finanseiru",
-          "financialReportsMeta": "Lukru/lakon · fluxu osan · VAT",
           "invoicesPurpose": "Kria, haruka no akompaña fatura",
           "invoicesAction": "Haree fatura",
           "billsPurpose": "Rejista konta fornesedór no selu",
           "billsAction": "Haree konta",
           "expensesPurpose": "Rejista no kategoriza gastu negósiu",
-          "expensesAction": "Haree despeza",
-          "financialReportsPurpose": "Lukru/lakon, fluxu osan no VAT",
-          "financialReportsAction": "Haree relatóriu"
+          "expensesAction": "Haree despeza"
         }
       },
       "accounting": {
@@ -16335,16 +14744,9 @@ export const translations = {
         },
         "cards": {
           "chartOfAccounts": "Planu Konta",
-          "ledgerStructure": "Estrutura livru kontabilidade",
           "journalEntries": "Lansu Jornál",
-          "pending": "{{count}} hein",
           "trialBalance": "Balansu Tentativa",
-          "balanced": "Balansu",
-          "outOfBalance": "La balansu",
           "balanceSheet": "Balansu",
-          "live": "Ativu",
-          "pendingPayroll": "Hein saláriu",
-          "financialPosition": "Pozisaun finanseira",
           "chartOfAccountsPurpose": "Ita-nia konta razaun no estrutura",
           "chartOfAccountsAction": "Haree plano konta",
           "journalEntriesPurpose": "Lansa no haree entrada diáriu",
@@ -16360,37 +14762,8 @@ export const translations = {
         "seoDescription": "Relatóriu saláriu, ema, prezensa, departamentu, ONG no relatóriu personalizadu iha fatin ida.",
         "summarySingle": "Família relatóriu ekipa {{count}}.",
         "summaryPlural": "Família relatóriu ekipa {{count}}.",
-        "summaryReadOnlySingle": "Família relatóriu {{count}} disponivel.",
-        "summaryReadOnlyPlural": "Família relatóriu {{count}} disponivel.",
-        "reportSetup": "Konfigura relatóriu",
-        "customReports": "Relatóriu personalizadu",
-        "filingRunway": "Prazu deklarasaun",
-        "allGood": "Laiha deklarasaun impostu atu entrega — prazu hotu klaru.",
         "browseReports": "Buka relatóriu",
         "browseAction": "Haree relatóriu",
-        "compliance": {
-          "filingOverdue": "deklarasaun {{count}} atrasu",
-          "filingsOverdue": "deklarasaun {{count}} atrasu",
-          "filingDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
-          "filingsDueThisWeek": "deklarasaun {{count}} tenke entrega semana ida-ne'e",
-          "noneDue": "laiha deklarasaun atu entrega"
-        },
-        "filings": {
-          "monthlyWit": "WIT {{period}}",
-          "monthlyWitReturn": "Deklarasaun WIT {{period}}",
-          "monthlyWitPayment": "Pagamentu WIT {{period}}",
-          "annualWit": "WIT anuál {{period}}",
-          "annualIncomeTax": "Impostu rendimentu anual {{period}}",
-          "servicesTax": "Impostu servisu {{period}}",
-          "installmentTax": "Prestasaun impostu rendimentu {{period}}",
-          "inssPayment": "Pagamentu INSS {{period}}",
-          "inssStatement": "Deklarasaun INSS {{period}}",
-          "overdue": "atrasu loron {{days}}",
-          "dueToday": "tenke entrega ohin",
-          "dueTomorrow": "tenke entrega aban",
-          "daysLeft": "falta loron {{days}}",
-          "line": "{{label}} — {{descriptor}} (prazu {{date}})"
-        },
         "families": {
           "payroll-reports": "Payslip, vista impostu, detallu tinan no rezumu saláriu.",
           "employee-reports": "Númeru staf, movimentu, estrutura ekipa no relatóriu funsionáriu.",
@@ -16644,7 +15017,6 @@ export const translations = {
         "failed": "La konsege haruka pedidu. Favor koko fali."
       },
       "connection": {
-        "title": "Ligasaun kontabilista",
         "description": "Husu ajuda profisionál ka jere asesu ne'ebé fó ona.",
         "none": "Seidauk hili parseiru kontabilidade.",
         "view": "Haree perfil parseiru",
@@ -16678,7 +15050,6 @@ export const translations = {
         "bannerAction": "Hatene liután"
       },
       "landing": {
-        "nav": "Ajuda kontabilista",
         "eyebrow": "Apoiu kontabilista opsionál",
         "title": "Halo rasik — ka husu kontabilista atu reviza",
         "description": "Xefe nafatin simples ba servisu loroloron. Bainhira presiza ajuda profisionál, hili firma parseira no kontrola bainhira asesu hahú.",
@@ -16695,7 +15066,6 @@ export const translations = {
       "impersonationNote": "Ita haree área parseiru hanesan ekipa firma parseira sei uza.",
       "cards": {
         "requests": "Pedidu foun",
-        "awaitingAccess": "Hein asesu kliente",
         "connected": "Kliente liga ona"
       },
       "needsAttention": "Presiza atensaun",
@@ -16821,7 +15191,6 @@ export const translations = {
       "expandSidebar": "Expandir barra lateral",
       "collapseSidebar": "Recolher barra lateral",
       "of": "de",
-      "basicMode": "Modo Básico",
       "adminConsole": "Consola Admin",
       "sitemap": "Mapa do Site",
       "guidance": "Orientação",
@@ -17419,13 +15788,10 @@ export const translations = {
     "landing": {
       "nav": {
         "features": "Funcionalidades",
-        "laborLaw": "Lei do Trabalho",
-        "apps": "Apps",
         "pricing": "Preços",
         "getStarted": "Começar",
         "forAccountants": "Para contabilistas",
         "menu": "Menu",
-        "overview": "Visão geral",
         "home": "Início",
         "engine": "O motor"
       },
@@ -17560,182 +15926,21 @@ export const translations = {
         }
       },
       "hero": {
-        "badge": "Feito para",
-        "badgeHighlight": "Timor-Leste",
-        "headline": "O Sistema Operativo",
-        "headlineAccent": "Para Empresas de TL",
-        "subheadline": {
-          "before": "RH, folha de pagamento, contabilidade e faturação — criado especificamente para Timor-Leste em torno da",
-          "highlight1": "Lei do Trabalho",
-          "middle": ", IRT/INSS, e",
-          "highlight2": "contabilidade de dupla entrada real",
-          "after": "."
-        },
-        "points": {
-          "labor": "Regras centrais da Lei do Trabalho integradas",
-          "tax": "IRT e INSS integrados",
-          "languages": "Tétum, Inglês, Português",
-          "accounting": "Contabilidade de dupla entrada"
-        },
-        "ctaPrimary": "Começar Agora",
         "trust": {
-          "trial": "Plano grátis — sem cartão",
-          "usd": "Suporte a moeda USD",
-          "transfers": "Transferências bancárias locais"
+          "trial": "Plano grátis — sem cartão"
         }
       },
       "mock": {
-        "stats": {
-          "totalEmployees": "Total de Funcionários",
-          "totalEmployeesChange": "+12 este mês",
-          "monthlyPayroll": "Folha Mensal",
-          "monthlyPayrollChange": "Vence em 5 dias",
-          "inssContribution": "Contribuição INSS",
-          "inssContributionChange": "4% + 6%",
-          "thirteenth": "Subsídio Anual",
-          "thirteenthChange": "Vence a 20 Dez"
-        },
-        "payrollByDept": "Folha por Departamento",
-        "currency": "USD",
-        "departments": {
-          "security": "Segurança",
-          "admin": "Administração",
-          "finance": "Finanças",
-          "operations": "Operações",
-          "hr": "RH",
-          "it": "TI"
-        },
-        "upcomingHolidays": "Feriados Próximos",
-        "holidays": {
-          "nov12": {
-            "date": "12 Nov",
-            "name": "Dia da Juventude"
-          },
-          "nov28": {
-            "date": "28 Nov",
-            "name": "Proclamação"
-          },
-          "dec7": {
-            "date": "7 Dez",
-            "name": "Dia dos Heróis"
-          },
-          "dec25": {
-            "date": "25 Dez",
-            "name": "Natal"
-          }
-        }
+        "holidays": {}
       },
-      "features": {
-        "badge": "Feito para Timor-Leste",
-        "title": "Tudo o que precisa",
-        "titleAccent": "Feito para Timor-Leste",
-        "description": "Construído de raiz para empresas de Timor-Leste. Não adaptado - desenhado especificamente para a Lei do Trabalho, IRT, INSS e banca local."
-      },
-      "tlFeatures": {
-        "laborLaw": {
-          "title": "Lei do Trabalho de Timor",
-          "subtitle": "Código do Trabalho de Timor-Leste",
-          "description": "Aplica regras centrais revistas do Código do Trabalho de Timor-Leste, incluindo semanas de 44 horas, horas extra a 150%/200% e descanso. Casos excecionais continuam sujeitos a revisão jurídica."
-        },
-        "witInss": {
-          "title": "IRT e INSS",
-          "subtitle": "Impostos e Segurança Social",
-          "description": "Cálculos automáticos de IRT com limiar de $500 para residentes. INSS a 4% funcionário + 6% empregador."
-        },
-        "thirteenth": {
-          "title": "Subsídio Anual",
-          "subtitle": "13.º Mês de Salário",
-          "description": "Cálculos automatizados do 13.º mês. Pro-rata para novos funcionários, com acompanhamento do prazo de 20 de Dezembro."
-        },
-        "sefope": {
-          "title": "Pronto para SEFOPE",
-          "subtitle": "Relatórios do Ministério do Trabalho",
-          "description": "Geração de PDF SEFOPE com um clique para registo de trabalhadores estrangeiros. Acompanhe vistos Tipo C, prazos de renovação e submissões ao ministério do trabalho — o maior problema de conformidade, resolvido."
-        }
-      },
-      "banks": {
-        "title": "Ficheiros Bancários de Folha com Um Clique",
-        "subtitle": "Gere o formato exato que cada banco requer — sem introdução manual de dados",
-        "bnu": "Ficheiro CSV de folha",
-        "bnctl": "Ficheiro CSV de folha",
-        "mandiri": "Ficheiro TXT de largura fixa",
-        "anz": "Ficheiro CSV de folha",
-        "tagline": "Carregue no portal do banco e pague toda a equipa em minutos, não horas"
-      },
-      "performance": {
-        "badge": "Feito para Internet de TL",
-        "title": "Rápido Mesmo em Conexões Lentas",
-        "description": "O Xefe faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
-        "features": {
-          "cache": "Cache local inteligente — funciona instantaneamente em visitas repetidas",
-          "lazy": "Funcionalidades pesadas carregam apenas quando necessário",
-          "small": "Aplicação leve, desenhada para ambientes de baixa largura de banda"
-        }
-      },
+      "tlFeatures": {},
+      "performance": {},
       "laborLaw": {
-        "badge": "Lei do Trabalho Timor-Leste",
-        "title": "Regras Laborais Centrais",
-        "titleAccent": "Integradas",
-        "description": "As regras centrais revistas estão integradas na folha. Casos excecionais, incluindo indemnizações, exigem uma revisão profissional explicitamente reconhecida.",
-        "features": {
-          "workWeek": {
-            "title": "Semana de 44 Horas",
-            "description": "44 horas/semana padrão com 8 horas/dia conforme a lei laboral de Timor"
-          },
-          "overtime": {
-            "title": "Taxas de Horas Extra",
-            "description": "150% para horas extra normais, 200% para domingos e feriados"
-          },
-          "sick": {
-            "title": "Licença por Doença",
-            "description": "12 dias/ano - primeiros 6 a 100%, restantes 6 a 50% do salário"
-          },
-          "maternity": {
-            "title": "Licença de Maternidade",
-            "description": "12 semanas de licença paga (84 dias)"
-          },
-          "annual": {
-            "title": "Férias Anuais",
-            "description": "Mínimo legal de 12 dias, sem escalões inventados por antiguidade"
-          },
-          "severance": {
-            "title": "Indemnização",
-            "description": "Calculada apenas após confirmação de revisão jurídica ou contabilística do caso"
-          }
-        }
-      },
-      "holidays": {
-        "title": "Feriados Nacionais (13 feriados públicos)",
-        "more": "+ 6 mais...",
-        "newYear": "Loron Tinan Foun (Ano Novo)",
-        "laborDay": "Loron Trabalhador (Dia do Trabalhador)",
-        "restoration": "Loron Restaurasaun Independensia",
-        "popularConsultation": "Loron Konsulta Popular",
-        "proclamation": "Loron Proklamasaun Independensia",
-        "heroesDay": "Loron Heroi Nasional",
-        "christmas": "Loron Natal (Natal)"
+        "features": {}
       },
       "tax": {
-        "badge": "Cálculos Automáticos",
-        "titleAccent": "Feito Corretamente",
-        "wit": {
-          "title": "Imposto sobre Rendimento do Trabalho (IRT)",
-          "points": {
-            "threshold": "Limiar de $500/mês para residentes",
-            "rate": "Taxa fixa de 10% sobre rendimento tributável",
-            "nonResident": "Regras para não-residentes tratadas separadamente",
-            "perDiem": "Per diem e viagens excluídos"
-          }
-        },
-        "inss": {
-          "title": "Segurança Social (INSS)",
-          "points": {
-            "employee": "Contribuição do funcionário 4%",
-            "employer": "Contribuição do empregador 6%",
-            "smallBusiness": "Reduções para pequenas empresas disponíveis",
-            "foodAllowance": "Subsídio de alimentação excluído da base"
-          }
-        },
+        "wit": {},
+        "inss": {},
         "example": {
           "title": "Exemplo de Cálculo de Recibo",
           "basicSalary": "Salário Base",
@@ -17748,20 +15953,7 @@ export const translations = {
           "badge": "Calculado automaticamente"
         }
       },
-      "payslip": {
-        "eyebrow": "Recibos de Vencimento",
-        "title": "Um recibo que a sua equipa",
-        "titleAccent": "consegue mesmo ler",
-        "subtitle": "Cada processamento gera um recibo pronto para revisão — IRT, INSS e subsídio anual discriminados linha a linha, em Tétum, Inglês ou Português. Os trabalhadores recebem o seu no telemóvel através do Ekipa."
-      },
-      "cta": {
-        "title": "Pronto para Começar?",
-        "titleAccent": "Comece Hoje",
-        "description": "Junte-se às empresas de Timor-Leste que usam o Xefe para fluxos de RH e folha claros e fáceis de rever.",
-        "primary": "Começar Grátis"
-      },
       "footer": {
-        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "howItWorks": "Como o Xefe funciona",
@@ -17773,283 +15965,23 @@ export const translations = {
         },
         "copyright": "© 2026 OniT Enterprises. Díli, Timor-Leste."
       },
-      "segments": {
-        "subtitle": "Confiado por organizações em todo o Timor-Leste",
-        "title": "Feito para empresas que precisam de conformidade",
-        "security": {
-          "label": "Empresas de Segurança",
-          "desc": "Grandes escalas, escalonamento de turnos"
-        },
-        "restaurants": {
-          "label": "Restaurantes e Cafés",
-          "desc": "Gorjetas, horas extra, alta rotatividade"
-        },
-        "ngos": {
-          "label": "ONGs e INGOs",
-          "desc": "Conformidade com doadores e trilhas de auditoria"
-        },
-        "hotels": {
-          "label": "Hotéis e Turismo",
-          "desc": "Gestão de pessoal sazonal"
-        },
-        "consulting": {
-          "label": "Consultoria e TI",
-          "desc": "Faturação por projeto, multi-moeda"
-        },
-        "construction": {
-          "label": "Construção",
-          "desc": "Trabalho diário, rastreio de segurança"
-        }
-      },
-      "painPoints": {
-        "paper": {
-          "title": "Ainda usa papel?",
-          "desc": "Cálculos manuais levam a erros de IRT que lhe custam dinheiro. Uma dedução errada = risco de auditoria."
-        },
-        "excel": {
-          "title": "O Excel está a falhar?",
-          "desc": "Fórmulas falham. Ficheiros corrompem. Sem trilha de auditoria para doadores. Sem cálculos automáticos do 13.º mês."
-        },
-        "foreign": {
-          "title": "Software estrangeiro que não se adapta?",
-          "desc": "Lançamentos manuais de IRT todos os meses. Sem relatórios SEFOPE. Sem Tétum. Feito para mercados que não são os seus."
-        },
-        "solution": {
-          "title": "O Xefe resolve isto",
-          "desc": "IRT/INSS automático. Transferências bancárias para BNU/BNCTL. Relatórios para SEFOPE. Interface em Tétum."
-        }
-      },
-      "modules": {
-        "badge": "Plataforma Completa",
-        "title": "9 Módulos Integrados",
-        "titleAccent": "Um Sistema Completo",
-        "description": "Da contratação à reforma, da folha de pagamento à contabilidade - tudo o que a sua equipa de RH precisa num só lugar.",
-        "people": {
-          "name": "Gestão de Pessoas",
-          "desc": "Perfis de funcionários, departamentos, organogramas, acompanhamento de documentos"
-        },
-        "hiring": {
-          "name": "Contratação e Recrutamento",
-          "desc": "Publicação de vagas, acompanhamento de candidatos, integração, desvinculação"
-        },
-        "time": {
-          "name": "Tempo e Assiduidade",
-          "desc": "Registo de ponto, folhas de presença, pedidos de licença, escalonamento de turnos"
-        },
-        "performance": {
-          "name": "Desempenho",
-          "desc": "Objetivos, avaliações, formação, certificações, disciplinar"
-        },
-        "payroll": {
-          "name": "Folha de Pagamento",
-          "desc": "INSS, impostos, horas extra, transferências bancárias, recibos"
-        },
-        "money": {
-          "name": "Dinheiro (Faturação)",
-          "desc": "Clientes, faturas, contas, despesas, pagamentos"
-        },
-        "accounting": {
-          "name": "Contabilidade",
-          "desc": "Livro de dupla entrada, balancete, exportação QuickBooks"
-        },
-        "reports": {
-          "name": "Relatórios e Análises",
-          "desc": "Relatórios de folha, análises de RH, construtor de relatórios personalizado"
-        },
-        "compliance": {
-          "name": "Conformidade",
-          "desc": "Trabalhadores estrangeiros, autorizações de trabalho, alertas de documentos"
-        },
-        "viewAll": "Ver Todas as 65+ Funcionalidades"
-      },
-      "apps": {
-        "badge": "Apps Móveis",
-        "title": "Xefe no seu bolso",
-        "description": "Ekipa para a sua equipa, Kaixa para o caixa do dia-a-dia — funcionam offline, em Tétum, feitos para o terreno."
-      },
+      "segments": {},
+      "painPoints": {},
+      "modules": {},
       "kaixa": {
-        "badge": "Aplicação Móvel",
-        "title": "Kaixa",
-        "titleAccent": "A Sua Caixa Digital",
-        "description": "Rastreio de dinheiro e POS simples para todos em Timor-Leste. De vendedores de quiosque a pequenas lojas — acompanhe cada dólar, venda produtos e imprima recibos. Funciona offline, fala Tétum.",
-        "tagline": "\"Kaixa\" — Tétum para caixa",
-        "features": {
-          "tamasai": {
-            "title": "Tama / Sai",
-            "desc": "Dois botões grandes — dinheiro entra, dinheiro sai. Acompanhe cada dólar que passa pelo seu negócio."
-          },
-          "pos": {
-            "title": "POS Simples",
-            "desc": "Catálogo de produtos, toque para vender e contagens de inventário. Saiba o que tem e o que vendeu."
-          },
-          "offline": {
-            "title": "Funciona Offline",
-            "desc": "Funcionalidade completa sem internet. Tudo sincroniza automaticamente quando se reconectar."
-          },
-          "tetum": {
-            "title": "Tétum Primeiro",
-            "desc": "Interface na sua língua. Alvos de toque grandes desenhados para velocidade, não complexidade."
-          },
-          "bluetooth": {
-            "title": "Recibos Bluetooth",
-            "desc": "Impressora térmica de $30 transforma o seu telefone numa caixa registadora. Recibos profissionais instantaneamente."
-          },
-          "vat": {
-            "title": "Pronto para IVA",
-            "desc": "Construído para o IVA de Timor-Leste de 2027. Quando se tornar lei, basta ligar um interruptor — sem necessidade de atualização."
-          }
-        },
-        "cta": "Em Breve no Google Play",
-        "ctaNote": "Android primeiro · Plano gratuito disponível",
-        "free": {
-          "badge": "Grátis",
-          "title": "Rastreio de Dinheiro",
-          "desc": "Não é contabilidade. **Rastreio de dinheiro.** Substitua o caderno.",
-          "descHighlight": "Rastreio de dinheiro.",
-          "features": {
-            "moneyInOut": "Dinheiro Entra / Dinheiro Sai — dois botões, é isso",
-            "summaries": "Resumos diários, semanais e mensais com gráficos",
-            "photoReceipts": "Recibos fotográficos — tire foto da página do caderno",
-            "categories": "Etiquetagem por categoria (stock, vendas, pessoal)",
-            "offline": "Funciona totalmente offline, sincroniza por wifi",
-            "tetum": "Interface em Tétum com alvos de toque grandes"
-          }
-        },
-        "upgrade": {
-          "badge": "Upgrade",
-          "title": "POS Simples",
-          "desc": "Tudo no Grátis, mais um **ponto de venda completo** a partir do seu telefone.",
-          "descHighlight": "ponto de venda completo",
-          "features": {
-            "catalog": "Catálogo de produtos — nome, preço, foto opcional",
-            "tapToSell": "Toque para vender — botões de produto grandes, quantidade, total",
-            "inventory": "Inventário — comprou 50, vendeu 30, tem 20 restantes",
-            "customerTabs": "Contas de clientes — \"O João deve-me $15\"",
-            "printer": "Impressora térmica Bluetooth ($30) para recibos",
-            "whatsapp": "Partilha de recibos por WhatsApp — toda a gente usa",
-            "monthlyReport": "Relatório resumo mensal — PDF imprimível para impostos"
-          }
-        },
-        "personas": {
-          "maria": {
-            "name": "Maria",
-            "role": "Dona de Quiosque",
-            "desc": "Vende crédito de telefone, snacks, cigarros. Usa um caderno hoje. Precisa de: \"Quanto é que ganhei hoje?\""
-          },
-          "ana": {
-            "name": "Ana",
-            "role": "Dona de Café",
-            "desc": "Gere um café com 5 funcionários. Usa o Xefe para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Ekipa."
-          },
-          "tomas": {
-            "name": "Tomás",
-            "role": "Dono de Loja",
-            "desc": "Loja de retalho em crescimento. Contas de clientes, rastreio de inventário. Pronto para o IVA quando chegar."
-          }
-        }
+        "features": {},
+        "free": {},
+        "upgrade": {},
+        "personas": {}
       },
       "ekipa": {
-        "badge": "Aplicação para Funcionários",
-        "title": "Ekipa",
-        "titleAccent": "O Companheiro Móvel da Sua Equipa",
-        "description": "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Xefe.",
-        "tagline": "\"Ekipa\" — Tétum para equipa",
-        "features": {
-          "payslips": {
-            "title": "Recibos no Telefone",
-            "desc": "Funcionários veem o detalhe do recibo, descarregam PDF e partilham via WhatsApp. Sem mais impressões."
-          },
-          "leave": {
-            "title": "Pedidos de Licença",
-            "desc": "Peça férias, licença por doença ou maternidade. Veja saldos e acompanhe o estado de aprovação em tempo real."
-          },
-          "crewClock": {
-            "title": "Registo de Ponto da Equipa",
-            "desc": "Modo supervisor com GPS + prova por câmara. Sistema anti-funcionário fantasma para equipas de construção e segurança."
-          },
-          "offline": {
-            "title": "Funciona Offline",
-            "desc": "Base de dados local SQLite sincroniza dados da equipa quando reconectada. Perfeito para locais remotos."
-          },
-          "bilingual": {
-            "title": "Tétum e Inglês",
-            "desc": "Interface completa em ambas as línguas. Funcionários mudam instantaneamente — sem reinício necessário."
-          },
-          "selfService": {
-            "title": "Perfil Self-Service",
-            "desc": "Veja dados pessoais, informação de emprego, documentos e histórico de assiduidade. Menos perguntas para o RH."
-          }
-        },
-        "cta": "Incluído com o Xefe",
-        "ctaNote": "Android · Grátis para todos os funcionários Xefe",
-        "shipped": {
-          "badge": "Disponível Agora",
-          "title": "O que Está Disponível",
-          "features": {
-            "login": "Autenticação por email/palavra-passe",
-            "dashboard": "Página inicial com contagem regressiva para pagamento e saldo de licenças",
-            "payslips": "Histórico de recibos de 12 meses com exportação PDF",
-            "leave": "Saldos de licença, histórico e formulário de pedido",
-            "crewClock": "Registo de ponto com GPS e câmara",
-            "profile": "Perfil completo do funcionário e resumo de assiduidade"
-          }
-        },
-        "coming": {
-          "badge": "Em Breve",
-          "title": "No Roteiro",
-          "features": {
-            "push": "Notificações push para recibos e aprovações",
-            "attendance": "Histórico pessoal de assiduidade e verificação de horas",
-            "documents": "Visualizador de documentos para contratos e certificados",
-            "shifts": "Visualizador de escala de turnos"
-          }
-        }
+        "features": {},
+        "shipped": {},
+        "coming": {}
       },
-      "mobilePay": {
-        "title": "Pronto para Dinheiro Móvel",
-        "subtitle": "Pague funcionários sem conta bancária",
-        "comingSoon": "Em Breve",
-        "note": "Desembolso diretamente para carteiras móveis dos funcionários. Sem necessidade de conta bancária."
-      },
-      "localSupport": {
-        "badge": "Baseado em Díli",
-        "title": "Suporte local,",
-        "titleAccent": "em Tétum e Inglês",
-        "description": "Não somos uma empresa estrangeira com suporte offshore. O Xefe é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
-        "items": {
-          "whatsapp": "Suporte por WhatsApp em Tétum e Inglês",
-          "training": "Formação presencial disponível em Díli",
-          "sefope": "Ajuda com submissões SEFOPE",
-          "bank": "Assistência na integração bancária (BNU, BNCTL)"
-        },
-        "cta": {
-          "title": "Precisa de ajuda para começar?",
-          "subtitle": "Consulta de configuração gratuita"
-        }
-      },
+      "localSupport": {},
       "accounting": {
-        "badge": "Contabilidade Real",
-        "title": "Contabilidade que realmente",
-        "titleAccent": "compreende TL",
-        "description": "Mantenha o QuickBooks para inventário se quiser — o Xefe trata da conformidade de TL.",
-        "features": {
-          "doubleEntry": {
-            "title": "Dupla Entrada Verdadeira",
-            "desc": "Cada transação cria débitos e créditos equilibrados. Pronto para auditoria desde o primeiro dia."
-          },
-          "glTrial": {
-            "title": "Razão Geral e Balancete",
-            "desc": "Razão geral completo, plano de contas e balancete — os relatórios que o seu contabilista realmente precisa."
-          },
-          "autoPost": {
-            "title": "Lançamento Automático da Folha",
-            "desc": "Processe a folha e os lançamentos contabilísticos escrevem-se sozinhos. Responsabilidade de IRT, INSS a pagar, despesas salariais — tudo lançado."
-          },
-          "qbExport": {
-            "title": "Exportação QuickBooks",
-            "desc": "Exporte IIF ou CSV para empresas que mantêm QuickBooks para inventário ou relatórios de grupo."
-          }
-        }
+        "features": {}
       }
     },
     "securityPage": {
@@ -18291,9 +16223,6 @@ export const translations = {
         "titleTop": "Como o Xefe",
         "titleAccent": "funciona por dentro",
         "lede": "Documentação em linguagem simples da maquinaria por baixo do Xefe — o que acontece ao seu dinheiro, quando caem os prazos e que garantias o próprio sistema impõe.",
-        "article1Tag": "Folha de pagamento & contabilidade",
-        "article1Title": "A cadeia do dinheiro da folha",
-        "article1Desc": "De um processamento em rascunho até livros fechados: os passos de aprovação, os três lançamentos que movem o dinheiro, todos os prazos legais e as sete garantias que seguram tudo.",
         "readArticle": "Ler o artigo",
         "guides": "Guias",
         "architecture": "Por dentro",
@@ -18564,9 +16493,6 @@ export const translations = {
         "description": "Configure a empresa e explore todas as funcionalidades gratuitamente. O Xefe mantém o trabalho diário claro e a evidência profissional pronta.",
         "primary": "Começar grátis",
         "whatsapp": "Pedir uma demonstração"
-      },
-      "footer": {
-        "home": "Visão geral do produto"
       }
     },
     "settings": {
@@ -19108,15 +17034,7 @@ export const translations = {
     "orgChart": {
       "title": "Organograma",
       "subtitle": "Visualize a estrutura da sua empresa e linhas de reporte",
-      "reorganize": "Reorganizar",
-      "exitReorganize": "Sair da Reorganização",
       "manage": "Gerir",
-      "stats": {
-        "executives": "Executivos",
-        "managers": "Gestores",
-        "seniorStaff": "Pessoal Sénior",
-        "totalEmployees": "Total de Funcionários"
-      },
       "emptyTitle": "Sem Dados da Organização",
       "emptyDesc": "Adicione funcionários para ver o organograma",
       "addFirstEmployee": "Adicionar Primeiro Funcionário",
@@ -19125,8 +17043,6 @@ export const translations = {
         "connectionOffline": "Não foi possível conectar à base de dados. A mostrar dados de demonstração.",
         "loadFailed": "Falha ao carregar dados da organização. Por favor tente novamente.",
         "unexpected": "Ocorreu um erro inesperado ao carregar os dados.",
-        "updatedTitle": "Organização Atualizada",
-        "updatedDesc": "Posição movida com sucesso",
         "refreshedTitle": "Dados Atualizados",
         "refreshedDesc": "Organograma atualizado com as últimas alterações de departamento"
       },
@@ -19249,11 +17165,6 @@ export const translations = {
         },
         "minimumWageReviewNote": "Nota de revisão *",
         "minimumWageReviewNotePlaceholder": "Quem reviu e por que se aplica este tratamento",
-        "sefopeTitle": "Registo SEFOPE (Ministério do Trabalho)",
-        "sefopeTooltip": "Obrigatório para todos os funcionários de TL",
-        "sefopeNumber": "Número SEFOPE",
-        "sefopeNumberPlaceholder": "SEFOPE-2024-XXXXX",
-        "sefopeDate": "Data de Registo",
         "workContract": "Documento de Contrato de Trabalho",
         "workContractHelp": "Carregar contrato de trabalho (PDF/DOC)"
       },
@@ -19296,9 +17207,7 @@ export const translations = {
           "premium": "Premium",
           "executive": "Executivo"
         },
-        "taxInfoTitle": "Informação Fiscal",
         "taxResidentLabel": "Residente fiscal de Timor-Leste",
-        "taxResidentHint": "Residente para efeitos fiscais (Lei 8/2008: presente 183+ dias em qualquer período de 12 meses, salvo se a habitação permanente estiver no estrangeiro). Residentes pagam 10% de IRT acima de $500/mês; não residentes pagam 10% desde o primeiro dólar.",
         "incomeTaxTitle": "Imposto sobre Rendimento (IRT)",
         "incomeTaxDesc": "10% sobre rendimento acima de $500/mês",
         "socialSecurityTitle": "Segurança Social (INSS)",
@@ -21680,180 +19589,12 @@ export const translations = {
       }
     },
     "dashboards": {
-      "staff": {
-        "title": "Painel de Pessoal",
-        "subtitle": "Visão geral dos funcionários e organização",
-        "actions": {
-          "viewAll": "Ver Todos",
-          "addEmployee": "Adicionar Funcionário"
-        },
-        "stats": {
-          "totalEmployees": "Total de Funcionários",
-          "inDatabase": "Na base de dados",
-          "activeEmployees": "Funcionários Ativos",
-          "activeRate": "{{rate}}% taxa de ativos",
-          "departments": "Departamentos",
-          "activeDepartments": "Departamentos ativos",
-          "inactive": "Inativos",
-          "inactiveRate": "{{rate}}% da força de trabalho"
-        },
-        "labels": {
-          "unknown": "Desconhecido"
-        },
-        "departments": {
-          "distribution": "Distribuição de funcionários ({{total}} total)",
-          "emptyEmployees": "Sem funcionários na base de dados",
-          "seedDatabase": "Preencher base de dados",
-          "emptyDepartments": "Sem dados de departamento",
-          "count": "{{count}} ({{percent}}%)"
-        },
-        "status": {
-          "title": "Visão Geral de Estado",
-          "description": "Análise do estado dos funcionários",
-          "live": "Em Direto",
-          "activeTitle": "Funcionários Ativos",
-          "activeDescription": "Atualmente empregados",
-          "inactiveTitle": "Funcionários Inativos",
-          "inactiveDescription": "Terminados ou de licença",
-          "departmentsTitle": "Departamentos",
-          "departmentsDescription": "Unidades de trabalho ativas"
-        },
-        "quickActions": {
-          "title": "Ações Rápidas",
-          "allEmployees": "Todos os Funcionários",
-          "addEmployee": "Adicionar Funcionário",
-          "departments": "Departamentos",
-          "orgChart": "Organograma"
-        },
-        "toast": {
-          "errorTitle": "Erro",
-          "loadFailed": "Falha ao carregar dados dos funcionários"
-        }
-      },
+      "staff": {},
       "timeLeave": {
-        "title": "Tempo e Licenças",
-        "subtitle": "Assiduidade, registo de tempo e gestão de licenças",
-        "actions": {
-          "trackTime": "Registar Tempo",
-          "newRequest": "Novo Pedido"
-        },
-        "stats": {
-          "totalEmployees": "Total de Funcionários",
-          "inDatabase": "Na base de dados",
-          "activeEmployees": "Funcionários Ativos",
-          "availableTracking": "Disponíveis para registo",
-          "timeEntries": "Registos de Tempo",
-          "noData": "Sem dados ainda",
-          "leaveRequests": "Pedidos de Licença",
-          "noRequests": "Sem pedidos ainda"
-        },
-        "status": {
-          "title": "Estado",
-          "description": "Dados de funcionários em tempo real",
-          "live": "Em Direto",
-          "databaseConnected": "Base de Dados Conectada",
-          "firebaseConnected": "Conectado ao Firebase",
-          "employeesAvailable": "Funcionários Disponíveis",
-          "activeEmployees": "{{count}} funcionários ativos",
-          "noEmployees": "Sem Dados de Funcionários",
-          "noEmployeesDesc": "Adicione funcionários para ativar o registo",
-          "empty": "Vazio"
-        },
-        "setup": {
-          "addEmployees": {
-            "title": "Adicionar Funcionários",
-            "description": "Importar ou adicionar funcionários à sua base de dados"
-          },
-          "configureTime": {
-            "title": "Configurar Registo de Tempo",
-            "description": "Configurar políticas e regras de registo de tempo"
-          },
-          "setupLeave": {
-            "title": "Configurar Políticas de Licença",
-            "description": "Definir tipos de licença e fluxos de aprovação"
-          }
-        },
-        "gettingStarted": {
-          "title": "Começar",
-          "description": "Configurar registo de tempo e licenças",
-          "done": "Concluído",
-          "pending": "Pendente"
-        },
-        "quickActions": {
-          "title": "Ações Rápidas",
-          "timeTracking": "Registo de Tempo",
-          "attendance": "Assiduidade",
-          "leaveRequests": "Pedidos de Licença",
-          "scheduling": "Escalonamento"
-        },
-        "toast": {
-          "errorTitle": "Erro",
-          "loadFailed": "Falha ao carregar dados dos funcionários"
-        }
+        "setup": {}
       },
       "hiring": {
-        "title": "Painel de Recrutamento",
-        "subtitle": "Visão geral das atividades de recrutamento e contratação",
-        "actions": {
-          "viewApplications": "Ver Candidaturas",
-          "postJob": "Publicar Nova Vaga",
-          "viewAll": "Ver Todos"
-        },
-        "stats": {
-          "openPositions": "Posições Abertas",
-          "openPositionsSub": "+3 este mês",
-          "totalApplications": "Total de Candidaturas",
-          "totalApplicationsSub": "+18 esta semana",
-          "interviewsScheduled": "Entrevistas Agendadas",
-          "interviewsScheduledSub": "Próximos 7 dias",
-          "pendingOffers": "Ofertas Pendentes",
-          "pendingOffersSub": "A aguardar resposta"
-        },
-        "recent": {
-          "title": "Atividade Recente",
-          "description": "Últimas atualizações no recrutamento"
-        },
-        "activity": {
-          "hired": {
-            "title": "Sarah Johnson contratada",
-            "subtitle": "Posição de Engenheiro de Software Sénior preenchida"
-          },
-          "interviews": {
-            "title": "3 entrevistas agendadas",
-            "subtitle": "Candidatos a Gestor de Produto"
-          },
-          "newJob": {
-            "title": "Nova vaga publicada",
-            "subtitle": "Especialista de Marketing - Remoto"
-          },
-          "surge": {
-            "title": "Aumento de candidaturas",
-            "subtitle": "Posição de Designer UX - 45 novas candidaturas"
-          },
-          "status": {
-            "completed": "Concluído",
-            "scheduled": "Agendado",
-            "active": "Ativo",
-            "trending": "Em Tendência"
-          }
-        },
-        "pipeline": {
-          "title": "Pipeline de Recrutamento",
-          "description": "Candidatos por fase",
-          "total": "{{count}} total",
-          "applications": "Candidaturas Recebidas",
-          "phone": "Triagem Telefónica",
-          "technical": "Entrevista Técnica",
-          "final": "Entrevista Final"
-        },
-        "quickActions": {
-          "title": "Ações Rápidas",
-          "createJob": "Criar Vaga",
-          "candidates": "Candidatos",
-          "interviews": "Entrevistas",
-          "onboarding": "Integração",
-          "offboarding": "Desvinculação"
-        }
+        "activity": {}
       }
     },
     "payroll": {
@@ -21916,105 +19657,11 @@ export const translations = {
         }
       }
     },
-    "payrollDashboard": {
-      "readyToRun": "Folha pronta para processar",
-      "allVerifiedProceed": "Todos os itens da lista verificados. Pode prosseguir com a folha.",
-      "runPayrollBtn": "Processar Folha",
-      "payrollFor": "Folha de {{month}}",
-      "payDate": "Data de pagamento:",
-      "daysRemaining": "{{days}} dias restantes",
-      "employees": "{{count}} funcionários",
-      "confirmRunPayroll": "Confirmar e Processar Folha",
-      "reviewPayroll": "Rever Folha",
-      "viewChecklist": "Ver Lista de Verificação",
-      "checklistTitle": "Lista de Verificação da Folha",
-      "allVerifiedReady": "Todos os itens verificados. A folha está pronta para processar.",
-      "checklistProgress": "{{done}} de {{total}} itens completos",
-      "pending": "pendente",
-      "grossPayroll": "Folha Bruta",
-      "employerINSS": "INSS Empregador ({{rate}}%)",
-      "employeeINSS": "INSS Funcionário ({{rate}}%)",
-      "estNetToEmployees": "Líquido Est. para Funcionários",
-      "employeesNeedAttention": "Funcionários Requerem Atenção",
-      "payrollCoverage": "Cobertura da Folha",
-      "missingContractsINSS": "Contratos ou INSS em falta",
-      "allEmployeesReady": "Todos os funcionários prontos",
-      "lastPayroll": "Última Folha",
-      "completed": "Concluída",
-      "noPayrollYet": "Nenhuma folha processada ainda",
-      "manage": "Gerir",
-      "ngoReporting": "Relatórios para ONGs e Doadores",
-      "ngoReportingHint": "Acesso rápido a ferramentas de alocação e exportação para doadores.",
-      "pastReports": "Histórico e Relatórios",
-      "complianceDeadlines": "Prazos de Conformidade",
-      "witDue": "IRT vence:",
-      "inssDue": "INSS vence:",
-      "inssStatementDue": "Declaração INSS vence:",
-      "inssPaymentDue": "Pagamento INSS vence:",
-      "minimumWage": "Salário mínimo:",
-      "minimumWageAmount": "$115 USD",
-      "lastReviewedBy": "Última revisão por {{name}}",
-      "simpleFlowTitle": "Fluxo simples da folha",
-      "simpleFlowDesc": "Siga estes passos por ordem no dia de pagamento.",
-      "simpleFlow": {
-        "peopleTitle": "Verificar registos dos funcionários",
-        "peoplePending": "{{count}} registos de funcionários ainda precisam de contrato ou dados INSS.",
-        "peopleReady": "Os registos dos funcionários parecem prontos para esta folha.",
-        "timeTitle": "Verificar tempo e licenças",
-        "timePending": "{{count}} pedidos de licença ainda precisam de revisão antes da folha.",
-        "timeReady": "Licenças e assiduidade parecem atualizadas para este período.",
-        "runTitle": "Processar folha",
-        "runPending": "Conclua os itens da lista de verificação antes de processar a folha.",
-        "payTitle": "Pagar salários",
-        "payDesc": "Abra as transferências bancárias depois de a folha ser aprovada."
-      },
-      "checklist": {
-        "attendanceLabel": "Assiduidade finalizada",
-        "attendanceIssue": "folha de presença pendente de aprovação",
-        "attendanceDesc": "Todas as folhas de presença submetidas e aprovadas",
-        "attendanceLink": "Rever folhas de presença",
-        "leaveLabel": "Pedidos de licença aprovados",
-        "leaveIssue": "pedido de licença pendente de aprovação",
-        "leaveDesc": "Sem pedidos de licença pendentes para o período",
-        "leaveLink": "Rever pedidos de licença",
-        "contractsLabel": "Contratos de funcionários completos",
-        "contractsIssue": "funcionário sem contrato",
-        "contractsDesc": "Todos os funcionários têm contratos válidos",
-        "contractsLink": "Ver funcionários",
-        "salariesLabel": "Dados salariais verificados",
-        "salariesIssue": "funcionário sem dados salariais",
-        "salariesDesc": "Dados de remuneração atualizados",
-        "salariesLink": "Rever salários"
-      },
-      "status": {
-        "gettingReady": "A Preparar",
-        "almostReady": "Quase Pronto",
-        "readyToRun": "Pronto para Processar",
-        "processing": "A Processar",
-        "completed": "Concluído"
-      },
-      "links": {
-        "allowances": "Subsídios",
-        "allowancesDesc": "Transporte, habitação, refeições e mais",
-        "deductions": "Deduções",
-        "deductionsDesc": "Empréstimos, adiantamentos e deduções",
-        "payrollHistory": "Histórico da Folha",
-        "payrollHistoryDesc": "Ver folhas anteriores",
-        "bankTransfers": "Transferências Bancárias",
-        "bankTransfersDesc": "Gerir pagamentos de salários",
-        "taxReports": "Relatórios Fiscais",
-        "taxReportsDesc": "Relatórios de IRT e INSS",
-        "payrollAllocation": "Relatório de Alocação da Folha",
-        "payrollAllocationDesc": "Divisão da folha por projeto e fonte de financiamento",
-        "donorExport": "Pacote de Exportação para Doadores",
-        "donorExportDesc": "Exportar CSVs contabilísticos de folha prontos para doadores"
-      }
-    },
+    "payrollDashboard": {},
     "setupWizard": {
       "steps": {
         "companyDetails": "Dados da Empresa",
         "bankAccounts": "Contas Bancárias",
-        "leavePolicies": "Políticas de Licença",
         "payrollConfig": "Config. da Folha",
         "complete": "Completo"
       },
@@ -22022,8 +19669,6 @@ export const translations = {
       "welcomeDesc": "Complete estes passos para começar a usar o Xefe",
       "companyIntro": "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
       "progressTitle": "Progresso da configuração",
-      "progressHint": "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
-      "savedAutomaticallyTitle": "Os passos concluídos ficam guardados automaticamente",
       "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Xefe retoma onde parou.",
       "stepOf": "Passo {{current}} de {{total}}",
       "requiredFields": "Campos Obrigatórios",
@@ -22032,7 +19677,6 @@ export const translations = {
       "error": "Erro",
       "failedSaveCompany": "Falha ao guardar dados da empresa.",
       "failedSaveBank": "Falha ao guardar conta bancária.",
-      "failedSaveLeave": "Falha ao guardar políticas de licença.",
       "failedSavePayroll": "Falha ao guardar config. da folha.",
       "setupComplete": "Configuração Completa",
       "accountReady": "A sua conta está pronta a usar!",
@@ -22045,21 +19689,8 @@ export const translations = {
       "legalName": "Nome Legal *",
       "legalNamePlaceholder": "Sua Empresa Lda.",
       "tradingName": "Nome Comercial",
-      "tradingNamePlaceholder": "Sua Empresa",
       "tinNumber": "N.º Único SERVE / NIF *",
       "tinPlaceholder": "Número Único da Empresa / NIF",
-      "teamSize": "Dimensão Aproximada da Equipa",
-      "selectTeamSize": "Selecionar dimensão da equipa",
-      "teamSizeHint": "Isto ajuda o Xefe a escolher melhores padrões para equipas pequenas ou maiores.",
-      "address": "Morada",
-      "addressPlaceholder": "Rua",
-      "city": "Cidade",
-      "cityPlaceholder": "Díli",
-      "country": "País",
-      "phone": "Telefone",
-      "phonePlaceholder": "+670 ...",
-      "email": "Email",
-      "emailPlaceholder": "info@empresa.tl",
       "bankIntro": "Escolha como paga normalmente os salários. Pode alterar isto mais tarde nas Definições.",
       "paymentMethod": "Método de pagamento salarial",
       "cash": "Dinheiro",
@@ -22072,19 +19703,9 @@ export const translations = {
       "accountNumber": "Número da Conta *",
       "accountNumberPlaceholder": "Número da conta",
       "leaveIntro": "Políticas de licença padrão baseadas na lei laboral de Timor-Leste serão aplicadas. Pode personalizar depois.",
-      "annualLeave": "Férias Anuais",
-      "annualLeaveValue": "12 dias/ano",
-      "sickLeave": "Licença por Doença",
-      "sickLeaveValue": "12 dias/ano",
-      "maternityLeave": "Licença de Maternidade",
-      "maternityLeaveValue": "12 semanas",
-      "paternityLeave": "Licença de Paternidade",
-      "paternityLeaveValue": "5 dias",
       "leaveNote": "Estes padrões cumprem o Código do Trabalho de TL. Personalize nas Definições após a configuração.",
       "payFrequency": "Frequência de Pagamento",
       "monthly": "Mensal",
-      "biWeekly": "Quinzenal",
-      "weekly": "Semanal",
       "payDay": "Dia de Pagamento (dia do mês)",
       "currency": "Moeda",
       "usdCurrency": "USD (Dólar Americano)",
@@ -22097,7 +19718,6 @@ export const translations = {
       "allSetDesc": "A sua conta foi configurada. Agora pode começar a adicionar funcionários, processar folha de pagamento e gerir a sua equipa.",
       "back": "Voltar",
       "doLater": "Ir para o painel por agora",
-      "finishLaterHint": "Pode voltar à configuração em qualquer altura a partir do painel antes de processar a sua primeira folha.",
       "saving": "A guardar...",
       "goToDashboard": "Ir para o Painel",
       "next": "Seguinte"
@@ -24185,7 +21805,6 @@ export const translations = {
       "toastRejectedDesc": "O processamento foi rejeitado e devolvido para revisão.",
       "toastRejectionFailed": "Falha na Rejeição",
       "toastRejectionFailedDesc": "Falha ao rejeitar processamento.",
-      "toastLoadError": "Falha ao carregar histórico. Por favor atualize a página.",
       "toastDetailsError": "Falha ao carregar detalhes.",
       "toastRecordsError": "Falha ao carregar registos.",
       "toastExportStarted": "Exportação Iniciada",
@@ -24539,15 +22158,9 @@ export const translations = {
         },
         "cards": {
           "staff": "Funcionários",
-          "active": "{{count}} ativos",
           "hiring": "Recrutamento",
-          "interviewScheduled": "{{count}} entrevista agendada",
-          "interviewsScheduled": "{{count}} entrevistas agendadas",
           "timeLeave": "Tempo & Licença",
-          "onLeaveToday": "{{count}} de licença hoje",
           "performance": "Desempenho",
-          "activeGoal": "{{count}} objetivo ativo",
-          "activeGoals": "{{count}} objetivos ativos",
           "staffPurpose": "Gerir a sua equipa e os seus dados",
           "staffAction": "Ver pessoal",
           "hiringPurpose": "Publicar vagas e acompanhar candidatos",
@@ -24561,11 +22174,8 @@ export const translations = {
       "scheduling": {
         "title": "Tempo & Licença",
         "seoDescription": "Cobertura, presença, aprovações de licença e planeamento de turnos num só lugar.",
-        "subtitle": "{{available}} de {{total}} funcionários disponíveis hoje ({{rate}}% de cobertura).",
         "subtitleRecorded": "A presença foi registada para {{recorded}} de {{total}} funcionários hoje.",
         "subtitleEmpty": "Aprove licenças, acompanhe a presença e planeie turnos.",
-        "attendanceAction": "Presença",
-        "shiftsAction": "Horários de turnos",
         "allGood": "Nada precisa da sua atenção agora.",
         "attention": {
           "leaveRequest": "pedido de licença à espera de aprovação",
@@ -24580,16 +22190,8 @@ export const translations = {
         },
         "cards": {
           "attendance": "Presença",
-          "availableToday": "{{rate}}% disponíveis hoje",
-          "recordedToday": "presença registada hoje",
           "leave": "Licença",
-          "onLeaveToday": "{{count}} de licença hoje",
-          "onLeaveTodayLabel": "de licença hoje",
-          "attendanceMeta": "Entradas e horas",
-          "hoursRecordedToday": "horas registadas hoje",
           "shifts": "Turnos",
-          "shiftsMeta": "Planear escalas semanais",
-          "shiftsThisWeek": "turnos esta semana",
           "attendancePurpose": "Registar horas e marcações de ponto",
           "attendanceAction": "Ver assiduidade",
           "leavePurpose": "Aprovar pedidos e acompanhar saldos",
@@ -24656,22 +22258,14 @@ export const translations = {
         },
         "cards": {
           "invoices": "Faturas",
-          "outstanding": "{{amount}} por receber",
           "bills": "Contas",
-          "overdue": "{{count}} em atraso",
-          "dueThisWeek": "{{amount}} a vencer esta semana",
           "expenses": "Despesas",
-          "expensesMeta": "Acompanhar gastos",
-          "financialReports": "Relatórios Financeiros",
-          "financialReportsMeta": "Lucros e perdas · fluxo de caixa · IVA",
           "invoicesPurpose": "Criar, enviar e acompanhar faturas",
           "invoicesAction": "Ver faturas",
           "billsPurpose": "Registar faturas de fornecedores e pagá-las",
           "billsAction": "Ver contas",
           "expensesPurpose": "Registar e categorizar despesas do negócio",
-          "expensesAction": "Ver despesas",
-          "financialReportsPurpose": "Demonstrações de resultados, fluxo de caixa e IVA",
-          "financialReportsAction": "Ver relatórios"
+          "expensesAction": "Ver despesas"
         }
       },
       "accounting": {
@@ -24693,16 +22287,9 @@ export const translations = {
         },
         "cards": {
           "chartOfAccounts": "Plano de Contas",
-          "ledgerStructure": "Estrutura do razão",
           "journalEntries": "Lançamentos",
-          "pending": "{{count}} pendentes",
           "trialBalance": "Balancete",
-          "balanced": "Equilibrado",
-          "outOfBalance": "Desequilibrado",
           "balanceSheet": "Balanço",
-          "live": "Atualizado",
-          "pendingPayroll": "Folha pendente",
-          "financialPosition": "Posição financeira",
           "chartOfAccountsPurpose": "As suas contas e a estrutura do razão",
           "chartOfAccountsAction": "Ver plano de contas",
           "journalEntriesPurpose": "Lançar e rever entradas do diário",
@@ -24718,37 +22305,8 @@ export const translations = {
         "seoDescription": "Relatórios de folha, pessoas, presença, departamentos, ONG e personalizados num só lugar.",
         "summarySingle": "{{count}} família de relatórios da equipa.",
         "summaryPlural": "{{count}} famílias de relatórios da equipa.",
-        "summaryReadOnlySingle": "{{count}} família de relatórios disponível.",
-        "summaryReadOnlyPlural": "{{count}} famílias de relatórios disponíveis.",
-        "reportSetup": "Configurar relatórios",
-        "customReports": "Relatórios personalizados",
-        "filingRunway": "Próximas declarações",
-        "allGood": "Não há declarações fiscais a entregar — os próximos prazos estão livres.",
         "browseReports": "Explorar relatórios",
         "browseAction": "Ver relatórios",
-        "compliance": {
-          "filingOverdue": "{{count}} declaração em atraso",
-          "filingsOverdue": "{{count}} declarações em atraso",
-          "filingDueThisWeek": "{{count}} declaração vence esta semana",
-          "filingsDueThisWeek": "{{count}} declarações vencem esta semana",
-          "noneDue": "sem declarações a vencer"
-        },
-        "filings": {
-          "monthlyWit": "WIT {{period}}",
-          "monthlyWitReturn": "Declaração WIT {{period}}",
-          "monthlyWitPayment": "Pagamento WIT {{period}}",
-          "annualWit": "WIT anual {{period}}",
-          "annualIncomeTax": "Imposto anual sobre o rendimento {{period}}",
-          "servicesTax": "Imposto sobre serviços {{period}}",
-          "installmentTax": "Prestação do imposto sobre o rendimento {{period}}",
-          "inssPayment": "Pagamento de INSS {{period}}",
-          "inssStatement": "Declaração de INSS {{period}}",
-          "overdue": "{{days}}d em atraso",
-          "dueToday": "vence hoje",
-          "dueTomorrow": "vence amanhã",
-          "daysLeft": "faltam {{days}}d",
-          "line": "{{label}} — {{descriptor}} (vence em {{date}})"
-        },
         "families": {
           "payroll-reports": "Recibos, impostos, detalhe anual e resumos da folha de pagamento.",
           "employee-reports": "Número, movimento e estrutura dos funcionários.",
@@ -25002,7 +22560,6 @@ export const translations = {
         "failed": "Não foi possível enviar o pedido. Tente novamente."
       },
       "connection": {
-        "title": "Ligação ao contabilista",
         "description": "Peça apoio profissional ou gira o acesso já concedido.",
         "none": "Nenhum parceiro contabilístico selecionado.",
         "view": "Ver perfil do parceiro",
@@ -25036,7 +22593,6 @@ export const translations = {
         "bannerAction": "Saber mais"
       },
       "landing": {
-        "nav": "Apoio contabilístico",
         "eyebrow": "Apoio contabilístico opcional",
         "title": "Faça por si — ou peça revisão a um contabilista",
         "description": "O Xefe mantém-se simples no trabalho diário. Quando quiser apoio profissional, escolha a firma parceira e controle exatamente quando começa o acesso.",
@@ -25053,7 +22609,6 @@ export const translations = {
       "impersonationNote": "Está a ver o mesmo espaço de parceiro que a equipa da firma parceira utilizará.",
       "cards": {
         "requests": "Novos pedidos",
-        "awaitingAccess": "A aguardar acesso do cliente",
         "connected": "Clientes ligados"
       },
       "needsAttention": "Precisa de atenção",

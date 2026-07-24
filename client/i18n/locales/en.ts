@@ -115,7 +115,6 @@ const messages = {
     expandSidebar: "Expand sidebar",
     collapseSidebar: "Collapse sidebar",
     of: "of",
-    basicMode: "Basic mode",
     adminConsole: "Admin Console",
     sitemap: "Sitemap",
     guidance: "Guidance",
@@ -751,13 +750,10 @@ const messages = {
   landing: {
     nav: {
       features: "Features",
-      laborLaw: "Labor Law",
-      apps: "Apps",
       pricing: "Pricing",
       getStarted: "Get Started",
       forAccountants: "For accountants",
       menu: "Menu",
-      overview: "Overview",
       home: "Home",
       engine: "The engine",
     },
@@ -913,196 +909,21 @@ const messages = {
       },
     },
     hero: {
-      badge: "Built for",
-      badgeHighlight: "Timor-Leste",
-      headline: "The Operating System",
-      headlineAccent: "For TL Businesses",
-      subheadline: {
-        before:
-          "HR, payroll, accounting & invoicing — built specifically for Timor-Leste around",
-        highlight1: "Lei Trabalho",
-        middle: ", WIT/INSS, and",
-        highlight2: "real double-entry accounting",
-        after: ".",
-      },
-      points: {
-        labor: "Core Lei Trabalho rules built in",
-        tax: "WIT & INSS built-in",
-        languages: "Tetun, English, Portuguese",
-        accounting: "Double-entry accounting",
-      },
-      ctaPrimary: "Start Now",
       trust: {
         trial: "Free plan — no card needed",
-        usd: "USD currency support",
-        transfers: "Local bank transfers",
       },
     },
     mock: {
-      stats: {
-        totalEmployees: "Total Employees",
-        totalEmployeesChange: "+12 this month",
-        monthlyPayroll: "Monthly Payroll",
-        monthlyPayrollChange: "Due in 5 days",
-        inssContribution: "INSS Contribution",
-        inssContributionChange: "4% + 6%",
-        thirteenth: "Subsidio Anual",
-        thirteenthChange: "Due Dec 20",
-      },
-      payrollByDept: "Payroll by Department",
-      currency: "USD",
-      departments: {
-        security: "Security",
-        admin: "Admin",
-        finance: "Finance",
-        operations: "Operations",
-        hr: "HR",
-        it: "IT",
-      },
-      upcomingHolidays: "Upcoming Holidays",
-      holidays: {
-        nov12: {
-          date: "Nov 12",
-          name: "Youth Day",
-        },
-        nov28: {
-          date: "Nov 28",
-          name: "Proclamation",
-        },
-        dec7: {
-          date: "Dec 7",
-          name: "Heroes Day",
-        },
-        dec25: {
-          date: "Dec 25",
-          name: "Christmas",
-        },
-      },
+      holidays: {},
     },
-    features: {
-      badge: "Made for Timor-Leste",
-      title: "Everything you need",
-      titleAccent: "Built for Timor-Leste",
-      description:
-        "Built from the ground up for Timor-Leste businesses. Not adapted - designed specifically for Lei Trabalho, WIT, INSS, and local banking.",
-    },
-    tlFeatures: {
-      laborLaw: {
-        title: "Lei Trabalho Timor",
-        subtitle: "Timor-Leste Labor Code",
-        description:
-          "Applies reviewed core Timor-Leste Labor Code rules, including 44-hour work weeks, overtime at 150%/200%, and rest-day rules. Exceptional cases stay subject to legal review.",
-      },
-      witInss: {
-        title: "WIT & INSS",
-        subtitle: "Tax & Social Security",
-        description:
-          "Automatic WIT tax calculations with $500 resident threshold. INSS at 4% employee + 6% employer rates.",
-      },
-      thirteenth: {
-        title: "Subsidio Anual",
-        subtitle: "13th Month Salary",
-        description:
-          "Automated 13th month salary calculations. Pro-rated for new employees, with December 20th deadline tracking.",
-      },
-      sefope: {
-        title: "SEFOPE Ready",
-        subtitle: "Labor Ministry Reports",
-        description:
-          "One-click SEFOPE PDF generation for foreign worker registrations. Track Visa Type C permits, renewal deadlines, and labor ministry submissions — the biggest compliance headache, solved.",
-      },
-    },
-    banks: {
-      title: "One-Click Bank Payroll Files",
-      subtitle:
-        "Generate the exact file format each bank requires — no manual data entry",
-      bnu: "CSV payroll file",
-      bnctl: "CSV payroll file",
-      mandiri: "Fixed-width TXT file",
-      anz: "CSV payroll file",
-      tagline:
-        "Upload to your bank portal and pay your entire staff in minutes, not hours",
-    },
-    performance: {
-      badge: "Built for TL Internet",
-      title: "Fast Even on Slow Connections",
-      description:
-        "Xefe caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
-      features: {
-        cache: "Smart local caching — works instantly on repeat visits",
-        lazy: "Heavy features load only when needed",
-        small: "Lightweight app, designed for low-bandwidth environments",
-      },
-    },
+    tlFeatures: {},
+    performance: {},
     laborLaw: {
-      badge: "Lei Trabalho Timor-Leste",
-      title: "Core Labor Rules",
-      titleAccent: "Built In",
-      description:
-        "Reviewed core rules are built into payroll. Exceptional cases, including severance, stay behind an explicit professional-review gate.",
-      features: {
-        workWeek: {
-          title: "44-Hour Work Week",
-          description:
-            "Standard 44 hours/week with 8 hours/day as per Timor labor law",
-        },
-        overtime: {
-          title: "Overtime Rates",
-          description:
-            "150% for regular overtime, 200% for Sundays and public holidays",
-        },
-        sick: {
-          title: "Sick Leave",
-          description: "12 days/year - first 6 at 100%, remaining 6 at 50% pay",
-        },
-        maternity: {
-          title: "Maternity Leave",
-          description: "12 weeks paid leave (84 days)",
-        },
-        annual: {
-          title: "Annual Leave",
-          description:
-            "12-day statutory minimum tracked without invented service tiers",
-        },
-        severance: {
-          title: "Severance Pay",
-          description:
-            "Calculated only after a case-specific legal/accountant review acknowledgement",
-        },
-      },
-    },
-    holidays: {
-      title: "National Holidays (13 public holidays)",
-      more: "+ 6 more...",
-      newYear: "Loron Tinan Foun (New Year)",
-      laborDay: "Loron Trabalhador (Labor Day)",
-      restoration: "Loron Restaurasaun Independensia",
-      popularConsultation: "Loron Konsulta Popular",
-      proclamation: "Loron Proklamasaun Independensia",
-      heroesDay: "Loron Heroi Nasional",
-      christmas: "Loron Natal (Christmas)",
+      features: {},
     },
     tax: {
-      badge: "Automatic Calculations",
-      titleAccent: "Done Right",
-      wit: {
-        title: "Withholding Income Tax (WIT)",
-        points: {
-          threshold: "$500/month threshold for residents",
-          rate: "10% flat rate on taxable income",
-          nonResident: "Non-resident rules handled separately",
-          perDiem: "Per diem and travel excluded",
-        },
-      },
-      inss: {
-        title: "Social Security (INSS)",
-        points: {
-          employee: "4% employee contribution",
-          employer: "6% employer contribution",
-          smallBusiness: "Small business reductions available",
-          foodAllowance: "Food allowance excluded from base",
-        },
-      },
+      wit: {},
+      inss: {},
       example: {
         title: "Example Payslip Calculation",
         basicSalary: "Basic Salary",
@@ -1115,22 +936,7 @@ const messages = {
         badge: "Auto-calculated",
       },
     },
-    payslip: {
-      eyebrow: "Payslips",
-      title: "A payslip your team can",
-      titleAccent: "actually read",
-      subtitle:
-        "Every payroll run produces a review-ready payslip — WIT, INSS and subsídio anual broken out line by line, in Tetun, English or Portuguese. Employees get theirs on their phone in Ekipa.",
-    },
-    cta: {
-      title: "Ready to Start?",
-      titleAccent: "Start Today",
-      description:
-        "Join Timor-Leste businesses using Xefe for clear, reviewable HR and payroll workflows.",
-      primary: "Start Free",
-    },
     footer: {
-      brand: "Xefe",
       location: "Timor-Leste",
       links: {
         howItWorks: "How Xefe works",
@@ -1142,289 +948,23 @@ const messages = {
       },
       copyright: "© 2026 OniT Enterprises. Dili, Timor-Leste.",
     },
-    segments: {
-      subtitle: "Trusted by organizations across Timor-Leste",
-      title: "Built for businesses that need compliance",
-      security: {
-        label: "Security Companies",
-        desc: "Large rosters, shift scheduling",
-      },
-      restaurants: {
-        label: "Restaurants & Cafés",
-        desc: "Tips, overtime, high turnover",
-      },
-      ngos: {
-        label: "NGOs & INGOs",
-        desc: "Donor compliance & audit trails",
-      },
-      hotels: {
-        label: "Hotels & Tourism",
-        desc: "Seasonal staff management",
-      },
-      consulting: {
-        label: "Consulting & IT",
-        desc: "Project billing, multi-currency",
-      },
-      construction: {
-        label: "Construction",
-        desc: "Day labor, safety tracking",
-      },
-    },
-    painPoints: {
-      paper: {
-        title: "Still using paper?",
-        desc: "Manual calculations lead to WIT errors that cost you money. One wrong deduction = audit risk.",
-      },
-      excel: {
-        title: "Excel breaking down?",
-        desc: "Formulas fail. Files corrupt. No audit trail for donors. No automatic 13th month calculations.",
-      },
-      foreign: {
-        title: "Foreign software that doesn't fit?",
-        desc: "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours.",
-      },
-      solution: {
-        title: "Xefe solves this",
-        desc: "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface.",
-      },
-    },
-    modules: {
-      badge: "Complete Platform",
-      title: "9 Integrated Modules",
-      titleAccent: "One Complete System",
-      description:
-        "From hiring to retirement, payroll to accounting - everything your HR team needs in one place.",
-      people: {
-        name: "People Management",
-        desc: "Employee profiles, departments, org charts, document tracking",
-      },
-      hiring: {
-        name: "Hiring & Recruitment",
-        desc: "Job postings, applicant tracking, onboarding, offboarding",
-      },
-      time: {
-        name: "Time & Attendance",
-        desc: "Clock in/out, timesheets, leave requests, shift scheduling",
-      },
-      performance: {
-        name: "Performance",
-        desc: "Goals, reviews, training, certifications, disciplinary",
-      },
-      payroll: {
-        name: "Payroll",
-        desc: "INSS, tax, overtime, bank transfers, payslips",
-      },
-      money: {
-        name: "Money (Invoicing)",
-        desc: "Customers, invoices, bills, expenses, payments",
-      },
-      accounting: {
-        name: "Accounting",
-        desc: "Double-entry ledger, trial balance, QuickBooks export",
-      },
-      reports: {
-        name: "Reports & Analytics",
-        desc: "Payroll reports, HR analytics, custom report builder",
-      },
-      compliance: {
-        name: "Compliance",
-        desc: "Foreign workers, work permits, document alerts",
-      },
-      viewAll: "View All 65+ Features",
-    },
-    apps: {
-      badge: "Mobile Apps",
-      title: "Xefe in your pocket",
-      description:
-        "Ekipa for your staff, Kaixa for daily cash — offline-first, Tetun-first, made for the field.",
-    },
+    segments: {},
+    painPoints: {},
+    modules: {},
     kaixa: {
-      badge: "Mobile App",
-      title: "Kaixa",
-      titleAccent: "Your Digital Cash Box",
-      description:
-        "Simple money tracking and POS for everyone in Timor-Leste. From kiosk vendors to small shops — track every dollar, sell products, and print receipts. Works offline, speaks Tetum.",
-      tagline: '"Kaixa" — Tetum for cash box',
-      features: {
-        tamasai: {
-          title: "Tama / Sai",
-          desc: "Two big buttons — money in, money out. Track every dollar that flows through your business.",
-        },
-        pos: {
-          title: "Simple POS",
-          desc: "Product catalog, tap-to-sell, and inventory counts. Know what you have and what you sold.",
-        },
-        offline: {
-          title: "Works Offline",
-          desc: "Full functionality without internet. Everything syncs automatically when you reconnect.",
-        },
-        tetum: {
-          title: "Tetum First",
-          desc: "Interface iha ita-nia lian. Big touch targets designed for speed, not complexity.",
-        },
-        bluetooth: {
-          title: "Bluetooth Receipts",
-          desc: "$30 thermal printer turns your phone into a register. Professional receipts instantly.",
-        },
-        vat: {
-          title: "VAT Ready",
-          desc: "Built for Timor-Leste's 2027 VAT. When it becomes law, flip a switch — no update needed.",
-        },
-      },
-      cta: "Coming Soon to Google Play",
-      ctaNote: "Android first · Free tier available",
-      free: {
-        badge: "Free",
-        title: "Money Tracking",
-        desc: "Not accounting. **Money tracking.** Replace the notebook.",
-        descHighlight: "Money tracking.",
-        features: {
-          moneyInOut: "Money In / Money Out — two buttons, that's it",
-          summaries: "Daily, weekly, monthly summaries with charts",
-          photoReceipts: "Photo receipts — snap the notebook page",
-          categories: "Category tagging (stock, sales, personal)",
-          offline: "Works fully offline, syncs on wifi",
-          tetum: "Tetum-first UI with big touch targets",
-        },
-      },
-      upgrade: {
-        badge: "Upgrade",
-        title: "Simple POS",
-        desc: "Everything in Free, plus a **complete point-of-sale** from your phone.",
-        descHighlight: "complete point-of-sale",
-        features: {
-          catalog: "Product catalog — name, price, optional photo",
-          tapToSell: "Tap-to-sell — big product buttons, quantity, total",
-          inventory: "Inventory — bought 50, sold 30, have 20 left",
-          customerTabs: 'Customer tabs — "João owes me $15"',
-          printer: "Bluetooth thermal printer ($30) for receipts",
-          whatsapp: "WhatsApp receipt sharing — everyone uses it",
-          monthlyReport: "Monthly summary report — printable PDF for tax",
-        },
-      },
-      personas: {
-        maria: {
-          name: "Maria",
-          role: "Kiosk Owner",
-          desc: 'Sells phone credit, snacks, cigarettes. Uses a notebook today. Needs: "How much did I make today?"',
-        },
-        ana: {
-          name: "Ana",
-          role: "Café Owner",
-          desc: "Runs a café with 5 staff. Uses Xefe for payroll, Kaixa for daily sales. Staff use Ekipa.",
-        },
-        tomas: {
-          name: "Tomas",
-          role: "Shop Owner",
-          desc: "Growing retail shop. Customer tabs, inventory tracking. Ready for VAT when it arrives.",
-        },
-      },
+      features: {},
+      free: {},
+      upgrade: {},
+      personas: {},
     },
     ekipa: {
-      badge: "Employee App",
-      title: "Ekipa",
-      titleAccent: "Your Team's Mobile Companion",
-      description:
-        "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Xefe customers.",
-      tagline: '"Ekipa" — Tetum for team',
-      features: {
-        payslips: {
-          title: "Payslips on Phone",
-          desc: "Employees view payslip breakdown, download PDF, and share via WhatsApp. No more printing.",
-        },
-        leave: {
-          title: "Leave Requests",
-          desc: "Request annual, sick, or maternity leave. See balances and track approval status in real-time.",
-        },
-        crewClock: {
-          title: "Crew Clock-In",
-          desc: "Supervisor mode with GPS + camera proof. Anti-ghost-worker system for construction and security teams.",
-        },
-        offline: {
-          title: "Works Offline",
-          desc: "SQLite local database syncs crew data when reconnected. Perfect for remote sites.",
-        },
-        bilingual: {
-          title: "Tetum & English",
-          desc: "Full interface in both languages. Employees switch instantly — no restart needed.",
-        },
-        selfService: {
-          title: "Self-Service Profile",
-          desc: "View personal details, job info, documents, and attendance history. Fewer questions for HR.",
-        },
-      },
-      cta: "Included with Xefe",
-      ctaNote: "Android · Free for all Xefe employees",
-      shipped: {
-        badge: "Live Now",
-        title: "What's Shipped",
-        features: {
-          login: "Email/password authentication",
-          dashboard: "Home with payday countdown & leave balance",
-          payslips: "12-month payslip history with PDF export",
-          leave: "Leave balances, history & request form",
-          crewClock: "Crew clock-in/out with GPS & camera",
-          profile: "Full employee profile & attendance summary",
-        },
-      },
-      coming: {
-        badge: "Coming Next",
-        title: "On the Roadmap",
-        features: {
-          push: "Push notifications for payslips & approvals",
-          attendance: "Personal attendance history & hours verification",
-          documents: "Document viewer for contracts & certificates",
-          shifts: "Shift schedule viewer",
-        },
-      },
+      features: {},
+      shipped: {},
+      coming: {},
     },
-    mobilePay: {
-      title: "Mobile Money Ready",
-      subtitle: "Pay employees without bank accounts",
-      comingSoon: "Coming Soon",
-      note: "Disbursement directly to employee mobile wallets. No bank account required.",
-    },
-    localSupport: {
-      badge: "Based in Dili",
-      title: "Local support,",
-      titleAccent: "iha Tetun no English",
-      description:
-        "We're not a foreign company with offshore support. Xefe is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
-      items: {
-        whatsapp: "WhatsApp support in Tetun & English",
-        training: "On-site training available in Dili",
-        sefope: "Help with SEFOPE submissions",
-        bank: "Bank integration assistance (BNU, BNCTL)",
-      },
-      cta: {
-        title: "Need help getting started?",
-        subtitle: "Free setup consultation",
-      },
-    },
+    localSupport: {},
     accounting: {
-      badge: "Real Accounting",
-      title: "Accounting that actually",
-      titleAccent: "understands TL",
-      description:
-        "Keep QuickBooks for inventory if you want — Xefe handles the TL compliance side.",
-      features: {
-        doubleEntry: {
-          title: "True Double-Entry",
-          desc: "Every transaction creates balanced debits and credits. Audit-ready from day one.",
-        },
-        glTrial: {
-          title: "GL & Trial Balance",
-          desc: "Full general ledger, chart of accounts, and trial balance — the reports your accountant actually needs.",
-        },
-        autoPost: {
-          title: "Payroll Auto-Posts",
-          desc: "Run payroll and the journal entries write themselves. WIT liability, INSS payable, salary expense — all posted.",
-        },
-        qbExport: {
-          title: "QuickBooks Export",
-          desc: "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting.",
-        },
-      },
+      features: {},
     },
   },
   securityPage: {
@@ -1708,10 +1248,6 @@ const messages = {
       titleTop: "How Xefe",
       titleAccent: "actually works",
       lede: "Plain-language documentation of the machinery under Xefe — what happens to your money, when the deadlines fall, and which guarantees are enforced by the system itself.",
-      article1Tag: "Payroll & accounting",
-      article1Title: "The payroll money chain",
-      article1Desc:
-        "From a draft payroll run to closed books: the approval steps, the three journals that move the money, every statutory deadline, and the seven guarantees that hold it all together.",
       readArticle: "Read the article",
       guides: "Guides",
       architecture: "Under the hood",
@@ -2020,9 +1556,6 @@ const messages = {
         "Set up the business and explore every feature free. Xefe keeps the everyday work clear and the professional evidence ready.",
       primary: "Start free",
       whatsapp: "Ask for a walkthrough",
-    },
-    footer: {
-      home: "Product overview",
     },
   },
   settings: {
@@ -2616,15 +2149,7 @@ const messages = {
   orgChart: {
     title: "Organizational Chart",
     subtitle: "Visualize your company structure and reporting lines",
-    reorganize: "Reorganize",
-    exitReorganize: "Exit Reorganize",
     manage: "Manage",
-    stats: {
-      executives: "Executives",
-      managers: "Managers",
-      seniorStaff: "Senior Staff",
-      totalEmployees: "Total Employees",
-    },
     emptyTitle: "No Organization Data",
     emptyDesc: "Add employees to see the organization chart",
     addFirstEmployee: "Add First Employee",
@@ -2633,8 +2158,6 @@ const messages = {
       connectionOffline: "Unable to connect to database. Showing demo data.",
       loadFailed: "Failed to load organization data. Please try again.",
       unexpected: "An unexpected error occurred while loading data.",
-      updatedTitle: "Organization Updated",
-      updatedDesc: "Position moved successfully",
       refreshedTitle: "Data Refreshed",
       refreshedDesc:
         "Organization chart updated with latest department changes",
@@ -2770,11 +2293,6 @@ const messages = {
       minimumWageReviewNote: "Review note *",
       minimumWageReviewNotePlaceholder:
         "Who reviewed it and why this treatment applies",
-      sefopeTitle: "SEFOPE Registration (Labor Ministry)",
-      sefopeTooltip: "Required for all TL employees",
-      sefopeNumber: "SEFOPE Number",
-      sefopeNumberPlaceholder: "SEFOPE-2024-XXXXX",
-      sefopeDate: "Registration Date",
       workContract: "Work Contract Document",
       workContractHelp: "Upload employment contract (PDF/DOC)",
     },
@@ -2821,10 +2339,7 @@ const messages = {
         premium: "Premium",
         executive: "Executive",
       },
-      taxInfoTitle: "Tax Information",
       taxResidentLabel: "Tax resident of Timor-Leste",
-      taxResidentHint:
-        "Resident for tax (Lei 8/2008: present 183+ days in any 12 months, unless the permanent home is abroad). Residents pay 10% WIT above $500/month; non-residents pay 10% flat from the first dollar.",
       incomeTaxTitle: "Income Tax (WIT)",
       incomeTaxDesc: "10% on income above $500/month",
       socialSecurityTitle: "Social Security (INSS)",
@@ -5336,180 +4851,12 @@ const messages = {
     },
   },
   dashboards: {
-    staff: {
-      title: "Staff Dashboard",
-      subtitle: "Overview of employees and organization",
-      actions: {
-        viewAll: "View All",
-        addEmployee: "Add Employee",
-      },
-      stats: {
-        totalEmployees: "Total Employees",
-        inDatabase: "In database",
-        activeEmployees: "Active Employees",
-        activeRate: "{{rate}}% active rate",
-        departments: "Departments",
-        activeDepartments: "Active departments",
-        inactive: "Inactive",
-        inactiveRate: "{{rate}}% of workforce",
-      },
-      labels: {
-        unknown: "Unknown",
-      },
-      departments: {
-        distribution: "Employee distribution ({{total}} total)",
-        emptyEmployees: "No employees in database",
-        seedDatabase: "Seed database",
-        emptyDepartments: "No department data",
-        count: "{{count}} ({{percent}}%)",
-      },
-      status: {
-        title: "Status Overview",
-        description: "Employee status breakdown",
-        live: "Live",
-        activeTitle: "Active Employees",
-        activeDescription: "Currently employed",
-        inactiveTitle: "Inactive Employees",
-        inactiveDescription: "Terminated or on leave",
-        departmentsTitle: "Departments",
-        departmentsDescription: "Active work units",
-      },
-      quickActions: {
-        title: "Quick Actions",
-        allEmployees: "All Employees",
-        addEmployee: "Add Employee",
-        departments: "Departments",
-        orgChart: "Org Chart",
-      },
-      toast: {
-        errorTitle: "Error",
-        loadFailed: "Failed to load employee data",
-      },
-    },
+    staff: {},
     timeLeave: {
-      title: "Time & Leave",
-      subtitle: "Attendance, time tracking, and leave management",
-      actions: {
-        trackTime: "Track Time",
-        newRequest: "New Request",
-      },
-      stats: {
-        totalEmployees: "Total Employees",
-        inDatabase: "In database",
-        activeEmployees: "Active Employees",
-        availableTracking: "Available for tracking",
-        timeEntries: "Time Entries",
-        noData: "No data yet",
-        leaveRequests: "Leave Requests",
-        noRequests: "No requests yet",
-      },
-      status: {
-        title: "Status",
-        description: "Real-time employee data",
-        live: "Live",
-        databaseConnected: "Database Connected",
-        firebaseConnected: "Connected to Firebase",
-        employeesAvailable: "Employees Available",
-        activeEmployees: "{{count}} active employees",
-        noEmployees: "No Employee Data",
-        noEmployeesDesc: "Add employees to enable tracking",
-        empty: "Empty",
-      },
-      setup: {
-        addEmployees: {
-          title: "Add Employees",
-          description: "Import or add employees to your database",
-        },
-        configureTime: {
-          title: "Configure Time Tracking",
-          description: "Set up time tracking policies and rules",
-        },
-        setupLeave: {
-          title: "Setup Leave Policies",
-          description: "Define leave types and approval workflows",
-        },
-      },
-      gettingStarted: {
-        title: "Getting Started",
-        description: "Setup time & leave tracking",
-        done: "Done",
-        pending: "Pending",
-      },
-      quickActions: {
-        title: "Quick Actions",
-        timeTracking: "Time Tracking",
-        attendance: "Attendance",
-        leaveRequests: "Leave Requests",
-        scheduling: "Scheduling",
-      },
-      toast: {
-        errorTitle: "Error",
-        loadFailed: "Failed to load employee data",
-      },
+      setup: {},
     },
     hiring: {
-      title: "Hiring Dashboard",
-      subtitle: "Overview of recruitment and hiring activities",
-      actions: {
-        viewApplications: "View Applications",
-        postJob: "Post New Job",
-        viewAll: "View All",
-      },
-      stats: {
-        openPositions: "Open Positions",
-        openPositionsSub: "+3 this month",
-        totalApplications: "Total Applications",
-        totalApplicationsSub: "+18 this week",
-        interviewsScheduled: "Interviews Scheduled",
-        interviewsScheduledSub: "Next 7 days",
-        pendingOffers: "Pending Offers",
-        pendingOffersSub: "Awaiting response",
-      },
-      recent: {
-        title: "Recent Activity",
-        description: "Latest updates in hiring",
-      },
-      activity: {
-        hired: {
-          title: "Sarah Johnson hired",
-          subtitle: "Senior Software Engineer position filled",
-        },
-        interviews: {
-          title: "3 interviews scheduled",
-          subtitle: "Product Manager candidates",
-        },
-        newJob: {
-          title: "New job posted",
-          subtitle: "Marketing Specialist - Remote",
-        },
-        surge: {
-          title: "Application surge",
-          subtitle: "UX Designer position - 45 new applications",
-        },
-        status: {
-          completed: "Completed",
-          scheduled: "Scheduled",
-          active: "Active",
-          trending: "Trending",
-        },
-      },
-      pipeline: {
-        title: "Hiring Pipeline",
-        description: "Candidates by stage",
-        total: "{{count}} total",
-        applications: "Applications Received",
-        phone: "Phone Screening",
-        technical: "Technical Interview",
-        final: "Final Interview",
-      },
-      quickActions: {
-        title: "Quick Actions",
-        createJob: "Create Job",
-        candidates: "Candidates",
-        interviews: "Interviews",
-        onboarding: "Onboarding",
-        offboarding: "Offboarding",
-      },
+      activity: {},
     },
   },
   payroll: {
@@ -5575,108 +4922,11 @@ const messages = {
       },
     },
   },
-  payrollDashboard: {
-    readyToRun: "Payroll ready to run",
-    allVerifiedProceed:
-      "All checklist items verified. You can proceed with payroll.",
-    runPayrollBtn: "Run Payroll",
-    payrollFor: "Payroll for {{month}}",
-    payDate: "Pay date:",
-    daysRemaining: "{{days}} days remaining",
-    employees: "{{count}} employees",
-    confirmRunPayroll: "Confirm & Run Payroll",
-    reviewPayroll: "Review Payroll",
-    viewChecklist: "View Checklist",
-    checklistTitle: "Payroll Checklist",
-    allVerifiedReady: "All items verified. Payroll is ready to run.",
-    checklistProgress: "{{done}} of {{total}} items complete",
-    pending: "pending",
-    grossPayroll: "Gross Payroll",
-    employerINSS: "Employer INSS ({{rate}}%)",
-    employeeINSS: "Employee INSS ({{rate}}%)",
-    estNetToEmployees: "Est. Net to Employees",
-    employeesNeedAttention: "Employees Need Attention",
-    payrollCoverage: "Payroll Coverage",
-    missingContractsINSS: "Missing contracts or INSS",
-    allEmployeesReady: "All employees ready",
-    lastPayroll: "Last Payroll",
-    completed: "Completed",
-    noPayrollYet: "No payroll run yet",
-    manage: "Manage",
-    ngoReporting: "NGO & Donor Reporting",
-    ngoReportingHint:
-      "Quick access to donor-ready payroll allocation and export tools.",
-    pastReports: "Past & Reports",
-    complianceDeadlines: "Compliance Deadlines",
-    witDue: "WIT due:",
-    inssStatementDue: "INSS statement due:",
-    inssPaymentDue: "INSS payment due:",
-    inssDue: "INSS due:",
-    minimumWage: "Minimum wage:",
-    minimumWageAmount: "$115 USD",
-    lastReviewedBy: "Last reviewed by {{name}}",
-    simpleFlowTitle: "Simple payroll flow",
-    simpleFlowDesc: "Work through these steps in order on payday.",
-    simpleFlow: {
-      peopleTitle: "Check employee records",
-      peoplePending:
-        "{{count}} employee records still need contracts or INSS details.",
-      peopleReady: "Employee records look ready for this payroll.",
-      timeTitle: "Check time and leave",
-      timePending: "{{count}} leave requests still need review before payroll.",
-      timeReady: "Leave and attendance look up to date for this pay period.",
-      runTitle: "Run payroll",
-      runPending: "Finish the checklist items before you run payroll.",
-      payTitle: "Pay salaries",
-      payDesc: "Open bank transfers after payroll is approved.",
-    },
-    checklist: {
-      attendanceLabel: "Attendance finalized",
-      attendanceIssue: "timesheet pending approval",
-      attendanceDesc: "All timesheets submitted and approved",
-      attendanceLink: "Review timesheets",
-      leaveLabel: "Leave requests approved",
-      leaveIssue: "leave request pending approval",
-      leaveDesc: "No pending leave requests for pay period",
-      leaveLink: "Review leave requests",
-      contractsLabel: "Employee contracts complete",
-      contractsIssue: "employee missing contract",
-      contractsDesc: "All employees have valid contracts",
-      contractsLink: "View employees",
-      salariesLabel: "Salary data verified",
-      salariesIssue: "employee missing salary data",
-      salariesDesc: "Compensation data up to date",
-      salariesLink: "Review salaries",
-    },
-    status: {
-      gettingReady: "Getting Ready",
-      almostReady: "Almost Ready",
-      readyToRun: "Ready to Run",
-      processing: "Processing",
-      completed: "Completed",
-    },
-    links: {
-      allowances: "Allowances",
-      allowancesDesc: "Transport, housing, meals & more",
-      deductions: "Deductions",
-      deductionsDesc: "Loans, advances & deductions",
-      payrollHistory: "Payroll History",
-      payrollHistoryDesc: "View past payroll runs",
-      bankTransfers: "Bank Transfers",
-      bankTransfersDesc: "Manage salary payments",
-      taxReports: "Tax Reports",
-      taxReportsDesc: "WIT and INSS reports",
-      payrollAllocation: "Payroll Allocation Report",
-      payrollAllocationDesc: "Project and funding source payroll split",
-      donorExport: "Donor Export Pack",
-      donorExportDesc: "Export donor-ready payroll accounting CSVs",
-    },
-  },
+  payrollDashboard: {},
   setupWizard: {
     steps: {
       companyDetails: "Company Details",
       bankAccounts: "Bank Accounts",
-      leavePolicies: "Leave Policies",
       payrollConfig: "Payroll Config",
       complete: "Complete",
     },
@@ -5685,9 +4935,6 @@ const messages = {
     companyIntro:
       "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
     progressTitle: "Setup progress",
-    progressHint:
-      "Complete each step once. You can adjust everything later in Settings.",
-    savedAutomaticallyTitle: "Finished steps are saved automatically",
     savedAutomaticallyDesc:
       "You can leave and come back later. Xefe will resume where you stopped.",
     stepOf: "Step {{current}} of {{total}}",
@@ -5697,7 +4944,6 @@ const messages = {
     error: "Error",
     failedSaveCompany: "Failed to save company details.",
     failedSaveBank: "Failed to save bank account.",
-    failedSaveLeave: "Failed to save leave policies.",
     failedSavePayroll: "Failed to save payroll config.",
     setupComplete: "Setup Complete",
     accountReady: "Your account is ready to use!",
@@ -5712,22 +4958,8 @@ const messages = {
     legalName: "Legal Name *",
     legalNamePlaceholder: "Your Company Lda.",
     tradingName: "Trading Name",
-    tradingNamePlaceholder: "Your Company",
     tinNumber: "SERVE / NIF (TIN) *",
     tinPlaceholder: "Unique Company Number / Tax ID",
-    teamSize: "Approximate Team Size",
-    selectTeamSize: "Select team size",
-    teamSizeHint:
-      "This helps Xefe choose better defaults for small or larger teams.",
-    address: "Address",
-    addressPlaceholder: "Street address",
-    city: "City",
-    cityPlaceholder: "Dili",
-    country: "Country",
-    phone: "Phone",
-    phonePlaceholder: "+670 ...",
-    email: "Email",
-    emailPlaceholder: "info@company.tl",
     bankIntro:
       "Choose how you usually pay salaries. You can change this later in Settings.",
     paymentMethod: "Salary payment method",
@@ -5743,20 +4975,10 @@ const messages = {
     accountNumberPlaceholder: "Account number",
     leaveIntro:
       "Default leave policies based on Timor-Leste labor law will be applied. You can customize these later.",
-    annualLeave: "Annual Leave",
-    annualLeaveValue: "12 days/year",
-    sickLeave: "Sick Leave",
-    sickLeaveValue: "12 days/year",
-    maternityLeave: "Maternity Leave",
-    maternityLeaveValue: "12 weeks",
-    paternityLeave: "Paternity Leave",
-    paternityLeaveValue: "5 days",
     leaveNote:
       "These defaults comply with TL Labor Code. Customize in Settings after setup.",
     payFrequency: "Pay Frequency",
     monthly: "Monthly",
-    biWeekly: "Bi-weekly",
-    weekly: "Weekly",
     payDay: "Pay Day (day of month)",
     currency: "Currency",
     usdCurrency: "USD (US Dollar)",
@@ -5770,8 +4992,6 @@ const messages = {
       "Your account has been configured. You can now start adding employees, running payroll, and managing your team.",
     back: "Back",
     doLater: "Go to dashboard for now",
-    finishLaterHint:
-      "You can return to setup any time from the dashboard before you run your first payroll.",
     saving: "Saving...",
     goToDashboard: "Go to Dashboard",
     next: "Next",
@@ -7975,7 +7195,6 @@ const messages = {
       "Payroll run has been rejected and sent back for revision.",
     toastRejectionFailed: "Rejection Failed",
     toastRejectionFailedDesc: "Failed to reject payroll run.",
-    toastLoadError: "Failed to load payroll history. Please refresh the page.",
     toastDetailsError: "Failed to load payroll details.",
     toastRecordsError: "Failed to load payroll records.",
     toastExportStarted: "Export Started",
@@ -8386,15 +7605,9 @@ const messages = {
       },
       cards: {
         staff: "Staff",
-        active: "{{count}} active",
         hiring: "Hiring",
-        interviewScheduled: "{{count}} interview scheduled",
-        interviewsScheduled: "{{count}} interviews scheduled",
         timeLeave: "Time & Leave",
-        onLeaveToday: "{{count}} on leave today",
         performance: "Performance",
-        activeGoal: "{{count}} active goal",
-        activeGoals: "{{count}} active goals",
         staffPurpose: "Manage your team and their details",
         staffAction: "View staff",
         hiringPurpose: "Post jobs and track candidates",
@@ -8409,13 +7622,9 @@ const messages = {
       title: "Time & Leave",
       seoDescription:
         "Coverage, attendance, leave approvals, and shift planning in one place.",
-      subtitle:
-        "{{available}} of {{total}} staff available today ({{rate}}% coverage).",
       subtitleRecorded:
         "Attendance is recorded for {{recorded}} of {{total}} staff today.",
       subtitleEmpty: "Approve leave, track attendance, and plan shifts.",
-      attendanceAction: "Attendance",
-      shiftsAction: "Shift schedules",
       allGood: "Nothing needs attention right now.",
       attention: {
         leaveRequest: "leave request waiting for approval",
@@ -8430,16 +7639,8 @@ const messages = {
       },
       cards: {
         attendance: "Attendance",
-        availableToday: "{{rate}}% available today",
-        recordedToday: "attendance recorded today",
         leave: "Leave",
-        onLeaveToday: "{{count}} on leave today",
-        onLeaveTodayLabel: "on leave today",
-        attendanceMeta: "Clock-ins & hours",
-        hoursRecordedToday: "hours recorded today",
         shifts: "Shifts",
-        shiftsMeta: "Plan weekly rosters",
-        shiftsThisWeek: "shifts this week",
         attendancePurpose: "Record hours and clock-ins",
         attendanceAction: "View attendance",
         leavePurpose: "Approve requests and track balances",
@@ -8511,22 +7712,14 @@ const messages = {
       },
       cards: {
         invoices: "Invoices",
-        outstanding: "{{amount}} outstanding",
         bills: "Bills",
-        overdue: "{{count}} overdue",
-        dueThisWeek: "{{amount}} due this week",
         expenses: "Expenses",
-        expensesMeta: "Track spending",
-        financialReports: "Financial Reports",
-        financialReportsMeta: "P&L · cashflow · VAT",
         invoicesPurpose: "Create, send and track invoices",
         invoicesAction: "View invoices",
         billsPurpose: "Record supplier bills and pay them",
         billsAction: "View bills",
         expensesPurpose: "Log and categorise business spending",
         expensesAction: "View expenses",
-        financialReportsPurpose: "P&L, cash flow and VAT statements",
-        financialReportsAction: "View reports",
       },
     },
     accounting: {
@@ -8551,16 +7744,9 @@ const messages = {
       },
       cards: {
         chartOfAccounts: "Chart of Accounts",
-        ledgerStructure: "Ledger structure",
         journalEntries: "Journal Entries",
-        pending: "{{count}} pending",
         trialBalance: "Trial Balance",
-        balanced: "Balanced",
-        outOfBalance: "Out of balance",
         balanceSheet: "Balance Sheet",
-        live: "Live",
-        pendingPayroll: "Pending payroll",
-        financialPosition: "Financial position",
         chartOfAccountsPurpose: "Your ledger accounts and structure",
         chartOfAccountsAction: "View chart",
         journalEntriesPurpose: "Post and review journal entries",
@@ -8577,37 +7763,8 @@ const messages = {
         "Payroll, people, attendance, department, NGO, and custom reports in one place.",
       summarySingle: "{{count}} workforce report family.",
       summaryPlural: "{{count}} workforce report families.",
-      summaryReadOnlySingle: "{{count}} report family available.",
-      summaryReadOnlyPlural: "{{count}} report families available.",
-      reportSetup: "Report setup",
-      customReports: "Custom reports",
-      filingRunway: "Filing runway",
-      allGood: "No tax filings due — the reporting runway is clear.",
       browseReports: "Browse reports",
       browseAction: "View reports",
-      compliance: {
-        filingOverdue: "{{count}} filing overdue",
-        filingsOverdue: "{{count}} filings overdue",
-        filingDueThisWeek: "{{count}} filing due this week",
-        filingsDueThisWeek: "{{count}} filings due this week",
-        noneDue: "no filings due",
-      },
-      filings: {
-        monthlyWit: "WIT {{period}}",
-        monthlyWitReturn: "WIT return {{period}}",
-        monthlyWitPayment: "WIT payment {{period}}",
-        annualWit: "Annual WIT {{period}}",
-        annualIncomeTax: "Annual income tax {{period}}",
-        servicesTax: "Services tax {{period}}",
-        installmentTax: "Income-tax installment {{period}}",
-        inssPayment: "INSS payment {{period}}",
-        inssStatement: "INSS statement {{period}}",
-        overdue: "{{days}}d overdue",
-        dueToday: "due today",
-        dueTomorrow: "due tomorrow",
-        daysLeft: "{{days}}d left",
-        line: "{{label}} — {{descriptor}} (due {{date}})",
-      },
       families: {
         "payroll-reports":
           "Payslips, tax views, year-to-date detail, and payroll summaries.",
@@ -8897,7 +8054,6 @@ const messages = {
       failed: "Could not send the request. Please try again.",
     },
     connection: {
-      title: "Accountant connection",
       description:
         "Request professional help or manage the access already granted.",
       none: "No accounting partner selected.",
@@ -8939,7 +8095,6 @@ const messages = {
       bannerAction: "Learn more",
     },
     landing: {
-      nav: "Accountant help",
       eyebrow: "Optional accountant support",
       title: "Do it yourself—or ask an accountant to review",
       description:
@@ -8959,7 +8114,6 @@ const messages = {
       "You are viewing the same partner workspace the partner firm's team will use.",
     cards: {
       requests: "New requests",
-      awaitingAccess: "Awaiting client access",
       connected: "Connected clients",
     },
     needsAttention: "Needs attention",
