@@ -53,16 +53,17 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("node_modules/exceljs")) {
             return "vendor-exceljs";
           }
+          // @react-pdf and its pdfkit/fontkit deps import each other; splitting
+          // them into two chunks created a cross-chunk cycle that crashed with
+          // "Cannot access 'JB' before initialization" in production (Sentry
+          // JAVASCRIPT-REACT-9). Keep the whole PDF stack in ONE lazy chunk.
           if (
-            id.includes("node_modules/@react-pdf/pdfkit") ||
+            id.includes("node_modules/@react-pdf") ||
             id.includes("node_modules/pdfkit") ||
             id.includes("node_modules/fontkit") ||
             id.includes("node_modules/restructure") ||
             id.includes("node_modules/linebreak")
           ) {
-            return "vendor-pdfkit";
-          }
-          if (id.includes("node_modules/@react-pdf")) {
             return "vendor-react-pdf";
           }
           // Firebase SDK split by product to keep the app shell smaller
