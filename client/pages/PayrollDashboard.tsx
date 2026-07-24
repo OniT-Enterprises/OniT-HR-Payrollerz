@@ -10,7 +10,10 @@ import { payrollNavConfig } from "@/lib/moduleNav";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useSettings } from "@/hooks/useSettings";
-import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import {
+  TAX_DEADLINE_WINDOW_MONTHS,
+  useTaxFilingsDueSoon,
+} from "@/hooks/useTaxFiling";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { leaveService } from "@/services/leaveService";
@@ -117,7 +120,10 @@ export default function PayrollDashboard() {
   );
   const payrollRunsQuery = usePayrollRuns({ limit: 6 });
   const settingsQuery = useSettings();
-  const taxDueQuery = useTaxFilingsDueSoon(6, canManageTenant);
+  const taxDueQuery = useTaxFilingsDueSoon(
+    TAX_DEADLINE_WINDOW_MONTHS,
+    canManageTenant,
+  );
   const leaveStatsQuery = useQuery({
     // Nested under leaveKeys.stats ON PURPOSE: leave create/approve/reject/
     // cancel invalidate that prefix, so the pending-leave number here refreshes
@@ -323,10 +329,13 @@ export default function PayrollDashboard() {
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
+      // Shown to every manage user, advanced tax mode or not: the monthly wage
+      // withholding form is every employer's obligation, so hiding the deadline
+      // from the simple flow would hide a statutory duty. The WIT route is
+      // accountant-gated, and AccountantGate explains who files it.
       show:
         canManageTenant &&
         hasComplianceContext &&
-        showAdvancedTax &&
         (taxDeadlineDataReady
           ? Boolean(nextWitDeadline) && witAttentionUrgency !== "ok"
           : witUrgency !== "ok"),

@@ -30,7 +30,10 @@ import {
   getNextMonthlyAdjustedDeadline,
   getUrgencyFromDays,
 } from "@/lib/tax/compliance";
-import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import {
+  TAX_DEADLINE_WINDOW_MONTHS,
+  useTaxFilingsDueSoon,
+} from "@/hooks/useTaxFiling";
 import {
   Users,
   UserPlus,
@@ -268,7 +271,7 @@ export default function Dashboard() {
 
   const employeeSummaryQuery = useActiveEmployeeSummary(shouldLoadEmployeeSummary);
   const leaveStatsQuery = useLeaveStats(hasTimeleave);
-  const dueDatesQuery = useTaxFilingsDueSoon(2, hasPayroll);
+  const dueDatesQuery = useTaxFilingsDueSoon(TAX_DEADLINE_WINDOW_MONTHS, hasPayroll);
   const payrollRunsQuery = usePayrollRuns({ limit: 10 }, hasPayroll);
   const settingsQuery = useSettings(hasPayroll);
   const invoiceStatsQuery = useInvoiceStats(hasMoney);
@@ -327,16 +330,26 @@ export default function Dashboard() {
     const daysToINSS = inssObligation?.daysUntilDue ?? getDaysUntilDueIso(todayIso, fallbackInssDue);
     const daysToSubsidio = getDaysUntilDueIso(todayIso, getNextAnnualAdjustedDeadline(todayIso, 12, 20));
 
+    // Each obligation carries its own destination: /payroll/tax is now a
+    // redirect to the most urgent filing, so sending a WIT-labelled card there
+    // lands a simple-flow tenant on the INSS return instead.
     return {
       wit: {
         days: daysToWit,
         status: getUrgencyFromDays(daysToWit, witObligation?.isOverdue ?? false),
+        path: '/payroll/tax/monthly-wit',
       },
       inss: {
         days: daysToINSS,
         status: getUrgencyFromDays(daysToINSS, inssObligation?.isOverdue ?? false),
+        path: '/payroll/tax/inss-monthly',
       },
-      subsidio: { days: daysToSubsidio, status: daysToSubsidio > 60 ? 'ok' : daysToSubsidio > 30 ? 'warning' : 'urgent' },
+      // The 13th-month subsidy is paid through payroll, not filed with ATTL.
+      subsidio: {
+        days: daysToSubsidio,
+        status: daysToSubsidio > 60 ? 'ok' : daysToSubsidio > 30 ? 'warning' : 'urgent',
+        path: '/payroll/run',
+      },
     };
   };
 
@@ -729,7 +742,7 @@ export default function Dashboard() {
               </p>
               <div className="space-y-2">
                 {canManageTenant && urgentCompliance && (
-                  <button onClick={() => navigate("/payroll/tax")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-red-400/40 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
+                  <button onClick={() => navigate(urgentCompliance.path)} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-red-400/40 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
                       <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </div>
