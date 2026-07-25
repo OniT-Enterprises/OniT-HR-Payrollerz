@@ -84,7 +84,7 @@ const translations: Record<string, Record<Language, string>> = {
   'home.viewDetails': { tet: 'Haree detallu', en: 'View details', pt: 'Ver detalhes', id: 'Lihat detail' },
   'home.statusTitle': { tet: 'Sumáriu', en: 'At a glance', pt: 'Resumo', id: 'Sekilas' },
   'home.noPayslip': { tet: 'Seidauk iha resibu', en: 'No payslips yet', pt: 'Sem recibos ainda', id: 'Belum ada slip gaji' },
-  'home.noPayslipSub': { tet: 'Ita-nia resibu sei mosu iha ne\'e bainhira payroll halo tiha', en: 'Your payslips will appear here once payroll runs', pt: 'Os seus recibos aparecerão aqui após o processamento', id: 'Slip gaji Anda akan muncul di sini setelah penggajian' },
+  'home.noPayslipSub': { tet: 'Ita-nia resibu sei mosu iha ne\'e bainhira folha pagamentu halo tiha', en: 'Your payslips will appear here once payroll runs', pt: 'Os seus recibos aparecerão aqui após o processamento', id: 'Slip gaji Anda akan muncul di sini setelah penggajian' },
   'home.daysLeft': { tet: 'loron restu', en: 'days left', pt: 'dias restantes', id: 'hari tersisa' },
   'home.attendance': { tet: 'Prezensa', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
   'home.hoursThisMonth': { tet: 'oras fulan ida ne\'e', en: 'hours this month', pt: 'horas este mês', id: 'jam bulan ini' },

@@ -7883,7 +7883,7 @@ export const translations = {
       "botPromptLeave": "Sé mak lisensa?",
       "botPlaceholder": "Husu ba XefeBot...",
       "allGood": "Buat hotu di'ak — laiha buat ne'ebé presiza atensaun",
-      "pendingPayrollTitle": "Payroll hein aprovasaun",
+      "pendingPayrollTitle": "Folha pagamentu hein aprovasaun",
       "untilPayday": "to'o loron selu",
       "headerSubtitle": "Sentru komandu no prioridade ba negósiu ohin loron",
       "issuesBadge": "{{count}} ho problema",
@@ -7912,7 +7912,7 @@ export const translations = {
       "witFull": "Impostu rendimentu saláriu (WIT) — deklarasaun mensál",
       "inssFull": "Seguransa sosiál INSS — pagamentu mensál",
       "thirteenthFull": "Saláriu fulan-13 (subsídiu Natál)",
-      "pendingPayrollDesc": "payroll presiza revizaun",
+      "pendingPayrollDesc": "folha pagamentu presiza revizaun",
       "overdue": "atrazu ona",
       "taxOverdue": "Impostu atrazu",
       "overdueFilings": "filing(s) liu prazu",
@@ -8295,7 +8295,7 @@ export const translations = {
           "description": "Hahú ho folha pagamentu. Aumenta funsaun ema, fatura no kontabilidade bainhira negósiu presiza.",
           "people": {
             "title": "Ema no tempu",
-            "description": "Rai rejistu funsionáriu, asiduidade no lisensa hamutuk. Staf bele haree payslip no husu lisensa iha Ekipa."
+            "description": "Rai rejistu funsionáriu, prezensa no lisensa hamutuk. Staf bele haree payslip no husu lisensa iha Ekipa."
           },
           "payroll": {
             "title": "Folha no banku lokal",
@@ -8456,7 +8456,7 @@ export const translations = {
       },
       "controls": {
         "eyebrow": "Kontrolu loloos",
-        "title": "Obriga iha servidor, la'ós de'it iha ekrã",
+        "title": "Obriga iha servidor, la'ós de'it iha ekran",
         "description": "Subar botaun ida la'ós seguransa. Xefe nia regra hela iha kamada base-dadus, ne'ebé ema la bele liu.",
         "cards": {
           "rules": {
@@ -8542,7 +8542,7 @@ export const translations = {
         "eyebrow": "Motór iha Xefe laran",
         "title": "Klik ida de'it atu finaliza folha pagamentu.",
         "titleAccent": "Lei mak halo servisu iha okos.",
-        "description": "Xefe nia ekrã simples tanba parte difísil hela iha motór laran: lei laboral, impostu no seguransa sosiál Timor-Leste nian, implementadu regra ida-idak no verifikadu ho oinsá folha pagamentu halo loloos iha rai laran.",
+        "description": "Xefe nia ekran simples tanba parte difísil hela iha motór laran: lei laboral, impostu no seguransa sosiál Timor-Leste nian, implementadu regra ida-idak no verifikadu ho oinsá folha pagamentu halo loloos iha rai laran.",
         "statTests": "teste automátiku",
         "statStatutes": "lei iha kódigu",
         "statAccounts": "konta kontabilidade TL",
@@ -8643,7 +8643,7 @@ export const translations = {
           },
           "file": {
             "title": "Deklara",
-            "description": "Declaração de Remunerações INSS iha formatu ofisiál no formuláriu impostu mensál ATTL prepara an rasik, ho detalle pagamentu preenchidu no data limite ajustadu ba loron servisu tuir mai iha Timor-Leste."
+            "description": "Declaração de Remunerações INSS iha formatu ofisiál no formuláriu impostu mensál ATTL prepara an rasik, ho detallu pagamentu prenxe ona no data limite ajustadu ba loron servisu tuir mai iha Timor-Leste."
           },
           "pay": {
             "title": "Selu",
@@ -8669,7 +8669,7 @@ export const translations = {
       },
       "cta": {
         "title": "Haree nia la'o ho Ita-nia folha rasik.",
-        "description": "Konfigura grátis: aumenta Ita-nia ekipa, halo folha rascunho ida, no haree númeru hotu iha pájina ne'e iha Ita-nia livru rasik. Ita subskreve de'it bainhira finaliza folha reál.",
+        "description": "Konfigura grátis: aumenta Ita-nia ekipa, halo folha rascunhu ida, no haree númeru hotu iha pájina ne'e iha Ita-nia livru rasik. Ita subskreve de'it bainhira finaliza folha reál.",
         "secondary": "Haree presu",
         "footnote": "Trabalhador iha leten ilustrativu de'it — aritmétika mak motór nian rasik."
       }
@@ -8700,8 +8700,8 @@ export const translations = {
         "s1": {
           "eyebrow": "1 · Siklu vida",
           "title": "Mákina estadu ne'ebé baze dadus impoin",
-          "body": "Tranzisaun ida-idak iha okos impoin husi regra seguransa iha baze dadus rasik, la'ós de'it iha ekrã sira — software ne'ebé kontorna aplikasaun mós la bele salta pasu ida.",
-          "draft": "rascunho",
+          "body": "Tranzisaun ida-idak iha okos impoin husi regra seguransa iha baze dadus rasik, la'ós de'it iha ekran sira — software ne'ebé kontorna aplikasaun mós la bele salta pasu ida.",
+          "draft": "rascunhu",
           "draftNote": "ema ruma iha ekipa ho asesu ba folha",
           "processing": "prosesamentu",
           "processingNote": "finaliza mak pasu úniku ne'ebé presiza subskrisaun ativu",
@@ -8760,7 +8760,7 @@ export const translations = {
           "g1": "Finaliza folha mak pasu úniku ne'ebé presiza subskrisaun.",
           "g1By": "Buat seluk hotu — rejistu, relatóriu, deklarasaun — kontinua disponível.",
           "g2": "Aprovasaun ema rua: ema ne'ebé aprova nunka ema ne'ebé prosesa.",
-          "g2By": "Impoin husi regra seguransa baze dadus, la'ós husi ekrã sira.",
+          "g2By": "Impoin husi regra seguransa baze dadus, la'ós husi ekran sira.",
           "g3": "Prosesamentu bele sai selu ona husi aprovadu de'it, ho evidénsia permanente.",
           "g3By": "Hakerek ne'ebé salta aprovasaun, baze dadus rejeita.",
           "g4": "Movimentu osan ida-idak mak lansamentu ekilibradu ida, rejista dala ida de'it.",
@@ -8860,11 +8860,11 @@ export const translations = {
         },
         "payments": {
           "title": "Selu trabalhador no prepara deklarasaun",
-          "description": "Konfirma data pagamentu. Resibu, ficheiru banku no dokumentu WIT no INSS sai husi folha aprovada."
+          "description": "Konfirma data pagamentu. Resibu, ficheiru banku no dokumentu WIT no INSS sai husi folha aprovadu."
         },
         "accounting": {
           "title": "Mantén livru kontabil atualizadu",
-          "description": "Folha aprovada lansa hanesan lansu kontabil balansadu. Livru jerál, balansu prova no demonstrasaun sira atualizadu nafatin."
+          "description": "Folha aprovadu lansa hanesan lansu kontabil balansadu. Livru jerál, balansu prova no demonstrasaun sira atualizadu nafatin."
         },
         "verifyNote": "Kada etapa rai nia evidénsia — konfigurasaun saláriu, kalkulasaun, aprovasaun no liña lansu bele verifika depois, liña ba liña."
       },
@@ -8912,7 +8912,7 @@ export const translations = {
           },
           "journals": {
             "title": "Lansu ligadu ba fonte",
-            "description": "Folha aprovada kria liña kontabil balansadu, ligadu fali ba folha orijinal."
+            "description": "Folha aprovadu kria liña kontabil balansadu, ligadu fali ba folha orijinal."
           },
           "audit": {
             "title": "Auditoria no disiplina períodu",
@@ -9036,8 +9036,8 @@ export const translations = {
         "tinPlaceholder": "Númeru Úniku Empreza / NIF",
         "employerNiss": "NISS Empregador",
         "employerNissPlaceholder": "Númeru rejistu empregador INSS",
-        "addressTitle": "Endereco",
-        "registeredAddress": "Endereco Registu *",
+        "addressTitle": "Enderesu",
+        "registeredAddress": "Enderesu Rejistu *",
         "registeredAddressPlaceholder": "Rua, edifisio, etc.",
         "city": "Sidade *",
         "cityPlaceholder": "ez.: Dili",
@@ -9075,7 +9075,7 @@ export const translations = {
         "noLocations": "Laiha lokal",
         "addFirstLocation": "Tau lokal primeiru",
         "locationName": "Naran lokal",
-        "address": "Endereco",
+        "address": "Enderesu",
         "hq": "Sede",
         "departments": "Departamentu",
         "departmentsHint": "Define departamentu organizasaun",
@@ -9115,7 +9115,7 @@ export const translations = {
         "payrollFrequency": "Frequensia Folha",
         "validationTitle": "Verifika konfigurasaun pagamentu",
         "selectMethodError": "Hili pelumenus métodu ida atu selu saláriu.",
-        "selectFrequencyError": "Hili pelumenus frekuénsia payroll ida.",
+        "selectFrequencyError": "Hili pelumenus frekuénsia folha pagamentu ida.",
         "bankDetailsError": "Kompleta naran banku no númeru konta, ka hasai konta mamuk.",
         "frequencyLabels": {
           "hourly": "Hora",
@@ -9202,7 +9202,7 @@ export const translations = {
         "hourlyRateWeeklyAverage": "Média semana oras 44",
         "hourlyRateFixed190": "Métodu folha oras 190",
         "hourlyRateHint": "Métodu oras 190 arredonda taxa oras ba leten no arredonda totál oras estra hamutuk dala ida. Uza métodu iha kontratu ka folha kontabilista.",
-        "first2HoursRate": "Taxa oras estra padrão",
+        "first2HoursRate": "Taxa oras estra padraun",
         "first2HoursHint": "1.5× = +50%, mínimu legál (Lei Trabálhu Art. 27)",
         "beyond2HoursRate": "Taxa depois 2 oras",
         "beyond2HoursHint": "2x = +100%",
@@ -9216,9 +9216,9 @@ export const translations = {
         "thirteenthMonth": "Subsidiu Anual (13 Mes)",
         "enable13th": "Ativa pagamentu 13 mes",
         "subsidioDeadlineNote": "Prazu legal: selu to'o 20 Dezembru kada tinan (Lei Trabálhu Art. 44).",
-        "approvalSection": "Aprovasaun payroll",
+        "approvalSection": "Aprovasaun folha pagamentu",
         "selfApprovalLabel": "Permite aprovasaun rasik (admin ida de’it)",
-        "selfApprovalDesc": "Ema ne’ebé kria payroll mós bele aprova. Uza de’it se Ita-nia negósiu iha admin payroll ida de’it — se taka, admin seluk tenke aprova kada payroll (seguru liu).",
+        "selfApprovalDesc": "Ema ne’ebé kria folha pagamentu mós bele aprova. Uza de’it se Ita-nia negósiu iha admin folha pagamentu ida de’it — se taka, admin seluk tenke aprova kada folha pagamentu (seguru liu).",
         "selfApprovalOwnerOnly": "Na’in konta de’it mak bele muda ida-ne’e.",
         "invalidValues": "Verifika taxa no oras. Persentajen tenke 0–100.",
         "prorataHint": "Pro-rata ba empregadu ho menus de 12 fulan",
@@ -9375,7 +9375,7 @@ export const translations = {
         "workLocation": "Lokal Servisu",
         "monthlySalary": "Saláriu Mensal",
         "benefitsPackage": "Pakote Benefisiu",
-        "streetAddress": "Endereco",
+        "streetAddress": "Enderesu",
         "city": "Sidade",
         "state": "Estado",
         "zipCode": "Kode Postal",
@@ -9400,7 +9400,7 @@ export const translations = {
         "missingContract": "Hatudu empregadu la iha kontratu servisu",
         "missingInss": "Hatudu empregadu la iha numeru INSS",
         "missingBank": "Hatudu empregadu la iha detallu banku",
-        "blockingIssues": "Hatudu empregadu ho problema blokeia payroll",
+        "blockingIssues": "Hatudu empregadu ho problema blokeia folha pagamentu",
         "issues": "Hatudu empregadu ne'ebé falta informasaun obrigatóriu",
         "found": "({{count}} hetan)",
         "clearFilter": "Hamos filtru"
@@ -9485,7 +9485,7 @@ export const translations = {
         "updatedTitle": "Departamentu Atualiza",
         "updatedDesc": "Mudansa departamentu rai ho susesu",
         "migratedTitle": "Departamentu Migra",
-        "migratedDesc": "Kria {{count}} departamentu husi registu existente"
+        "migratedDesc": "Kria {{count}} departamentu husi rejistu existente"
       }
     },
     "orgChart": {
@@ -9830,7 +9830,7 @@ export const translations = {
           "fields": {
             "fullName": "Naran Tomak *",
             "dob": "Data Moris *",
-            "address": "Endereco *",
+            "address": "Enderesu *",
             "mobile": "Telefone Movel *",
             "emergencyName": "Naran Kontaktu Emerjensia *",
             "emergencyPhone": "Telefone Emerjensia *",
@@ -10269,7 +10269,7 @@ export const translations = {
         },
         "tabs": {
           "daily": "Resumo loron",
-          "entries": "Registu tempu"
+          "entries": "Rejistu tempu"
         },
         "filters": {
           "title": "Filtru",
@@ -10280,7 +10280,7 @@ export const translations = {
           "export": "Exporta CSV",
           "logActivity": "Rejista tempu",
           "emptyTitle": "Laiha entrada tempu",
-          "emptyDescription": "Laiha registu prezensa ba {{date}}"
+          "emptyDescription": "Laiha rejistu prezensa ba {{date}}"
         },
         "dialog": {
           "title": "Rejista tempu",
@@ -10297,21 +10297,21 @@ export const translations = {
           "previewOvernight": "turnu kalan liu meia-noite",
           "tooLong": "Oras hirak ne'e halo total {{hours}}h — verifika tempu tama no sai.",
           "cancel": "Kansela",
-          "submit": "Submete registu"
+          "submit": "Submete rejistu"
         },
         "edit": {
-          "title": "Hadia registu tempu",
+          "title": "Hadia rejistu tempu",
           "description": "{{name}} · {{date}} — mudansa sei rejista iha audit log",
           "reason": "Razaun ba mudansa *",
           "reasonPlaceholder": "Ez. Haluha atu rejista sai",
           "reasonRequired": "Favor fo razaun ba mudansa.",
           "adjusted": "hadia ona",
           "save": "Salva mudansa",
-          "adjustSuccess": "Registu atualiza ona.",
-          "deleteTitle": "Apaga registu ida ne'e?",
-          "deleteDesc": "Ida ne'e sei hamoos registu prezensa ba {{name}} iha {{date}}. La bele halo fali.",
+          "adjustSuccess": "Rejistu atualiza ona.",
+          "deleteTitle": "Apaga rejistu ida ne'e?",
+          "deleteDesc": "Ida ne'e sei hamoos rejistu prezensa ba {{name}} iha {{date}}. La bele halo fali.",
           "deleteConfirm": "Apaga",
-          "deleteSuccess": "Registu apaga ona."
+          "deleteSuccess": "Rejistu apaga ona."
         },
         "table": {
           "totalHours": "Oras",
@@ -10333,7 +10333,7 @@ export const translations = {
           "validationTitle": "Erru validasaun",
           "validationDesc": "Favor preenche kampu obrigatoriu.",
           "successTitle": "Susesu",
-          "successDesc": "Registu tempu salva ona.",
+          "successDesc": "Rejistu tempu salva ona.",
           "errorTitle": "Erru",
           "errorDesc": "Falha rejista. Koko fali.",
           "exportTitle": "Exportasaun kompletu",
@@ -10500,7 +10500,7 @@ export const translations = {
         },
         "import": {
           "title": "Importa dadus prezensa",
-          "description": "Importa registu husi dispozitivu biometriku ka CSV",
+          "description": "Importa rejistu husi dispozitivu biometriku ka CSV",
           "selectFile": "Hili ficheiru",
           "format": "CSV ka XLSX — formatu naran de'it serve; XefeBot bele lee fixeiru la organizadu",
           "importing": "Importa hela...",
@@ -10539,14 +10539,14 @@ export const translations = {
           "allStatuses": "Status hotu"
         },
         "empty": {
-          "title": "Laiha registu prezensa",
+          "title": "Laiha rejistu prezensa",
           "titleToday": "Laiha prezensa regista ohin",
-          "instructions": "Uza butaun iha leten atu marka prezensa manual, ka importa registu husi dispozitivu biometriku.",
+          "instructions": "Uza butaun iha leten atu marka prezensa manual, ka importa rejistu husi dispozitivu biometriku.",
           "importButton": "Importa husi Dispozitivu"
         },
         "table": {
-          "title": "Registu prezensa",
-          "summary": "{{count}} registu ba {{date}}",
+          "title": "Rejistu prezensa",
+          "summary": "{{count}} rejistu ba {{date}}",
           "employee": "Empregadu",
           "department": "Departamentu",
           "clockIn": "Tama",
@@ -10590,11 +10590,11 @@ export const translations = {
           "exportDesc": "Ficheiru CSV download ona.",
           "importSelect": "Favor hili ficheiru atu importa.",
           "importErrorTitle": "Erru importa",
-          "importEmpty": "Laiha registu validu.",
+          "importEmpty": "Laiha rejistu validu.",
           "importAiTitle": "XefeBot lee ona ita-nia fixeiru",
-          "importAiDesc": "Formatu la hanesan, entaun XefeBot normaliza — rekoñese registu {{count}}.",
+          "importAiDesc": "Formatu la hanesan, entaun XefeBot normaliza — rekoñese rejistu {{count}}.",
           "importCompleteTitle": "Importa remata",
-          "importCompleteDesc": "{{success}} registu importa, {{duplicates}} duplicadu toba, {{errors}} erru.",
+          "importCompleteDesc": "{{success}} rejistu importa, {{duplicates}} duplikadu salta, {{errors}} erru.",
           "importFailed": "Falha importa dadus prezensa."
         }
       },
@@ -10633,7 +10633,7 @@ export const translations = {
           "list": "Lista"
         },
         "actions": {
-          "publishSchedule": "Publika rascunho {{count}}",
+          "publishSchedule": "Publika rascunhu {{count}}",
           "export": "Exporta CSV",
           "copyWeek": "Kopia semana",
           "cancel": "Kansela",
@@ -10734,7 +10734,7 @@ export const translations = {
           "confirm": "Apaga"
         },
         "status": {
-          "draft": "Rascunho",
+          "draft": "Rascunhu",
           "published": "Publika",
           "confirmed": "Konfirma",
           "cancelled": "Kansela"
@@ -10794,8 +10794,8 @@ export const translations = {
           "exportEmptyTitle": "La iha buat atu exporta",
           "exportEmptyDesc": "La iha turnu semana ida ne'e.",
           "copiedTitle": "Semana kopia ona",
-          "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho.",
-          "copiedWithSkippedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunho. {{skipped}} la kopia (agenda ona ka iha lisensa).",
+          "copiedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunhu.",
+          "copiedWithSkippedDesc": "Turnu {{count}} kopia ba semana oin mai nudar rascunhu. {{skipped}} la kopia (agenda ona ka iha lisensa).",
           "copyAllSkippedTitle": "Atualiza tiha ona",
           "copyAllSkippedDesc": "Semana oin mai hanesan ona — turnu {{skipped}} la kopia (agenda ona ka iha lisensa).",
           "copyEmptyTitle": "La iha buat atu kopia",
@@ -11029,7 +11029,7 @@ export const translations = {
       },
       "journalEntries": {
         "title": "Entrada Jornál",
-        "subtitle": "Lançamentos Contábeis - Reviza entrada kontabilidade husi saláriu no operasaun",
+        "subtitle": "Lansamentu Kontabilidade - Reviza entrada kontabilidade husi saláriu no operasaun",
         "manualEntry": "Entrada Manual",
         "forNonPayroll": "Ba ajustamentu la saláriu de'it",
         "createEntry": "Kria Entrada Jornál",
@@ -11108,15 +11108,15 @@ export const translations = {
       },
       "fixedAssets": {
         "title": "Ativos Fixos",
-        "subtitle": "Registu ativu: eskala depresiaun, rejistu mensál, abate",
-        "export": "Esporta registu",
+        "subtitle": "Rejistu ativu: eskala depresiaun, rejistu mensál, abate",
+        "export": "Esporta rejistu",
         "postDepreciation": "Rejista depresiaun",
         "addAsset": "Aumenta ativu",
         "addDescription": "Xefe halo depresiaun liña-loos hahú husi fulan sosa nian, no rejista lansamentu ida kada fulan.",
         "empty": "Seidauk iha ativu. Aumenta primeiru — másina kafé mós sura.",
         "loadError": "La bele karrega ativu fixu. Favór koko fila fali.",
         "saveError": "La bele rai. Favór koko fila fali.",
-        "exportError": "La bele esporta registu. Favór koko fila fali.",
+        "exportError": "La bele esporta rejistu. Favór koko fila fali.",
         "createdTitle": "Ativu aumenta ona",
         "deletedTitle": "Ativu hamoos ona",
         "deleteTitle": "Hamoos ativu?",
@@ -11464,7 +11464,7 @@ export const translations = {
         "payrollLink": "Saláriu",
         "accountantGateInstead": "alternativa.",
         "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Xefe mantén ida-ne'e automátiku.",
-        "accountantGateEnableHint": "Na'in empresa bele hamoris ekrã sira-ne'e iha Konfigurasaun → Modu impostu avansadu.",
+        "accountantGateEnableHint": "Na'in empresa bele hamoris ekran sira-ne'e iha Konfigurasaun → Modu impostu avansadu.",
         "thisMonth": "Fulan Ida-ne'e",
         "payrollEntries": "Entrada Saláriu",
         "posted": "Publika",
@@ -11569,7 +11569,7 @@ export const translations = {
         "minutesAgo": "{{count}}m liu",
         "hoursAgo": "{{count}}h liu",
         "daysAgo": "{{count}} loron liu",
-        "viewDetailsAction": "Haree detalle",
+        "viewDetailsAction": "Haree detallu",
         "errorLoad": "La konsege karga log auditoría",
         "actionTenantCreated": "Tenante Kria",
         "actionTenantSuspended": "Tenante Suspende",
@@ -11716,7 +11716,7 @@ export const translations = {
         "usersAdmins": "Admin {{count}}",
         "usersStaff": "Staff {{count}}",
         "actions": {
-          "viewDetails": "Haree detalle",
+          "viewDetails": "Haree detallu",
           "edit": "Edita",
           "impersonate": "Tama hanesan",
           "suspend": "Suspende",
@@ -11901,7 +11901,7 @@ export const translations = {
         },
         "stats": {
           "attendanceRate": "Taxa prezensa",
-          "attendanceRateSummary": "{{present}} husi {{total}} registu",
+          "attendanceRateSummary": "{{present}} husi {{total}} rejistu",
           "lateArrivals": "Chegada atrasadu",
           "lateHoursSummary": "{{hours}} oras total",
           "overtimeHours": "Oras extra",
@@ -11912,8 +11912,8 @@ export const translations = {
         "cards": {
           "summary": {
             "title": "Resumo prezensa",
-            "description": "Registu prezensa loron-loron ba períodu ne'ebé hili",
-            "totalRecords": "Total registu",
+            "description": "Rejistu prezensa loron-loron ba períodu ne'ebé hili",
+            "totalRecords": "Total rejistu",
             "export": "Exporta prezensa"
           },
           "leave": {
@@ -11928,8 +11928,8 @@ export const translations = {
             "title": "Relatoriu oras extra",
             "description": "Akompaña oras extra tuir empregadu",
             "total": "Total oras extra",
-            "records": "Registu ho oras extra",
-            "average": "Media OT / registu",
+            "records": "Rejistu ho oras extra",
+            "average": "Media OT / rejistu",
             "hoursValue": "{{hours}} oras",
             "export": "Exporta oras extra"
           }
@@ -11939,10 +11939,10 @@ export const translations = {
           "description": "Distribuisaun tuir status prezensa"
         },
         "recent": {
-          "title": "Registu prezensa foun",
-          "description": "Registu tama no sai ne'ebé foun liu",
-          "emptyTitle": "Laiha registu prezensa ba períodu ida ne'e",
-          "emptyDescription": "Registu sei mosu iha ne'e bainhira empregadu tama ka sai"
+          "title": "Rejistu prezensa foun",
+          "description": "Rejistu tama no sai ne'ebé foun liu",
+          "emptyTitle": "Laiha rejistu prezensa ba períodu ida ne'e",
+          "emptyDescription": "Rejistu sei mosu iha ne'e bainhira empregadu tama ka sai"
         }
       },
       "shared": {
@@ -13109,7 +13109,7 @@ export const translations = {
         "addressPlaceholder": "Enderesu",
         "notesPlaceholder": "Nota interna kona-ba kliente ida ne'e",
         "newInvoice": "Fatura Foun",
-        "formDescription": "Hatama detalle kliente",
+        "formDescription": "Hatama detallu kliente",
         "nameRequired": "Naran kliente maka obrigatoriu",
         "created": "Kliente kria ona ho susesu",
         "updated": "Kliente atualiza ona ho susesu",
@@ -13222,7 +13222,7 @@ export const translations = {
         "template_modernDesc": "Kabesaliu ho kór forte",
         "template_minimal": "Minimál",
         "template_minimalDesc": "Simples ho liña fina",
-        "templateHint": "Muda oinsá fatura ne'e mosu iha ekrã no PDF.",
+        "templateHint": "Muda oinsá fatura ne'e mosu iha ekran no PDF.",
         "templateError": "Falha muda modelu",
         "accentColor": "Kór destake",
         "paymentOptions": "Opsaun Pagamentu",
@@ -13341,7 +13341,7 @@ export const translations = {
         "logoUploaded": "Logotipu upload tiha ona",
         "logoUploadError": "Falha upload logotipu",
         "invoiceTemplate": "Modelu Fatura",
-        "invoiceTemplateDesc": "Oinsá ita-nia fatura mosu iha ekrã, PDF no email",
+        "invoiceTemplateDesc": "Oinsá ita-nia fatura mosu iha ekran, PDF no email",
         "paymentAccounts": "Konta Pagamentu",
         "paymentAccountsDesc": "Konta banku ne'ebé kliente bele selu ba — hili ida ba kada fatura",
         "noAccounts": "Seidauk iha konta pagamentu. Aumenta ida atu kliente hatene selu iha ne'ebé.",
@@ -13367,7 +13367,7 @@ export const translations = {
         "tooltipTitle": "Fatura Rekorrente",
         "tooltipContent": "Template sira ne'ebe gera fatura foun automatiku tuir horario. Di'ak ba servisu subskrisaun, retainer, ka siklu faturasaun regular.",
         "perInvoice": "ba fatura ida",
-        "viewDetails": "Haree Detalle",
+        "viewDetails": "Haree Detallu",
         "edit": "Edita",
         "generateNow": "Gera Agora",
         "pause": "Pausa",
@@ -13488,7 +13488,7 @@ export const translations = {
         "notesPlaceholder": "Nota interna kona-ba fornesedor ida ne'e",
         "newBill": "Fatura Foun",
         "newExpense": "Despeza Foun",
-        "formDescription": "Hatama detalle fornesedor",
+        "formDescription": "Hatama detallu fornesedor",
         "nameRequired": "Naran fornesedor maka obrigatoriu",
         "created": "Fornesedor kria ona ho susesu",
         "updated": "Fornesedor atualiza ona ho susesu",
@@ -13545,7 +13545,7 @@ export const translations = {
         "selectVendor": "Hili fornesedor",
         "descriptionPlaceholder": "Despeza ida ne'e ba sa?",
         "notesPlaceholder": "Nota adisionál",
-        "formDescription": "Hatama detalle despeza",
+        "formDescription": "Hatama detallu despeza",
         "descriptionRequired": "Deskrisaun maka obrigatoriu",
         "amountRequired": "Hatama valor validu",
         "created": "Despeza kria ona ho susesu",
@@ -13667,12 +13667,12 @@ export const translations = {
         "category": "Kategoria",
         "descriptionPlaceholder": "Fatura ida ne'e ba sa?",
         "notesPlaceholder": "Nota adisionál",
-        "details": "Detalle Fatura",
+        "details": "Detallu Fatura",
         "summary": "Resumo",
         "paid": "Selu tiha",
         "balanceDue": "Saldo Divida",
         "recordPayment": "Rejista Pagamentu",
-        "formDescription": "Hatama detalle fatura",
+        "formDescription": "Hatama detallu fatura",
         "vendorRequired": "Favor hili fornesedor",
         "descriptionRequired": "Deskrisaun maka obrigatoriu",
         "amountRequired": "Hatama valor validu",
@@ -13688,7 +13688,7 @@ export const translations = {
         "dueDateTooltip": "Data ne'ebe fatura ida ne'e tenke selu atu evita multa ka interupsaun servisu.",
         "uploadBill": "Upload Fatura",
         "quickAddTitle": "Tau Fatura husi Fixeiru",
-        "quickAddDescription": "Anexa fatura no hatama informasaun bázika — ita bele edita detalle sira depois.",
+        "quickAddDescription": "Anexa fatura no hatama informasaun bázika — ita bele edita detallu sira depois.",
         "saveBill": "Rai Fatura",
         "attachments": "Aneksu sira",
         "attachment": "Aneksu",
@@ -13751,7 +13751,7 @@ export const translations = {
         "viewInvoices": "Haree Fatura",
         "invoicesDescription": "Haree fonte rendimentu hotu",
         "viewExpenses": "Haree Despeza",
-        "expensesDescription": "Haree detalle despeza hotu",
+        "expensesDescription": "Haree detallu despeza hotu",
         "loadError": "Falha karrega relatoriu",
         "tooltipTitle": "Demonstrasaun Lukru no Lakon",
         "tooltipContent": "Konhesidu mós hanesan Demonstrasaun Resultadu. Hatudu rendimentu (osan hetan husi fatura) menus despeza (kustu) atu kalkula lukru likidu ka lakon ba períodu ida."
@@ -13980,9 +13980,9 @@ export const translations = {
       "periodStart": "Data Hahú",
       "periodEnd": "Data Remata",
       "payDate": "Data Pagamentu",
-      "syncAttendance": "Sinkroniza hosi Attendance",
+      "syncAttendance": "Sinkroniza hosi Prezensa",
       "syncingAttendance": "Sinkroniza hela...",
-      "syncAttendanceDesc": "Karu dadus oras regular, overtime no atrasu hosi attendance ba períodu ida-ne'e.",
+      "syncAttendanceDesc": "Karu dadus oras regular, overtime no atrasu hosi prezensa ba períodu ida-ne'e.",
       "includeSubsidio": "Inklui Subsídiu Anuál (fulan 13) iha prosesu ida-ne'e",
       "subsidioDesc": "Aumenta saláriu fulan 13 pro-rata no inklui iha WIT no INSS.",
       "employeesNeedDocs": "Trabalhador {{count}} Presiza Dokumentu",
@@ -14036,7 +14036,7 @@ export const translations = {
       "thisActionWill": "Asaun ida-ne'e sei:",
       "submitForReview": "Submete saláriu ba revizaun ema rua",
       "differentAdminApprove": "Admin seluk tenke aprova molok prosesa",
-      "selfApprovalNext": "Ita rasik bele aprova payroll ida-ne’e (aprovasaun rasik ativu)",
+      "selfApprovalNext": "Ita rasik bele aprova folha pagamentu ida-ne’e (aprovasaun rasik ativu)",
       "journalEntriesCreated": "Entrada jornál kria bainhira aprova",
       "back": "Fila",
       "submitting": "Submete hela...",
@@ -14060,10 +14060,10 @@ export const translations = {
       "toastComplianceRequiredDesc": "Favór rekoñese kestaun konformidade molok kontinua.",
       "toastOverrideShort": "Razaun anulasaun badak liu",
       "toastOverrideShortDesc": "Favór fó pelumenus karakter 10 esplika tanba saida ita kontinua sein konformidade tomak.",
-      "toastSyncedAttendance": "Dadus attendance sinkroniza ba trabalhador {{count}}.",
-      "toastSyncedAttendanceWithLeave": "Dadus attendance sinkroniza ba trabalhador {{count}}. Lisensa aprovada kredita ba ema {{leaveCount}} — lisensa selu nian la kona desconto.",
-      "toastSyncLeaveLookupFailed": "La bele karga lisensa aprovada, entaun sinkronizasaun kansela — se lae, trabalhador iha lisensa selu nian sei simu osan menus. Xeke koneksaun no koko fali.",
-      "toastSyncAttendanceNoData": "Laiha rejistu attendance ba períodu ida-ne'e.",
+      "toastSyncedAttendance": "Dadus prezensa sinkroniza ba trabalhador {{count}}.",
+      "toastSyncedAttendanceWithLeave": "Dadus prezensa sinkroniza ba trabalhador {{count}}. Lisensa aprovadu kredita ba ema {{leaveCount}} — lisensa selu nian la kona deskontu.",
+      "toastSyncLeaveLookupFailed": "La bele karga lisensa aprovadu, entaun sinkronizasaun kansela — se lae, trabalhador iha lisensa selu nian sei simu osan menus. Xeke koneksaun no koko fali.",
+      "toastSyncAttendanceNoData": "Laiha rejistu prezensa ba períodu ida-ne'e.",
       "toastLoadFailed": "La konsege karrega trabalhador. Favór atualiza pájina.",
       "monthlyDesc": "Dala ida fulan ida",
       "biweeklyDesc": "Semana rua-rua",
@@ -14160,7 +14160,7 @@ export const translations = {
     "paymentOrders": {
       "action": "Ordem de pagamentu (banku)",
       "downloadedTitle": "Ordem de pagamentu download ona",
-      "downloadedDescription": "Imprime, prienxe númeru OT, asina, no haruka liu husi email ba Ita-nia balcão banku.",
+      "downloadedDescription": "Imprime, prienxe númeru OT, asina, no haruka liu husi email ba Ita-nia balkaun banku.",
       "failed": "La konsege kria ordem de pagamentu."
     },
     "payrollHistory": {
@@ -14201,18 +14201,18 @@ export const translations = {
       "approve": "Aprova",
       "reject": "Rejeita",
       "twoPersonRule": "Regra ema rua: admin seluk tenke aprova",
-      "selfApproveWarning": "Ita mak kria payroll ida-ne’e. Xeke didi’ak montante sira molok aprova — laiha ema seluk sei reviza.",
-      "nextStepsTitle": "Payroll aprova ona — saida mak tuir mai?",
+      "selfApproveWarning": "Ita mak kria folha pagamentu ida-ne’e. Xeke didi’ak montante sira molok aprova — laiha ema seluk sei reviza.",
+      "nextStepsTitle": "Folha pagamentu aprova ona — saida mak tuir mai?",
       "nextStepsDesc": "Ita-nia funsionáriu sira seidauk simu osan. Pasu sira-ne’e mak bain-bain tuir mai.",
       "nextStepsPayslips": "Haruka payslip ba funsionáriu sira",
-      "nextStepsBankTransfer": "Prepara transferênsia banku",
+      "nextStepsBankTransfer": "Prepara transferénsia banku",
       "nextStepsTax": "Xeke deklarasaun WIT no INSS",
       "nextStepsLater": "Ha’u sei halo ida-ne’e ikus mai",
       "payrollRunsTitle": "Saláriu Hala'o tiha",
       "showingRuns": "Hatudu {{count}} saláriu hala'o",
       "noRunsFound": "Laiha saláriu hala'o",
       "runFirstPayroll": "Hala'o Saláriu Primeiru",
-      "viewDetails": "Haree Detalle",
+      "viewDetails": "Haree Detallu",
       "exportCsv": "Exporta CSV",
       "exportQuickBooks": "Exporta ba QuickBooks",
       "sendPayslips": "Haruka Payslip",
@@ -14240,7 +14240,7 @@ export const translations = {
       "cancel": "Kansela",
       "rejecting": "Rejeita hela...",
       "rejectPayroll": "Rejeita Saláriu",
-      "detailsTitle": "Detalle Saláriu",
+      "detailsTitle": "Detallu Saláriu",
       "detailsDescription": "Haree rejistru saláriu empregadu ida-idak",
       "totalGross": "Totál Brutu",
       "totalDeductions": "Totál Dedusaun",
@@ -14262,7 +14262,7 @@ export const translations = {
       "toastRejectedDesc": "Saláriu rejeita no haruka fali ba revizaun.",
       "toastRejectionFailed": "Rejeisaun Falha",
       "toastRejectionFailedDesc": "La konsege rejeita saláriu.",
-      "toastDetailsError": "La konsege karrega detalle saláriu.",
+      "toastDetailsError": "La konsege karrega detallu saláriu.",
       "toastRecordsError": "La konsege karrega rejistru saláriu.",
       "toastExportStarted": "Exporta Hahú",
       "toastExportDesc": "Ficheiro CSV sei download lalais.",
@@ -14325,7 +14325,7 @@ export const translations = {
       "subtitle": "Jere transferensia banku folha pagamentu no istória transasaun",
       "coverEmail": {
         "title": "Agora haruka email ba banku",
-        "description": "BNU prosesa lote saláriu husi instrusaun liu husi email. Ba BNCTL, pakote ida-ne'e best-effort to'o Ita-nia balcão konfirma. Haruka ficheiru no anexa folha Ordem de Pagamento ne'ebé imprime no asina ona.",
+        "description": "BNU prosesa lote saláriu husi instrusaun liu husi email. Ba BNCTL, pakote ida-ne'e best-effort to'o Ita-nia balkaun konfirma. Haruka ficheiru no anexa folha Ordem de Pagamento ne'ebé imprime no asina ona.",
         "copy": "Kopia testu email",
         "copied": "Testu email kopia ona"
       },
@@ -14379,7 +14379,7 @@ export const translations = {
       "bankAccount": "Konta Banku",
       "reference": "Referensia",
       "actions": "Asaun",
-      "viewDetails": "Haree detalle",
+      "viewDetails": "Haree detallu",
       "toastErrorTitle": "Erru",
       "toastLoadError": "La konsege karrega transferensia. Favór atualiza pájina.",
       "toastEmployeesLoading": "Empregadu sira seidauk karrega hotu",
@@ -14574,15 +14574,15 @@ export const translations = {
       "dashboardTitle": "Bemvindu ba Xefe.",
       "dashboardBody": "Ida ne’e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne’e.",
       "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
-      "peopleBody": "Ida ne’e mak fatin atu jeréncia ema hotu ne’ebé serbisu iha ita-nia empreza — empregádu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregádu primeiru ho botãu iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
+      "peopleBody": "Ida ne’e mak fatin atu jere ema hotu ne’ebé serbisu iha ita-nia empreza — empregadu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregadu primeiru ho botaun iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
       "schedulingTitle": "Bemvindu ba Tempu & Lisensa.",
-      "schedulingBody": "Akompanha prezensa, jeréncia pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne’e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
+      "schedulingBody": "Akompanha prezensa, jere pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne’e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
       "payrollTitle": "Bemvindu ba Folha Pagamentu.",
-      "payrollBody": "Ida ne’e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregádu, prezensa, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
+      "payrollBody": "Ida ne’e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregadu, prezensa, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
       "moneyTitle": "Bemvindu ba Osan.",
       "moneyBody": "Akompanha ita-nia fluxu osan lor-loron iha ne’e — fatura ne’ebé ita haruka, pagamentu ne’ebé ita simu, no saida mak sei pendente. Kria fatura, rejista pagamentu, no mantein ita-nia livru atualizadu.",
       "accountingTitle": "Bemvindu ba Kontabilidade.",
-      "accountingBody": "Ida ne’e ita-nia livru razãu formál — lansamantu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamantu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
+      "accountingBody": "Ida ne’e ita-nia livru razaun formál — lansamentu jornal, planu konta, no relatóriu finanseiru. Folha pagamentu no fatura ida-idak kria lansamentu automatikamente iha ne’e. Uza seksaun ida ne’e atu rekonsilha, ajusta, no relata.",
       "reportsTitle": "Bemvindu ba Relatóriu Ekipa.",
       "reportsBody": "Kria no reviza relatóriu saláriu, empregadu, prezensa, departamentu, ONG no relatóriu personalizadu. Hili família relatóriu ida atu hahú."
     },
@@ -14728,18 +14728,18 @@ export const translations = {
       "accounting": {
         "title": "Kontabilidade",
         "seoDescription": "Lansu jornál, estrutura konta no demonstrasaun finanseira iha fatin ida.",
-        "summaryPosted": "Saláriu ikus lança ona iha {{date}} · {{amount}}.",
-        "summaryNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade.",
+        "summaryPosted": "Saláriu ikus lansa ona iha {{date}} · {{amount}}.",
+        "summaryNotPosted": "Saláriu ikus seidauk lansa ba livru kontabilidade.",
         "summaryNoPayroll": "Reviza lansu jornál no mantén balansu tentativa loos.",
         "newEntry": "Lansu foun",
         "reviewPayroll": "Reviza lansu jornál saláriu",
-        "allGoodWithPayroll": "Kontas balansu ona no saláriu lança ona — laiha buat ne'ebé presiza atensaun.",
+        "allGoodWithPayroll": "Kontas balansu ona no saláriu lansa ona — laiha buat ne'ebé presiza atensaun.",
         "allGood": "Kontas balansu ona — laiha buat ne'ebé presiza atensaun.",
         "attention": {
           "trialBalance": "Balansu tentativa la balansu",
           "draftEntry": "Rascunhu lansu jornál {{count}} atu reviza",
           "draftEntries": "Rascunhu lansu jornál {{count}} atu reviza",
-          "payrollNotPosted": "Saláriu ikus seidauk lança ba livru kontabilidade",
+          "payrollNotPosted": "Saláriu ikus seidauk lansa ba livru kontabilidade",
           "annualIncomeTax": "Prepara impostu rendimentu negósiu {{year}} — prazu {{date}}"
         },
         "cards": {
@@ -14986,7 +14986,7 @@ export const translations = {
         "cannotTitle": "Kontabilista la bele",
         "can": {
           "payroll": "Reviza kálkulu folha no valór legal",
-          "money": "Servisu ho konta, fatura no lançamentu kontabilidade",
+          "money": "Servisu ho konta, fatura no lansamentu kontabilidade",
           "reports": "Prepara no reviza relatóriu finanseiru no konformidade",
           "review": "Haree rekordu ne'ebé presiza atu rekonsilia no aprova"
         },
