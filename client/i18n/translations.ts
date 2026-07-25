@@ -14420,7 +14420,7 @@ export const translations = {
     "taxReports": {
       "historyCapped": "Hatudu períodu {{count}} ne'ebé foun liu.",
       "filedFiguresFrozenTitle": "Hatama tiha ona — númeru sira nafatin",
-      "filedFiguresFrozenDescription": "{{period}} hatama tiha ona, tan ne'e númeru deklaradu sira nafatin hanesan submete ona. Ida ne'ebé ita haree mak previzaun husi folha atuál, la'ós deklarasaun ne'ebé hatama ona.",
+      "filedFiguresFrozenDescription": "{{period}} hatama tiha ona, tan ne'e númeru sira ne'ebé deklara ona nafatin hanesan. Ida ne'ebé ita haree mak folha atuál, la'ós deklarasaun ne'ebé hatama ona.",
       "inssArrearsMonth": "fulan",
       "inssArrearsMonths": "fulan",
       "inssArrearsNotice": "Pagamentu INSS atrazadu akumula funan 1% kada fulan ka fraksaun (DL 20/2017 Art. 39).",
