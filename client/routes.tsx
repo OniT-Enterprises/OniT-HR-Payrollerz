@@ -6,6 +6,7 @@
 
 import React, { lazy } from "react";
 import { Route, Navigate } from "react-router-dom";
+import { isChunkLoadError, isReloadInFlight, reloadForFreshChunks } from "@/lib/chunkReload";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 import { FeatureRoute } from "@/components/auth/FeatureRoute";
 import { MarketingRouteFallback } from "@/components/marketing/MarketingRouteFallback";
@@ -24,23 +25,31 @@ function marketingRoute(page: React.ReactNode) {
 
 // After a deploy, hashed chunk filenames change; users holding a stale
 // index.html hit a failed dynamic import and land on a dead page. Reload once
-// (at most once per minute, to avoid loops) to pick up the fresh index.html.
+// (loop-guarded in chunkReload.ts) to pick up the fresh index.html.
 function lazyWithRetry<P extends object>(
   importFn: () => Promise<{ default: React.ComponentType<P> }>,
 ) {
   return lazy(async () => {
+    let module: { default: React.ComponentType<P> } | undefined;
     try {
-      return await importFn();
+      module = await importFn();
     } catch (error) {
-      const KEY = "xefe-chunk-reload-at";
-      const last = Number(sessionStorage.getItem(KEY) || 0);
-      if (Date.now() - last > 60_000) {
-        sessionStorage.setItem(KEY, String(Date.now()));
-        window.location.reload();
-        await new Promise(() => {}); // page is reloading; never resolve
-      }
-      throw error;
+      if (!isChunkLoadError(error)) throw error;
+      // Reloading: suspend forever so the route keeps showing its fallback
+      // until the fresh document replaces this one.
+      if (isReloadInFlight() || reloadForFreshChunks()) return new Promise<never>(() => {});
+      throw error; // cooldown hit: genuinely broken, let the error surface
     }
+    // main.tsx's `vite:preloadError` handler calls preventDefault() to own the
+    // recovery, which makes Vite's preload helper RESOLVE `undefined` rather
+    // than reject. Without this guard that surfaced as React's "Element type is
+    // invalid. Received a promise that resolves to: undefined" error card
+    // racing the reload (Sentry JAVASCRIPT-REACT-B / -C).
+    if (!module) {
+      if (isReloadInFlight() || reloadForFreshChunks()) return new Promise<never>(() => {});
+      throw new Error("Failed to fetch dynamically imported module (stale chunk)");
+    }
+    return module;
   });
 }
 

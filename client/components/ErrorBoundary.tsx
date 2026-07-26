@@ -1,6 +1,7 @@
 import React from 'react';
 import * as Sentry from '@sentry/react';
 import { RefreshCw } from 'lucide-react';
+import { isChunkLoadError, reloadForFreshChunks } from '@/lib/chunkReload';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -27,6 +28,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Stale chunk after a deploy (a dynamic import that didn't go through
+    // Vite's `vite:preloadError` event, handled in main.tsx). Reload to fetch
+    // the fresh build — expected post-deploy noise, so don't report it either.
+    // chunkReload's cooldown stops this from spinning.
+    if (isChunkLoadError(error) && reloadForFreshChunks()) return;
+
     // Log the error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
