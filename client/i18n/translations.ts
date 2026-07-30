@@ -2545,7 +2545,8 @@ export const translations = {
           "requiredForReason": "required notice for this departure reason is",
           "shortfallWorker": "Notice is short: the worker owes the employer the missing",
           "shortfallEmployer": "Notice is short: the employer owes the worker the missing",
-          "daysPay": "days' pay"
+          "daysPay": "days' pay",
+          "jobSearchCredit": "During notice the worker may take at least {{days}} paid days to look for work (2 working days per week), keeping full pay and without using annual leave. They must say how they will use it at least 1 day in advance."
         },
         "disciplinary": {
           "noConcludedWarning": "No concluded disciplinary case is on file for this employee. Dismissal for cause without the Art. 50(4) written process (accusation, defence, reasoned decision) is automatically unlawful (Art. 51) and exposes you to Art. 55 indemnity — confirm with your accountant."
@@ -6363,6 +6364,10 @@ export const translations = {
       "absence": "Absence",
       "lateArrival": "Late arrival",
       "specialHours": "Special hours (2× pay)",
+      "invalidHireDate": "hire date is not a valid date — fix it on the employee profile before running payroll",
+      "unpaidAbsence": "Unpaid absence",
+      "absenceHoursLabel": "Hours docked",
+      "absenceHoursHint": "From attendance: hours expected but not worked and not covered by paid leave. Set to 0 for hours the worker was entitled to take with pay.",
       "advanceRepayment": "Advance Repayment",
       "loanRepayment": "Loan Repayment",
       "courtOrder": "Court Order",
@@ -6408,6 +6413,8 @@ export const translations = {
       "tryAdjustSearch": "Try adjusting your search term or clear the filter",
       "payrollWarnings": "{{count}} Payroll Warning(s)",
       "warningBelowMinWage": "Salary ${{salary}} is below minimum wage (${{min}}/month)",
+      "warningTerminatedBeforePeriod": "Employment ended {{date}}, before this period, but they are marked active and will be paid. Re-terminate them, or set a new hire date if they were rehired.",
+      "warningTerminatedAfterPeriod": "Left on {{date}}, after this period. This run pays the wages they earned in the period; their severance and 13th month go on the run covering their last day.",
       "warningOTExceeds": "{{hours}} OT hours exceeds max {{max}}/month ({{weekly}}/week)",
       "warningExcessiveHours": "Averaging {{hours}} hours/day — exceeds safe limits",
       "contractNeeded": "Contract needed",
@@ -9998,7 +10005,8 @@ export const translations = {
           "requiredForReason": "avizu préviu ezijidu ba motivu sai ida-ne'e mak",
           "shortfallWorker": "Avizu préviu la to'o: traballadór selu ba empregadór",
           "shortfallEmployer": "Avizu préviu la to'o: empregadór selu ba traballadór",
-          "daysPay": "loron pagamentu ne'ebé falta"
+          "daysPay": "loron pagamentu ne'ebé falta",
+          "jobSearchCredit": "Durante avizu préviu, traballadór bele foti loron {{days}} atu buka servisu — loron rua kada semana. Loron sira-ne'e selu tomak no la gasta lisensa anual. Nia tenke informa uluk loron ida antes oinsá nia sei uza."
         },
         "disciplinary": {
           "noConcludedWarning": "La iha prosesu disiplinár ne'ebé remata ona ba traballadór ida-ne'e. Despedimentu ho justa kauza sein prosesu hakerek tuir Art. 50(4) (akuzasaun, defeza, desizaun ho razaun) automatikamente ilegál (Art. 51) no fó risku ba ita atu selu indemnizasaun Art. 55 — konfirma ho ita-nia kontabilista."
@@ -13906,6 +13914,10 @@ export const translations = {
       "absence": "Falta",
       "lateArrival": "Tarde mai",
       "specialHours": "Oras espesiál (2×)",
+      "invalidHireDate": "data hahú servisu la validu — hadia iha perfil traballadór nian molok prosesa saláriu",
+      "unpaidAbsence": "Falta la selu",
+      "absenceHoursLabel": "Oras ne'ebé deskonta",
+      "absenceHoursHint": "Husi prezensa: oras ne'ebé espera maibé la halo servisu, no laiha lisensa selu nian. Hatama 0 ba oras ne'ebé traballadór iha direitu atu foti ho saláriu.",
       "advanceRepayment": "Selu Adiantamentu",
       "loanRepayment": "Selu Empréstimu",
       "courtOrder": "Ordem tribunál",
@@ -13951,6 +13963,8 @@ export const translations = {
       "tryAdjustSearch": "Koko ajusta termu buka ka hamoos filtru",
       "payrollWarnings": "Avizu Saláriu {{count}}",
       "warningBelowMinWage": "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
+      "warningTerminatedBeforePeriod": "Servisu hotu ona iha {{date}}, molok períodu ida-ne'e, maibé nia marka nafatin ativu no sei simu saláriu. Hapara fali nia kontratu, ka hatama data hahú servisu foun se nia fila mai servisu.",
+      "warningTerminatedAfterPeriod": "Nia sai iha {{date}}, hafoin períodu ida-ne'e. Prosesu ida-ne'e selu saláriu ne'ebé nia hetan iha períodu. Kompensasaun servisu no fulan 13 sei tama iha prosesu ne'ebé kobre nia loron ikus.",
       "warningOTExceeds": "Oras OT {{hours}} liu másimu {{max}}/fulan ({{weekly}}/semana)",
       "warningExcessiveHours": "Média {{hours}} oras/loron — liu limite seguru",
       "contractNeeded": "Presiza kontratu",
@@ -17631,7 +17645,8 @@ export const translations = {
           "requiredForReason": "o aviso prévio exigido para este motivo de saída é de",
           "shortfallWorker": "Aviso prévio insuficiente: o trabalhador deve ao empregador os",
           "shortfallEmployer": "Aviso prévio insuficiente: o empregador deve ao trabalhador os",
-          "daysPay": "dias de remuneração em falta"
+          "daysPay": "dias de remuneração em falta",
+          "jobSearchCredit": "Durante o aviso prévio o trabalhador pode usar pelo menos {{days}} dias pagos para procurar trabalho (dois dias de trabalho por semana), sem perda de remuneração e sem gastar férias. Deve comunicar o modo de utilização com pelo menos 1 dia de antecedência."
         },
         "disciplinary": {
           "noConcludedWarning": "Não existe qualquer processo disciplinar concluído em arquivo para este trabalhador. O despedimento com justa causa sem o processo escrito do art. 50.º(4) (acusação, defesa, decisão fundamentada) é automaticamente ilícito (art. 51.º) e expõe-no à indemnização do art. 55.º — confirme com o seu contabilista."
@@ -21449,6 +21464,10 @@ export const translations = {
       "absence": "Falta",
       "lateArrival": "Atraso",
       "specialHours": "Horas especiais (2×)",
+      "invalidHireDate": "a data de admissão não é uma data válida — corrija-a no perfil do trabalhador antes de processar o salário",
+      "unpaidAbsence": "Ausência não remunerada",
+      "absenceHoursLabel": "Horas descontadas",
+      "absenceHoursHint": "Da assiduidade: horas previstas mas não trabalhadas e não cobertas por licença paga. Coloque 0 nas horas que o trabalhador tinha direito a gozar com remuneração.",
       "advanceRepayment": "Reembolso de adiantamento",
       "loanRepayment": "Reembolso de empréstimo",
       "courtOrder": "Ordem judicial",
@@ -21494,6 +21513,8 @@ export const translations = {
       "tryAdjustSearch": "Tente ajustar o termo de pesquisa ou limpe o filtro",
       "payrollWarnings": "{{count}} Aviso(s) da Folha",
       "warningBelowMinWage": "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
+      "warningTerminatedBeforePeriod": "O vínculo cessou em {{date}}, antes deste período, mas está marcado como ativo e será pago. Volte a cessar o vínculo ou defina uma nova data de admissão se foi readmitido.",
+      "warningTerminatedAfterPeriod": "Saiu em {{date}}, depois deste período. Este processamento paga a remuneração ganha no período; a compensação por serviço e o 13.º mês entram no processamento que cobre o último dia de trabalho.",
       "warningOTExceeds": "{{hours}} horas extra excedem máximo de {{max}}/mês ({{weekly}}/semana)",
       "warningExcessiveHours": "Média de {{hours}} horas/dia — excede limites seguros",
       "contractNeeded": "Contrato necessário",

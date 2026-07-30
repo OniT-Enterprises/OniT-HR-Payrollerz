@@ -131,6 +131,27 @@ function getInPeriodTermination(
   return end && end >= periodStart && end <= periodEnd ? end : null;
 }
 
+/**
+ * Whether a terminated employee still belongs on THIS run's roster: their
+ * employment had not yet ended when the period began.
+ *
+ * Deliberately one-sided, unlike getInPeriodTermination. A termination AFTER
+ * periodEnd is the NORMAL case, not an edge case — getInitialPayrollDates sets a
+ * monthly period to the calendar month PRECEDING payday, so a worker who leaves
+ * early in month N+1 is already `terminated` before anyone opens the month-N run.
+ * With a two-sided bound they were gone from the active directory and rejected by
+ * the leaver filter, so a fully worked month could be paid by no run at all, with
+ * no warning and no UI to add them back (the wizard has exclude toggles only).
+ *
+ * getInPeriodTermination keeps its two-sided test because it gates the once-only
+ * final-pay items and the proration end: a termination after periodEnd means the
+ * whole period was worked, so full hours, no Art. 56 and no Art. 44 in this run.
+ */
+function employedDuringPeriod(employee: Employee, periodStart: string): boolean {
+  const end = employee.terminationDate || null;
+  return Boolean(end && end >= periodStart);
+}
+
 export function usePayrollCalculator({
   activeEmployees,
   terminatedEmployees,
@@ -258,6 +279,43 @@ export function usePayrollCalculator({
     () => finalPayDedupYears(periodStart, periodEnd, payDate),
     [periodStart, periodEnd, payDate],
   );
+
+  // Roster: active employees plus anyone whose employment had not ended when the
+  // period began. Two distinct cases, and both must be paid:
+  //  - termination INSIDE the period → final run: worked fraction, Art. 56
+  //    service compensation, netted Art. 44 subsidio;
+  //  - termination AFTER the period → an ordinary, fully worked period that
+  //    simply had not been paid yet when offboarding completed. Their final pay
+  //    rides the later run that covers their last working day.
+  //
+  // Computed BEFORE the queries below because every one of them is gated on the
+  // roster being non-empty. Gating on activeEmployees instead starved a
+  // leaver-only run of its YTD, month-to-date WIT, deduction and allowance data,
+  // which feed the resident $500/month exemption netting — so simply letting such
+  // a run render would have traded a blocked run for a wrong number.
+  const rosterLeavers = useMemo(() => {
+    if (!terminatedEmployees || terminatedEmployees.length === 0) return [];
+    return terminatedEmployees.filter((employee) =>
+      employedDuringPeriod(employee, periodStart),
+    );
+  }, [terminatedEmployees, periodStart]);
+  // Only leavers whose termination lands inside the period carry final-pay items,
+  // so this is what gates the committed-final-pay lookup.
+  const inPeriodLeavers = useMemo(
+    () =>
+      rosterLeavers.filter((employee) =>
+        Boolean(getInPeriodTermination(employee, periodStart, periodEnd)),
+      ),
+    [rosterLeavers, periodStart, periodEnd],
+  );
+  const rosterEmployees = useMemo(
+    () =>
+      rosterLeavers.length > 0
+        ? [...activeEmployees, ...rosterLeavers]
+        : activeEmployees,
+    [activeEmployees, rosterLeavers],
+  );
+
   const ytdQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
     queryFn: () =>
@@ -265,7 +323,7 @@ export function usePayrollCalculator({
     enabled:
       Boolean(tenantId) &&
       Number.isInteger(payrollYear) &&
-      activeEmployees.length > 0,
+      rosterEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
   const ytdByEmployee = ytdQuery.data ?? EMPTY_YTD_BY_EMPLOYEE;
@@ -285,23 +343,6 @@ export function usePayrollCalculator({
   );
   const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
   const attendanceSyncRequestRef = useRef(0);
-
-  // Roster: active employees plus leavers whose termination falls inside this
-  // pay period — their final run pays the worked fraction, Art. 56 service
-  // compensation, and the netted Art. 44 subsidio.
-  const inPeriodLeavers = useMemo(() => {
-    if (!terminatedEmployees || terminatedEmployees.length === 0) return [];
-    return terminatedEmployees.filter((employee) =>
-      Boolean(getInPeriodTermination(employee, periodStart, periodEnd)),
-    );
-  }, [terminatedEmployees, periodStart, periodEnd]);
-  const rosterEmployees = useMemo(
-    () =>
-      inPeriodLeavers.length > 0
-        ? [...activeEmployees, ...inPeriodLeavers]
-        : activeEmployees,
-    [activeEmployees, inPeriodLeavers],
-  );
 
   // Final pay (Art. 56 severance + Art. 44 subsidio) already committed this
   // year, so a leaver's final pay is disbursed exactly once even across two
@@ -349,7 +390,7 @@ export function usePayrollCalculator({
       Boolean(tenantId) &&
       payFrequency === "monthly" &&
       /^\d{4}-\d{2}$/.test(periodMonth) &&
-      activeEmployees.length > 0,
+      rosterEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
   const mtdWitByEmployee = mtdWitQuery.data ?? EMPTY_MTD_WIT;
@@ -368,7 +409,7 @@ export function usePayrollCalculator({
     queryKey: ["tenants", tenantId, "deductions", "activeForPayroll"],
     queryFn: () =>
       payrollService.deductions.getActiveDeductionsForPayroll(tenantId),
-    enabled: Boolean(tenantId) && activeEmployees.length > 0,
+    enabled: Boolean(tenantId) && rosterEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
     refetchOnMount: "always",
   });
@@ -406,7 +447,7 @@ export function usePayrollCalculator({
   const allowanceEnrollmentsQuery = useQuery({
     queryKey: ["tenants", tenantId, "benefits", "activeForPayroll"],
     queryFn: () => payrollService.benefits.getAllEnrollments(tenantId),
-    enabled: Boolean(tenantId) && activeEmployees.length > 0,
+    enabled: Boolean(tenantId) && rosterEmployees.length > 0,
     staleTime: 5 * 60 * 1000,
   });
   const allowancesByEmployee = useMemo(() => {
@@ -436,8 +477,19 @@ export function usePayrollCalculator({
       // A leaver's final run pays Art. 56 severance + Art. 44 subsidio exactly
       // once — resolveLeaverFinalPay nets both against what's already committed
       // and honors offboarding's cause-aware severance decision.
-      const { terminationDate: engineTerminationDate, subsidioAnual } =
-        resolveLeaverFinalPay({
+      //
+      // Guarded because it reaches calculateSubsidioAnual, whose first act is
+      // parsePlainISODate(hireDate) — a RangeError on anything that is not ISO
+      // yyyy-mm-dd. The Employees-page CSV importer stores that column verbatim
+      // (unlike lib/employees/import.ts, which validates), so a dd/mm/yyyy
+      // spreadsheet export puts one in Firestore. This call used to sit OUTSIDE
+      // the try/catch around calculateTLPayroll below, so the throw escaped
+      // calculateForEmployee, aborted the roster .map inside a setState updater,
+      // and took the whole authenticated app to the app-level ErrorBoundary —
+      // no employee's row survived. Degrade to this row only.
+      let finalPay: ReturnType<typeof resolveLeaverFinalPay>;
+      try {
+        finalPay = resolveLeaverFinalPay({
           inPeriodTermination: getInPeriodTermination(
             data.employee,
             periodStart,
@@ -454,6 +506,15 @@ export function usePayrollCalculator({
           },
           severanceEntitled: data.employee.severanceOnTermination === true,
         });
+      } catch (error) {
+        console.error(
+          "Final-pay resolution failed for employee:",
+          data.employee.id,
+          error,
+        );
+        return null;
+      }
+      const { terminationDate: engineTerminationDate, subsidioAnual } = finalPay;
       // Per-employee frequency overrides the run-level selector
       const effectiveFrequency =
         data.employee.compensation.payFrequency ?? payFrequency;
@@ -905,6 +966,20 @@ export function usePayrollCalculator({
         : TL_WORKING_HOURS.standardDailyHours;
     };
 
+    // Each roster member's employment window inside this period, so leave credit
+    // is clipped the same way the holiday credit is (see the sync loop below).
+    const employmentWindowByEmployee = new Map(
+      employeePayrollDataRef.current.map((d) => [
+        d.employee.id || "",
+        {
+          start: d.employee.jobDetails.hireDate || undefined,
+          end:
+            getInPeriodTermination(d.employee, periodStart, periodEnd) ??
+            undefined,
+        },
+      ]),
+    );
+
     // Approved leave overlapping the pay period. Without this, paid leave days
     // (zero recorded hours) would be docked as unpaid absence. Paid leave types
     // reduce absence hours; sick leave feeds sickDays so the TL 100%/50% sick
@@ -954,6 +1029,11 @@ export function usePayrollCalculator({
         // Holiday-aware working-day count so leave duration (and sick banding)
         // matches the server's canonical, holiday-excluding calculation.
         (start, end) => calculateWorkingDays(start, end, periodHolidayDates),
+        // Clip credit to each employee's own employment window — the same window
+        // the holiday credit below uses. A leaver's approved leave often runs past
+        // their last working day (offboarding never truncates leave_requests), and
+        // crediting those days cancels the salary proration.
+        (employeeId) => employmentWindowByEmployee.get(employeeId) ?? {},
       );
     } catch (error) {
       if (attendanceSyncRequestRef.current !== requestId) return;
@@ -1113,7 +1193,7 @@ export function usePayrollCalculator({
     const warnings: {
       employeeName: string;
       message: string;
-      type: "wage" | "hours";
+      type: "wage" | "hours" | "lifecycle";
     }[] = [];
     const maxMonthlyOT = TL_WORKING_HOURS.maxOvertimePerWeek * 4;
     // Per-day / per-ISO-week maxima from the attendance summary's
@@ -1127,6 +1207,44 @@ export function usePayrollCalculator({
       if (excludedEmployees.has(d.employee.id || "")) continue;
       includedCount += 1;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
+      // Defence in depth for a resurrected leaver. A stamped terminationDate that
+      // falls BEFORE this period means the employment had already ended, yet the
+      // row is on the roster — which is what a stray "active" flip looks like from
+      // here. The calculator deliberately treats active-with-a-stale-date as a
+      // rehire (and would then need a new hireDate), so this warns rather than
+      // excluding: only the operator knows which of the two it is.
+      const stampedTermination = d.employee.terminationDate || "";
+      if (
+        stampedTermination &&
+        periodStart &&
+        stampedTermination < periodStart &&
+        d.employee.status === "active"
+      ) {
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningTerminatedBeforePeriod", {
+            date: stampedTermination,
+          }),
+          type: "lifecycle",
+        });
+      }
+      // Explains why a departed worker is on this run: they left AFTER the period
+      // they worked, so this run owes them ordinary wages and their final pay
+      // (Art. 56 / Art. 44) belongs to the later run covering their last day.
+      if (
+        stampedTermination &&
+        periodEnd &&
+        stampedTermination > periodEnd &&
+        d.employee.status === "terminated"
+      ) {
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningTerminatedAfterPeriod", {
+            date: stampedTermination,
+          }),
+          type: "lifecycle",
+        });
+      }
       const salary = d.employee.compensation.monthlySalary || 0;
       const minimumWage = calculationConfig?.minimumWage ?? 115;
       const isPartTime =
@@ -1235,6 +1353,10 @@ export function usePayrollCalculator({
     calculationConfig,
     attendanceSummaryRows,
     payrollConfig,
+    // Read by the lifecycle warnings, which compare a stamped terminationDate
+    // against this period's bounds.
+    periodStart,
+    periodEnd,
   ]);
 
   // ─── Filtered data ──────────────────────────────────────────────
@@ -1281,9 +1403,14 @@ export function usePayrollCalculator({
             : new Date();
         const monthsWorkedThisYear = asOfDate.getMonth() + 1;
         const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
-        // Same once-only leaver resolution as calculateForEmployee (shared helper).
-        const { terminationDate: engineTerminationDate, subsidioAnual } =
-          resolveLeaverFinalPay({
+        // Same once-only leaver resolution as calculateForEmployee (shared helper),
+        // and guarded the same way — see the RangeError note there. Callers pass
+        // rows that already calculated, so a throwing hireDate has normally been
+        // dropped upstream, but validation must not be the thing that crashes the
+        // app either. A row we cannot resolve becomes a validation error.
+        let finalPay: ReturnType<typeof resolveLeaverFinalPay>;
+        try {
+          finalPay = resolveLeaverFinalPay({
             inPeriodTermination: getInPeriodTermination(
               data.employee,
               periodStart,
@@ -1300,6 +1427,21 @@ export function usePayrollCalculator({
             },
             severanceEntitled: data.employee.severanceOnTermination === true,
           });
+        } catch (error) {
+          console.error(
+            "Final-pay resolution failed for employee:",
+            data.employee.id,
+            error,
+          );
+          allErrors.push(
+            `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}: ${
+              t("runPayroll.invalidHireDate") ||
+              "hire date is not a valid date — fix it on the employee profile before running payroll"
+            }`,
+          );
+          continue;
+        }
+        const { terminationDate: engineTerminationDate, subsidioAnual } = finalPay;
         const effectiveFrequency =
           data.employee.compensation.payFrequency ?? payFrequency;
         const totalPeriodsInMonth = getPayPeriodsInPayMonth(
@@ -1389,6 +1531,8 @@ export function usePayrollCalculator({
       recurringInputsByEmployee,
       allowancesByEmployee,
       calculationConfig,
+      // Used by the unresolvable-hire-date validation error below.
+      t,
     ],
   );
 

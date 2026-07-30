@@ -6792,6 +6792,8 @@ const messages = {
     absence: "Falta",
     lateArrival: "Tarde mai",
     specialHours: "Oras espesiál (2×)",
+    invalidHireDate:
+      "data hahú servisu la validu — hadia iha perfil traballadór nian molok prosesa saláriu",
     unpaidAbsence: "Falta la selu",
     absenceHoursLabel: "Oras ne'ebé deskonta",
     absenceHoursHint:
@@ -6849,6 +6851,10 @@ const messages = {
     payrollWarnings: "Avizu Saláriu {{count}}",
     warningBelowMinWage:
       "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
+    warningTerminatedBeforePeriod:
+      "Servisu hotu ona iha {{date}}, molok períodu ida-ne'e, maibé nia marka nafatin ativu no sei simu saláriu. Hapara fali nia kontratu, ka hatama data hahú servisu foun se nia fila mai servisu.",
+    warningTerminatedAfterPeriod:
+      "Nia sai iha {{date}}, hafoin períodu ida-ne'e. Prosesu ida-ne'e selu saláriu ne'ebé nia hetan iha períodu. Kompensasaun servisu no fulan 13 sei tama iha prosesu ne'ebé kobre nia loron ikus.",
     warningOTExceeds:
       "Oras OT {{hours}} liu másimu {{max}}/fulan ({{weekly}}/semana)",
     warningExcessiveHours: "Média {{hours}} oras/loron — liu limite seguru",

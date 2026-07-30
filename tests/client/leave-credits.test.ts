@@ -209,3 +209,75 @@ describe("computeLeaveCredits", () => {
     expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 0, sickDays: 5 });
   });
 });
+
+describe("computeLeaveCredits: clipped to the employment window", () => {
+  // Approved leave routinely outlives a leaver's last working day — offboarding
+  // never truncates leave_requests. Crediting those days cancelled the salary
+  // proration, because absence is computed as
+  // expected - worked - paidLeave against a FULL-month expectation.
+  const window = (start?: string, end?: string) => () => ({ start, end });
+
+  const computeWindowed = (
+    requests: LeaveCreditInput[],
+    employmentWindowFor: (employeeId: string) => { start?: string; end?: string },
+  ) =>
+    computeLeaveCredits(
+      requests,
+      PERIOD.start,
+      PERIOD.end,
+      HOURS_PER_DAY,
+      payFraction,
+      workingDays,
+      employmentWindowFor,
+    );
+
+  it("stops crediting paid leave at the termination date", () => {
+    // Jun 8-12 is Mon-Fri. Employment ends Wednesday Jun 10, so only Mon-Wed
+    // (24h) may be credited — not the full 40h.
+    const credits = computeWindowed(
+      [req({ startDate: "2026-06-08", endDate: "2026-06-12" })],
+      window(undefined, "2026-06-10"),
+    );
+    expect(credits.get("emp-1")?.paidLeaveHours).toBe(24);
+  });
+
+  it("credits nothing for leave entirely after the termination date", () => {
+    const credits = computeWindowed(
+      [req({ startDate: "2026-06-15", endDate: "2026-06-26" })],
+      window(undefined, "2026-06-10"),
+    );
+    expect(credits.has("emp-1")).toBe(false);
+  });
+
+  it("clips sick days to the employment window too", () => {
+    const credits = computeWindowed(
+      [req({ leaveType: "sick", startDate: "2026-06-08", endDate: "2026-06-12" })],
+      window(undefined, "2026-06-10"),
+    );
+    expect(credits.get("emp-1")).toEqual({ paidLeaveHours: 0, sickDays: 3 });
+  });
+
+  it("stops crediting before a mid-period hire date", () => {
+    const credits = computeWindowed(
+      [req({ startDate: "2026-06-08", endDate: "2026-06-12" })],
+      window("2026-06-11", undefined),
+    );
+    expect(credits.get("emp-1")?.paidLeaveHours).toBe(16); // Thu-Fri only
+  });
+
+  it("leaves an in-window request untouched", () => {
+    const credits = computeWindowed(
+      [req({ startDate: "2026-06-08", endDate: "2026-06-12" })],
+      window("2026-06-01", "2026-06-30"),
+    );
+    expect(credits.get("emp-1")?.paidLeaveHours).toBe(40);
+  });
+
+  it("falls back to the period when no window is known for the employee", () => {
+    const credits = computeWindowed(
+      [req({ startDate: "2026-06-08", endDate: "2026-06-12" })],
+      () => ({}),
+    );
+    expect(credits.get("emp-1")?.paidLeaveHours).toBe(40);
+  });
+});

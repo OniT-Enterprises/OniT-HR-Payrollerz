@@ -30,7 +30,12 @@ function mappedValue(
   return mapping ? String(row[mapping.csvColumn] ?? "").trim() : "";
 }
 
-function validISODate(value: string): boolean {
+/**
+ * Exported so the Employees-page CSV path shares ONE definition with this
+ * validating importer. A non-ISO hireDate reaching Firestore makes
+ * calculateSubsidioAnual throw a RangeError deep inside the payroll calculator.
+ */
+export function validISODate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;

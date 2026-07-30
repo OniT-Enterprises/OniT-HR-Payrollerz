@@ -694,7 +694,20 @@ export default function AddEmployee() {
         isForeignWorker: !isTimorese,
         bankName: additionalInfo.paymentMethod === "bank_transfer" ? additionalInfo.bankName : "",
         bankAccountNumber: additionalInfo.paymentMethod === "bank_transfer" ? additionalInfo.bankAccountNumber : "",
-        status: "active",
+        // NEVER re-author status on an edit — this page is also the edit page
+        // (/people/add?edit=<id>). Hardcoding "active" here silently resurrected
+        // a terminated worker: saving their profile to attach an exit document
+        // put them back on the payroll roster at FULL salary, every month. And
+        // because updateEmployee merges fields, terminationDate and
+        // severanceOnTermination survived, so the run treated them as a rehire
+        // while the INSS DR contract-day proration in statutory-returns.ts (which
+        // only fires for status === 'terminated') stopped applying — reopening
+        // gap-matrix live bug L4 with a full 30-day Art. 12 declaration.
+        // It also un-suspended 'inactive' staff and re-billed their seat.
+        // Reactivation must be an explicit, audited action that clears those
+        // fields and sets a new hireDate, not a side effect of saving a profile.
+        // Same reasoning as the jobDetails lifecycle spread above.
+        status: isEditMode ? (editingEmployee?.status ?? "active") : "active",
       };
 
       // Upload files if they exist
