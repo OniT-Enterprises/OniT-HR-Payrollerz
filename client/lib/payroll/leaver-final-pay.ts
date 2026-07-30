@@ -386,7 +386,7 @@ export function resolveLeaverFinalPay(args: {
       0,
       subtractMoney(
         entitlement,
-        committedSubsidioForLeaver(committed, inPeriodTermination),
+        committedSubsidioForLeaver(committed, inPeriodTermination, hireDate),
       ),
     ),
   };
@@ -408,8 +408,12 @@ function committedSubsidioForLeaver(
     subsidioAnualByRun?: readonly CommittedSubsidioRun[];
   },
   inPeriodTermination: string,
+  hireDate: string,
 ): number {
   const byRun = committed.subsidioAnualByRun;
   if (!byRun) return committed.subsidioAnual;
-  return committedSubsidioDischarging(byRun, inPeriodTermination);
+  // hireDate scopes BOTH sides: calculateSubsidioAnual prorates the entitlement
+  // from it, so the netting must ignore runs that predate it or a rehired worker
+  // is charged twice for the same months. See committedSubsidioDischarging.
+  return committedSubsidioDischarging(byRun, inPeriodTermination, hireDate);
 }
