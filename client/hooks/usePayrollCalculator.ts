@@ -504,6 +504,9 @@ export function usePayrollCalculator({
             serviceCompensation: 0,
             subsidioAnual: 0,
           },
+          // RAW recorded hire date, not the today-defaulted `hireDate` above: a
+          // synthesized default must never narrow the netting (see the arg doc).
+          engagementStart: data.employee.jobDetails.hireDate || undefined,
           severanceEntitled: data.employee.severanceOnTermination === true,
         });
       } catch (error) {
@@ -1440,6 +1443,7 @@ export function usePayrollCalculator({
               serviceCompensation: 0,
               subsidioAnual: 0,
             },
+            engagementStart: data.employee.jobDetails.hireDate || undefined,
             severanceEntitled: data.employee.severanceOnTermination === true,
           });
         } catch (error) {

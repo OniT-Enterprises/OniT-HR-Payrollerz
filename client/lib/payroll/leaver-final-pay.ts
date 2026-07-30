@@ -346,6 +346,15 @@ export function resolveLeaverFinalPay(args: {
     /** Committed subsidio with the wage period of each run that paid it. */
     subsidioAnualByRun?: readonly CommittedSubsidioRun[];
   };
+  /**
+   * Start of the CURRENT period of employment, from the employee's RECORDED hire
+   * date — pass undefined when none is on file. Deliberately separate from
+   * `hireDate` above, which callers default to today when the field is empty: that
+   * default is fine for prorating an entitlement but must never bound the netting,
+   * because "today" would exclude every earlier run of a CONTINUOUS engagement and
+   * re-pay a subsidio already paid. Only recorded data may narrow the netting.
+   */
+  engagementStart?: string;
   /** Only explicit true includes Art. 56; absence is review-blocked/safe-off. */
   severanceEntitled?: boolean;
 }): { terminationDate: string | undefined; subsidioAnual: number } {
@@ -357,6 +366,7 @@ export function resolveLeaverFinalPay(args: {
     includeSubsidioAnual,
     subsidioConfig,
     committed,
+    engagementStart,
     severanceEntitled = false,
   } = args;
 
@@ -386,7 +396,7 @@ export function resolveLeaverFinalPay(args: {
       0,
       subtractMoney(
         entitlement,
-        committedSubsidioForLeaver(committed, inPeriodTermination, hireDate),
+        committedSubsidioForLeaver(committed, inPeriodTermination, engagementStart),
       ),
     ),
   };
@@ -408,12 +418,16 @@ function committedSubsidioForLeaver(
     subsidioAnualByRun?: readonly CommittedSubsidioRun[];
   },
   inPeriodTermination: string,
-  hireDate: string,
+  engagementStart: string | undefined,
 ): number {
   const byRun = committed.subsidioAnualByRun;
   if (!byRun) return committed.subsidioAnual;
-  // hireDate scopes BOTH sides: calculateSubsidioAnual prorates the entitlement
-  // from it, so the netting must ignore runs that predate it or a rehired worker
-  // is charged twice for the same months. See committedSubsidioDischarging.
-  return committedSubsidioDischarging(byRun, inPeriodTermination, hireDate);
+  // The recorded hire date scopes BOTH sides: calculateSubsidioAnual prorates the
+  // entitlement from it, so the netting must ignore runs that predate it or a
+  // rehired worker is charged twice for the same months. Absent (or incoherent)
+  // recorded data means no narrowing at all — the whole civil year is considered,
+  // which is the direction that cannot double-pay. See committedSubsidioDischarging.
+  const usable =
+    engagementStart && engagementStart <= inPeriodTermination ? engagementStart : undefined;
+  return committedSubsidioDischarging(byRun, inPeriodTermination, usable);
 }
