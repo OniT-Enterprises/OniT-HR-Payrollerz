@@ -1210,6 +1210,19 @@ export function usePayrollCalculator({
       if (excludedEmployees.has(d.employee.id || "")) continue;
       includedCount += 1;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
+      // MONEY_CHAIN.md invariant 6 — Xefe never infers a compliance value. A missing
+      // hire date is silently defaulted to today by the calculators, and the Art. 44
+      // subsidio and Art. 56 service compensation are both prorated FROM it, so a
+      // statutory figure would rest on a substituted date with nothing on screen to
+      // say so. Disclose rather than block: blocking would stop runs that complete
+      // today, and only the tenant knows the real date.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.employee.jobDetails.hireDate || "")) {
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningNoHireDate"),
+          type: "wage",
+        });
+      }
       // A row whose calculation threw is excluded from the run by getIncludedData.
       // Silence there would mean an employee simply vanishes from payroll and is
       // never paid, so say it out loud. The usual cause is an unparseable

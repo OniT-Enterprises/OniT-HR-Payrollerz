@@ -5,6 +5,33 @@
  * and keeping it out of the hook file means tests don't drag the hook's
  * firebase/context import chain into vitest, where the Firebase env vars
  * don't exist.
+ *
+ * ---------------------------------------------------------------------------
+ * THE SCOPE CONTRACT — read this before changing anything below.
+ *
+ * Every defect this module has had (four in July 2026, three of them inside the
+ * FIX for the previous one) was the same mistake in a different costume:
+ *
+ *     the ENTITLEMENT was computed over one scope, and the amount NETTED OFF it
+ *     was computed over a different one.
+ *
+ *   - netted across two civil years, entitlement over one    -> underpaid
+ *   - netted per run-year, entitlement per termination-year   -> paid twice
+ *   - netted across the civil year, entitlement per engagement -> underpaid
+ *   - netted using a defaulted date, entitlement from a real one -> paid twice
+ *
+ * So when you touch either side, state the scope out loud and change both:
+ *   1. WHICH PERIOD does the entitlement cover? (calculateSubsidioAnual prorates
+ *      from the hire date to the as-of/termination date.)
+ *   2. WHICH COMMITTED AMOUNTS discharge exactly that period? (nothing earlier,
+ *      nothing from another engagement, nothing from another civil year.)
+ *   3. Is the data bounding (2) RECORDED, or synthesized? A default may prorate
+ *      an entitlement; it must never narrow a netting — narrowing on a guess
+ *      re-pays money that was already paid.
+ *
+ * Art. 56 is the deliberate exception: its suppression is year-agnostic, because
+ * a second run over the same period must never re-pay it. See MONEY_CHAIN.md §4a.
+ * ---------------------------------------------------------------------------
  */
 import { calculateSubsidioAnual } from "@/lib/payroll/calculations-tl";
 import { maxMoney, multiplyMoney, subtractMoney } from "@/lib/currency";
