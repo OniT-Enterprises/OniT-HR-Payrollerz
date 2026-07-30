@@ -6911,6 +6911,8 @@ const messages = {
     absence: "Falta",
     lateArrival: "Atraso",
     specialHours: "Horas especiais (2×)",
+    invalidHireDate:
+      "a data de admissão não é uma data válida — corrija-a no perfil do trabalhador antes de processar o salário",
     unpaidAbsence: "Ausência não remunerada",
     absenceHoursLabel: "Horas descontadas",
     absenceHoursHint:
@@ -6968,6 +6970,10 @@ const messages = {
     payrollWarnings: "{{count}} Aviso(s) da Folha",
     warningBelowMinWage:
       "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
+    warningTerminatedBeforePeriod:
+      "O vínculo cessou em {{date}}, antes deste período, mas está marcado como ativo e será pago. Volte a cessar o vínculo ou defina uma nova data de admissão se foi readmitido.",
+    warningTerminatedAfterPeriod:
+      "Saiu em {{date}}, depois deste período. Este processamento paga a remuneração ganha no período; a compensação por serviço e o 13.º mês entram no processamento que cobre o último dia de trabalho.",
     warningOTExceeds:
       "{{hours}} horas extra excedem máximo de {{max}}/mês ({{weekly}}/semana)",
     warningExcessiveHours:

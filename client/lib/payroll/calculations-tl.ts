@@ -35,6 +35,7 @@ import {
   sumMoney,
   proRata,
   maxMoney,
+  compareMoney,
 } from '@/lib/currency';
 
 // ============================================
@@ -1031,8 +1032,33 @@ export function calculateTLPayroll(
 
   // ========== DEDUCTIONS ==========
 
-  // Absence deduction
-  const absenceDeduction = calculateAbsenceDeduction(hourlyRate, input.absenceHours);
+  // Absence and late time are a LOSS of remuneration (Art. 33(5)), so together
+  // they can consume at most the whole period's cash gross — never more. The
+  // clamp is load-bearing, not defensive: hourlyRate is rounded to the cent
+  // against a 190.6667 divisor (ROUND_CEIL against 190 under the
+  // fixed_190_round_up convention), so rate x a full month of absence hours
+  // OVERSHOOTS the monthly salary. Because netPay is gross minus deductions, the
+  // payslip then showed a negative amount payable. Reachable by default for a
+  // hire dated after the period end — calculateProRataHours returns 0, so the row
+  // is seeded with a full month of absence while salaried gross stays whole — and
+  // for any salaried employee whose absence reaches a full month.
+  const rawAbsenceDeduction = calculateAbsenceDeduction(hourlyRate, input.absenceHours);
+  const rawLateDeduction = calculateLateDeduction(hourlyRate, input.lateArrivalMinutes);
+  const absenceDeduction = Math.min(rawAbsenceDeduction, cashGrossPay);
+  // Absence is clamped first, then late takes only what gross has left, so the
+  // two lines always sum to at most gross and the payslip still adds up.
+  const lateDeduction = Math.min(
+    rawLateDeduction,
+    maxMoney(0, subtractMoney(cashGrossPay, absenceDeduction)),
+  );
+  if (rawAbsenceDeduction > absenceDeduction || rawLateDeduction > lateDeduction) {
+    warnings.push(
+      'Absence and late time exceed this period\'s gross pay, so they were ' +
+        'capped at gross (Art. 33(5) is a loss of remuneration, never a debt). ' +
+        'Check the hours — an employee who did not work in this period at all ' +
+        'should be excluded from the run rather than fully docked.',
+    );
+  }
   if (absenceDeduction > 0) {
     deductions.push({
       type: 'absence',
@@ -1043,8 +1069,6 @@ export function calculateTLPayroll(
     });
   }
 
-  // Late arrival deduction
-  const lateDeduction = calculateLateDeduction(hourlyRate, input.lateArrivalMinutes);
   if (lateDeduction > 0) {
     deductions.push({
       type: 'late_arrival',
@@ -1225,7 +1249,14 @@ export function calculateTLPayroll(
   // Use decimal.js for precise final totals
 
   const totalDeductions = sumMoney(finalDeductions.map(d => d.amount));
-  const netPay = subtractMoney(cashGrossPay, totalDeductions);
+  // Floored like wagesPaid/taxableIncome/contributableRemuneration already are.
+  // With absence and late capped at gross above, the only line that can still
+  // reach here is a court order, which Art. 42(2) leaves outside the 30% ceiling
+  // — and an employer cannot hand the court more than the whole wage anyway. A
+  // negative amount payable is not a thing that can be paid, printed, summed into
+  // a run total, or sent to a bank, so it must never be produced; the warning
+  // below tells the operator the figures need review.
+  const netPay = maxMoney(0, subtractMoney(cashGrossPay, totalDeductions));
   const totalCompensationPaid = Math.max(
     0,
     subtractMoney(totalCompensation, absenceDeduction, lateDeduction),
@@ -1236,8 +1267,14 @@ export function calculateTLPayroll(
   );
 
   // Warnings
-  if (netPay < 0) {
-    warnings.push('Net pay is negative. Please review deductions.');
+  // Tests the PRE-floor condition: netPay is clamped at 0 above, so `netPay < 0`
+  // can no longer fire. Deductions still exceeding gross means a figure needs
+  // review even though the payable amount is now coherent.
+  if (compareMoney(totalDeductions, cashGrossPay) > 0) {
+    warnings.push(
+      'Deductions exceed gross pay for this period, so net pay was floored at ' +
+        '$0.00. Review the deduction lines before approving.',
+    );
   }
 
   if (input.taxInfo.hasTaxExemption || input.taxInfo.inssExempt) {

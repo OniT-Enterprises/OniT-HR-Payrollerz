@@ -835,3 +835,60 @@ describe("validateTLPayrollInput", () => {
     expect(errors[0]).toContain("sick days");
   });
 });
+
+// ============================================================
+// Net pay can never be negative (unclamped absence overshoot)
+// ============================================================
+
+describe("net pay floor and the absence-vs-gross cap", () => {
+  // A full month of absence against a salaried employee. hourlyRate is rounded to
+  // the cent against a 190.6667 divisor, so rate x 190.67 lands ABOVE the monthly
+  // salary — and netPay used to be gross minus deductions with no floor, so the
+  // payslip showed a negative amount payable. This is the default state for a hire
+  // dated after the period end: calculateProRataHours returns 0, the row is seeded
+  // with a full month of absence, and salaried gross stays whole.
+  const FULL_MONTH_HOURS = 190.67;
+
+  it("never returns a negative net pay for a full month of absence", () => {
+    for (const monthlySalary of [115, 400, 1000, 2615, 5000]) {
+      const result = calculateTLPayroll(
+        makeBaseInput({ monthlySalary, absenceHours: FULL_MONTH_HOURS }),
+      );
+      expect(result.netPay).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("caps the absence deduction at gross so the payslip lines still add up", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 400, absenceHours: FULL_MONTH_HOURS }),
+    );
+    const totalDeductions = result.deductions.reduce((sum, d) => sum + d.amount, 0);
+    expect(result.absenceDeduction).toBeLessThanOrEqual(result.cashGrossPay);
+    expect(totalDeductions).toBeLessThanOrEqual(result.cashGrossPay + 0.001);
+    expect(result.netPay).toBe(0);
+  });
+
+  it("warns when absence and late time are capped at gross", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 400,
+        absenceHours: FULL_MONTH_HOURS,
+        lateArrivalMinutes: 120,
+      }),
+    );
+    expect(result.warnings.some((w) => w.includes("capped at gross"))).toBe(true);
+    // Absence is clamped first; late then takes only what gross has left, which is
+    // nothing once absence has consumed it all.
+    expect(result.lateDeduction).toBe(0);
+  });
+
+  it("leaves an ordinary partial absence untouched", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 600, absenceHours: 16 }),
+    );
+    expect(result.absenceDeduction).toBeGreaterThan(0);
+    expect(result.absenceDeduction).toBeLessThan(result.cashGrossPay);
+    expect(result.netPay).toBeGreaterThan(0);
+    expect(result.warnings.some((w) => w.includes("capped at gross"))).toBe(false);
+  });
+});

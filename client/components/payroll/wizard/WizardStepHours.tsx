@@ -18,7 +18,7 @@ import type { TLBonusINSSCategory } from "@/lib/payroll/calculations-tl";
 interface PayrollWarning {
   employeeName: string;
   message: string;
-  type: "wage" | "hours";
+  type: "wage" | "hours" | "lifecycle";
 }
 
 interface WizardStepHoursProps {

@@ -78,10 +78,19 @@ export default function RunPayrollWizard() {
     refetch: refetchEmployees,
   } = useEmployeeDirectory({ status: "active" });
   const activeEmployees = activeEmployeeData ?? [];
-  // Leavers terminated inside the pay period get a final-pay row (prorated
-  // hours + Art. 56 severance + netted Art. 44 subsidio) — the hook filters
-  // this list by its own period, so passing all terminated staff is correct.
-  const { data: terminatedEmployeeData } = useEmployeeDirectory({ status: "terminated" });
+  // Leavers whose employment covered any of the pay period get a row — prorated
+  // hours, plus Art. 56 severance and netted Art. 44 subsidio when the
+  // termination itself falls inside the period. The hook filters this list by its
+  // own period, so passing all terminated staff is correct.
+  const {
+    data: terminatedEmployeeData,
+    isSuccess: terminatedLoaded,
+    isError: terminatedError,
+  } = useEmployeeDirectory({ status: "terminated" });
+  // The empty state must not be decided before the TERMINATED query settles: a
+  // tenant whose only payroll member is a leaver would otherwise be told to add
+  // their first employee while that leaver was still in flight.
+  const terminatedSettled = terminatedLoaded || terminatedError;
 
   const createPayrollMutation = useCreatePayrollRunWithRecords();
   const payrollMutationGuardRef = useRef(false);
@@ -131,8 +140,11 @@ export default function RunPayrollWizard() {
     defaultPayFrequency: configuredSchedule?.frequency,
     defaultPayDay: configuredSchedule?.payDay,
   });
+  // Keyed on the ROSTER, not activeEmployees: a run whose only member is a leaver
+  // (the last employee has left, and their final pay is still owed) must still
+  // wait for its YTD and calculation state like any other run.
   const payrollDataBlocked =
-    activeEmployees.length > 0 &&
+    calc.rosterEmployees.length > 0 &&
     (calc.isYtdLoading ||
       calc.isYtdError ||
       calc.calculationsPending ||
@@ -383,7 +395,14 @@ export default function RunPayrollWizard() {
     );
   }
 
-  if (employeesLoaded && activeEmployees.length === 0) {
+  // The ROSTER, not activeEmployees. A tenant whose last employee has just left
+  // still has a payroll to run: their worked days, Art. 56 severance and prorated
+  // Art. 44 subsidio. Keyed on activeEmployees this short-circuited to the
+  // "add your first employee" empty state, and since /payroll/run is the only
+  // run-creation route, money the product had already computed and promised
+  // ("the next payroll run automatically pays their Art. 56 severance") could
+  // never be disbursed at all.
+  if (employeesLoaded && terminatedSettled && calc.rosterEmployees.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <SEO {...seoConfig.runPayroll} />
@@ -425,11 +444,11 @@ export default function RunPayrollWizard() {
     );
   }
 
-  if (activeEmployees.length > 0 && calc.isYtdLoading) {
+  if (calc.rosterEmployees.length > 0 && calc.isYtdLoading) {
     return <PayrollLoadingSkeleton />;
   }
 
-  if (activeEmployees.length > 0 && calc.isYtdError) {
+  if (calc.rosterEmployees.length > 0 && calc.isYtdError) {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />

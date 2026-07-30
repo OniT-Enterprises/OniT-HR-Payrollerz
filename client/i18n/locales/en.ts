@@ -6802,6 +6802,8 @@ const messages = {
     absence: "Absence",
     lateArrival: "Late arrival",
     specialHours: "Special hours (2× pay)",
+    invalidHireDate:
+      "hire date is not a valid date — fix it on the employee profile before running payroll",
     unpaidAbsence: "Unpaid absence",
     absenceHoursLabel: "Hours docked",
     absenceHoursHint:
@@ -6858,6 +6860,10 @@ const messages = {
     payrollWarnings: "{{count}} Payroll Warning(s)",
     warningBelowMinWage:
       "Salary ${{salary}} is below minimum wage (${{min}}/month)",
+    warningTerminatedBeforePeriod:
+      "Employment ended {{date}}, before this period, but they are marked active and will be paid. Re-terminate them, or set a new hire date if they were rehired.",
+    warningTerminatedAfterPeriod:
+      "Left on {{date}}, after this period. This run pays the wages they earned in the period; their severance and 13th month go on the run covering their last day.",
     warningOTExceeds:
       "{{hours}} OT hours exceeds max {{max}}/month ({{weekly}}/week)",
     warningExcessiveHours:

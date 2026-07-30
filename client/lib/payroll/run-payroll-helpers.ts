@@ -180,13 +180,32 @@ export function computeLeaveCredits(
   /** Paid fraction (0..1) of the policy for a leave type; 0 = unpaid. */
   payFractionForType: (leaveType: string) => number,
   workingDaysBetween: (start: string, end: string) => number,
+  /**
+   * This employee's employment window inside the period (mid-period hire date,
+   * in-period termination date). Credit is clipped to it, because leave can only
+   * be credited for days the contract existed.
+   *
+   * Without this, approved leave running past a leaver's last working day
+   * credited paid hours for days after the employment ended and CANCELLED the
+   * salary proration: absence is computed as
+   * expected - worked - paidLeave against a FULL-month expectation, so a leaver
+   * with a month of approved leave came out at nearly full pay. Nothing truncates
+   * approved leave at exit — offboarding never touches leave_requests — and the
+   * holiday credit in the same sync already clips to exactly this window.
+   */
+  employmentWindowFor?: (employeeId: string) => { start?: string; end?: string },
 ): Map<string, LeaveCredit> {
   const credits = new Map<string, LeaveCredit>();
 
   for (const req of approvedLeave) {
     if (!req.employeeId) continue;
-    const overlapStart = req.startDate > periodStart ? req.startDate : periodStart;
-    const overlapEnd = req.endDate < periodEnd ? req.endDate : periodEnd;
+    const employment = employmentWindowFor?.(req.employeeId);
+    const windowStart =
+      employment?.start && employment.start > periodStart ? employment.start : periodStart;
+    const windowEnd =
+      employment?.end && employment.end < periodEnd ? employment.end : periodEnd;
+    const overlapStart = req.startDate > windowStart ? req.startDate : windowStart;
+    const overlapEnd = req.endDate < windowEnd ? req.endDate : windowEnd;
     if (overlapStart > overlapEnd) continue;
 
     const days = req.halfDay ? 0.5 : workingDaysBetween(overlapStart, overlapEnd);

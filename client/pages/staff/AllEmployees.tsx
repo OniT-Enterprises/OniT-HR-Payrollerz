@@ -80,6 +80,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { validISODate } from "@/lib/employees/import";
 import { getFunctionsLazy } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
@@ -851,6 +852,15 @@ export default function AllEmployees() {
     const v = (i: number) => values[i]?.trim() ?? "";
     const address = [v(12), v(13), v(14), v(15)].filter(Boolean).join(", ");
     const emptyDoc = { number: "", expiryDate: "", required: false };
+    // This path used to store the hire-date column VERBATIM, unlike the
+    // validating importer in lib/employees/import.ts. A dd/mm/yyyy spreadsheet
+    // export therefore put a non-ISO date in Firestore, and calculateSubsidioAnual
+    // throws a RangeError on it — which crashed the whole payroll calculator.
+    // Throwing here lands in the caller's per-row catch, so the row is counted as
+    // an error and skipped instead.
+    if (v(7) && !validISODate(v(7))) {
+      throw new Error(`Hire date must use YYYY-MM-DD (got "${v(7)}")`);
+    }
     return {
       personalInfo: {
         firstName: v(1),
