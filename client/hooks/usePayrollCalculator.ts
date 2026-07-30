@@ -64,6 +64,7 @@ import {
   calculateProRataHours,
   computeLeaveCredits,
   type EmployeePayrollData,
+  finalPayDedupYears,
   getPayPeriodsInPayMonth,
 } from "@/lib/payroll/run-payroll-helpers";
 import {
@@ -245,12 +246,20 @@ export function usePayrollCalculator({
         : undefined,
     [payrollConfig, periodEnd],
   );
-  // Key the civil-year windows (subsidio proration, severance/subsidio dedup,
-  // YTD) to the PERIOD the payroll is FOR, not the pay date. A December run paid
-  // in January belongs to the earlier civil year — paying it against the pay-date
-  // year mis-prorates the 13th month (Art. 44 "civil year") and looks up the
-  // once-per-year dedup in the wrong year, re-paying an already-committed subsidio.
+  // Key the civil-year windows (subsidio proration, YTD) to the PERIOD the
+  // payroll is FOR, not the pay date. A December run paid in January belongs to
+  // the earlier civil year — paying it against the pay-date year mis-prorates
+  // the 13th month (Art. 44 "civil year").
   const payrollYear = Number.parseInt((periodEnd || payDate).slice(0, 4), 10);
+  // The once-only final-pay dedup needs the year SET, not this single year. A
+  // leaver's Art. 56/44 entitlement is computed from their termination date, so
+  // for a period straddling 1 January the periodEnd year is the wrong place to
+  // look and the already-paid December run goes unseen — re-paying the whole
+  // 13th month. See finalPayDedupYears.
+  const finalPayYears = useMemo(
+    () => finalPayDedupYears(periodStart, periodEnd, payDate),
+    [periodStart, periodEnd, payDate],
+  );
   const ytdQuery = useQuery({
     queryKey: ["tenants", tenantId, "payrollYtd", payrollYear],
     queryFn: () =>
@@ -311,16 +320,16 @@ export function usePayrollCalculator({
       tenantId,
       "payrollRecords",
       "committedFinalPay",
-      payrollYear,
+      finalPayYears.join(","),
     ],
     queryFn: () =>
       payrollService.records.getCommittedFinalPayByEmployee(
         tenantId,
-        payrollYear,
+        finalPayYears,
       ),
     enabled:
       Boolean(tenantId) &&
-      Number.isInteger(payrollYear) &&
+      finalPayYears.length > 0 &&
       inPeriodLeavers.length > 0,
     staleTime: 5 * 60 * 1000,
   });

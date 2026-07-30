@@ -17,8 +17,12 @@ import {
 /**
  * Offboarding compliance helpers (Lei 4/2012 + DL 20/2017) — pure functions
  * behind the Offboarding page:
- *  - E7 notice periods: Arts. 49(8)-(9) (employer-side, 15/30 days by tenure)
- *    and 53(2)-(3) (resignation, 30 days);
+ *  - E7 notice periods: Arts. 49(8)-(9) (resignation, 30 days, worker pays any
+ *    shortfall) and 53(2)-(3) (employer-side, 15/30 days by tenure, employer
+ *    pays any shortfall). Art. 49 is the WORKER's article and Art. 53 is the
+ *    employer's — these assertions exist to pin that mapping, because the code
+ *    shipped with the two transposed until Jul 2026 and this suite agreed with
+ *    the error;
  *  - F12 INSS cessation deadline: DL 20/2017 Art. 5(2)-(3), day 10 of the
  *    month after cessation;
  *  - F24 death as a departure cause: Art. 47(1)(b) caducidade;
@@ -27,18 +31,20 @@ import {
  */
 
 describe('requiredNoticeDays (Arts. 49(8), 53(2))', () => {
-  it('resignation always requires 30 days written notice, regardless of tenure', () => {
+  it("resignation cites the WORKER's article, Art. 49(8), for its flat 30 days", () => {
     const short = requiredNoticeDays('resignation', '2026-01-01', '2026-06-30');
     const long = requiredNoticeDays('resignation', '2015-01-01', '2026-06-30');
     expect(short.days).toBe(30);
     expect(long.days).toBe(30);
-    expect(short.basis).toBe('Lei 4/2012 Art. 53(2)');
+    // Art. 49 = "Rescisão por iniciativa do trabalhador"; (8) is the 30-day
+    // no-just-cause notice. NOT Art. 53(2), which is the employer's band.
+    expect(short.basis).toBe('Lei 4/2012 Art. 49(8)');
   });
 
-  it('employer-side causes: 15 days at tenure up to 2 years', () => {
+  it("employer-side causes cite the EMPLOYER's article, Art. 53(2): 15 days at tenure up to 2 years", () => {
     expect(requiredNoticeDays('redundancy', '2025-03-01', '2026-06-30')).toEqual({
       days: 15,
-      basis: 'Lei 4/2012 Art. 49(8)',
+      basis: 'Lei 4/2012 Art. 53(2)',
     });
     expect(requiredNoticeDays('termination', '2025-03-01', '2026-06-30').days).toBe(15);
   });
@@ -46,9 +52,18 @@ describe('requiredNoticeDays (Arts. 49(8), 53(2))', () => {
   it('employer-side causes: 30 days beyond 2 years of tenure', () => {
     expect(requiredNoticeDays('redundancy', '2020-01-15', '2026-06-30')).toEqual({
       days: 30,
-      basis: 'Lei 4/2012 Art. 49(8)',
+      basis: 'Lei 4/2012 Art. 53(2)',
     });
     expect(requiredNoticeDays('termination', '2019-06-01', '2026-09-15').days).toBe(30);
+  });
+
+  it('never cites a worker article for an employer case, or vice versa', () => {
+    // Regression guard for the Jul 2026 transposition: whichever side owes the
+    // notice must be cited from that side's article.
+    expect(requiredNoticeDays('resignation', '2015-01-01', '2026-06-30').basis).toContain('49(');
+    for (const reason of ['redundancy', 'termination'] as const) {
+      expect(requiredNoticeDays(reason, '2015-01-01', '2026-06-30').basis).toContain('53(');
+    }
   });
 
   it('tenure boundary: exactly 2 years is still the 15-day band; one day beyond is 30', () => {
