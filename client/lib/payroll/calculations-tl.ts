@@ -1260,19 +1260,55 @@ export function calculateTLPayroll(
   // balances (createJournalEntry rejects it). Shaving the lines keeps net,
   // payslip and journal reconciled by construction, and is what really happens:
   // the employer deposits what could be withheld and the balance stays owed.
+  // Covered end-to-end by tests/client/payroll-journal.test.ts, which walks
+  // engine -> accounting summary -> journal and asserts the entry balances.
+  // Which lines give way first when the wage cannot cover them all. EXPLICIT
+  // rather than relying on the order lines happen to be pushed in: the push order
+  // puts court_order after loan/advance, so consuming the budget in array order
+  // would shave a tribunal-fixed amount while sparing a voluntary repayment. That
+  // is only harmless today because the Art. 42(3) block above tends to have
+  // zeroed the voluntary lines already — an incidental interaction, not a
+  // guarantee, and exactly the kind of thing that breaks when either side moves.
+  //
+  // Lower number = protected for longer:
+  //  1 absence / late      a reduction OF the wage (Art. 33(5)), not a withholding
+  //                        FROM it — the money was never earned, so it always stands
+  //  2 income_tax / INSS   statutory withholding remitted to the state
+  //  3 court_order         Art. 42(2): determined by judicial decision
+  //  4 loan / advance      voluntary employer arrangements
+  //  5 other               everything discretionary
+  const CLAMP_PRIORITY: Record<string, number> = {
+    absence: 1, late_arrival: 1,
+    income_tax: 2, inss_employee: 2,
+    court_order: 3,
+    loan_repayment: 4, advance_repayment: 4,
+  };
+  const clampPriority = (type: string) => CLAMP_PRIORITY[type] ?? 5;
+
   const preClampTotal = sumMoney(finalDeductions.map(d => d.amount));
   let withholdingClampedToGross = false;
   if (compareMoney(preClampTotal, cashGrossPay) > 0) {
     withholdingClampedToGross = true;
-    // Shave from the END of the list backwards, so statutory withholding (pushed
-    // first) survives ahead of discretionary lines wherever possible.
+    // Walk the lines most-protected first, giving each what the wage still has.
+    // Whatever is left over when the budget runs out is shaved, so the lines can
+    // never sum to more than gross and netPay falls out non-negative.
+    const order = finalDeductions
+      .map((deduction, index) => ({ deduction, index }))
+      .sort((a, b) =>
+        clampPriority(a.deduction.type) - clampPriority(b.deduction.type) || a.index - b.index,
+      );
     let budget = cashGrossPay;
-    const clamped = finalDeductions.map(d => {
-      const amount = Math.min(d.amount, maxMoney(0, budget));
+    const amountByIndex = new Map<number, number>();
+    for (const { deduction, index } of order) {
+      const amount = Math.min(deduction.amount, maxMoney(0, budget));
       budget = subtractMoney(budget, amount);
-      return { ...d, amount };
-    });
-    finalDeductions = clamped;
+      amountByIndex.set(index, amount);
+    }
+    // Rebuild in the ORIGINAL order — the payslip reads these lines top to bottom.
+    finalDeductions = finalDeductions.map((deduction, index) => ({
+      ...deduction,
+      amount: amountByIndex.get(index) ?? deduction.amount,
+    }));
   }
 
   // ========== FINAL CALCULATIONS ==========

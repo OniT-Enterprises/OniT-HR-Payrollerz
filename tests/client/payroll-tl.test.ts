@@ -892,3 +892,59 @@ describe("net pay floor and the absence-vs-gross cap", () => {
     expect(result.warnings.some((w) => w.includes("capped at gross"))).toBe(false);
   });
 });
+
+describe("withholding clamp gives way in the right order", () => {
+  // When the wage cannot cover every deduction, which line yields matters:
+  // absence is a reduction OF the wage (Art. 33(5)) and always stands; statutory
+  // withholding outranks a court order (Art. 42(2)), which outranks voluntary
+  // repayments. This must NOT depend on the order lines happen to be pushed in —
+  // court_order is pushed AFTER loan/advance, so consuming the budget in array
+  // order would shave the tribunal-fixed amount and spare the voluntary one.
+  const amountOf = (result: ReturnType<typeof calculateTLPayroll>, type: string) =>
+    result.deductions.filter((d) => d.type === type).reduce((s, d) => s + d.amount, 0);
+
+  it("spares a court order and shaves the voluntary repayment first", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({
+        monthlySalary: 400,
+        absenceHours: 150,     // eats most of the wage
+        courtOrders: 120,
+        advanceRepayment: 90,  // pushed BEFORE court_order in the array
+      }),
+    );
+    expect(result.netPay).toBeGreaterThanOrEqual(0);
+    expect(result.totalDeductions).toBeLessThanOrEqual(result.cashGrossPay + 0.001);
+    // The voluntary line gives way before the court-ordered one.
+    expect(amountOf(result, "advance_repayment")).toBe(0);
+    expect(amountOf(result, "court_order")).toBeGreaterThan(0);
+  });
+
+  it("never shaves the absence reduction itself", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 400, absenceHours: 190.67, courtOrders: 200 }),
+    );
+    // Absence consumed the whole wage, so the court order has nothing to come
+    // from — but the wage reduction stands at its full capped value.
+    expect(amountOf(result, "absence")).toBeCloseTo(result.cashGrossPay, 2);
+    expect(amountOf(result, "court_order")).toBe(0);
+    expect(result.netPay).toBe(0);
+  });
+
+  it("keeps statutory withholding ahead of a court order", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 400, absenceHours: 140, courtOrders: 300 }),
+    );
+    // INSS is computed on the post-absence base, so it is small but must survive.
+    expect(amountOf(result, "inss_employee")).toBeGreaterThan(0);
+    expect(result.totalDeductions).toBeLessThanOrEqual(result.cashGrossPay + 0.001);
+    expect(result.netPay).toBe(0);
+  });
+
+  it("leaves every line untouched when the wage covers them all", () => {
+    const result = calculateTLPayroll(
+      makeBaseInput({ monthlySalary: 1000, absenceHours: 8, advanceRepayment: 40 }),
+    );
+    expect(amountOf(result, "advance_repayment")).toBe(40);
+    expect(result.warnings.some((w) => w.includes("exceeded gross pay"))).toBe(false);
+  });
+});
