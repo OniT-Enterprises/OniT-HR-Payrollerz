@@ -6870,6 +6870,8 @@ const messages = {
     payrollWarnings: "Avizu Saláriu {{count}}",
     warningBelowMinWage:
       "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
+    warningNoHireDate:
+      "laiha data hahú servisu validu, entaun tinan servisu la loos. Fulan 13 no kompensasaun servisu depende ba data ne'e — hatama data loos iha perfil traballadór.",
     warningNotCalculated:
       "la bele kalkula saláriu, entaun traballadór ne'e LA tama iha prosesu ne'e. Xeke nia data hahú servisu no saláriu iha perfil.",
     warningTerminatedBeforePeriod:

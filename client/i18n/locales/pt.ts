@@ -6989,6 +6989,8 @@ const messages = {
     payrollWarnings: "{{count}} Aviso(s) da Folha",
     warningBelowMinWage:
       "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
+    warningNoHireDate:
+      "não há data de admissão válida em arquivo, pelo que a antiguidade está a ser presumida. O 13.º mês e a compensação por serviço dependem dela — defina a data real no perfil do trabalhador.",
     warningNotCalculated:
       "não foi possível calcular a remuneração, pelo que este trabalhador NÃO está incluído no processamento. Verifique a data de admissão e o salário no perfil.",
     warningTerminatedBeforePeriod:

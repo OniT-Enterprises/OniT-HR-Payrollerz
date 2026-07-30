@@ -6879,6 +6879,8 @@ const messages = {
     payrollWarnings: "{{count}} Payroll Warning(s)",
     warningBelowMinWage:
       "Salary ${{salary}} is below minimum wage (${{min}}/month)",
+    warningNoHireDate:
+      "no valid start date on file, so length of service is being guessed. The 13th month and service compensation depend on it — set the real start date on the employee profile.",
     warningNotCalculated:
       "pay could not be calculated, so this employee is NOT included in the run. Check their hire date and salary on the employee profile.",
     warningTerminatedBeforePeriod:
