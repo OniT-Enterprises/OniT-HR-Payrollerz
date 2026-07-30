@@ -2784,6 +2784,8 @@ const messages = {
         shortfallEmployer:
           "Notice is short: the employer owes the worker the missing",
         daysPay: "days' pay",
+        jobSearchCredit:
+          "During notice the worker may take at least {{days}} paid days to look for work (2 working days per week), keeping full pay and without using annual leave. They must say how they will use it at least 1 day in advance.",
       },
       disciplinary: {
         noConcludedWarning:
@@ -6800,6 +6802,10 @@ const messages = {
     absence: "Absence",
     lateArrival: "Late arrival",
     specialHours: "Special hours (2× pay)",
+    unpaidAbsence: "Unpaid absence",
+    absenceHoursLabel: "Hours docked",
+    absenceHoursHint:
+      "From attendance: hours expected but not worked and not covered by paid leave. Set to 0 for hours the worker was entitled to take with pay.",
     advanceRepayment: "Advance Repayment",
     loanRepayment: "Loan Repayment",
     courtOrder: "Court Order",

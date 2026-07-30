@@ -692,6 +692,16 @@ export function usePayrollCalculator({
         "nightShiftHours",
         "holidayHours",
         "restDayHours",
+        // absenceHours is editable because it is the ONLY pay lever for a
+        // salaried worker: calculateRegularPay ignores hours for salaried staff
+        // and every shortfall (including a leaver's partial period) is docked
+        // through the absence deduction, so raising regularHours cannot correct
+        // an over-dock. Attendance sync derives it as
+        // expected − worked − paidLeave, which over-counts whenever hours were
+        // lawfully not worked and no leave request exists — the Art. 53(4)
+        // paid job-search credit during a redundancy notice being the case that
+        // has no leave type at all.
+        "absenceHours",
       ];
       const moneyFields = ["bonus", "perDiem", "allowances"];
 

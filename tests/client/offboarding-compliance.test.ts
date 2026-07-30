@@ -4,6 +4,7 @@ import {
   noticeDaysGiven,
   noticeShortfallDays,
   inssCessationDeadline,
+  jobSearchCreditDays,
   severanceDefaultForReason,
 } from '@/lib/payroll/leaver-final-pay';
 import {
@@ -85,6 +86,48 @@ describe('requiredNoticeDays (Arts. 49(8), 53(2))', () => {
         });
       },
     );
+  });
+});
+
+describe('jobSearchCreditDays (Art. 53(4))', () => {
+  it('grants 2 paid days per complete week of a redundancy notice', () => {
+    // 30-day notice (>2 years' tenure) = 4 complete weeks = 8 days.
+    expect(jobSearchCreditDays('redundancy', '2026-06-01', '2026-07-01')).toBe(8);
+    // 15-day notice (tenure up to 2 years) = 2 complete weeks = 4 days.
+    expect(jobSearchCreditDays('redundancy', '2026-06-16', '2026-07-01')).toBe(4);
+  });
+
+  it('ignores a trailing partial week (conservative floor, OPEN question)', () => {
+    expect(jobSearchCreditDays('redundancy', '2026-06-01', '2026-06-08')).toBe(2); // 7 days
+    expect(jobSearchCreditDays('redundancy', '2026-06-01', '2026-06-13')).toBe(2); // 12 days
+    expect(jobSearchCreditDays('redundancy', '2026-06-01', '2026-06-15')).toBe(4); // 14 days
+  });
+
+  it('is zero for a notice period shorter than one week', () => {
+    expect(jobSearchCreditDays('redundancy', '2026-06-28', '2026-07-01')).toBe(0);
+    expect(jobSearchCreditDays('redundancy', '2026-07-01', '2026-07-01')).toBe(0);
+  });
+
+  it('attaches to redundancy ONLY — not resignation, dismissal, or any other cause', () => {
+    // Art. 53 is the communication rule for the Art. 52 market/technological/
+    // structural rescission. A resignation runs under Art. 49 and a justa-causa
+    // dismissal under Art. 50 (which needs no notice period at all).
+    for (const reason of [
+      'resignation',
+      'termination',
+      'retirement',
+      'contract_end',
+      'mutual_agreement',
+      'death',
+      'other',
+    ] as const) {
+      expect(jobSearchCreditDays(reason, '2026-06-01', '2026-07-01')).toBe(0);
+    }
+  });
+
+  it('returns null when the dates cannot be evaluated', () => {
+    expect(jobSearchCreditDays('redundancy', 'not-a-date', '2026-07-01')).toBeNull();
+    expect(jobSearchCreditDays('redundancy', '2026-06-01', '')).toBeNull();
   });
 });
 

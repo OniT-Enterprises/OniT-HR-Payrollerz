@@ -41,6 +41,7 @@ interface OriginalValues {
   nightShiftHours: number;
   holidayHours: number;
   restDayHours: number;
+  absenceHours: number;
   bonus: number;
   bonusINSSCategory: TLBonusINSSCategory | null;
   perDiem: number;
@@ -54,6 +55,7 @@ interface EmployeePayrollRowData {
   nightShiftHours: number;
   holidayHours: number;
   restDayHours: number;
+  absenceHours: number;
   sickDays: number;
   perDiem: number;
   bonus: number;
@@ -283,6 +285,34 @@ function ExpandedDetails({
             ariaLabel={`${t("runPayroll.restDay")} - ${employeeName}`}
             onInputChange={onInputChange}
           />
+        </div>
+      </div>
+
+      {/* Unpaid absence — editable, and deliberately separate from the special
+          hours above because it REDUCES pay. The attendance sync derives it as
+          expected − worked − paid leave, so it over-counts any hour that was
+          lawfully not worked without a leave request behind it: the Art. 53(4)
+          paid job-search credit during a redundancy notice has no leave type at
+          all, and for salaried staff this is the only field that can correct the
+          resulting dock (regular hours do not scale salaried pay). */}
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          {t("runPayroll.unpaidAbsence") || "Unpaid absence"}
+        </p>
+        <div className="flex flex-wrap items-end gap-3">
+          <LabeledNumber
+            label={t("runPayroll.absenceHoursLabel") || "Hours docked"}
+            value={data.absenceHours}
+            originalValue={data.originalValues.absenceHours}
+            employeeId={employeeId}
+            field="absenceHours"
+            ariaLabel={`${t("runPayroll.absenceHoursLabel") || "Hours docked"} - ${employeeName}`}
+            onInputChange={onInputChange}
+          />
+          <p className="text-[11px] text-muted-foreground max-w-md pb-2">
+            {t("runPayroll.absenceHoursHint") ||
+              "From attendance: hours expected but not worked and not covered by paid leave. Set to 0 for hours the worker was entitled to take with pay."}
+          </p>
         </div>
       </div>
 

@@ -153,6 +153,39 @@ export function noticeShortfallDays(
   return Math.max(0, requiredDays - given);
 }
 
+/**
+ * Paid job-search credit during an employer redundancy notice — Lei 4/2012
+ * Art. 53(4): "Durante o período de aviso prévio, o trabalhador tem direito a
+ * utilizar um crédito de horas correspondente a dois dias de trabalho por semana
+ * sem prejuízo do direito à correspondente remuneração."
+ *
+ * Paid in full: these hours are NOT an absence and must not be docked, and they
+ * do not consume the Art. 32 annual-leave balance. Art. 53(5) requires the worker
+ * to tell the employer how they will use the credit at least 1 day in advance.
+ *
+ * `redundancy` ONLY. Art. 53 is the communication rule for the Art. 52
+ * market/technological/structural rescission, so the credit does not attach to a
+ * resignation (Art. 49) or to a justa-causa dismissal (Art. 50, which needs no
+ * notice period at all).
+ *
+ * Counts 2 days per COMPLETE week of notice — the conservative floor. The statute
+ * says "por semana" without addressing a part-week, so whether a trailing partial
+ * week also earns the 2 days is unresolved; this returns the floor and the UI
+ * presents it as a minimum. OPEN (needs-Nico).
+ *
+ * Returns null when the dates cannot be evaluated, 0 for any non-redundancy cause.
+ */
+export function jobSearchCreditDays(
+  reason: DepartureReason,
+  noticeDate: string,
+  lastWorkingDay: string,
+): number | null {
+  if (reason !== "redundancy") return 0;
+  const noticeDays = noticeDaysGiven(noticeDate, lastWorkingDay);
+  if (noticeDays === null) return null;
+  return Math.floor(noticeDays / 7) * 2;
+}
+
 // ============================================
 // Art. 55 unlawful-dismissal indemnity — REFERENCE ONLY (Lei 4/2012)
 // ============================================

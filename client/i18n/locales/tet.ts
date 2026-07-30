@@ -2682,6 +2682,8 @@ const messages = {
         shortfallEmployer:
           "Avizu préviu la to'o: empregadór selu ba traballadór",
         daysPay: "loron pagamentu ne'ebé falta",
+        jobSearchCredit:
+          "Durante avizu préviu, traballadór bele foti loron {{days}} atu buka servisu — loron rua kada semana. Loron sira-ne'e selu tomak no la gasta lisensa anual. Nia tenke informa uluk loron ida antes oinsá nia sei uza.",
       },
       disciplinary: {
         noConcludedWarning:
@@ -6790,6 +6792,10 @@ const messages = {
     absence: "Falta",
     lateArrival: "Tarde mai",
     specialHours: "Oras espesiál (2×)",
+    unpaidAbsence: "Falta la selu",
+    absenceHoursLabel: "Oras ne'ebé deskonta",
+    absenceHoursHint:
+      "Husi prezensa: oras ne'ebé espera maibé la halo servisu, no laiha lisensa selu nian. Hatama 0 ba oras ne'ebé traballadór iha direitu atu foti ho saláriu.",
     advanceRepayment: "Selu Adiantamentu",
     loanRepayment: "Selu Empréstimu",
     courtOrder: "Ordem tribunál",

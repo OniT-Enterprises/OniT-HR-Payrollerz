@@ -54,6 +54,7 @@ import {
   Loader2,
   AlertTriangle,
   CalendarClock,
+  Info,
   Landmark,
   ShieldAlert,
 } from "lucide-react";
@@ -88,6 +89,7 @@ import {
   noticeDaysGiven,
   noticeShortfallDays,
   inssCessationDeadline,
+  jobSearchCreditDays,
   art55IndemnityMonths,
   art55Indemnity,
 } from "@/lib/payroll/leaver-final-pay";
@@ -227,6 +229,18 @@ export default function Offboarding() {
           selectedCase.noticeDate,
           selectedCase.lastWorkingDay,
           noticeReq.days,
+        )
+      : null;
+  // Art. 53(4): paid job-search credit during a REDUNDANCY notice period only.
+  // Informational — nothing here pays it or blocks the case; the hours are taken
+  // as time off during notice and must simply not be docked (see the unpaid
+  // absence field in the payroll wizard).
+  const jobSearchCredit =
+    selectedCase?.noticeDate && selectedCase?.lastWorkingDay
+      ? jobSearchCreditDays(
+          selectedCase.departureReason,
+          selectedCase.noticeDate,
+          selectedCase.lastWorkingDay,
         )
       : null;
 
@@ -1212,6 +1226,18 @@ export default function Offboarding() {
                                   ? "Lei 4/2012 Art. 49(9)"
                                   : "Lei 4/2012 Art. 53(3)"}
                                 ).
+                              </span>
+                            </p>
+                          )}
+                          {jobSearchCredit !== null && jobSearchCredit > 0 && (
+                            <p className="flex items-start gap-2 text-muted-foreground">
+                              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                              <span>
+                                {t("hiring.offboarding.notice.jobSearchCredit", {
+                                  days: String(jobSearchCredit),
+                                }) ||
+                                  `During notice the worker may take at least ${jobSearchCredit} paid days to look for work (2 working days per week), without losing pay and without using annual leave. They must say how they will use the credit at least 1 day in advance.`}{" "}
+                                (Lei 4/2012 Art. 53(4)-(5)).
                               </span>
                             </p>
                           )}

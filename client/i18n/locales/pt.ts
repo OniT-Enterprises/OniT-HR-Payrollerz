@@ -2835,6 +2835,8 @@ const messages = {
         shortfallEmployer:
           "Aviso prévio insuficiente: o empregador deve ao trabalhador os",
         daysPay: "dias de remuneração em falta",
+        jobSearchCredit:
+          "Durante o aviso prévio o trabalhador pode usar pelo menos {{days}} dias pagos para procurar trabalho (dois dias de trabalho por semana), sem perda de remuneração e sem gastar férias. Deve comunicar o modo de utilização com pelo menos 1 dia de antecedência.",
       },
       disciplinary: {
         noConcludedWarning:
@@ -6909,6 +6911,10 @@ const messages = {
     absence: "Falta",
     lateArrival: "Atraso",
     specialHours: "Horas especiais (2×)",
+    unpaidAbsence: "Ausência não remunerada",
+    absenceHoursLabel: "Horas descontadas",
+    absenceHoursHint:
+      "Da assiduidade: horas previstas mas não trabalhadas e não cobertas por licença paga. Coloque 0 nas horas que o trabalhador tinha direito a gozar com remuneração.",
     advanceRepayment: "Reembolso de adiantamento",
     loanRepayment: "Reembolso de empréstimo",
     courtOrder: "Ordem judicial",
