@@ -105,6 +105,45 @@ flowchart LR
 | 5 | Corrections = reversing journals; never delete/repoint | `voidJournalEntry`/`createReversingJournalEntry` |
 | 6 | Statutory generation refuses on missing data — Xefe never infers compliance values | strict readers in `lib/tax/statutory-payroll-record.ts` |
 | 7 | Audit trail: `payroll.run/approve/pay`, `tax.*` actions written via server callable | `functions/src/audit.ts` allowlist + E2E assertion |
+| 8 | Deduction LINES never sum to more than `cashGrossPay`, so `gross − deductions = net` always holds | clamp in `calculateTLPayroll` + `payroll-journal.test.ts` (engine → summary → journal) |
+| 9 | A leaver's Art. 56 severance and Art. 44 subsídio are each paid exactly once, and the Art. 44 test is per-civil-year | `getCommittedFinalPayByEmployee` + `committedSubsidioDischarging` + `final-pay-dedup.test.ts` |
+
+### 4a. Final-pay once-only guard — the two scopes are NOT the same
+
+This subsystem caused four separate money bugs in July 2026, three of them in
+*fixes* for the previous one, so the reasoning is recorded here rather than only
+in code comments.
+
+- **Art. 56 severance is suppressed year-agnostically.** Any committed
+  `service_compensation` in the looked-up window blocks a second one, because a
+  second run over the same period must never re-pay it. (Whether Art. 56 is
+  once-per-*employment* rather than once-per-year matters only for a rehire and is
+  OPEN — gap matrix F20. Widening it all-time would underpay a genuinely rehired
+  worker who completes a fresh 5-year block, so it is deliberately left alone.)
+- **Art. 44 subsídio is per civil year**, so it may only be netted against the
+  *same* year's committed amount. Do **not** try to key this on "the civil year a
+  run discharges" — that question is unanswerable from a run: a wage period
+  straddling 1 January touches two years and nothing on a payroll record says
+  which one its subsídio was computed for. Both naive keys are wrong in opposite
+  directions (year-agnostic paid a January leaver $0 of what they were owed;
+  anchoring on `periodEnd` re-paid a December leaver in full). The rule is a
+  predicate over *(run period, termination date)* — `committedSubsidioDischarging`.
+- **The lookup spans every civil year the wage period touches**
+  (`finalPayDedupYears`), and includes `writing_records` runs: their records are
+  committed in the same atomic batch as the run doc, so a stuck run holds real
+  money that `repairStuckRun` will promote. Missing them pays twice; counting an
+  abandoned partial run only suppresses a payment, which is visible and transient.
+- **Roster membership is one-sided.** A terminated employee belongs on any run
+  whose period began before their employment ended (`employedDuringPeriod`),
+  because the default schedule pays the *preceding* month — a two-sided test meant
+  a fully worked month could be paid by no run at all. `getInPeriodTermination`
+  keeps its two-sided test; it gates the final-pay items and the proration end,
+  not roster membership.
+
+Any change here needs `final-pay-dedup.test.ts`, `rl-termination-payroll.test.ts`
+and `payroll-journal.test.ts` green, and those tests must exercise the shape the
+**service** actually returns — a test built on a hand-made input shape hid one of
+the four bugs completely.
 
 The whole chain is proven end-to-end in one browser pass:
 `tests/e2e/full-workflow.spec.ts` (signup → … → liability-clearing journals),
