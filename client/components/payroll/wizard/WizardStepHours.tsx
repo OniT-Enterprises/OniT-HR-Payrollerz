@@ -8,7 +8,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, RefreshCw, Search } from "lucide-react";
+import { AlertCircle, Info, RefreshCw, Search } from "lucide-react";
 import { PayrollEmployeeCard } from "@/components/payroll";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
@@ -105,15 +105,27 @@ export function WizardStepHours({
         )}
       </div>
 
-      {/* Warnings */}
+      {/* Warnings. `lifecycle` notes are context, not problems — e.g. "left after
+          this period, so this run pays their wages and the final pay rides the
+          later run". Rendering those in the red block told the operator something
+          was wrong with a run that was correct, so they get a neutral amber
+          treatment while wage/hours breaches stay red. */}
       {payrollWarnings.length > 0 && (
-        <div className="space-y-1.5 p-3 rounded-xl border border-red-500/30 bg-red-50/30 dark:bg-red-950/10">
+        <div className="space-y-1.5 p-3 rounded-xl border border-border bg-muted/20">
           {payrollWarnings.map((w, i) => (
             <div
               key={i}
-              className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300 p-2 rounded-lg bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30"
+              className={
+                w.type === "lifecycle"
+                  ? "flex items-start gap-2 text-sm text-amber-700 dark:text-amber-300 p-2 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30"
+                  : "flex items-start gap-2 text-sm text-red-700 dark:text-red-300 p-2 rounded-lg bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30"
+              }
             >
-              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+              {w.type === "lifecycle" ? (
+                <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              )}
               <span className="font-medium">{w.employeeName}:</span>
               <span>{w.message}</span>
             </div>

@@ -1207,6 +1207,17 @@ export function usePayrollCalculator({
       if (excludedEmployees.has(d.employee.id || "")) continue;
       includedCount += 1;
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
+      // A row whose calculation threw is excluded from the run by getIncludedData.
+      // Silence there would mean an employee simply vanishes from payroll and is
+      // never paid, so say it out loud. The usual cause is an unparseable
+      // hireDate reaching calculateSubsidioAnual.
+      if (d.calculation === null) {
+        warnings.push({
+          employeeName: name,
+          message: t("runPayroll.warningNotCalculated"),
+          type: "wage",
+        });
+      }
       // Defence in depth for a resurrected leaver. A stamped terminationDate that
       // falls BEFORE this period means the employment had already ended, yet the
       // row is on the roster — which is what a stray "active" flip looks like from
@@ -1404,10 +1415,14 @@ export function usePayrollCalculator({
         const monthsWorkedThisYear = asOfDate.getMonth() + 1;
         const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
         // Same once-only leaver resolution as calculateForEmployee (shared helper),
-        // and guarded the same way — see the RangeError note there. Callers pass
-        // rows that already calculated, so a throwing hireDate has normally been
-        // dropped upstream, but validation must not be the thing that crashes the
-        // app either. A row we cannot resolve becomes a validation error.
+        // and guarded the same way — see the RangeError note there.
+        //
+        // Defence in depth, not a live path: callers pass rows that already
+        // calculated, and a hireDate that throws here would have thrown there
+        // first, leaving calculation null and the row filtered out by
+        // getIncludedData. Kept so validation can never be the thing that takes
+        // the app down if that ever stops being true. The operator learns about a
+        // dropped row from the payrollWarnings entry, not from here.
         let finalPay: ReturnType<typeof resolveLeaverFinalPay>;
         try {
           finalPay = resolveLeaverFinalPay({
