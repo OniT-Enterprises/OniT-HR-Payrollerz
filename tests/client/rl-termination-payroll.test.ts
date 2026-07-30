@@ -411,6 +411,59 @@ describe("resolveLeaverFinalPay: which committed subsidio discharges this leaver
     expect(r.subsidioAnual).toBeCloseTo(50, 2); // subsidio still owed
   });
 
+  it("REHIRE: does not net the previous engagement's subsidio against the new one", () => {
+    // Every other case here uses one continuous hireDate, which is exactly why
+    // this went unnoticed. Xefe's rehire action moves hireDate to the new start
+    // date, so calculateSubsidioAnual prorates the entitlement from THERE — and
+    // the netting has to be scoped the same way. Otherwise the worker loses the
+    // earlier months from the entitlement AND has the earlier payment subtracted.
+    //
+    // $600/month, originally hired 2019-03-01. Worked Jan-Mar 2026 and was paid
+    // 3/12 = $150 on the March run. Rehired 2026-07-01, leaves again 2026-10-31.
+    const r = resolveLeaverFinalPay({
+      monthlySalary: 600,
+      hireDate: "2026-07-01", // moved by the rehire
+      asOfDate: new Date("2026-10-31T00:00:00"),
+      includeSubsidioAnual: false,
+      subsidioConfig: { proRataForNewEmployees: true },
+      inPeriodTermination: "2026-10-31",
+      severanceEntitled: true,
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 150,
+        subsidioAnualByRun: [
+          // First engagement's final pay — wholly before the new hire date.
+          { periodStart: "2026-03-01", periodEnd: "2026-03-31", payDate: "2026-03-19", amount: 150 },
+        ],
+      },
+    });
+    // Jul-Oct = 4/12 of $600, with nothing from the old engagement netted off.
+    expect(r.subsidioAnual).toBeCloseTo(200, 2);
+    // $150 (first engagement) + $200 = $350 = 7/12 for the 7 months actually
+    // worked in 2026. Netting the $150 again paid $50 here, i.e. $200 total.
+  });
+
+  it("REHIRE: still nets a payment made inside the CURRENT engagement", () => {
+    const r = resolveLeaverFinalPay({
+      monthlySalary: 600,
+      hireDate: "2026-07-01",
+      asOfDate: new Date("2026-10-31T00:00:00"),
+      includeSubsidioAnual: false,
+      subsidioConfig: { proRataForNewEmployees: true },
+      inPeriodTermination: "2026-10-31",
+      severanceEntitled: true,
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 250,
+        subsidioAnualByRun: [
+          { periodStart: "2026-03-01", periodEnd: "2026-03-31", amount: 150 }, // old engagement
+          { periodStart: "2026-09-01", periodEnd: "2026-09-30", amount: 100 }, // this engagement
+        ],
+      },
+    });
+    expect(r.subsidioAnual).toBeCloseTo(100, 2); // 200 entitlement - 100, not - 250
+  });
+
   it("falls back to the year-agnostic total when no per-run breakdown is supplied", () => {
     // Over-netting underpays a subsidio the worker can see and get topped up;
     // under-netting sends a second 13th month out the door. Prefer the former.

@@ -301,6 +301,22 @@ export interface CommittedSubsidioRun {
 export function committedSubsidioDischarging(
   runs: readonly CommittedSubsidioRun[],
   terminationDate: string,
+  /**
+   * Start of the employment this entitlement was computed for (the employee's
+   * current hireDate). A run that finished before it belongs to an EARLIER
+   * engagement and cannot discharge this one.
+   *
+   * Load-bearing for a rehire. Xefe's rehire action moves hireDate to the new
+   * start date, which scopes the Art. 44 entitlement to the new engagement — so
+   * the netting has to be scoped the same way or the worker is charged twice for
+   * the same months: once by losing the earlier months from the entitlement, and
+   * again by having the earlier engagement's payment subtracted. Worked case,
+   * $600/month, worked Jan-Mar 2026 (paid 3/12 = $150), rehired 1 Jul, left
+   * 31 Oct: without this the final run pays 4/12 - $150 = $50, so $200 total
+   * against 7 months worked ($350). Omit it and the whole civil year is
+   * considered, which is right whenever employment was continuous.
+   */
+  engagementStart?: string,
 ): number {
   const terminationYear = civilYearOf(terminationDate);
   if (terminationYear === null) return 0;
@@ -309,6 +325,10 @@ export function committedSubsidioDischarging(
     const start = run.periodStart || run.payDate || '';
     const end = run.periodEnd || start;
     if (!start) continue;
+    // Wholly before this engagement began — a previous period of employment.
+    // A run that STRADDLES the boundary still counts: it may hold this
+    // engagement's subsidio, and netting is the direction that cannot double-pay.
+    if (engagementStart && end < engagementStart) continue;
     const coversTermination = start <= terminationDate && terminationDate <= end;
     const withinTerminationYear =
       civilYearOf(start) === terminationYear && civilYearOf(end) === terminationYear;

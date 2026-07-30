@@ -156,3 +156,35 @@ describe("committedSubsidioDischarging", () => {
     expect(committedSubsidioDischarging([legacy], "2025-11-30")).toBe(0);
   });
 });
+
+describe("committedSubsidioDischarging: engagement boundary (rehire)", () => {
+  const oldEngagement = { periodStart: "2026-03-01", periodEnd: "2026-03-31", amount: 150 };
+  const thisEngagement = { periodStart: "2026-09-01", periodEnd: "2026-09-30", amount: 100 };
+
+  it("ignores a run that finished before the current engagement began", () => {
+    expect(
+      committedSubsidioDischarging([oldEngagement], "2026-10-31", "2026-07-01"),
+    ).toBe(0);
+  });
+
+  it("still counts runs inside the current engagement", () => {
+    expect(
+      committedSubsidioDischarging([oldEngagement, thisEngagement], "2026-10-31", "2026-07-01"),
+    ).toBe(100);
+  });
+
+  it("counts a run straddling the engagement boundary — never double-pay", () => {
+    // Ambiguous: it may hold this engagement's subsidio. Netting is the safe side.
+    const straddles = { periodStart: "2026-06-15", periodEnd: "2026-07-15", amount: 80 };
+    expect(committedSubsidioDischarging([straddles], "2026-10-31", "2026-07-01")).toBe(80);
+  });
+
+  it("considers the whole civil year when employment was continuous", () => {
+    // The ordinary case: hireDate years earlier excludes nothing.
+    expect(
+      committedSubsidioDischarging([oldEngagement, thisEngagement], "2026-10-31", "2019-03-01"),
+    ).toBe(250);
+    // ...and omitting the boundary behaves the same way.
+    expect(committedSubsidioDischarging([oldEngagement, thisEngagement], "2026-10-31")).toBe(250);
+  });
+});

@@ -140,6 +140,15 @@ in code comments.
   keeps its two-sided test; it gates the final-pay items and the proration end,
   not roster membership.
 
+- **A rehire scopes BOTH sides.** The rehire action moves `hireDate`, which
+  prorates the Art. 44 entitlement from the new start date — so the netting must
+  ignore runs that finished before it (`engagementStart`). Scoping only one side
+  charged the worker twice for the same months: $600/month, worked Jan-Mar 2026
+  (paid 3/12 = $150), rehired 1 Jul, left 31 Oct paid 4/12 - $150 = $50, i.e. $200
+  against 7 months worked ($350). Entitlement and netting must always be computed
+  at the same scope — every bug in this subsystem so far has been a mismatch
+  between the two.
+
 Any change here needs `final-pay-dedup.test.ts`, `rl-termination-payroll.test.ts`
 and `payroll-journal.test.ts` green, and those tests must exercise the shape the
 **service** actually returns — a test built on a hand-made input shape hid one of
