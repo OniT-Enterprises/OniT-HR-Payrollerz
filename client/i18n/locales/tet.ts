@@ -1945,6 +1945,24 @@ const messages = {
       "{{success}} importa ona · {{duplicates}} duplikadu salta · {{errors}} erru",
     importErrorTitle: "Erru Importa",
     importErrorDesc: "La bele le CSV. Favor hare formatu.",
+    returnToWork: {
+      rehireAction: "Simu fila fali",
+      unsuspendAction: "Fó ativu fali",
+      rehireTitle: "Simu fila fali traballadór",
+      unsuspendTitle: "Fó ativu fali ba traballadór",
+      rehireDescription:
+        "Hahú períodu servisu foun. Ida-ne'e hamoos loron servisu ikus no mós desizaun kompensasaun servisu husi saída uluk.",
+      unsuspendDescription:
+        "Hatama fila fali traballadór ne'e ba folha saláriu. Nia tinan servisu la muda.",
+      newStartDate: "Data hahú servisu foun",
+      serviceResetNote:
+        "Tinan servisu ba kompensasaun servisu no fulan 13 sura hahú husi data ida-ne'e, la'ós husi data hahú servisu uluk.",
+      confirm: "Fila ba servisu",
+      rehiredTitle: "Traballadór simu fila fali",
+      unsuspendedTitle: "Traballadór ativu fali",
+      doneDesc: "{{name}} fila ba folha saláriu hahú husi prosesu tuirmai.",
+      failedTitle: "La bele fó servisu fila fali ba traballadór ne'e",
+    },
     importDialog: {
       title: "Importa empregadu hosi CSV",
       description:

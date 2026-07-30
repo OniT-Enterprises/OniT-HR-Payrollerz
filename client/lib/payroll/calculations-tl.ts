@@ -1245,17 +1245,44 @@ export function calculateTLPayroll(
     );
   }
 
+  // Physical ceiling, applied AFTER the Art. 42(3) percentage cap: you cannot
+  // withhold more money than the period actually pays. The 30% cap above spares
+  // court orders (Art. 42(2) — tribunal-fixed, the employer may not shave them)
+  // and spares absence/late (Art. 33(5) — a loss of remuneration, not a retained
+  // amount), so those two together can still exceed gross: a full month of
+  // absence consumes the whole wage, and a court order then has nothing left to
+  // come from.
+  //
+  // Clamp the LINES, not the net. netPay is gross minus the deduction lines, and
+  // the payroll GL journal debits wages + employer INSS against credits of net
+  // pay + one credit per deduction — so flooring the net while leaving an
+  // over-large line intact makes debits != credits and the journal no longer
+  // balances (createJournalEntry rejects it). Shaving the lines keeps net,
+  // payslip and journal reconciled by construction, and is what really happens:
+  // the employer deposits what could be withheld and the balance stays owed.
+  const preClampTotal = sumMoney(finalDeductions.map(d => d.amount));
+  let withholdingClampedToGross = false;
+  if (compareMoney(preClampTotal, cashGrossPay) > 0) {
+    withholdingClampedToGross = true;
+    // Shave from the END of the list backwards, so statutory withholding (pushed
+    // first) survives ahead of discretionary lines wherever possible.
+    let budget = cashGrossPay;
+    const clamped = finalDeductions.map(d => {
+      const amount = Math.min(d.amount, maxMoney(0, budget));
+      budget = subtractMoney(budget, amount);
+      return { ...d, amount };
+    });
+    finalDeductions = clamped;
+  }
+
   // ========== FINAL CALCULATIONS ==========
   // Use decimal.js for precise final totals
 
   const totalDeductions = sumMoney(finalDeductions.map(d => d.amount));
-  // Floored like wagesPaid/taxableIncome/contributableRemuneration already are.
-  // With absence and late capped at gross above, the only line that can still
-  // reach here is a court order, which Art. 42(2) leaves outside the 30% ceiling
-  // — and an employer cannot hand the court more than the whole wage anyway. A
+  // maxMoney is now belt-and-braces only: the clamp above guarantees
+  // totalDeductions <= cashGrossPay, so this subtraction cannot go negative. A
   // negative amount payable is not a thing that can be paid, printed, summed into
-  // a run total, or sent to a bank, so it must never be produced; the warning
-  // below tells the operator the figures need review.
+  // a run total, or sent to a bank.
   const netPay = maxMoney(0, subtractMoney(cashGrossPay, totalDeductions));
   const totalCompensationPaid = Math.max(
     0,
@@ -1267,13 +1294,16 @@ export function calculateTLPayroll(
   );
 
   // Warnings
-  // Tests the PRE-floor condition: netPay is clamped at 0 above, so `netPay < 0`
-  // can no longer fire. Deductions still exceeding gross means a figure needs
-  // review even though the payable amount is now coherent.
-  if (compareMoney(totalDeductions, cashGrossPay) > 0) {
+  // Tests the PRE-clamp condition: the clamp above guarantees
+  // totalDeductions <= cashGrossPay, so comparing the post-clamp total would
+  // never fire. What the operator needs to know is that withholding was reduced
+  // to fit the wage, and that the shortfall is still owed to whoever it was for.
+  if (withholdingClampedToGross) {
     warnings.push(
-      'Deductions exceed gross pay for this period, so net pay was floored at ' +
-        '$0.00. Review the deduction lines before approving.',
+      'Withholding for this period exceeded gross pay, so the deduction lines ' +
+        'were reduced to fit and net pay is $0.00. Nothing can be withheld from a ' +
+        'wage that is already fully consumed — the unwithheld balance (including ' +
+        'any court-ordered amount) remains owed. Review before approving.',
     );
   }
 

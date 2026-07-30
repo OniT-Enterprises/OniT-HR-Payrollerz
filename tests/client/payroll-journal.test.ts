@@ -18,6 +18,50 @@ import {
   type PayrollJournalSummary,
 } from "@/lib/accounting/calculations";
 import { sumMoney } from "@/lib/currency";
+import {
+  calculateTLPayroll,
+  type TLPayrollInput,
+  type TLPayrollResult,
+} from "@/lib/payroll/calculations-tl";
+import { summarizePayrollForAccounting } from "@/lib/payroll/accounting-summary";
+
+function makeJournalInput(overrides: Partial<TLPayrollInput> = {}): TLPayrollInput {
+  return {
+    employeeId: "emp-j1",
+    monthlySalary: 400,
+    payFrequency: "monthly",
+    isHourly: false,
+    regularHours: 190,
+    overtimeHours: 0,
+    nightShiftHours: 0,
+    holidayHours: 0,
+    restDayHours: 0,
+    absenceHours: 0,
+    lateArrivalMinutes: 0,
+    sickDaysUsed: 0,
+    ytdSickDaysUsed: 0,
+    bonus: 0,
+    bonusINSSCategory: null,
+    commission: 0,
+    perDiem: 0,
+    foodAllowance: 0,
+    transportAllowance: 0,
+    otherEarnings: 0,
+    nonCashBenefits: 0,
+    nonCashBenefitINSSCategory: null,
+    taxInfo: { isResident: true, hasTaxExemption: false },
+    loanRepayment: 0,
+    advanceRepayment: 0,
+    courtOrders: 0,
+    otherDeductions: 0,
+    ytdGrossPay: 0,
+    ytdIncomeTax: 0,
+    ytdINSSEmployee: 0,
+    monthsWorkedThisYear: 12,
+    hireDate: "2025-01-01",
+    ...overrides,
+  };
+}
 
 // Stub resolver: every code maps to a stable id/name. The builder never asks
 // for a code payrollJournalAccountCodes() didn't list, which this asserts.
@@ -237,4 +281,99 @@ describe("fixed-asset acquisition posting", () => {
       resolve,
     )).toThrow(/positive/);
   });
+});
+
+// ============================================================
+// End-to-end: engine output must always post a BALANCED journal
+// ============================================================
+
+/**
+ * The gap that let a regression through. The tests above hand
+ * buildPayrollJournalLines a hand-written summary, so they prove the builder
+ * balances what it is given — not that the ENGINE produces a summary that can
+ * balance. A change that floored netPay without shrinking the deduction lines
+ * broke exactly that seam: gross - deductions = net stopped holding, so
+ * Dr(wages + employer INSS) != Cr(net + each deduction) and the run's journal
+ * could not post. This walks the real chain the app walks —
+ * calculateTLPayroll -> summarizePayrollForAccounting -> buildPayrollJournalLines.
+ */
+describe("engine -> accounting summary -> journal always balances", () => {
+  const journalFor = (result: TLPayrollResult) => {
+    const totals = summarizePayrollForAccounting([
+      {
+        totalGrossPay: result.cashGrossPay,
+        totalDeductions: result.totalDeductions,
+        netPay: result.netPay,
+        deductions: result.deductions,
+        employerTaxes: [{ type: "inss_employer", amount: result.inssEmployer }],
+      },
+    ]);
+    // Same mapping accountingService.createFromPayrollRun uses.
+    return buildPayrollJournalLines(
+      {
+        totalGrossPay: totals.totalWagesExpense,
+        totalINSSEmployer: totals.totalINSSEmployer,
+        totalIncomeTax: totals.totalIncomeTax,
+        totalINSSEmployee: totals.totalINSSEmployee,
+        totalNetPay: totals.totalNetPay,
+        totalAdvanceRepayments: totals.totalAdvanceRepayments,
+        totalOtherDeductions: totals.totalOtherDeductions,
+      } as PayrollJournalSummary,
+      resolve,
+    );
+  };
+
+  const cases: { name: string; input: Partial<TLPayrollInput> }[] = [
+    { name: "ordinary salaried month", input: {} },
+    { name: "partial absence", input: { absenceHours: 16 } },
+    // A full month of absence: gross is entirely consumed, so the wage expense
+    // and every base fall to zero.
+    { name: "full-month absence", input: { absenceHours: 190.67 } },
+    // The case that broke the identity: absence eats the whole wage while a
+    // court order (Art. 42(2), outside the 30% cap) still wants to be withheld.
+    {
+      name: "full-month absence PLUS a court order",
+      input: { absenceHours: 190.67, courtOrders: 100 },
+    },
+    {
+      name: "full-month absence PLUS an advance repayment",
+      input: { absenceHours: 190.67, advanceRepayment: 50 },
+    },
+    {
+      name: "full-month absence PLUS court order AND advance",
+      input: { absenceHours: 190.67, courtOrders: 100, advanceRepayment: 50 },
+    },
+    { name: "late arrival on top of a full absence", input: { absenceHours: 190.67, lateArrivalMinutes: 120 } },
+    { name: "court order larger than the whole wage", input: { courtOrders: 5000 } },
+  ];
+
+  for (const { name, input } of cases) {
+    it(`balances: ${name}`, () => {
+      const result = calculateTLPayroll(
+        makeJournalInput({ monthlySalary: 400, ...input }),
+      );
+      // The engine invariant the journal depends on.
+      expect(result.netPay).toBeGreaterThanOrEqual(0);
+      expect(result.totalDeductions).toBeLessThanOrEqual(result.cashGrossPay + 0.001);
+      expect(
+        sumMoney(result.deductions.map((d) => d.amount)),
+      ).toBeCloseTo(result.totalDeductions, 2);
+      expect(result.cashGrossPay - result.totalDeductions).toBeCloseTo(result.netPay, 2);
+
+      // ...and the journal that follows from it.
+      const journal = journalFor(result);
+      expect(journal.totalDebit).toBeCloseTo(journal.totalCredit, 2);
+      if (journal.lines.length === 0) {
+        // A run in which the wage was entirely consumed posts nothing, which is
+        // correct — there is no expense and no liability. (normalizeJournalAmounts
+        // rejects an empty entry, so accountingService must not try to post one;
+        // that guard is a pre-existing concern, not part of this invariant.)
+        expect(journal.totalDebit).toBe(0);
+        expect(journal.totalCredit).toBe(0);
+        return;
+      }
+      // Throws if the entry is unbalanced or malformed at write time.
+      normalizeJournalAmounts(journal.lines, journal.totalDebit, journal.totalCredit);
+    });
+  }
 });
