@@ -50,6 +50,7 @@ import { holidayService } from "@/services/holidayService";
 import type { Employee } from "@/services/employeeService";
 import {
   payrollService,
+  type CommittedFinalPay,
   type EmployeePayrollYTD,
 } from "@/services/payrollService";
 import type { AttendanceEmployeeSummary } from "@/services/attendanceService";
@@ -95,10 +96,7 @@ interface UsePayrollCalculatorOptions {
 
 const EMPTY_YTD_BY_EMPLOYEE: Record<string, EmployeePayrollYTD> = {};
 const EMPTY_ALLOWANCE_INPUTS: Record<string, EmployeeAllowanceInputs> = {};
-const EMPTY_COMMITTED_FINAL_PAY: Record<
-  string,
-  { serviceCompensation: number; subsidioAnual: number }
-> = {};
+const EMPTY_COMMITTED_FINAL_PAY: Record<string, CommittedFinalPay> = {};
 const EMPTY_MTD_WIT: Record<
   string,
   { mtdWitTaxableIncome: number; mtdIncomeTax: number }

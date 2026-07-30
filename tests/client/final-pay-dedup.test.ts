@@ -5,8 +5,14 @@ import {
 } from "@/lib/payroll/run-payroll-helpers";
 
 /**
- * Once-only guard for a leaver's final pay (Lei 4/2012 Art. 56 severance and
- * Art. 44 subsidio anual, each owed once per civil year).
+ * Once-only guard for a leaver's final pay: Lei 4/2012 Art. 56 severance and
+ * Art. 44 subsidio anual.
+ *
+ * The two are scoped differently and these helpers only pick the run SET; the
+ * netting scope lives in resolveLeaverFinalPay. Art. 44 is a per-civil-year
+ * entitlement and may only be netted against the same year. Art. 56 is
+ * suppressed by any committed service compensation in the window (whether it is
+ * once-per-employment rather than once-per-year is OPEN — gap matrix F20).
  *
  * These helpers back `payrollService.getCommittedFinalPayByEmployee`, which had
  * NO test coverage while being the only thing preventing a leaver's severance or

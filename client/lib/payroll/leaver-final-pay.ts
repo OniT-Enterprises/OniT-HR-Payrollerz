@@ -310,9 +310,24 @@ export function inssCessationDeadline(lastWorkingDay: string): string | null {
  *    practice pays Art. 56 on employer-initiated endings, not resignations,
  *    so offboarding stamps that cause-aware decision on the employee.
  *  - Art. 44 subsidio for a leaver is the termination-year entitlement net of
- *    whatever 13th month is already committed (annual run or a prior final
- *    run), clamped at 0. It is owed regardless of the severance decision.
+ *    whatever 13th month is already committed FOR THAT SAME CIVIL YEAR (annual
+ *    run or a prior final run), clamped at 0. It is owed regardless of the
+ *    severance decision.
  *  - A non-leaver follows the ordinary includeSubsidioAnual toggle.
+ *
+ * The two once-only guards are scoped DIFFERENTLY on purpose, and mixing them up
+ * has now caused a bug in each direction:
+ *  - Art. 44 is a per-civil-year entitlement, so it may only be netted against
+ *    the SAME year's committed subsidio. `subsidioAnualByYear` carries that
+ *    breakdown. Netting the year-agnostic total against a termination-year
+ *    entitlement paid a January leaver $0 of a subsidio they were owed, because
+ *    the lookup spans both years of a period straddling 1 January.
+ *  - Art. 56 severance is suppressed on ANY committed service compensation in
+ *    the looked-up window, deliberately year-agnostic: a second run over the
+ *    same period must never re-pay it. (Whether Art. 56 is once-per-employment
+ *    rather than once-per-year — which would matter for a rehire — is OPEN, gap
+ *    matrix F20/line 104. Widening it all-time would underpay a genuinely
+ *    rehired worker who completes a fresh 5-year block, so it stays as-is.)
  */
 export function resolveLeaverFinalPay(args: {
   inPeriodTermination: string | null;
@@ -321,7 +336,12 @@ export function resolveLeaverFinalPay(args: {
   asOfDate: Date;
   includeSubsidioAnual: boolean;
   subsidioConfig?: { proRataForNewEmployees?: boolean };
-  committed: { serviceCompensation: number; subsidioAnual: number };
+  committed: {
+    serviceCompensation: number;
+    subsidioAnual: number;
+    /** Committed subsidio keyed by the run's civil year. */
+    subsidioAnualByYear?: Record<number, number>;
+  };
   /** Only explicit true includes Art. 56; absence is review-blocked/safe-off. */
   severanceEntitled?: boolean;
 }): { terminationDate: string | undefined; subsidioAnual: number } {
@@ -360,7 +380,30 @@ export function resolveLeaverFinalPay(args: {
         : inPeriodTermination,
     subsidioAnual: maxMoney(
       0,
-      subtractMoney(entitlement, committed.subsidioAnual),
+      subtractMoney(
+        entitlement,
+        committedSubsidioForYear(committed, inPeriodTermination),
+      ),
     ),
   };
+}
+
+/**
+ * Committed Art. 44 subsidio for the civil year the termination falls in. Falls
+ * back to the year-agnostic total only when no per-year breakdown was supplied,
+ * so older callers keep the previous (over-netting) behaviour rather than
+ * silently netting nothing and re-paying a 13th month.
+ */
+function committedSubsidioForYear(
+  committed: {
+    subsidioAnual: number;
+    subsidioAnualByYear?: Record<number, number>;
+  },
+  inPeriodTermination: string,
+): number {
+  const byYear = committed.subsidioAnualByYear;
+  if (!byYear) return committed.subsidioAnual;
+  const year = Number.parseInt(inPeriodTermination.slice(0, 4), 10);
+  if (!Number.isInteger(year)) return committed.subsidioAnual;
+  return byYear[year] ?? 0;
 }
