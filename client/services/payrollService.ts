@@ -96,6 +96,18 @@ function yearPayDateWindow(year: number): { start: string; end: string } {
   return { start: `${year - 1}-12-01`, end: `${year + 1}-03-01` };
 }
 
+/**
+ * Final-pay amounts already committed for one employee. `serviceCompensation` is
+ * year-agnostic on purpose (any committed Art. 56 suppresses a re-pay), whereas
+ * Art. 44 subsidio must be netted per civil year — hence the breakdown. See
+ * resolveLeaverFinalPay for why mixing the two scopes is a money bug either way.
+ */
+export interface CommittedFinalPay {
+  serviceCompensation: number;
+  subsidioAnual: number;
+  subsidioAnualByYear: Record<number, number>;
+}
+
 class PayrollRunService {
   private get collectionRef() {
     return collection(db, 'payrollRuns');
@@ -1075,12 +1087,12 @@ class PayrollRecordService {
    * runs in memory on periodStart/periodEnd. Runs without periodStart
    * (legacy) fall back to payDate membership via `belongs`.
    */
-  private async getRunIdsByPeriod(
+  private async getRunsByPeriod(
     tenantId: string,
     statuses: PayrollRun['status'][],
     payDateWindow: { start: string; end: string },
     belongs: (run: { periodStart?: string; periodEnd?: string; payDate?: string }) => boolean,
-  ): Promise<string[]> {
+  ): Promise<{ id: string; periodStart?: string; periodEnd?: string; payDate?: string }[]> {
     const runsSnapshot = await getDocs(query(
       collection(db, 'payrollRuns'),
       where('tenantId', '==', tenantId),
@@ -1089,10 +1101,22 @@ class PayrollRecordService {
       where('payDate', '<=', payDateWindow.end),
     ));
     return runsSnapshot.docs
-      .filter((runDoc) => belongs(runDoc.data() as {
-        periodStart?: string; periodEnd?: string; payDate?: string;
+      .map((runDoc) => ({
+        id: runDoc.id,
+        ...(runDoc.data() as { periodStart?: string; periodEnd?: string; payDate?: string }),
       }))
-      .map((runDoc) => runDoc.id);
+      .filter((run) => belongs(run));
+  }
+
+  private async getRunIdsByPeriod(
+    tenantId: string,
+    statuses: PayrollRun['status'][],
+    payDateWindow: { start: string; end: string },
+    belongs: (run: { periodStart?: string; periodEnd?: string; payDate?: string }) => boolean,
+  ): Promise<string[]> {
+    return (await this.getRunsByPeriod(tenantId, statuses, payDateWindow, belongs)).map(
+      (run) => run.id,
+    );
   }
 
   /** Aggregate current-period values from paid records; never re-sum YTD snapshots. */
@@ -1186,7 +1210,7 @@ class PayrollRecordService {
   async getCommittedFinalPayByEmployee(
     tenantId: string,
     years: readonly number[],
-  ): Promise<Record<string, { serviceCompensation: number; subsidioAnual: number }>> {
+  ): Promise<Record<string, CommittedFinalPay>> {
     if (years.length === 0) return {};
     // One payDate window spanning every requested year; consecutive years'
     // windows overlap heavily, so this stays a single range query.
@@ -1195,15 +1219,27 @@ class PayrollRecordService {
       start: yearPayDateWindow(sorted[0]).start,
       end: yearPayDateWindow(sorted[sorted.length - 1]).end,
     };
-    const runIds = await this.getRunIdsByPeriod(
+    const runs = await this.getRunsByPeriod(
       tenantId,
       ['writing_records', 'processing', 'approved', 'paid'],
       window,
       (run) => runTouchesFinalPayYear(run, sorted),
     );
-    const totals: Record<string, { serviceCompensation: number; subsidioAnual: number }> = {};
+    // Which civil year each run's subsidio discharges. Anchored on periodEnd
+    // because Art. 44 is an end-of-year / end-of-employment payment: a December
+    // run paid on 5 January still ends in December and discharges that year,
+    // and a final run straddling 1 January for a January leaver ends in — and
+    // discharges — the termination year. Only the SAME year may be netted
+    // against a leaver's entitlement; see resolveLeaverFinalPay.
+    const runYear = new Map<string, number>();
+    for (const run of runs) {
+      const anchor = run.periodEnd || run.periodStart || run.payDate || '';
+      const year = Number.parseInt(anchor.slice(0, 4), 10);
+      if (Number.isInteger(year)) runYear.set(run.id, year);
+    }
+    const totals: Record<string, CommittedFinalPay> = {};
 
-    for (const runIdChunk of chunkArray(runIds, 10)) {
+    for (const runIdChunk of chunkArray(runs.map((run) => run.id), 10)) {
       if (runIdChunk.length === 0) continue;
       // tenantId filter is load-bearing — see getTenantYTDTotals.
       const recordsSnapshot = await getDocs(query(
@@ -1214,16 +1250,25 @@ class PayrollRecordService {
       for (const recordDoc of recordsSnapshot.docs) {
         const record = normalizeLegacyRecord({ ...recordDoc.data() }) as PayrollRecord;
         if (!record.employeeId) continue;
-        const current = totals[record.employeeId] || { serviceCompensation: 0, subsidioAnual: 0 };
+        const current =
+          totals[record.employeeId] ||
+          { serviceCompensation: 0, subsidioAnual: 0, subsidioAnualByYear: {} };
+        const subsidio =
+          record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0;
+        const year = runYear.get(record.payrollRunId || '');
         totals[record.employeeId] = {
           serviceCompensation: addMoney(
             current.serviceCompensation,
             record.earnings?.find((e) => e.type === 'service_compensation')?.amount || 0,
           ),
-          subsidioAnual: addMoney(
-            current.subsidioAnual,
-            record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0,
-          ),
+          subsidioAnual: addMoney(current.subsidioAnual, subsidio),
+          subsidioAnualByYear:
+            year === undefined
+              ? current.subsidioAnualByYear
+              : {
+                  ...current.subsidioAnualByYear,
+                  [year]: addMoney(current.subsidioAnualByYear[year] ?? 0, subsidio),
+                },
         };
       }
     }
