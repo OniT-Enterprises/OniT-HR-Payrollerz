@@ -423,6 +423,7 @@ describe("resolveLeaverFinalPay: which committed subsidio discharges this leaver
     const r = resolveLeaverFinalPay({
       monthlySalary: 600,
       hireDate: "2026-07-01", // moved by the rehire
+      engagementStart: "2026-07-01",
       asOfDate: new Date("2026-10-31T00:00:00"),
       includeSubsidioAnual: false,
       subsidioConfig: { proRataForNewEmployees: true },
@@ -447,6 +448,7 @@ describe("resolveLeaverFinalPay: which committed subsidio discharges this leaver
     const r = resolveLeaverFinalPay({
       monthlySalary: 600,
       hireDate: "2026-07-01",
+      engagementStart: "2026-07-01",
       asOfDate: new Date("2026-10-31T00:00:00"),
       includeSubsidioAnual: false,
       subsidioConfig: { proRataForNewEmployees: true },
@@ -462,6 +464,55 @@ describe("resolveLeaverFinalPay: which committed subsidio discharges this leaver
       },
     });
     expect(r.subsidioAnual).toBeCloseTo(100, 2); // 200 entitlement - 100, not - 250
+  });
+
+  it("a MISSING recorded hire date must not narrow the netting", () => {
+    // Callers default hireDate to today when the field is empty. That default is
+    // fine for prorating, but if it bounded the netting it would exclude every
+    // earlier run of a CONTINUOUS engagement and re-pay a subsidio already paid.
+    // engagementStart is therefore passed separately, from recorded data only.
+    const r = resolveLeaverFinalPay({
+      monthlySalary: 600,
+      hireDate: "2026-07-31", // stand-in for the getTodayTL() default
+      engagementStart: undefined, // nothing on file
+      asOfDate: new Date("2026-10-31T00:00:00"),
+      includeSubsidioAnual: false,
+      subsidioConfig: { proRataForNewEmployees: true },
+      inPeriodTermination: "2026-10-31",
+      severanceEntitled: true,
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 150,
+        subsidioAnualByRun: [
+          { periodStart: "2026-03-01", periodEnd: "2026-03-31", amount: 150 },
+        ],
+      },
+    });
+    // The March payment IS netted: 3/12 entitlement (Jul-Oct = 4/12 = 200) - 150.
+    expect(r.subsidioAnual).toBeCloseTo(50, 2);
+  });
+
+  it("ignores an engagement start that postdates the termination", () => {
+    // Incoherent recorded data (or a today-default that has run past the exit) must
+    // not narrow the netting either.
+    const r = resolveLeaverFinalPay({
+      monthlySalary: 600,
+      hireDate: "2026-07-01",
+      engagementStart: "2026-12-01", // after the last working day
+      asOfDate: new Date("2026-10-31T00:00:00"),
+      includeSubsidioAnual: false,
+      subsidioConfig: { proRataForNewEmployees: true },
+      inPeriodTermination: "2026-10-31",
+      severanceEntitled: true,
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 150,
+        subsidioAnualByRun: [
+          { periodStart: "2026-03-01", periodEnd: "2026-03-31", amount: 150 },
+        ],
+      },
+    });
+    expect(r.subsidioAnual).toBeCloseTo(50, 2);
   });
 
   it("falls back to the year-agnostic total when no per-run breakdown is supplied", () => {
