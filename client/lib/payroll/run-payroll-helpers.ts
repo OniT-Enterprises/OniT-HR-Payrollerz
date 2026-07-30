@@ -2,6 +2,7 @@
  * RunPayroll shared types and helper functions
  * Extracted from RunPayroll.tsx to reduce file size
  */
+import { addMoney } from '@/lib/currency';
 import type { Employee } from '@/services/employeeService';
 import type { TLBonusINSSCategory, TLPayrollResult } from '@/lib/payroll/calculations-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
@@ -264,6 +265,56 @@ export function finalPayDedupYears(
     if (year !== null) years.add(year);
   }
   return [...years].sort((a, b) => a - b);
+}
+
+/** One committed run's Art. 44 subsidio, with the wage period that produced it. */
+export interface CommittedSubsidioRun {
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  payDate?: string | null;
+  amount: number;
+}
+
+/**
+ * Committed Art. 44 subsidio that discharges the SAME entitlement a leaver
+ * terminating on `terminationDate` is owed, so it can be netted off.
+ *
+ * Art. 44 is a per-civil-year entitlement, but "which year does this run
+ * discharge?" cannot be answered from a run: a period straddling 1 January
+ * touches two, and nothing on a payroll record says which one its subsidio was
+ * computed for. Anchoring on periodEnd (the first attempt at this) got a January
+ * leaver right and a December leaver exactly wrong — it filed a straddling run's
+ * subsidio under the later year while the lookup asked for the earlier one, found
+ * nothing, and re-paid the whole 13th month.
+ *
+ * So ask an answerable question instead. A committed run discharges this leaver's
+ * subsidio when EITHER:
+ *  - its wage period CONTAINS the termination date — the run covered their last
+ *    day, so any subsidio on it is their final-pay subsidio; or
+ *  - its wage period lies ENTIRELY WITHIN the termination year — an ordinary
+ *    same-year payout (the December annual run, or an early one), which
+ *    discharges that civil year regardless of the exact dates.
+ *
+ * A straddling run is therefore netted only for a leaver whose last day it
+ * actually covers, never for an unrelated leaver later in either year.
+ */
+export function committedSubsidioDischarging(
+  runs: readonly CommittedSubsidioRun[],
+  terminationDate: string,
+): number {
+  const terminationYear = civilYearOf(terminationDate);
+  if (terminationYear === null) return 0;
+  let total = 0;
+  for (const run of runs) {
+    const start = run.periodStart || run.payDate || '';
+    const end = run.periodEnd || start;
+    if (!start) continue;
+    const coversTermination = start <= terminationDate && terminationDate <= end;
+    const withinTerminationYear =
+      civilYearOf(start) === terminationYear && civilYearOf(end) === terminationYear;
+    if (coversTermination || withinTerminationYear) total = addMoney(total, run.amount);
+  }
+  return total;
 }
 
 /**
