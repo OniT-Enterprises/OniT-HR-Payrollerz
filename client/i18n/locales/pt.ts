@@ -1978,6 +1978,24 @@ const messages = {
     csvImportCompleteTitle: "Importação concluída",
     csvImportCompleteDesc:
       "{{success}} importados · {{duplicates}} duplicado(s) ignorados · {{errors}} erro(s)",
+    returnToWork: {
+      rehireAction: "Readmitir",
+      unsuspendAction: "Reativar",
+      rehireTitle: "Readmitir trabalhador",
+      unsuspendTitle: "Reativar trabalhador",
+      rehireDescription:
+        "Iniciar um novo período de trabalho. Isto elimina a data de cessação registada e a decisão de compensação por serviço da saída anterior.",
+      unsuspendDescription:
+        "Levantar a suspensão e voltar a incluir o trabalhador no processamento salarial. O registo de antiguidade não é alterado.",
+      newStartDate: "Nova data de admissão",
+      serviceResetNote:
+        "Os anos de serviço para a compensação por serviço e o 13.º mês contam a partir desta data, não da data de admissão original.",
+      confirm: "Voltar ao trabalho",
+      rehiredTitle: "Trabalhador readmitido",
+      unsuspendedTitle: "Trabalhador reativado",
+      doneDesc: "{{name}} volta ao processamento salarial a partir do próximo processamento.",
+      failedTitle: "Não foi possível reativar este trabalhador",
+    },
     importDialog: {
       title: "Importar funcionários de CSV",
       description:

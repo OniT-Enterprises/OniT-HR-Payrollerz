@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import {
   Select,
@@ -45,6 +46,7 @@ import {
   Eye,
   Edit,
   UserMinus,
+  UserPlus,
   Plus,
   AlertTriangle,
   Upload,
@@ -116,6 +118,7 @@ function DesktopEmployeeTable({
   onEditEmployee,
   onCreateEkipaAccount,
   onDeleteEmployee,
+  onReturnToWork,
   duplicateIds,
   canManageTenant,
   sort,
@@ -130,6 +133,7 @@ function DesktopEmployeeTable({
   onEditEmployee: (emp: Employee) => void;
   onCreateEkipaAccount: (emp: Employee) => void;
   onDeleteEmployee: (emp: Employee) => void;
+  onReturnToWork: (emp: Employee) => void;
   duplicateIds: Set<string>;
   canManageTenant: boolean;
   sort: SortState<EmployeeSortKey> | null;
@@ -262,7 +266,10 @@ function DesktopEmployeeTable({
       )}
       <div role="cell" className="px-4 py-2">
         <div className="flex items-center justify-end">
-          <DropdownMenu>
+          {/* modal={false} is load-bearing: a modal Radix DropdownMenu whose item
+              opens a Dialog leaves <body> at pointer-events:none and freezes the
+              page. "Return to work" below is the first item here to open one. */}
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -287,6 +294,17 @@ function DesktopEmployeeTable({
                 <DropdownMenuItem onClick={() => onCreateEkipaAccount(employee)}>
                   <Smartphone className="h-4 w-4 mr-2" />
                   {t("employees.tooltips.createEkipaAccount")}
+                </DropdownMenuItem>
+              )}
+              {/* The ONLY route back to active. Saving a profile deliberately no
+                  longer re-authors status (it silently resurrected leavers onto
+                  payroll), so bringing someone back has to be explicit here. */}
+              {canManageTenant && employee.status !== "active" && (
+                <DropdownMenuItem onClick={() => onReturnToWork(employee)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {employee.status === "terminated"
+                    ? t("employees.returnToWork.rehireAction")
+                    : t("employees.returnToWork.unsuspendAction")}
                 </DropdownMenuItem>
               )}
               {canManageTenant && <DropdownMenuSeparator />}
@@ -372,6 +390,9 @@ export default function AllEmployees() {
   const [showProfileView, setShowProfileView] = useState(false);
   const [showIncompleteProfiles, setShowIncompleteProfiles] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [returningEmployee, setReturningEmployee] = useState<Employee | null>(null);
+  const [returnStartDate, setReturnStartDate] = useState("");
+  const [returnSaving, setReturnSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [ekipaTarget, setEkipaTarget] = useState<Employee | null>(null);
   const [ekipaCreating, setEkipaCreating] = useState(false);
@@ -736,6 +757,64 @@ export default function AllEmployees() {
     if (!canManageTenant) return;
     // Navigate to offboarding page
     navigate(`/people/offboarding?employeeId=${employee.id}`);
+  };
+
+  const handleReturnToWork = (employee: Employee) => {
+    if (!canManageTenant) return;
+    setReturningEmployee(employee);
+    setReturnStartDate(getTodayTL());
+  };
+
+  /**
+   * Bring a non-active employee back. Two distinct cases:
+   *  - `inactive` (suspended): just clear the suspension; service is unbroken, so
+   *    hireDate and any stamped lifecycle fields stay exactly as they are.
+   *  - `terminated` (rehire): a NEW period of employment. The old terminationDate
+   *    and the offboarding severance decision must be cleared or payroll would
+   *    treat the person as a leaver again on the next run, and hireDate must move
+   *    to the new start date so Art. 56 service and the Art. 44 subsidio prorate
+   *    from it rather than from the original engagement.
+   */
+  const submitReturnToWork = async () => {
+    const employee = returningEmployee;
+    if (!employee?.id || !canManageTenant || returnSaving) return;
+    const isRehire = employee.status === "terminated";
+    if (isRehire && !/^\d{4}-\d{2}-\d{2}$/.test(returnStartDate)) return;
+    setReturnSaving(true);
+    try {
+      const updates: Partial<Employee> = isRehire
+        ? {
+            status: "active",
+            terminationDate: "",
+            severanceOnTermination: false,
+            jobDetails: { ...employee.jobDetails, hireDate: returnStartDate },
+          }
+        : { status: "active" };
+      await employeeService.updateEmployee(tenantId, employee.id, updates, {
+        tenantId,
+        userId: session?.member?.uid || "",
+        userEmail: session?.member?.email || "",
+      });
+      toast({
+        title: isRehire
+          ? t("employees.returnToWork.rehiredTitle")
+          : t("employees.returnToWork.unsuspendedTitle"),
+        description: t("employees.returnToWork.doneDesc", {
+          name: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+        }),
+      });
+      setReturningEmployee(null);
+      loadEmployees();
+    } catch (error) {
+      console.error("Return to work failed:", error);
+      toast({
+        title: t("employees.returnToWork.failedTitle"),
+        description: error instanceof Error ? error.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setReturnSaving(false);
+    }
   };
 
   const handleCreateEkipaAccount = (employee: Employee) => {
@@ -1252,6 +1331,69 @@ export default function AllEmployees() {
           </DialogContent>
         </Dialog>
 
+        {/* Return to work — the only route back to `active`. See submitReturnToWork
+            for why a profile save must not do this implicitly. */}
+        <Dialog
+          open={canManageTenant && returningEmployee !== null}
+          onOpenChange={(open) => !returnSaving && !open && setReturningEmployee(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {returningEmployee?.status === "terminated"
+                  ? t("employees.returnToWork.rehireTitle")
+                  : t("employees.returnToWork.unsuspendTitle")}
+              </DialogTitle>
+              <DialogDescription>
+                {returningEmployee?.status === "terminated"
+                  ? t("employees.returnToWork.rehireDescription")
+                  : t("employees.returnToWork.unsuspendDescription")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm">
+                {`${returningEmployee?.personalInfo.firstName ?? ""} ${returningEmployee?.personalInfo.lastName ?? ""}`.trim()}
+              </p>
+              {returningEmployee?.status === "terminated" && (
+                <div className="space-y-2">
+                  <Label htmlFor="return-start-date">
+                    {t("employees.returnToWork.newStartDate")}
+                  </Label>
+                  <Input
+                    id="return-start-date"
+                    type="date"
+                    value={returnStartDate}
+                    onChange={(e) => setReturnStartDate(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("employees.returnToWork.serviceResetNote")}
+                  </p>
+                </div>
+              )}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setReturningEmployee(null)}
+                  disabled={returnSaving}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  onClick={submitReturnToWork}
+                  disabled={
+                    returnSaving ||
+                    (returningEmployee?.status === "terminated" &&
+                      !/^\d{4}-\d{2}-\d{2}$/.test(returnStartDate))
+                  }
+                >
+                  {returnSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t("employees.returnToWork.confirm")}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Active filter chips — show what's active, tap to remove */}
         {hasActiveFilters && (
           <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -1429,6 +1571,7 @@ export default function AllEmployees() {
               onEditEmployee={handleEditEmployee}
               onCreateEkipaAccount={handleCreateEkipaAccount}
               onDeleteEmployee={handleDeleteEmployee}
+              onReturnToWork={handleReturnToWork}
               duplicateIds={duplicateIds}
               canManageTenant={canManageTenant}
               sort={sort}

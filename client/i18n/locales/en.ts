@@ -1947,6 +1947,24 @@ const messages = {
       "{{success}} imported · {{duplicates}} duplicate(s) skipped · {{errors}} error(s)",
     importErrorTitle: "Import Error",
     importErrorDesc: "Failed to parse CSV file. Please check the format.",
+    returnToWork: {
+      rehireAction: "Rehire",
+      unsuspendAction: "Return to active",
+      rehireTitle: "Rehire employee",
+      unsuspendTitle: "Return employee to active",
+      rehireDescription:
+        "Start a new period of employment. This clears the recorded end date and the severance decision from their last departure.",
+      unsuspendDescription:
+        "Lift the suspension and put this employee back on payroll. Their service record is unchanged.",
+      newStartDate: "New start date",
+      serviceResetNote:
+        "Years of service for service compensation and the 13th month are counted from this date, not from their original start date.",
+      confirm: "Return to work",
+      rehiredTitle: "Employee rehired",
+      unsuspendedTitle: "Employee returned to active",
+      doneDesc: "{{name}} is back on payroll from the next run.",
+      failedTitle: "Could not return this employee to work",
+    },
     importDialog: {
       title: "Import employees from CSV",
       description:
