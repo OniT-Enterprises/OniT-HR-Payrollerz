@@ -191,4 +191,23 @@ describe("interface guardrails", () => {
       'from "@/lib/firebase"',
     );
   });
+
+  it("keeps docked absence hours correctable in the payroll wizard", () => {
+    // absenceHours is the ONLY pay lever for a salaried worker: calculateRegularPay
+    // ignores hours for salaried staff, so every shortfall is docked through the
+    // absence deduction and raising regularHours cannot undo an over-dock. It was
+    // omitted from the editable set, which left a wrong dock — e.g. the Art. 53(4)
+    // paid job-search credit, which has no leave type behind it — impossible to
+    // correct anywhere in the UI. Keep it editable and keep the input rendered.
+    const hook = read("client/hooks/usePayrollCalculator.ts");
+    const hourFields = hook.slice(
+      hook.indexOf("const hourFields = ["),
+      hook.indexOf("const moneyFields = ["),
+    );
+    expect(hourFields).toContain('"absenceHours"');
+
+    const card = read("client/components/payroll/PayrollEmployeeCard.tsx");
+    expect(card).toContain('field="absenceHours"');
+    expect(card).toContain("data.originalValues.absenceHours");
+  });
 });
