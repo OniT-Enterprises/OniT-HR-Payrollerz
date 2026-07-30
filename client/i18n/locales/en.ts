@@ -1971,6 +1971,7 @@ const messages = {
         "Rows matching an existing employee (same ID or same full name) are skipped automatically, so re-importing a file never creates duplicates.",
       step1: "1. Download the template and fill in one row per employee",
       step2: "2. Upload the completed file",
+      rowLabel: "Row {{row}}",
       downloadTemplate: "Download CSV template",
       chooseFile: "Choose CSV file",
       importing: "Importing…",
@@ -6825,7 +6826,7 @@ const messages = {
     unpaidAbsence: "Unpaid absence",
     absenceHoursLabel: "Hours docked",
     absenceHoursHint:
-      "From attendance: hours expected but not worked and not covered by paid leave. Set to 0 for hours the worker was entitled to take with pay.",
+      "From attendance: hours expected but not worked, with no leave record behind them. Approved paid leave and sick days are already credited — do not zero those here, or they will be paid twice.",
     advanceRepayment: "Advance Repayment",
     loanRepayment: "Loan Repayment",
     courtOrder: "Court Order",
@@ -6878,6 +6879,8 @@ const messages = {
     payrollWarnings: "{{count}} Payroll Warning(s)",
     warningBelowMinWage:
       "Salary ${{salary}} is below minimum wage (${{min}}/month)",
+    warningNotCalculated:
+      "pay could not be calculated, so this employee is NOT included in the run. Check their hire date and salary on the employee profile.",
     warningTerminatedBeforePeriod:
       "Employment ended {{date}}, before this period, but they are marked active and will be paid. Re-terminate them, or set a new hire date if they were rehired.",
     warningTerminatedAfterPeriod:

@@ -1969,6 +1969,7 @@ const messages = {
         "Liña ne'ebé hanesan empregadu eziste ona (ID hanesan ka naran kompletu hanesan) sei salta automátikamente, nune'e importa fila-fali la kria duplikadu.",
       step1: "1. Download modelo no prienxe liña ida ba empregadu ida",
       step2: "2. Upload arkivu ne'ebé prienxe tiha ona",
+      rowLabel: "Liña {{row}}",
       downloadTemplate: "Download modelo CSV",
       chooseFile: "Hili arkivu CSV",
       importing: "Importa hela…",
@@ -6815,7 +6816,7 @@ const messages = {
     unpaidAbsence: "Falta la selu",
     absenceHoursLabel: "Oras ne'ebé deskonta",
     absenceHoursHint:
-      "Husi prezensa: oras ne'ebé espera maibé la halo servisu, no laiha lisensa selu nian. Hatama 0 ba oras ne'ebé traballadór iha direitu atu foti ho saláriu.",
+      "Husi prezensa: oras ne'ebé espera maibé la halo servisu, no laiha rejistu lisensa. Lisensa selu nian no loron moras kredita ona — la bele hatama 0 ba sira, se lae sei selu dala rua.",
     advanceRepayment: "Selu Adiantamentu",
     loanRepayment: "Selu Empréstimu",
     courtOrder: "Ordem tribunál",
@@ -6869,6 +6870,8 @@ const messages = {
     payrollWarnings: "Avizu Saláriu {{count}}",
     warningBelowMinWage:
       "Saláriu ${{salary}} menus duke saláriu mínimu (${{min}}/fulan)",
+    warningNotCalculated:
+      "la bele kalkula saláriu, entaun traballadór ne'e LA tama iha prosesu ne'e. Xeke nia data hahú servisu no saláriu iha perfil.",
     warningTerminatedBeforePeriod:
       "Servisu hotu ona iha {{date}}, molok períodu ida-ne'e, maibé nia marka nafatin ativu no sei simu saláriu. Hapara fali nia kontratu, ka hatama data hahú servisu foun se nia fila mai servisu.",
     warningTerminatedAfterPeriod:

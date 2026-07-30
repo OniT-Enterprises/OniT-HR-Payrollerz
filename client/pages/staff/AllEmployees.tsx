@@ -1009,6 +1009,7 @@ export default function AllEmployees() {
         let successCount = 0;
         let duplicateCount = 0;
         let errorCount = 0;
+        const errorReasons: string[] = [];
 
         for (const [index, line] of dataLines.entries()) {
           try {
@@ -1028,17 +1029,30 @@ export default function AllEmployees() {
             successCount++;
           } catch (error) {
             errorCount++;
+            // Keep the first few reasons: a count alone ("3 errors") leaves the
+            // admin with no idea that, say, their whole spreadsheet uses
+            // dd/mm/yyyy dates. Row numbers are 1-based including the header.
+            if (errorReasons.length < 3) {
+              errorReasons.push(
+                `${t("employees.importDialog.rowLabel", { row: String(index + 2) })}: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+              );
+            }
             console.error(`Error importing row ${index + 2}:`, error);
           }
         }
 
         toast({
           title: t("employees.csvImportCompleteTitle"),
-          description: t("employees.csvImportCompleteDesc", {
-            success: successCount,
-            duplicates: duplicateCount,
-            errors: errorCount,
-          }),
+          description: [
+            t("employees.csvImportCompleteDesc", {
+              success: successCount,
+              duplicates: duplicateCount,
+              errors: errorCount,
+            }),
+            ...errorReasons,
+          ].join(" — "),
           variant: errorCount > 0 ? "destructive" : "default",
         });
         if (successCount > 0) loadEmployees();

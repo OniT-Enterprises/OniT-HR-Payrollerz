@@ -2002,6 +2002,7 @@ const messages = {
         "Linhas que correspondam a um funcionário existente (mesmo ID ou mesmo nome completo) são ignoradas automaticamente, por isso reimportar um ficheiro nunca cria duplicados.",
       step1: "1. Descarregue o modelo e preencha uma linha por funcionário",
       step2: "2. Carregue o ficheiro preenchido",
+      rowLabel: "Linha {{row}}",
       downloadTemplate: "Descarregar modelo CSV",
       chooseFile: "Escolher ficheiro CSV",
       importing: "A importar…",
@@ -6934,7 +6935,7 @@ const messages = {
     unpaidAbsence: "Ausência não remunerada",
     absenceHoursLabel: "Horas descontadas",
     absenceHoursHint:
-      "Da assiduidade: horas previstas mas não trabalhadas e não cobertas por licença paga. Coloque 0 nas horas que o trabalhador tinha direito a gozar com remuneração.",
+      "Da assiduidade: horas previstas mas não trabalhadas, sem qualquer registo de licença. As licenças pagas aprovadas e os dias de doença já estão creditados — não os coloque a 0 aqui, senão serão pagos duas vezes.",
     advanceRepayment: "Reembolso de adiantamento",
     loanRepayment: "Reembolso de empréstimo",
     courtOrder: "Ordem judicial",
@@ -6988,6 +6989,8 @@ const messages = {
     payrollWarnings: "{{count}} Aviso(s) da Folha",
     warningBelowMinWage:
       "Salário ${{salary}} está abaixo do salário mínimo (${{min}}/mês)",
+    warningNotCalculated:
+      "não foi possível calcular a remuneração, pelo que este trabalhador NÃO está incluído no processamento. Verifique a data de admissão e o salário no perfil.",
     warningTerminatedBeforePeriod:
       "O vínculo cessou em {{date}}, antes deste período, mas está marcado como ativo e será pago. Volte a cessar o vínculo ou defina uma nova data de admissão se foi readmitido.",
     warningTerminatedAfterPeriod:

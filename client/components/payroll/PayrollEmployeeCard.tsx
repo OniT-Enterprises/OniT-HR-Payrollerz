@@ -311,7 +311,7 @@ function ExpandedDetails({
           />
           <p className="text-[11px] text-muted-foreground max-w-md pb-2">
             {t("runPayroll.absenceHoursHint") ||
-              "From attendance: hours expected but not worked and not covered by paid leave. Set to 0 for hours the worker was entitled to take with pay."}
+              "From attendance: hours expected but not worked, with no leave record behind them. Approved paid leave and sick days are already credited — do not zero those here, or they will be paid twice."}
           </p>
         </div>
       </div>
