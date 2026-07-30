@@ -8,6 +8,10 @@
  */
 import { calculateSubsidioAnual } from "@/lib/payroll/calculations-tl";
 import { maxMoney, multiplyMoney, subtractMoney } from "@/lib/currency";
+import {
+  committedSubsidioDischarging,
+  type CommittedSubsidioRun,
+} from "@/lib/payroll/run-payroll-helpers";
 
 export type DepartureReason =
   | "resignation"
@@ -318,7 +322,7 @@ export function inssCessationDeadline(lastWorkingDay: string): string | null {
  * The two once-only guards are scoped DIFFERENTLY on purpose, and mixing them up
  * has now caused a bug in each direction:
  *  - Art. 44 is a per-civil-year entitlement, so it may only be netted against
- *    the SAME year's committed subsidio. `subsidioAnualByYear` carries that
+ *    the SAME year's committed subsidio. `subsidioAnualByRun` carries the per-run breakdown that makes that
  *    breakdown. Netting the year-agnostic total against a termination-year
  *    entitlement paid a January leaver $0 of a subsidio they were owed, because
  *    the lookup spans both years of a period straddling 1 January.
@@ -339,8 +343,8 @@ export function resolveLeaverFinalPay(args: {
   committed: {
     serviceCompensation: number;
     subsidioAnual: number;
-    /** Committed subsidio keyed by the run's civil year. */
-    subsidioAnualByYear?: Record<number, number>;
+    /** Committed subsidio with the wage period of each run that paid it. */
+    subsidioAnualByRun?: readonly CommittedSubsidioRun[];
   };
   /** Only explicit true includes Art. 56; absence is review-blocked/safe-off. */
   severanceEntitled?: boolean;
@@ -382,28 +386,30 @@ export function resolveLeaverFinalPay(args: {
       0,
       subtractMoney(
         entitlement,
-        committedSubsidioForYear(committed, inPeriodTermination),
+        committedSubsidioForLeaver(committed, inPeriodTermination),
       ),
     ),
   };
 }
 
 /**
- * Committed Art. 44 subsidio for the civil year the termination falls in. Falls
- * back to the year-agnostic total only when no per-year breakdown was supplied,
- * so older callers keep the previous (over-netting) behaviour rather than
- * silently netting nothing and re-paying a 13th month.
+ * Committed Art. 44 subsidio that discharges this leaver's own civil-year
+ * entitlement — see committedSubsidioDischarging for the rule and why a per-year
+ * key cannot express it.
+ *
+ * Falls back to the year-agnostic total when no per-run breakdown was supplied,
+ * so a caller that predates the breakdown keeps OVER-netting. That direction is
+ * deliberate: over-netting underpays a subsidio, which the worker sees and can be
+ * topped up, while under-netting sends a second 13th month out the door.
  */
-function committedSubsidioForYear(
+function committedSubsidioForLeaver(
   committed: {
     subsidioAnual: number;
-    subsidioAnualByYear?: Record<number, number>;
+    subsidioAnualByRun?: readonly CommittedSubsidioRun[];
   },
   inPeriodTermination: string,
 ): number {
-  const byYear = committed.subsidioAnualByYear;
-  if (!byYear) return committed.subsidioAnual;
-  const year = Number.parseInt(inPeriodTermination.slice(0, 4), 10);
-  if (!Number.isInteger(year)) return committed.subsidioAnual;
-  return byYear[year] ?? 0;
+  const byRun = committed.subsidioAnualByRun;
+  if (!byRun) return committed.subsidioAnual;
+  return committedSubsidioDischarging(byRun, inPeriodTermination);
 }

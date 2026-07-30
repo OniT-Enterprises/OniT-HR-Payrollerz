@@ -278,71 +278,146 @@ describe("resolveLeaverFinalPay: exact-once idempotency", () => {
   });
 });
 
-describe("resolveLeaverFinalPay: Art. 44 nets per CIVIL YEAR, Art. 56 does not", () => {
-  // A January leaver whose final run's period straddles 1 January. The committed
-  // lookup deliberately spans BOTH civil years so a prior December run can
-  // suppress a duplicate Art. 56 — but Art. 44 is a per-year entitlement, so
-  // last year's 13th month must NOT be netted against this year's.
-  const januaryLeaver = {
+describe("resolveLeaverFinalPay: which committed subsidio discharges this leaver", () => {
+  // Art. 44 is a per-civil-year entitlement, but a wage period straddling
+  // 1 January touches TWO years and a payroll record does not say which year its
+  // subsidio was computed for. Both naive keys are wrong in one direction:
+  //   - year-agnostic netting paid a JANUARY leaver $0 of a subsidio they were owed;
+  //   - keying each run on its periodEnd year then re-paid a DECEMBER leaver's
+  //     subsidio in full, because the run was filed under the later year while the
+  //     lookup asked for the earlier one.
+  // The rule is a predicate over (run period, termination date) — see
+  // committedSubsidioDischarging. These use the shape the SERVICE actually
+  // returns (subsidioAnualByRun), not a hand-made per-year map.
+  const base = {
     monthlySalary: 600,
     hireDate: "2019-03-01",
-    asOfDate: new Date("2026-01-04T00:00:00"),
     includeSubsidioAnual: false,
     subsidioConfig: { proRataForNewEmployees: true },
-    inPeriodTermination: "2026-01-02",
     severanceEntitled: true,
   };
+  const decemberAnnualRun = {
+    periodStart: "2025-12-01",
+    periodEnd: "2025-12-31",
+    payDate: "2025-12-19",
+    amount: 600,
+  };
+  // The final run itself, straddling 1 January.
+  const straddlingFinalRun = {
+    periodStart: "2025-12-20",
+    periodEnd: "2026-01-01",
+    payDate: "2026-01-02",
+    amount: 600,
+  };
 
-  it("pays the termination-year subsidio even though LAST year's is in the committed set", () => {
+  it("REGRESSION: a December leaver's straddling final run is netted, not re-paid", () => {
+    // Run A (straddling) already paid this leaver's full 2025 subsidio. A second
+    // run covering the same last working day must pay $0 more. Keyed on run
+    // periodEnd (2026) against a 2025 termination this returned the full $600 again.
     const r = resolveLeaverFinalPay({
-      ...januaryLeaver,
+      ...base,
+      asOfDate: new Date("2026-01-05T00:00:00"),
+      inPeriodTermination: "2025-12-31",
       committed: {
-        serviceCompensation: 0,
-        // $600 of 2025 subsidio was paid on the December 2025 run and is visible
-        // because the straddling period pulls in both years.
+        serviceCompensation: 600,
         subsidioAnual: 600,
-        subsidioAnualByYear: { 2025: 600 },
+        subsidioAnualByRun: [straddlingFinalRun],
       },
     });
-    // Netting the year-agnostic 600 against the 2026 entitlement paid $0 — the
-    // regression this breakdown exists to prevent.
-    expect(r.subsidioAnual).toBeGreaterThan(0);
+    expect(r.terminationDate).toBeUndefined(); // Art. 56 suppressed
+    expect(r.subsidioAnual).toBe(0); // and NO second 13th month
+  });
+
+  it("pays a January leaver their new-year subsidio despite last year's being committed", () => {
+    // The December 2025 annual run sits entirely in 2025, so it discharges 2025 —
+    // never this leaver's 2026 entitlement.
+    const r = resolveLeaverFinalPay({
+      ...base,
+      asOfDate: new Date("2026-01-04T00:00:00"),
+      inPeriodTermination: "2026-01-02",
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 600,
+        subsidioAnualByRun: [decemberAnnualRun],
+      },
+    });
     expect(r.subsidioAnual).toBeCloseTo(50, 2); // 1/12 of $600 for January
   });
 
-  it("still nets a subsidio already committed for the SAME year", () => {
+  it("nets an ordinary same-year payout made earlier in the termination year", () => {
+    // An early/annual payout whose period lies wholly inside the termination year
+    // discharges that year even though it does not cover the last working day.
     const r = resolveLeaverFinalPay({
-      ...januaryLeaver,
+      ...base,
+      asOfDate: new Date("2026-11-30T00:00:00"),
+      inPeriodTermination: "2026-11-30",
       committed: {
         serviceCompensation: 0,
-        subsidioAnual: 650,
-        subsidioAnualByYear: { 2025: 600, 2026: 50 },
+        subsidioAnual: 600,
+        subsidioAnualByRun: [
+          { periodStart: "2026-06-01", periodEnd: "2026-06-30", payDate: "2026-06-19", amount: 600 },
+        ],
       },
     });
     expect(r.subsidioAnual).toBe(0);
   });
 
-  it("suppresses Art. 56 on committed service compensation from EITHER year", () => {
-    // Severance stays year-agnostic on purpose: a second run over the same
-    // straddling period must not re-pay it.
+  it("does NOT net a straddling run against an unrelated later leaver", () => {
+    // The straddling run touches 2026, but it neither covers this leaver's last day
+    // nor lies wholly inside 2026, so it cannot discharge their 2026 entitlement.
     const r = resolveLeaverFinalPay({
-      ...januaryLeaver,
+      ...base,
+      asOfDate: new Date("2026-06-30T00:00:00"),
+      inPeriodTermination: "2026-06-30",
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 600,
+        subsidioAnualByRun: [straddlingFinalRun],
+      },
+    });
+    expect(r.subsidioAnual).toBeCloseTo(300, 2); // 6/12 of $600
+  });
+
+  it("tops up a partial same-period payout instead of doubling it", () => {
+    const r = resolveLeaverFinalPay({
+      ...base,
+      asOfDate: new Date("2026-09-30T00:00:00"),
+      inPeriodTermination: "2026-09-30",
+      committed: {
+        serviceCompensation: 0,
+        subsidioAnual: 200,
+        subsidioAnualByRun: [
+          { periodStart: "2026-09-01", periodEnd: "2026-09-30", payDate: "2026-09-19", amount: 200 },
+        ],
+      },
+    });
+    expect(r.subsidioAnual).toBeCloseTo(250, 2); // 450 entitlement - 200 committed
+  });
+
+  it("suppresses Art. 56 on committed service compensation from ANY run", () => {
+    // Severance stays year-agnostic on purpose: a second run over the same
+    // straddling period must never re-pay it.
+    const r = resolveLeaverFinalPay({
+      ...base,
+      asOfDate: new Date("2026-01-04T00:00:00"),
+      inPeriodTermination: "2026-01-02",
       committed: {
         serviceCompensation: 600,
         subsidioAnual: 0,
-        subsidioAnualByYear: {},
+        subsidioAnualByRun: [],
       },
     });
     expect(r.terminationDate).toBeUndefined();
-    // ...and the subsidio is still owed independently of that decision.
-    expect(r.subsidioAnual).toBeCloseTo(50, 2);
+    expect(r.subsidioAnual).toBeCloseTo(50, 2); // subsidio still owed
   });
 
-  it("falls back to the year-agnostic total when no breakdown is supplied", () => {
-    // Older callers must keep over-netting rather than silently netting nothing
-    // and re-paying a 13th month.
+  it("falls back to the year-agnostic total when no per-run breakdown is supplied", () => {
+    // Over-netting underpays a subsidio the worker can see and get topped up;
+    // under-netting sends a second 13th month out the door. Prefer the former.
     const r = resolveLeaverFinalPay({
-      ...januaryLeaver,
+      ...base,
+      asOfDate: new Date("2026-01-04T00:00:00"),
+      inPeriodTermination: "2026-01-02",
       committed: { serviceCompensation: 0, subsidioAnual: 600 },
     });
     expect(r.subsidioAnual).toBe(0);

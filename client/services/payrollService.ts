@@ -29,7 +29,10 @@ import {
   resolveScheduledDeductions,
   withheldRecurringByEmployee,
 } from '@/lib/payroll/recurring-deductions';
-import { runTouchesFinalPayYear } from '@/lib/payroll/run-payroll-helpers';
+import {
+  runTouchesFinalPayYear,
+  type CommittedSubsidioRun,
+} from '@/lib/payroll/run-payroll-helpers';
 import { isTenantSubscribed } from '@/lib/packagePricing';
 import { addMoney, subtractMoney } from '@/lib/currency';
 import { accountService, journalEntryService } from './accountingService';
@@ -105,7 +108,13 @@ function yearPayDateWindow(year: number): { start: string; end: string } {
 export interface CommittedFinalPay {
   serviceCompensation: number;
   subsidioAnual: number;
-  subsidioAnualByYear: Record<number, number>;
+  /**
+   * Per-run breakdown, so the caller can net only the subsidio that discharges
+   * the SAME civil-year entitlement its leaver is owed. A plain per-year map does
+   * not work: a period straddling 1 January touches two years and nothing on a
+   * record says which one its subsidio was for. See committedSubsidioDischarging.
+   */
+  subsidioAnualByRun: CommittedSubsidioRun[];
 }
 
 class PayrollRunService {
@@ -1225,17 +1234,19 @@ class PayrollRecordService {
       window,
       (run) => runTouchesFinalPayYear(run, sorted),
     );
-    // Which civil year each run's subsidio discharges. Anchored on periodEnd
-    // because Art. 44 is an end-of-year / end-of-employment payment: a December
-    // run paid on 5 January still ends in December and discharges that year,
-    // and a final run straddling 1 January for a January leaver ends in — and
-    // discharges — the termination year. Only the SAME year may be netted
-    // against a leaver's entitlement; see resolveLeaverFinalPay.
-    const runYear = new Map<string, number>();
+    // Each run's wage period, kept alongside its subsidio so the caller can decide
+    // which committed amounts discharge its leaver's civil-year entitlement.
+    // Do NOT collapse this to a single year per run: a period straddling
+    // 1 January touches two civil years and a payroll record does not record
+    // which one its subsidio was computed for, so any single-year anchor is wrong
+    // for one of the two leavers it can apply to. See committedSubsidioDischarging.
+    const runPeriod = new Map<string, { periodStart?: string; periodEnd?: string; payDate?: string }>();
     for (const run of runs) {
-      const anchor = run.periodEnd || run.periodStart || run.payDate || '';
-      const year = Number.parseInt(anchor.slice(0, 4), 10);
-      if (Number.isInteger(year)) runYear.set(run.id, year);
+      runPeriod.set(run.id, {
+        periodStart: run.periodStart,
+        periodEnd: run.periodEnd,
+        payDate: run.payDate,
+      });
     }
     const totals: Record<string, CommittedFinalPay> = {};
 
@@ -1252,23 +1263,20 @@ class PayrollRecordService {
         if (!record.employeeId) continue;
         const current =
           totals[record.employeeId] ||
-          { serviceCompensation: 0, subsidioAnual: 0, subsidioAnualByYear: {} };
+          { serviceCompensation: 0, subsidioAnual: 0, subsidioAnualByRun: [] };
         const subsidio =
           record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0;
-        const year = runYear.get(record.payrollRunId || '');
+        const period = runPeriod.get(record.payrollRunId || '');
         totals[record.employeeId] = {
           serviceCompensation: addMoney(
             current.serviceCompensation,
             record.earnings?.find((e) => e.type === 'service_compensation')?.amount || 0,
           ),
           subsidioAnual: addMoney(current.subsidioAnual, subsidio),
-          subsidioAnualByYear:
-            year === undefined
-              ? current.subsidioAnualByYear
-              : {
-                  ...current.subsidioAnualByYear,
-                  [year]: addMoney(current.subsidioAnualByYear[year] ?? 0, subsidio),
-                },
+          subsidioAnualByRun:
+            subsidio > 0 && period
+              ? [...current.subsidioAnualByRun, { ...period, amount: subsidio }]
+              : current.subsidioAnualByRun,
         };
       }
     }

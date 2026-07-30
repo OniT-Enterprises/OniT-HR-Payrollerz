@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  committedSubsidioDischarging,
   finalPayDedupYears,
   runTouchesFinalPayYear,
 } from "@/lib/payroll/run-payroll-helpers";
@@ -8,9 +9,10 @@ import {
  * Once-only guard for a leaver's final pay: Lei 4/2012 Art. 56 severance and
  * Art. 44 subsidio anual.
  *
- * The two are scoped differently and these helpers only pick the run SET; the
- * netting scope lives in resolveLeaverFinalPay. Art. 44 is a per-civil-year
- * entitlement and may only be netted against the same year. Art. 56 is
+ * finalPayDedupYears / runTouchesFinalPayYear pick which committed runs to LOOK
+ * AT; committedSubsidioDischarging then decides which of those actually discharge
+ * a given leaver's Art. 44 entitlement (a per-civil-year amount, and a straddling
+ * period touches two years, so the run set alone cannot answer it). Art. 56 is
  * suppressed by any committed service compensation in the window (whether it is
  * once-per-employment rather than once-per-year is OPEN — gap matrix F20).
  *
@@ -95,5 +97,62 @@ describe("runTouchesFinalPayYear", () => {
   it("matches nothing when the year set is empty", () => {
     // A run with no evaluable dates must never silently suppress a payment.
     expect(runTouchesFinalPayYear(decemberRun, [])).toBe(false);
+  });
+});
+
+describe("committedSubsidioDischarging", () => {
+  // "Which civil year does this run discharge?" is unanswerable for a period that
+  // straddles 1 January — nothing on a payroll record says which year its subsidio
+  // was computed for. So the rule is a predicate instead: a run discharges this
+  // leaver's Art. 44 entitlement when its period covers their last working day, OR
+  // lies entirely inside their termination year.
+  const decemberAnnual = {
+    periodStart: "2025-12-01",
+    periodEnd: "2025-12-31",
+    payDate: "2025-12-19",
+    amount: 600,
+  };
+  const straddling = {
+    periodStart: "2025-12-20",
+    periodEnd: "2026-01-01",
+    payDate: "2026-01-02",
+    amount: 600,
+  };
+
+  it("counts a straddling run for the leaver whose last day it covers", () => {
+    expect(committedSubsidioDischarging([straddling], "2025-12-31")).toBe(600);
+    expect(committedSubsidioDischarging([straddling], "2026-01-01")).toBe(600);
+  });
+
+  it("ignores a straddling run for an unrelated leaver later in either year", () => {
+    expect(committedSubsidioDischarging([straddling], "2026-06-30")).toBe(0);
+    expect(committedSubsidioDischarging([straddling], "2025-06-30")).toBe(0);
+  });
+
+  it("counts a run lying entirely inside the termination year", () => {
+    expect(committedSubsidioDischarging([decemberAnnual], "2025-03-15")).toBe(600);
+  });
+
+  it("ignores last year's annual run for a January leaver", () => {
+    expect(committedSubsidioDischarging([decemberAnnual], "2026-01-02")).toBe(0);
+  });
+
+  it("sums several discharging runs and skips the rest", () => {
+    const june = { periodStart: "2026-06-01", periodEnd: "2026-06-30", amount: 200 };
+    const sept = { periodStart: "2026-09-01", periodEnd: "2026-09-30", amount: 150 };
+    expect(
+      committedSubsidioDischarging([decemberAnnual, june, sept, straddling], "2026-09-30"),
+    ).toBe(350);
+  });
+
+  it("is zero for an empty set or an unparseable termination date", () => {
+    expect(committedSubsidioDischarging([], "2026-01-02")).toBe(0);
+    expect(committedSubsidioDischarging([straddling], "nope")).toBe(0);
+  });
+
+  it("falls back to payDate for a run with no period recorded", () => {
+    const legacy = { payDate: "2026-03-05", amount: 400 };
+    expect(committedSubsidioDischarging([legacy], "2026-11-30")).toBe(400);
+    expect(committedSubsidioDischarging([legacy], "2025-11-30")).toBe(0);
   });
 });
