@@ -1209,8 +1209,8 @@ export default function Offboarding() {
                                   "days' pay"}{" "}
                                 (
                                 {selectedCase.departureReason === "resignation"
-                                  ? "Lei 4/2012 Art. 53(3)"
-                                  : "Lei 4/2012 Art. 49(9)"}
+                                  ? "Lei 4/2012 Art. 49(9)"
+                                  : "Lei 4/2012 Art. 53(3)"}
                                 ).
                               </span>
                             </p>

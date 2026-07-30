@@ -29,6 +29,7 @@ import {
   resolveScheduledDeductions,
   withheldRecurringByEmployee,
 } from '@/lib/payroll/recurring-deductions';
+import { runTouchesFinalPayYear } from '@/lib/payroll/run-payroll-helpers';
 import { isTenantSubscribed } from '@/lib/packagePricing';
 import { addMoney, subtractMoney } from '@/lib/currency';
 import { accountService, journalEntryService } from './accountingService';
@@ -324,10 +325,16 @@ class PayrollRunService {
     const expected = run.expectedRecordCount ?? 0;
 
     if (records.length >= expected && expected > 0) {
-      // All records made it — finalize the run
+      // All records made it — finalize the run. This is the same "commit point"
+      // as createPayrollRunWithRecords step 3, so it MUST stamp committedAt:
+      // without it assertDraftFiguresFresh falls back to createdAt, which for a
+      // repaired run predates the draft it should be invalidating, so a draft
+      // holding the same leaver's severance or 13th month is never flagged as
+      // stale and can be approved on top of this run.
       const runRef = doc(db, 'payrollRuns', runId);
       await updateDoc(runRef, {
         status: 'processing',
+        committedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
       return 'repaired';
@@ -1152,29 +1159,47 @@ class PayrollRecordService {
   }
 
   /**
-   * Final-pay amounts already COMMITTED for each employee this year, used to
-   * make a leaver's Art. 56 severance and Art. 44 subsidio pay exactly once.
-   * Unlike getTenantYTDTotals (paid-only, for reporting), this includes every
-   * run that has real persisted records and will be paid — 'processing',
-   * 'approved', 'paid' — but NOT 'draft'/'writing_records' (may be discarded
-   * or partial) nor 'cancelled'/'rejected'. The run currently being built is
-   * an unsaved draft, so it is never counted. Covered by the existing
-   * (tenantId, status, payDate) composite index.
+   * Final-pay amounts already COMMITTED for each employee in the given civil
+   * year(s), used to make a leaver's Art. 56 severance and Art. 44 subsidio pay
+   * exactly once. Unlike getTenantYTDTotals (paid-only, for reporting), this
+   * includes every run that has real persisted records and will be paid.
+   *
+   * Takes a SET of years, not one year: a leaver's entitlement is computed from
+   * their termination date, and a wage period can straddle 1 January, so keying
+   * this on periodEnd's year alone re-paid the whole 13th month. The caller
+   * passes `finalPayDedupYears(periodStart, periodEnd, payDate)` — see the
+   * regression detail there and in tests/client/final-pay-dedup.test.ts.
+   *
+   * 'writing_records' COUNTS. It was excluded as "may be discarded or partial",
+   * but createPayrollRunWithRecords commits the run doc and up to 498 records in
+   * ONE atomic batch before the separate status flip, so at TL tenant sizes a
+   * stuck run holds complete records that repairStuckRun then promotes. Missing
+   * them sends money out the door twice; counting a genuinely-abandoned partial
+   * run instead suppresses a payment, which surfaces as a visible $0 line and is
+   * transient (repairStuckRun deletes an incomplete run and its records, after
+   * which this lookup stops seeing them). 'draft' is still excluded — the run
+   * being built is an unsaved draft and must never count against itself — as are
+   * 'cancelled'/'rejected'.
+   *
+   * Covered by the existing (tenantId, status, payDate) composite index.
    */
   async getCommittedFinalPayByEmployee(
     tenantId: string,
-    year: number,
+    years: readonly number[],
   ): Promise<Record<string, { serviceCompensation: number; subsidioAnual: number }>> {
-    const yearStr = String(year);
+    if (years.length === 0) return {};
+    // One payDate window spanning every requested year; consecutive years'
+    // windows overlap heavily, so this stays a single range query.
+    const sorted = [...years].sort((a, b) => a - b);
+    const window = {
+      start: yearPayDateWindow(sorted[0]).start,
+      end: yearPayDateWindow(sorted[sorted.length - 1]).end,
+    };
     const runIds = await this.getRunIdsByPeriod(
       tenantId,
-      ['processing', 'approved', 'paid'],
-      yearPayDateWindow(year),
-      // Dedup is conservative: a period touching the year at EITHER end counts,
-      // so a New-Year-spanning weekly final run is found from both years.
-      (run) =>
-        (run.periodStart || run.payDate || '').slice(0, 4) === yearStr ||
-        (run.periodEnd || '').slice(0, 4) === yearStr,
+      ['writing_records', 'processing', 'approved', 'paid'],
+      window,
+      (run) => runTouchesFinalPayYear(run, sorted),
     );
     const totals: Record<string, { serviceCompensation: number; subsidioAnual: number }> = {};
 

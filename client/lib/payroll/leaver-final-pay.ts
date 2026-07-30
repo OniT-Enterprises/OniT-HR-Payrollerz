@@ -72,16 +72,31 @@ export interface NoticeRequirement {
 
 /**
  * Statutory written-notice requirement for a departure cause (Lei 4/2012):
- *  - resignation: 30 days by the worker (Art. 53(2)); a shortfall means the
- *    worker owes the employer the missing days' pay (Art. 53(3));
+ *  - resignation: 30 days by the worker (Art. 49(8) — "cessar o contrato
+ *    independentemente de justa causa, mediante comunicação escrita [...] com a
+ *    antecedência mínima de 30 dias"); a shortfall means the worker owes the
+ *    employer the missing days' pay (Art. 49(9));
  *  - employer-initiated termination (redundancy / market reasons and
  *    dismissal): 15 days when tenure is up to 2 years, 30 days beyond 2 years
- *    (Art. 49(8)); a shortfall means the employer pays the missing days
- *    (Art. 49(9));
+ *    (Art. 53(2)); a shortfall means the employer pays the missing days
+ *    (Art. 53(3));
  *  - every other cause (caducidade, mutual agreement, retirement, death,
  *    other): no statutory notice.
  * Unknown/invalid hireDate on an employer-side cause assumes the longer
  * 30-day notice (the safer reading for the worker).
+ *
+ * The articles are easy to transpose and were swapped here until Jul 2026:
+ * Art. 49 is "Rescisão por iniciativa do TRABALHADOR" (so its (8)/(9) carry the
+ * worker's 30-day notice and the worker-pays shortfall), while Art. 53 is
+ * "Comunicação da rescisão" for the employer's market/technological/structural
+ * rescission of Art. 52 (so its (2)/(3) carry the 15/30-day band and the
+ * employer-pays shortfall). Both verified against the Jornal da República text.
+ *
+ * OPEN (needs-Nico): `termination` is bundled with `redundancy` into the Art. 53(2)
+ * band, but Art. 50(3) says justa-causa dismissal needs no prior notice ("sem
+ * necessidade de aviso prévio"). Xefe's `termination` label does not distinguish
+ * justa-causa from no-cause dismissal, so this is left as-is deliberately rather
+ * than hard-coding 0 days — see docs/TL_LAW_GAP_MATRIX_JUL2026.md §4.1.
  */
 export function requiredNoticeDays(
   reason: DepartureReason,
@@ -89,10 +104,10 @@ export function requiredNoticeDays(
   lastWorkingDay: string,
 ): NoticeRequirement {
   if (reason === "resignation") {
-    return { days: 30, basis: "Lei 4/2012 Art. 53(2)" };
+    return { days: 30, basis: "Lei 4/2012 Art. 49(8)" };
   }
   if (reason === "redundancy" || reason === "termination") {
-    const basis = "Lei 4/2012 Art. 49(8)";
+    const basis = "Lei 4/2012 Art. 53(2)";
     const hire = parseIsoDayUtc(hireDate);
     const last = parseIsoDayUtc(lastWorkingDay);
     if (hire === null || last === null) return { days: 30, basis };
@@ -125,8 +140,8 @@ export function noticeDaysGiven(
 /**
  * How many required-notice days were NOT given (0 = notice satisfied).
  * The shortfall is what one side owes the other in pay: the worker on a
- * resignation (Art. 53(3)), the employer on a market-reason termination
- * (Art. 49(9)). Null when the dates cannot be evaluated.
+ * resignation (Art. 49(9)), the employer on a market-reason termination
+ * (Art. 53(3)). Null when the dates cannot be evaluated.
  */
 export function noticeShortfallDays(
   noticeDate: string,
