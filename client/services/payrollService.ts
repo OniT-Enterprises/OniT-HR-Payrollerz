@@ -348,7 +348,7 @@ class PayrollRunService {
     if (records.length >= expected && expected > 0) {
       // All records made it — finalize the run. This is the same "commit point"
       // as createPayrollRunWithRecords step 3, so it MUST stamp committedAt:
-      // without it assertDraftFiguresFresh falls back to createdAt, which for a
+      // without it assertRunFiguresFresh falls back to createdAt, which for a
       // repaired run predates the draft it should be invalidating, so a draft
       // holding the same leaver's severance or 13th month is never flagged as
       // stale and can be approved on top of this run.
@@ -378,26 +378,45 @@ class PayrollRunService {
   }
 
   /**
-   * Throw if any run was committed after this draft was saved in a scope that
-   * overlaps its figures: the same period month always (the runs share the
-   * monthly $500 WIT threshold), widened to the same period year when the
-   * draft carries once-only final-pay lines (Art. 56 severance / Art. 44
-   * subsidio, deduped per year). Commit time is committedAt where stamped,
-   * falling back to approvedAt/createdAt for runs predating the stamp —
-   * approvedAt can over-block a legacy processing-then-approved run, which
-   * only costs the approver a re-run, never a double payment.
+   * Throw if any run was committed after THIS run's records were built, in a scope
+   * that overlaps its figures: the same period month always (the runs share the
+   * monthly $500 WIT threshold), widened to the same period year when the run
+   * carries once-only final-pay lines (Art. 56 severance / Art. 44 subsidio,
+   * deduped per year).
+   *
+   * Applies to BOTH pre-approval statuses, for different reasons:
+   *
+   *  - 'draft': a draft is INVISIBLE to getCommittedFinalPayByEmployee and
+   *    getMonthToDateWITByEmployee (both start at 'processing'), so a run built
+   *    later cannot see it and both grant the same exemption or severance.
+   *  - 'processing': a processing run IS visible to those lookups, so the
+   *    sequential case self-corrects — the later run dedupes against it. What is
+   *    NOT covered is CONCURRENCY: the dedup maps are React Query caches with a
+   *    5-minute staleTime, invalidated only in the client that committed. Two
+   *    admins (or two tabs) building runs inside that window both read "nothing
+   *    committed" and both pay the leaver's severance. Comparing other runs'
+   *    commit time against this run's createdAt catches exactly that — run A
+   *    committing after run B was created means B's figures never saw A — while
+   *    leaving the ordinary sequential case alone, because there A committed
+   *    before B was ever created.
+   *
+   * Commit time is committedAt where stamped, falling back to
+   * approvedAt/createdAt for runs predating the stamp — approvedAt can over-block
+   * a legacy processing-then-approved run, which only costs the approver a
+   * re-run, never a double payment. That is the deliberate direction of this
+   * whole guard: over-blocking is friction, under-blocking is money out twice.
    */
-  private async assertDraftFiguresFresh(
+  private async assertRunFiguresFresh(
     tenantId: string,
-    draftRunId: string,
-    draft: PayrollRun,
+    runId: string,
+    run: PayrollRun,
   ): Promise<void> {
-    const draftSavedAt =
-      draft.createdAt instanceof Date ? draft.createdAt.getTime() : 0;
-    const periodMonth = (draft.periodStart || draft.payDate || '').slice(0, 7);
-    if (!draftSavedAt || periodMonth.length !== 7) return;
+    const builtAt =
+      run.createdAt instanceof Date ? run.createdAt.getTime() : 0;
+    const periodMonth = (run.periodStart || run.payDate || '').slice(0, 7);
+    if (!builtAt || periodMonth.length !== 7) return;
 
-    const records = await payrollRecordService.getPayrollRecordsByRunId(draftRunId, tenantId);
+    const records = await payrollRecordService.getPayrollRecordsByRunId(runId, tenantId);
     const hasFinalPay = records.some((record) =>
       record.earnings?.some(
         (earning) =>
@@ -415,7 +434,7 @@ class PayrollRunService {
       where('payDate', '<=', window.end),
     ));
     const stale = runsSnapshot.docs.some((runDoc) => {
-      if (runDoc.id === draftRunId) return false;
+      if (runDoc.id === runId) return false;
       const data = runDoc.data() as {
         periodStart?: string;
         payDate?: string;
@@ -432,12 +451,12 @@ class PayrollRunService {
         data.committedAt?.toDate?.() ??
         data.approvedAt?.toDate?.() ??
         data.createdAt?.toDate?.();
-      return committed ? committed.getTime() > draftSavedAt : false;
+      return committed ? committed.getTime() > builtAt : false;
     });
     if (stale) {
       throw new Error(
-        'Another payroll run for this period was finalized after this draft was saved, ' +
-        'so its tax-exemption and final-pay figures may be stale. Reject this draft and ' +
+        'Another payroll run for this period was finalized after this one was built, ' +
+        'so its tax-exemption and final-pay figures may be stale. Reject this run and ' +
         'run payroll again to recalculate.',
       );
     }
@@ -482,8 +501,11 @@ class PayrollRunService {
     // ignore drafts, so any run committed since then invalidates this draft's
     // figures — approving it unchanged would double an exemption or a
     // severance/13th-month payment. Force a re-run instead of a silent recompute.
-    if (payroll.status === 'draft' && tenantId) {
-      await this.assertDraftFiguresFresh(tenantId, id, payroll);
+    // Runs a client BUILT before another run was committed carry figures that
+    // predate it. Applies to 'processing' as well as 'draft', for different
+    // reasons in each case — see assertRunFiguresFresh.
+    if ((payroll.status === 'draft' || payroll.status === 'processing') && tenantId) {
+      await this.assertRunFiguresFresh(tenantId, id, payroll);
     }
 
     // Atomic status transition: the pre-checks above read a snapshot, but two

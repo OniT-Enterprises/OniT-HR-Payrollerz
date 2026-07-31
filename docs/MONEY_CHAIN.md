@@ -107,6 +107,7 @@ flowchart LR
 | 7 | Audit trail: `payroll.run/approve/pay`, `tax.*` actions written via server callable | `functions/src/audit.ts` allowlist + E2E assertion |
 | 8 | Deduction LINES never sum to more than `cashGrossPay`, so `gross − deductions = net` always holds | clamp in `calculateTLPayroll` + `payroll-journal.test.ts` (engine → summary → journal) |
 | 9 | A leaver's Art. 56 severance and Art. 44 subsídio are each paid exactly once, and the Art. 44 test is per-civil-year | `getCommittedFinalPayByEmployee` + `committedSubsidioDischarging` + `final-pay-dedup.test.ts` |
+| 10 | A run cannot be approved with figures built before another run was committed (double exemption / double severance) | `assertRunFiguresFresh` on approve, for `draft` AND `processing` — the latter covers the cross-client concurrency the client-side dedup caches cannot |
 
 ### 4a. Final-pay once-only guard — the two scopes are NOT the same
 
