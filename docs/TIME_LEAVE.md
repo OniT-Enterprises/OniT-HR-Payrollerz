@@ -81,6 +81,20 @@ constraint so Firestore can prove the query is authorized.
   year projection from source requests, making retries idempotent.
 - Approval cancels overlapping non-cancelled shifts and recomputes affected
   weekly timesheets.
+- **Payroll credits leave only for days the contract existed.** The payroll
+  attendance sync clips both paid-leave hours and sick days to each employee's
+  employment window (`computeLeaveCredits`, `employmentWindowFor`), the same
+  window the holiday credit already used. Offboarding never truncates
+  `leave_requests`, so a leaver's approved leave routinely runs past their last
+  working day; crediting those days cancelled the salary proration and overpaid
+  them, because absence is derived as
+  `expected − worked − paidLeave` against a FULL-month expectation. Fixed Jul 31
+  (PR #23).
+- **Sick days are deliberately NOT netted out of `absenceHours`.** The sync leaves
+  them docked and the engine adds a separate `sickPay` earning, so the statutory
+  100%/50% banding nets out. Zeroing docked hours for a sick day therefore pays it
+  TWICE — the payroll wizard's "hours docked" field says so, and the warning must
+  stay.
 
 ### Leave types
 
