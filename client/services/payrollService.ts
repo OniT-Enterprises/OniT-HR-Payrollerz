@@ -30,6 +30,7 @@ import {
   withheldRecurringByEmployee,
 } from '@/lib/payroll/recurring-deductions';
 import {
+  isRunFiguresStale,
   runTouchesFinalPayYear,
   type CommittedSubsidioRun,
 } from '@/lib/payroll/run-payroll-helpers';
@@ -433,8 +434,9 @@ class PayrollRunService {
       where('payDate', '>=', window.start),
       where('payDate', '<=', window.end),
     ));
-    const stale = runsSnapshot.docs.some((runDoc) => {
-      if (runDoc.id === runId) return false;
+    // The DECISION lives in a pure, unit-tested helper; this half only reads
+    // Firestore and flattens the timestamps for it.
+    const committedRuns = runsSnapshot.docs.map((runDoc) => {
       const data = runDoc.data() as {
         periodStart?: string;
         payDate?: string;
@@ -442,16 +444,23 @@ class PayrollRunService {
         approvedAt?: { toDate?: () => Date };
         createdAt?: { toDate?: () => Date };
       };
-      const period = data.periodStart || data.payDate || '';
-      const scopeMatch = hasFinalPay
-        ? period.slice(0, 4) === String(year)
-        : period.slice(0, 7) === periodMonth;
-      if (!scopeMatch) return false;
       const committed =
         data.committedAt?.toDate?.() ??
         data.approvedAt?.toDate?.() ??
         data.createdAt?.toDate?.();
-      return committed ? committed.getTime() > builtAt : false;
+      return {
+        id: runDoc.id,
+        periodStart: data.periodStart,
+        payDate: data.payDate,
+        committedAtMs: committed ? committed.getTime() : null,
+      };
+    });
+    const stale = isRunFiguresStale({
+      runId,
+      builtAtMs: builtAt,
+      periodMonth,
+      hasFinalPay,
+      committedRuns,
     });
     if (stale) {
       throw new Error(

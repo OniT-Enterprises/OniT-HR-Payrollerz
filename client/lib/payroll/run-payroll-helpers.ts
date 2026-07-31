@@ -354,3 +354,65 @@ export function runTouchesFinalPayYear(
   }
   return false;
 }
+
+/** One already-committed run, as the staleness check needs to see it. */
+export interface CommittedRunStamp {
+  id: string;
+  periodStart?: string | null;
+  payDate?: string | null;
+  /**
+   * When this run's records became visible to the dedup aggregations. Prefer
+   * committedAt; approvedAt/createdAt are fallbacks for runs that predate the
+   * stamp. Milliseconds since epoch, or null when none is evaluable.
+   */
+  committedAtMs?: number | null;
+}
+
+/**
+ * Whether a run awaiting approval was built BEFORE another overlapping run was
+ * committed — in which case its tax-exemption and once-only final-pay figures
+ * predate that run and approving it unchanged would pay something twice.
+ *
+ * Pure so CI can test it: the service half is a Firestore query, and CI unit tests
+ * run without VITE_FIREBASE_* env, which is exactly why this decision had no test
+ * coverage while guarding a double payment.
+ *
+ * Scope follows what the run actually carries:
+ *  - always the same period MONTH — overlapping runs share the monthly $500 WIT
+ *    threshold;
+ *  - widened to the same period YEAR when the run carries once-only final-pay
+ *    lines, because Art. 56 severance and Art. 44 subsidio are deduped per year.
+ *
+ * Compares against the run's OWN build time, which is what makes it correct for a
+ * `processing` run as well as a draft: a run committing after this one was built
+ * means this one's figures never saw it (the concurrent case), while in the
+ * ordinary sequential case the earlier run committed before this one existed and
+ * nothing fires.
+ */
+export function isRunFiguresStale(args: {
+  /** This run's id, so it never flags itself. */
+  runId: string;
+  /** When this run's records were built (createdAt), ms since epoch. */
+  builtAtMs: number;
+  /** This run's period month, 'YYYY-MM'. */
+  periodMonth: string;
+  /** Whether this run carries Art. 56 / Art. 44 lines (widens scope to the year). */
+  hasFinalPay: boolean;
+  /** Every committed run in the payDate window. */
+  committedRuns: readonly CommittedRunStamp[];
+}): boolean {
+  const { runId, builtAtMs, periodMonth, hasFinalPay, committedRuns } = args;
+  if (!builtAtMs || !/^\d{4}-\d{2}$/.test(periodMonth)) return false;
+  const year = periodMonth.slice(0, 4);
+  return committedRuns.some((other) => {
+    if (other.id === runId) return false;
+    const period = other.periodStart || other.payDate || '';
+    const scopeMatch = hasFinalPay
+      ? period.slice(0, 4) === year
+      : period.slice(0, 7) === periodMonth;
+    if (!scopeMatch) return false;
+    return typeof other.committedAtMs === 'number'
+      ? other.committedAtMs > builtAtMs
+      : false;
+  });
+}
