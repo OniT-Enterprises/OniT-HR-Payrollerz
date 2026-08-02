@@ -341,6 +341,9 @@ function ExpandedDetails({
           {calculation.serviceCompensation > 0 && (
             <EarningCard label={t("runPayroll.serviceCompensation")} value={calculation.serviceCompensation} />
           )}
+          {calculation.untakenLeavePayout > 0 && (
+            <EarningCard label={t("runPayroll.untakenLeavePayout")} value={calculation.untakenLeavePayout} />
+          )}
         </div>
       </div>
 

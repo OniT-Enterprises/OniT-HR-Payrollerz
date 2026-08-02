@@ -110,6 +110,12 @@ export interface CommittedFinalPay {
   serviceCompensation: number;
   subsidioAnual: number;
   /**
+   * Art. 32 untaken-leave payout already committed. Year-agnostic like
+   * serviceCompensation: the balance is a once-per-departure entitlement, so any
+   * committed payout discharges it and a re-run must not pay it twice.
+   */
+  untakenLeavePayout: number;
+  /**
    * Per-run breakdown, so the caller can net only the subsidio that discharges
    * the SAME civil-year entitlement its leaver is owed. A plain per-year map does
    * not work: a period straddling 1 January touches two years and nothing on a
@@ -1294,7 +1300,7 @@ class PayrollRecordService {
         if (!record.employeeId) continue;
         const current =
           totals[record.employeeId] ||
-          { serviceCompensation: 0, subsidioAnual: 0, subsidioAnualByRun: [] };
+          { serviceCompensation: 0, subsidioAnual: 0, untakenLeavePayout: 0, subsidioAnualByRun: [] };
         const subsidio =
           record.earnings?.find((e) => e.type === 'subsidio_anual')?.amount || 0;
         const period = runPeriod.get(record.payrollRunId || '');
@@ -1302,6 +1308,10 @@ class PayrollRecordService {
           serviceCompensation: addMoney(
             current.serviceCompensation,
             record.earnings?.find((e) => e.type === 'service_compensation')?.amount || 0,
+          ),
+          untakenLeavePayout: addMoney(
+            current.untakenLeavePayout,
+            record.earnings?.find((e) => e.type === 'untaken_leave')?.amount || 0,
           ),
           subsidioAnual: addMoney(current.subsidioAnual, subsidio),
           subsidioAnualByRun:

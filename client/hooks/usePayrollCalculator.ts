@@ -503,6 +503,7 @@ export function usePayrollCalculator({
           committed: committedFinalPay[data.employee.id || ""] ?? {
             serviceCompensation: 0,
             subsidioAnual: 0,
+            untakenLeavePayout: 0,
           },
           // RAW recorded hire date, not the today-defaulted `hireDate` above: a
           // synthesized default must never narrow the netting (see the arg doc).
@@ -513,6 +514,7 @@ export function usePayrollCalculator({
           // seniority carry-back across a year boundary would re-pay it.
           priorServiceCompensationSettled:
             data.employee.priorServiceCompensationSettled === true,
+          untakenLeaveDays: data.employee.untakenLeaveDays ?? 0,
         });
       } catch (error) {
         console.error(
@@ -522,7 +524,11 @@ export function usePayrollCalculator({
         );
         return null;
       }
-      const { terminationDate: engineTerminationDate, subsidioAnual } = finalPay;
+      const {
+        terminationDate: engineTerminationDate,
+        subsidioAnual,
+        untakenLeaveDays: leaveDaysToPay,
+      } = finalPay;
       // Per-employee frequency overrides the run-level selector
       const effectiveFrequency =
         data.employee.compensation.payFrequency ?? payFrequency;
@@ -576,6 +582,10 @@ export function usePayrollCalculator({
         // Fires the engine's Art. 56 service-compensation earning for a leaver's
         // final run only, and only if not already committed in an earlier run.
         terminationDate: engineTerminationDate,
+        // Art. 32 untaken-leave cash-out, on the same once-only footing.
+        untakenLeaveDays: leaveDaysToPay,
+        employerPreventedLeave:
+          data.employee.employerPreventedLeave === true,
         nonCashBenefits: 0,
         nonCashBenefitINSSCategory: null,
         taxInfo: {
@@ -1460,9 +1470,13 @@ export function usePayrollCalculator({
             committed: committedFinalPay[data.employee.id || ""] ?? {
               serviceCompensation: 0,
               subsidioAnual: 0,
+              untakenLeavePayout: 0,
             },
             engagementStart: data.employee.jobDetails.hireDate || undefined,
             severanceEntitled: data.employee.severanceOnTermination === true,
+            priorServiceCompensationSettled:
+              data.employee.priorServiceCompensationSettled === true,
+            untakenLeaveDays: data.employee.untakenLeaveDays ?? 0,
           });
         } catch (error) {
           console.error(
@@ -1478,7 +1492,11 @@ export function usePayrollCalculator({
           );
           continue;
         }
-        const { terminationDate: engineTerminationDate, subsidioAnual } = finalPay;
+        const {
+        terminationDate: engineTerminationDate,
+        subsidioAnual,
+        untakenLeaveDays: leaveDaysToPay,
+      } = finalPay;
         const effectiveFrequency =
           data.employee.compensation.payFrequency ?? payFrequency;
         const totalPeriodsInMonth = getPayPeriodsInPayMonth(
@@ -1529,6 +1547,9 @@ export function usePayrollCalculator({
           regularAllowances: enrolled.regularAllowances,
           subsidioAnual,
           terminationDate: engineTerminationDate,
+          untakenLeaveDays: leaveDaysToPay,
+          employerPreventedLeave:
+            data.employee.employerPreventedLeave === true,
           nonCashBenefits: 0,
           nonCashBenefitINSSCategory: null,
           taxInfo: {

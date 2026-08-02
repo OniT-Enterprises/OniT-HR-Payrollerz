@@ -394,6 +394,31 @@ export function useSetSeveranceIncluded() {
   });
 }
 
+/**
+ * Reviewer inputs for the final-pay questions Xefe will not answer on its own:
+ * the Art. 32 untaken-leave balance, the Art. 32(5) employer-fault assertion, and
+ * the justa-causa attestation (Art. 23(4)(d) / Art. 50(3)). Each is stored on the
+ * offboarding case and stamped onto the employee when the case completes.
+ */
+export function useSetFinalPayReviewInputs() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+  return useMutation({
+    mutationFn: ({
+      caseId,
+      ...fields
+    }: {
+      caseId: string;
+      untakenLeaveDays?: number;
+      employerPreventedLeave?: boolean;
+      justaCausaEstablished?: boolean;
+    }) => offboardingService.updateCase(tenantId, caseId, fields),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: offboardingKeys.all(tenantId) });
+    },
+  });
+}
+
 export function useCompleteExitInterview() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();

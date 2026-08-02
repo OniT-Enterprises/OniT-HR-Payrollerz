@@ -178,6 +178,18 @@ export interface Employee {
    */
   severanceOnTermination?: boolean;
   /**
+   * Annual-leave days accrued but not taken, recorded by the offboarding reviewer
+   * and cashed out under Art. 32 on the final payroll run. Absent means no
+   * payout — payroll never guesses a balance.
+   */
+  untakenLeaveDays?: number;
+  /**
+   * Reviewer's assertion that the EMPLOYER culpably prevented the leave being
+   * taken, which doubles the Art. 32(5) payout. Never inferred from a balance:
+   * leave the worker chose to defer carries no penalty.
+   */
+  employerPreventedLeave?: boolean;
+  /**
    * Set when a re-engagement carried seniority back across a break (Lei 4/2012
    * Art. 12, ≤90 days) — the ORIGINAL start of continuous service. hireDate
    * equals this whenever service is continuous; the pair is kept so a later

@@ -12,6 +12,7 @@
  *     (salary/22) x 2 — i.e. to the ordinary DAILY rate.
  */
 import { describe, it, expect } from 'vitest';
+import { resolveLeaverFinalPay } from '@/lib/payroll/leaver-final-pay';
 import {
   accruedAnnualLeaveDays,
   calculateUntakenLeavePayout,
@@ -197,5 +198,56 @@ describe('calculateTLPayroll — untaken leave in the payslip', () => {
     const r = calculateTLPayroll(leaverInput({ untakenLeaveDays: 2 }));
     expect(r.untakenLeavePayout).toBe(20);
     expect(r.warnings.some(w => /Art\. 32 payout normally arises only when employment ends/.test(w))).toBe(true);
+  });
+});
+
+describe('resolveLeaverFinalPay — untaken leave is paid once', () => {
+  const base = {
+    inPeriodTermination: '2026-02-28',
+    monthlySalary: 220,
+    hireDate: '2016-05-01',
+    asOfDate: new Date('2026-02-28T00:00:00'),
+    includeSubsidioAnual: true,
+    committed: {
+      serviceCompensation: 0,
+      subsidioAnual: 0,
+      untakenLeavePayout: 0,
+      subsidioAnualByRun: [],
+    },
+    severanceEntitled: true,
+    untakenLeaveDays: 2,
+  };
+
+  it('passes the recorded days through on the first final run', () => {
+    expect(resolveLeaverFinalPay(base).untakenLeaveDays).toBe(2);
+  });
+
+  it('zeroes them once a previous run committed the payout', () => {
+    // Year-agnostic, exactly like Art. 56: the balance is a once-per-departure
+    // entitlement, so a re-run over the same period must not pay it twice.
+    const r = resolveLeaverFinalPay({
+      ...base,
+      committed: { ...base.committed, untakenLeavePayout: 20 },
+    });
+    expect(r.untakenLeaveDays).toBe(0);
+  });
+
+  it('never pays a leave balance on a non-leaver run', () => {
+    const r = resolveLeaverFinalPay({ ...base, inPeriodTermination: null });
+    expect(r.untakenLeaveDays).toBe(0);
+  });
+
+  it('clamps a negative recorded balance to zero', () => {
+    expect(
+      resolveLeaverFinalPay({ ...base, untakenLeaveDays: -5 }).untakenLeaveDays,
+    ).toBe(0);
+  });
+
+  it('is independent of the severance decision', () => {
+    // Leave is owed whatever the Art. 56 outcome — including a justa-causa
+    // dismissal, where severance goes but accrued leave does not.
+    const r = resolveLeaverFinalPay({ ...base, severanceEntitled: false });
+    expect(r.terminationDate).toBeUndefined();
+    expect(r.untakenLeaveDays).toBe(2);
   });
 });

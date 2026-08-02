@@ -1958,7 +1958,16 @@ const messages = {
         "Lift the suspension and put this employee back on payroll. Their service record is unchanged.",
       newStartDate: "New start date",
       serviceResetNote:
-        "Years of service for service compensation and the 13th month are counted from this date, not from their original start date.",
+        "Enter the new start date to see whether their service continues or restarts.",
+      seniorityContinuous: "Service continues from the original start date",
+      seniorityRestarts: "Service restarts from the new start date",
+      seniorityGap: "Break of {{days}} day(s) since their last working day.",
+      seniorityNoGap:
+        "No usable end date on their last departure, so continuity cannot be established.",
+      seniorityKeepsDate:
+        "Service compensation, the 13th month and leave accrual will count from {{date}}.",
+      seniorityPermanent:
+        "A break of 90 days or less makes a new fixed-term contract permanent (Art. 12).",
       confirm: "Return to work",
       rehiredTitle: "Employee rehired",
       unsuspendedTitle: "Employee returned to active",
@@ -2906,6 +2915,19 @@ const messages = {
         decisionExclude: "Exclude from final payroll",
         reviewWarning:
           "The statutory text and common practice can point to different outcomes. Xefe will not choose for you.",
+        justaCausaLabel:
+          "Dismissal for just cause on a valid disciplinary process",
+        justaCausaHelp:
+          "Written accusation, right of defence and a formal decision. Art. 23(4)(d) then removes both the Art. 55 indemnity and the Art. 56 compensation, and Art. 50(3) removes the notice period. A defective process keeps the entitlement.",
+        untakenLeaveLabel: "Untaken annual leave (days)",
+        untakenLeaveAccrued:
+          "Accrued this year: {{days}} day(s) — subtract any already taken",
+        untakenLeaveHelp:
+          "Art. 32: unused leave is paid in full on exit, at the ordinary daily rate. Taxable, but outside the INSS base. Leave blank to pay nothing.",
+        employerPreventedLeaveLabel:
+          "Employer prevented the leave being taken (Art. 32(5) — double pay)",
+        employerPreventedLeaveHelp:
+          "Only where the employer was at fault. Leave the worker chose to defer carries no penalty.",
         reviewNote: "Review note *",
         reviewNotePlaceholder: "Reviewer, date, and basis for the decision",
         reviewAcknowledgement:
@@ -6948,6 +6970,7 @@ const messages = {
     restDayPay: "Rest Day Pay",
     thirteenthMonth: "13th Month",
     serviceCompensation: "Severance (Art. 56)",
+    untakenLeavePayout: "Untaken Leave (Art. 32)",
     incomeTax: "Income Tax",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Employer Contributions",

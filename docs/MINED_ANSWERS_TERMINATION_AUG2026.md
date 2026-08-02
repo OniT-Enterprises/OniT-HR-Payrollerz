@@ -193,12 +193,33 @@ All three answered questions are now in code, with tests naming the evidence.
    disciplinary process, which only a human can attest; a defective dismissal keeps the
    entitlement. Defaults to absent, so nothing changes until a caller opts in.
 
-**Still to wire (UI, not engine):** the offboarding screen should collect the untaken-day count
-(suggested by `accruedAnnualLeaveDays`), the Art. 32(5) employer-fault decision, and the
-justa-causa attestation; and the rehire dialog should show the seniority determination
-(`gapDays`, `seniorityContinuous`, `becomesPermanent`) rather than deciding silently. The engine
-defaults are safe until then: no day count means no payout, and no attestation means unchanged
-behaviour.
+### UI wiring — done (same day)
+
+`npm test` **1117 passing**, `tsc` clean, `build` clean, `i18n:check` 0 missing / 0 extra across
+en + tet + pt.
+
+- **Offboarding final-pay panel** now collects all three reviewer inputs: the **untaken-leave day
+  count** (with an accrual suggestion from `accruedAnnualLeaveDays` shown beside it — accrual only,
+  since Xefe cannot know what was taken), the **Art. 32(5) employer-fault** checkbox (appears only
+  once a balance is entered), and the **justa-causa attestation** (appears only for
+  `departureReason === "termination"`). Persisted on the case via `useSetFinalPayReviewInputs`,
+  stamped onto the employee at completion, and read by payroll.
+- **Rehire dialog** shows the live Art. 12 determination — gap in days, whether service continues
+  or restarts, which date will count, and the permanent-conversion note — instead of deciding
+  silently. The old `serviceResetNote` asserted that service always restarts from the new date,
+  which is now false, so it was rewritten.
+- **Payslip** shows an "Untaken Leave (Art. 32)" earning line.
+- **New plumbing:** `untaken_leave` added to `EarningType`; `Employee.untakenLeaveDays` /
+  `employerPreventedLeave`; `OffboardingCase.untakenLeaveDays` / `employerPreventedLeave` /
+  `justaCausaEstablished`.
+
+**A fourth safety fix fell out of the wiring.** Once the payout became a real payroll earning it
+inherited the double-pay problem Art. 56 already had: two runs covering the same termination period
+would each pay it. So `CommittedFinalPay.untakenLeavePayout` now sums committed `untaken_leave`
+earnings and `resolveLeaverFinalPay` returns 0 days once any payout is committed — year-agnostic,
+exactly like Art. 56, because the balance is a once-per-departure entitlement. Tested, including
+that it stays payable when severance is refused (a justa-causa dismissal loses severance but keeps
+accrued leave).
 
 ## What to do with this
 

@@ -111,6 +111,26 @@ export interface OffboardingCase {
   notes?: string;
   /** Explicit reviewed Art. 56 decision. Absence is never treated as consent. */
   includeArt56Severance?: boolean;
+  /**
+   * Reviewer attests the dismissal was for just cause on a VALID disciplinary
+   * process (written accusation, right of defence, formal decision). Art. 23(4)(d)
+   * then removes both the Art. 55 indemnity and Art. 56 compensation, and
+   * Art. 50(3) removes the notice requirement. Only meaningful for `termination`;
+   * a defective process keeps the entitlement, so absence changes nothing.
+   */
+  justaCausaEstablished?: boolean;
+  /**
+   * Annual-leave days accrued but not taken, to be cashed out under Art. 32 on
+   * the final payroll run. Recorded by the reviewer — payroll never guesses a
+   * balance — and stamped onto the employee when the case completes.
+   */
+  untakenLeaveDays?: number;
+  /**
+   * Reviewer asserts the EMPLOYER culpably prevented the leave being taken,
+   * doubling the payout under Art. 32(5). Never inferred: leave the worker chose
+   * to defer carries no penalty.
+   */
+  employerPreventedLeave?: boolean;
   finalPayReviewAcknowledged?: boolean;
   finalPayReviewNote?: string;
   finalPayReviewedBy?: string;
@@ -256,6 +276,11 @@ class OffboardingService {
           status: 'terminated',
           terminationDate: updates.lastWorkingDay ?? existing.lastWorkingDay,
           severanceOnTermination: reviewedSeverance,
+          // Art. 32 payout inputs the final run reads (see resolveLeaverFinalPay).
+          untakenLeaveDays:
+            updates.untakenLeaveDays ?? existing.untakenLeaveDays ?? 0,
+          employerPreventedLeave:
+            (updates.employerPreventedLeave ?? existing.employerPreventedLeave) === true,
           updatedAt: serverTimestamp(),
         });
       }
@@ -621,6 +646,9 @@ class OffboardingService {
           // The payroll run reads this to decide whether the final pay
           // auto-includes Art. 56 (see resolveLeaverFinalPay).
           severanceOnTermination: severanceIncluded,
+          // Same contract for the Art. 32 untaken-leave cash-out.
+          untakenLeaveDays: caseData.untakenLeaveDays ?? 0,
+          employerPreventedLeave: caseData.employerPreventedLeave === true,
           updatedAt: serverTimestamp(),
         });
       }

@@ -64,6 +64,7 @@ import {
   useCreateOffboardingCase,
   useSaveArticle56FinalPay,
   useSetSeveranceIncluded,
+  useSetFinalPayReviewInputs,
   useUpdateChecklistItem,
   useCompleteExitInterview,
 } from "@/hooks/useHiring";
@@ -93,6 +94,7 @@ import {
   art55IndemnityMonths,
   art55Indemnity,
 } from "@/lib/payroll/leaver-final-pay";
+import { accruedAnnualLeaveDays } from "@/lib/payroll/calculations-tl";
 import { useEmployeeById } from "@/hooks/useEmployees";
 import { exportToCSV } from "@/lib/csvExport";
 import {
@@ -129,6 +131,7 @@ export default function Offboarding() {
   const completeExitInterviewMutation = useCompleteExitInterview();
   const saveArticle56Mutation = useSaveArticle56FinalPay();
   const setSeveranceMutation = useSetSeveranceIncluded();
+  const setFinalPayInputsMutation = useSetFinalPayReviewInputs();
 
   const loading = activeCasesLoading || completedCasesLoading;
 
@@ -140,6 +143,8 @@ export default function Offboarding() {
   const [finalPayReviewAcknowledged, setFinalPayReviewAcknowledged] =
     useState(false);
   const [finalPayReviewNote, setFinalPayReviewNote] = useState("");
+  /** Draft of the Art. 32 balance, so typing doesn't fire a write per keystroke. */
+  const [untakenLeaveDraft, setUntakenLeaveDraft] = useState("");
   const [showDialog, setShowDialog] = useState(Boolean(requestedEmployeeId));
   const queryClient = useQueryClient();
 
@@ -152,11 +157,17 @@ export default function Offboarding() {
         selectedCase?.finalPayReviewNote ||
         "",
     );
+    setUntakenLeaveDraft(
+      typeof selectedCase?.untakenLeaveDays === "number"
+        ? String(selectedCase.untakenLeaveDays)
+        : "",
+    );
   }, [
     selectedCase?.id,
     selectedCase?.article56FinalPay?.reviewAcknowledged,
     selectedCase?.article56FinalPay?.reviewNote,
     selectedCase?.finalPayReviewNote,
+    selectedCase?.untakenLeaveDays,
   ]);
 
   const onboardingQueryKey = [
@@ -1472,6 +1483,183 @@ export default function Offboarding() {
                             {t("hiring.offboarding.finalPay.reviewWarning") ||
                               "The statutory text and common practice can point to different outcomes. Xefe will not choose for you."}
                           </p>
+
+                          {/*
+                            Justa causa (Art. 23(4)(d) / Art. 50(3)). Only a
+                            dismissal can be for just cause, and the exemption
+                            depends on the PROCESS being valid — which only a
+                            human can attest — so this is never inferred from the
+                            departure reason alone.
+                          */}
+                          {selectedCase.departureReason === "termination" && (
+                            <label className="flex items-start gap-2 text-xs">
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                checked={
+                                  selectedCase.justaCausaEstablished === true
+                                }
+                                disabled={
+                                  setFinalPayInputsMutation.isPending ||
+                                  selectedCase.status === "completed"
+                                }
+                                onChange={(e) => {
+                                  if (!selectedCase.id) return;
+                                  const justaCausaEstablished = e.target.checked;
+                                  setFinalPayInputsMutation.mutate({
+                                    caseId: selectedCase.id,
+                                    justaCausaEstablished,
+                                  });
+                                  setSelectedCase({
+                                    ...selectedCase,
+                                    justaCausaEstablished,
+                                  });
+                                }}
+                              />
+                              <span>
+                                <span className="font-medium">
+                                  {t(
+                                    "hiring.offboarding.finalPay.justaCausaLabel",
+                                  ) ||
+                                    "Dismissal for just cause on a valid disciplinary process"}
+                                </span>
+                                <span className="block text-muted-foreground">
+                                  {t(
+                                    "hiring.offboarding.finalPay.justaCausaHelp",
+                                  ) ||
+                                    "Written accusation, right of defence and a formal decision. Art. 23(4)(d) then removes both the Art. 55 indemnity and Art. 56 compensation, and Art. 50(3) removes the notice period. A defective process keeps the entitlement."}
+                                </span>
+                              </span>
+                            </label>
+                          )}
+
+                          {/* Art. 32 untaken annual leave, cashed out on exit. */}
+                          <div className="space-y-2 border-t pt-3">
+                            <Label
+                              htmlFor="untakenLeaveDays"
+                              className="text-xs font-medium"
+                            >
+                              {t("hiring.offboarding.finalPay.untakenLeaveLabel") ||
+                                "Untaken annual leave (days)"}
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                id="untakenLeaveDays"
+                                type="number"
+                                min={0}
+                                step="0.5"
+                                className="h-8 w-24"
+                                value={untakenLeaveDraft}
+                                disabled={
+                                  setFinalPayInputsMutation.isPending ||
+                                  selectedCase.status === "completed"
+                                }
+                                placeholder="0"
+                                onChange={(e) =>
+                                  setUntakenLeaveDraft(e.target.value)
+                                }
+                                onBlur={() => {
+                                  if (!selectedCase.id) return;
+                                  const parsed = Number(untakenLeaveDraft);
+                                  const days =
+                                    untakenLeaveDraft.trim() === "" ||
+                                    !Number.isFinite(parsed) ||
+                                    parsed < 0
+                                      ? 0
+                                      : parsed;
+                                  if (days === (selectedCase.untakenLeaveDays ?? 0))
+                                    return;
+                                  setFinalPayInputsMutation.mutate({
+                                    caseId: selectedCase.id,
+                                    untakenLeaveDays: days,
+                                  });
+                                  setSelectedCase({
+                                    ...selectedCase,
+                                    untakenLeaveDays: days,
+                                  });
+                                }}
+                              />
+                              {(() => {
+                                // Accrual only — Xefe cannot know how many days
+                                // were actually taken, so this is a suggestion the
+                                // reviewer confirms or overrides.
+                                const hire =
+                                  selectedCase.article56FinalPay?.hireDate;
+                                if (!hire || !selectedCase.lastWorkingDay)
+                                  return null;
+                                let accrued = 0;
+                                try {
+                                  accrued = accruedAnnualLeaveDays(
+                                    hire,
+                                    new Date(
+                                      `${selectedCase.lastWorkingDay}T00:00:00`,
+                                    ),
+                                    {
+                                      terminationDate:
+                                        selectedCase.lastWorkingDay,
+                                    },
+                                  );
+                                } catch {
+                                  return null;
+                                }
+                                return (
+                                  <span className="text-xs text-muted-foreground">
+                                    {t(
+                                      "hiring.offboarding.finalPay.untakenLeaveAccrued",
+                                      { days: String(accrued) },
+                                    ) ||
+                                      `Accrued this year: ${accrued} day(s) — subtract any already taken`}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {t("hiring.offboarding.finalPay.untakenLeaveHelp") ||
+                                "Art. 32: unused leave is paid in full on exit, at the ordinary daily rate. Taxable, but outside the INSS base. Leave blank to pay nothing."}
+                            </p>
+                            {(selectedCase.untakenLeaveDays ?? 0) > 0 && (
+                              <label className="flex items-start gap-2 text-xs">
+                                <input
+                                  type="checkbox"
+                                  className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                  checked={
+                                    selectedCase.employerPreventedLeave === true
+                                  }
+                                  disabled={
+                                    setFinalPayInputsMutation.isPending ||
+                                    selectedCase.status === "completed"
+                                  }
+                                  onChange={(e) => {
+                                    if (!selectedCase.id) return;
+                                    const employerPreventedLeave =
+                                      e.target.checked;
+                                    setFinalPayInputsMutation.mutate({
+                                      caseId: selectedCase.id,
+                                      employerPreventedLeave,
+                                    });
+                                    setSelectedCase({
+                                      ...selectedCase,
+                                      employerPreventedLeave,
+                                    });
+                                  }}
+                                />
+                                <span>
+                                  <span className="font-medium">
+                                    {t(
+                                      "hiring.offboarding.finalPay.employerPreventedLeaveLabel",
+                                    ) ||
+                                      "Employer prevented the leave being taken (Art. 32(5) — double pay)"}
+                                  </span>
+                                  <span className="block text-muted-foreground">
+                                    {t(
+                                      "hiring.offboarding.finalPay.employerPreventedLeaveHelp",
+                                    ) ||
+                                      "Only where the employer was at fault. Leave the worker chose to defer carries no penalty."}
+                                  </span>
+                                </span>
+                              </label>
+                            )}
+                          </div>
                           {selectedCase.departureReason === "death" && (
                             <p className="text-xs text-muted-foreground">
                               {t(

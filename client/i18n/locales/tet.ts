@@ -1956,7 +1956,16 @@ const messages = {
         "Hatama fila fali traballadór ne'e ba folha saláriu. Nia tinan servisu la muda.",
       newStartDate: "Data hahú servisu foun",
       serviceResetNote:
-        "Tinan servisu ba kompensasaun servisu no fulan 13 sura hahú husi data ida-ne'e, la'ós husi data hahú servisu uluk.",
+        "Hatama data hahú foun atu haree servisu kontinua ka hahú fali.",
+      seniorityContinuous: "Servisu kontinua husi data hahú orijinál",
+      seniorityRestarts: "Servisu hahú fali husi data hahú foun",
+      seniorityGap: "Intervalu loron {{days}} husi loron servisu ikus.",
+      seniorityNoGap:
+        "La iha data remata ne'ebé bele uza husi saída ikus, tan ne'e labele konfirma kontinuidade.",
+      seniorityKeepsDate:
+        "Kompensasaun servisu, fulan 13 no akumulasaun feriadu sei sura husi {{date}}.",
+      seniorityPermanent:
+        "Intervalu loron 90 ka menus halo kontratu tempu limitadu foun sai permanente (Art. 12).",
       confirm: "Fila ba servisu",
       rehiredTitle: "Traballadór simu fila fali",
       unsuspendedTitle: "Traballadór ativu fali",
@@ -2804,6 +2813,19 @@ const messages = {
         decisionExclude: "Hasai husi folla pagamentu finál",
         reviewWarning:
           "Lei nia testu no prátika komún bele hatudu rezultadu la hanesan. Xefe la hili ba Ita.",
+        justaCausaLabel:
+          "Despedimentu ho justa causa liu husi prosesu disiplinár válidu",
+        justaCausaHelp:
+          "Akuzasaun hakerek, direitu defeza no desizaun formál. Art. 23(4)(d) hasai indemnizasaun Art. 55 no kompensasaun Art. 56, no Art. 50(3) hasai avizu prévio. Prosesu ne'ebé la válidu mantein direitu.",
+        untakenLeaveLabel: "Feriadu anuál la goza (loron)",
+        untakenLeaveAccrued:
+          "Akumula tinan ne'e: loron {{days}} — hasai sira ne'ebé goza tiha ona",
+        untakenLeaveHelp:
+          "Art. 32: feriadu ne'ebé la goza selu tomak bainhira sai, ho valór loron normál. Tributável, maibé la tama baze INSS. Husik mamuk atu la selu buat ida.",
+        employerPreventedLeaveLabel:
+          "Empregadór impede goza feriadu (Art. 32(5) — selu dobru)",
+        employerPreventedLeaveHelp:
+          "Deit bainhira sala mai husi empregadór. Feriadu ne'ebé trabalhadór rasik hakarak taka ba oin la iha penalidade.",
         reviewNote: "Nota revizaun *",
         reviewNotePlaceholder: "Ema ne'ebé reviza, data, no baze ba desizaun",
         reviewAcknowledgement:
@@ -6939,6 +6961,7 @@ const messages = {
     restDayPay: "Pagamentu Loron Deskansu",
     thirteenthMonth: "Fulan 13",
     serviceCompensation: "Indemnizasaun (Art. 56)",
+    untakenLeavePayout: "Feriadu La Goza (Art. 32)",
     incomeTax: "Impostu Rendimentu",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Kontribuisaun Empreza",

@@ -37,6 +37,8 @@ type EarningType =
   | 'bonus'
   | 'subsidio_anual'
   | 'service_compensation'
+  /** Art. 32 cash-out of annual leave left untaken at exit. */
+  | 'untaken_leave'
   | 'non_cash_benefit'
   | 'commission'
   | 'tip'

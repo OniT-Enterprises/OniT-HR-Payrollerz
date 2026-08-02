@@ -1989,7 +1989,16 @@ const messages = {
         "Levantar a suspensão e voltar a incluir o trabalhador no processamento salarial. O registo de antiguidade não é alterado.",
       newStartDate: "Nova data de admissão",
       serviceResetNote:
-        "Os anos de serviço para a compensação por serviço e o 13.º mês contam a partir desta data, não da data de admissão original.",
+        "Introduza a nova data de início para ver se o serviço continua ou reinicia.",
+      seniorityContinuous: "O serviço continua desde a data de início original",
+      seniorityRestarts: "O serviço reinicia na nova data de início",
+      seniorityGap: "Interrupção de {{days}} dia(s) desde o último dia de trabalho.",
+      seniorityNoGap:
+        "Não existe data de fim utilizável na última cessação, pelo que não é possível estabelecer a continuidade.",
+      seniorityKeepsDate:
+        "A compensação por tempo de serviço, o 13.º mês e a acumulação de férias contam a partir de {{date}}.",
+      seniorityPermanent:
+        "Uma interrupção igual ou inferior a 90 dias torna permanente um novo contrato a termo (Art. 12.º).",
       confirm: "Voltar ao trabalho",
       rehiredTitle: "Trabalhador readmitido",
       unsuspendedTitle: "Trabalhador reativado",
@@ -2959,6 +2968,19 @@ const messages = {
         decisionExclude: "Excluir da folha final",
         reviewWarning:
           "O texto da lei e a prática comum podem apontar para resultados diferentes. O Xefe não escolhe por si.",
+        justaCausaLabel:
+          "Despedimento por justa causa com processo disciplinar válido",
+        justaCausaHelp:
+          "Acusação escrita, direito de defesa e decisão formal. O Art. 23.º(4)(d) retira então tanto a indemnização do Art. 55.º como a compensação do Art. 56.º, e o Art. 50.º(3) dispensa o aviso prévio. Um processo inválido mantém o direito.",
+        untakenLeaveLabel: "Férias não gozadas (dias)",
+        untakenLeaveAccrued:
+          "Acumuladas este ano: {{days}} dia(s) — subtraia as já gozadas",
+        untakenLeaveHelp:
+          "Art. 32.º: as férias não gozadas são pagas na totalidade à saída, ao valor diário normal. Tributáveis, mas fora da base da Segurança Social. Deixe em branco para não pagar nada.",
+        employerPreventedLeaveLabel:
+          "O empregador impediu o gozo das férias (Art. 32.º(5) — pagamento em dobro)",
+        employerPreventedLeaveHelp:
+          "Apenas quando a culpa é do empregador. As férias que o trabalhador optou por adiar não têm penalização.",
         reviewNote: "Nota de revisão *",
         reviewNotePlaceholder: "Revisor, data e fundamento da decisão",
         reviewAcknowledgement:
@@ -7059,6 +7081,7 @@ const messages = {
     restDayPay: "Pagamento de Dia de Descanso",
     thirteenthMonth: "13.º Mês",
     serviceCompensation: "Indemnização (Art. 56)",
+    untakenLeavePayout: "Férias Não Gozadas (Art. 32.º)",
     incomeTax: "Imposto sobre Rendimento",
     inssEmployee4: "INSS (4%)",
     employerContrib: "Contribuições do Empregador",

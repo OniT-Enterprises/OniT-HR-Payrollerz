@@ -1410,9 +1410,63 @@ export default function AllEmployees() {
                     value={returnStartDate}
                     onChange={(e) => setReturnStartDate(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {t("employees.returnToWork.serviceResetNote")}
-                  </p>
+                  {/*
+                    Show the Art. 12 determination instead of asserting that
+                    service always restarts — it does not when the break is 90
+                    days or less, and the old static note said otherwise.
+                  */}
+                  {(() => {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(returnStartDate)) {
+                      return (
+                        <p className="text-xs text-muted-foreground">
+                          {t("employees.returnToWork.serviceResetNote")}
+                        </p>
+                      );
+                    }
+                    const preview = resolveRehireSeniority({
+                      originalHireDate:
+                        returningEmployee.continuousServiceSince ||
+                        returningEmployee.jobDetails.hireDate ||
+                        "",
+                      previousTerminationDate: returningEmployee.terminationDate,
+                      newStartDate: returnStartDate,
+                    });
+                    return (
+                      <div
+                        className={cn(
+                          "rounded-md border p-2 text-xs",
+                          preview.seniorityContinuous
+                            ? "border-amber-500/40 bg-amber-500/5"
+                            : "border-border bg-muted/40",
+                        )}
+                      >
+                        <p className="font-medium">
+                          {preview.seniorityContinuous
+                            ? t("employees.returnToWork.seniorityContinuous")
+                            : t("employees.returnToWork.seniorityRestarts")}
+                        </p>
+                        <p className="mt-1 text-muted-foreground">
+                          {preview.gapDays === null
+                            ? t("employees.returnToWork.seniorityNoGap")
+                            : t("employees.returnToWork.seniorityGap", {
+                                days: String(preview.gapDays),
+                              })}
+                        </p>
+                        {preview.seniorityContinuous && (
+                          <p className="mt-1 text-muted-foreground">
+                            {t("employees.returnToWork.seniorityKeepsDate", {
+                              date: preview.hireDate,
+                            })}
+                          </p>
+                        )}
+                        {preview.becomesPermanent && (
+                          <p className="mt-1 text-muted-foreground">
+                            {t("employees.returnToWork.seniorityPermanent")}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
               <div className="flex justify-end gap-2">

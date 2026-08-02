@@ -497,6 +497,8 @@ export function resolveLeaverFinalPay(args: {
     subsidioAnual: number;
     /** Committed subsidio with the wage period of each run that paid it. */
     subsidioAnualByRun?: readonly CommittedSubsidioRun[];
+    /** Art. 32 untaken-leave payout already committed, year-agnostic. */
+    untakenLeavePayout?: number;
   };
   /**
    * Start of the CURRENT period of employment, from the employee's RECORDED hire
@@ -518,7 +520,18 @@ export function resolveLeaverFinalPay(args: {
    * suppresses — it can never increase a payment.
    */
   priorServiceCompensationSettled?: boolean;
-}): { terminationDate: string | undefined; subsidioAnual: number } {
+  /**
+   * Art. 32 untaken-leave days a reviewer recorded at offboarding. Paid once, on
+   * the same year-agnostic footing as Art. 56: a second run over the same period
+   * must not re-pay it, so any committed `untaken_leave` earning zeroes it.
+   */
+  untakenLeaveDays?: number;
+}): {
+  terminationDate: string | undefined;
+  subsidioAnual: number;
+  /** Days to pay out this run — 0 once a previous run has settled them. */
+  untakenLeaveDays: number;
+} {
   const {
     inPeriodTermination,
     monthlySalary,
@@ -530,7 +543,16 @@ export function resolveLeaverFinalPay(args: {
     engagementStart,
     severanceEntitled = false,
     priorServiceCompensationSettled = false,
+    untakenLeaveDays = 0,
   } = args;
+
+  // Suppressed year-agnostically, exactly like Art. 56: the entitlement is a
+  // once-per-departure balance, so ANY committed untaken-leave payout in the
+  // looked-up window discharges it and a re-run must not pay it again.
+  const leaveDaysToPay =
+    committed.untakenLeavePayout && committed.untakenLeavePayout > 0
+      ? 0
+      : Math.max(0, untakenLeaveDays);
 
   if (!inPeriodTermination) {
     return {
@@ -538,6 +560,8 @@ export function resolveLeaverFinalPay(args: {
       subsidioAnual: includeSubsidioAnual
         ? calculateSubsidioAnual(monthlySalary, hireDate, asOfDate, subsidioConfig)
         : 0,
+      // Art. 32 payout belongs to a departure; a non-leaver run never pays it.
+      untakenLeaveDays: 0,
     };
   }
 
@@ -564,6 +588,7 @@ export function resolveLeaverFinalPay(args: {
         committedSubsidioForLeaver(committed, inPeriodTermination, engagementStart),
       ),
     ),
+    untakenLeaveDays: leaveDaysToPay,
   };
 }
 
