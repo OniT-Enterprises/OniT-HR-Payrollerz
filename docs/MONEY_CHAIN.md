@@ -106,7 +106,7 @@ flowchart LR
 | 6 | Statutory generation refuses on missing data — Xefe never infers compliance values | strict readers in `lib/tax/statutory-payroll-record.ts` |
 | 7 | Audit trail: `payroll.run/approve/pay`, `tax.*` actions written via server callable | `functions/src/audit.ts` allowlist + E2E assertion |
 | 8 | Deduction LINES never sum to more than `cashGrossPay`, so `gross − deductions = net` always holds | clamp in `calculateTLPayroll` + `payroll-journal.test.ts` (engine → summary → journal) |
-| 9 | A leaver's Art. 56 severance and Art. 44 subsídio are each paid exactly once, and the Art. 44 test is per-civil-year | `getCommittedFinalPayByEmployee` + `committedSubsidioDischarging` + `final-pay-dedup.test.ts` |
+| 9 | A leaver's Art. 56 severance, Art. 44 subsídio and Art. 32 untaken-leave payout are each paid exactly once, and the Art. 44 test is per-civil-year while the other two are year-agnostic | `getCommittedFinalPayByEmployee` + `committedSubsidioDischarging` + `final-pay-dedup.test.ts` + `untaken-leave-payout.test.ts` |
 | 10 | A run cannot be approved with figures built before another run was committed (double exemption / double severance) | `assertRunFiguresFresh` on approve, for `draft` AND `processing` — the latter covers the cross-client concurrency the client-side dedup caches cannot. Decision is pure in `isRunFiguresStale` + `run-figures-stale.test.ts` |
 
 ### 4a. Final-pay once-only guard — the two scopes are NOT the same
@@ -117,10 +117,22 @@ in code comments.
 
 - **Art. 56 severance is suppressed year-agnostically.** Any committed
   `service_compensation` in the looked-up window blocks a second one, because a
-  second run over the same period must never re-pay it. (Whether Art. 56 is
-  once-per-*employment* rather than once-per-year matters only for a rehire and is
-  OPEN — gap matrix F20. Widening it all-time would underpay a genuinely rehired
-  worker who completes a fresh 5-year block, so it is deliberately left alone.)
+  second run over the same period must never re-pay it.
+- **Art. 56 across a rehire is settled (was gap matrix F20).** Lei 4/2012 Art. 12
+  carries seniority back when a worker is re-engaged within 90 days, so the
+  carried-back service would otherwise let a later termination re-pay blocks
+  already settled — and the window lookup **cannot** catch it, because
+  `yearPayDateWindow` spans only the termination year ±~2 months. So a rehire that
+  carries seniority stamps `Employee.priorServiceCompensationSettled`, which
+  suppresses Art. 56 **all-time**. Beyond 90 days service restarts and the flag is
+  cleared, which preserves the genuine fresh-5-year-block case that previously
+  argued against widening the guard. `resolveRehireSeniority` +
+  `rehire-seniority.test.ts`.
+- **Art. 32 untaken-leave payout is suppressed year-agnostically too.** The
+  balance is a once-per-*departure* entitlement, not a per-year one, so any
+  committed `untaken_leave` earning discharges it. It is independent of the
+  severance decision: a justa-causa dismissal loses Art. 56 and still owes accrued
+  leave.
 - **Art. 44 subsídio is per civil year**, so it may only be netted against the
   *same* year's committed amount. Do **not** try to key this on "the civil year a
   run discharges" — that question is unanswerable from a run: a wage period

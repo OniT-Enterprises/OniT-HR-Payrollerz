@@ -1,11 +1,9 @@
 # Open questions for Nico — Timor-Leste payroll & tax
 
-Ten questions where Xefe's engineering has gone as far as it can without a
-practitioner's ruling. Each one is blocking a real decision in the product.
-
-**How to use this:** every question states what Xefe does *today*, so the shortest
-useful answer is often "that's correct" or "no — do X instead". Nothing here needs
-a written opinion; a sentence each is enough to unblock it.
+Questions where Xefe's engineering has gone as far as it can without a practitioner's
+ruling. Each one states what Xefe does *today*, so the shortest useful answer is often
+"that's correct" or "no — do X instead". Nothing here needs a written opinion; a
+sentence each is enough to unblock it.
 
 Where the answer changes money, the amount is given. Where Xefe had to pick a side
 to ship, it picked the **conservative** one — over-withholding rather than under,
@@ -17,23 +15,14 @@ asked to make a judgement the software could have made for them.
 Source detail for all of these is in `docs/TL_LAW_GAP_MATRIX_JUL2026.md`; the
 statute references were read from a clean Jornal da República copy.
 
+**This list was ten questions; three are now closed** — see *Already answered* at the
+end. Question IDs are unchanged so existing cross-references still resolve. If any of
+the three closed readings looks wrong to you, that correction is more valuable than
+anything still open below.
+
 ---
 
 ## A. Money-affecting — worth answering first
-
-### A1. Does a justa-causa dismissal void Art. 56 service compensation?
-Art. 23(4)(d) says a worker dismissed for just cause gets "sem qualquer
-indemnização ou compensação". Art. 56 says service compensation is owed
-"independentemente do motivo". These read in opposite directions for a
-dismissed-for-cause worker with 5+ years of service.
-
-- **Impact:** one month's salary per completed 5-year block. On a $600 salary with
-  12 years' service that is $1,200 either paid or not paid.
-- **Xefe today:** never auto-pays it. A reviewer must explicitly decide and
-  acknowledge severance for each departure, and the decision is stamped on the
-  employee. So the risk is a reviewer being given no guidance, not a wrong payment.
-- **Question:** for a dismissal with just cause under Art. 23(4)(d), is Art. 56
-  compensation payable or not?
 
 ### A2. Is Art. 56 service counted in complete 5-year blocks, or prorated?
 "um mês de salário por cada período de 5 anos de trabalho" — does a worker with
@@ -41,30 +30,13 @@ dismissed-for-cause worker with 5+ years of service.
 
 - **Impact:** on $600 and 7 years, $600 vs $840.
 - **Xefe today:** complete blocks only (the smaller amount).
-- **Question:** blocks or pro-rata? And does a partial final block count at all?
-
-### A3. Is accrued-but-untaken annual leave paid out in cash at termination?
-Art. 32 gives 12 working days a year. Nothing in the statute text we have says
-explicitly whether an unused balance converts to cash when employment ends.
-
-- **Impact:** up to 12 days' pay per leaver — on $600/month roughly $276.
-- **Xefe today:** **no payout line exists.** A leaver's final pay is wages +
-  Art. 56 + Art. 44 only. If a payout is owed, Xefe is currently silent about it
-  and the employer would have to add it manually.
-- **Question:** is untaken annual leave payable on exit? If so, at the ordinary
-  daily rate, and is it capped at the current year's accrual or does carry-over
-  count too?
-
-### A4. On a rehire, does Art. 56 service restart?
-A worker leaves, is paid Art. 56 for their completed blocks, and is later rehired.
-
-- **Impact:** whether their next departure counts service from the original hire
-  date (paying for the same years twice) or from the rehire date.
-- **Xefe today:** the rehire action moves the hire date, so service restarts and
-  the 13th month prorates from the new start. Xefe also suppresses a second
-  severance for any already-committed amount in the lookup window.
-- **Question:** is that right — does a rehire start a fresh service clock for
-  Art. 56?
+- **What we already have:** four independent statements of "1 month per 5 years" —
+  two from your firm (EN and PT), one from an unrelated HR coordinator, and one real
+  final payment. Every one of them is *framed* per block. But every worked example we
+  can find has a tenure that is an exact multiple of 5, where both readings give the
+  same answer, so none of them actually settles it.
+- **Question, as narrowly as we can put it:** *for a leaver with exactly 7 years —
+  1 month, or 1.4?* And does a partial final block count at all?
 
 ### A5. Are holiday and rest-day 2× premiums inside the INSS contribution base?
 DL 20/2017 Art. 8(2)(f) includes regular supplements in the base; overtime
@@ -137,15 +109,49 @@ does Art. 61's employer duty come back?
   practitioners reportedly use useful-life rates. Which does ATTL actually accept
   on Form C?
 - **Unjustified-absence seniority discount:** calendar days or working days?
-- **Carry-over and "culposamente" (Art. 32(5)):** if the employer *offers* leave and
-  the worker defers it, is the 2× compensation still owed?
+- **Annual-leave carry-over clock (Art. 32):** how long may an untaken balance be
+  carried before it lapses — is there a 12-month use-by, and from when?
 - **In-kind wages:** lawful under Art. 40(1)? Moot while Xefe is 100% cash.
 
 ---
 
-## What Xefe will do with the answers
+## Already answered — please correct us if any of this is wrong
 
-A1–A5 change engine behaviour or reviewer guidance and each has a test waiting to
-be written against the answer. B6–B7 are one-line changes once the basis is known.
-B8–B10 remove hard blocks or defaults that currently need an operator to work
-around them. Nothing here is waiting on more engineering — only on the ruling.
+Closed on 2026-08-02 from your firm's own written advisories and a final-pay
+worksheet, not from our reading of the statute. All three are now live in Xefe, so a
+correction changes real behaviour.
+
+### A1. Does justa causa void Art. 56 service compensation? — **no severance, if the process is valid**
+Art. 23(4)(d) ("sem qualquer indemnização ou compensação") prevails over Art. 56's
+"independentemente do motivo". We took "valid" to mean written accusation, right of
+defence and a formal decision, so Xefe asks a reviewer to attest to the process
+rather than inferring it from the departure reason — a procedurally defective
+dismissal keeps the entitlement. We also applied Art. 50(3): no prior notice.
+
+- **Still open on this topic:** whether Art. 55 sits on top in an unlawful-dismissal
+  finding.
+
+### A3. Is untaken annual leave paid out in cash at termination? — **yes**
+Paid in full on exit, accruing **1 day per month worked** (12/year), valued at the
+**ordinary daily rate = monthly salary ÷ 22**. Taxable, but outside the INSS base.
+The ÷22 convention came from your worksheet; we made it configurable per tenant
+because the statute does not prescribe a divisor and our hourly-rate maths uses the
+annualized 44-hour week (~23.83 days) instead.
+
+- **Also taken from this:** the Art. 32(5) double pay attaches to the employer
+  having *prevented* the leave, so leave a worker chose to defer carries no penalty.
+  Xefe asks; it never infers fault.
+- **Worth confirming:** does an untaken balance carried over from an *earlier* year
+  also get cashed out, or only the current year's accrual? (See section C.)
+
+### A4. On a rehire, does Art. 56 service restart? — **not within 90 days**
+Re-engagement within 90 days carries seniority from the original start date (and
+makes a new fixed-term contract permanent); beyond 90 days service restarts unless
+continuity is proven. Xefe previously reset the clock unconditionally, which
+under-paid short-break returners; it now keeps the original date inside the window
+and shows the reviewer which rule applied.
+
+- **What we could not implement:** Xefe does not record the *motive* of a
+  re-engagement, so the automatic fixed-term→permanent conversion is flagged to the
+  reviewer rather than applied. If the motive rarely differs in practice, we would
+  rather just apply it.

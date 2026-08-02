@@ -110,7 +110,7 @@ numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
 
 | id            | Policy slot          | Statute                                                                         | Default days/yr                           | Employer pay default                                                | Notes                                                                                                                            |
 | ------------- | -------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `annual`      | `annualLeave`        | Art. 32                                                                         | 12 working days                           | 100%                                                                | Carry-over configurable; probation-gated                                                                                         |
+| `annual`      | `annualLeave`        | Art. 32                                                                         | 12 working days                           | 100%                                                                | Carry-over configurable; probation-gated. **Any balance left untaken at termination is CASHED OUT** — see note below              |
 | `sick`        | `sickLeave`          | Art. 34                                                                         | 12                                        | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate                                                                                                              |
 | `maternity`   | `maternityLeave`     | Art. 59(1)                                                                      | 84 (12 weeks, ≥10 after birth)            | **Unpaid** — INSS parental subsidy (DL 18/2017)                     | See INSS section below                                                                                                           |
 | `paternity`   | `paternityLeave`     | Art. 60                                                                         | 5 working days                            | **Unpaid** — INSS parental subsidy                                  | See INSS section below                                                                                                           |
@@ -184,6 +184,26 @@ operator enters; the note is what keeps the two hours from being deducted.
   24-hour shift.
 - Editing an employee or date recomputes both the old and new weekly timesheet.
 - Paid/unpaid leave hours use the configured policy’s paid percentage.
+
+### Annual leave left untaken at termination is money
+
+An untaken `annual` balance does **not** simply lapse when someone leaves: Art. 32 pays
+it out in cash on the final payslip, at the ordinary daily rate (`monthly salary / 22`),
+accruing 1 day per month worked. It is taxable but **outside** the INSS base, and it is
+paid **once per departure** (any committed `untaken_leave` earning discharges it).
+
+It lives in payroll, not here: `calculateUntakenLeavePayout` in
+`client/lib/payroll/calculations-tl.ts`, gated by a day count a reviewer records on the
+offboarding case. Time & Leave owns the *balance*; offboarding owns the *decision*;
+payroll owns the *payment*. Xefe never derives the payable balance automatically,
+because it cannot know what was actually taken — `accruedAnnualLeaveDays` only supplies
+the accrual side as a suggestion.
+
+The Art. 32(5) double-pay penalty applies only where the **employer** prevented the
+leave being taken, so it is an explicit reviewer assertion and never inferred from a
+balance. Background and evidence: `docs/MINED_ANSWERS_TERMINATION_AUG2026.md` §A3.
+
+**Still unbuilt:** the 12-month carry-over use-by clock (gap matrix F2).
 
 ## Roles
 
