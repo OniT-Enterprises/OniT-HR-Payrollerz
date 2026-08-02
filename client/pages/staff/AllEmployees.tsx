@@ -33,6 +33,7 @@ import {
   getIncompleteEmployees,
 } from "@/lib/employeeUtils";
 import { useToast } from "@/hooks/use-toast";
+import { resolveRehireSeniority } from "@/lib/payroll/leaver-final-pay";
 import { getTodayTL } from "@/lib/dateUtils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -769,11 +770,18 @@ export default function AllEmployees() {
    * Bring a non-active employee back. Two distinct cases:
    *  - `inactive` (suspended): just clear the suspension; service is unbroken, so
    *    hireDate and any stamped lifecycle fields stay exactly as they are.
-   *  - `terminated` (rehire): a NEW period of employment. The old terminationDate
-   *    and the offboarding severance decision must be cleared or payroll would
-   *    treat the person as a leaver again on the next run, and hireDate must move
-   *    to the new start date so Art. 56 service and the Art. 44 subsidio prorate
-   *    from it rather than from the original engagement.
+   *  - `terminated` (rehire): a new period of employment — but NOT necessarily a
+   *    new service clock. Lei 4/2012 Art. 12: a re-engagement within 90 days
+   *    carries seniority from the ORIGINAL start date (and converts a fixed-term
+   *    contract to permanent); beyond 90 days service restarts unless continuity
+   *    is proven. resolveRehireSeniority decides which hireDate applies. The old
+   *    terminationDate and severance decision are cleared either way, or payroll
+   *    would treat the person as a leaver again on the next run.
+   *
+   *    When seniority carries back, any Art. 56 already paid for the earlier
+   *    service is stamped as `priorServiceCompensationSettled` so a later
+   *    termination cannot re-pay blocks already settled — the committed lookup
+   *    only spans the termination year ±~2 months and would miss it.
    */
   const submitReturnToWork = async () => {
     const employee = returningEmployee;
@@ -782,12 +790,35 @@ export default function AllEmployees() {
     if (isRehire && !/^\d{4}-\d{2}-\d{2}$/.test(returnStartDate)) return;
     setReturnSaving(true);
     try {
-      const updates: Partial<Employee> = isRehire
+      const seniority = isRehire
+        ? resolveRehireSeniority({
+            originalHireDate:
+              employee.continuousServiceSince || employee.jobDetails.hireDate || "",
+            previousTerminationDate: employee.terminationDate,
+            newStartDate: returnStartDate,
+          })
+        : null;
+      const updates: Partial<Employee> = isRehire && seniority
         ? {
             status: "active",
             terminationDate: "",
             severanceOnTermination: false,
-            jobDetails: { ...employee.jobDetails, hireDate: returnStartDate },
+            jobDetails: { ...employee.jobDetails, hireDate: seniority.hireDate },
+            ...(seniority.seniorityContinuous
+              ? {
+                  continuousServiceSince: seniority.hireDate,
+                  // Carry forward a previously-stamped settlement, and record
+                  // this engagement's reviewed Art. 56 decision as settled.
+                  priorServiceCompensationSettled:
+                    employee.priorServiceCompensationSettled === true ||
+                    employee.severanceOnTermination === true,
+                }
+              : {
+                  // Fresh clock: drop both carry-back markers so a future
+                  // termination is not suppressed by a settled earlier engagement.
+                  continuousServiceSince: "",
+                  priorServiceCompensationSettled: false,
+                }),
           }
         : { status: "active" };
       await employeeService.updateEmployee(tenantId, employee.id, updates, {

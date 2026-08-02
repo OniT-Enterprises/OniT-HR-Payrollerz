@@ -184,6 +184,40 @@ export const TL_SUBSIDIO_ANUAL = {
   minimumMonthsDefault: 0,  // No minimum by law
 };
 
+/**
+ * Annual leave (Lei 4/2012 Art. 32) — accrual and the cash payout owed for a
+ * balance left untaken when employment ends.
+ *
+ * Art. 32(1) gives 12 working days of paid annual leave per year. A practitioner
+ * advisory from a TL accounting firm states the working rule as "1 day/month
+ * worked or 12/year; paid in full if not used; double pay if the employer
+ * unjustly prevents leave", and a real final-pay worksheet from the same firm
+ * carries the payout as its own gross line ("Ferias não Gozadas"), valued at the
+ * ordinary daily rate. Evidence: ops/plans/primosboot-mail-archive.md ->
+ * docs/MINED_ANSWERS_TERMINATION_AUG2026.md (A3).
+ *
+ * `payoutWorkingDaysPerMonth: 22` deliberately differs from the divisor behind
+ * `calculateHourlyRate`, which annualizes the 44-hour week (44 x 52/12 = 190.67
+ * hours, i.e. ~23.83 days). The statute prescribes NEITHER; 22 is the convention
+ * the observed worksheet used for this line specifically, and it is the
+ * pro-worker of the two. Override per tenant via the calculation config rather
+ * than editing this default.
+ */
+export const TL_ANNUAL_LEAVE = {
+  /** Art. 32(1) — working days of paid annual leave per full year. */
+  daysPerYear: 12,
+  /** Accrual rate implied by 12/year: one working day per month worked. */
+  accrualDaysPerMonth: 1,
+  /** Divisor turning a monthly salary into the daily rate for a leave payout. */
+  payoutWorkingDaysPerMonth: 22,
+  /**
+   * Art. 32(5) pays DOUBLE where the employer culpably prevented the leave
+   * being taken. Xefe never infers employer fault, so this multiplier is applied
+   * only on an explicit reviewer decision — see calculateUntakenLeavePayout.
+   */
+  employerFaultMultiplier: 2,
+};
+
 // ============================================
 // WORKING HOURS & OVERTIME
 // ============================================

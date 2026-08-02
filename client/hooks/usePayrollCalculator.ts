@@ -508,6 +508,11 @@ export function usePayrollCalculator({
           // synthesized default must never narrow the netting (see the arg doc).
           engagementStart: data.employee.jobDetails.hireDate || undefined,
           severanceEntitled: data.employee.severanceOnTermination === true,
+          // Art. 56 settled for pre-rehire service. Needed because the committed
+          // lookup above spans only the termination year ±~2 months, so a
+          // seniority carry-back across a year boundary would re-pay it.
+          priorServiceCompensationSettled:
+            data.employee.priorServiceCompensationSettled === true,
         });
       } catch (error) {
         console.error(

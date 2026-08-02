@@ -177,6 +177,33 @@ export interface Employee {
    * add service compensation; false or absent stays safe-off.
    */
   severanceOnTermination?: boolean;
+  /**
+   * Set when a re-engagement carried seniority back across a break (Lei 4/2012
+   * Art. 12, ≤90 days) — the ORIGINAL start of continuous service. hireDate
+   * equals this whenever service is continuous; the pair is kept so a later
+   * termination can tell "never had a break" from "had one that didn't count".
+   */
+  continuousServiceSince?: string;
+  /**
+   * True when Art. 56 service compensation was already settled for service
+   * BEFORE the current re-engagement. Stamped at rehire, only when seniority is
+   * carried back.
+   *
+   * Load-bearing, and the reason it cannot be derived at run time: the committed
+   * final-pay lookup only spans the termination year ±~2 months
+   * (`yearPayDateWindow`), so a rehire whose earlier payment falls outside that
+   * window is invisible to it. Carrying seniority back without this would compute
+   * a second termination's Art. 56 over the WHOLE carried-back service and re-pay
+   * blocks already settled. Suppresses all-time — see resolveLeaverFinalPay.
+   *
+   * Sourced from the earlier engagement's reviewed `severanceOnTermination`
+   * decision, so it records that severance was DECIDED, which is not quite the
+   * same as disbursed (a tenant could decide yes and never run the final
+   * payroll). That direction over-suppresses, which under-pays visibly and can be
+   * topped up; the opposite direction sends a second severance out the door. The
+   * offboarding review is where a genuine second entitlement gets restored.
+   */
+  priorServiceCompensationSettled?: boolean;
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;
   compliance?: EmployeeComplianceSnapshot;

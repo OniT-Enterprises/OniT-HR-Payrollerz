@@ -64,8 +64,40 @@ export type DepartureReason =
  * statute-literal reading — the Art. 56 payment is then payable to the
  * estate/heirs, which the offboarding UI flags for accountant confirmation.
  */
-export function severanceDefaultForReason(reason: DepartureReason): boolean {
+export function severanceDefaultForReason(
+  reason: DepartureReason,
+  options?: JustaCausaOption,
+): boolean {
+  // A dismissal for just cause on a VALID process extinguishes termination pay —
+  // see JustaCausaOption. Overrides the cause-based suggestion above.
+  if (options?.justaCausaEstablished) return false;
   return reason !== "resignation";
+}
+
+/**
+ * Whether a dismissal for just cause has been established on a **valid**
+ * disciplinary process (mined answer A1).
+ *
+ * Art. 23(4)(d) says a worker dismissed for just cause gets "sem qualquer
+ * indemnização ou compensação" — both nouns, i.e. the Art. 55 indemnity AND the
+ * Art. 56 compensation — while Art. 56 itself reads "independentemente do
+ * motivo". A practitioner advisory resolves the conflict in favour of
+ * Art. 23(4)(d): on just-cause termination under Arts. 50/23/24 there is
+ * "**no severance pay if the process is valid**", where valid means a
+ * disciplinary procedure with written accusation, right of defence and a formal
+ * decision. Evidence: docs/MINED_ANSWERS_TERMINATION_AUG2026.md §A1.
+ *
+ * The validity condition is why this is a separate, explicitly-set flag rather
+ * than a new DepartureReason: a procedurally defective dismissal does NOT earn
+ * the exemption, and only a human reviewer can attest to the process. Absent or
+ * false leaves every existing behaviour untouched.
+ *
+ * It also settles Art. 50(3) ("sem necessidade de aviso prévio") for
+ * requiredNoticeDays, which previously had to bundle justa-causa dismissal into
+ * the Art. 53(2) notice band because the two were indistinguishable.
+ */
+export interface JustaCausaOption {
+  justaCausaEstablished?: boolean;
 }
 
 // ============================================
@@ -123,19 +155,28 @@ export interface NoticeRequirement {
  * rescission of Art. 52 (so its (2)/(3) carry the 15/30-day band and the
  * employer-pays shortfall). Both verified against the Jornal da República text.
  *
- * OPEN (needs-Nico): `termination` is bundled with `redundancy` into the Art. 53(2)
- * band, but Art. 50(3) says justa-causa dismissal needs no prior notice ("sem
- * necessidade de aviso prévio"). Xefe's `termination` label does not distinguish
- * justa-causa from no-cause dismissal, so this is left as-is deliberately rather
- * than hard-coding 0 days — see docs/TL_LAW_GAP_MATRIX_JUL2026.md §4.1.
+ * RESOLVED (was needs-Nico): `termination` is still bundled with `redundancy`
+ * into the Art. 53(2) band by DEFAULT, because Xefe's `termination` label alone
+ * cannot distinguish justa-causa from no-cause dismissal. A caller that knows it
+ * was justa causa on a valid process now says so via `justaCausaEstablished`, and
+ * gets the Art. 50(3) answer — no prior notice required. Absent, behaviour is
+ * unchanged. See docs/MINED_ANSWERS_TERMINATION_AUG2026.md §A1 and
+ * docs/TL_LAW_GAP_MATRIX_JUL2026.md §4.1.
  */
 export function requiredNoticeDays(
   reason: DepartureReason,
   hireDate: string,
   lastWorkingDay: string,
+  options?: JustaCausaOption,
 ): NoticeRequirement {
+  // Art. 50(3): a justa-causa dismissal needs no prior notice at all. Only
+  // meaningful for an employer-initiated dismissal — it must not silence the
+  // worker's own 30-day duty on a resignation, so it is checked after that.
   if (reason === "resignation") {
     return { days: 30, basis: "Lei 4/2012 Art. 49(8)" };
+  }
+  if (options?.justaCausaEstablished && reason === "termination") {
+    return { days: 0, basis: "Lei 4/2012 Art. 50(3)" };
   }
   if (reason === "redundancy" || reason === "termination") {
     const basis = "Lei 4/2012 Art. 53(2)";
@@ -215,6 +256,90 @@ export function jobSearchCreditDays(
   const noticeDays = noticeDaysGiven(noticeDate, lastWorkingDay);
   if (noticeDays === null) return null;
   return Math.floor(noticeDays / 7) * 2;
+}
+
+// ============================================
+// Re-engagement / rehire seniority (Lei 4/2012 Arts. 12, 7)
+// ============================================
+
+/** Lei 4/2012 Art. 12 — gap below which a re-engagement continues the old service. */
+export const REENGAGEMENT_CONTINUITY_DAYS = 90;
+
+export interface RehireSeniority {
+  /** The hireDate to store: the ORIGINAL one when service continues, else the new start. */
+  hireDate: string;
+  /** True when the earlier engagement's service carries into the new one. */
+  seniorityContinuous: boolean;
+  /** Calendar days between the previous last working day and the new start, or null. */
+  gapDays: number | null;
+  /**
+   * True when Art. 12 converts the new fixed-term contract to PERMANENT. Surfaced
+   * for a reviewer; Xefe does not silently rewrite the contract type, because the
+   * conversion also requires the re-engagement to be for the SAME reason, which
+   * is not recorded.
+   */
+  becomesPermanent: boolean;
+  basis: string;
+}
+
+/**
+ * Which hire date a re-engaged worker keeps — Lei 4/2012 Arts. 12 and 7.
+ *
+ * A practitioner advisory states the rule as: a new fixed-term contract with the
+ * same worker for the same reason **within 90 days** automatically becomes
+ * permanent and **seniority counts from the original start date**; re-engagement
+ * after more than 90 days "may restart seniority unless continuity is proven".
+ * Seniority drives severance, service compensation and holiday accrual. Evidence:
+ * docs/MINED_ANSWERS_TERMINATION_AUG2026.md §A4.
+ *
+ * Xefe previously moved hireDate to the new start date unconditionally, which
+ * silently erased service the worker was still entitled to whenever the break was
+ * short. Inside the window the ORIGINAL date is kept.
+ *
+ * Note the asymmetry in how missing data is treated, and keep it:
+ *  - an unreadable/absent PREVIOUS termination date cannot establish continuity,
+ *    so it does not carry seniority back — but it is reported (gapDays null) so
+ *    the UI can ask rather than quietly resetting;
+ *  - beyond 90 days the default is a fresh clock, matching the advisory's "may
+ *    restart", with continuity available as an explicit reviewer override.
+ *
+ * `continuityProven` forces continuity regardless of the gap — the reviewer
+ * asserting the "unless continuity is proven" branch.
+ */
+export function resolveRehireSeniority(args: {
+  originalHireDate: string;
+  previousTerminationDate: string | null | undefined;
+  newStartDate: string;
+  continuityProven?: boolean;
+}): RehireSeniority {
+  const { originalHireDate, previousTerminationDate, newStartDate, continuityProven } = args;
+
+  const prev = parseIsoDayUtc(previousTerminationDate);
+  const start = parseIsoDayUtc(newStartDate);
+  const gapDays =
+    prev === null || start === null ? null : Math.max(0, Math.round((start - prev) / MS_PER_DAY));
+
+  const withinWindow = gapDays !== null && gapDays <= REENGAGEMENT_CONTINUITY_DAYS;
+  const continuous = Boolean(continuityProven) || withinWindow;
+
+  // Only a *valid* original hire date can be carried back; otherwise there is
+  // nothing coherent to preserve and the new start is the only usable date.
+  const originalUsable = parseIsoDayUtc(originalHireDate) !== null;
+
+  return {
+    hireDate: continuous && originalUsable ? originalHireDate : newStartDate,
+    seniorityContinuous: continuous && originalUsable,
+    gapDays,
+    becomesPermanent: withinWindow,
+    basis:
+      continuityProven && !withinWindow
+        ? 'Lei 4/2012 Art. 12 — continuity asserted by reviewer'
+        : withinWindow
+          ? `Lei 4/2012 Art. 12 — re-engaged within ${REENGAGEMENT_CONTINUITY_DAYS} days`
+          : gapDays === null
+            ? 'no usable previous termination date — service restarted'
+            : `re-engaged after ${REENGAGEMENT_CONTINUITY_DAYS} days — service restarted`,
+  };
 }
 
 // ============================================
@@ -384,6 +509,15 @@ export function resolveLeaverFinalPay(args: {
   engagementStart?: string;
   /** Only explicit true includes Art. 56; absence is review-blocked/safe-off. */
   severanceEntitled?: boolean;
+  /**
+   * Art. 56 already settled for service BEFORE the current engagement, from
+   * `Employee.priorServiceCompensationSettled`. Suppresses a re-pay all-time,
+   * which `committed.serviceCompensation` cannot: that lookup only spans the
+   * termination year ±~2 months, so a rehire carrying seniority back across a
+   * year boundary would otherwise re-pay blocks already settled. Only ever
+   * suppresses — it can never increase a payment.
+   */
+  priorServiceCompensationSettled?: boolean;
 }): { terminationDate: string | undefined; subsidioAnual: number } {
   const {
     inPeriodTermination,
@@ -395,6 +529,7 @@ export function resolveLeaverFinalPay(args: {
     committed,
     engagementStart,
     severanceEntitled = false,
+    priorServiceCompensationSettled = false,
   } = args;
 
   if (!inPeriodTermination) {
@@ -413,10 +548,13 @@ export function resolveLeaverFinalPay(args: {
     { ...subsidioConfig, terminationDate: inPeriodTermination },
   );
   return {
-    // Skip severance if it was already paid/committed in an earlier run, or
-    // if the offboarding decision excluded it for this termination's cause.
+    // Skip severance if it was already paid/committed in an earlier run, or paid
+    // for pre-rehire service outside that lookup's window, or if the offboarding
+    // decision excluded it for this termination's cause.
     terminationDate:
-      committed.serviceCompensation > 0 || !severanceEntitled
+      committed.serviceCompensation > 0 ||
+      priorServiceCompensationSettled ||
+      !severanceEntitled
         ? undefined
         : inPeriodTermination,
     subsidioAnual: maxMoney(

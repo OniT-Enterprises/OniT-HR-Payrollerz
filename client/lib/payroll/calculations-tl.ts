@@ -17,6 +17,7 @@ import {
   TL_WORKING_HOURS,
   TL_SICK_LEAVE,
   TL_SUBSIDIO_ANUAL,
+  TL_ANNUAL_LEAVE,
   TL_SERVICE_COMPENSATION,
   TL_NON_CASH_BENEFITS,
   TL_PAY_PERIODS,
@@ -84,6 +85,14 @@ export interface TLPayrollCalculationConfig {
   subsidioAnual?: {
     /** When false, current-year hires still receive the full month (tenant choice). */
     proRataForNewEmployees?: boolean;
+  };
+  /**
+   * Convention for cashing out untaken annual leave (Art. 32). Defaults to
+   * TL_ANNUAL_LEAVE.payoutWorkingDaysPerMonth (22) — see that constant for why
+   * this divisor deliberately differs from `hourlyRate.monthlyHoursDivisor`.
+   */
+  leavePayout?: {
+    workingDaysPerMonth?: number;
   };
 }
 
@@ -155,6 +164,18 @@ export interface TLPayrollInput {
   subsidioAnual?: number;        // 13th month salary / annual subsidy (paid in a specific run)
   /** When present, Art. 56 service compensation is derived from salary and service dates. */
   terminationDate?: string;
+  /**
+   * Annual-leave days accrued but NOT taken, to be cashed out under Art. 32.
+   * Supplied by the caller (a reviewer confirms it) because payroll cannot know
+   * how many days were actually taken; `accruedAnnualLeaveDays` computes the
+   * accrual side to suggest. Absent/0 pays nothing.
+   */
+  untakenLeaveDays?: number;
+  /**
+   * Art. 32(5) double-pay penalty — only ever an explicit reviewer decision that
+   * the EMPLOYER culpably prevented the leave being taken. Never inferred.
+   */
+  employerPreventedLeave?: boolean;
   /** Monthly benefit in kind. It is compensation, but is not cash paid in payroll. */
   nonCashBenefits: number;
   /** Required for a non-zero benefit because the $20 rule governs WIT, not INSS. */
@@ -226,6 +247,8 @@ export interface TLPayrollResult {
   otherEarnings: number;
   subsidioAnual: number;
   serviceCompensation: number;
+  /** Art. 32 cash-out of annual leave left untaken at exit. */
+  untakenLeavePayout: number;
   nonCashBenefits: number;
 
   // Totals
@@ -664,11 +687,38 @@ export function calculateSubsidioAnual(
     terminationDate?: string | null;
   },
 ): number {
+  const effectiveMonths = monthsInEntitlementYear(hireDate, asOfDate, options);
+  return proRata(monthlySalary, Math.min(effectiveMonths, 12), TL_SUBSIDIO_ANUAL.fullYearMonths);
+}
+
+/**
+ * Months of the civil year an employee is entitled *for* — the shared basis of
+ * the Art. 44 subsidio pro-rata and the Art. 32 annual-leave accrual.
+ *
+ * Counted inclusively: a mid-year hire starts at the hire month (unless the
+ * tenant opts out of new-hire proration), and a termination inside the year caps
+ * the count at the termination month. Returns 0 when the year falls entirely
+ * outside the engagement.
+ *
+ * Extracted so the two entitlements cannot drift apart. That is not theoretical
+ * tidiness — the observed practitioner worksheet used the SAME month count for
+ * both lines (a leaver hired years earlier and terminated in February got 2/12
+ * of a month's subsidio and 2 days of leave), so a divergence here would put
+ * Xefe out of step with real practice on one line or the other.
+ *
+ * Parses plain ISO dates calendar-safe: `new Date("YYYY-MM-DD")` is UTC midnight
+ * but getFullYear()/getMonth() read local, so west of UTC a first-of-month date
+ * slips to the previous month/year.
+ */
+export function monthsInEntitlementYear(
+  hireDate: string,
+  asOfDate: Date = new Date(),
+  options?: {
+    proRataForNewEmployees?: boolean;
+    terminationDate?: string | null;
+  },
+): number {
   const year = asOfDate.getFullYear();
-  // Parse plain ISO dates calendar-safe. `new Date("YYYY-MM-DD")` is UTC
-  // midnight but getFullYear()/getMonth() read local, so west of UTC a
-  // first-of-month date slips to the previous month/year — the Art. 56 path
-  // already avoids this with parsePlainISODate; the subsidio path must too.
   const hire = parsePlainISODate(hireDate, 'Hire date');
   if (hire.year > year) return 0;
 
@@ -684,8 +734,81 @@ export function calculateSubsidioAnual(
     if (term.year === year) endMonth = term.month - 1;
   }
 
-  const effectiveMonths = Math.max(0, endMonth - startMonth + 1);
-  return proRata(monthlySalary, Math.min(effectiveMonths, 12), TL_SUBSIDIO_ANUAL.fullYearMonths);
+  return Math.max(0, endMonth - startMonth + 1);
+}
+
+/**
+ * Annual-leave days ACCRUED in the leave year (Lei 4/2012 Art. 32) — one working
+ * day per month worked, capped at the 12-day statutory year.
+ *
+ * This is the accrual only. The payable balance is accrued MINUS days already
+ * taken, which payroll cannot infer — the caller supplies it. Use as the
+ * suggested figure a reviewer confirms, never as an auto-paid amount.
+ */
+export function accruedAnnualLeaveDays(
+  hireDate: string,
+  asOfDate: Date = new Date(),
+  options?: {
+    proRataForNewEmployees?: boolean;
+    terminationDate?: string | null;
+  },
+): number {
+  const months = monthsInEntitlementYear(hireDate, asOfDate, options);
+  return Math.min(
+    months * TL_ANNUAL_LEAVE.accrualDaysPerMonth,
+    TL_ANNUAL_LEAVE.daysPerYear,
+  );
+}
+
+/**
+ * Daily rate used to cash out untaken annual leave: monthly salary divided by
+ * the tenant's working-days-per-month convention (default 22).
+ *
+ * Deliberately NOT `calculateHourlyRate x 8` — see TL_ANNUAL_LEAVE for why the
+ * divisors differ and why the statute settles neither.
+ */
+export function leavePayoutDailyRate(
+  monthlySalary: number,
+  config?: TLPayrollCalculationConfig['leavePayout'],
+): number {
+  const divisor =
+    config?.workingDaysPerMonth ?? TL_ANNUAL_LEAVE.payoutWorkingDaysPerMonth;
+  if (!Number.isFinite(divisor) || divisor <= 0) {
+    throw new RangeError('Leave payout working-days divisor must be a positive finite number.');
+  }
+  return divideMoney(monthlySalary, divisor);
+}
+
+/**
+ * Cash owed for annual leave left untaken when employment ends (Art. 32):
+ * untaken days x the ordinary daily rate.
+ *
+ * `employerPreventedLeave` applies the Art. 32(5) double-pay penalty. It is an
+ * explicit reviewer decision and defaults OFF, because the penalty attaches to
+ * the employer having *culpably prevented* the leave — the practitioner wording
+ * is "double pay if the employer unjustly prevents leave". Where the employer
+ * offered leave and the worker chose to defer it there is no employer fault and
+ * the plain rate applies, so this can never be inferred from a balance alone.
+ *
+ * Negative or non-finite day counts yield 0 rather than throwing: an unknown
+ * balance must not block a final payslip, and paying nothing is the reviewable
+ * failure mode (the worker can be topped up) where paying a guessed amount is not.
+ */
+export function calculateUntakenLeavePayout(
+  monthlySalary: number,
+  untakenDays: number,
+  options?: {
+    employerPreventedLeave?: boolean;
+    config?: TLPayrollCalculationConfig['leavePayout'];
+  },
+): number {
+  if (!Number.isFinite(untakenDays) || untakenDays <= 0) return 0;
+  if (!Number.isFinite(monthlySalary) || monthlySalary <= 0) return 0;
+  const dailyRate = leavePayoutDailyRate(monthlySalary, options?.config);
+  const days = options?.employerPreventedLeave
+    ? untakenDays * TL_ANNUAL_LEAVE.employerFaultMultiplier
+    : untakenDays;
+  return multiplyMoney(dailyRate, days);
 }
 
 /**
@@ -994,6 +1117,38 @@ export function calculateTLPayroll(
       isTaxable: true,
       isINSSBase: false,
     });
+  }
+
+  // Untaken annual leave cashed out on exit (Lei 4/2012 Art. 32). Taxable as
+  // salary under Tax Law 8/2008 Art. 1, but OUTSIDE the INSS base: DL 20/2017
+  // Art. 8 contributions attach to remuneration for work performed, and an
+  // observed practitioner worksheet builds the contribution base from salary plus
+  // the annual subsidy only — excluding both this line and Art. 56 severance.
+  // See docs/MINED_ANSWERS_TERMINATION_AUG2026.md.
+  const untakenLeavePayout = calculateUntakenLeavePayout(
+    input.monthlySalary,
+    input.untakenLeaveDays ?? 0,
+    {
+      employerPreventedLeave: input.employerPreventedLeave,
+      config: config?.leavePayout,
+    },
+  );
+  if (untakenLeavePayout > 0) {
+    earnings.push({
+      type: 'untaken_leave',
+      description: input.employerPreventedLeave
+        ? 'Untaken Annual Leave (Art. 32(5) double pay)'
+        : 'Untaken Annual Leave Payout',
+      descriptionTL: 'Feriadu Anuál La Goza',
+      amount: untakenLeavePayout,
+      isTaxable: true,
+      isINSSBase: false,
+    });
+    if (!input.terminationDate) {
+      warnings.push(
+        'Untaken annual leave is being cashed out without a termination date — Art. 32 payout normally arises only when employment ends.',
+      );
+    }
   }
 
   const nonCashBenefits = Math.max(0, input.nonCashBenefits);
@@ -1369,6 +1524,7 @@ export function calculateTLPayroll(
     otherEarnings: input.otherEarnings,
     subsidioAnual,
     serviceCompensation,
+    untakenLeavePayout,
     nonCashBenefits,
 
     // Totals
