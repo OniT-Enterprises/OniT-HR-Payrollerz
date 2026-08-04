@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
@@ -35,6 +35,24 @@ export default function Login() {
       navigate(from, { replace: true });
     }
   }, [authResolved, user, from, navigate]);
+
+  // Never offer sign-in before Firebase has given a definite answer about the
+  // session this browser already holds. A click landing inside that window is
+  // how you get an ORPHANED GOOGLE CHOOSER: the popup opens, the restore
+  // finishes, the effect above navigates to the dashboard, and the popup is
+  // left on screen asking which account to use for a session that already
+  // exists. Waiting costs a few hundred ms on a cold load and nothing on a
+  // warm one — the page is only reachable when signed out anyway.
+  if (!authResolved || user) {
+    return (
+      <div className="dark flex min-h-screen items-center justify-center bg-[#0a0a0b]">
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary"
+          aria-label={t("common.loading")}
+        />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
