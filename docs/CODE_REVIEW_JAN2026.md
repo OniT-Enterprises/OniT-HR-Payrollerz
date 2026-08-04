@@ -12,6 +12,17 @@ The application is well-structured, modular, and utilizes modern React patterns.
 
 ### 🔴 Critical (Performance/Scalability)
 
+- [ ] **Time-box `loadUserState` in AuthContext** (opened 2026-08-04) — when the
+  Firestore profile read or the forced token refresh hangs, `authResolved` never
+  flips, and `HomeRoute`'s `loading || !authResolved` gate leaves `/` as a
+  permanent skeleton: the app looks dead, with no error and no retry. Seen on
+  prod. `client/hooks/useAuthSettled.ts` defends the auth screens so sign-in
+  stays reachable, but that is a patch per caller — the timeout belongs in
+  AuthContext, where a stalled read can resolve to `profileStatus: "error"` and
+  surface the `SessionRecovery` card that already exists. Needs a decision on the
+  timeout value and what a partial resolution may render. See
+  `docs/AUTH_SESSION.md`.
+
 - [x] **Server-side filtering** - Move filtering from client to Firestore queries
   - [x] `employeeService.ts` - Added `getEmployees()` with filters
   - [x] `invoiceService.ts` - Added `getInvoices()` with filters

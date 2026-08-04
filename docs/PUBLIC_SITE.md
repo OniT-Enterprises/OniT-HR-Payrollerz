@@ -27,7 +27,8 @@ Marketing lives on **xefe.tl**; the authenticated app on **app.xefe.tl**
   Cross-host redirects must be decided from the **path** alone; the backstop for
   anything that slips through is `client/lib/hostBounce.ts`, and
   `tests/client/host-split-redirects.test.ts` pins that no path is claimed by
-  both hosts.
+  both hosts. Full reasoning plus the rest of the session invariants:
+  `docs/AUTH_SESSION.md`.
 
 ## The pages
 
