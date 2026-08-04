@@ -153,7 +153,10 @@ describe('resolveLeaverFinalPay — carried-back seniority must not re-pay Art. 
   });
 
   it('defaults to paying when the flag is absent (no behaviour change for non-rehires)', () => {
-    const { priorServiceCompensationSettled, ...withoutFlag } = {
+    // Rest-destructure to drop the key entirely; the binding is deliberately
+    // unused, hence the underscore (unused-imports/no-unused-vars allows /^_/,
+    // and CI lints with --max-warnings 0).
+    const { priorServiceCompensationSettled: _omitted, ...withoutFlag } = {
       ...base,
       priorServiceCompensationSettled: undefined,
     };
