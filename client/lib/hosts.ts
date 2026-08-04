@@ -32,6 +32,17 @@ export function isMarketingHost(): boolean {
 }
 
 /**
+ * True when this document is served by the public marketing origin. That origin
+ * is the marketing site for EVERY visitor, so it must never render app chrome
+ * or the assistant — not even when it happens to hold a session of its own
+ * (Firebase auth is per-origin, and a session left on the apex is invisible to
+ * the app host; see HomeRoute in App.tsx). Dev/localhost is always the app.
+ */
+export function isMarketingOrigin(): boolean {
+  return import.meta.env.PROD && isMarketingHost();
+}
+
+/**
  * Paths that belong on app.xefe.tl. Auth screens are deliberately app-side:
  * signing in must happen on the origin that holds the session.
  *

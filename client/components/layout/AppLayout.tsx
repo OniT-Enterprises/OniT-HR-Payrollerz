@@ -13,6 +13,7 @@ import AppSidebar from "./AppSidebar";
 import { ImpersonationBanner } from "./ImpersonationBanner";
 import { useI18n } from "@/i18n/I18nProvider";
 import { isPublicPath } from "@/lib/publicPaths";
+import { isMarketingOrigin } from "@/lib/hosts";
 
 // TopBar owns setup/notification data queries. Do not load that Firestore
 // surface for landing and authentication pages that never render app chrome.
@@ -46,8 +47,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
     !isTenantDocumentAlerts &&
     ADMIN_PATHS.some((p) => location.pathname.startsWith(p));
 
-  // No sidebar while loading, for public/admin pages, or unauthenticated users
-  if (authLoading || tenantLoading || !user || !session || isPublicRoute || isAdminRoute) {
+  // No sidebar while loading, for public/admin pages, or unauthenticated users.
+  // The marketing origin never wears app chrome either: it serves the public
+  // home to signed-in visitors too, and "/" is not in PUBLIC_PATHS.
+  if (
+    authLoading ||
+    tenantLoading ||
+    !user ||
+    !session ||
+    isPublicRoute ||
+    isAdminRoute ||
+    isMarketingOrigin()
+  ) {
     return <>{children}</>;
   }
 

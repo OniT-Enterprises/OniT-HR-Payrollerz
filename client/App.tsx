@@ -18,9 +18,11 @@ import {
   APP_HOST,
   MARKETING_HOST,
   isAppHost,
+  isMarketingOrigin,
   pathBelongsToApp,
   pathBelongsToMarketing,
 } from "@/lib/hosts";
+import { noteHostBounce } from "@/lib/hostBounce";
 import { GuidanceProvider } from "@/contexts/GuidanceContext";
 import { I18nProvider, useI18n } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -182,9 +184,15 @@ function HomeRoute() {
 
   // Not logged in - show landing page (dark marketing skeleton while the
   // chunk loads; the app-style RouteLoadingFallback would flash light here).
-  // On the app host the marketing site lives on the apex — send guests there.
+  // On the app host the marketing site lives on the apex — send guests there,
+  // unless we have already bounced across the boundary too often (see
+  // lib/hostBounce.ts): then the sign-in screen ends the journey on this origin
+  // rather than handing it back to a host that may return it.
   if (!user) {
     if (import.meta.env.PROD && isAppHost()) {
+      if (!noteHostBounce()) {
+        return <Navigate to="/auth/login" replace />;
+      }
       window.location.replace(MARKETING_ORIGIN);
       return <MarketingRouteFallback />;
     }
@@ -280,17 +288,24 @@ function HomeRoute() {
     return <AccountantPortfolioDashboard />;
   }
 
-  // User with tenants - show regular dashboard
-  // Host split: authenticated home is the app host. A leftover pre-split
-  // session on xefe.tl would otherwise render the dashboard on the marketing
-  // origin and then bounce confusingly on the next server hit.
-  if (
-    import.meta.env.PROD &&
-    typeof window !== "undefined" &&
-    window.location.hostname === MARKETING_HOST
-  ) {
-    window.location.replace(APP_ORIGIN);
-    return <RouteLoadingFallback />;
+  // User with tenants - show regular dashboard.
+  //
+  // Host split: the apex is marketing for EVERYONE, signed in or not. It used
+  // to redirect a signed-in visitor to the app origin, which read as tidy and
+  // was in fact a redirect loop: Firebase auth is per-origin, so the session
+  // that made xefe.tl redirect could not travel with it, and app.xefe.tl —
+  // seeing a guest — sent the visitor straight back to the apex, forever
+  // (2026-08-04, one real user; nginx logged the two "/" documents alternating
+  // every ~3s). A session lingering on the apex is harmless because the apex
+  // only ever serves public pages, and every app path there already redirects
+  // server-side; the marketing nav's own sign-in link is the way across, and it
+  // lands on the origin where the session belongs.
+  if (isMarketingOrigin()) {
+    return (
+      <Suspense fallback={<MarketingRouteFallback />}>
+        <Landing />
+      </Suspense>
+    );
   }
   return <Dashboard />;
 }

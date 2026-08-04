@@ -16,6 +16,18 @@ Marketing lives on **xefe.tl**; the authenticated app on **app.xefe.tl**
 - `/auth/*` belongs to app.xefe.tl (nginx redirects; marketing CTAs may keep
   relative links). `/i/` and `/apply/` share links stay on the apex forever.
 - Path ownership logic: `client/lib/hosts.ts` (used by HostGuard in App.tsx).
+- **Never redirect across the boundary based on auth state.** Firebase auth is
+  scoped to an origin, so neither host can see whether the other holds a
+  session — such a redirect is a guess, and two guesses face to face are an
+  infinite loop. That is not hypothetical: until 2026-08-04 the apex sent a
+  signed-in visitor to app.xefe.tl, which saw a guest and sent them back,
+  forever (nginx logged both "/" documents alternating every ~3s for one real
+  user). The apex is now marketing for everyone, signed in or not — harmless,
+  since it serves only public pages and app paths there already 301 across.
+  Cross-host redirects must be decided from the **path** alone; the backstop for
+  anything that slips through is `client/lib/hostBounce.ts`, and
+  `tests/client/host-split-redirects.test.ts` pins that no path is claimed by
+  both hosts.
 
 ## The pages
 
