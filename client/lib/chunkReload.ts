@@ -7,12 +7,15 @@
  * dynamically imported module", Safari "Importing a module script failed".
  * Reloading fetches fresh HTML with the new hashes, which fixes it.
  *
- * The subtle part: once main.tsx's `vite:preloadError` listener calls
- * `preventDefault()` to claim the recovery, Vite's preload helper **resolves
- * `undefined`** instead of rejecting. A `React.lazy` factory that just returns
- * that then trips React's useless "Element type is invalid. Received a promise
- * that resolves to: undefined" — racing the reload it's already doing. Both
- * shapes have to be handled; see `lazyWithRetry`.
+ * The subtle part, and why main.tsx no longer calls `preventDefault()` on
+ * `vite:preloadError` (changed 2026-08-04): preventing the default suppresses
+ * Vite's throw, which makes its preload helper **resolve `undefined`** instead
+ * of rejecting. Every `await import(...)` in the app then receives `undefined`,
+ * and the failure resurfaces far from its cause — as React's "Element type is
+ * invalid. Received a promise that resolves to: undefined" from a lazy route,
+ * or as "Cannot read properties of undefined (reading 'default')" from a
+ * service. A rejection is the honest signal; `lazyWithRetry` still handles both
+ * shapes, because a swallowed rejection is easy to reintroduce.
  */
 
 const RELOAD_KEY = "xefe-chunk-reload-at";

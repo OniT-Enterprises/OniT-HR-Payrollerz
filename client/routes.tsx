@@ -40,11 +40,13 @@ function lazyWithRetry<P extends object>(
       if (isReloadInFlight() || reloadForFreshChunks()) return new Promise<never>(() => {});
       throw error; // cooldown hit: genuinely broken, let the error surface
     }
-    // main.tsx's `vite:preloadError` handler calls preventDefault() to own the
-    // recovery, which makes Vite's preload helper RESOLVE `undefined` rather
-    // than reject. Without this guard that surfaced as React's "Element type is
-    // invalid. Received a promise that resolves to: undefined" error card
-    // racing the reload (Sentry JAVASCRIPT-REACT-B / -C).
+    // Defensive: an import that RESOLVES `undefined` instead of rejecting.
+    // Vite's preload helper does that whenever something calls
+    // preventDefault() on `vite:preloadError` — main.tsx deliberately no longer
+    // does (see lib/chunkReload.ts), but the shape is one listener away from
+    // returning, and unguarded it surfaced as React's "Element type is invalid.
+    // Received a promise that resolves to: undefined" racing the reload
+    // (Sentry JAVASCRIPT-REACT-B / -C).
     if (!module) {
       if (isReloadInFlight() || reloadForFreshChunks()) return new Promise<never>(() => {});
       throw new Error("Failed to fetch dynamically imported module (stale chunk)");

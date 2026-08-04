@@ -48,10 +48,19 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 // dynamic import (or one of its preloaded deps) fails to fetch. Reload once
 // (loop guard shared with lazyWithRetry in routes.tsx, see lib/chunkReload) to
 // pick up the fresh index.html instead of stranding the user on a dead page.
-window.addEventListener("vite:preloadError", (event) => {
-  if (reloadForFreshChunks()) {
-    event.preventDefault(); // suppress the throw; we're reloading
-  }
+//
+// Deliberately NOT preventDefault(): that suppresses Vite's throw, which makes
+// its preload helper RESOLVE `undefined` instead of rejecting — and then every
+// `await import(...)` in the app hands `undefined` to code expecting a module.
+// It resurfaced on 2026-08-04 as "Cannot read properties of undefined (reading
+// 'default')", an unhandled rejection with a stack pointing into our own bundle
+// and no hint of the real cause. Letting the import reject is strictly better:
+// call sites with a try/catch degrade properly (a failed Firestore import shows
+// the account-recovery card, not a TypeError), lazyWithRetry already handles the
+// rejected shape, and the wording is in `ignoreErrors` above so the reload we
+// just scheduled stays quiet in Sentry either way.
+window.addEventListener("vite:preloadError", () => {
+  reloadForFreshChunks();
 });
 
 // Get the root element
