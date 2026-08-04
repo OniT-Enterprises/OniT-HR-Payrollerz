@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthSettled } from "@/hooks/useAuthSettled";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
@@ -19,6 +20,7 @@ export default function Login() {
   const { t } = useI18n();
 
   const { signIn, signInWithGoogle, user, authResolved } = useAuth();
+  const authSettled = useAuthSettled();
   const navigate = useNavigate();
   const location = useLocation();
   const requestedLocation = (location.state as {
@@ -36,14 +38,17 @@ export default function Login() {
     }
   }, [authResolved, user, from, navigate]);
 
-  // Never offer sign-in before Firebase has given a definite answer about the
-  // session this browser already holds. A click landing inside that window is
-  // how you get an ORPHANED GOOGLE CHOOSER: the popup opens, the restore
-  // finishes, the effect above navigates to the dashboard, and the popup is
-  // left on screen asking which account to use for a session that already
-  // exists. Waiting costs a few hundred ms on a cold load and nothing on a
-  // warm one — the page is only reachable when signed out anyway.
-  if (!authResolved || user) {
+  // Don't offer sign-in while Firebase is still deciding about the session this
+  // browser already holds. A click landing inside that window is how you get an
+  // ORPHANED GOOGLE CHOOSER: the popup opens, the restore finishes, the effect
+  // above navigates to the dashboard, and the popup is left on screen asking
+  // which account to use for a session that already exists.
+  //
+  // The wait is BOUNDED by useAuthSettled — an unbounded one locked users out of
+  // this page entirely when the profile read behind `authResolved` hung. Once
+  // settled we only keep the spinner while a user is actually present, because
+  // the effect above is already navigating away and the form would just flash.
+  if (!authSettled || (authResolved && user)) {
     return (
       <div className="dark flex min-h-screen items-center justify-center bg-[#0a0a0b]">
         <Loader2

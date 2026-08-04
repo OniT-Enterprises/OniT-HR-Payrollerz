@@ -13,6 +13,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthSettled } from "@/hooks/useAuthSettled";
 import { useTenant } from "@/contexts/TenantContext";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { AccountantChoice } from "@/components/accountants/AccountantChoice";
@@ -28,7 +29,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t } = useI18n();
-  const { refreshUserProfile, signInWithGoogle, authResolved } = useAuth();
+  const { refreshUserProfile, signInWithGoogle } = useAuth();
+  const authSettled = useAuthSettled();
   const { switchTenant } = useTenant();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -175,7 +177,7 @@ export default function Signup() {
     // an account nobody needs. Unlike Login this page does NOT bounce a
     // signed-in user away, because creating a second organization from here is
     // a legitimate flow; it only refuses to start a sign-in it can't yet judge.
-    if (actionInFlight.current || !authResolved) return;
+    if (actionInFlight.current || !authSettled) return;
 
     actionInFlight.current = true;
     setError(null);
@@ -283,7 +285,7 @@ export default function Signup() {
                 <GoogleSignInButton
                   onClick={handleGoogle}
                   loading={googleLoading}
-                  disabled={loading || !authResolved}
+                  disabled={loading || !authSettled}
                   label={t("auth.continueWithGoogle")}
                 />
                 <div className="relative my-4">
