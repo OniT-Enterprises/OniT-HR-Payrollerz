@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Command, Minimize2, Maximize2, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatStore } from "@/stores/chatStore";
+import { isMarketingOrigin } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
 const ChatPanel = lazy(() => import("./ChatPanel"));
@@ -154,7 +155,9 @@ const ChatWidget = () => {
     [handleClose],
   );
 
-  if (!user) return null;
+  // Signed out, or on the marketing origin — which serves the public site to
+  // signed-in visitors too, and must not float the assistant over it.
+  if (!user || isMarketingOrigin()) return null;
 
   return (
     <>
