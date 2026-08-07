@@ -342,6 +342,22 @@ export function usePayrollCalculator({
     new Set(),
   );
   const [attendanceSyncPending, setAttendanceSyncPending] = useState(false);
+  /**
+   * A computed sync held back for confirmation.
+   *
+   * Absence is `expected - worked - paidLeave` against a FULL-month
+   * expectation, and for salaried staff the shortfall is docked. So syncing a
+   * period that was only PARTLY recorded silently deducts every unrecorded
+   * working day: three recorded days in a month wipes out most of the salary,
+   * from a button labelled "Load regular, overtime, and late data". An
+   * employee with NO records at all is skipped entirely (`if (!summary)`), so
+   * the danger is confined to partial coverage — which is exactly what an
+   * owner who records absences only, then presses Sync, will have.
+   */
+  const [pendingAttendanceSync, setPendingAttendanceSync] = useState<{
+    data: EmployeePayrollData[];
+    docked: { name: string; hours: number }[];
+  } | null>(null);
   const attendanceSyncRequestRef = useRef(0);
 
   // Final pay (Art. 56 severance + Art. 44 subsidio) already committed this
@@ -1072,6 +1088,7 @@ export function usePayrollCalculator({
 
     // Build the next rows from a synchronous snapshot so the counts below are
     // accurate the moment the toast reads them.
+    const newlyDocked: { name: string; hours: number }[] = [];
     const nextData = employeePayrollDataRef.current.map((data) => {
       const employeeId = data.employee.id || "";
       const summary = summaryByEmployee.get(employeeId);
@@ -1133,6 +1150,12 @@ export function usePayrollCalculator({
       };
 
       const isEdited = checkIsEdited(updated);
+      if (absenceHours > (data.absenceHours ?? 0) + 0.01) {
+        newlyDocked.push({
+          name: `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`,
+          hours: Number((absenceHours - (data.absenceHours ?? 0)).toFixed(2)),
+        });
+      }
       syncedCount += 1;
       const withEdit = { ...updated, isEdited };
       return {
@@ -1140,6 +1163,12 @@ export function usePayrollCalculator({
         calculation: latestCalculatorRef.current(withEdit),
       };
     });
+
+    if (newlyDocked.length > 0) {
+      setPendingAttendanceSync({ data: nextData, docked: newlyDocked });
+      finishSync();
+      return;
+    }
 
     setEmployeePayrollData(nextData);
 
@@ -1789,6 +1818,13 @@ export function usePayrollCalculator({
     handleResetRow,
     toggleRowExpansion,
     handleSyncFromAttendance,
+    pendingAttendanceSync,
+    confirmAttendanceSync: () => {
+      if (!pendingAttendanceSync) return;
+      setEmployeePayrollData(pendingAttendanceSync.data);
+      setPendingAttendanceSync(null);
+    },
+    cancelAttendanceSync: () => setPendingAttendanceSync(null),
     refetchYtd: () =>
       Promise.all([
         ytdQuery.refetch(),

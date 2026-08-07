@@ -6714,6 +6714,8 @@ const messages = {
         "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
       failed:
         "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
+      foreignCurrency:
+        "Dokumentu ne’e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne’ebé Ita selu duni iha USD.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',
@@ -7112,6 +7114,15 @@ const messages = {
     },
   },
   runPayroll: {
+    syncDock: {
+      title: "Ida-ne'e sei deskonta saláriu",
+      description:
+        "Laiha rejistu prezensa ba loron servisu balun iha períodu ne'e. Folha trata loron servisu ne'ebé laiha rejistu nu'udar falta laiha pagamentu, tanba ne'e sinkroniza sei hamenus pagamentu ba ema {{count}}:",
+      hours: "Deskonta oras {{hours}}",
+      hint: "Se ema sira-ne'e servisu duni, rejista uluk loron sira-ne'e iha Prezensa, ka husik oras sira nu'udar iha ona no la sinkroniza.",
+      cancel: "La sinkroniza",
+      confirm: "Sinkroniza no deskonta",
+    },
     absence: "Falta",
     lateArrival: "Tarde mai",
     specialHours: "Oras espesiál (2×)",

@@ -6249,6 +6249,7 @@ export const translations = {
         "reading": "XefeBot is reading your file…",
         "filled": "XefeBot filled in the details from your file — check them before saving.",
         "failed": "XefeBot couldn't read this file — fill in the details manually.",
+        "foreignCurrency": "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.",
         "vendorOnFile": "On the document: {{name}} — not in your vendor list yet.",
         "addVendor": "Add \"{{name}}\"",
         "vendorAdded": "Vendor \"{{name}}\" added",
@@ -6634,6 +6635,14 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "syncDock": {
+        "title": "This will dock pay",
+        "description": "Attendance is missing for some working days in this period. Payroll treats a working day with no record as an unpaid absence, so syncing will reduce pay for {{count}} people:",
+        "hours": "{{hours}} h deducted",
+        "hint": "If these people actually worked, record those days in Attendance first, or leave the hours as they are and do not sync.",
+        "cancel": "Do not sync",
+        "confirm": "Sync and dock"
+      },
       "absence": "Absence",
       "lateArrival": "Late arrival",
       "specialHours": "Special hours (2× pay)",
@@ -14089,6 +14098,7 @@ export const translations = {
         "reading": "XefeBot lee hela ita-nia fixeiru…",
         "filled": "XefeBot prenxe ona detallu sira husi fixeiru — xeke uluk molok grava.",
         "failed": "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
+        "foreignCurrency": "Dokumentu ne’e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne’ebé Ita selu duni iha USD.",
         "vendorOnFile": "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
         "addVendor": "Aumenta \"{{name}}\"",
         "vendorAdded": "Fornesedor \"{{name}}\" aumenta ona",
@@ -14474,6 +14484,14 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "syncDock": {
+        "title": "Ida-ne'e sei deskonta saláriu",
+        "description": "Laiha rejistu prezensa ba loron servisu balun iha períodu ne'e. Folha trata loron servisu ne'ebé laiha rejistu nu'udar falta laiha pagamentu, tanba ne'e sinkroniza sei hamenus pagamentu ba ema {{count}}:",
+        "hours": "Deskonta oras {{hours}}",
+        "hint": "Se ema sira-ne'e servisu duni, rejista uluk loron sira-ne'e iha Prezensa, ka husik oras sira nu'udar iha ona no la sinkroniza.",
+        "cancel": "La sinkroniza",
+        "confirm": "Sinkroniza no deskonta"
+      },
       "absence": "Falta",
       "lateArrival": "Tarde mai",
       "specialHours": "Oras espesiál (2×)",
@@ -21929,6 +21947,7 @@ export const translations = {
         "reading": "O XefeBot está a ler o seu ficheiro…",
         "filled": "O XefeBot preencheu os detalhes a partir do ficheiro — confira antes de guardar.",
         "failed": "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
+        "foreignCurrency": "Este documento está em {{currency}}. O Xefe registа os valores em dólares americanos — introduza o valor que pagou efetivamente em USD.",
         "vendorOnFile": "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
         "addVendor": "Adicionar \"{{name}}\"",
         "vendorAdded": "Fornecedor \"{{name}}\" adicionado",
@@ -22314,6 +22333,14 @@ export const translations = {
       }
     },
     "runPayroll": {
+      "syncDock": {
+        "title": "Isto vai descontar salário",
+        "description": "Faltam registos de assiduidade em alguns dias úteis deste período. A folha trata um dia útil sem registo como falta não paga, por isso sincronizar vai reduzir o vencimento de {{count}} pessoas:",
+        "hours": "{{hours}} h descontadas",
+        "hint": "Se estas pessoas trabalharam mesmo, registe primeiro esses dias na Assiduidade, ou deixe as horas como estão e não sincronize.",
+        "cancel": "Não sincronizar",
+        "confirm": "Sincronizar e descontar"
+      },
       "absence": "Falta",
       "lateArrival": "Atraso",
       "specialHours": "Horas especiais (2×)",
