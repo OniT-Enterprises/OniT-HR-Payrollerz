@@ -64,7 +64,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <LayoutProvider>
-      <div className="flex h-dvh bg-background">
+      <div className="flex h-dvh overflow-hidden bg-background">
         <a
           href="#main-content"
           className="sr-only z-[60] rounded-md bg-background px-4 py-2 text-sm font-medium text-foreground shadow-lg focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
@@ -72,7 +72,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {t("common.skipToContent")}
         </a>
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* min-h-0 is load-bearing: a flex item defaults to min-height:auto,
+            so without it this column grows to its content and bursts the
+            h-dvh shell. The whole document then scrolls — sidebar included —
+            and <main>'s overflow-y-auto never engages. */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           {isImpersonating && <ImpersonationBanner />}
           <React.Suspense fallback={<div className="h-14 shrink-0 border-b border-border/70 bg-card" />}>
             <TopBar />
