@@ -6852,7 +6852,9 @@ const messages = {
       failed:
         "O XefeBot não conseguiu ler este ficheiro — preencha os detalhes manualmente.",
       foreignCurrency:
-        "Este documento está em {{currency}}. O Xefe registа os valores em dólares americanos — introduza o valor que pagou efetivamente em USD.",
+        "Este documento está em {{currency}}. O Xefe regista os valores em dólares americanos — introduza o valor que pagou efetivamente em USD.",
+      checkDate:
+        "A data lida neste documento ({{date}}) está no futuro, por isso pode estar errada — introduza a data manualmente.",
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',

@@ -46,6 +46,8 @@ import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
 import { canExtractFile, extractDocument } from '@/lib/aiExtract';
+import { foreignCurrencyLabel, isForeignExtractedCurrency } from '@/lib/extracted-currency';
+import { isImplausibleDocumentDate } from '@/lib/extracted-date';
 import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -231,6 +233,11 @@ export default function Expenses() {
   const dropInputRef = useRef<HTMLInputElement>(null);
   const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed'>('idle');
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
+  // Receipts priced in another currency: expenses are booked in USD only, so the
+  // extracted amount is withheld rather than pre-filled (see extracted-currency).
+  const [aiForeignCurrency, setAiForeignCurrency] = useState<string | null>(null);
+  // Set when the extracted receipt date is in the future — a day/month swap.
+  const [aiSuspectDate, setAiSuspectDate] = useState<string | null>(null);
   const aiRun = useRef(0);
 
   const handleDroppedReceipt = (incoming: File[]) => {
@@ -260,11 +267,15 @@ export default function Expenses() {
 
     if (!canExtractFile(file)) {
       setAiStatus('idle');
+      setAiForeignCurrency(null);
+      setAiSuspectDate(null);
       return;
     }
     const run = ++aiRun.current;
     setAiStatus('reading');
     setAiVendorName(null);
+    setAiForeignCurrency(null);
+    setAiSuspectDate(null);
     extractDocument(file, tenantId, 'expense')
       .then((fields) => {
         if (aiRun.current !== run) return;
@@ -272,11 +283,17 @@ export default function Expenses() {
           setAiStatus('failed');
           return;
         }
+        const foreign = isForeignExtractedCurrency(fields.currency);
+        setAiForeignCurrency(foreign ? foreignCurrencyLabel(fields.currency) : null);
+        // A receipt cannot be dated in the future; that reading is a day/month swap.
+        const suspectDate = isImplausibleDocumentDate(fields.billDate, getTodayTL());
+        setAiSuspectDate(suspectDate ? fields.billDate : null);
         setFormData((prev) => ({
           ...prev,
-          date: fields.billDate || prev.date,
+          date: suspectDate ? prev.date : (fields.billDate || prev.date),
           description: fields.description || prev.description,
-          amount: fields.amount ?? prev.amount,
+          // A foreign-currency total must not land in a USD field.
+          amount: foreign ? prev.amount : (fields.amount ?? prev.amount),
           category: (fields.category as ExpenseFormData['category']) || prev.category,
         }));
         if (fields.vendorName) setAiVendorName(fields.vendorName);
@@ -855,6 +872,8 @@ export default function Expenses() {
             aiRun.current += 1;
             setAiStatus('idle');
             setAiVendorName(null);
+            setAiForeignCurrency(null);
+            setAiSuspectDate(null);
           }
         }}
       >
@@ -886,6 +905,26 @@ export default function Expenses() {
             {!editingExpense && aiStatus === 'failed' && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
                 {t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'done' && (aiForeignCurrency || aiSuspectDate) && (
+              <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+                {aiForeignCurrency && (
+                  <p>
+                    {(
+                      t('money.ai.foreignCurrency')
+                      || 'This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.'
+                    ).replace('{{currency}}', aiForeignCurrency)}
+                  </p>
+                )}
+                {aiSuspectDate && (
+                  <p>
+                    {(
+                      t('money.ai.checkDate')
+                      || 'The date read from this document ({{date}}) is in the future, so it may be wrong — enter the date yourself.'
+                    ).replace('{{date}}', aiSuspectDate)}
+                  </p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">

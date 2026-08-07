@@ -6753,6 +6753,8 @@ const messages = {
       failed: "XefeBot couldn't read this file — fill in the details manually.",
       foreignCurrency:
         "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.",
+      checkDate:
+        "The date read from this document ({{date}}) is in the future, so it may be wrong — enter the date yourself.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
       vendorAdded: 'Vendor "{{name}}" added',

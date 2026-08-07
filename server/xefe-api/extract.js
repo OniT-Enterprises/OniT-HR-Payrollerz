@@ -147,7 +147,14 @@ async function runOnce(filePath, kind, token) {
     model: EXTRACT_MODEL,
     maxTurns: 6,
     systemPrompt: SYSTEM_PROMPT,
-    allowedTools: ['Read'],
+    // NO bare `allowedTools: ['Read']` here. A bare entry auto-approves the
+    // whole tool BEFORE the workspace check and before canUseTool, which
+    // defeated both guards below: a probe confirmed the model could then read a
+    // file outside the temp dir entirely (the SDK also warns about this as
+    // CLAUDE_SDK_CAN_USE_TOOL_SHADOWED). With the allow-list omitted, Read
+    // inside the relocated workspace still works and reads outside it are
+    // denied. Adding it back re-opens an arbitrary-file-read from an
+    // attacker-controlled document.
     disallowedTools: BUILTIN_DENY,
     permissionMode: 'dontAsk',
     settingSources: [],

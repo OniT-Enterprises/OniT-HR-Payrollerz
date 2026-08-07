@@ -40,6 +40,11 @@ import { fileUploadService } from "@/services/fileUploadService";
 import BillAttachmentsInput from "@/components/money/BillAttachmentsInput";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import { canExtractFile, extractDocument } from "@/lib/aiExtract";
+import {
+  foreignCurrencyLabel,
+  isForeignExtractedCurrency,
+} from "@/lib/extracted-currency";
+import { isImplausibleDocumentDate } from "@/lib/extracted-date";
 import type { ExpenseCategory } from "@/types/money";
 import { Building2, Loader2, Sparkles } from "lucide-react";
 
@@ -117,6 +122,13 @@ export default function QuickBillDialog({
     "idle" | "reading" | "done" | "failed"
   >("idle");
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
+  // Set when the document is priced in a currency Xefe cannot book (bills are
+  // USD-only). The amount is then left blank rather than pre-filled with a
+  // foreign face value that would be saved as dollars.
+  const [aiForeignCurrency, setAiForeignCurrency] = useState<string | null>(null);
+  // Set when the extracted document date cannot be right (a future-dated bill),
+  // which in the real document corpus means a day/month swap.
+  const [aiSuspectDate, setAiSuspectDate] = useState<string | null>(null);
   const aiRun = useRef(0);
 
   // Seed state each time the dialog opens with a fresh batch of files
@@ -140,6 +152,8 @@ export default function QuickBillDialog({
       aiRun.current += 1;
       setAiStatus("idle");
       setAiVendorName(null);
+      setAiForeignCurrency(null);
+      setAiSuspectDate(null);
       return;
     }
     const file = initialFiles[0];
@@ -147,6 +161,8 @@ export default function QuickBillDialog({
     const run = ++aiRun.current;
     setAiStatus("reading");
     setAiVendorName(null);
+    setAiForeignCurrency(null);
+    setAiSuspectDate(null);
     extractDocument(file, tenantId, "bill")
       .then((fields) => {
         if (aiRun.current !== run) return;
@@ -154,9 +170,20 @@ export default function QuickBillDialog({
           setAiStatus("failed");
           return;
         }
-        if (fields.amount != null) setAmount(String(fields.amount));
-        if (fields.billDate) setBillDate(fields.billDate);
-        if (fields.dueDate) setDueDate(fields.dueDate);
+        const foreign = isForeignExtractedCurrency(fields.currency);
+        setAiForeignCurrency(
+          foreign ? foreignCurrencyLabel(fields.currency) : null,
+        );
+        // A foreign-currency total must not land in a USD field.
+        if (fields.amount != null && !foreign) setAmount(String(fields.amount));
+
+        // An already-issued bill cannot be dated in the future; that reading is
+        // a day/month swap. Both dates come from the same misreading, so hold
+        // the due date back too rather than trusting half of it.
+        const suspectDate = isImplausibleDocumentDate(fields.billDate, getTodayTL());
+        setAiSuspectDate(suspectDate ? fields.billDate : null);
+        if (fields.billDate && !suspectDate) setBillDate(fields.billDate);
+        if (fields.dueDate && !suspectDate) setDueDate(fields.dueDate);
         if (fields.description) setDescription(fields.description);
         if (fields.category) setCategory(fields.category as ExpenseCategory);
         if (fields.billNumber) setBillNumber(fields.billNumber);
@@ -350,6 +377,26 @@ export default function QuickBillDialog({
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
               {t("money.ai.failed") ||
                 "XefeBot couldn't read this file — fill in the details manually."}
+            </div>
+          )}
+          {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate) && (
+            <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+              {aiForeignCurrency && (
+                <p>
+                  {(
+                    t("money.ai.foreignCurrency") ||
+                    "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD."
+                  ).replace("{{currency}}", aiForeignCurrency)}
+                </p>
+              )}
+              {aiSuspectDate && (
+                <p>
+                  {(
+                    t("money.ai.checkDate") ||
+                    "The date read from this document ({{date}}) is in the future, so it may be wrong — enter the bill date yourself."
+                  ).replace("{{date}}", aiSuspectDate)}
+                </p>
+              )}
             </div>
           )}
 

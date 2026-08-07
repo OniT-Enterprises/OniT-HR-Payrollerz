@@ -6731,6 +6731,8 @@ const messages = {
         "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
       foreignCurrency:
         "Dokumentu ne’e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne’ebé Ita selu duni iha USD.",
+      checkDate:
+        "Data ne’ebé lee husi dokumentu ne’e ({{date}}) iha futuru, tan ne’e bele sala — hatama data ne’e Ita-nia an.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',
