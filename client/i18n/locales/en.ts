@@ -3498,6 +3498,16 @@ const messages = {
       },
     },
     attendance: {
+      unrecorded: {
+        title: "{{count}} people have no record for {{date}}",
+        explain:
+          "Xefe does not assume they worked. Until you say, payroll counts nothing for them — neither pay nor absence.",
+        allWorked: "They all worked normally",
+        worked: "Worked",
+        wasAway: "Was away",
+        andMore: "and {{count}} more",
+        marked: "Recorded a normal working day for {{count}} people.",
+      },
       absence: {
         nonWorkingDay:
           "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
@@ -6726,6 +6736,8 @@ const messages = {
       filled:
         "XefeBot filled in the details from your file — check them before saving.",
       failed: "XefeBot couldn't read this file — fill in the details manually.",
+      foreignCurrency:
+        "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
       vendorAdded: 'Vendor "{{name}}" added',

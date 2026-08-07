@@ -3173,6 +3173,15 @@ export const translations = {
         }
       },
       "attendance": {
+        "unrecorded": {
+          "title": "{{count}} people have no record for {{date}}",
+          "explain": "Xefe does not assume they worked. Until you say, payroll counts nothing for them — neither pay nor absence.",
+          "allWorked": "They all worked normally",
+          "worked": "Worked",
+          "wasAway": "Was away",
+          "andMore": "and {{count}} more",
+          "marked": "Recorded a normal working day for {{count}} people."
+        },
         "absence": {
           "nonWorkingDay": "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
           "action": "Record an absence",
@@ -11004,6 +11013,15 @@ export const translations = {
         }
       },
       "attendance": {
+        "unrecorded": {
+          "title": "Ema {{count}} laiha rejistu ba {{date}}",
+          "explain": "Xefe la assume katak sira servisu. To'o Ita hatete, folha la sura buat ida ba sira — la iha pagamentu, la iha falta.",
+          "allWorked": "Sira hotu servisu baibain",
+          "worked": "Servisu",
+          "wasAway": "Falta",
+          "andMore": "no {{count}} tan",
+          "marked": "Rejista loron servisu baibain ba ema {{count}}."
+        },
         "absence": {
           "nonWorkingDay": "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",
           "action": "Rejista falta",
@@ -18835,6 +18853,15 @@ export const translations = {
         }
       },
       "attendance": {
+        "unrecorded": {
+          "title": "{{count}} pessoas não têm registo em {{date}}",
+          "explain": "O Xefe não assume que trabalharam. Até você dizer, a folha não conta nada para elas — nem vencimento nem falta.",
+          "allWorked": "Trabalharam todos normalmente",
+          "worked": "Trabalhou",
+          "wasAway": "Faltou",
+          "andMore": "e mais {{count}}",
+          "marked": "Registado um dia normal de trabalho para {{count}} pessoas."
+        },
         "absence": {
           "nonWorkingDay": "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
           "action": "Registar uma falta",
