@@ -103,6 +103,35 @@ does Art. 61's employer duty come back?
 
 ---
 
+### B11. Must a new worker have a NISS before their first payroll, or before the first DR?
+
+Xefe now lets an employer create an employee **without** an INSS/NISS number and
+chases it later — the Add Employee form was previously unusable for a shop owner
+who did not have the card to hand. The customer-facing copy says the number is
+"needed before your first INSS filing".
+
+- **Impact:** none on money; entirely on what we tell an employer they may
+  postpone. If enrolment is actually due within N days of hiring, our copy is
+  telling them the opposite.
+- **Xefe today:** the number is optional at hire; the monthly DR export refuses
+  to generate for any employee missing one, naming that employee.
+- **What we could not establish:** `docs/TL_LAW_GAP_MATRIX_JUL2026.md` finds no
+  employer register duty beyond Art. 20(f) / 27(6), and nothing in the corpus
+  sets an enrolment deadline.
+- **Question:** *is there a deadline to enrol a new worker with INSS, and does
+  anything go wrong if the number only appears at the first monthly DR?*
+
+### B12. Is an individual worker TIN ever mandatory, or only above a threshold?
+
+- **Impact:** none today — the DR writes the worker TIN column blank when absent
+  and no calculation reads it.
+- **Xefe today:** optional everywhere, collected behind a disclosure.
+- **What we already have:** the only TIN-conditional rule found anywhere is the
+  petroleum regime (30% flat with no TIN, `docs/MINED_SIGNOFF_ANSWERS_JUL2026.md`).
+  We deliberately did **not** invent a domestic threshold.
+- **Question:** *for ordinary non-petroleum employment, is a worker TIN required
+  at any income level — or is it genuinely optional?*
+
 ## C. Low stakes — answer if convenient
 
 - **Tax depreciation:** Schedule VII prints 100% first-year expensing, but
