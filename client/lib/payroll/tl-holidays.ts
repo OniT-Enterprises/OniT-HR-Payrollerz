@@ -1,7 +1,10 @@
 export interface TLHoliday {
   date: string; // YYYY-MM-DD
+  /** English name. */
   name: string;
   nameTetun?: string;
+  /** Portuguese name as gazetted in the Jornal da República. */
+  namePt?: string;
   variable?: boolean;
 }
 
@@ -20,25 +23,25 @@ export interface TLHoliday {
 // pay don't silently miss these days in the meantime.
 const ANNOUNCED_VARIABLE_HOLIDAYS: Record<number, TLHoliday[]> = {
   2026: [
-    { date: "2026-03-20", name: "Idul Fitri", nameTetun: "Idul Fitri", variable: true },
-    { date: "2026-05-27", name: "Idul Adha", nameTetun: "Idul Adha", variable: true },
+    { date: "2026-03-20", name: "Idul Fitri", nameTetun: "Idul Fitri", namePt: "Idul Fitri", variable: true },
+    { date: "2026-05-27", name: "Idul Adha", nameTetun: "Idul Adha", namePt: "Idul Adha", variable: true },
   ],
   // 2027–2030: estimated — confirm against the official proclamation each year.
   2027: [
-    { date: "2027-03-10", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
-    { date: "2027-05-17", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+    { date: "2027-03-10", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", namePt: "Idul Fitri", variable: true },
+    { date: "2027-05-17", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", namePt: "Idul Adha", variable: true },
   ],
   2028: [
-    { date: "2028-02-27", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
-    { date: "2028-05-05", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+    { date: "2028-02-27", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", namePt: "Idul Fitri", variable: true },
+    { date: "2028-05-05", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", namePt: "Idul Adha", variable: true },
   ],
   2029: [
-    { date: "2029-02-15", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
-    { date: "2029-04-24", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+    { date: "2029-02-15", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", namePt: "Idul Fitri", variable: true },
+    { date: "2029-04-24", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", namePt: "Idul Adha", variable: true },
   ],
   2030: [
-    { date: "2030-02-05", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", variable: true },
-    { date: "2030-04-13", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", variable: true },
+    { date: "2030-02-05", name: "Idul Fitri (estimated)", nameTetun: "Idul Fitri", namePt: "Idul Fitri", variable: true },
+    { date: "2030-04-13", name: "Idul Adha (estimated)", nameTetun: "Idul Adha", namePt: "Idul Adha", variable: true },
   ],
 };
 
@@ -98,20 +101,20 @@ function getEasterSundayUTC(year: number): Date {
  */
 export function getTLPublicHolidays(year: number): TLHoliday[] {
   const fixed: TLHoliday[] = [
-    { date: `${year}-01-01`, name: "New Year's Day", nameTetun: "Loron Tinan Foun" },
-    { date: `${year}-03-03`, name: "Veterans Day", nameTetun: "Loron Veteranu" },
-    { date: `${year}-05-01`, name: "Labor Day", nameTetun: "Loron Trabalhador" },
-    { date: `${year}-05-20`, name: "Independence Restoration Day", nameTetun: "Loron Restaurasaun Independensia" },
-    { date: `${year}-08-30`, name: "Popular Consultation Day", nameTetun: "Loron Konsulta Popular" },
-    { date: `${year}-11-01`, name: "All Saints Day", nameTetun: "Loron Santu Hotu" },
-    { date: `${year}-11-02`, name: "All Souls Day", nameTetun: "Loron Finadu" },
-    { date: `${year}-11-03`, name: "National Women's Day", nameTetun: "Loron Feto Nasionál" },
-    { date: `${year}-11-12`, name: "National Youth Day", nameTetun: "Loron Juventude Nasional" },
-    { date: `${year}-11-28`, name: "Independence Proclamation Day", nameTetun: "Loron Proklamasaun Independensia" },
-    { date: `${year}-12-07`, name: "Memorial Day", nameTetun: "Loron Memoria" },
-    { date: `${year}-12-08`, name: "Immaculate Conception", nameTetun: "Loron Imakulada Konseisaun" },
-    { date: `${year}-12-25`, name: "Christmas Day", nameTetun: "Loron Natal" },
-    { date: `${year}-12-31`, name: "National Heroes Day", nameTetun: "Loron Heroi Nasional" },
+    { date: `${year}-01-01`, name: "New Year's Day", nameTetun: "Loron Tinan Foun", namePt: "Dia de Ano Novo" },
+    { date: `${year}-03-03`, name: "Veterans Day", nameTetun: "Loron Veteranu", namePt: "Dia dos Veteranos" },
+    { date: `${year}-05-01`, name: "Labor Day", nameTetun: "Loron Trabalhador", namePt: "Dia Mundial do Trabalhador" },
+    { date: `${year}-05-20`, name: "Independence Restoration Day", nameTetun: "Loron Restaurasaun Independensia", namePt: "Dia da Restauração da Independência" },
+    { date: `${year}-08-30`, name: "Popular Consultation Day", nameTetun: "Loron Konsulta Popular", namePt: "Dia da Consulta Popular" },
+    { date: `${year}-11-01`, name: "All Saints Day", nameTetun: "Loron Santu Hotu", namePt: "Dia de Todos os Santos" },
+    { date: `${year}-11-02`, name: "All Souls Day", nameTetun: "Loron Finadu", namePt: "Dia de Finados" },
+    { date: `${year}-11-03`, name: "National Women's Day", nameTetun: "Loron Feto Nasionál", namePt: "Dia Nacional da Mulher" },
+    { date: `${year}-11-12`, name: "National Youth Day", nameTetun: "Loron Juventude Nasional", namePt: "Dia Nacional da Juventude" },
+    { date: `${year}-11-28`, name: "Independence Proclamation Day", nameTetun: "Loron Proklamasaun Independensia", namePt: "Dia da Proclamação da Independência" },
+    { date: `${year}-12-07`, name: "Memorial Day", nameTetun: "Loron Memoria", namePt: "Dia da Memória" },
+    { date: `${year}-12-08`, name: "Immaculate Conception", nameTetun: "Loron Imakulada Konseisaun", namePt: "Dia de Nossa Senhora da Imaculada Conceição" },
+    { date: `${year}-12-25`, name: "Christmas Day", nameTetun: "Loron Natal", namePt: "Dia de Natal" },
+    { date: `${year}-12-31`, name: "National Heroes Day", nameTetun: "Loron Heroi Nasional", namePt: "Dia dos Heróis Nacionais" },
   ];
 
   const easterSunday = getEasterSundayUTC(year);
@@ -119,8 +122,8 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
   const corpusChristi = addDaysUTC(easterSunday, 60);
 
   const movable: TLHoliday[] = [
-    { date: formatUTCISODate(goodFriday), name: "Good Friday", nameTetun: "Sesta-feira Santa", variable: true },
-    { date: formatUTCISODate(corpusChristi), name: "Corpus Christi", nameTetun: "Corpus Christi", variable: true },
+    { date: formatUTCISODate(goodFriday), name: "Good Friday", nameTetun: "Sesta-feira Santa", namePt: "Sexta-Feira Santa", variable: true },
+    { date: formatUTCISODate(corpusChristi), name: "Corpus Christi", nameTetun: "Corpus Christi", namePt: "Corpo de Deus", variable: true },
     ...(ANNOUNCED_VARIABLE_HOLIDAYS[year] ?? []),
   ];
 
