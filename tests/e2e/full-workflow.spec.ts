@@ -15,6 +15,7 @@
 import { expect, Page, test, type Download } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { getInitialPayrollDates } from "../../client/lib/payroll/payroll-schedule";
+import { pickDate, pickNthDate } from "./helpers/datePicker";
 import {
   activateSubscription,
   closeAdmin,
@@ -152,11 +153,17 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   // Registered address lives in Settings (needed for INSS statutory identity)
   await page.goto("/settings/company"); // company details moved off the /settings hub
   await page.getByLabel(/registered address/i).fill("Rua de Dili 1, Dili");
+  // Statutory identifiers sit behind a disclosure: a first-time owner should
+  // not have to face TIN/NISS to save their company name.
+  await page.getByRole("button", { name: /tax and registration numbers/i }).click();
   await page.getByLabel(/employer niss/i).fill("EMP-NISS-98765");
   await page.getByRole("button", { name: /save/i }).first().click();
-  await expect(page.getByText(/saved/i).first()).toBeVisible({
-    timeout: 15_000,
-  });
+  // Assert the actual confirmation, not any text containing "saved" — the
+  // page carries a static note ("Teams are saved as soon as you add or
+  // remove them") that made the old /saved/i match a false positive.
+  await expect(
+    page.getByText(/company details updated/i).first(),
+  ).toBeVisible({ timeout: 15_000 });
 
   // Payment evidence must point at a real ledger account. Configure the bank
   // once through Settings so the later transfer can settle salaries to 1130.
@@ -201,33 +208,38 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   });
   await page.keyboard.press("Escape"); // close the manage dialog
 
+  // One scrolling screen — the 4-step wizard is gone, so there is no Next.
   await page.goto("/people/add");
   await page.getByLabel(/first name/i).fill(EMPLOYEE.first);
   await page.getByLabel(/last name/i).fill(EMPLOYEE.last);
-  await page.getByLabel(/email/i).first().fill(EMPLOYEE.email);
-  await page.getByRole("button", { name: "Next", exact: true }).click();
 
-  // Job step: department select, title, start date prefilled
+  // Department, job title and start date
   await page.getByRole("combobox").first().click();
   await page.getByRole("option", { name: "Operations" }).click();
   await page.getByLabel(/job title/i).fill("Barista");
-  await page.getByLabel(/start date/i).fill("2026-01-05");
+  await pickNthDate(page, page, 0, "2026-01-05");
   await page
     .getByRole("button", { name: /project & donor details/i })
     .click();
   await page.getByLabel(/project code/i).fill(PROJECT_CODE);
   await page.getByLabel(/funding source/i).fill(FUNDING_SOURCE);
-  await page.getByRole("button", { name: "Next", exact: true }).click();
 
-  // Compensation step — monthly salary above minimum wage
+  // Monthly salary above minimum wage — now a required field
   await page
     .getByLabel(/monthly salary/i)
     .first()
     .fill("600");
-  await page.getByRole("button", { name: "Next", exact: true }).click();
 
-  // Documents step: statutory identifiers — the INSS monthly filing refuses
-  // to generate for an employee without a NISS number
+  // Email is optional now and lives under "More details"; the app invite
+  // needs it, so open the disclosure and fill it.
+  await page.getByRole("button", { name: /more details/i }).first().click();
+  await page.getByLabel(/email/i).first().fill(EMPLOYEE.email);
+
+  // Statutory identifiers are behind a disclosure — the INSS monthly filing
+  // refuses to generate for an employee without a NISS number.
+  await page
+    .getByRole("button", { name: /id and inss number/i })
+    .click();
   await page
     .getByRole("row")
     .filter({ hasText: /bilhete de identidade/i })
@@ -473,8 +485,8 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   expect(allocationCsv).toContain('"Donor ""A"", Health"');
 
   await page.goto("/reports/donor-export");
-  await page.locator("#donor-export-start").fill(PAY_DATE_ISO);
-  await page.locator("#donor-export-end").fill(PAY_DATE_ISO);
+  await pickDate(page, page.locator("#donor-export-start"), PAY_DATE_ISO);
+  await pickDate(page, page.locator("#donor-export-end"), PAY_DATE_ISO);
   const donorSummaryRow = page
     .getByRole("row")
     .filter({ hasText: PROJECT_CODE })
@@ -539,7 +551,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await page.getByRole("option").first().click();
   await transferDialog.getByRole("combobox").nth(1).click();
   await page.getByRole("option").first().click();
-  await transferDialog.locator('input[type="date"]').fill(PAY_DATE_ISO);
+  await pickNthDate(page, transferDialog, 0, PAY_DATE_ISO);
   await transferDialog
     .getByRole("button", { name: /record transfer/i })
     .click();

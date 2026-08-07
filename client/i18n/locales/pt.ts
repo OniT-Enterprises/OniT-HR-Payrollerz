@@ -1813,6 +1813,8 @@ const messages = {
       save: "Guardar Estrutura de Pagamento",
     },
     timeOff: {
+      statutoryNote: "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
+      companyGroupHeading: "O que a sua empresa acrescenta",
       customTypes: {
         title: "Tipos de licença personalizados",
         hint: "Licenças específicas da empresa, além do conjunto da Lei do Trabalho (p. ex., dias de voluntariado). Os tipos ativos aparecem no formulário de pedido na web e no telemóvel; desativar um tipo esconde-o dos novos pedidos sem afetar os existentes.",
@@ -2283,6 +2285,12 @@ const messages = {
     },
   },
   addEmployee: {
+    section: {
+      who: "Quem está a adicionar?",
+      job: "O que faz e quanto lhe paga",
+      ids: "Documento de identificação e número INSS",
+      idsHelp: "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário.",
+    },
     wizard: {
       basicTitle: "Informação Básica",
       basicDesc: "Nome, contactos e contacto de emergência",

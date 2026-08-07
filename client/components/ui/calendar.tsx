@@ -4,9 +4,15 @@
  */
 import * as React from "react";
 import { DayPicker } from "react-day-picker";
+import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+
+/** Local-time ISO date, matching the value DatePicker emits. */
+function formatISO(date: Date): string {
+  return formatDate(date, "yyyy-MM-dd");
+}
 
 function Calendar({
   className,
@@ -21,16 +27,16 @@ function Calendar({
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
-        month_caption: "flex justify-center pt-1 relative items-center h-7",
+        month_caption: "pointer-events-none flex justify-center pt-1 relative items-center h-7",
         caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1 absolute inset-x-0 justify-between",
+        nav: "flex items-center gap-1 absolute inset-x-0 justify-between z-10",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1"
+          "h-7 w-7 min-h-0 md:h-7 md:w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 z-10"
         ),
         button_next: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1"
+          "h-7 w-7 min-h-0 md:h-7 md:w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 z-10"
         ),
         month_grid: "w-full border-collapse space-x-1",
         weekdays: "flex",
@@ -64,6 +70,11 @@ function Calendar({
           ) : (
             <ChevronRight className="h-4 w-4" />
           ),
+        // Stable, locale-independent hook for tests and automation. The
+        // accessible name is localized prose, so it is not addressable.
+        DayButton: ({ day, modifiers: _modifiers, ...buttonProps }) => (
+          <button {...buttonProps} data-date={formatISO(day.date)} />
+        ),
       }}
       {...props}
     />

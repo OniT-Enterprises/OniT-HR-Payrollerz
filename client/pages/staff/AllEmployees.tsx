@@ -88,6 +88,7 @@ import { validISODate } from "@/lib/employees/import";
 import { getFunctionsLazy } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
+import { roundMoney } from "@/lib/currency";
 // Compliance filter types for URL params
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues" | "issues";
 
@@ -959,6 +960,18 @@ export default function AllEmployees() {
   };
 
   /** Build an Employee from a template-ordered CSV row (see handleDownloadTemplate) */
+  // NOTE: this is a SECOND, positional CSV path, separate from the mapped
+  // importer in lib/employees/import.ts used by /people/add. The two drifted
+  // apart once already (that is what the hire-date comment below records), so
+  // keep their rules in step until they are properly merged.
+  const requireRowSalary = (raw: string): number => {
+    const parsed = Number(raw);
+    if (!raw || !Number.isFinite(parsed) || parsed < 0) {
+      throw new Error(`Monthly salary is required and must be a number (got "${raw}")`);
+    }
+    return roundMoney(parsed);
+  };
+
   const employeeFromCsvRow = (values: string[]): Omit<Employee, "id"> => {
     const v = (i: number) => values[i]?.trim() ?? "";
     const address = [v(12), v(13), v(14), v(15)].filter(Boolean).join(", ");
@@ -996,8 +1009,14 @@ export default function AllEmployees() {
         manager: "",
       },
       compensation: {
-        monthlySalary: parseInt(v(10), 10) || 0,
-        annualLeaveDays: 25,
+        // parseInt TRUNCATED cents ("850.75" -> 850) and silently produced $0
+        // for a missing or unparseable salary — the same defect the canonical
+        // importer (lib/employees/import.ts) was fixed for. A wrong wage is
+        // worse than a rejected row, so throw into the caller's per-row catch.
+        monthlySalary: requireRowSalary(v(10)),
+        // Art. 32 is 12 working days, matching TL_DEFAULT_LEAVE_POLICIES and
+        // lib/employees/import.ts. This path granted 25.
+        annualLeaveDays: 12,
         benefitsPackage: v(11) || "standard",
         payFrequency: "monthly",
         isResident: true,

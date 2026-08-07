@@ -92,6 +92,7 @@ export function DatePicker({
           <Button
             id={id}
             type="button"
+            data-datepicker={value || ""}
             variant="outline"
             disabled={disabled}
             aria-label={ariaLabel}

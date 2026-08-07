@@ -6,6 +6,7 @@
  * Storage rules running in the emulator suite.
  */
 import { expect, Page, test } from "@playwright/test";
+import { pickNthDate } from "./helpers/datePicker";
 import {
   closeAdmin,
   findTenantIdByName,
@@ -150,8 +151,8 @@ test("refund and credit note stay balanced and flow into reports", async ({
   });
 
   await page.goto("/accounting/statements/income-statement");
-  await page.locator('input[type="date"]').nth(0).fill(`${TODAY.slice(0, 4)}-01-01`);
-  await page.locator('input[type="date"]').nth(1).fill(TODAY);
+  await pickNthDate(page, page, 0, `${TODAY.slice(0, 4)}-01-01`);
+  await pickNthDate(page, page, 1, TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
   const revenueRow = page.getByRole("row").filter({ hasText: "4100" });
   await expect(revenueRow.getByText("$100.00")).toBeVisible({

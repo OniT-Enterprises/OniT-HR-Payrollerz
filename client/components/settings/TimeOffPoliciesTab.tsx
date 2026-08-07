@@ -432,6 +432,10 @@ export function TimeOffPoliciesTab({
         {/* Leave Types */}
         <div className="space-y-4">
           <h3 className="font-medium">{t("settings.timeOff.entitlements")}</h3>
+          <p className="text-sm text-muted-foreground">
+            {t("settings.timeOff.statutoryNote") ||
+              "These already follow Timor-Leste law. Change them only if your accountant asks you to."}
+          </p>
 
           {/* Annual Leave */}
           <div className="p-4 border rounded-lg space-y-4">
@@ -930,6 +934,9 @@ export function TimeOffPoliciesTab({
             timeOffPolicies.customLeaveTypes. The server (createLeaveRequest,
             entitlementsFromConfig, leavePayFraction) already honors them by id. */}
         <div className="space-y-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("settings.timeOff.companyGroupHeading") || "What your company adds"}
+          </h3>
           <div>
             <h3 className="font-medium">
               {t("settings.timeOff.customTypes.title") || "Custom leave types"}

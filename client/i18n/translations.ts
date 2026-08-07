@@ -1618,6 +1618,8 @@ export const translations = {
         "save": "Save Payment Structure"
       },
       "timeOff": {
+        "statutoryNote": "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
+        "companyGroupHeading": "What your company adds",
         "customTypes": {
           "title": "Custom leave types",
           "hint": "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones.",
@@ -2025,6 +2027,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Who are you adding?",
+        "job": "What they do and what you pay them",
+        "ids": "ID and INSS number",
+        "idsHelp": "Nothing here stops you saving. We will ask again when you need it."
+      },
       "wizard": {
         "basicTitle": "Basic Info",
         "basicDesc": "Name, contact details, and emergency contact",
@@ -9248,6 +9256,8 @@ export const translations = {
         "save": "Rai Estrutura Pagamentu"
       },
       "timeOff": {
+        "statutoryNote": "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
+        "companyGroupHeading": "Saida mak ita-nia empreza aumenta",
         "customTypes": {
           "title": "Tipu lisensa personalizada",
           "hint": "Lisensa kompañia nian rasik, aumenta tan ba tipu sira iha Lei Trabálhu (ex., loron voluntáriu). Tipu ativu sira mosu iha formuláriu pedidu iha web no telemovel; bainhira dezativa tipu ida, nia la mosu tan ba pedidu foun maibé la muda sira ne'ebé iha ona.",
@@ -9655,6 +9665,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Ita hatama sé?",
+        "job": "Sira halo saida no ita selu hira",
+        "ids": "Dokumentu identidade no númeru INSS",
+        "idsHelp": "Buat ida iha ne'e la bandu ita rai. Ami sei husu fali bainhira presiza."
+      },
       "wizard": {
         "basicTitle": "Info Basiku",
         "basicDesc": "Naran, kontaktu no kontaktu emerjensia",
@@ -16878,6 +16894,8 @@ export const translations = {
         "save": "Guardar Estrutura de Pagamento"
       },
       "timeOff": {
+        "statutoryNote": "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
+        "companyGroupHeading": "O que a sua empresa acrescenta",
         "customTypes": {
           "title": "Tipos de licença personalizados",
           "hint": "Licenças específicas da empresa, além do conjunto da Lei do Trabalho (p. ex., dias de voluntariado). Os tipos ativos aparecem no formulário de pedido na web e no telemóvel; desativar um tipo esconde-o dos novos pedidos sem afetar os existentes.",
@@ -17285,6 +17303,12 @@ export const translations = {
       }
     },
     "addEmployee": {
+      "section": {
+        "who": "Quem está a adicionar?",
+        "job": "O que faz e quanto lhe paga",
+        "ids": "Documento de identificação e número INSS",
+        "idsHelp": "Nada aqui o impede de guardar. Voltaremos a pedir quando for necessário."
+      },
       "wizard": {
         "basicTitle": "Informação Básica",
         "basicDesc": "Nome, contactos e contacto de emergência",

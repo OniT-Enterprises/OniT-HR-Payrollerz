@@ -77,7 +77,24 @@ export function CompanyDetailsTab({
     mode: 'onChange',
   });
 
+  // Never reset over unsaved edits. `initialData` is a fresh object on every
+  // settings refetch, so resetting on it silently discards whatever the user
+  // is half-way through typing — on a slow connection that is the difference
+  // between saving a company address and losing it.
+  //
+  // `isDirty` must be read HERE, during render: formState is a lazily
+  // subscribed Proxy, so reading it inside the effect would never establish
+  // the subscription and it would always be false.
+  const { isDirty } = form.formState;
+  const appliedSnapshot = useRef<string | null>(null);
+
   useEffect(() => {
+    const snapshot = JSON.stringify(initialData);
+    if (appliedSnapshot.current === snapshot) return;
+    // Remember the server state we skipped so a later refetch of the SAME
+    // values does not keep retrying the reset.
+    appliedSnapshot.current = snapshot;
+    if (isDirty) return;
     form.reset({
       legalName: initialData.legalName || '',
       tradingName: initialData.tradingName || '',
@@ -95,7 +112,7 @@ export function CompanyDetailsTab({
     setLogoFile(null);
     setLogoMarkedForRemoval(false);
     setLogoPreviewUrl(initialData.logoUrl || null);
-  }, [form, initialData]);
+  }, [form, initialData, isDirty]);
 
   useEffect(() => {
     return () => {
