@@ -91,6 +91,7 @@ const ReportsDashboard = lazyWithRetry(() => import("@/pages/ReportsDashboard"))
 // People - Staff
 const AllEmployees = lazyWithRetry(() => import("@/pages/staff/AllEmployees"));
 const AddEmployee = lazyWithRetry(() => import("@/pages/staff/AddEmployee"));
+const EmployeeProfile = lazyWithRetry(() => import("@/pages/staff/EmployeeProfile"));
 const Departments = lazyWithRetry(() => import("@/pages/staff/Departments"));
 const OrganizationChart = lazyWithRetry(() => import("@/pages/staff/OrganizationChart"));
 const Announcements = lazyWithRetry(() => import("@/pages/staff/Announcements"));
@@ -370,6 +371,14 @@ export const peopleRoutes = (
       element={
         <FeatureRoute requiredModule="staff">
           <AllEmployees />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/employees/:employeeId"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <EmployeeProfile />
         </FeatureRoute>
       }
     />
