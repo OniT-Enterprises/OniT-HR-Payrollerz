@@ -4,9 +4,15 @@
  */
 import * as React from "react";
 import { DayPicker } from "react-day-picker";
+import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+
+/** Local-time ISO date, matching the value DatePicker emits. */
+function formatISO(date: Date): string {
+  return formatDate(date, "yyyy-MM-dd");
+}
 
 function Calendar({
   className,
@@ -64,6 +70,11 @@ function Calendar({
           ) : (
             <ChevronRight className="h-4 w-4" />
           ),
+        // Stable, locale-independent hook for tests and automation. The
+        // accessible name is localized prose, so it is not addressable.
+        DayButton: ({ day, modifiers: _modifiers, ...buttonProps }) => (
+          <button {...buttonProps} data-date={formatISO(day.date)} />
+        ),
       }}
       {...props}
     />

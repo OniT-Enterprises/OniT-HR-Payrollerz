@@ -15,6 +15,7 @@
 import { expect, Page, test, type Download } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { getInitialPayrollDates } from "../../client/lib/payroll/payroll-schedule";
+import { pickNthDate } from "./helpers/datePicker";
 import {
   activateSubscription,
   closeAdmin,
@@ -539,7 +540,7 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   await page.getByRole("option").first().click();
   await transferDialog.getByRole("combobox").nth(1).click();
   await page.getByRole("option").first().click();
-  await transferDialog.locator('input[type="date"]').fill(PAY_DATE_ISO);
+  await pickNthDate(page, transferDialog, 0, PAY_DATE_ISO);
   await transferDialog
     .getByRole("button", { name: /record transfer/i })
     .click();

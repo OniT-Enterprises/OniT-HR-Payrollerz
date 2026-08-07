@@ -10,6 +10,7 @@
  * test here. Every financial mutation is performed through the product UI.
  */
 import { expect, Page, test } from "@playwright/test";
+import { pickNthDate } from "./helpers/datePicker";
 import {
   closeAdmin,
   findTenantIdByName,
@@ -373,8 +374,8 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   const yearStart = `${TODAY.slice(0, 4)}-01-01`;
 
   await page.goto("/accounting/statements/trial-balance");
-  await page.locator('input[type="date"]').nth(0).fill(yearStart);
-  await page.locator('input[type="date"]').nth(1).fill(TODAY);
+  await pickNthDate(page, page, 0, yearStart);
+  await pickNthDate(page, page, 1, TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
   await expect(page.getByText("4100", { exact: true }).last()).toBeVisible({
     timeout: 30_000,
@@ -388,8 +389,8 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   );
 
   await page.goto("/accounting/statements/income-statement");
-  await page.locator('input[type="date"]').nth(0).fill(yearStart);
-  await page.locator('input[type="date"]').nth(1).fill(TODAY);
+  await pickNthDate(page, page, 0, yearStart);
+  await pickNthDate(page, page, 1, TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
   const revenueRow = page.getByRole("row").filter({ hasText: "4100" });
   await expect(revenueRow).toBeVisible({ timeout: 30_000 });
@@ -401,7 +402,7 @@ test("invoice, bill, asset, depreciation, reconciliation, and close reach balanc
   );
 
   await page.goto("/accounting/statements/balance-sheet");
-  await page.locator('input[type="date"]').fill(TODAY);
+  await pickNthDate(page, page, 0, TODAY);
   await page.getByRole("button", { name: /^generate$/i }).click();
   await expect(page.getByText(/total assets/i).last()).toBeVisible({
     timeout: 30_000,
