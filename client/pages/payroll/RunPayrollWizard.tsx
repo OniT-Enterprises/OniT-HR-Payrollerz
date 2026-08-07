@@ -47,6 +47,7 @@ import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { Button } from "@/components/ui/button";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL } from "@/lib/dateUtils";
+import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { Calculator, Calendar, CheckCircle, Clock, Plus, Sparkles, Users } from "lucide-react";
 import { getConfiguredPayrollSchedule } from "@/lib/payroll/payroll-schedule";
 import { useIsSubscribed } from "@/hooks/useBilling";
@@ -622,6 +623,16 @@ export default function RunPayrollWizard() {
                 </div>
               ))}
             </div>
+            <p className="text-sm font-medium">
+              {t("runPayroll.syncDock.total", {
+                amount: formatCurrencyTL(
+                  (calc.pendingAttendanceSync?.docked ?? []).reduce(
+                    (sum, row) => sum + row.amount,
+                    0,
+                  ),
+                ),
+              })}
+            </p>
             <p className="text-xs text-muted-foreground">
               {t("runPayroll.syncDock.hint")}
             </p>

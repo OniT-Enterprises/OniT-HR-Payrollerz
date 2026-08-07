@@ -7148,6 +7148,8 @@ const messages = {
       description:
         "Laiha rejistu prezensa ba loron servisu balun iha períodu ne'e. Folha trata loron servisu ne'ebé laiha rejistu nu'udar falta laiha pagamentu, tanba ne'e sinkroniza sei hamenus pagamentu ba ema {{count}}:",
       hours: "Deskonta oras {{hours}}",
+      amount: "−{{amount}}  (oras {{hours}})",
+      total: "Totál ne'ebé sei deskonta: {{amount}}",
       hint: "Se ema sira-ne'e servisu duni, rejista uluk loron sira-ne'e iha Prezensa, ka husik oras sira nu'udar iha ona no la sinkroniza.",
       cancel: "La sinkroniza",
       confirm: "Sinkroniza no deskonta",
