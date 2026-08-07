@@ -6755,6 +6755,10 @@ const messages = {
         "This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.",
       checkDate:
         "The date read from this document ({{date}}) is in the future, so it may be wrong — enter the date yourself.",
+      looksLikePaymentProof:
+        "This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below.",
+      notABill:
+        "XefeBot read this file but it isn't a bill or receipt — enter the details below.",
       vendorOnFile: "On the document: {{name}} — not in your vendor list yet.",
       addVendor: 'Add "{{name}}"',
       vendorAdded: 'Vendor "{{name}}" added',

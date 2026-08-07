@@ -119,8 +119,11 @@ export default function QuickBillDialog({
   // AI prefill: XefeBot reads the dropped file server-side and fills the form;
   // the user reviews and confirms — extraction never saves anything itself.
   const [aiStatus, setAiStatus] = useState<
-    "idle" | "reading" | "done" | "failed"
+    "idle" | "reading" | "done" | "failed" | "notABill"
   >("idle");
+  // What the document turned out to be, when it is not a bill — a bank payment
+  // slip is a large share of real uploads and deserves a truthful message.
+  const [aiOtherKind, setAiOtherKind] = useState<"payment_proof" | "other" | null>(null);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Set when the document is priced in a currency Xefe cannot book (bills are
   // USD-only). The amount is then left blank rather than pre-filled with a
@@ -129,6 +132,9 @@ export default function QuickBillDialog({
   // Set when the extracted document date cannot be right (a future-dated bill),
   // which in the real document corpus means a day/month swap.
   const [aiSuspectDate, setAiSuspectDate] = useState<string | null>(null);
+  // The seller's NIF/TIN off the document, saved with a vendor created from it
+  // so a withholding classification has something to start from.
+  const [aiVendorTaxId, setAiVendorTaxId] = useState<string | null>(null);
   const aiRun = useRef(0);
 
   // Seed state each time the dialog opens with a fresh batch of files
@@ -154,6 +160,8 @@ export default function QuickBillDialog({
       setAiVendorName(null);
       setAiForeignCurrency(null);
       setAiSuspectDate(null);
+      setAiVendorTaxId(null);
+      setAiOtherKind(null);
       return;
     }
     const file = initialFiles[0];
@@ -163,10 +171,28 @@ export default function QuickBillDialog({
     setAiVendorName(null);
     setAiForeignCurrency(null);
     setAiSuspectDate(null);
+    setAiVendorTaxId(null);
+    setAiOtherKind(null);
     extractDocument(file, tenantId, "bill")
       .then((fields) => {
         if (aiRun.current !== run) return;
-        if (fields.documentType === "other" || fields.confidence < 0.3) {
+        // Read successfully, but it is not a bill: say which, rather than
+        // claiming the file could not be read.
+        if (fields.documentType === "payment_proof") {
+          setAiOtherKind("payment_proof");
+          setAiStatus("notABill");
+          return;
+        }
+        if (fields.documentType === "other") {
+          if (fields.confidence >= 0.5) {
+            setAiOtherKind("other");
+            setAiStatus("notABill");
+            return;
+          }
+          setAiStatus("failed");
+          return;
+        }
+        if (fields.confidence < 0.3) {
           setAiStatus("failed");
           return;
         }
@@ -188,6 +214,7 @@ export default function QuickBillDialog({
         if (fields.category) setCategory(fields.category as ExpenseCategory);
         if (fields.billNumber) setBillNumber(fields.billNumber);
         if (fields.vendorName) setAiVendorName(fields.vendorName);
+        setAiVendorTaxId(fields.vendorTaxId);
         setAiStatus("done");
       })
       .catch(() => {
@@ -205,6 +232,7 @@ export default function QuickBillDialog({
       const newVendorId = await vendorService.createVendor(tenantId, {
         name: aiVendorName,
         type: "business",
+        ...(aiVendorTaxId ? { tin: aiVendorTaxId } : {}),
       });
       await queryClient.invalidateQueries({
         queryKey: vendorKeys.all(tenantId),
@@ -377,6 +405,15 @@ export default function QuickBillDialog({
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
               {t("money.ai.failed") ||
                 "XefeBot couldn't read this file — fill in the details manually."}
+            </div>
+          )}
+          {aiStatus === "notABill" && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+              {aiOtherKind === "payment_proof"
+                ? t("money.ai.looksLikePaymentProof") ||
+                  "This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below."
+                : t("money.ai.notABill") ||
+                  "XefeBot read this file but it isn't a bill or receipt — enter the details below."}
             </div>
           )}
           {aiStatus === "done" && (aiForeignCurrency || aiSuspectDate) && (

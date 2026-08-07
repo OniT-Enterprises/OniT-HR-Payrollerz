@@ -231,7 +231,9 @@ export default function Expenses() {
   const [dragActive, setDragActive] = useState(false);
   const dragDepth = useRef(0);
   const dropInputRef = useRef<HTMLInputElement>(null);
-  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed'>('idle');
+  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed' | 'notABill'>('idle');
+  // A bank slip or ATM receipt read fine but is not an expense document.
+  const [aiOtherKind, setAiOtherKind] = useState<'payment_proof' | 'other' | null>(null);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
   // Receipts priced in another currency: expenses are booked in USD only, so the
   // extracted amount is withheld rather than pre-filled (see extracted-currency).
@@ -269,6 +271,7 @@ export default function Expenses() {
       setAiStatus('idle');
       setAiForeignCurrency(null);
       setAiSuspectDate(null);
+      setAiOtherKind(null);
       return;
     }
     const run = ++aiRun.current;
@@ -276,10 +279,26 @@ export default function Expenses() {
     setAiVendorName(null);
     setAiForeignCurrency(null);
     setAiSuspectDate(null);
+    setAiOtherKind(null);
     extractDocument(file, tenantId, 'expense')
       .then((fields) => {
         if (aiRun.current !== run) return;
-        if (fields.documentType === 'other' || fields.confidence < 0.3) {
+        // Read successfully but not an expense document: say which.
+        if (fields.documentType === 'payment_proof') {
+          setAiOtherKind('payment_proof');
+          setAiStatus('notABill');
+          return;
+        }
+        if (fields.documentType === 'other') {
+          if (fields.confidence >= 0.5) {
+            setAiOtherKind('other');
+            setAiStatus('notABill');
+            return;
+          }
+          setAiStatus('failed');
+          return;
+        }
+        if (fields.confidence < 0.3) {
           setAiStatus('failed');
           return;
         }
@@ -874,6 +893,7 @@ export default function Expenses() {
             setAiVendorName(null);
             setAiForeignCurrency(null);
             setAiSuspectDate(null);
+            setAiOtherKind(null);
           }
         }}
       >
@@ -905,6 +925,15 @@ export default function Expenses() {
             {!editingExpense && aiStatus === 'failed' && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
                 {t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'notABill' && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                {aiOtherKind === 'payment_proof'
+                  ? t('money.ai.looksLikePaymentProof')
+                    || 'This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below.'
+                  : t('money.ai.notABill')
+                    || "XefeBot read this file but it isn't a bill or receipt \u2014 enter the details below."}
               </div>
             )}
             {!editingExpense && aiStatus === 'done' && (aiForeignCurrency || aiSuspectDate) && (

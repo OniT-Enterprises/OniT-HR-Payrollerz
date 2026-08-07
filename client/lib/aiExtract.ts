@@ -22,8 +22,16 @@ export const EXTRACT_MIME_TYPES = [
 ];
 
 export interface ExtractedDocumentFields {
-  documentType: "bill" | "receipt" | "other";
+  /**
+   * `payment_proof` is a bank document evidencing a payment (transfer slip,
+   * "Comprovativo", ATM "LEVANTAMENTO") rather than a seller's invoice. Auditing
+   * 151 real TL documents showed these are a large share of what businesses
+   * actually send, so they get their own answer instead of "couldn't read".
+   */
+  documentType: "bill" | "receipt" | "payment_proof" | "other";
   vendorName: string | null;
+  /** Seller's tax number (NIF/TIN in TL, NPWP in ID) — needed for withholding. */
+  vendorTaxId: string | null;
   billNumber: string | null;
   billDate: string | null;
   dueDate: string | null;

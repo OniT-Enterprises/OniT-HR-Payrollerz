@@ -6855,6 +6855,10 @@ const messages = {
         "Este documento está em {{currency}}. O Xefe regista os valores em dólares americanos — introduza o valor que pagou efetivamente em USD.",
       checkDate:
         "A data lida neste documento ({{date}}) está no futuro, por isso pode estar errada — introduza a data manualmente.",
+      looksLikePaymentProof:
+        "Isto parece um comprovativo de pagamento bancário, não uma fatura de fornecedor. Anexe-o à fatura que paga e introduza os dados da fatura abaixo.",
+      notABill:
+        "O XefeBot leu este ficheiro, mas não é uma fatura nem um recibo — introduza os dados abaixo.",
       vendorOnFile:
         "No documento: {{name}} — ainda não está na sua lista de fornecedores.",
       addVendor: 'Adicionar "{{name}}"',
