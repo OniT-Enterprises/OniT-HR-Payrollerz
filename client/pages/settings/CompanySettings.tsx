@@ -78,9 +78,14 @@ export default function CompanySettings() {
     try {
       // Details first: it validates. A validation failure must not leave the
       // page half-saved, so stop before touching structure.
-      const detailsOk = (await detailsSaveRef.current?.()) ?? true;
+      // A missing registration is a bug, not a no-op: reporting success while
+      // writing nothing is the worst possible outcome here.
+      if (!detailsSaveRef.current || !structureSaveRef.current) {
+        throw new Error("Company settings sections did not register their save");
+      }
+      const detailsOk = await detailsSaveRef.current();
       if (!detailsOk) return;
-      const structureOk = (await structureSaveRef.current?.()) ?? true;
+      const structureOk = await structureSaveRef.current();
       // The sections stay quiet when the page owns Save, so confirm once here.
       // Failures already surfaced their own destructive toast.
       if (structureOk) {

@@ -1784,6 +1784,8 @@ const messages = {
       save: "Save Payment Structure",
     },
     timeOff: {
+      statutoryNote: "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
+      companyGroupHeading: "What your company adds",
       customTypes: {
         title: "Custom leave types",
         hint: "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones.",

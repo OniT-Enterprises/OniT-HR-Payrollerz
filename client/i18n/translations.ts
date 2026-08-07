@@ -1618,6 +1618,8 @@ export const translations = {
         "save": "Save Payment Structure"
       },
       "timeOff": {
+        "statutoryNote": "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
+        "companyGroupHeading": "What your company adds",
         "customTypes": {
           "title": "Custom leave types",
           "hint": "Company-specific leave beyond the Labour Law set (e.g. volunteer days). Active types appear in the request form on web and mobile; deactivating hides a type from new requests without touching existing ones.",
@@ -9254,6 +9256,8 @@ export const translations = {
         "save": "Rai Estrutura Pagamentu"
       },
       "timeOff": {
+        "statutoryNote": "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
+        "companyGroupHeading": "Saida mak ita-nia empreza aumenta",
         "customTypes": {
           "title": "Tipu lisensa personalizada",
           "hint": "Lisensa kompañia nian rasik, aumenta tan ba tipu sira iha Lei Trabálhu (ex., loron voluntáriu). Tipu ativu sira mosu iha formuláriu pedidu iha web no telemovel; bainhira dezativa tipu ida, nia la mosu tan ba pedidu foun maibé la muda sira ne'ebé iha ona.",
@@ -16890,6 +16894,8 @@ export const translations = {
         "save": "Guardar Estrutura de Pagamento"
       },
       "timeOff": {
+        "statutoryNote": "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
+        "companyGroupHeading": "O que a sua empresa acrescenta",
         "customTypes": {
           "title": "Tipos de licença personalizados",
           "hint": "Licenças específicas da empresa, além do conjunto da Lei do Trabalho (p. ex., dias de voluntariado). Os tipos ativos aparecem no formulário de pedido na web e no telemóvel; desativar um tipo esconde-o dos novos pedidos sem afetar os existentes.",

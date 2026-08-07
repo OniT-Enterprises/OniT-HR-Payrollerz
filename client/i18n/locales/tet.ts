@@ -1786,6 +1786,8 @@ const messages = {
       save: "Rai Estrutura Pagamentu",
     },
     timeOff: {
+      statutoryNote: "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
+      companyGroupHeading: "Saida mak ita-nia empreza aumenta",
       customTypes: {
         title: "Tipu lisensa personalizada",
         hint: "Lisensa kompañia nian rasik, aumenta tan ba tipu sira iha Lei Trabálhu (ex., loron voluntáriu). Tipu ativu sira mosu iha formuláriu pedidu iha web no telemovel; bainhira dezativa tipu ida, nia la mosu tan ba pedidu foun maibé la muda sira ne'ebé iha ona.",
