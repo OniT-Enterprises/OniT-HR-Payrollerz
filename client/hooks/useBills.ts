@@ -39,6 +39,24 @@ function useAllBills(
   });
 }
 
+/**
+ * Bills already recorded for one vendor — used to warn before the same supplier
+ * invoice is entered twice (client/lib/money/duplicate-bill.ts). Scoped to the
+ * vendor so the check costs one small query rather than loading the ledger, and
+ * disabled until a vendor is chosen.
+ */
+export function useVendorBills(vendorId: string | undefined) {
+  const tenantId = useTenantId();
+  const filters: BillFilters = { vendorId, pageSize: 200 };
+  return useQuery({
+    queryKey: billKeys.list(tenantId, filters),
+    queryFn: () => billService.getBills(tenantId, filters),
+    enabled: Boolean(tenantId && vendorId),
+    staleTime: 60 * 1000,
+    select: (data: PaginatedResult<Bill>) => data.data,
+  });
+}
+
 export function useBill(id: string | undefined) {
   const tenantId = useTenantId();
   return useQuery({

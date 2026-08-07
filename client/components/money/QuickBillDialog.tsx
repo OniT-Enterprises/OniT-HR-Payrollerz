@@ -35,7 +35,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useActiveVendors, vendorKeys } from "@/hooks/useVendors";
 import { vendorService } from "@/services/vendorService";
-import { useCreateBill } from "@/hooks/useBills";
+import { useCreateBill, useVendorBills } from "@/hooks/useBills";
+import { findDuplicateBills } from "@/lib/money/duplicate-bill";
 import { fileUploadService } from "@/services/fileUploadService";
 import BillAttachmentsInput from "@/components/money/BillAttachmentsInput";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
@@ -116,6 +117,9 @@ export default function QuickBillDialog({
   const [saving, setSaving] = useState(false);
   const submitInFlight = useRef(false);
   const vendorsUnavailable = vendorsLoadError && vendors.length === 0;
+  // Bills already on file for the chosen vendor, to warn before the same invoice
+  // is entered twice — likeliest on this path, where a photo fills the form in.
+  const { data: vendorBills = [] } = useVendorBills(vendorId || undefined);
 
   // AI prefill: XefeBot reads the dropped file server-side and fills the form;
   // the user reviews and confirms — extraction never saves anything itself.
@@ -292,6 +296,19 @@ export default function QuickBillDialog({
       setAiVendorName(null);
     }
   }, [aiVendorName, vendors, vendorId]);
+
+  // Warn, never block: two invoices from one supplier on one day for one amount
+  // is a real thing, so the person decides — they can see the existing bill.
+  const parsedAmountForCheck = parseFloat(amount);
+  const duplicateMatches = vendorId && Number.isFinite(parsedAmountForCheck)
+    ? findDuplicateBills(vendorBills, {
+      vendorId,
+      billNumber: billNumber.trim() || null,
+      billDate,
+      amount: parsedAmountForCheck,
+    })
+    : [];
+  const duplicate = duplicateMatches[0];
 
   const reportInvalidFiles = (errors: string[]) => {
     toast({
@@ -645,6 +662,25 @@ export default function QuickBillDialog({
               disabled={saving}
             />
           </div>
+
+          {duplicate && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+              <p>
+                {(duplicate.reason === "same_number"
+                  ? t("money.bills.duplicateSameNumber")
+                    || 'Bill "{{number}}" from this vendor is already recorded ({{date}}, {{amount}}). Saving this adds a second one.'
+                  : t("money.bills.duplicateSameAmount")
+                    || "A bill from this vendor for {{amount}} on {{date}} is already recorded. Saving this adds a second one."
+                )
+                  .replace("{{number}}", duplicate.bill.billNumber || "")
+                  .replace("{{date}}", duplicate.bill.billDate)
+                  .replace(
+                    "{{amount}}",
+                    `$${(duplicate.bill.total ?? duplicate.bill.amount ?? 0).toFixed(2)}`,
+                  )}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter>

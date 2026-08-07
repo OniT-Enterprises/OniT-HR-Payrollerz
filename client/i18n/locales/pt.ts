@@ -7049,6 +7049,10 @@ const messages = {
         "A data até à qual esta conta deve ser paga para evitar multas ou interrupção de serviço.",
       uploadBill: "Carregar Conta",
       quickAddTitle: "Adicionar Conta a partir de Ficheiro",
+      duplicateSameNumber:
+        'A fatura "{{number}}" deste fornecedor já está registada ({{date}}, {{amount}}). Se guardar, fica uma segunda.',
+      duplicateSameAmount:
+        "Já está registada uma fatura deste fornecedor de {{amount}} em {{date}}. Se guardar, fica uma segunda.",
       quickAddDescription:
         "Anexe a conta e introduza os dados básicos — pode editar os detalhes mais tarde.",
       saveBill: "Guardar Conta",

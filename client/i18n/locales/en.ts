@@ -6947,6 +6947,10 @@ const messages = {
         "The date by which this bill should be paid to avoid late fees or service interruption.",
       uploadBill: "Upload Bill",
       quickAddTitle: "Add Bill from File",
+      duplicateSameNumber:
+        'Bill "{{number}}" from this vendor is already recorded ({{date}}, {{amount}}). Saving this adds a second one.',
+      duplicateSameAmount:
+        "A bill from this vendor for {{amount}} on {{date}} is already recorded. Saving this adds a second one.",
       quickAddDescription:
         "Attach the bill and enter the basics — you can edit the details later.",
       saveBill: "Save Bill",

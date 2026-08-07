@@ -6925,6 +6925,10 @@ const messages = {
         "Data ne'ebe fatura ida ne'e tenke selu atu evita multa ka interupsaun servisu.",
       uploadBill: "Upload Fatura",
       quickAddTitle: "Tau Fatura husi Fixeiru",
+      duplicateSameNumber:
+        'Fatura "{{number}}" husi fornesedor ne’e rejista ona ({{date}}, {{amount}}). Se grava, sei sai rua.',
+      duplicateSameAmount:
+        "Fatura husi fornesedor ne’e ho {{amount}} iha {{date}} rejista ona. Se grava, sei sai rua.",
       quickAddDescription:
         "Anexa fatura no hatama informasaun bázika — ita bele edita detallu sira depois.",
       saveBill: "Rai Fatura",
