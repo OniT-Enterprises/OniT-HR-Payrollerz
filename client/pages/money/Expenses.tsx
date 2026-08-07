@@ -55,6 +55,7 @@ import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { getTodayTL, formatDateTL } from '@/lib/dateUtils';
 import { sumMoney } from '@/lib/currency';
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Receipt,
   Plus,
@@ -890,11 +891,10 @@ export default function Expenses() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">{t('common.date') || 'Date'} *</Label>
-                <Input
+                <DatePicker
                   id="date"
-                  type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, date: value })}
                 />
               </div>
               <div className="space-y-2">

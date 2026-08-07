@@ -45,7 +45,6 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/layout/PageHeader";
-import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWizard";
 import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -56,6 +55,7 @@ import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
 import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
 import ContractGeneratorDialog from "@/components/staff/ContractGeneratorDialog";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,9 +74,6 @@ import {
 import { FIXED_TERM_MOTIVES, appendContractRenewal } from "@/lib/probation";
 import {
   UserPlus,
-  User,
-  Briefcase,
-  DollarSign,
   FileText,
   FileDown,
   FileUp,
@@ -86,6 +83,7 @@ import {
   Smartphone,
   Sparkles,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -130,38 +128,6 @@ export default function AddEmployee() {
   const tenantId = useTenantId();
   const { user } = useAuth();
 
-  const WIZARD_STEPS: WizardStep[] = useMemo(
-    () => [
-      {
-        id: "basic",
-        title: t("addEmployee.wizard.basicTitle"),
-        description: t("addEmployee.wizard.basicDesc"),
-        icon: User,
-      },
-      {
-        id: "job",
-        title: t("addEmployee.wizard.jobTitle"),
-        description: t("addEmployee.wizard.jobDesc"),
-        icon: Briefcase,
-      },
-      {
-        id: "compensation",
-        title: t("addEmployee.wizard.compensationTitle"),
-        description: t("addEmployee.wizard.compensationDesc"),
-        icon: DollarSign,
-      },
-      {
-        id: "documents",
-        title: t("addEmployee.wizard.documentsTitle"),
-        description: t("addEmployee.wizard.documentsDesc"),
-        icon: FileText,
-      },
-    ],
-    [t],
-  );
-
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState(0);
 
   // Form with react-hook-form + zod validation
   const {
@@ -171,7 +137,7 @@ export default function AddEmployee() {
     watch,
     reset,
     setValue,
-    trigger,
+    setFocus,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(addEmployeeFormSchema),
@@ -300,7 +266,8 @@ export default function AddEmployee() {
     sefopePermitNumber: "",
     sefopePermitExpiry: "",
     sefopePermitFile: null as File | null,
-    paymentMethod: "bank_transfer" as "bank_transfer" | "cash",
+    // Cash is the Timor-Leste default; most workers have no bank account.
+    paymentMethod: "cash" as "bank_transfer" | "cash",
     bankName: "",
     bankAccountNumber: "",
   });
@@ -338,12 +305,6 @@ export default function AddEmployee() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   // In edit mode, show green border for filled fields and red for empty ones
-  const fieldBorder = (value: unknown): string => {
-    if (!isEditMode) return "";
-    if (value === undefined || value === null || value === "") return "border-red-500";
-    return "border-green-500";
-  };
-
   const loadEmployeeForEdit = useCallback(async (employeeId: string) => {
     try {
       setLoading(true);
@@ -504,50 +465,6 @@ export default function AddEmployee() {
     return { status: "valid", message: t("addEmployee.documents.status.valid"), variant: "default" as const };
   };
 
-  // Fields to validate per step
-  const stepFields: Record<string, (keyof AddEmployeeFormData)[]> = {
-    basic: ["firstName", "lastName", "email", "dateOfBirth"],
-    job: ["department", "jobTitle", "startDate", "employmentType"],
-    compensation: [],
-    documents: [],
-  };
-
-  // Quick check for enabling/disabling Next button
-  const canProceed = () => {
-    const step = WIZARD_STEPS[currentStep].id;
-    switch (step) {
-      case "basic":
-        return !!(formValues.firstName && formValues.lastName && formValues.email && !errors.email);
-      case "job":
-        return !!(formValues.department && formValues.jobTitle && formValues.startDate);
-      case "compensation":
-        return true;
-      case "documents":
-        return true;
-      default:
-        return true;
-    }
-  };
-
-  // Validate current step fields with Zod via react-hook-form before advancing
-  const validateStep = async (): Promise<boolean> => {
-    const step = WIZARD_STEPS[currentStep].id;
-    const fields = stepFields[step];
-    if (!fields || fields.length === 0) return true;
-    const valid = await trigger(fields);
-    if (!valid) {
-      const stepErrors = fields
-        .map(f => errors[f]?.message)
-        .filter(Boolean);
-      toast({
-        title: t("addEmployee.toast.requiredFieldsTitle"),
-        description: stepErrors[0] || t("addEmployee.toast.requiredFieldsDesc"),
-        variant: "destructive",
-      });
-    }
-    return valid;
-  };
-
   const renderBulkTools = () => (
     <>
       <Button variant="outline" onClick={downloadTemplate}>
@@ -615,7 +532,7 @@ export default function AddEmployee() {
         personalInfo: {
           firstName: data.firstName,
           lastName: data.lastName,
-          email: data.email,
+          email: data.email || "",
           phone: data.phone || "",
           phoneApp: data.phoneApp || "",
           appEligible: data.appEligible,
@@ -630,8 +547,8 @@ export default function AddEmployee() {
           // whole jobDetails map.
           ...(previousJobDetails ?? {}),
           employeeId,
-          department: data.department,
-          position: data.jobTitle,
+          department: data.department || "",
+          position: data.jobTitle || "",
           hireDate: data.startDate || toDateStringTL(currentDate),
           employmentType: data.employmentType,
           contractedWeeklyHours:
@@ -1183,20 +1100,20 @@ export default function AddEmployee() {
           </DialogContent>
         </Dialog>
 
-        {/* Step Wizard */}
-        <StepWizard
-          steps={WIZARD_STEPS}
-          currentStep={currentStep}
-          onStepChange={setCurrentStep}
-          onComplete={handleSubmit(onFormSubmit, (validationErrors) => {
-            // Navigate to the step with the first error and show toast
-            const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp", "dateOfBirth"];
-            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "contractEndDate", "probationEndDate", "fixedTermMotive", "contractedWeeklyHours", "minimumWageTreatment", "minimumWageReviewNote"];
-            const errorKeys = Object.keys(validationErrors);
-            if (errorKeys.some(k => basicFields.includes(k))) {
-              setCurrentStep(0);
-            } else if (errorKeys.some(k => jobFields.includes(k))) {
-              setCurrentStep(1);
+        {/* One scrolling form. No stepper: after the cut this is nine
+            controls, and a 4-step frame told a first-time user the job was
+            bigger than it is — while stranding them on a step that did not
+            hold the field the error was about. */}
+        <form
+          onSubmit={handleSubmit(onFormSubmit, (validationErrors) => {
+            // Everything is on screen now, so focus the offending field
+            // instead of navigating anywhere.
+            const firstKey = Object.keys(validationErrors)[0];
+            if (firstKey) {
+              setFocus(firstKey as keyof AddEmployeeFormData);
+              document
+                .getElementById(firstKey)
+                ?.scrollIntoView({ block: "center" });
             }
             const firstError = Object.values(validationErrors)[0];
             toast({
@@ -1205,15 +1122,10 @@ export default function AddEmployee() {
               variant: "destructive",
             });
           })}
-          onBeforeNext={validateStep}
-          onCancel={() => navigate("/people/employees")}
-          isSubmitting={isSubmitting}
-          submitLabel={isEditMode ? t("addEmployee.buttons.updateEmployee") : t("addEmployee.buttons.addEmployee")}
-          canProceed={canProceed()}
-          cannotProceedMessage={!canProceed() ? t("addEmployee.toast.fillRequiredFields") : undefined}
+          className="space-y-6 pb-24"
         >
           {/* Step 1: Basic Info */}
-          <StepContent stepId="basic" currentStepId={WIZARD_STEPS[currentStep].id}>
+          <>
             <div className="space-y-6">
               {/* Name Row */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1224,9 +1136,9 @@ export default function AddEmployee() {
                     {...register("firstName")}
                     placeholder={t("addEmployee.fields.firstName")}
                     autoFocus
-                    className={errors.firstName ? "border-red-500" : ""}
+                    className={errors.firstName ? "border-destructive" : ""}
                   />
-                  {errors.firstName && <p className="text-sm text-red-500">{errors.firstName.message}</p>}
+                  {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">{t("addEmployee.fields.lastName")}</Label>
@@ -1234,9 +1146,9 @@ export default function AddEmployee() {
                     id="lastName"
                     {...register("lastName")}
                     placeholder={t("addEmployee.fields.lastName")}
-                    className={errors.lastName ? "border-red-500" : ""}
+                    className={errors.lastName ? "border-destructive" : ""}
                   />
-                  {errors.lastName && <p className="text-sm text-red-500">{errors.lastName.message}</p>}
+                  {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
                 </div>
               </div>
 
@@ -1244,14 +1156,21 @@ export default function AddEmployee() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="dateOfBirth">{t("addEmployee.fields.dateOfBirth")}</Label>
-                  <Input
-                    id="dateOfBirth"
-                    type="date"
-                    {...register("dateOfBirth")}
-                    className={errors.dateOfBirth ? "border-red-500" : fieldBorder(watch("dateOfBirth"))}
+                  <Controller
+                    name="dateOfBirth"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="dateOfBirth"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        clearable
+                        aria-invalid={!!errors.dateOfBirth}
+                      />
+                    )}
                   />
                   {errors.dateOfBirth && (
-                    <p className="text-sm text-red-500">{errors.dateOfBirth.message}</p>
+                    <p className="text-sm text-destructive">{errors.dateOfBirth.message}</p>
                   )}
                   {!errors.dateOfBirth && isLightWorkMinor && (
                     <p className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -1267,7 +1186,7 @@ export default function AddEmployee() {
                     id="address"
                     {...register("address")}
                     placeholder={t("addEmployee.fields.address")}
-                    className={fieldBorder(watch("address"))}
+                    
                   />
                 </div>
               </div>
@@ -1284,9 +1203,9 @@ export default function AddEmployee() {
                     type="email"
                     {...register("email")}
                     placeholder="employee@company.com"
-                    className={errors.email ? "border-red-500" : ""}
+                    className={errors.email ? "border-destructive" : ""}
                   />
-                  {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                  {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2">
@@ -1366,10 +1285,10 @@ export default function AddEmployee() {
                 </div>
               </div>
             </div>
-          </StepContent>
+          </>
 
           {/* Step 2: Job Details */}
-          <StepContent stepId="job" currentStepId={WIZARD_STEPS[currentStep].id}>
+          <>
             <div className="space-y-6">
               {/* Department & Title */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1380,7 +1299,7 @@ export default function AddEmployee() {
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={errors.department ? "border-red-500" : fieldBorder(field.value)}>
+                        <SelectTrigger className={errors.department ? "border-destructive" : ""}>
                           <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1391,7 +1310,7 @@ export default function AddEmployee() {
                       </Select>
                     )}
                   />
-                  {errors.department && <p className="text-sm text-red-500">{errors.department.message}</p>}
+                  {errors.department && <p className="text-sm text-destructive">{errors.department.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="jobTitle">{t("addEmployee.fields.jobTitle")}</Label>
@@ -1399,9 +1318,9 @@ export default function AddEmployee() {
                     id="jobTitle"
                     {...register("jobTitle")}
                     placeholder={t("addEmployee.fields.jobTitlePlaceholder")}
-                    className={errors.jobTitle ? "border-red-500" : fieldBorder(formValues.jobTitle)}
+                    className={errors.jobTitle ? "border-destructive" : ""}
                   />
-                  {errors.jobTitle && <p className="text-sm text-red-500">{errors.jobTitle.message}</p>}
+                  {errors.jobTitle && <p className="text-sm text-destructive">{errors.jobTitle.message}</p>}
                 </div>
               </div>
 
@@ -1430,13 +1349,19 @@ export default function AddEmployee() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="startDate">{t("addEmployee.fields.startDate")}</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    {...register("startDate")}
-                    className={errors.startDate ? "border-red-500" : ""}
+                  <Controller
+                    name="startDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="startDate"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        aria-invalid={!!errors.startDate}
+                      />
+                    )}
                   />
-                  {errors.startDate && <p className="text-sm text-red-500">{errors.startDate.message}</p>}
+                  {errors.startDate && <p className="text-sm text-destructive">{errors.startDate.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="employmentType">{t("addEmployee.fields.employmentType")}</Label>
@@ -1544,10 +1469,17 @@ export default function AddEmployee() {
                   <Label htmlFor="contractEndDate">
                     {t("addEmployee.fields.contractEndDate") || "Contract end date"}
                   </Label>
-                  <Input
-                    id="contractEndDate"
-                    type="date"
-                    {...register("contractEndDate")}
+                  <Controller
+                    name="contractEndDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="contractEndDate"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        clearable
+                      />
+                    )}
                   />
                   <p className="text-xs text-muted-foreground">
                     {t("addEmployee.fields.contractEndDateHelp") || "Fixed-term contracts only — leave empty for permanent."}
@@ -1557,10 +1489,17 @@ export default function AddEmployee() {
                   <Label htmlFor="probationEndDate">
                     {t("addEmployee.fields.probationEndDate") || "Probation ends"}
                   </Label>
-                  <Input
-                    id="probationEndDate"
-                    type="date"
-                    {...register("probationEndDate")}
+                  <Controller
+                    name="probationEndDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        id="probationEndDate"
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        clearable
+                      />
+                    )}
                   />
                   <p className="text-xs text-muted-foreground">
                     {t("addEmployee.fields.probationEndDateHelp") || "Art. 14: 8/15 days for fixed-term, 30-90 days for permanent contracts."}
@@ -1669,7 +1608,6 @@ export default function AddEmployee() {
                   type="file"
                   accept=".pdf,.doc,.docx"
                   onChange={e => handleAdditionalInfoChange("workContract", e.target.files?.[0] || null)}
-                  className={isEditMode ? (additionalInfo.workContract || editingEmployee?.documents?.workContract?.fileUrl ? "border-green-500" : "border-red-500") : ""}
                 />
                 {additionalInfo.workContract ? (
                   <p className="text-xs text-primary flex items-center gap-1">
@@ -1681,10 +1619,10 @@ export default function AddEmployee() {
                 )}
               </div>
             </div>
-          </StepContent>
+          </>
 
           {/* Step 3: Compensation */}
-          <StepContent stepId="compensation" currentStepId={WIZARD_STEPS[currentStep].id}>
+          <>
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="space-y-2">
@@ -1694,7 +1632,7 @@ export default function AddEmployee() {
                     type="number"
                     {...register("salary")}
                     placeholder={t("addEmployee.compensation.salaryPlaceholder")}
-                    className={fieldBorder(formValues.salary)}
+                    className={errors.salary ? "border-destructive" : ""}
                   />
                   <p className="text-xs text-muted-foreground">{t("addEmployee.compensation.minWageHint")}</p>
                 </div>
@@ -1772,7 +1710,7 @@ export default function AddEmployee() {
                         value={additionalInfo.bankName}
                         onValueChange={v => handleAdditionalInfoChange("bankName", v)}
                       >
-                        <SelectTrigger className={fieldBorder(additionalInfo.bankName)}>
+                        <SelectTrigger >
                           <SelectValue placeholder={t("addEmployee.compensation.bankNamePlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -1790,7 +1728,7 @@ export default function AddEmployee() {
                         value={additionalInfo.bankAccountNumber}
                         onChange={e => handleAdditionalInfoChange("bankAccountNumber", e.target.value)}
                         placeholder={t("addEmployee.compensation.accountNumberPlaceholder")}
-                        className={fieldBorder(additionalInfo.bankAccountNumber)}
+                        
                       />
                     </div>
                   </>
@@ -1821,10 +1759,10 @@ export default function AddEmployee() {
                 <span className="text-xs text-muted-foreground">{t("addEmployee.compensation.socialSecurityTitle")}: {t("addEmployee.compensation.socialSecurityDesc")}</span>
               </div>
             </div>
-          </StepContent>
+          </>
 
           {/* Step 4: Documents */}
-          <StepContent stepId="documents" currentStepId={WIZARD_STEPS[currentStep].id}>
+          <>
             <div className="space-y-6">
               {/* Nationality — drives document requirements */}
               <div className="space-y-2">
@@ -1890,11 +1828,11 @@ export default function AddEmployee() {
                         </TableCell>
                         <TableCell>
                           {doc.hasExpiry ? (
-                            <Input
-                              type="date"
+                            <DatePicker
                               value={vals.expiryDate}
-                              onChange={e => handleDocumentChange(doc.fieldKey, "expiryDate", e.target.value)}
-                              className="max-w-[160px]"
+                              onChange={v => handleDocumentChange(doc.fieldKey, "expiryDate", v)}
+                              className="max-w-[190px]"
+                              clearable
                             />
                           ) : (
                             <span className="text-xs text-muted-foreground">N/A</span>
@@ -1942,11 +1880,11 @@ export default function AddEmployee() {
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="workingVisaExpiry" className="text-xs text-muted-foreground">{t("addEmployee.documents.visaExpiry")}</Label>
-                        <Input
+                        <DatePicker
                           id="workingVisaExpiry"
-                          type="date"
                           value={additionalInfo.workingVisaExpiry}
-                          onChange={e => handleAdditionalInfoChange("workingVisaExpiry", e.target.value)}
+                          onChange={v => handleAdditionalInfoChange("workingVisaExpiry", v)}
+                          clearable
                         />
                       </div>
                       <div className="space-y-1">
@@ -1976,11 +1914,11 @@ export default function AddEmployee() {
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="sefopePermitExpiry" className="text-xs text-muted-foreground">{t("addEmployee.documents.sefopePermitExpiry")}</Label>
-                        <Input
+                        <DatePicker
                           id="sefopePermitExpiry"
-                          type="date"
                           value={additionalInfo.sefopePermitExpiry}
-                          onChange={e => handleAdditionalInfoChange("sefopePermitExpiry", e.target.value)}
+                          onChange={v => handleAdditionalInfoChange("sefopePermitExpiry", v)}
+                          clearable
                         />
                       </div>
                       <div className="space-y-1">
@@ -2012,8 +1950,34 @@ export default function AddEmployee() {
                 </Alert>
               )}
             </div>
-          </StepContent>
-        </StepWizard>
+          </>
+
+          {/* Sticky save bar: on a phone this sits where the thumb already
+              is, and never scrolls away mid-form. */}
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
+            <div className="mx-auto flex max-w-screen-2xl gap-2 sm:justify-end sm:px-0">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => navigate("/people/employees")}
+                disabled={isSubmitting}
+                className="min-h-11 flex-1 sm:flex-none"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-h-11 flex-1 sm:flex-none"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode
+                  ? t("addEmployee.buttons.updateEmployee")
+                  : t("addEmployee.buttons.addEmployee")}
+              </Button>
+            </div>
+          </div>
+        </form>
         </div>
     </div>
   );

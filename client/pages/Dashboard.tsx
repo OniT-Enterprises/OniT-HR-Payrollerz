@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useChatStore } from "@/stores/chatStore";
 import { Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
@@ -46,7 +47,9 @@ import {
   Wallet,
   BookOpen,
   FileText,
+  Sparkles,
 } from "lucide-react";
+import { PRESSABLE } from "@/lib/pressable";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useCountUp } from "@/hooks/useCountUp";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -66,12 +69,6 @@ function formatCurrencyShort(amount: number, locale: "en" | "tet" | "pt") {
     maximumFractionDigits: 0,
   }).format(amount);
 }
-
-/* Tactile feedback for tappable surfaces: quick press scale + visible focus
-   ring. Hover feedback stays border + fill (no shadows, no translation) per
-   the style guide's motion rules. */
-const PRESSABLE =
-  "transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 function AnimatedNumber({
   value,
@@ -408,15 +405,40 @@ export default function Dashboard() {
   const shouldReviewLeave = hasTimeleave && pendingLeave > 0;
   const shouldFixEmployees = canManageTenant && hasStaff && employeesWithIssues > 0;
   const shouldAddEmployee = canManageTenant && hasStaff && activeEmployeeCount === 0;
+  // Nobody on the payroll yet, so offer one clear next step.
+  //
+  // This is deliberately NOT read as "brand-new tenant": `activeEmployeeCount`
+  // counts only status === "active", so an established business whose staff
+  // were all terminated, or one that uses Xefe for invoicing only, also lands
+  // here. The panel is therefore ADDITIVE — it never hides real data. It only
+  // replaces the duplicate "add employee" to-do row, and the overview grid is
+  // suppressed solely when every number in it would read zero.
+  const noStaffYet =
+    canManageTenant &&
+    hasStaff &&
+    activeEmployeeCount === 0 &&
+    payrollRuns.length === 0;
+  const hasAnyRealNumbers =
+    activeEmployeeCount > 0 ||
+    payrollRuns.length > 0 ||
+    pendingLeave > 0 ||
+    employeesWithIssues > 0 ||
+    (moneyStats?.revenueThisMonth ?? 0) > 0 ||
+    (moneyStats?.totalOutstanding ?? 0) > 0;
+  // The panel already carries this action; don't say it twice.
+  const showAddEmployeeTodo = shouldAddEmployee && !noStaffYet;
+  // Only an explicit false counts: settings are not loaded for tenants without
+  // the payroll module, and `undefined` must not be read as "setup pending".
+  const setupIncomplete = settingsQuery.data?.setupComplete === false;
   const hasThingsToDo =
     shouldRunPayroll ||
     shouldReviewLeave ||
     shouldFixEmployees ||
-    shouldAddEmployee ||
+    showAddEmployeeTodo ||
     Boolean(canManageTenant && urgentCompliance);
   const hasNeedsAttention =
     Boolean(canManageTenant && urgentCompliance) || shouldFixEmployees;
-  const hasComingUp = shouldRunPayroll || shouldReviewLeave || shouldAddEmployee;
+  const hasComingUp = shouldRunPayroll || shouldReviewLeave || showAddEmployeeTodo;
 
   const formatMoney = (amount: number) => formatCurrencyShort(amount, locale);
 
@@ -442,7 +464,12 @@ export default function Dashboard() {
   }
   const botSummary =
     summaryParts.slice(0, 2).join(" ") ||
-    (canManageTenant ? t("dashboard.botSummaryAllGood") : t("dashboard.botIntro"));
+    (noStaffYet
+      ? t("dashboard.botSummaryFirstRun") ||
+        "Let's add your first team member so Xefe can start doing the work."
+      : canManageTenant
+        ? t("dashboard.botSummaryAllGood")
+        : t("dashboard.botIntro"));
 
   const retryDashboard = useCallback(async () => {
     const requests: Array<Promise<unknown>> = [];
@@ -643,8 +670,43 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ── First run: one welcome panel with one next step, instead of a
+            row of zeroes and a one-row to-do list. ── */}
+        {noStaffYet && (
+          <div className="mb-6 rounded-2xl border border-border/70 bg-card p-5 sm:p-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
+              <Sparkles className="h-5 w-5 text-primary" />
+            </div>
+            <p className="mt-4 text-base font-semibold">
+              {t("dashboard.firstRunTitle") || "Let's set up your team"}
+            </p>
+            <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+              {t("dashboard.firstRunDesc") ||
+                "Add the people who work for you. Once they are in, Xefe works out their pay, tax, and INSS for you."}
+            </p>
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                onClick={() => navigate("/people/add")}
+                className="min-h-11 w-full sm:w-auto"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {t("dashboard.firstRunAction") || "Add your first employee"}
+              </Button>
+              {setupIncomplete && (
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate("/setup")}
+                  className="min-h-11 w-full sm:w-auto"
+                >
+                  {t("dashboard.firstRunSetupLink") || "Finish setting up Xefe"}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Overview cards ── */}
-        {overviewCards.length > 0 && (
+        {overviewCards.length > 0 && !(noStaffYet && !hasAnyRealNumbers) && (
           <div
             className={`mb-6 grid grid-cols-2 gap-3 ${
               overviewCards.length >= 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"
@@ -820,7 +882,7 @@ export default function Dashboard() {
                     <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
                 )}
-                {shouldAddEmployee && (
+                {showAddEmployeeTodo && (
                   <button onClick={() => navigate("/people/add")} className={`flex w-full items-center gap-3 rounded-xl border border-border/70 bg-card p-4 text-left hover:border-primary/30 hover:bg-muted/40 ${PRESSABLE} sm:gap-4`}>
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                       <UserPlus className="h-4 w-4 text-primary" />

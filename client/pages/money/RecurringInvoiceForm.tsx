@@ -41,6 +41,7 @@ import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from 
 import type { RecurringFrequency, InvoiceSettings } from '@/types/money';
 import { getTodayTL } from '@/lib/dateUtils';
 import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Repeat,
   ArrowLeft,
@@ -548,10 +549,16 @@ export default function RecurringInvoiceForm() {
                     <Calendar className="h-3.5 w-3.5" />
                     {t('money.recurringInvoiceForm.startDate') || 'Start Date'} *
                   </Label>
-                  <Input
-                    type="date"
-                    {...register('startDate')}
-                    className={errors.startDate ? 'border-red-500' : ''}
+                  <Controller
+                    name="startDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        aria-invalid={!!errors.startDate}
+                      />
+                    )}
                   />
                   {errors.startDate && (
                     <p className="text-xs text-red-500">{errors.startDate.message}</p>
@@ -588,11 +595,18 @@ export default function RecurringInvoiceForm() {
               {endType === 'date' && (
                 <div className="space-y-2 max-w-xs">
                   <Label>{t('money.recurringInvoiceForm.endDate') || 'End Date'}</Label>
-                  <Input
-                    type="date"
-                    {...register('endDate')}
-                    min={formData.startDate}
-                    className={errors.endDate ? 'border-red-500' : ''}
+                  <Controller
+                    name="endDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        min={formData.startDate}
+                        clearable
+                        aria-invalid={!!errors.endDate}
+                      />
+                    )}
                   />
                   {errors.endDate && (
                     <p className="text-xs text-red-500">{errors.endDate.message}</p>

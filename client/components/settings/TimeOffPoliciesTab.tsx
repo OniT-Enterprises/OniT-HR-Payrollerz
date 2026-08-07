@@ -36,6 +36,8 @@ import { settingsService } from "@/services/settingsService";
 import { holidayService, type HolidayOverride } from "@/services/holidayService";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { useI18n } from "@/i18n/I18nProvider";
 import type {
   LeaveTypeConfig,
   SettingsTabProps,
@@ -93,6 +95,7 @@ export function TimeOffPoliciesTab({
   userId,
 }: TimeOffPoliciesTabProps) {
   const { toast } = useToast();
+  const { locale } = useI18n();
 
   // Local state for time-off policies
   const [timeOffPolicies, setTimeOffPolicies] =
@@ -240,6 +243,7 @@ export function TimeOffPoliciesTab({
         date: string;
         name: string;
         nameTetun?: string;
+        namePt?: string;
         source: "built_in" | "override";
       }
     >();
@@ -249,6 +253,7 @@ export function TimeOffPoliciesTab({
         date: h.date,
         name: h.name,
         nameTetun: h.nameTetun,
+        namePt: h.namePt,
         source: "built_in",
       });
     });
@@ -263,6 +268,7 @@ export function TimeOffPoliciesTab({
         date: o.date,
         name: o.name || t("settings.notifications.holidayName"),
         nameTetun: o.nameTetun || "",
+        namePt: "",
         source: "override",
       });
     });
@@ -1214,14 +1220,30 @@ export function TimeOffPoliciesTab({
                             : t("settings.notifications.builtIn")}
                         </Badge>
                       </div>
-                      <div className="text-sm font-medium truncate">
-                        {h.name}
-                      </div>
-                      {h.nameTetun ? (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {h.nameTetun}
-                        </div>
-                      ) : null}
+                      {(() => {
+                        // A Tetun reader saw "New Year's Day" in bold with
+                        // "Loron Tinan Foun" as grey subtext, and a Portuguese
+                        // reader got no Portuguese at all. Lead with the
+                        // reader's own language.
+                        const localName =
+                          (locale === "tet" && h.nameTetun) ||
+                          (locale === "pt" && h.namePt) ||
+                          h.name;
+                        const secondary =
+                          localName === h.name ? h.nameTetun : h.name;
+                        return (
+                          <>
+                            <div className="text-sm font-medium truncate">
+                              {localName}
+                            </div>
+                            {secondary && secondary !== localName ? (
+                              <div className="text-xs text-muted-foreground truncate">
+                                {secondary}
+                              </div>
+                            ) : null}
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -1294,9 +1316,12 @@ export function TimeOffPoliciesTab({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>{t("common.date")}</Label>
-                <Input
-                  type="date"
-                  {...holidayOverrideForm.register("date")}
+                <Controller
+                  name="date"
+                  control={holidayOverrideForm.control}
+                  render={({ field }) => (
+                    <DatePicker value={field.value || ''} onChange={field.onChange} />
+                  )}
                 />
                 {holidayOverrideForm.formState.errors.date && (
                   <p className="text-sm text-destructive">

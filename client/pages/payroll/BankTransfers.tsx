@@ -100,6 +100,7 @@ import DashboardLoadError from "@/components/dashboard/DashboardLoadError";
 import { useTableSort } from "@/hooks/useTableSort";
 import { SortableColumnHeader } from "@/components/ui/SortableColumnHeader";
 
+import { DatePicker } from "@/components/ui/date-picker";
 // Columns the transfers table can be sorted by (Actions is not sortable)
 type BankTransferSortKey =
   | "payrollPeriod"
@@ -1424,14 +1425,12 @@ export default function BankTransfers() {
                             <Label htmlFor="transfer-date">
                               {t("bankTransfers.transferDateLabel")} *
                             </Label>
-                            <Input
+                            <DatePicker
                               id="transfer-date"
-                              type="date"
                               value={formData.transferDate}
-                              onChange={(e) =>
-                                handleInputChange(
+                              onChange={(value) => handleInputChange(
                                   "transferDate",
-                                  e.target.value,
+                                  value,
                                 )
                               }
                               required

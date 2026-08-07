@@ -42,7 +42,9 @@ import {
   ChevronRight,
   X,
   PanelLeftClose,
+  MessageCircle,
 } from "lucide-react";
+import { SUPPORT_WHATSAPP_URL } from "@/lib/support";
 import type { ComponentType } from "react";
 import type { ModulePermission } from "@/types/tenant";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
@@ -569,9 +571,56 @@ interface SidebarFooterProps {
   showSettings: boolean;
 }
 
+/**
+ * Always-available rescue path. Our users are first-time software users on a
+ * phone; when they get stuck, a human on WhatsApp is the fastest way out. This
+ * is an external link, not a route, so it never depends on app state.
+ */
+function HelpLink({ collapsed, t }: { collapsed: boolean; t: (key: string) => string }) {
+  const label = t("common.getHelp") || "Get help";
+  const base =
+    "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all";
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href={SUPPORT_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label}
+            className={`flex h-11 w-full items-center justify-center rounded-lg md:h-10 ${base}`}
+          >
+            <MessageCircle className="h-5 w-5" />
+          </a>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <a
+      href={SUPPORT_WHATSAPP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`relative flex h-11 w-full items-center gap-3 rounded-lg pl-3 pr-3 text-sm md:h-9 ${base}`}
+    >
+      <MessageCircle className="h-5 w-5 shrink-0" />
+      <span className="truncate">{label}</span>
+    </a>
+  );
+}
+
 function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pathname, t, showSettings }: SidebarFooterProps) {
   return (
     <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
+      <div className="mb-1">
+        <HelpLink collapsed={collapsed} t={t} />
+      </div>
       <div className="flex items-center gap-1">
         {showSettings && (
           <div className="flex-1">

@@ -55,7 +55,7 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   // Personal Information
   { id: "firstName", name: "First Name", category: "Personal Information", required: true, type: "text" },
   { id: "lastName", name: "Last Name", category: "Personal Information", required: true, type: "text" },
-  { id: "email", name: "Email", category: "Personal Information", required: true, type: "email" },
+  { id: "email", name: "Email", category: "Personal Information", required: false, type: "email" },
   { id: "phone", name: "Phone", category: "Personal Information", required: false, type: "phone" },
   { id: "address", name: "Address", category: "Personal Information", required: false, type: "text" },
   { id: "dateOfBirth", name: "Date of Birth", category: "Personal Information", required: false, type: "date" },
@@ -64,10 +64,10 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
   // Job Details
   { id: "employeeId", name: "Employee ID", category: "Job Details", required: false, type: "text" },
   {
-    id: "department", name: "Department", category: "Job Details", required: true, type: "select",
+    id: "department", name: "Department", category: "Job Details", required: false, type: "select",
     options: ["Engineering", "Human Resources", "Marketing", "Sales", "Finance", "Operations", "Customer Service", "Information Technology", "Legal", "Research & Development", "Quality Assurance", "Administration", "Procurement", "Facilities", "Training"],
   },
-  { id: "position", name: "Job Title/Position", category: "Job Details", required: true, type: "text" },
+  { id: "position", name: "Job Title/Position", category: "Job Details", required: false, type: "text" },
   { id: "hireDate", name: "Hire Date", category: "Job Details", required: false, type: "date" },
   { id: "employmentType", name: "Employment Type", category: "Job Details", required: false, type: "select", options: ["Full-time", "Part-time", "Contract", "Temporary", "Intern", "Shareholder"] },
   { id: "workLocation", name: "Work Location", category: "Job Details", required: false, type: "select", options: ["Office", "Remote", "Hybrid", "Field"] },
@@ -84,7 +84,7 @@ const EMPLOYEE_FIELDS: EmployeeField[] = [
     options: ["full_floor", "pro_rata", "reviewed_exception"],
   },
   // Compensation
-  { id: "monthlySalary", name: "Monthly Salary", category: "Compensation", required: false, type: "number" },
+  { id: "monthlySalary", name: "Monthly Salary", category: "Compensation", required: true, type: "number" },
   { id: "annualLeaveDays", name: "Annual Leave Days", category: "Compensation", required: false, type: "number" },
   { id: "benefitsPackage", name: "Benefits Package", category: "Compensation", required: false, type: "select", options: ["Basic", "Standard", "Premium", "Executive"] },
   // Documents

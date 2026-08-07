@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -771,12 +772,10 @@ export default function EmployeeAllowances() {
 
             <div>
               <Label htmlFor="effective-date">{t("allowances.startDate")}</Label>
-              <Input
+              <DatePicker
                 id="effective-date"
-                type="date"
                 value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-              />
+                onChange={(value) => setEffectiveDate(value)}/>
             </div>
           </div>
 

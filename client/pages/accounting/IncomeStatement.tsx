@@ -20,7 +20,6 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
   Table,
@@ -50,6 +49,7 @@ import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { downloadCSVRows } from "@/lib/csvExport";
 import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
+import { DatePicker } from "@/components/ui/date-picker";
 function parseIsoDateParts(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return null;
@@ -261,20 +261,16 @@ export default function IncomeStatement() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
               <Label>{t("accounting.incomeStatement.periodStart")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={periodStart}
-                onChange={(e) => setPeriodStart(e.target.value)}
-                className="w-[180px]"
+                onChange={(value) => setPeriodStart(value)} className="w-[180px]"
               />
             </div>
             <div className="space-y-2">
               <Label>{t("accounting.incomeStatement.periodEnd")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={periodEnd}
-                onChange={(e) => setPeriodEnd(e.target.value)}
-                className="w-[180px]"
+                onChange={(value) => setPeriodEnd(value)} className="w-[180px]"
               />
             </div>
             <Button onClick={handleGenerate} disabled={generating}>

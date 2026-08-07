@@ -30,6 +30,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -52,7 +53,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
+import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useUpdatePayrollRun, useRepairStuckRun, useMarkPayrollRunAsPaid } from "@/hooks/usePayroll";
+import { DatePicker } from "@/components/ui/date-picker";
+import { getTodayTL } from "@/lib/dateUtils";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
@@ -74,6 +77,7 @@ import {
   ShieldCheck,
   Ban,
   AlertTriangle,
+  Banknote,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService, SubscriptionRequiredError } from "@/services/payrollService";
@@ -117,6 +121,71 @@ type PayrollHistorySortKey = "period" | "payDate" | "employees" | "grossPay" | "
 export default function PayrollHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Settling an approved run IN CASH.
+  //
+  // Until now the only approved -> paid transition was completing a bank
+  // transfer, so an employer who pays wages in cash — the norm in Timor-Leste —
+  // could never move a run to `paid`. Both statutory builders only read paid
+  // runs, so those businesses could not file an INSS DR or an ATTL WIT return
+  // at all. The service already supported `paymentMethod: 'cash'` (it posts
+  // against cash-on-hand 1110 instead of the payroll bank 1130); nothing ever
+  // called it.
+  const markRunPaidMutation = useMarkPayrollRunAsPaid();
+  const [cashPayRun, setCashPayRun] = useState<PayrollRun | null>(null);
+  const [cashPayDate, setCashPayDate] = useState("");
+  const [cashPayReference, setCashPayReference] = useState("");
+  const cashPayInFlight = useRef(false);
+
+  const openCashPayDialog = (run: PayrollRun) => {
+    setCashPayRun(run);
+    setCashPayDate(run.payDate || getTodayTL());
+    setCashPayReference("");
+  };
+
+  const handleConfirmCashPayment = async () => {
+    if (!canManageTenant || !cashPayRun?.id || !user?.uid || cashPayInFlight.current) return;
+    const reference = cashPayReference.trim();
+    if (!reference || !cashPayDate) return;
+
+    cashPayInFlight.current = true;
+    try {
+      await markRunPaidMutation.mutateAsync({
+        id: cashPayRun.id,
+        payment: {
+          tenantId,
+          paymentDate: cashPayDate,
+          paymentReference: reference,
+          paymentMethod: "cash",
+          paidBy: user.uid,
+          audit: {
+            tenantId,
+            userId: user.uid,
+            userEmail: user.email || "",
+          },
+        },
+      });
+      toast({
+        title: t("payrollHistory.cashPaid.successTitle") || "Payroll marked as paid",
+        description:
+          t("payrollHistory.cashPaid.successDesc") ||
+          "The cash payment is recorded, so this run now counts towards your INSS and tax returns.",
+      });
+      setCashPayRun(null);
+    } catch (error) {
+      console.error("Failed to mark payroll run paid in cash:", error);
+      toast({
+        title: t("payrollHistory.cashPaid.errorTitle") || "Could not record the payment",
+        description:
+          error instanceof Error
+            ? error.message
+            : t("payrollHistory.cashPaid.errorDesc") || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      cashPayInFlight.current = false;
+    }
+  };
   const { canManage } = useTenant();
   const canManageTenant = canManage();
   const tenantId = useTenantId();
@@ -1609,21 +1678,35 @@ export default function PayrollHistory() {
                   {t("payrollHistory.detailsDescription")}
                 </DialogDescription>
               </div>
-              {canManageTenant && selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
-                <Button
-                  size="sm"
-                  disabled={loadingRecords || runRecords.length === 0}
-                  onClick={() => {
-                    setSendPayslipsRun(selectedRun);
-                    setSendPayslipsRecords(runRecords);
-                    setShowSendPayslipsDialog(true);
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  {t("payrollHistory.sendPayslips")}
-                </Button>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Cash settlement. Only for a run still awaiting payment —
+                    a bank-paid run settles from the Bank Transfers page. */}
+                {canManageTenant && selectedRun?.status === "approved" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openCashPayDialog(selectedRun)}
+                  >
+                    <Banknote className="mr-2 h-4 w-4" />
+                    {t("payrollHistory.cashPaid.action") || "Paid in cash"}
+                  </Button>
+                )}
+                {canManageTenant && selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
+                  <Button
+                    size="sm"
+                    disabled={loadingRecords || runRecords.length === 0}
+                    onClick={() => {
+                      setSendPayslipsRun(selectedRun);
+                      setSendPayslipsRecords(runRecords);
+                      setShowSendPayslipsDialog(true);
+                    }}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    {t("payrollHistory.sendPayslips")}
+                  </Button>
+                )}
+              </div>
             </div>
           </DialogHeader>
 
@@ -1748,6 +1831,79 @@ export default function PayrollHistory() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record a cash wage payment. Posts the same settlement journal a bank
+          transfer does, against cash-on-hand instead of the payroll bank. */}
+      <Dialog
+        open={!!cashPayRun}
+        onOpenChange={(open) => { if (!open) setCashPayRun(null); }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t("payrollHistory.cashPaid.title") || "Record a cash payment"}
+            </DialogTitle>
+            <DialogDescription>
+              {t("payrollHistory.cashPaid.description") ||
+                "Confirm you have paid these wages in cash. Xefe records the payment in your books and counts this run towards your INSS and tax returns."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cash-pay-date">
+                {t("payrollHistory.cashPaid.dateLabel") || "The day you paid them"}
+              </Label>
+              <DatePicker
+                id="cash-pay-date"
+                value={cashPayDate}
+                onChange={setCashPayDate}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cash-pay-reference">
+                {t("payrollHistory.cashPaid.referenceLabel") || "Reference"}
+              </Label>
+              <Input
+                id="cash-pay-reference"
+                value={cashPayReference}
+                onChange={(e) => setCashPayReference(e.target.value)}
+                placeholder={
+                  t("payrollHistory.cashPaid.referencePlaceholder") ||
+                  "e.g. Cash payment, signed sheet"
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("payrollHistory.cashPaid.referenceHelp") ||
+                  "Something you can find again later — a receipt book number or the signed payment sheet."}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setCashPayRun(null)}
+              disabled={markRunPaidMutation.isPending}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => { void handleConfirmCashPayment(); }}
+              disabled={
+                markRunPaidMutation.isPending ||
+                !cashPayDate ||
+                !cashPayReference.trim()
+              }
+            >
+              {markRunPaidMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {t("payrollHistory.cashPaid.confirm") || "Yes, they have been paid"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

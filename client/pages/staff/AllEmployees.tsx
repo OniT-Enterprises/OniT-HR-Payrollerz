@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import {
@@ -1404,12 +1405,10 @@ export default function AllEmployees() {
                   <Label htmlFor="return-start-date">
                     {t("employees.returnToWork.newStartDate")}
                   </Label>
-                  <Input
+                  <DatePicker
                     id="return-start-date"
-                    type="date"
                     value={returnStartDate}
-                    onChange={(e) => setReturnStartDate(e.target.value)}
-                  />
+                    onChange={(value) => setReturnStartDate(value)}/>
                   {/*
                     Show the Art. 12 determination instead of asserting that
                     service always restarts — it does not when the break is 90

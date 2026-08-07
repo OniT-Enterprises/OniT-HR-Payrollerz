@@ -12,6 +12,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -258,8 +259,8 @@ export default function AccountingAuditTrail() {
               <div className="space-y-2">
                 <Label>{t("accounting.auditTrail.dateRange")}</Label>
                 <div className="flex gap-2">
-                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  <DatePicker value={startDate} onChange={(value) => setStartDate(value)}/>
+                  <DatePicker value={endDate} onChange={(value) => setEndDate(value)}/>
                 </div>
               </div>
             </div>

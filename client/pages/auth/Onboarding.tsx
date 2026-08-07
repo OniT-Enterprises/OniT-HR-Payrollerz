@@ -22,6 +22,7 @@ import {
 } from "@/services/provisionOrg";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { AccountantChoice } from "@/components/accountants/AccountantChoice";
 import {
   forgetAccountantPartner,
@@ -65,6 +66,9 @@ export default function Onboarding() {
   const [companyName, setCompanyName] = useState("");
   const [companySlug, setCompanySlug] = useState("");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  // Opened only when a collision survives the automatic retry, so the user can
+  // actually act on the "that address is taken" error.
+  const [revealSlug, setRevealSlug] = useState(false);
   const [accountantPartnerId, setAccountantPartnerId] =
     useState<AccountantPartnerId | null>(() => {
       const fromUrl = getAccountantPartner(searchParams.get("accountant"));
@@ -167,13 +171,32 @@ export default function Onboarding() {
         await updateProfile(user, { displayName: normalizedDisplayName });
       }
 
-      const tenantId = await provisionOrganization({
-        user,
-        displayName: normalizedDisplayName,
-        companyName,
-        companySlug,
-        accountantPartnerId,
-      });
+      // The slug is hidden by default, so a taken one must resolve itself
+      // rather than dead-end a signup on a concept the user never saw. One
+      // suffixed retry; only a second collision surfaces the field.
+      let tenantId: string;
+      try {
+        tenantId = await provisionOrganization({
+          user,
+          displayName: normalizedDisplayName,
+          companyName,
+          companySlug,
+          accountantPartnerId,
+        });
+      } catch (provisionErr) {
+        if (!(provisionErr instanceof SlugTakenError) || slugManuallyEdited) {
+          throw provisionErr;
+        }
+        const suffixed = `${companySlug}-${Math.random().toString(36).slice(2, 6)}`;
+        setCompanySlug(suffixed);
+        tenantId = await provisionOrganization({
+          user,
+          displayName: normalizedDisplayName,
+          companyName,
+          companySlug: suffixed,
+          accountantPartnerId,
+        });
+      }
       await refreshUserProfile();
       // Load the new tenant session before navigating — HomeRoute decides
       // from context state, and the tenant init effect may still hold the
@@ -187,6 +210,7 @@ export default function Onboarding() {
     } catch (err: unknown) {
       console.error("Onboarding error:", err);
       if (err instanceof SlugTakenError) {
+        setRevealSlug(true);
         setError(t("auth.errors.companySlugTaken"));
       } else if (err instanceof ProvisioningTimeoutError) {
         setError(t("auth.errors.networkTimeout"));
@@ -317,27 +341,36 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* The slug is only ever the Firestore tenant id — never shown to
+                  the customer again. A first-time owner should not have to
+                  understand a "web address" to sign up, so it is generated from
+                  the company name and tucked away. A collision is resolved
+                  automatically on submit. */}
+              <MoreDetailsSection
+                // Remount so a revealed section actually opens: the component
+                // reads defaultOpen once, into local state.
+                key={revealSlug ? "slug-open" : "slug-closed"}
+                defaultOpen={revealSlug}
+                title={t("auth.signup.companyUrlAdvanced") || "Advanced"}
+                contentClassName="space-y-2"
+              >
                 <Label htmlFor="companySlug">{t("auth.signup.companyUrl")}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="companySlug"
-                    name="companySlug"
-                    type="text"
-                    autoComplete="off"
-                    placeholder={t("auth.signup.companySlugPlaceholder")}
-                    value={companySlug}
-                    onChange={(e) => {
-                      setSlugManuallyEdited(true);
-                      setCompanySlug(generateSlug(e.target.value));
-                    }}
-                    className="flex-1"
-                  />
-                </div>
+                <Input
+                  id="companySlug"
+                  name="companySlug"
+                  type="text"
+                  autoComplete="off"
+                  placeholder={t("auth.signup.companySlugPlaceholder")}
+                  value={companySlug}
+                  onChange={(e) => {
+                    setSlugManuallyEdited(true);
+                    setCompanySlug(generateSlug(e.target.value));
+                  }}
+                />
                 <p className="text-xs text-muted-foreground">
                   {t("auth.signup.companyUrlHint")}
                 </p>
-              </div>
+              </MoreDetailsSection>
 
               <AccountantChoice
                 value={accountantPartnerId}

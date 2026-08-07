@@ -120,6 +120,9 @@ const messages = {
     guidance: "Orientação",
     hide: "Ocultar",
     moreDetails: "Mais detalhes",
+    pickADate: "Escolher data",
+    clear: "Limpar",
+    getHelp: "Obter ajuda",
     previous: "Anterior",
     next: "Seguinte",
     review: "Rever",
@@ -380,6 +383,13 @@ const messages = {
       "{{count}} perfil(is) de trabalhador precisam de atenção.",
     botSummaryLeave: "{{count}} pedido(s) de licença aguardam decisão.",
     botSummaryAllGood: "Está tudo em ordem hoje.",
+    botSummaryFirstRun:
+      "Vamos adicionar o primeiro membro da equipa para o Xefe começar a trabalhar.",
+    firstRunTitle: "Vamos configurar a sua equipa",
+    firstRunDesc:
+      "Adicione as pessoas que trabalham consigo. Depois disso, o Xefe calcula o salário, o imposto e o INSS por si.",
+    firstRunAction: "Adicione o seu primeiro funcionário",
+    firstRunSetupLink: "Termine a configuração do Xefe",
     cardPayrollContext: "{{count}} trabalhadores · est. {{amount}}",
     cardPayrollPrepared: "Folha preparada",
     cardEmployeesIssues: "{{count}} perfil(is) precisam de atenção",
@@ -646,6 +656,7 @@ const messages = {
       companyUrl: "ID da Empresa",
       companySlugPlaceholder: "acme-inc",
       companyUrlHint: "Este será o identificador único da sua organização",
+      companyUrlAdvanced: "Avançado",
       alreadyHaveAccount: "Já tem conta?",
       terms:
         "Ao criar uma conta, concorda com os nossos Termos de Serviço e Política de Privacidade.",
@@ -1641,8 +1652,34 @@ const messages = {
       disabledToast:
         "De volta ao fluxo simples — o Xefe aplica valores seguros por defeito.",
     },
-    setupProgress: "Progresso da Configuração",
-    progressComplete: "{{completed}}/{{total}} Completo",
+    hub: {
+      groupBusiness: "O seu negócio",
+      groupTeam: "A sua equipa",
+      companyLabel: "Dados da empresa",
+      companyDesc: "Nome, morada, telefone e logótipo da sua empresa.",
+      paymentsLabel: "Como paga aos seus funcionários",
+      paymentsDesc:
+        "Dinheiro ou transferência bancária, contas bancárias e com que frequência paga.",
+      billingLabel: "O seu plano Xefe",
+      billingDesc: "Quanto lhe custa o Xefe e como o paga.",
+      accessLabel: "Quem pode usar o Xefe",
+      accessDesc:
+        "Convide pessoas, altere o que podem abrir ou reponha uma palavra-passe.",
+      timeOffLabel: "Licenças e feriados",
+      timeOffDesc:
+        "Dias de licença por ano, atestados médicos e feriados públicos.",
+      advancedTitle: "Definições avançadas",
+      advancedCaution:
+        "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
+      payrollRulesLabel: "Regras de imposto, INSS e horas extra",
+      payrollRulesDesc: "Os valores que o Xefe usa para calcular os salários.",
+      accountantLabel: "O seu contabilista",
+      accountantDesc:
+        "Dê acesso ao seu contabilista ou envie a contabilidade para o QuickBooks.",
+      finishSetupTitle: "Termine a configuração do Xefe",
+      finishSetupDesc:
+        "Algumas perguntas sobre o seu negócio e já pode processar salários.",
+    },
     tabs: {
       company: "Empresa",
       structure: "Estrutura",
@@ -1655,6 +1692,13 @@ const messages = {
       title: "Dados da Empresa",
       description:
         "Informações básicas sobre a sua empresa para fins legais e fiscais",
+      sectionPlaces: "Locais de trabalho e equipas",
+      sectionPlacesDesc:
+        "Os seus locais de trabalho e as equipas em que agrupa os funcionários.",
+      teamsSavedNote:
+        "As equipas são guardadas assim que as adiciona ou remove.",
+      taxNumbersTitle: "Números fiscais e de registo",
+      sectorSeedsNote: "Escolher um setor adiciona uma lista inicial de equipas.",
       legalName: "Nome Legal da Empresa *",
       legalNamePlaceholder: "ex., OniT Security, Lda",
       tradingName: "Nome Comercial (se diferente)",
@@ -1953,7 +1997,7 @@ const messages = {
       builtIn: "Integrado",
       edit: "Editar",
       removeOverride: "Remover substituição",
-      addOverrideHoliday: "Adicionar / substituir feriado",
+      addOverrideHoliday: "Adicionar ou alterar feriado (Tolerância)",
       nameTetun: "Nome (Tétum)",
       notes: "Notas",
       notesPlaceholder: "Opcional (ex., referência de decreto governamental)",
@@ -7266,6 +7310,23 @@ const messages = {
     failed: "Não foi possível gerar a ordem de pagamento.",
   },
   payrollHistory: {
+    cashPaid: {
+      action: "Pago em dinheiro",
+      title: "Registar um pagamento em dinheiro",
+      description:
+        "Confirme que pagou estes salários em dinheiro. O Xefe regista o pagamento na contabilidade e passa a contar este processamento para as suas declarações de INSS e impostos.",
+      dateLabel: "O dia em que pagou",
+      referenceLabel: "Referência",
+      referencePlaceholder: "ex.: Pagamento em dinheiro, folha assinada",
+      referenceHelp:
+        "Algo que consiga encontrar mais tarde — o número do recibo ou a folha de pagamento assinada.",
+      confirm: "Sim, já foram pagos",
+      successTitle: "Processamento marcado como pago",
+      successDesc:
+        "O pagamento em dinheiro ficou registado, por isso este processamento já conta para as suas declarações de INSS e impostos.",
+      errorTitle: "Não foi possível registar o pagamento",
+      errorDesc: "Tente novamente.",
+    },
     title: "Histórico da Folha",
     subtitle: "Ver e gerir folhas anteriores",
     runNewPayroll: "Processar Nova Folha",

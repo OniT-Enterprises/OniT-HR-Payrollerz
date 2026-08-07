@@ -120,6 +120,9 @@ const messages = {
     guidance: "Guidance",
     hide: "Hide",
     moreDetails: "More details",
+    pickADate: "Pick a date",
+    clear: "Clear",
+    getHelp: "Get help",
     previous: "Previous",
     next: "Next",
     review: "Review",
@@ -378,6 +381,13 @@ const messages = {
     botSummaryEmployees: "{{count}} employee profile(s) need attention.",
     botSummaryLeave: "{{count}} leave request(s) are waiting.",
     botSummaryAllGood: "Everything looks on track today.",
+    botSummaryFirstRun:
+      "Let's add your first team member so Xefe can start doing the work.",
+    firstRunTitle: "Let's set up your team",
+    firstRunDesc:
+      "Add the people who work for you. Once they are in, Xefe works out their pay, tax, and INSS for you.",
+    firstRunAction: "Add your first employee",
+    firstRunSetupLink: "Finish setting up Xefe",
     cardPayrollContext: "{{count}} employees · est. {{amount}}",
     cardPayrollPrepared: "Payroll is prepared",
     cardEmployeesIssues: "{{count}} profile(s) need attention",
@@ -640,6 +650,7 @@ const messages = {
       companyUrl: "Company ID",
       companySlugPlaceholder: "acme-inc",
       companyUrlHint: "This will be your unique organization identifier",
+      companyUrlAdvanced: "Advanced",
       alreadyHaveAccount: "Already have an account?",
       terms:
         "By creating an account, you agree to our Terms of Service and Privacy Policy.",
@@ -1616,8 +1627,33 @@ const messages = {
       enabledToast: "Advanced tax controls are now visible.",
       disabledToast: "Back to the simple flow — Xefe applies safe defaults.",
     },
-    setupProgress: "Setup Progress",
-    progressComplete: "{{completed}}/{{total}} Complete",
+    hub: {
+      groupBusiness: "Your business",
+      groupTeam: "Your team",
+      companyLabel: "Business details",
+      companyDesc: "Your company name, address, phone, and logo.",
+      paymentsLabel: "How you pay your staff",
+      paymentsDesc:
+        "Cash or bank transfer, your bank accounts, and how often you pay.",
+      billingLabel: "Your Xefe plan",
+      billingDesc: "What Xefe costs you, and how you pay for it.",
+      accessLabel: "Who can use Xefe",
+      accessDesc:
+        "Invite people, change what they can open, or reset a password.",
+      timeOffLabel: "Time off and holidays",
+      timeOffDesc: "Days off each year, sick notes, and public holidays.",
+      advancedTitle: "Advanced settings",
+      advancedCaution:
+        "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
+      payrollRulesLabel: "Tax, INSS and overtime rules",
+      payrollRulesDesc: "The rates Xefe uses to work out pay.",
+      accountantLabel: "Your accountant",
+      accountantDesc:
+        "Give your accountant access, or send your books to QuickBooks.",
+      finishSetupTitle: "Finish setting up Xefe",
+      finishSetupDesc:
+        "A few questions about your business, then you can run payroll.",
+    },
     tabs: {
       company: "Company",
       structure: "Structure",
@@ -1630,6 +1666,12 @@ const messages = {
       title: "Company Details",
       description:
         "Basic information about your company for legal and tax purposes",
+      sectionPlaces: "Where you work and your teams",
+      sectionPlacesDesc:
+        "Your work locations and the teams you group staff into.",
+      teamsSavedNote: "Teams are saved as soon as you add or remove them.",
+      taxNumbersTitle: "Tax and registration numbers",
+      sectorSeedsNote: "Choosing a sector adds a starter list of teams.",
       legalName: "Legal Company Name *",
       legalNamePlaceholder: "e.g., OniT Security, Lda",
       tradingName: "Trading Name (if different)",
@@ -1920,7 +1962,7 @@ const messages = {
       builtIn: "Built-in",
       edit: "Edit",
       removeOverride: "Remove override",
-      addOverrideHoliday: "Add / override holiday",
+      addOverrideHoliday: "Add or change a holiday (Tolerância)",
       nameTetun: "Name (Tetun)",
       notes: "Notes",
       notesPlaceholder: "Optional (e.g., government decree reference)",
@@ -7144,6 +7186,23 @@ const messages = {
     failed: "Could not generate the payment order.",
   },
   payrollHistory: {
+    cashPaid: {
+      action: "Paid in cash",
+      title: "Record a cash payment",
+      description:
+        "Confirm you have paid these wages in cash. Xefe records the payment in your books and counts this run towards your INSS and tax returns.",
+      dateLabel: "The day you paid them",
+      referenceLabel: "Reference",
+      referencePlaceholder: "e.g. Cash payment, signed sheet",
+      referenceHelp:
+        "Something you can find again later — a receipt book number or the signed payment sheet.",
+      confirm: "Yes, they have been paid",
+      successTitle: "Payroll marked as paid",
+      successDesc:
+        "The cash payment is recorded, so this run now counts towards your INSS and tax returns.",
+      errorTitle: "Could not record the payment",
+      errorDesc: "Please try again.",
+    },
     title: "Payroll History",
     subtitle: "View and manage past payroll runs",
     runNewPayroll: "Run New Payroll",

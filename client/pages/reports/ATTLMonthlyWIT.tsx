@@ -50,6 +50,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -1789,12 +1790,10 @@ export default function ATTLMonthlyWIT() {
                   <Label htmlFor="wit-payment-date">
                     {t("reports.attlMonthlyWit.markFiled.paymentDate")}
                   </Label>
-                  <Input
+                  <DatePicker
                     id="wit-payment-date"
-                    type="date"
                     value={paymentDate}
-                    onChange={(event) => setPaymentDate(event.target.value)}
-                  />
+                    onChange={(value) => setPaymentDate(value)}/>
                 </div>
 
                 <div>

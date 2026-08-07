@@ -28,6 +28,7 @@ import {
 import type { Goal, GoalPriority, Milestone } from "@/services/goalsService";
 import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
 
+import { DatePicker } from "@/components/ui/date-picker";
 interface GoalForm {
   title: string;
   description: string;
@@ -427,11 +428,11 @@ export default function Goals() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="goal-start">Start</Label>
-                <Input id="goal-start" type="date" value={form.startDate} onChange={(event) => setForm((current) => ({ ...current, startDate: event.target.value }))} />
+                <DatePicker id="goal-start" value={form.startDate} onChange={(value) => setForm((current) => ({ ...current, startDate: value }))} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="goal-end">End</Label>
-                <Input id="goal-end" type="date" min={form.startDate} value={form.endDate} onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))} />
+                <DatePicker id="goal-end" min={form.startDate} value={form.endDate} onChange={(value) => setForm((current) => ({ ...current, endDate: value }))} />
               </div>
             </div>
             <div className="space-y-3">
@@ -447,7 +448,7 @@ export default function Goals() {
               {form.milestones.map((milestone) => (
                 <div key={milestone.id} className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_auto]">
                   <Input value={milestone.title} maxLength={160} aria-label="Milestone name" placeholder="Milestone" onChange={(event) => updateFormMilestone(milestone.id, { title: event.target.value })} />
-                  <Input type="date" value={milestone.dueDate} min={form.startDate} max={form.endDate} aria-label="Milestone due date" onChange={(event) => updateFormMilestone(milestone.id, { dueDate: event.target.value })} />
+                  <DatePicker value={milestone.dueDate} min={form.startDate} max={form.endDate} aria-label="Milestone due date" onChange={(value) => updateFormMilestone(milestone.id, { dueDate: value })} />
                   <Button variant="ghost" size="icon" aria-label="Remove milestone" disabled={form.milestones.length === 1} onClick={() => setForm((current) => ({ ...current, milestones: current.milestones.filter((item) => item.id !== milestone.id) }))}>
                     <X className="h-4 w-4" />
                   </Button>

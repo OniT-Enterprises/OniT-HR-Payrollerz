@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -893,21 +894,17 @@ export default function DeductionsAdvances() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="start-date">{t("deductions.startDate")}</Label>
-                <Input
+                <DatePicker
                   id="start-date"
-                  type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
+                  onChange={(value) => setStartDate(value)}/>
               </div>
               <div>
                 <Label htmlFor="end-date">{t("deductions.endDate")}</Label>
-                <Input
+                <DatePicker
                   id="end-date"
-                  type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
+                  onChange={(value) => setEndDate(value)}/>
               </div>
             </div>
 

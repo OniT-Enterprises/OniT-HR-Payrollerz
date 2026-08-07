@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -667,11 +668,10 @@ export default function Disciplinary() {
                       </div>
                       <div>
                         <Label htmlFor="incident-date">Date *</Label>
-                        <Input
+                        <DatePicker
                           id="incident-date"
-                          type="date"
                           value={formData.date}
-                          onChange={(e) => handleInputChange("date", e.target.value)}
+                          onChange={(value) => handleInputChange("date", value)}
                           required
                         />
                       </div>
@@ -984,12 +984,10 @@ export default function Disciplinary() {
                 </div>
                 <div>
                   <Label htmlFor="decision-delivered">Decision delivered *</Label>
-                  <Input
+                  <DatePicker
                     id="decision-delivered"
-                    type="date"
                     value={editFormData.decisionDeliveredDate}
-                    onChange={(event) => handleEditInputChange("decisionDeliveredDate", event.target.value)}
-                  />
+                    onChange={(value) => handleEditInputChange("decisionDeliveredDate", value)}/>
                 </div>
               </div>
             )}

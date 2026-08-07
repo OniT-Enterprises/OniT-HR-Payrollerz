@@ -28,11 +28,18 @@ import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
 import { fileUploadService } from '@/services/fileUploadService';
 import { Save, Loader2, ImagePlus, Trash2, Building2 } from 'lucide-react';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import type { SettingsTabProps, CompanyDetailsFormData, CompanyDetails } from './types';
 import { companyDetailsFormSchema } from './types';
 
 interface CompanyDetailsTabProps extends SettingsTabProps {
   initialData: CompanyDetails;
+  /** Host page owns the Save button (the merged /settings/company page). */
+  hideSaveButton?: boolean;
+  /** Lets the host page trigger this section's save. Resolves false on failure. */
+  registerSave?: (fn: () => Promise<boolean>) => void;
+  /** Host's save, so Enter in a field still submits the merged page. */
+  onRequestSave?: () => void;
 }
 
 export function CompanyDetailsTab({
@@ -42,6 +49,9 @@ export function CompanyDetailsTab({
   onReload,
   t,
   initialData,
+  hideSaveButton = false,
+  registerSave,
+  onRequestSave,
 }: CompanyDetailsTabProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -138,8 +148,8 @@ export function CompanyDetailsTab({
   }, [initialData.logoUrl, logoObjectUrl]);
 
   const onSave = useCallback(
-    async (data: CompanyDetailsFormData) => {
-      if (!tenantId) return;
+    async (data: CompanyDetailsFormData): Promise<boolean> => {
+      if (!tenantId) return false;
       setSaving(true);
       const previousLogoUrl = initialData.logoUrl || '';
       let uploadedLogoUrl: string | null = null;
@@ -189,11 +199,14 @@ export function CompanyDetailsTab({
         setLogoMarkedForRemoval(false);
         setLogoPreviewUrl(nextLogoUrl || null);
 
-        toast({
-          title: t('settings.notifications.savedTitle'),
-          description: t('settings.notifications.companySaved'),
-        });
+        if (!hideSaveButton) {
+          toast({
+            title: t('settings.notifications.savedTitle'),
+            description: t('settings.notifications.companySaved'),
+          });
+        }
         onReload();
+        return true;
       } catch {
         if (uploadedLogoUrl) {
           await fileUploadService.deleteFile(uploadedLogoUrl).catch((error) => {
@@ -205,12 +218,36 @@ export function CompanyDetailsTab({
           description: t('settings.notifications.saveFailed'),
           variant: 'destructive',
         });
+        return false;
       } finally {
         setSaving(false);
       }
     },
-    [tenantId, setSaving, initialData.logoUrl, logoMarkedForRemoval, logoFile, logoObjectUrl, onReload, toast, t]
+    [tenantId, setSaving, initialData.logoUrl, logoMarkedForRemoval, logoFile, logoObjectUrl, hideSaveButton, onReload, toast, t]
   );
+
+  const onInvalid = useCallback(() => {
+    toast({
+      title: t('settings.notifications.errorTitle') || 'Validation Error',
+      description: 'Please fill in all required fields.',
+      variant: 'destructive',
+    });
+  }, [toast, t]);
+
+  // The merged company page drives both sections from one Save button. The
+  // wrapper reports validation failures as `false` so the host can stop
+  // before saving the next section.
+  const runSave = useCallback(async (): Promise<boolean> => {
+    let ok = false;
+    await form.handleSubmit(async (data) => {
+      ok = await onSave(data);
+    }, onInvalid)();
+    return ok;
+  }, [form, onSave, onInvalid]);
+
+  useEffect(() => {
+    registerSave?.(runSave);
+  }, [registerSave, runSave]);
 
   return (
     <Card>
@@ -219,13 +256,23 @@ export function CompanyDetailsTab({
         <CardDescription>{t('settings.company.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={form.handleSubmit(onSave, () => {
-          toast({
-            title: t('settings.notifications.errorTitle') || 'Validation Error',
-            description: 'Please fill in all required fields.',
-            variant: 'destructive',
-          });
-        })}>
+        <form
+          onSubmit={(e) => {
+            // When the page owns Save, Enter must run the PAGE save so both
+            // sections persist — not just this form's half.
+            if (hideSaveButton) {
+              e.preventDefault();
+              onRequestSave?.();
+              return;
+            }
+            void form.handleSubmit(onSave, onInvalid)(e);
+          }}
+        >
+          {/* Restores implicit submission (Enter in a field) now that this
+              form has no visible submit button of its own. */}
+          {hideSaveButton && (
+            <button type="submit" className="sr-only" tabIndex={-1} aria-hidden />
+          )}
           <div className="space-y-3">
             <Label>Company Logo</Label>
             <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
@@ -299,6 +346,15 @@ export function CompanyDetailsTab({
               />
             </div>
 
+          </div>
+
+          {/* Statutory identifiers — needed for filings, but nothing a new
+              owner must face on first open. */}
+          <MoreDetailsSection
+            title={t('settings.company.taxNumbersTitle') || 'Tax and registration numbers'}
+            className="mt-6"
+          >
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="businessType">{t('settings.company.businessType')}</Label>
               <Controller
@@ -340,7 +396,8 @@ export function CompanyDetailsTab({
                 placeholder={t('settings.company.employerNissPlaceholder')}
               />
             </div>
-          </div>
+            </div>
+          </MoreDetailsSection>
 
           <Separator className="my-6" />
 
@@ -405,16 +462,18 @@ export function CompanyDetailsTab({
             </div>
           </div>
 
-          <div className="flex justify-end pt-6">
-            <Button type="submit" disabled={saving}>
-              {saving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              {t('settings.company.save')}
-            </Button>
-          </div>
+          {!hideSaveButton && (
+            <div className="flex justify-end pt-6">
+              <Button type="submit" disabled={saving}>
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {t('settings.company.save')}
+              </Button>
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>

@@ -111,15 +111,21 @@ export function buildEmployeesFromCSV(
 
     if (!firstName) rowErrors.push("First name is required");
     if (!lastName) rowErrors.push("Last name is required");
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      rowErrors.push("A valid email is required");
+    // Email, department and job title are optional here for the same reason
+    // they are optional on the Add Employee form: many TL workers have no
+    // email, and neither field is read by payroll or any statutory return.
+    // An email that IS supplied must still be well-formed.
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      rowErrors.push("Email is not a valid address");
     }
-    if (!department) rowErrors.push("Department is required");
-    if (!position) rowErrors.push("Job title/position is required");
     if (!validISODate(hireDate)) rowErrors.push("Hire date must use YYYY-MM-DD");
 
+    const salaryText = mappedValue(row, mappings, "monthlySalary");
+    // Required, matching the form: a missing salary otherwise imports as $0 and
+    // only fails later, mid-payroll-run.
+    if (!salaryText) rowErrors.push("Monthly salary is required");
     const salary = parseOptionalMoney(
-      mappedValue(row, mappings, "monthlySalary"),
+      salaryText,
       "Monthly salary",
       rowErrors,
     );

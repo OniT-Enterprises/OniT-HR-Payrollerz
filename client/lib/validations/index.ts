@@ -233,7 +233,10 @@ export const addEmployeeFormSchema = z.object({
   // Step 1: Basic Info
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
-  email: z.string().email('Invalid email address').min(1, 'Email is required'),
+  // Optional by design: many TL workers (guards, drivers, cleaners) have no
+  // email. Nothing statutory reads it — it only gates the optional Ekipa app
+  // invite, which already guards on presence.
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   phoneApp: z.string().optional().or(z.literal('')),
   appEligible: z.boolean().default(false),
@@ -243,8 +246,8 @@ export const addEmployeeFormSchema = z.object({
   emergencyContactPhone: z.string().optional().or(z.literal('')),
 
   // Step 2: Job Details
-  department: z.string().min(1, 'Department is required'),
-  jobTitle: z.string().min(1, 'Job title is required'),
+  department: z.string().optional().or(z.literal('')),
+  jobTitle: z.string().optional().or(z.literal('')),
   manager: z.string().optional().or(z.literal('')),
   projectCode: z.string().max(100).optional().or(z.literal('')),
   fundingSource: z.string().max(200).optional().or(z.literal('')),
@@ -271,11 +274,17 @@ export const addEmployeeFormSchema = z.object({
   minimumWageReviewNote: z.string().max(500).optional().or(z.literal('')),
 
   // Step 3: Compensation
-  salary: z.string().optional().or(z.literal('')).refine(
-    (value) => !value || (Number.isFinite(Number(value)) && Number(value) >= 0),
+  // Required. Previously optional and silently coerced to $0, which only
+  // surfaced mid-payroll as "below minimum wage" — long after the person who
+  // knew the number had moved on.
+  salary: z.string().min(1, 'Enter how much you pay them each month').refine(
+    (value) => Number.isFinite(Number(value)) && Number(value) >= 0,
     'Salary must be a non-negative number',
   ),
-  leaveDays: z.string().default('25'),
+  // Art. 32 statutory annual leave is 12 working days, which is also what
+  // TL_DEFAULT_LEAVE_POLICIES.annualLeave.daysPerYear uses. The old 25 default
+  // contradicted the tenant policy default.
+  leaveDays: z.string().default('12'),
   benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
   payFrequency: z.enum(['weekly', 'monthly']).default('monthly'),
   isResident: z.boolean().default(true),

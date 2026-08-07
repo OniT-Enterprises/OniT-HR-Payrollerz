@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -79,6 +78,7 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 
+import { DatePicker } from "@/components/ui/date-picker";
 // ============================================
 // Rating Stars Component
 // ============================================
@@ -785,10 +785,9 @@ export default function Reviews() {
               </div>
               <div className="space-y-2">
                 <Label>Review Date</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={formData.reviewDate}
-                  onChange={(e) => setFormData({ ...formData, reviewDate: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, reviewDate: value })}
                 />
               </div>
             </div>
@@ -796,18 +795,16 @@ export default function Reviews() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Period Start</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={formData.reviewPeriodStart}
-                  onChange={(e) => setFormData({ ...formData, reviewPeriodStart: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, reviewPeriodStart: value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Period End</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={formData.reviewPeriodEnd}
-                  onChange={(e) => setFormData({ ...formData, reviewPeriodEnd: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, reviewPeriodEnd: value })}
                 />
               </div>
             </div>

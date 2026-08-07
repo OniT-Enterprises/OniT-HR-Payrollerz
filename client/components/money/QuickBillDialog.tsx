@@ -12,6 +12,7 @@ import { paths } from "@/lib/paths";
 import { matchVendorByName } from "@/lib/money/vendor-match";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -459,11 +460,9 @@ export default function QuickBillDialog({
             </div>
             <div className="space-y-2">
               <Label>{t("money.bills.dueDate") || "Due Date"}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                disabled={saving}
+                onChange={(value) => setDueDate(value)} disabled={saving}
               />
             </div>
           </div>
@@ -484,11 +483,9 @@ export default function QuickBillDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t("money.bills.billDate") || "Bill Date"}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={billDate}
-                onChange={(e) => setBillDate(e.target.value)}
-                disabled={saving}
+                onChange={(value) => setBillDate(value)} disabled={saving}
               />
             </div>
             <div className="space-y-2">

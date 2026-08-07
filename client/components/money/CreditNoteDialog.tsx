@@ -19,6 +19,7 @@ import { getTodayTL } from '@/lib/dateUtils';
 import type { Invoice } from '@/types/money';
 import { Loader2, Receipt } from 'lucide-react';
 
+import { DatePicker } from "@/components/ui/date-picker";
 interface CreditNoteDialogProps {
   invoice: Invoice;
   open: boolean;
@@ -137,14 +138,12 @@ export function CreditNoteDialog({ invoice, open, onClose, onCredited }: CreditN
           </div>
           <div className="space-y-2">
             <Label htmlFor="credit-note-date">Credit-note date</Label>
-            <Input
+            <DatePicker
               id="credit-note-date"
-              type="date"
               min={invoice.issueDate}
               max={today}
               value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
+              onChange={(value) => setDate(value)}/>
           </div>
           <div className="space-y-2">
             <Label htmlFor="credit-note-reason">Reason</Label>

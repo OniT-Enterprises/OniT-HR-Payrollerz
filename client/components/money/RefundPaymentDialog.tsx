@@ -19,6 +19,7 @@ import { getTodayTL } from '@/lib/dateUtils';
 import type { Invoice, PaymentReceived } from '@/types/money';
 import { Loader2, RotateCcw } from 'lucide-react';
 
+import { DatePicker } from "@/components/ui/date-picker";
 interface RefundPaymentDialogProps {
   invoice: Invoice;
   payment: PaymentReceived;
@@ -144,14 +145,12 @@ export function RefundPaymentDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="refund-date">Refund date</Label>
-            <Input
+            <DatePicker
               id="refund-date"
-              type="date"
               min={payment.date}
               max={today}
               value={date}
-              onChange={(event) => setDate(event.target.value)}
-            />
+              onChange={(value) => setDate(value)}/>
           </div>
           <div className="space-y-2">
             <Label htmlFor="refund-reason">Reason</Label>
