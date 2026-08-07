@@ -16,6 +16,16 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { StepWizard, StepContent } from "@/components/ui/StepWizard";
 import type { WizardStep } from "@/components/ui/StepWizard";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
@@ -578,6 +588,53 @@ export default function RunPayrollWizard() {
             />
           </StepContent>
         </StepWizard>
+
+        {/* A sync that would DOCK people is never applied silently: absence is
+            measured against a full-month expectation, so any working day nobody
+            recorded becomes an unpaid deduction. */}
+        <AlertDialog
+          open={Boolean(calc.pendingAttendanceSync)}
+          onOpenChange={(open) => {
+            if (!open) calc.cancelAttendanceSync();
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("runPayroll.syncDock.title")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("runPayroll.syncDock.description", {
+                  count: calc.pendingAttendanceSync?.docked.length ?? 0,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="max-h-56 space-y-1 overflow-y-auto rounded-lg border p-3">
+              {calc.pendingAttendanceSync?.docked.map((row) => (
+                <div
+                  key={row.name}
+                  className="flex items-center justify-between gap-3 text-sm"
+                >
+                  <span className="min-w-0 truncate">{row.name}</span>
+                  <span className="shrink-0 text-muted-foreground">
+                    {t("runPayroll.syncDock.hours", { hours: row.hours })}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {t("runPayroll.syncDock.hint")}
+            </p>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={calc.cancelAttendanceSync}>
+                {t("runPayroll.syncDock.cancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={calc.confirmAttendanceSync}>
+                {t("runPayroll.syncDock.confirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

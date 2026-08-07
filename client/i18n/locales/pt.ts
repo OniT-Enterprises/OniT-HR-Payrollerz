@@ -7241,6 +7241,15 @@ const messages = {
     },
   },
   runPayroll: {
+    syncDock: {
+      title: "Isto vai descontar salário",
+      description:
+        "Faltam registos de assiduidade em alguns dias úteis deste período. A folha trata um dia útil sem registo como falta não paga, por isso sincronizar vai reduzir o vencimento de {{count}} pessoas:",
+      hours: "{{hours}} h descontadas",
+      hint: "Se estas pessoas trabalharam mesmo, registe primeiro esses dias na Assiduidade, ou deixe as horas como estão e não sincronize.",
+      cancel: "Não sincronizar",
+      confirm: "Sincronizar e descontar",
+    },
     absence: "Falta",
     lateArrival: "Atraso",
     specialHours: "Horas especiais (2×)",

@@ -7136,6 +7136,15 @@ const messages = {
     },
   },
   runPayroll: {
+    syncDock: {
+      title: "This will dock pay",
+      description:
+        "Attendance is missing for some working days in this period. Payroll treats a working day with no record as an unpaid absence, so syncing will reduce pay for {{count}} people:",
+      hours: "{{hours}} h deducted",
+      hint: "If these people actually worked, record those days in Attendance first, or leave the hours as they are and do not sync.",
+      cancel: "Do not sync",
+      confirm: "Sync and dock",
+    },
     absence: "Absence",
     lateArrival: "Late arrival",
     specialHours: "Special hours (2× pay)",
