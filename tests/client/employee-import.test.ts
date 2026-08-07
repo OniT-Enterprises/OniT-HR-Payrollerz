@@ -47,6 +47,51 @@ describe("employee CSV import", () => {
     });
   });
 
+  it("imports a cash worker with no email, department, or job title", () => {
+    // The common Timor-Leste case: a security guard or driver with no email
+    // address. This used to be rejected outright, which made the importer
+    // unusable for the businesses Xefe is built for.
+    const result = buildEmployeesFromCSV(
+      [
+        {
+          firstName: "João",
+          lastName: "Guterres",
+          email: "",
+          department: "",
+          position: "",
+          hireDate: "2026-01-10",
+          employmentType: "Full-time",
+          monthlySalary: "115",
+        },
+      ],
+      mappings,
+      { batchId: "batch", today: "2026-01-01" },
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.employees).toHaveLength(1);
+    expect(result.employees[0].employee.compensation.monthlySalary).toBe(115);
+  });
+
+  it("requires a monthly salary rather than silently importing zero", () => {
+    const result = buildEmployeesFromCSV(
+      [
+        {
+          firstName: "Ana",
+          lastName: "Soares",
+          hireDate: "2026-01-10",
+          employmentType: "Full-time",
+          monthlySalary: "",
+        },
+      ],
+      mappings,
+      { batchId: "batch", today: "2026-01-01" },
+    );
+
+    expect(result.employees).toEqual([]);
+    expect(result.errors[0].messages).toContain("Monthly salary is required");
+  });
+
   it("rejects invalid rows before writes and enforces part-time settings", () => {
     const result = buildEmployeesFromCSV(
       [
@@ -70,7 +115,9 @@ describe("employee CSV import", () => {
     expect(result.errors[0].messages).toEqual(
       expect.arrayContaining([
         "First name is required",
-        "A valid email is required",
+        // Email is optional now (many TL workers have none), but a supplied
+        // one must still be a valid address.
+        "Email is not a valid address",
         "Hire date must use YYYY-MM-DD",
         "Monthly salary must be a non-negative number",
         "Part-time contracted hours must be between 1 and 44",

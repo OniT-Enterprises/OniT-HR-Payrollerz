@@ -353,12 +353,22 @@ export function buildMonthlyINSSReturn(
       parentalLeavesByEmployee.get(employee.id) || []
     );
 
+    // Name the person in the error. "employee INSS/NISS number" alone told the
+    // filer something was missing but not from whom, on a return covering the
+    // whole workforce. The INSS number is collected after hire by design, so
+    // this is the moment it actually has to be chased.
+    const employeeLabel =
+      [employee.personalInfo?.firstName, employee.personalInfo?.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim() || employee.id;
+
     employeeRecords.push({
       employeeId: employee.id,
-      fullName: `${requireStatutoryText(employee.personalInfo.firstName, 'employee first name')} ${requireStatutoryText(employee.personalInfo.lastName, 'employee last name')}`,
+      fullName: `${requireStatutoryText(employee.personalInfo.firstName, `employee first name (${employeeLabel})`)} ${requireStatutoryText(employee.personalInfo.lastName, `employee last name (${employeeLabel})`)}`,
       inssNumber: requireStatutoryText(
         employee.documents?.socialSecurityNumber?.number,
-        'employee INSS/NISS number'
+        `employee INSS/NISS number (${employeeLabel})`
       ),
       contributionBase,
       employeeContribution,
