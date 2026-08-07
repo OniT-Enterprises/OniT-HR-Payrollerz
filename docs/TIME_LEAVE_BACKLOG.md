@@ -12,32 +12,67 @@ certificate, **B14** the annual-leave waiting period). This file is engineering.
 
 ## 1. Money — do these first
 
-### 1.1 Saturday is treated as a non-working day  ⚠️ real money
+### 1.1 The working week is hardcoded Mon–Fri  ⚠️ real money, both directions
 
 `calculateWorkingDays` (`client/services/leaveService.ts`) skips
-`dayOfWeek === 0 || dayOfWeek === 6`. But **only Sunday** is the Art. 30(2) weekly
-rest day, and the rest of the codebase agrees: `attendanceCalculations.ts` and
-`usePayrollCalculator.ts` pay the 2× rest-day rate for **Sunday** and treat
-Saturday work as ordinary.
+`dayOfWeek === 0 || dayOfWeek === 6` for everyone. Art. 30 does not say that:
 
-So the leave engine and the payroll engine disagree about what Saturday is. For a
-six-day business — common in Dili — a worker sick Mon–Sat is counted as **5 days,
-not 6**: they lose a day of pay and keep a day of entitlement they already spent.
+> 1. …um período de descanso semanal remunerado de, no mínimo, **24 horas
+>    consecutivas**.
+> 2. O dia de descanso semanal **só pode deixar de ser ao domingo quando** o
+>    trabalhador preste trabalhos indispensáveis à continuidade de serviços que
+>    não podem ser interrompidos…
 
-It also blocks recording: the absence dialog refuses a Saturday, because it asks
-the same function whether the day counts.
+Sunday is the **default rest day, not a rule**. A hotel, restaurant, clinic or
+security firm lawfully works Sundays, and those workers rest on another day.
+Saturday is not a rest day at all unless the company makes it one.
+
+Xefe is wrong in both directions, and silently:
+
+| For a hotel worker resting on Wednesday | Today |
+| --- | --- |
+| Sunday worked — ordinary for them | paid **2×** (overpaid) |
+| Wednesday worked — their real rest day | paid **1×** (underpaid) |
+| Leave spanning a Sunday | consumes no day |
+| Leave spanning their Wednesday | consumes one |
+
+And for any six-day employer, a worker sick Mon–Sat is counted as **5 days, not
+6**: they lose a day of pay and keep a day of entitlement they already spent.
+The absence dialog also refuses to record a Saturday, because it asks the same
+function whether the day counts.
+
+Payroll half-knows this already — `usePayrollCalculator` carries "Non-Sunday
+per-employee rest days stay manual (wizard row field)", a manual escape hatch
+for pay. **Leave has none.**
+
+This is the typical employer, not an edge case. The statutory week is **44
+hours** (Art. 25) and 44 ≠ 5 × 8 — Mon–Fri is 40. The firms' own 190-hour
+divisor, matched to the cent in `docs/MINED_TL_ACCOUNTING_INTEL.md`, is
+44 × 52 ÷ 12, which only works on a six-day week.
+
+Do **not** cite the 22-day leave-payout divisor as evidence either way:
+`constants-tl.ts` records it as a selectable accounting convention chosen for
+being pro-worker, explicitly not a statutory claim about the week.
+
+The pay half is already tracked as **L2** in `TL_LAW_GAP_MATRIX_JUL2026.md`
+(Arts. 30(1), 27(2), "no per-employee rest-day concept"). Fix them together —
+they are one missing field.
 
 **Why it is not a one-line fix.** `calculateWorkingDays` is the canonical
 leave-duration source — the server callable `createLeaveRequest` recomputes
-duration with it (`functions/src/timeleave.ts`, `calculateCanonicalLeaveDuration`),
-and balances and payroll follow from that. Changing it needs:
+duration with it (`functions/src/timeleave.ts`,
+`calculateCanonicalLeaveDuration`), and balances and payroll follow from that.
+Needs:
 
-- a per-tenant **working week** setting (which days the company opens);
-- the same rule on the client and in `functions/`, or duration disagrees between
-  what the UI shows and what the server stores;
-- a decision on existing data — past requests were counted under the old rule.
+- a **working week** and **rest day**, per employee or per company (a hotel has
+  both patterns inside one tenant — see the question below);
+- the same rule on the client and in `functions/`, or the duration the UI shows
+  disagrees with the one the server stores;
+- a decision on whether the 2× rest-day premium follows the worker's actual rest
+  day or stays pinned to Sunday;
+- a decision on existing data, counted under the old rule.
 
-Blocked on **NICO_OPEN_QUESTIONS A6**.
+Blocked on **NICO_OPEN_QUESTIONS A6**, which now asks all three.
 
 ### 1.2 An `absent` record cannot be reclassified
 

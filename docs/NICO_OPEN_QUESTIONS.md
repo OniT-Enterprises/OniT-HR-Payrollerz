@@ -50,18 +50,61 @@ be read either way.
 
 ---
 
-### A6. Is Saturday a working day for leave, or a rest day?
-Art. 30(2) makes **Sunday** the weekly rest day, and Xefe's attendance and payroll
-treat Saturday work as ordinary (only Sunday earns the 2× rest-day rate). But the
-leave-duration function excludes **both** Saturday and Sunday, so a worker at a
-Saturday-opening shop who is sick Monday to Saturday is counted as **5 sick days,
-not 6** — they lose a day of pay, and a day of entitlement is left unconsumed.
+### A6. Which day is a worker's rest day, and which days does the company work?
+Filed first as "is Saturday a working day", which was too narrow. Art. 30 reads:
 
-Which is right for a business that genuinely opens six days: does leave consume
-the Saturday? We assume yes, and that Xefe is currently wrong, but the fix means
-each company declaring its own working week, so we would rather ask once than
-guess for everyone. **Cost today: one day of pay per six-day sick spell, for any
-six-day-week employer.**
+> 1. O trabalhador tem direito a um período de descanso semanal remunerado de,
+>    no mínimo, **24 horas consecutivas**.
+> 2. O dia de descanso semanal **só pode deixar de ser ao domingo quando** o
+>    trabalhador preste trabalhos indispensáveis à continuidade de serviços que
+>    não podem ser interrompidos ou que tenham, necessariamente, de ser
+>    prestados ao domingo.
+
+So Sunday is the **default**, not a rule — a hotel, restaurant, clinic or
+security firm lawfully works Sundays, and those workers rest on another day.
+Xefe assumes a Mon–Fri week everywhere, and it is wrong in both directions:
+
+| For a hotel worker resting on Wednesday | Xefe today |
+| --- | --- |
+| Sunday worked — an ordinary day for them | paid **2×** (overpaid) |
+| Wednesday worked — their actual rest day | paid **1×** (underpaid) |
+| Sick leave spanning a Sunday | consumes no leave day |
+| Sick leave spanning their Wednesday | consumes one |
+
+Payroll half-knows this — `usePayrollCalculator` carries "Non-Sunday
+per-employee rest days stay manual (wizard row field)" — so there is a manual
+escape hatch for pay. **Leave has none**: `calculateWorkingDays` skips Saturday
+and Sunday for everyone, and the server recomputes duration the same way.
+
+Three things we would like settled before building it:
+
+1. **Whose fact is it?** A company-wide working week, or per employee? A hotel
+   has reception on rotation and an office on Mon–Fri in the same tenant, which
+   argues per employee — but that is a field on every worker.
+2. **Does the 2× rest-day premium follow the worker's actual rest day**, or is
+   Sunday special for pay even when it is an ordinary working day for them?
+3. **Does an employer need to record the Art. 30(2) justification** (that the
+   service cannot be interrupted), or is it enough that the roster shows it?
+
+**Cost today:** a six-day employer loses a worker a day of pay per six-day sick
+spell; a Sunday-operating employer both overpays Sunday work and underpays the
+real rest day. Both silent.
+
+**Why we think Mon–Fri is wrong for the typical employer, not just the edge
+case.** The statutory week is **44 hours** (Art. 25) and 44 is not 5 × 8 — a
+Mon–Fri week is 40. Your own firm's workpaper convention agrees: the 190-hour
+divisor we matched to the cent is exactly 44 × 52 ÷ 12, which only makes sense
+on a **six-day** week. Outside guides describe the TL standard week the same
+way, Monday to Saturday with 24 consecutive hours of rest usually on Sunday.
+
+One thing we are deliberately NOT treating as evidence: the 22-day divisor used
+for the leave payout. `constants-tl.ts` records it as a selectable accounting
+convention, chosen because it is the pro-worker of the two, explicitly not a
+statutory statement about the length of the week.
+
+`docs/TL_LAW_GAP_MATRIX_JUL2026.md` L2 already flags the pay half of this
+against Arts. 30(1) and 27(2) — "no per-employee rest-day concept". The leave
+half is new.
 
 ### A7. Art. 64 — five days a year to care for a sick child. Are we right to omit it?
 "Os trabalhadores com filhos menores de 10 anos têm direito a faltar ao trabalho,
