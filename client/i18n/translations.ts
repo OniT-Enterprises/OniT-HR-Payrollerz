@@ -1631,6 +1631,100 @@ export const translations = {
           "workingDay": "Working day",
           "notAHoliday": "Not a public holiday"
         },
+        "intro": "Xefe already follows the Timor-Leste Labour Law (Law 4/2012). You only need to change something if your company gives your staff more than the law asks.",
+        "groupYours": "Your company's decisions",
+        "groupLaw": "Fixed by Timor-Leste law",
+        "whatTheLawSays": "What the law says",
+        "notSavedYet": "Not saved yet",
+        "paidInFull": "Paid in full — the law requires it.",
+        "paidInFullStudy": "Paid in full — the law requires it (Labour Law Art. 76.3).",
+        "paidMismatch": "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
+        "setPaidInFull": "Set to paid in full",
+        "rows": {
+          "annual": {
+            "title": "Days off every year",
+            "summaryCarry": "{{days}} days a year. Up to {{carry}} unused days roll into next year.",
+            "summaryNoCarry": "{{days}} days a year. Unused days do not roll over.",
+            "daysLabel": "Days off each year",
+            "carryQuestion": "Let unused days roll into next year",
+            "carryMaxLabel": "How many days can roll over",
+            "carryIsYours": "The law does not set this number — it is your company's choice.",
+            "belowMinimum": "The law requires at least 12 days a year (Labour Law Art. 32).",
+            "setMinimum": "Set to 12 days"
+          },
+          "holidays": {
+            "title": "Public holidays",
+            "summaryNone": "{{count}} days in {{year}}. You have not changed any.",
+            "summaryChanged": "{{count}} days in {{year}}. You changed {{changed}}.",
+            "yearLabel": "Show holidays for",
+            "seeAll": "See all {{count}} public holidays for {{year}}",
+            "isDayOff": "This is a day off",
+            "isDayOffHint": "Turn this off to tell Xefe that a public holiday is a normal working day at your company.",
+            "saveDay": "Save this day",
+            "savesImmediately": "This day is saved on its own, straight away.",
+            "formIncomplete": "Fill in the date and the name before saving.",
+            "law": "The built-in list has the fixed legal dates, the Easter ones (Good Friday, Corpus Christi), and the announced Muslim holidays. Add a change for a day the Government declares later (Tolerância), or a day your company closes."
+          },
+          "custom": {
+            "title": "Extra leave your company offers",
+            "summaryNone": "None yet.",
+            "turnedOff": "{{name}} (turned off)",
+            "noLaw": "The Labour Law does not cover these. They are entirely your company's."
+          },
+          "probation": {
+            "title": "Waiting time before annual leave",
+            "summary": "New workers wait {{months}} months.",
+            "summaryNone": "New workers can take annual leave straight away.",
+            "monthsLabel": "Months a new worker waits before annual leave",
+            "pendingExplainer": "We are still checking this one with our accounting reviewers. Ask your accountant before you change it."
+          },
+          "sick": {
+            "title": "When someone is sick",
+            "summary": "{{days}} days a year. First 6 days at full pay, next 6 at half pay.",
+            "pendingExplainer": "We have matched these bands to the Labour Law and are confirming the reading with our accounting reviewers. The pay rule itself is what payroll applies.",
+            "certificateOn": "A medical certificate is required for sick leave.",
+            "certificateOff": "Your company does not require a medical certificate for sick leave."
+          },
+          "parental": {
+            "daysLabel": "Days off",
+            "payYourselfTitle": "Pay salary instead of the INSS subsidy"
+          },
+          "maternity": {
+            "title": "Maternity leave",
+            "summary": "{{days}} days (12 weeks). INSS pays the mother — you pay nothing.",
+            "summaryPaid": "{{days}} days (12 weeks). Your company pays {{percent}}% — this cancels the INSS subsidy for those days."
+          },
+          "paternity": {
+            "title": "Paternity leave",
+            "summary": "{{days}} days. INSS pays the father — you pay nothing.",
+            "summaryPaid": "{{days}} days. Your company pays {{percent}}% — this cancels the INSS subsidy for those days."
+          },
+          "miscarriage": {
+            "title": "Leave after a miscarriage",
+            "summary": "{{days}} days (4 weeks). INSS pays the worker — you pay nothing.",
+            "summaryPaid": "{{days}} days (4 weeks). Your company pays {{percent}}% — this cancels the INSS subsidy for those days."
+          },
+          "breastfeeding": {
+            "title": "Breastfeeding breaks and pregnancy check-ups",
+            "summary": "Paid — and nothing to set up here."
+          },
+          "special": {
+            "title": "Weddings, funerals and community days",
+            "summary": "{{days}} paid days a year, shared between all of them.",
+            "daysLabel": "Days a year"
+          },
+          "study": {
+            "title": "Exam days",
+            "summary": "{{days}} paid days a year for exams. The law sets no limit — this number is yours.",
+            "daysLabel": "Exam days your company allows each year"
+          },
+          "unpaid": {
+            "title": "Unpaid time off",
+            "summary": "Up to {{days}} days a year.",
+            "detail": "Xefe will not approve more than {{days}} unpaid days in a year for one worker.",
+            "noStatute": "The Labour Law does not set this number — it is a Xefe limit."
+          }
+        },
         "annualLeaveCashOutNote": "If someone leaves with annual leave they never took, it is not lost — it is paid out in cash on their final payslip (Labour Law Art. 32).",
         "statutoryNote": "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
         "companyGroupHeading": "What your company adds",
@@ -1679,11 +1773,11 @@ export const translations = {
         "maternityDaysHint": "Days (12 weeks = 84 days)",
         "annualLeaveHint": "Legal minimum: 12 working days per year (Labour Law Art. 32). Carry-over limits are your company's policy.",
         "maternityHint": "Legal duration: 12 weeks (Labour Law Art. 59).",
-        "paternityHint": "Legal minimum: 5 working days (Labour Law Art. 59).",
+        "paternityHint": "Legal minimum: 5 working days (Labour Law Art. 60).",
         "sickPayBandsTitle": "Sick pay is fixed by law",
-        "sickPayBandsText": "Payroll pays certified sick leave per the Labour Code: 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
+        "sickPayBandsText": "Payroll pays certified sick leave per the Labour Code (Art. 33.4): 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
         "invalidValues": "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
-        "save": "Save Time Off Policies"
+        "save": "Save leave settings"
       },
       "payroll": {
         "currentRatesTitle": "The rates you are using now",
@@ -9295,6 +9389,100 @@ export const translations = {
           "workingDay": "Loron servisu",
           "notAHoliday": "La'ós feriadu"
         },
+        "intro": "Xefe tuir ona Lei Trabálhu Timor-Leste (Lei 4/2012). Ita presiza muda buat ida de'it se ita-nia empreza fó ba nia traballadór sira liu duke lei husu.",
+        "groupYours": "Desizaun ita-nia empreza nian",
+        "groupLaw": "Lei Timor-Leste mak fiksa",
+        "whatTheLawSays": "Saida mak lei dehan",
+        "notSavedYet": "Seidauk rai",
+        "paidInFull": "Selu tomak — lei husu nune'e.",
+        "paidInFullStudy": "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 76.3).",
+        "paidMismatch": "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
+        "setPaidInFull": "Tau ba selu tomak",
+        "rows": {
+          "annual": {
+            "title": "Loron deskansa kada tinan",
+            "summaryCarry": "Loron {{days}} kada tinan. To'o loron {{carry}} ne'ebé seidauk goza bele tama ba tinan oin.",
+            "summaryNoCarry": "Loron {{days}} kada tinan. Loron ne'ebé seidauk goza la tama ba tinan oin.",
+            "daysLabel": "Loron deskansa kada tinan",
+            "carryQuestion": "Husik loron ne'ebé seidauk goza tama ba tinan oin",
+            "carryMaxLabel": "Loron hira mak bele tama ba tinan oin",
+            "carryIsYours": "Lei la tau númeru ne'e — ne'e ita-nia empreza nia desizaun.",
+            "belowMinimum": "Lei husu loron 12 kada tinan nu'udar mínimu (Lei Trabálhu Art. 32).",
+            "setMinimum": "Tau loron 12"
+          },
+          "holidays": {
+            "title": "Feriadu",
+            "summaryNone": "Loron {{count}} iha {{year}}. Ita seidauk muda ida.",
+            "summaryChanged": "Loron {{count}} iha {{year}}. Ita muda {{changed}}.",
+            "yearLabel": "Hatudu feriadu ba",
+            "seeAll": "Haree feriadu {{count}} hotu ba {{year}}",
+            "isDayOff": "Loron ne'e loron deskansa",
+            "isDayOffHint": "Desliga ida-ne'e atu hatete ba Xefe katak feriadu ida ne'e loron servisu baibain iha ita-nia empreza.",
+            "saveDay": "Rai loron ne'e",
+            "savesImmediately": "Loron ne'e rai mesak, kedas.",
+            "formIncomplete": "Hatama data no naran molok rai.",
+            "law": "Lista ne'ebé tama ona iha laran inklui data legál fiksu sira, feriadu Páskua nian (Sesta-Feira Santa, Korpu de Deus), no feriadu muçulmanu ne'ebé anunsia ona. Aumenta mudansa ba loron ne'ebé Governu deklara ikus mai (Toleránsia), ka loron ne'ebé ita-nia empreza taka."
+          },
+          "custom": {
+            "title": "Lisensa aumenta ne'ebé ita-nia empreza fó",
+            "summaryNone": "Seidauk iha.",
+            "turnedOff": "{{name}} (dezativa ona)",
+            "noLaw": "Lei Trabálhu la kobre sira-ne'e. Sira ita-nia empreza nian tomak."
+          },
+          "probation": {
+            "title": "Tempu hein molok lisensa anuál",
+            "summary": "Traballadór foun hein fulan {{months}}.",
+            "summaryNone": "Traballadór foun bele goza lisensa anuál kedas.",
+            "monthsLabel": "Fulan hira mak traballadór foun hein molok lisensa anuál",
+            "pendingExplainer": "Ami seidauk hotu verifika ida-ne'e ho ami-nia revizór kontabilidade nian. Koalia ho ita-nia kontabilista molok muda."
+          },
+          "sick": {
+            "title": "Bainhira ema moras",
+            "summary": "Loron {{days}} kada tinan. Loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu.",
+            "pendingExplainer": "Ami kompara ona banda sira-ne'e ho Lei Trabálhu no daudaun konfirma leitura ne'e ho ami-nia revizór kontabilidade nian. Regra pagamentu rasik mak folha aplika.",
+            "certificateOn": "Presiza sertifikadu médiku ba lisensa doensa.",
+            "certificateOff": "Ita-nia empreza la presiza sertifikadu médiku ba lisensa doensa."
+          },
+          "parental": {
+            "daysLabel": "Loron lisensa",
+            "payYourselfTitle": "Selu saláriu troka subsídiu INSS"
+          },
+          "maternity": {
+            "title": "Lisensa maternidade",
+            "summary": "Loron {{days}} (semana 12). INSS selu ba inan — ita la selu buat ida.",
+            "summaryPaid": "Loron {{days}} (semana 12). Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e."
+          },
+          "paternity": {
+            "title": "Lisensa paternidade",
+            "summary": "Loron {{days}}. INSS selu ba aman — ita la selu buat ida.",
+            "summaryPaid": "Loron {{days}}. Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e."
+          },
+          "miscarriage": {
+            "title": "Lisensa depois interrupsaun gravidés",
+            "summary": "Loron {{days}} (semana 4). INSS selu ba traballadora — ita la selu buat ida.",
+            "summaryPaid": "Loron {{days}} (semana 4). Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e."
+          },
+          "breastfeeding": {
+            "title": "Pausa fó susu no konsulta gravidés",
+            "summary": "Selu — no laiha buat atu konfigura iha ne'e."
+          },
+          "special": {
+            "title": "Kazamentu, funerál no loron komunidade",
+            "summary": "Loron {{days}} ho pagamentu kada tinan, fahe ba sira hotu.",
+            "daysLabel": "Loron kada tinan"
+          },
+          "study": {
+            "title": "Loron prova",
+            "summary": "Loron {{days}} ho pagamentu kada tinan ba prova. Lei la tau limite — númeru ne'e ita-nia.",
+            "daysLabel": "Loron prova ne'ebé ita-nia empreza fó kada tinan"
+          },
+          "unpaid": {
+            "title": "Lisensa laiha pagamentu",
+            "summary": "To'o loron {{days}} kada tinan.",
+            "detail": "Xefe la aprova liu loron {{days}} laiha pagamentu iha tinan ida ba traballadór ida.",
+            "noStatute": "Lei Trabálhu la tau númeru ne'e — ne'e limite Xefe nian."
+          }
+        },
         "annualLeaveCashOutNote": "Se ema ida sai ho lisensa tinan nian ne'ebé nia seidauk goza, ne'e la lakon — selu ho osan iha nia resibu ikus (Lei Traballu Art. 32).",
         "statutoryNote": "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
         "companyGroupHeading": "Saida mak ita-nia empreza aumenta",
@@ -9343,11 +9531,11 @@ export const translations = {
         "maternityDaysHint": "Loron (12 semana = 84 loron)",
         "annualLeaveHint": "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
         "maternityHint": "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
-        "paternityHint": "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 59).",
+        "paternityHint": "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 60).",
         "sickPayBandsTitle": "Pagamentu lisensa doensa fixu tuir lei",
-        "sickPayBandsText": "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral: loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
+        "sickPayBandsText": "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral (Art. 33.4): loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
         "invalidValues": "Uza loron no persentajen válidu. Persentajen tenke 0–100 no períodu esperiénsia 0–12 fulan.",
-        "save": "Rai Politika Lisensa"
+        "save": "Rai konfigurasaun lisensa"
       },
       "payroll": {
         "currentRatesTitle": "Valór ne'ebé ita uza agora",
@@ -16959,6 +17147,100 @@ export const translations = {
           "workingDay": "Dia de trabalho",
           "notAHoliday": "Não é feriado"
         },
+        "intro": "O Xefe já cumpre a Lei do Trabalho de Timor-Leste (Lei 4/2012). Só precisa de alterar algo se a sua empresa der aos seus trabalhadores mais do que a lei exige.",
+        "groupYours": "Decisões da sua empresa",
+        "groupLaw": "Fixado pela lei de Timor-Leste",
+        "whatTheLawSays": "O que diz a lei",
+        "notSavedYet": "Ainda não guardado",
+        "paidInFull": "Pago por inteiro — a lei exige-o.",
+        "paidInFullStudy": "Pago por inteiro — a lei exige-o (Lei do Trabalho, art. 76.º/3).",
+        "paidMismatch": "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
+        "setPaidInFull": "Definir como pago por inteiro",
+        "rows": {
+          "annual": {
+            "title": "Dias de férias por ano",
+            "summaryCarry": "{{days}} dias por ano. Até {{carry}} dias não gozados transitam para o ano seguinte.",
+            "summaryNoCarry": "{{days}} dias por ano. Os dias não gozados não transitam.",
+            "daysLabel": "Dias de férias por ano",
+            "carryQuestion": "Deixar os dias não gozados transitar para o ano seguinte",
+            "carryMaxLabel": "Quantos dias podem transitar",
+            "carryIsYours": "A lei não fixa este número — é uma opção da sua empresa.",
+            "belowMinimum": "A lei exige pelo menos 12 dias por ano (Lei do Trabalho, art. 32.º).",
+            "setMinimum": "Definir 12 dias"
+          },
+          "holidays": {
+            "title": "Feriados",
+            "summaryNone": "{{count}} dias em {{year}}. Não alterou nenhum.",
+            "summaryChanged": "{{count}} dias em {{year}}. Alterou {{changed}}.",
+            "yearLabel": "Mostrar feriados de",
+            "seeAll": "Ver todos os {{count}} feriados de {{year}}",
+            "isDayOff": "Este é um dia de folga",
+            "isDayOffHint": "Desligue para dizer ao Xefe que um feriado é um dia de trabalho normal na sua empresa.",
+            "saveDay": "Guardar este dia",
+            "savesImmediately": "Este dia é guardado sozinho, de imediato.",
+            "formIncomplete": "Preencha a data e o nome antes de guardar.",
+            "law": "A lista incorporada tem as datas legais fixas, as da Páscoa (Sexta-Feira Santa, Corpo de Deus) e os feriados muçulmanos já anunciados. Acrescente uma alteração para um dia que o Governo declare mais tarde (Tolerância de ponto) ou para um dia em que a sua empresa encerra."
+          },
+          "custom": {
+            "title": "Licenças adicionais que a sua empresa oferece",
+            "summaryNone": "Ainda nenhuma.",
+            "turnedOff": "{{name}} (desativada)",
+            "noLaw": "A Lei do Trabalho não cobre estas. São inteiramente da sua empresa."
+          },
+          "probation": {
+            "title": "Tempo de espera antes das férias anuais",
+            "summary": "Os novos trabalhadores esperam {{months}} meses.",
+            "summaryNone": "Os novos trabalhadores podem gozar férias de imediato.",
+            "monthsLabel": "Meses que um novo trabalhador espera antes das férias anuais",
+            "pendingExplainer": "Ainda estamos a verificar este ponto com os nossos revisores de contabilidade. Fale com o seu contabilista antes de o alterar."
+          },
+          "sick": {
+            "title": "Quando alguém está doente",
+            "summary": "{{days}} dias por ano. Os primeiros 6 dias com salário por inteiro, os 6 seguintes a meio salário.",
+            "pendingExplainer": "Já confrontámos estes escalões com a Lei do Trabalho e estamos a confirmar a leitura com os nossos revisores de contabilidade. A regra de pagamento em si é a que a folha aplica.",
+            "certificateOn": "É exigido certificado médico para a licença por doença.",
+            "certificateOff": "A sua empresa não exige certificado médico para a licença por doença."
+          },
+          "parental": {
+            "daysLabel": "Dias de licença",
+            "payYourselfTitle": "Pagar salário em vez do subsídio do INSS"
+          },
+          "maternity": {
+            "title": "Licença de maternidade",
+            "summary": "{{days}} dias (12 semanas). O INSS paga à mãe — a empresa não paga nada.",
+            "summaryPaid": "{{days}} dias (12 semanas). A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias."
+          },
+          "paternity": {
+            "title": "Licença de paternidade",
+            "summary": "{{days}} dias. O INSS paga ao pai — a empresa não paga nada.",
+            "summaryPaid": "{{days}} dias. A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias."
+          },
+          "miscarriage": {
+            "title": "Licença após interrupção da gravidez",
+            "summary": "{{days}} dias (4 semanas). O INSS paga à trabalhadora — a empresa não paga nada.",
+            "summaryPaid": "{{days}} dias (4 semanas). A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias."
+          },
+          "breastfeeding": {
+            "title": "Pausas para amamentação e consultas de gravidez",
+            "summary": "Pago — e não há nada a configurar aqui."
+          },
+          "special": {
+            "title": "Casamentos, funerais e dias comunitários",
+            "summary": "{{days}} dias pagos por ano, repartidos entre todos eles.",
+            "daysLabel": "Dias por ano"
+          },
+          "study": {
+            "title": "Dias de exame",
+            "summary": "{{days}} dias pagos por ano para exames. A lei não fixa limite — este número é seu.",
+            "daysLabel": "Dias de exame que a sua empresa concede por ano"
+          },
+          "unpaid": {
+            "title": "Licença sem vencimento",
+            "summary": "Até {{days}} dias por ano.",
+            "detail": "O Xefe não aprova mais do que {{days}} dias sem vencimento por ano para um trabalhador.",
+            "noStatute": "A Lei do Trabalho não fixa este número — é um limite do Xefe."
+          }
+        },
         "annualLeaveCashOutNote": "Se alguém sair com férias que nunca gozou, não se perdem — são pagas em dinheiro no último recibo de vencimento (Lei do Trabalho Art. 32).",
         "statutoryNote": "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
         "companyGroupHeading": "O que a sua empresa acrescenta",
@@ -17007,11 +17289,11 @@ export const translations = {
         "maternityDaysHint": "Dias (12 semanas = 84 dias)",
         "annualLeaveHint": "Mínimo legal: 12 dias úteis por ano (Lei do Trabalho, art. 32.º). Os limites de transição são política da sua empresa.",
         "maternityHint": "Duração legal: 12 semanas (Lei do Trabalho, art. 59.º).",
-        "paternityHint": "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 59.º).",
+        "paternityHint": "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 60.º).",
         "sickPayBandsTitle": "O pagamento da licença por doença é fixado por lei",
-        "sickPayBandsText": "A folha paga a licença por doença certificada conforme o Código do Trabalho: 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
+        "sickPayBandsText": "A folha paga a licença por doença certificada conforme o Código do Trabalho (art. 33.º/4): 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
         "invalidValues": "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
-        "save": "Guardar Políticas de Licenças"
+        "save": "Guardar definições de licenças"
       },
       "payroll": {
         "currentRatesTitle": "As taxas que está a usar agora",

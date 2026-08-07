@@ -1826,6 +1826,125 @@ const messages = {
         workingDay: "Dia de trabalho",
         notAHoliday: "Não é feriado",
       },
+      intro:
+        "O Xefe já cumpre a Lei do Trabalho de Timor-Leste (Lei 4/2012). Só precisa de alterar algo se a sua empresa der aos seus trabalhadores mais do que a lei exige.",
+      groupYours: "Decisões da sua empresa",
+      groupLaw: "Fixado pela lei de Timor-Leste",
+      whatTheLawSays: "O que diz a lei",
+      notSavedYet: "Ainda não guardado",
+      paidInFull: "Pago por inteiro — a lei exige-o.",
+      paidInFullStudy:
+        "Pago por inteiro — a lei exige-o (Lei do Trabalho, art. 76.º/3).",
+      paidMismatch:
+        "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
+      setPaidInFull: "Definir como pago por inteiro",
+      rows: {
+        annual: {
+          title: "Dias de férias por ano",
+          summaryCarry:
+            "{{days}} dias por ano. Até {{carry}} dias não gozados transitam para o ano seguinte.",
+          summaryNoCarry:
+            "{{days}} dias por ano. Os dias não gozados não transitam.",
+          daysLabel: "Dias de férias por ano",
+          carryQuestion:
+            "Deixar os dias não gozados transitar para o ano seguinte",
+          carryMaxLabel: "Quantos dias podem transitar",
+          carryIsYours:
+            "A lei não fixa este número — é uma opção da sua empresa.",
+          belowMinimum:
+            "A lei exige pelo menos 12 dias por ano (Lei do Trabalho, art. 32.º).",
+          setMinimum: "Definir 12 dias",
+        },
+        holidays: {
+          title: "Feriados",
+          summaryNone: "{{count}} dias em {{year}}. Não alterou nenhum.",
+          summaryChanged: "{{count}} dias em {{year}}. Alterou {{changed}}.",
+          yearLabel: "Mostrar feriados de",
+          seeAll: "Ver todos os {{count}} feriados de {{year}}",
+          isDayOff: "Este é um dia de folga",
+          isDayOffHint:
+            "Desligue para dizer ao Xefe que um feriado é um dia de trabalho normal na sua empresa.",
+          saveDay: "Guardar este dia",
+          savesImmediately: "Este dia é guardado sozinho, de imediato.",
+          formIncomplete: "Preencha a data e o nome antes de guardar.",
+          law: "A lista incorporada tem as datas legais fixas, as da Páscoa (Sexta-Feira Santa, Corpo de Deus) e os feriados muçulmanos já anunciados. Acrescente uma alteração para um dia que o Governo declare mais tarde (Tolerância de ponto) ou para um dia em que a sua empresa encerra.",
+        },
+        custom: {
+          title: "Licenças adicionais que a sua empresa oferece",
+          summaryNone: "Ainda nenhuma.",
+          turnedOff: "{{name}} (desativada)",
+          noLaw:
+            "A Lei do Trabalho não cobre estas. São inteiramente da sua empresa.",
+        },
+        probation: {
+          title: "Tempo de espera antes das férias anuais",
+          summary: "Os novos trabalhadores esperam {{months}} meses.",
+          summaryNone: "Os novos trabalhadores podem gozar férias de imediato.",
+          monthsLabel:
+            "Meses que um novo trabalhador espera antes das férias anuais",
+          pendingExplainer:
+            "Ainda estamos a verificar este ponto com os nossos revisores de contabilidade. Fale com o seu contabilista antes de o alterar.",
+        },
+        sick: {
+          title: "Quando alguém está doente",
+          summary:
+            "{{days}} dias por ano. Os primeiros 6 dias com salário por inteiro, os 6 seguintes a meio salário.",
+          pendingExplainer:
+            "Já confrontámos estes escalões com a Lei do Trabalho e estamos a confirmar a leitura com os nossos revisores de contabilidade. A regra de pagamento em si é a que a folha aplica.",
+          certificateOn:
+            "É exigido certificado médico para a licença por doença.",
+          certificateOff:
+            "A sua empresa não exige certificado médico para a licença por doença.",
+        },
+        parental: {
+          daysLabel: "Dias de licença",
+          payYourselfTitle: "Pagar salário em vez do subsídio do INSS",
+        },
+        maternity: {
+          title: "Licença de maternidade",
+          summary:
+            "{{days}} dias (12 semanas). O INSS paga à mãe — a empresa não paga nada.",
+          summaryPaid:
+            "{{days}} dias (12 semanas). A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias.",
+        },
+        paternity: {
+          title: "Licença de paternidade",
+          summary:
+            "{{days}} dias. O INSS paga ao pai — a empresa não paga nada.",
+          summaryPaid:
+            "{{days}} dias. A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias.",
+        },
+        miscarriage: {
+          title: "Licença após interrupção da gravidez",
+          summary:
+            "{{days}} dias (4 semanas). O INSS paga à trabalhadora — a empresa não paga nada.",
+          summaryPaid:
+            "{{days}} dias (4 semanas). A sua empresa paga {{percent}}% — isto anula o subsídio do INSS nesses dias.",
+        },
+        breastfeeding: {
+          title: "Pausas para amamentação e consultas de gravidez",
+          summary: "Pago — e não há nada a configurar aqui.",
+        },
+        special: {
+          title: "Casamentos, funerais e dias comunitários",
+          summary: "{{days}} dias pagos por ano, repartidos entre todos eles.",
+          daysLabel: "Dias por ano",
+        },
+        study: {
+          title: "Dias de exame",
+          summary:
+            "{{days}} dias pagos por ano para exames. A lei não fixa limite — este número é seu.",
+          daysLabel: "Dias de exame que a sua empresa concede por ano",
+        },
+        unpaid: {
+          title: "Licença sem vencimento",
+          summary: "Até {{days}} dias por ano.",
+          detail:
+            "O Xefe não aprova mais do que {{days}} dias sem vencimento por ano para um trabalhador.",
+          noStatute:
+            "A Lei do Trabalho não fixa este número — é um limite do Xefe.",
+        },
+      },
       annualLeaveCashOutNote: "Se alguém sair com férias que nunca gozou, não se perdem — são pagas em dinheiro no último recibo de vencimento (Lei do Trabalho Art. 32).",
       statutoryNote: "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
       companyGroupHeading: "O que a sua empresa acrescenta",
@@ -1887,13 +2006,13 @@ const messages = {
       annualLeaveHint:
         "Mínimo legal: 12 dias úteis por ano (Lei do Trabalho, art. 32.º). Os limites de transição são política da sua empresa.",
       maternityHint: "Duração legal: 12 semanas (Lei do Trabalho, art. 59.º).",
-      paternityHint: "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 59.º).",
+      paternityHint: "Mínimo legal: 5 dias úteis (Lei do Trabalho, art. 60.º).",
       sickPayBandsTitle: "O pagamento da licença por doença é fixado por lei",
       sickPayBandsText:
-        "A folha paga a licença por doença certificada conforme o Código do Trabalho: 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
+        "A folha paga a licença por doença certificada conforme o Código do Trabalho (art. 33.º/4): 12 dias por ano — os primeiros 6 dias a 100%, os 6 seguintes a 50%, nada além disso. Estes escalões não podem ser editados.",
       invalidValues:
         "Use dias e percentagens válidos. As percentagens devem ser 0–100 e o período experimental 0–12 meses.",
-      save: "Guardar Políticas de Licenças",
+      save: "Guardar definições de licenças",
     },
     payroll: {
       currentRatesTitle: "As taxas que está a usar agora",

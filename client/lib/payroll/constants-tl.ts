@@ -287,10 +287,23 @@ export const TL_NON_CASH_BENEFITS = {
 // ============================================
 
 /**
- * Sick Leave Rules (Labor Code Article 42)
+ * Sick Leave Rules (Lei 4/2012 Art. 33(4))
  * - 12 days per year maximum with medical certificate
  * - First 6 days: 100% pay
  * - Remaining 6 days: 50% pay
+ *
+ * Citation corrected 2026-08-07 against the official Lei 4/2012 text
+ * (mj.gov.tl): "O trabalhador pode igualmente faltar justificadamente ao
+ * trabalho por motivo de doença ou acidente, mediante a apresentação de
+ * atestado médico, até 12 dias por ano, dos quais 6 são remunerados por
+ * inteiro e os 6 dias restantes remunerados a 50 por cento do valor da
+ * remuneração diária."
+ *
+ * This file previously said Art. 42 — that is the wage-DEDUCTION article
+ * (Art. 42(3) carries the 30%/month cap). docs/TIME_LEAVE.md said Art. 34 —
+ * that is "Princípios gerais" of the occupational safety section. Sick leave
+ * sits in the same article as special leave, which the repo already cites
+ * correctly as Art. 33(3).
  */
 export const TL_SICK_LEAVE = {
   // Total annual sick days

@@ -1799,6 +1799,119 @@ const messages = {
         workingDay: "Loron servisu",
         notAHoliday: "La'ós feriadu",
       },
+      intro:
+        "Xefe tuir ona Lei Trabálhu Timor-Leste (Lei 4/2012). Ita presiza muda buat ida de'it se ita-nia empreza fó ba nia traballadór sira liu duke lei husu.",
+      groupYours: "Desizaun ita-nia empreza nian",
+      groupLaw: "Lei Timor-Leste mak fiksa",
+      whatTheLawSays: "Saida mak lei dehan",
+      notSavedYet: "Seidauk rai",
+      paidInFull: "Selu tomak — lei husu nune'e.",
+      paidInFullStudy: "Selu tomak — lei husu nune'e (Lei Trabálhu Art. 76.3).",
+      paidMismatch:
+        "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
+      setPaidInFull: "Tau ba selu tomak",
+      rows: {
+        annual: {
+          title: "Loron deskansa kada tinan",
+          summaryCarry:
+            "Loron {{days}} kada tinan. To'o loron {{carry}} ne'ebé seidauk goza bele tama ba tinan oin.",
+          summaryNoCarry:
+            "Loron {{days}} kada tinan. Loron ne'ebé seidauk goza la tama ba tinan oin.",
+          daysLabel: "Loron deskansa kada tinan",
+          carryQuestion: "Husik loron ne'ebé seidauk goza tama ba tinan oin",
+          carryMaxLabel: "Loron hira mak bele tama ba tinan oin",
+          carryIsYours:
+            "Lei la tau númeru ne'e — ne'e ita-nia empreza nia desizaun.",
+          belowMinimum:
+            "Lei husu loron 12 kada tinan nu'udar mínimu (Lei Trabálhu Art. 32).",
+          setMinimum: "Tau loron 12",
+        },
+        holidays: {
+          title: "Feriadu",
+          summaryNone: "Loron {{count}} iha {{year}}. Ita seidauk muda ida.",
+          summaryChanged: "Loron {{count}} iha {{year}}. Ita muda {{changed}}.",
+          yearLabel: "Hatudu feriadu ba",
+          seeAll: "Haree feriadu {{count}} hotu ba {{year}}",
+          isDayOff: "Loron ne'e loron deskansa",
+          isDayOffHint:
+            "Desliga ida-ne'e atu hatete ba Xefe katak feriadu ida ne'e loron servisu baibain iha ita-nia empreza.",
+          saveDay: "Rai loron ne'e",
+          savesImmediately: "Loron ne'e rai mesak, kedas.",
+          formIncomplete: "Hatama data no naran molok rai.",
+          law: "Lista ne'ebé tama ona iha laran inklui data legál fiksu sira, feriadu Páskua nian (Sesta-Feira Santa, Korpu de Deus), no feriadu muçulmanu ne'ebé anunsia ona. Aumenta mudansa ba loron ne'ebé Governu deklara ikus mai (Toleránsia), ka loron ne'ebé ita-nia empreza taka.",
+        },
+        custom: {
+          title: "Lisensa aumenta ne'ebé ita-nia empreza fó",
+          summaryNone: "Seidauk iha.",
+          turnedOff: "{{name}} (dezativa ona)",
+          noLaw:
+            "Lei Trabálhu la kobre sira-ne'e. Sira ita-nia empreza nian tomak.",
+        },
+        probation: {
+          title: "Tempu hein molok lisensa anuál",
+          summary: "Traballadór foun hein fulan {{months}}.",
+          summaryNone: "Traballadór foun bele goza lisensa anuál kedas.",
+          monthsLabel: "Fulan hira mak traballadór foun hein molok lisensa anuál",
+          pendingExplainer:
+            "Ami seidauk hotu verifika ida-ne'e ho ami-nia revizór kontabilidade nian. Koalia ho ita-nia kontabilista molok muda.",
+        },
+        sick: {
+          title: "Bainhira ema moras",
+          summary:
+            "Loron {{days}} kada tinan. Loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu.",
+          pendingExplainer:
+            "Ami kompara ona banda sira-ne'e ho Lei Trabálhu no daudaun konfirma leitura ne'e ho ami-nia revizór kontabilidade nian. Regra pagamentu rasik mak folha aplika.",
+          certificateOn: "Presiza sertifikadu médiku ba lisensa doensa.",
+          certificateOff:
+            "Ita-nia empreza la presiza sertifikadu médiku ba lisensa doensa.",
+        },
+        parental: {
+          daysLabel: "Loron lisensa",
+          payYourselfTitle: "Selu saláriu troka subsídiu INSS",
+        },
+        maternity: {
+          title: "Lisensa maternidade",
+          summary:
+            "Loron {{days}} (semana 12). INSS selu ba inan — ita la selu buat ida.",
+          summaryPaid:
+            "Loron {{days}} (semana 12). Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e.",
+        },
+        paternity: {
+          title: "Lisensa paternidade",
+          summary: "Loron {{days}}. INSS selu ba aman — ita la selu buat ida.",
+          summaryPaid:
+            "Loron {{days}}. Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e.",
+        },
+        miscarriage: {
+          title: "Lisensa depois interrupsaun gravidés",
+          summary:
+            "Loron {{days}} (semana 4). INSS selu ba traballadora — ita la selu buat ida.",
+          summaryPaid:
+            "Loron {{days}} (semana 4). Ita-nia empreza selu {{percent}}% — ida-ne'e hasai subsídiu INSS ba loron sira-ne'e.",
+        },
+        breastfeeding: {
+          title: "Pausa fó susu no konsulta gravidés",
+          summary: "Selu — no laiha buat atu konfigura iha ne'e.",
+        },
+        special: {
+          title: "Kazamentu, funerál no loron komunidade",
+          summary: "Loron {{days}} ho pagamentu kada tinan, fahe ba sira hotu.",
+          daysLabel: "Loron kada tinan",
+        },
+        study: {
+          title: "Loron prova",
+          summary:
+            "Loron {{days}} ho pagamentu kada tinan ba prova. Lei la tau limite — númeru ne'e ita-nia.",
+          daysLabel: "Loron prova ne'ebé ita-nia empreza fó kada tinan",
+        },
+        unpaid: {
+          title: "Lisensa laiha pagamentu",
+          summary: "To'o loron {{days}} kada tinan.",
+          detail:
+            "Xefe la aprova liu loron {{days}} laiha pagamentu iha tinan ida ba traballadór ida.",
+          noStatute: "Lei Trabálhu la tau númeru ne'e — ne'e limite Xefe nian.",
+        },
+      },
       annualLeaveCashOutNote: "Se ema ida sai ho lisensa tinan nian ne'ebé nia seidauk goza, ne'e la lakon — selu ho osan iha nia resibu ikus (Lei Traballu Art. 32).",
       statutoryNote: "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
       companyGroupHeading: "Saida mak ita-nia empreza aumenta",
@@ -1857,13 +1970,13 @@ const messages = {
       annualLeaveHint:
         "Mínimu legal: loron servisu 12 kada tinan (Lei Trabálhu Art. 32). Limite transferénsia mak Ita-nia empreza nia polítika.",
       maternityHint: "Durasaun legal: semana 12 (Lei Trabálhu Art. 59).",
-      paternityHint: "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 59).",
+      paternityHint: "Mínimu legal: loron servisu 5 (Lei Trabálhu Art. 60).",
       sickPayBandsTitle: "Pagamentu lisensa doensa fixu tuir lei",
       sickPayBandsText:
-        "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral: loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
+        "Folha selu lisensa doensa ho sertifikadu tuir Kodigu Laboral (Art. 33.4): loron 12 kada tinan — loron 6 primeiru ho 100%, loron 6 tuir mai ho 50%, liu ne'e la selu. Banda sira-ne'e la bele muda.",
       invalidValues:
         "Uza loron no persentajen válidu. Persentajen tenke 0–100 no períodu esperiénsia 0–12 fulan.",
-      save: "Rai Politika Lisensa",
+      save: "Rai konfigurasaun lisensa",
     },
     payroll: {
       currentRatesTitle: "Valór ne'ebé ita uza agora",

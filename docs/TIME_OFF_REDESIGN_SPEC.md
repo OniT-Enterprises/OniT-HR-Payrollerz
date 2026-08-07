@@ -438,11 +438,44 @@ Every `{{count}}` is interpolated through `t(key, params)` — the signature at 
 
 ## (h) What the repo could not settle — needs a human
 
-1. **Sick-leave article.** `client/lib/payroll/constants-tl.ts:290` says "Labor Code Article 42"; `docs/TIME_LEAVE.md:114` says Art. 34. Art. 42 is the wage-**deduction** article everywhere else in this repo (`calculations-tl.ts:1344,1373,1403,1432`; the 30%/month cap is Lei 4/2012 Art. 42(3)). **The UI prints the days and the bands — which three code layers agree on — and no article.** Needs Nico. `StatutoryRatesCard.tsx:37-39` already carries the same open question.
+1. ~~**Sick-leave article.**~~ **RESOLVED 2026-08-07 from the primary source.**
+   Both repo values were wrong. The official Lei 4/2012 text (mj.gov.tl,
+   `~/Sites/m365-mail-export/laws/lei_4_2012_clean.txt`) puts sick leave in
+   **Art. 33(4)** — the same article as special leave (33(3)) and the proof
+   rule (33(7)):
 
-2. **Paternity-leave article.** `en.ts:1845` (`paternityHint`) says Art. 59; `docs/TIME_LEAVE.md:116` says Art. 60. Two authorities inside the repo disagree, so the spec prints the "5 working days" minimum without an article and badges the row. Do not let anyone "tidy" this by picking one.
+   > "O trabalhador pode igualmente faltar justificadamente ao trabalho por
+   > motivo de doença ou acidente, mediante a apresentação de atestado
+   > médico, até 12 dias por ano, dos quais 6 são remunerados por inteiro e
+   > os 6 dias restantes remunerados a 50 por cento do valor da remuneração
+   > diária."
 
-3. **Whether Art. 32 permits deferring annual leave for a waiting period at all.** `probationHint` (`en.ts:1825-1826`) currently asserts Art. 14 authority. But `client/lib/probation.ts` puts statutory probation at 8/15/30/90 **days** (Art. 14), so the 3-month default (`client/types/settings.ts:336`) exceeds statutory probation for every category except managerial, and `docs/TL_LAW_GAP_MATRIX_JUL2026.md` F19 records only that it "gates leave eligibility". The spec downgrades this to "not settled". **This is a copy regression from a confident claim to a hedged one — confirm before shipping.**
+   Art. 42 is the wage-**deduction** article (42(3) = the 30%/month cap);
+   Art. 34 is "Princípios gerais" of the occupational-safety section. The UI
+   now prints Art. 33.4. `constants-tl.ts` and `TIME_LEAVE.md` corrected.
+   The row keeps its `Pending confirmation` badge until Nico signs off on the
+   reading — the *citation* is settled, the reviewer sign-off is not.
+   `StatutoryRatesCard.tsx:37-39` still carries the old open question.
+
+   **Follow-on this opens:** Art. 33(4) makes the medical certificate
+   statutory ("mediante a apresentação de atestado médico"), so item 5 below
+   is no longer "wire it or drop it" — it is "the law requires it".
+
+2. ~~**Paternity-leave article.**~~ **RESOLVED 2026-08-07: Art. 60.** Same
+   source: "Artigo 60.º — Licença por paternidade. 1. O trabalhador tem
+   direito a uma licença remunerada de 5 dias úteis por paternidade…".
+   `docs/TIME_LEAVE.md` was right; `en.ts` said Art. 59, which is maternity.
+   Corrected in en/pt/tet. The row is NOT badged — the spec's own order
+   table, 390px mockup and key list all show it unbadged, and nothing about
+   it is pending any more.
+
+3. **STILL OPEN — but no copy regression shipped.** Tony's call (2026-08-07):
+   keep the articles visible. `probationHint` ships **verbatim**, Art. 14
+   intact; the row carries the `Pending confirmation` badge and the
+   "ask your accountant" sentence instead, so the claim is flagged rather
+   than deleted. The concern below stands and still needs Nico.
+
+   **Whether Art. 32 permits deferring annual leave for a waiting period at all.** `probationHint` (`en.ts:1825-1826`) currently asserts Art. 14 authority. But `client/lib/probation.ts` puts statutory probation at 8/15/30/90 **days** (Art. 14), so the 3-month default (`client/types/settings.ts:336`) exceeds statutory probation for every category except managerial, and `docs/TL_LAW_GAP_MATRIX_JUL2026.md` F19 records only that it "gates leave eligibility". The spec downgrades this to "not settled". **This is a copy regression from a confident claim to a hedged one — confirm before shipping.**
 
 4. **Annual leave above 12 is only half-honoured.** Raising it increases the leave balance (`functions/src/timeleave.ts:333-355`), but the termination cash-out accrual is hard-capped at `TL_ANNUAL_LEAVE.daysPerYear = 12` (`client/lib/payroll/constants-tl.ts:206-210` via `accruedAnnualLeaveDays`, `calculations-tl.ts:748-762`, consumed at `client/pages/hiring/Offboarding.tsx:1591`). An employer who sets 15 sees 15 accrue and 12 suggested in final pay. Adding the Art. 32 cash-out sentence makes that gap visible to a customer for the first time. **This is a money-chain question, not a UI question** — resolve or document before the copy ships.
 
