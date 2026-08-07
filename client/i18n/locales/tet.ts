@@ -6731,6 +6731,14 @@ const messages = {
         "XefeBot la konsege lee fixeiru ne'e — prenxe detallu sira manualmente.",
       foreignCurrency:
         "Dokumentu ne’e iha {{currency}}. Xefe rejista osan iha dólar amerikanu — hatama montante ne’ebé Ita selu duni iha USD.",
+      checkDate:
+        "Data ne’ebé lee husi dokumentu ne’e ({{date}}) iha futuru, tan ne’e bele sala — hatama data ne’e Ita-nia an.",
+      looksLikePaymentProof:
+        "Ne’e hanesan komprovativu pagamentu banku, la’ós fatura fornesedor. Anexa ba fatura ne’ebé nia paga, no hatama dadus fatura iha kraik.",
+      notABill:
+        "XefeBot lee ona fixeiru ne’e maibé la’ós fatura ka resibu — hatama dadus iha kraik.",
+      pdfProtected:
+        "PDF ne’e iha proteksaun senha, tan ne’e buat ida la bele lee. Grava kópia ida ne’ebé la iha proteksaun, ka hatama dadus iha kraik.",
       vendorOnFile:
         "Iha dokumentu: {{name}} — seidauk iha ita-nia lista fornesedor.",
       addVendor: 'Aumenta "{{name}}"',

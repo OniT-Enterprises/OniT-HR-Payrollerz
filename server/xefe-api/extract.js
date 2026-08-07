@@ -20,6 +20,11 @@ const path = require('path');
 
 const EXTRACT_MODEL = process.env.XEFE_EXTRACT_MODEL || 'claude-sonnet-5';
 const TIMEOUT_MS = Math.max(20_000, Number(process.env.XEFE_EXTRACT_TIMEOUT_MS) || 90_000);
+// Normalising a spreadsheet is a batch job, not a single-document read: one
+// chunk of a wide timesheet matrix can expand into hundreds of rows. A real
+// 30-day x 30-employee sheet aborted at the 90s document timeout and imported
+// nothing, so the table path gets its own, longer ceiling.
+const TABLE_TIMEOUT_MS = Math.max(TIMEOUT_MS, Number(process.env.XEFE_EXTRACT_TABLE_TIMEOUT_MS) || 180_000);
 
 // Matches the category options in the Bill/Expense forms (client CATEGORIES).
 const CATEGORIES = [
@@ -45,8 +50,18 @@ function buildPrompt(filePath, kind, todayIso) {
     '',
     'Extract what the document actually shows and reply with ONLY this JSON object:',
     '{',
-    '  "documentType": "bill" | "receipt" | "other",',
+    '  "documentType": "bill" | "receipt" | "payment_proof" | "other",',
+    '                                        // A PAYSLIP is never a bill or receipt. Wages are',
+    '                                        // owned by payroll, so a "Recibo de Vencimento",',
+    '                                        // "Recibo de Salário", payslip or salary advice is',
+    '                                        // "other" — booking one as an expense would',
+    '                                        // double-count wages and make a vendor of an employee.',
+    '                                        // payment_proof = a BANK document evidencing a payment',
+    '                                        // (transfer slip, "Comprovativo"/"Contas à Ordem - Movimentos",',
+    '                                        // ATM "LEVANTAMENTO" slip) rather than a seller\'s invoice',
     '  "vendorName": string | null,          // the SELLER/supplier on the document, not the customer',
+    '  "vendorTaxId": string | null,          // the SELLER\'s tax number: NIF/TIN in Timor-Leste,',
+    '                                        // NPWP in Indonesia, NIF/NIPC in Portugal. Never the customer\'s.',
     '  "billNumber": string | null,          // invoice/receipt number',
     '  "billDate": "YYYY-MM-DD" | null,      // document/issue date',
     '  "dueDate": "YYYY-MM-DD" | null,       // payment due date if stated',
@@ -60,7 +75,9 @@ function buildPrompt(filePath, kind, todayIso) {
     '',
     'Rules:',
     '- Use null for anything not on the document. Never invent values.',
-    `- Today is ${todayIso}; resolve ambiguous dates sensibly (DD/MM/YYYY is the local convention).`,
+    `- Today is ${todayIso}; DD/MM/YYYY is the local convention, so 06/11/${todayIso.slice(0, 4)} is 6 November.`,
+    '- A document cannot be dated in the future. If your reading of the date lands after'
+      + ` ${todayIso}, you have the day and month the wrong way round — swap them.`,
     '- Amounts are plain numbers (no currency symbols, no thousands separators).',
     '- If the file is not a bill/receipt at all (or unreadable), return {"documentType":"other","confidence":0} with nulls.',
   ].join('\n');
@@ -103,12 +120,30 @@ function parseJsonReply(text) {
 }
 
 function sanitizeFields(raw) {
-  const str = (v) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, 300) : null);
+  // Control characters have no place in a vendor name or a description, and they
+  // are what lets one extracted value break into another cell/row once the bill
+  // is exported (see client/lib/csvExport.ts). Strip them at the boundary.
+  const str = (v) => {
+    if (typeof v !== 'string') return null;
+    const cleaned = v.replace(/[\u0000-\u001F\u007F]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return cleaned ? cleaned.slice(0, 300) : null;
+  };
   const num = (v) => (typeof v === 'number' && isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : null);
-  const date = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+  // isRealCalendarDate, not just the shape: 2026-02-31 matches the regex.
+  const date = (v) => (isRealCalendarDate(v) ? v : null);
+  // A tax number is short and structured; anything else is a misread.
+  const taxId = (v) => {
+    const cleaned = str(v);
+    if (!cleaned) return null;
+    const compact = cleaned.replace(/[^0-9A-Za-z.\-/ ]/g, '').trim().slice(0, 40);
+    return /\d/.test(compact) ? compact : null;
+  };
   return {
-    documentType: ['bill', 'receipt'].includes(raw.documentType) ? raw.documentType : 'other',
+    documentType: ['bill', 'receipt', 'payment_proof'].includes(raw.documentType)
+      ? raw.documentType
+      : 'other',
     vendorName: str(raw.vendorName),
+    vendorTaxId: taxId(raw.vendorTaxId),
     billNumber: str(raw.billNumber),
     billDate: date(raw.billDate),
     dueDate: date(raw.dueDate),
@@ -117,7 +152,10 @@ function sanitizeFields(raw) {
     currency: str(raw.currency),
     description: str(raw.description),
     category: CATEGORIES.includes(raw.category) ? raw.category : 'other',
-    confidence: typeof raw.confidence === 'number' ? Math.max(0, Math.min(1, raw.confidence)) : 0,
+    // Number.isFinite, not typeof: NaN is a number, and a NaN confidence would
+    // pass every `confidence < threshold` check in the forms (NaN comparisons are
+    // all false), so an unreadable document would prefill as a confident one.
+    confidence: Number.isFinite(raw.confidence) ? Math.max(0, Math.min(1, raw.confidence)) : 0,
   };
 }
 
@@ -147,7 +185,14 @@ async function runOnce(filePath, kind, token) {
     model: EXTRACT_MODEL,
     maxTurns: 6,
     systemPrompt: SYSTEM_PROMPT,
-    allowedTools: ['Read'],
+    // NO bare `allowedTools: ['Read']` here. A bare entry auto-approves the
+    // whole tool BEFORE the workspace check and before canUseTool, which
+    // defeated both guards below: a probe confirmed the model could then read a
+    // file outside the temp dir entirely (the SDK also warns about this as
+    // CLAUDE_SDK_CAN_USE_TOOL_SHADOWED). With the allow-list omitted, Read
+    // inside the relocated workspace still works and reads outside it are
+    // denied. Adding it back re-opens an arbitrary-file-read from an
+    // attacker-controlled document.
     disallowedTools: BUILTIN_DENY,
     permissionMode: 'dontAsk',
     settingSources: [],
@@ -225,6 +270,19 @@ async function extractDocumentFields(filePath, kind) {
 // model only NORMALIZES formatting — matching rows to real employee records
 // stays deterministic in the client.
 
+/**
+ * A strict `YYYY-MM-DD` calendar date. The regex alone accepts 2024-02-31, which
+ * would become an attendance day that does not exist.
+ */
+function isRealCalendarDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() + 1 === month
+    && date.getUTCDate() === day;
+}
+
 const TABLE_KINDS = {
   attendance: {
     maxRows: 1000,
@@ -246,6 +304,14 @@ const TABLE_KINDS = {
       `- Today is ${todayIso}; DD/MM/YYYY is the local date convention.`,
       '- Convert AM/PM and decimal times ("7.30am", "17h05") to 24-hour HH:MM.',
       '- If one row holds multiple punches, first punch = clockIn, last = clockOut.',
+      '- LAYOUT: the sheet may be a WIDE MATRIX instead of one row per record —',
+      '  employee names spread ACROSS the columns (often in repeating groups of',
+      '  "Start / Finish / Hours"), with the days of the month running DOWN the rows.',
+      '  Read the header rows to learn which employee owns which column group, then',
+      '  emit ONE object per employee per day that has a start time. Ignore a',
+      '  computed "Hours" column — clockIn and clockOut are what is wanted.',
+      '- The month and year may only appear in a header row or the sheet name rather',
+      '  than on each row; use them to complete a day-only date like "3" or "Monday 3".',
       '- Do not invent rows or values. Reply with [] if nothing usable.',
       '',
       '--- SPREADSHEET START ---',
@@ -254,13 +320,20 @@ const TABLE_KINDS = {
     ].join('\n'),
     sanitizeRow: (row) => {
       const employee = typeof row.employee === 'string' ? row.employee.trim().slice(0, 120) : '';
-      const date = typeof row.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.date) ? row.date : '';
+      const date = isRealCalendarDate(row.date) ? row.date : '';
+      // These rows become attendance, then hours, then pay, and the client pushes
+      // them in without re-checking (client/pages/time-leave/Attendance.tsx), so
+      // an impossible time must be DROPPED here, never repaired. Clamping 25:30
+      // to 23:30 would invent a night shift the sheet never showed; letting 12:99
+      // through would put 99 minutes into an hours calculation.
       const time = (v) => {
         if (typeof v !== 'string') return '';
         const m = v.trim().match(/^(\d{1,2}):(\d{2})/);
         if (!m) return '';
-        const h = Math.min(23, parseInt(m[1], 10));
-        return `${String(h).padStart(2, '0')}:${m[2]}`;
+        const hours = parseInt(m[1], 10);
+        const minutes = parseInt(m[2], 10);
+        if (hours > 23 || minutes > 59) return '';
+        return `${String(hours).padStart(2, '0')}:${m[2]}`;
       };
       const clockIn = time(row.clockIn);
       if (!employee || !date || !clockIn) return null;
@@ -281,7 +354,7 @@ function parseJsonArrayReply(text) {
 
 async function runTextOnce(prompt, token) {
   const abortController = new AbortController();
-  const timeout = setTimeout(() => abortController.abort(), TIMEOUT_MS);
+  const timeout = setTimeout(() => abortController.abort(), TABLE_TIMEOUT_MS);
   const options = {
     model: EXTRACT_MODEL,
     maxTurns: 1,
@@ -356,4 +429,11 @@ async function extractTableRows(tableText, kind) {
   throw lastError ?? new Error('Table extraction produced no response');
 }
 
-module.exports = { extractDocumentFields, extractTableRows };
+// sanitizeFields and parseJsonReply are the boundary against hostile model
+// output (the document being read is attacker-controlled), so they are
+// exported for test/extract-sanitize.test.mjs.
+module.exports = {
+  extractDocumentFields, extractTableRows, sanitizeFields, parseJsonReply,
+  sanitizeAttendanceRow: TABLE_KINDS.attendance.sanitizeRow,
+  isRealCalendarDate,
+};

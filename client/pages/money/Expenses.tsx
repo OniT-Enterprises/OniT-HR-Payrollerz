@@ -46,6 +46,9 @@ import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
 import { canExtractFile, extractDocument } from '@/lib/aiExtract';
+import { foreignCurrencyLabel, isForeignExtractedCurrency } from '@/lib/extracted-currency';
+import { isImplausibleDocumentDate } from '@/lib/extracted-date';
+import { isProtectedPdf } from '@/lib/pdf-protected';
 import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import DashboardLoadError from '@/components/dashboard/DashboardLoadError';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -229,8 +232,17 @@ export default function Expenses() {
   const [dragActive, setDragActive] = useState(false);
   const dragDepth = useRef(0);
   const dropInputRef = useRef<HTMLInputElement>(null);
-  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed'>('idle');
+  const [aiStatus, setAiStatus] = useState<'idle' | 'reading' | 'done' | 'failed' | 'notABill'>('idle');
+  // A bank slip or ATM receipt read fine but is not an expense document.
+  const [aiOtherKind, setAiOtherKind] = useState<'payment_proof' | 'other' | null>(null);
+  // A password-protected PDF cannot be read by anything — say so specifically.
+  const [aiProtectedPdf, setAiProtectedPdf] = useState(false);
   const [aiVendorName, setAiVendorName] = useState<string | null>(null);
+  // Receipts priced in another currency: expenses are booked in USD only, so the
+  // extracted amount is withheld rather than pre-filled (see extracted-currency).
+  const [aiForeignCurrency, setAiForeignCurrency] = useState<string | null>(null);
+  // Set when the extracted receipt date is in the future — a day/month swap.
+  const [aiSuspectDate, setAiSuspectDate] = useState<string | null>(null);
   const aiRun = useRef(0);
 
   const handleDroppedReceipt = (incoming: File[]) => {
@@ -260,23 +272,53 @@ export default function Expenses() {
 
     if (!canExtractFile(file)) {
       setAiStatus('idle');
+      setAiForeignCurrency(null);
+      setAiSuspectDate(null);
+      setAiOtherKind(null);
+      setAiProtectedPdf(false);
       return;
     }
     const run = ++aiRun.current;
     setAiStatus('reading');
     setAiVendorName(null);
+    setAiForeignCurrency(null);
+    setAiSuspectDate(null);
+    setAiOtherKind(null);
+    setAiProtectedPdf(false);
     extractDocument(file, tenantId, 'expense')
-      .then((fields) => {
+      .then(async (fields) => {
         if (aiRun.current !== run) return;
-        if (fields.documentType === 'other' || fields.confidence < 0.3) {
+        // Read successfully but not an expense document: say which.
+        if (fields.documentType === 'payment_proof') {
+          setAiOtherKind('payment_proof');
+          setAiStatus('notABill');
+          return;
+        }
+        if (fields.documentType === 'other') {
+          if (fields.confidence >= 0.5) {
+            setAiOtherKind('other');
+            setAiStatus('notABill');
+            return;
+          }
+          setAiProtectedPdf(await isProtectedPdf(file));
           setAiStatus('failed');
           return;
         }
+        if (fields.confidence < 0.3) {
+          setAiStatus('failed');
+          return;
+        }
+        const foreign = isForeignExtractedCurrency(fields.currency);
+        setAiForeignCurrency(foreign ? foreignCurrencyLabel(fields.currency) : null);
+        // A receipt cannot be dated in the future; that reading is a day/month swap.
+        const suspectDate = isImplausibleDocumentDate(fields.billDate, getTodayTL());
+        setAiSuspectDate(suspectDate ? fields.billDate : null);
         setFormData((prev) => ({
           ...prev,
-          date: fields.billDate || prev.date,
+          date: suspectDate ? prev.date : (fields.billDate || prev.date),
           description: fields.description || prev.description,
-          amount: fields.amount ?? prev.amount,
+          // A foreign-currency total must not land in a USD field.
+          amount: foreign ? prev.amount : (fields.amount ?? prev.amount),
           category: (fields.category as ExpenseFormData['category']) || prev.category,
         }));
         if (fields.vendorName) setAiVendorName(fields.vendorName);
@@ -855,6 +897,9 @@ export default function Expenses() {
             aiRun.current += 1;
             setAiStatus('idle');
             setAiVendorName(null);
+            setAiForeignCurrency(null);
+            setAiSuspectDate(null);
+            setAiOtherKind(null);
           }
         }}
       >
@@ -885,7 +930,39 @@ export default function Expenses() {
             )}
             {!editingExpense && aiStatus === 'failed' && (
               <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-                {t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+                {aiProtectedPdf
+                  ? t('money.ai.pdfProtected')
+                    || 'This PDF is password-protected, so nothing can read it. Save an unprotected copy, or enter the details below.'
+                  : t('money.ai.failed') || "XefeBot couldn't read this file \u2014 fill in the details manually."}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'notABill' && (
+              <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                {aiOtherKind === 'payment_proof'
+                  ? t('money.ai.looksLikePaymentProof')
+                    || 'This looks like a bank payment slip, not a supplier bill. Attach it to the bill it pays, and enter the bill details below.'
+                  : t('money.ai.notABill')
+                    || "XefeBot read this file but it isn't a bill or receipt \u2014 enter the details below."}
+              </div>
+            )}
+            {!editingExpense && aiStatus === 'done' && (aiForeignCurrency || aiSuspectDate) && (
+              <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/[0.08] p-3 text-sm text-foreground/80">
+                {aiForeignCurrency && (
+                  <p>
+                    {(
+                      t('money.ai.foreignCurrency')
+                      || 'This document is in {{currency}}. Xefe records money in US dollars — enter the amount you actually paid in USD.'
+                    ).replace('{{currency}}', aiForeignCurrency)}
+                  </p>
+                )}
+                {aiSuspectDate && (
+                  <p>
+                    {(
+                      t('money.ai.checkDate')
+                      || 'The date read from this document ({{date}}) is in the future, so it may be wrong — enter the date yourself.'
+                    ).replace('{{date}}', aiSuspectDate)}
+                  </p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">

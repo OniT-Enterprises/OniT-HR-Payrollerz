@@ -99,6 +99,14 @@ import {
   parseDateISO,
 } from "@/lib/dateUtils";
 import { extractTable } from "@/lib/aiExtract";
+import type { ExtractedAttendanceRow } from "@/lib/aiExtract";
+import {
+  dedupeAttendanceRows,
+  excelCellToText,
+  pickWorksheetName,
+  planExtraction,
+  worksheetToTableText,
+} from "@/lib/attendance/spreadsheet-text";
 import {
   parseImportTime,
   describeSkippedImport,
@@ -116,17 +124,16 @@ function normalizeImportHeader(value: string): string {
     .replace(/[\s-]+/g, "_");
 }
 
+/**
+ * Cell-to-text for the STRICT parser too, not just the AI fallback.
+ *
+ * This used to render every Date cell as YYYY-MM-DD, which silently destroyed
+ * clock times: Excel stores a time-only cell ("09:23") as a date on the 1899
+ * epoch, so a clock-in arrived as the text "1899-12-30". Both import paths now
+ * share the unit-tested conversion.
+ */
 function excelCellText(value: unknown): string {
-  if (value instanceof Date) {
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, "0");
-    const day = String(value.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-  if (value && typeof value === "object" && "text" in value) {
-    return String((value as { text?: unknown }).text ?? "").trim();
-  }
-  return String(value ?? "").trim();
+  return excelCellToText(value);
 }
 
 async function parseAttendanceImport(
@@ -167,23 +174,34 @@ async function parseAttendanceImport(
   return result.data;
 }
 
-async function fileToTableText(file: File): Promise<string> {
+/**
+ * Convert an import file to the text the extractor reads.
+ *
+ * The conversion itself lives in client/lib/attendance/spreadsheet-text.ts, which
+ * is unit-tested against real TL workbooks — it preserves clock times (Excel
+ * stores a time-only cell as a date on the 1899 epoch, and rendering those as
+ * YYYY-MM-DD destroyed every time in the file), drops print-layout spacer rows,
+ * and picks the right sheet in a workbook that holds one sheet per month.
+ */
+async function fileToTableText(
+  file: File,
+  targetMonth?: { year: number; month: number },
+): Promise<{ text: string; sheetName?: string; sheetCount?: number }> {
   if (file.name.toLowerCase().endsWith(".xlsx")) {
     const { default: ExcelJS } = await import("exceljs");
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(await file.arrayBuffer());
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet) return "";
-    const lines: string[] = [];
-    worksheet.eachRow((row) => {
-      const values = (row.values as unknown[])
-        .slice(1)
-        .map((value) => excelCellText(value));
-      lines.push(values.join("\t"));
-    });
-    return lines.join("\n");
+    const names = workbook.worksheets.map((sheet) => sheet.name);
+    const chosen = pickWorksheetName(names, targetMonth);
+    const worksheet = workbook.worksheets.find((sheet) => sheet.name === chosen);
+    if (!worksheet) return { text: "" };
+    return {
+      text: worksheetToTableText(worksheet),
+      sheetName: worksheet.name,
+      sheetCount: names.length,
+    };
   }
-  return file.text();
+  return { text: await file.text() };
 }
 
 export default function Attendance() {
@@ -981,13 +999,28 @@ export default function Attendance() {
       let usedAi = false;
       if (records.length === 0) {
         try {
-          const tableText = await fileToTableText(importFile);
+          const { text: tableText, sheetName, sheetCount } =
+            await fileToTableText(importFile);
           if (tableText.trim()) {
-            const aiRows = await extractTable(
-              tableText,
-              tenantId,
-              "attendance",
-            );
+            // One request per chunk: a wide monthly grid expands into one record
+            // per employee per day, which does not fit a single call.
+            const plan = planExtraction(tableText);
+            const collected: ExtractedAttendanceRow[] = [];
+            for (const chunk of plan.chunks) {
+              collected.push(...(await extractTable(chunk, tenantId, "attendance")));
+            }
+            const aiRows = dedupeAttendanceRows(collected);
+            if (plan.skippedLines > 0) {
+              // Never let a cap look like a complete import.
+              skipped.push({
+                rowNumber: 0,
+                reason: "employee",
+                detail:
+                  `${plan.skippedLines} further rows were not read (file too large for one import` +
+                  `${sheetCount && sheetCount > 1 ? `; sheet "${sheetName}" of ${sheetCount}` : ""}` +
+                  ") — split the file and import the rest",
+              });
+            }
             // The AI re-parsed the whole file, so strict-pass skips no longer
             // apply — track the AI pass's own no-match drops instead.
             skipped.length = 0;
