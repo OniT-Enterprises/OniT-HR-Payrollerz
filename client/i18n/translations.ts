@@ -3186,6 +3186,7 @@ export const translations = {
       "attendance": {
         "modeNote": "You record absences and overtime only. Anyone with no record for a day counts as having worked normally.",
         "unrecorded": {
+          "showFewer": "Show fewer",
           "title": "{{count}} people have no record for {{date}}",
           "explain": "Xefe does not assume they worked. Until you say, payroll counts nothing for them — neither pay nor absence.",
           "allWorked": "They all worked normally",
@@ -3195,6 +3196,11 @@ export const translations = {
           "marked": "Recorded a normal working day for {{count}} people."
         },
         "absence": {
+          "firstDay": "First day away",
+          "lastDay": "Last day away",
+          "lastDayHint": "Leave this the same as the first day for a single day.",
+          "spellLength": "{{days}} working day(s) will be recorded.",
+          "halfDay": "Only half the day",
           "nonWorkingDay": "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
           "action": "Record an absence",
           "title": "Record an absence",
@@ -11051,6 +11057,7 @@ export const translations = {
       "attendance": {
         "modeNote": "Ita rejista falta no oras extra de'it. Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain.",
         "unrecorded": {
+          "showFewer": "Hatudu uitoan",
           "title": "Ema {{count}} laiha rejistu ba {{date}}",
           "explain": "Xefe la assume katak sira servisu. To'o Ita hatete, folha la sura buat ida ba sira — la iha pagamentu, la iha falta.",
           "allWorked": "Sira hotu servisu baibain",
@@ -11060,6 +11067,11 @@ export const translations = {
           "marked": "Rejista loron servisu baibain ba ema {{count}}."
         },
         "absence": {
+          "firstDay": "Loron dahuluk falta",
+          "lastDay": "Loron ikus falta",
+          "lastDayHint": "Husik hanesan loron dahuluk se falta loron ida de'it.",
+          "spellLength": "Sei rejista loron servisu {{days}}.",
+          "halfDay": "Loron balu de'it",
           "nonWorkingDay": "Loron ne'e fim-de-semana ka feriadu, tanba ne'e la sura nu'udar lisensa. Hili loron servisu.",
           "action": "Rejista falta",
           "title": "Rejista falta",
@@ -18916,6 +18928,7 @@ export const translations = {
       "attendance": {
         "modeNote": "Regista apenas faltas e horas extra. Quem não tiver registo num dia conta como tendo trabalhado normalmente.",
         "unrecorded": {
+          "showFewer": "Mostrar menos",
           "title": "{{count}} pessoas não têm registo em {{date}}",
           "explain": "O Xefe não assume que trabalharam. Até você dizer, a folha não conta nada para elas — nem vencimento nem falta.",
           "allWorked": "Trabalharam todos normalmente",
@@ -18925,6 +18938,11 @@ export const translations = {
           "marked": "Registado um dia normal de trabalho para {{count}} pessoas."
         },
         "absence": {
+          "firstDay": "Primeiro dia de ausência",
+          "lastDay": "Último dia de ausência",
+          "lastDayHint": "Deixe igual ao primeiro dia para uma ausência de um só dia.",
+          "spellLength": "Vão ser registados {{days}} dia(s) úteis.",
+          "halfDay": "Apenas meio dia",
           "nonWorkingDay": "Esse dia é fim de semana ou feriado, por isso não conta como licença. Escolha um dia útil.",
           "action": "Registar uma falta",
           "title": "Registar uma falta",

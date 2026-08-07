@@ -244,6 +244,10 @@ export default function Attendance() {
   const [absenceForm, setAbsenceForm] = useState({
     employeeId: "",
     date: "",
+    // Absences run in spells, not single days. A week off sick was five
+    // separate recordings before this.
+    endDate: "",
+    halfDay: false,
     reason: "" as "" | "sick" | "special" | "unpaid" | "unjustified",
     hasCertificate: false,
     notes: "",
@@ -531,15 +535,35 @@ export default function Attendance() {
   // `getTodayTL()` — Timor-Leste's today — so an owner working Friday evening
   // in another timezone lands on Saturday by default and would have hit that
   // raw server error. Say it plainly here instead.
+  // An empty end date means a single day, so the spell is always well-formed.
+  const absenceEndDate = absenceForm.endDate || absenceForm.date;
+
+  const absenceWorkingDays = useMemo(() => {
+    if (!absenceForm.date) return 0;
+    const year = Number(absenceForm.date.slice(0, 4));
+    if (!Number.isFinite(year)) return 0;
+    // A spell can cross a year boundary, so take holidays from both.
+    const endYear = Number(absenceEndDate.slice(0, 4));
+    const holidays = [
+      ...getTLPublicHolidays(year),
+      ...(Number.isFinite(endYear) && endYear !== year
+        ? getTLPublicHolidays(endYear)
+        : []),
+    ].map((holiday) => holiday.date);
+    const days = calculateWorkingDays(
+      absenceForm.date,
+      absenceEndDate,
+      holidays,
+    );
+    // Art. 33(4) and the rest are counted in working days; a half-day is only
+    // meaningful on a single date, which is what the server enforces too.
+    return absenceForm.halfDay && days === 1 ? 0.5 : days;
+  }, [absenceForm.date, absenceEndDate, absenceForm.halfDay]);
+
   const absenceIsNonWorkingDay = useMemo(() => {
     if (!absenceForm.date) return false;
-    const year = Number(absenceForm.date.slice(0, 4));
-    if (!Number.isFinite(year)) return false;
-    const holidays = getTLPublicHolidays(year).map((holiday) => holiday.date);
-    return (
-      calculateWorkingDays(absenceForm.date, absenceForm.date, holidays) === 0
-    );
-  }, [absenceForm.date]);
+    return absenceWorkingDays === 0;
+  }, [absenceForm.date, absenceWorkingDays]);
 
   // Who has NO record for the shown day.
   //
@@ -567,6 +591,8 @@ export default function Attendance() {
   }, [employees, recordedEmployeeIds, selectedDate, today]);
 
   const [markingWorked, setMarkingWorked] = useState(false);
+  // A 300-employee tenant needs to reach the 40th name, not just the first 8.
+  const [showAllUnrecorded, setShowAllUnrecorded] = useState(false);
 
   /**
    * Record a normal working day for people who have none.
@@ -625,6 +651,8 @@ export default function Attendance() {
     setAbsenceForm({
       employeeId: "",
       date,
+      endDate: "",
+      halfDay: false,
       reason: "",
       hasCertificate: false,
       notes: "",
@@ -685,8 +713,11 @@ export default function Attendance() {
             `timeLeave.attendance.absence.reasons.${absenceForm.reason}`,
           ),
           startDate: absenceForm.date,
-          endDate: absenceForm.date,
-          duration: 1,
+          endDate: absenceEndDate,
+          // The server recomputes this (calculateCanonicalLeaveDuration) and is
+          // authoritative; sending our own count keeps the optimistic UI honest.
+          duration: absenceWorkingDays,
+          halfDay: absenceForm.halfDay,
           reason:
             absenceForm.notes ||
             t(`timeLeave.attendance.absence.reasons.${absenceForm.reason}`),
@@ -1631,7 +1662,7 @@ export default function Attendance() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("common.date")}</Label>
+                <Label>{t("timeLeave.attendance.absence.firstDay")}</Label>
                 <DatePicker
                   value={absenceForm.date}
                   onChange={(date) =>
@@ -1639,6 +1670,40 @@ export default function Attendance() {
                   }
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label>{t("timeLeave.attendance.absence.lastDay")}</Label>
+                <DatePicker
+                  value={absenceEndDate}
+                  onChange={(endDate) =>
+                    setAbsenceForm((current) => ({ ...current, endDate }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  {absenceWorkingDays > 0
+                    ? t("timeLeave.attendance.absence.spellLength", {
+                        days: absenceWorkingDays,
+                      })
+                    : t("timeLeave.attendance.absence.lastDayHint")}
+                </p>
+              </div>
+
+              {/* Only offered on a single date — the server rejects a half-day
+                  spanning two, and half of a week is not a thing anyone means. */}
+              {absenceForm.date && absenceEndDate === absenceForm.date && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="absence-half-day"
+                    checked={absenceForm.halfDay}
+                    onCheckedChange={(halfDay) =>
+                      setAbsenceForm((current) => ({ ...current, halfDay }))
+                    }
+                  />
+                  <Label htmlFor="absence-half-day">
+                    {t("timeLeave.attendance.absence.halfDay")}
+                  </Label>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="absence-reason">
@@ -1956,7 +2021,10 @@ export default function Attendance() {
               </Button>
             </div>
             <div className="mt-3 space-y-2">
-              {unrecordedEmployees.slice(0, 8).map((employee) => (
+              {(showAllUnrecorded
+                ? unrecordedEmployees
+                : unrecordedEmployees.slice(0, 8)
+              ).map((employee) => (
                 <div
                   key={employee.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-background/60 px-3 py-2"
@@ -1983,6 +2051,8 @@ export default function Attendance() {
                         setAbsenceForm({
                           employeeId: employee.id!,
                           date: selectedDate,
+                          endDate: "",
+                          halfDay: false,
                           reason: "",
                           hasCertificate: false,
                           notes: "",
@@ -1996,11 +2066,18 @@ export default function Attendance() {
                 </div>
               ))}
               {unrecordedEmployees.length > 8 && (
-                <p className="text-xs text-amber-800/80 dark:text-amber-200/80">
-                  {t("timeLeave.attendance.unrecorded.andMore", {
-                    count: unrecordedEmployees.length - 8,
-                  })}
-                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAllUnrecorded((open) => !open)}
+                >
+                  {showAllUnrecorded
+                    ? t("timeLeave.attendance.unrecorded.showFewer")
+                    : t("timeLeave.attendance.unrecorded.andMore", {
+                        count: unrecordedEmployees.length - 8,
+                      })}
+                </Button>
               )}
             </div>
           </div>

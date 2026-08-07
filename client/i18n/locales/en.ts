@@ -3514,6 +3514,7 @@ const messages = {
       modeNote:
         "You record absences and overtime only. Anyone with no record for a day counts as having worked normally.",
       unrecorded: {
+        showFewer: "Show fewer",
         title: "{{count}} people have no record for {{date}}",
         explain:
           "Xefe does not assume they worked. Until you say, payroll counts nothing for them — neither pay nor absence.",
@@ -3524,6 +3525,11 @@ const messages = {
         marked: "Recorded a normal working day for {{count}} people.",
       },
       absence: {
+        firstDay: "First day away",
+        lastDay: "Last day away",
+        lastDayHint: "Leave this the same as the first day for a single day.",
+        spellLength: "{{days}} working day(s) will be recorded.",
+        halfDay: "Only half the day",
         nonWorkingDay:
           "That day is a weekend or a public holiday, so no leave is counted for it. Pick a working day.",
         action: "Record an absence",
