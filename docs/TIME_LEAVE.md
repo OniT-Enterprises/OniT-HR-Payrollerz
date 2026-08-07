@@ -222,17 +222,23 @@ payroll owns the *payment*. Xefe never derives the payable balance automatically
 because it cannot know what was actually taken — `accruedAnnualLeaveDays` only supplies
 the accrual side as a suggestion.
 
-**Open gap — an employer who grants MORE than 12 days is only half-honoured.**
-Raising `annualLeave.daysPerYear` above 12 increases the leave *balance*
-(`functions/src/timeleave.ts`), but the termination accrual is hard-capped at
-`TL_ANNUAL_LEAVE.daysPerYear = 12` (`client/lib/payroll/constants-tl.ts` via
-`accruedAnnualLeaveDays`, `calculations-tl.ts`, consumed by
-`client/pages/hiring/Offboarding.tsx`). So a tenant configured for 15 sees 15
-accrue during employment and only 12 suggested at final pay. Since the reviewer
-records the payable day count by hand, this is a wrong *suggestion*, not a wrong
-payment — but it is a suggestion in the employer's favour, which is the wrong
-direction. Surfaced 2026-08-07 when the Art. 32 cash-out was first stated in the
-Time Off settings UI; a customer can now see the promise, so the gap is visible.
+**CLOSED 2026-08-07 — an employer who grants MORE than 12 days is now honoured
+on both sides.** Art. 32's 12 days is a FLOOR. Raising `annualLeave.daysPerYear`
+above it always increased the leave *balance* (`functions/src/timeleave.ts`),
+but the termination accrual was hard-capped at `TL_ANNUAL_LEAVE.daysPerYear = 12`,
+so a tenant configured for 15 saw 15 accrue during employment and only 12
+suggested at final pay — the worker's own balance and their final payslip
+disagreed by 3 days of pay, in the employer's favour.
+
+`accruedAnnualLeaveDays` now takes `entitlementDaysPerYear` and accrues
+`entitlement / 12` per month, capped at the entitlement;
+`client/pages/hiring/Offboarding.tsx` passes the tenant's configured figure.
+Omitted, the behaviour is byte-identical to before (12/12 = 1 per month), and a
+non-positive or non-finite config falls back to the statutory floor rather than
+accruing nothing. Covered by `tests/client/untaken-leave-payout.test.ts`.
+
+This remains a *suggestion* a reviewer confirms — the scope contract in
+`docs/MONEY_CHAIN.md` §4a is unchanged, and nothing here auto-pays.
 Not yet resolved: is the 12 cap correct (statutory minimum accrues, extra is
 contractual and lapses), or should the accrual follow the configured policy?
 

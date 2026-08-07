@@ -1682,8 +1682,9 @@ export const translations = {
             "title": "When someone is sick",
             "summary": "{{days}} days a year. First 6 days at full pay, next 6 at half pay.",
             "pendingExplainer": "We have matched these bands to the Labour Law and are confirming the reading with our accounting reviewers. The pay rule itself is what payroll applies.",
-            "certificateOn": "A medical certificate is required for sick leave.",
-            "certificateOff": "Your company does not require a medical certificate for sick leave."
+            "certificateOn": "A medical certificate is required for sick leave (Labour Law Art. 33.4).",
+            "certificateOff": "Your company has this turned off, but the law requires a medical certificate for sick leave.",
+            "setCertificateRequired": "Require a certificate"
           },
           "parental": {
             "daysLabel": "Days off",
@@ -9485,8 +9486,9 @@ export const translations = {
             "title": "Bainhira ema moras",
             "summary": "Loron {{days}} kada tinan. Loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu.",
             "pendingExplainer": "Ami kompara ona banda sira-ne'e ho Lei Trabálhu no daudaun konfirma leitura ne'e ho ami-nia revizór kontabilidade nian. Regra pagamentu rasik mak folha aplika.",
-            "certificateOn": "Presiza sertifikadu médiku ba lisensa doensa.",
-            "certificateOff": "Ita-nia empreza la presiza sertifikadu médiku ba lisensa doensa."
+            "certificateOn": "Presiza sertifikadu médiku ba lisensa doensa (Lei Trabálhu Art. 33.4).",
+            "certificateOff": "Ita-nia empreza taka tiha ida-ne’e, maié lei husu sertifikadu médiku ba lisensa doensa.",
+            "setCertificateRequired": "Presiza sertifikadu"
           },
           "parental": {
             "daysLabel": "Loron lisensa",
@@ -17288,8 +17290,9 @@ export const translations = {
             "title": "Quando alguém está doente",
             "summary": "{{days}} dias por ano. Os primeiros 6 dias com salário por inteiro, os 6 seguintes a meio salário.",
             "pendingExplainer": "Já confrontámos estes escalões com a Lei do Trabalho e estamos a confirmar a leitura com os nossos revisores de contabilidade. A regra de pagamento em si é a que a folha aplica.",
-            "certificateOn": "É exigido certificado médico para a licença por doença.",
-            "certificateOff": "A sua empresa não exige certificado médico para a licença por doença."
+            "certificateOn": "É exigido certificado médico para a licença por doença (Lei do Trabalho, art. 33.º/4).",
+            "certificateOff": "A sua empresa tem isto desligado, mas a lei exige certificado médico para a licença por doença.",
+            "setCertificateRequired": "Exigir certificado"
           },
           "parental": {
             "daysLabel": "Dias de licença",

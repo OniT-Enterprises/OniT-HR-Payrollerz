@@ -737,9 +737,23 @@ export function monthsInEntitlementYear(
   return Math.max(0, endMonth - startMonth + 1);
 }
 
+/** Calendar months in a leave year — the accrual divisor. Deliberately NOT
+ *  TL_ANNUAL_LEAVE.daysPerYear, which is also 12 but means days, not months. */
+const ACCRUAL_MONTHS_PER_YEAR = 12;
+
 /**
- * Annual-leave days ACCRUED in the leave year (Lei 4/2012 Art. 32) — one working
- * day per month worked, capped at the 12-day statutory year.
+ * Annual-leave days ACCRUED in the leave year (Lei 4/2012 Art. 32) — one
+ * working day per month worked over a 12-day year, pro-rated when the tenant
+ * grants more.
+ *
+ * Art. 32 sets 12 working days as a FLOOR, and Time Off settings lets an
+ * employer grant more. Until 2026-08-07 this function ignored that: it always
+ * accrued 1 day/month and capped at the statutory 12, while
+ * `functions/src/timeleave.ts` credited the configured figure to the leave
+ * BALANCE. An employer who granted 15 therefore saw 15 accrue all year and
+ * only 12 suggested at termination — the worker's own balance and their final
+ * payslip disagreed by 3 days of pay. `entitlementDaysPerYear` closes that;
+ * omitted, the behaviour is byte-identical to before (12/12 = 1 per month).
  *
  * This is the accrual only. The payable balance is accrued MINUS days already
  * taken, which payroll cannot infer — the caller supplies it. Use as the
@@ -751,13 +765,26 @@ export function accruedAnnualLeaveDays(
   options?: {
     proRataForNewEmployees?: boolean;
     terminationDate?: string | null;
+    /**
+     * The tenant's configured annual entitlement. Defaults to the Art. 32
+     * floor. A non-positive or non-finite value falls back to the floor rather
+     * than accruing nothing — a broken config must not silently zero a
+     * worker's final pay.
+     */
+    entitlementDaysPerYear?: number;
   },
 ): number {
   const months = monthsInEntitlementYear(hireDate, asOfDate, options);
-  return Math.min(
-    months * TL_ANNUAL_LEAVE.accrualDaysPerMonth,
-    TL_ANNUAL_LEAVE.daysPerYear,
-  );
+  const configured = options?.entitlementDaysPerYear;
+  const entitlement =
+    typeof configured === 'number' && Number.isFinite(configured) && configured > 0
+      ? configured
+      : TL_ANNUAL_LEAVE.daysPerYear;
+  const perMonth = entitlement / ACCRUAL_MONTHS_PER_YEAR;
+  const accrued = Math.min(months * perMonth, entitlement);
+  // Two decimals: a 15-day year accrues 1.25/month, and the reviewer confirms
+  // the figure by hand — float noise like 8.749999999 must never reach them.
+  return Math.round(accrued * 100) / 100;
 }
 
 /**

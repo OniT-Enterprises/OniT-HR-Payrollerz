@@ -1870,9 +1870,11 @@ const messages = {
           // safety). Badge stays until the accounting reviewers sign off.
           pendingExplainer:
             "We have matched these bands to the Labour Law and are confirming the reading with our accounting reviewers. The pay rule itself is what payroll applies.",
-          certificateOn: "A medical certificate is required for sick leave.",
+          certificateOn:
+            "A medical certificate is required for sick leave (Labour Law Art. 33.4).",
           certificateOff:
-            "Your company does not require a medical certificate for sick leave.",
+            "Your company has this turned off, but the law requires a medical certificate for sick leave.",
+          setCertificateRequired: "Require a certificate",
         },
         parental: {
           daysLabel: "Days off",

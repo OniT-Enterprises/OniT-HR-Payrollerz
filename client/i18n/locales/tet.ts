@@ -1861,9 +1861,11 @@ const messages = {
             "Loron {{days}} kada tinan. Loron 6 primeiru ho saláriu tomak, loron 6 tuir mai ho saláriu balu.",
           pendingExplainer:
             "Ami kompara ona banda sira-ne'e ho Lei Trabálhu no daudaun konfirma leitura ne'e ho ami-nia revizór kontabilidade nian. Regra pagamentu rasik mak folha aplika.",
-          certificateOn: "Presiza sertifikadu médiku ba lisensa doensa.",
+          certificateOn:
+            "Presiza sertifikadu médiku ba lisensa doensa (Lei Trabálhu Art. 33.4).",
           certificateOff:
-            "Ita-nia empreza la presiza sertifikadu médiku ba lisensa doensa.",
+            "Ita-nia empreza taka tiha ida-ne’e, maié lei husu sertifikadu médiku ba lisensa doensa.",
+          setCertificateRequired: "Presiza sertifikadu",
         },
         parental: {
           daysLabel: "Loron lisensa",

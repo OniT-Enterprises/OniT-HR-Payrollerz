@@ -1892,9 +1892,10 @@ const messages = {
           pendingExplainer:
             "Já confrontámos estes escalões com a Lei do Trabalho e estamos a confirmar a leitura com os nossos revisores de contabilidade. A regra de pagamento em si é a que a folha aplica.",
           certificateOn:
-            "É exigido certificado médico para a licença por doença.",
+            "É exigido certificado médico para a licença por doença (Lei do Trabalho, art. 33.º/4).",
           certificateOff:
-            "A sua empresa não exige certificado médico para a licença por doença.",
+            "A sua empresa tem isto desligado, mas a lei exige certificado médico para a licença por doença.",
+          setCertificateRequired: "Exigir certificado",
         },
         parental: {
           daysLabel: "Dias de licença",
