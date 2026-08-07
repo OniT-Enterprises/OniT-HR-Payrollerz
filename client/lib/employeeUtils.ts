@@ -13,81 +13,91 @@ interface ProfileCompletenessResult {
   }[];
 }
 
+/**
+ * How complete a profile is *for the things Xefe actually has to do* — run
+ * payroll and file the statutory returns. Nothing else counts.
+ *
+ * Scored, and only these:
+ *  - full name, INSS number (NISS), residency answer, hire date — the INSS
+ *    monthly DR cannot be produced without them (plus a termination date once
+ *    someone has left, which is what takes them off the DR);
+ *  - monthly salary and hire date — payroll cannot price a period without them.
+ *
+ * Email, phone, address, date of birth, employee ID, department and job title
+ * are deliberately OPTIONAL on the Add Employee form (many Timorese workers
+ * have no email address, and no return asks for a job title). Scoring them
+ * made a correctly-created employee read ~25% complete and nagged the owner
+ * about fields we had just told them to skip, which trains people to ignore
+ * the warning that matters. They are reported nowhere here.
+ */
 export function getProfileCompleteness(employee: Employee): ProfileCompletenessResult {
   const missingFields: string[] = [];
   let completed = 0;
   let total = 0;
 
-  // Check personal info
-  const personalFields = [
-    { key: 'firstName', label: 'First Name' },
-    { key: 'lastName', label: 'Last Name' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Phone' },
-    { key: 'address', label: 'Address' },
-    { key: 'dateOfBirth', label: 'Date of Birth' },
-  ];
-
-  personalFields.forEach(({ key, label }) => {
+  const score = (label: string, present: boolean) => {
     total++;
-    if (employee.personalInfo?.[key as keyof typeof employee.personalInfo]) {
-      completed++;
-    } else {
-      missingFields.push(label);
-    }
-  });
+    if (present) completed++;
+    else missingFields.push(label);
+  };
 
-  // Check job details
-  const jobFields = [
-    { key: 'employeeId', label: 'Employee ID' },
-    { key: 'department', label: 'Department' },
-    { key: 'position', label: 'Position' },
-    { key: 'hireDate', label: 'Hire Date' },
-  ];
+  // Identity on the return: the DR lists a worker by name and NISS.
+  score('First Name', !!employee.personalInfo?.firstName);
+  score('Last Name', !!employee.personalInfo?.lastName);
+  score(
+    'INSS Number (NISS)',
+    !!(
+      employee.documents?.socialSecurityNumber?.number ||
+      employee.personalInfo?.socialSecurityNumber
+    ),
+  );
 
-  jobFields.forEach(({ key, label }) => {
-    total++;
-    if (employee.jobDetails?.[key as keyof typeof employee.jobDetails]) {
-      completed++;
-    } else {
-      missingFields.push(label);
-    }
-  });
+  // Residency drives the WIT rate, so "not answered" is a real gap — but
+  // `false` (non-resident) is a complete answer, not a missing one.
+  score('Residency Status', typeof employee.compensation?.isResident === 'boolean');
 
-  // Check compensation
-  total++;
-  if (employee.compensation?.monthlySalary) {
-    completed++;
-  } else {
-    missingFields.push('Monthly Salary');
+  // Payroll and the DR both need the dates and the wage.
+  score('Hire Date', !!employee.jobDetails?.hireDate);
+  score('Monthly Salary', !!employee.compensation?.monthlySalary);
+
+  // Only once someone has left: the DR needs the date that removes them.
+  if (employee.status === 'terminated') {
+    score('Termination Date', !!employee.terminationDate);
   }
 
-  // Check required documents
+  // Documents are shown for information. NISS is the only one a filing
+  // depends on; a passport is required to employ a foreign worker at all.
+  // The rest are useful records, never a reason to call a profile incomplete.
   const requiredDocuments = [
     {
-      field: 'ID Card',
-      missing: !employee.documents?.idCard?.number,
-      required: employee.documents?.idCard?.required ?? true,
-    },
-    {
-      field: 'Social Security',
-      missing: !employee.documents?.socialSecurityNumber?.number,
-      required: employee.documents?.socialSecurityNumber?.required ?? true,
-    },
-    {
-      field: 'Employee ID Card',
-      missing: !employee.documents?.employeeIdCard?.number,
-      required: employee.documents?.employeeIdCard?.required ?? true,
+      field: 'INSS (NISS)',
+      missing: !(
+        employee.documents?.socialSecurityNumber?.number ||
+        employee.personalInfo?.socialSecurityNumber
+      ),
+      required: true,
     },
     {
       field: 'Passport',
       missing: !employee.documents?.passport?.number,
-      required: employee.documents?.passport?.required ?? false,
+      required: employee.documents?.passport?.required ?? !!employee.isForeignWorker,
+    },
+    {
+      field: 'Tax Number (TIN)',
+      missing: !employee.documents?.taxIdentificationNumber?.number,
+      required: false,
+    },
+    {
+      field: 'ID Card',
+      missing: !(
+        employee.documents?.bilheteIdentidade?.number || employee.documents?.idCard?.number
+      ),
+      required: false,
     },
     {
       field: 'Electoral Card',
       missing: !employee.documents?.electoralCard?.number,
-      required: employee.documents?.electoralCard?.required ?? false,
+      required: false,
     },
   ];
 

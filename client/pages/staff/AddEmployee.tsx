@@ -30,14 +30,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -52,8 +44,6 @@ import { employeeService, type Employee, type ResidencyStatus } from "@/services
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
-import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
-import ContractGeneratorDialog from "@/components/staff/ContractGeneratorDialog";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -62,8 +52,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import { toDateStringTL } from "@/lib/dateUtils";
-import { buildCSV } from "@/lib/csvExport";
-import { buildEmployeesFromCSV } from "@/lib/employees/import";
 import { divideMoney, roundMoney } from "@/lib/currency";
 import {
   ageAt,
@@ -75,8 +63,6 @@ import { FIXED_TERM_MOTIVES, appendContractRenewal } from "@/lib/probation";
 import {
   UserPlus,
   FileText,
-  FileDown,
-  FileUp,
   Info,
   Mail,
   Phone,
@@ -86,6 +72,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+
+// Optional, heavy and rarely opened: the contract generator pulls the PDF
+// stack in with it, so it must not sit in this page's chunk (STYLE_GUIDE:
+// "Do not preload optional PDF, spreadsheet, or upload code").
+const ContractGeneratorDialog = React.lazy(
+  () => import("@/components/staff/ContractGeneratorDialog"),
+);
 
 // Helper function to get monthly salary with fallback
 const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?: number }): number => {
@@ -292,12 +285,8 @@ export default function AddEmployee() {
   }, [isTimorese]);
 
   // UI state
-  const [showImportDialog, setShowImportDialog] = useState(false);
   const [showContractGenerator, setShowContractGenerator] = useState(false);
-  const [importFile, setImportFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showColumnMapper, setShowColumnMapper] = useState(false);
-  const [showBulkTools, setShowBulkTools] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [managers, setManagers] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -464,36 +453,6 @@ export default function AddEmployee() {
     }
     return { status: "valid", message: t("addEmployee.documents.status.valid"), variant: "default" as const };
   };
-
-  const renderBulkTools = () => (
-    <>
-      <Button variant="outline" onClick={downloadTemplate}>
-        <FileDown className="h-4 w-4 mr-2" />
-        {t("addEmployee.buttons.template")}
-      </Button>
-      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogTrigger asChild>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-            <FileUp className="h-4 w-4 mr-2" />
-            {t("addEmployee.buttons.import")}
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("addEmployee.import.title")}</DialogTitle>
-            <DialogDescription>{t("addEmployee.import.description")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input type="file" accept=".csv" onChange={handleFileImport} />
-            <Button variant="outline" onClick={downloadTemplate} className="w-full">
-              <FileDown className="h-4 w-4 mr-2" />
-              {t("addEmployee.buttons.downloadTemplateFirst")}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
 
   // Form submission handler - called by react-hook-form's handleSubmit
   const onFormSubmit = async (data: AddEmployeeFormData) => {
@@ -841,139 +800,6 @@ export default function AddEmployee() {
     }
   };
 
-  // CSV Import handlers
-  const downloadTemplate = () => {
-    const headers = [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "department",
-      "position",
-      "hireDate",
-      "employmentType",
-      "monthlySalary",
-      "annualLeaveDays",
-      "projectCode",
-      "fundingSource",
-    ];
-    const sample = [
-      "John",
-      "Doe",
-      "john@company.com",
-      "+670123456",
-      "Operations",
-      "Project Officer",
-      "2026-02-01",
-      "Full-time",
-      "1500.00",
-      "12",
-      "HEALTH-2026",
-      "Example Donor",
-    ];
-    const csv = buildCSV(headers, [sample]);
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "employee_import_template.csv";
-    link.click();
-    window.URL.revokeObjectURL(url);
-    toast({
-      title: t("addEmployee.import.downloadedTitle"),
-      description: t("addEmployee.import.downloadedDesc"),
-    });
-  };
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImportFile(file);
-      setShowImportDialog(false);
-      setShowColumnMapper(true);
-    }
-  };
-
-  const handleMappingComplete = async (mappings: ColumnMapping[], csvData: Record<string, string>[]) => {
-    if (isSubmitting) return;
-    const importResult = buildEmployeesFromCSV(csvData, mappings, {
-      today: toDateStringTL(new Date()),
-      batchId: Date.now().toString(),
-    });
-
-    if (importResult.errors.length) {
-      const firstError = importResult.errors[0];
-      toast({
-        title: t("addEmployee.import.validationFailedTitle"),
-        description: t("addEmployee.import.validationFailedDesc", {
-          count: importResult.errors.length,
-          row: firstError.rowNumber,
-          error: firstError.messages.join("; "),
-        }),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setShowColumnMapper(false);
-    setImportFile(null);
-    toast({
-      title: t("addEmployee.import.importStartedTitle"),
-      description: t("addEmployee.import.importStartedDesc", {
-        count: csvData.length,
-      }),
-    });
-
-    let importedCount = 0;
-    const failures: Array<{ rowNumber: number; message: string }> = [];
-    for (const item of importResult.employees) {
-      try {
-        await employeeService.addEmployee(
-          tenantId,
-          item.employee,
-          user
-            ? {
-                tenantId,
-                userId: user.uid,
-                userEmail: user.email || "",
-                userName: user.displayName || undefined,
-              }
-            : undefined,
-        );
-        importedCount += 1;
-      } catch (error) {
-        failures.push({
-          rowNumber: item.rowNumber,
-          message: error instanceof Error ? error.message : "Import failed",
-        });
-      }
-    }
-
-    setIsSubmitting(false);
-    await loadDepartmentsAndManagers();
-    if (failures.length) {
-      toast({
-        title: t("addEmployee.import.completedWithErrorsTitle"),
-        description: t("addEmployee.import.completedWithErrorsDesc", {
-          imported: importedCount,
-          failed: failures.length,
-          row: failures[0].rowNumber,
-          error: failures[0].message,
-        }),
-        variant: importedCount === 0 ? "destructive" : "default",
-      });
-      return;
-    }
-
-    toast({
-      title: t("addEmployee.import.completedTitle"),
-      description: t("addEmployee.import.completedDesc", {
-        count: importedCount,
-      }),
-    });
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -1052,53 +878,29 @@ export default function AddEmployee() {
           : t("addEmployee.header.addSubtitle")}
         icon={UserPlus}
         iconColor="text-blue-500"
-        actions={
-          <Button variant="outline" onClick={() => setShowBulkTools((prev) => !prev)}>
-            <FileText className="h-4 w-4 mr-2" />
-            {t("common.moreActions")}
-          </Button>
-        }
         className="mx-auto max-w-screen-2xl px-4 sm:px-6"
       />
 
       <div className="mx-auto max-w-screen-2xl px-4 py-5 sm:px-6 sm:py-6 -mt-6">
-        {showBulkTools && (
-          <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              {t("addEmployee.import.description")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {renderBulkTools()}
-            </div>
-          </div>
-        )}
-
-        {/* Contract Generator Dialog */}
-        <ContractGeneratorDialog
-          open={showContractGenerator}
-          onOpenChange={setShowContractGenerator}
-          input={{
-            form: formValues,
-            docValues,
-            additionalInfo,
-          }}
-          employeeName={`${formValues.firstName || ""} ${formValues.lastName || ""}`.trim()}
-          onAttach={(file) => handleAdditionalInfoChange("workContract", file)}
-        />
-
-        {/* Column Mapper Dialog */}
-        <Dialog open={showColumnMapper} onOpenChange={setShowColumnMapper}>
-          <DialogContent className="max-w-7xl max-h-[90vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>{t("addEmployee.import.mapTitle")}</DialogTitle>
-            </DialogHeader>
-            <CSVColumnMapper
-              csvFile={importFile}
-              onMappingComplete={handleMappingComplete}
-              onCancel={() => { setShowColumnMapper(false); setImportFile(null); }}
+        {/* Contract Generator Dialog — mounted only once opened so its chunk
+            (and the PDF code it pulls) never loads for someone just adding a
+            person. Bulk CSV import deliberately does NOT live on this page:
+            it is one button on Employees. */}
+        {showContractGenerator && (
+          <React.Suspense fallback={null}>
+            <ContractGeneratorDialog
+              open={showContractGenerator}
+              onOpenChange={setShowContractGenerator}
+              input={{
+                form: formValues,
+                docValues,
+                additionalInfo,
+              }}
+              employeeName={`${formValues.firstName || ""} ${formValues.lastName || ""}`.trim()}
+              onAttach={(file) => handleAdditionalInfoChange("workContract", file)}
             />
-          </DialogContent>
-        </Dialog>
+          </React.Suspense>
+        )}
 
         {/* One scrolling form. No stepper: after the cut this is nine
             controls, and a 4-step frame told a first-time user the job was

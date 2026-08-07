@@ -20,8 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   CreditCard,
   Save,
@@ -42,6 +44,14 @@ import type {
 interface PaymentStructureTabProps extends SettingsTabProps {
   initialData: PaymentStructure;
 }
+
+/** Existing labels for an account's purpose, reused as a read-only heading. */
+const ACCOUNT_PURPOSE_LABEL_KEYS: Record<BankAccountConfig['purpose'], string> = {
+  payroll: 'settings.payment.accountPurpose.payroll',
+  tax: 'settings.payment.accountPurpose.tax',
+  social_security: 'settings.payment.accountPurpose.socialSecurity',
+  general: 'settings.payment.accountPurpose.general',
+};
 
 export function PaymentStructureTab({
   tenantId,
@@ -214,25 +224,13 @@ export function PaymentStructureTab({
             <div className="space-y-4">
               {payment.bankAccounts.map((account, index) => (
                 <div key={account.id} className="p-4 border rounded-lg space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Select
-                      value={account.purpose}
-                      onValueChange={(value: 'payroll' | 'tax' | 'social_security' | 'general') => {
-                        const updated = [...payment.bankAccounts];
-                        updated[index] = { ...account, purpose: value };
-                        setPayment({ ...payment, bankAccounts: updated });
-                      }}
-                    >
-                      <SelectTrigger className="w-full sm:w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="payroll">{t('settings.payment.accountPurpose.payroll')}</SelectItem>
-                        <SelectItem value="tax">{t('settings.payment.accountPurpose.tax')}</SelectItem>
-                        <SelectItem value="social_security">{t('settings.payment.accountPurpose.socialSecurity')}</SelectItem>
-                        <SelectItem value="general">{t('settings.payment.accountPurpose.general')}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center justify-between gap-2">
+                    {/* The purpose stays visible as a fact; changing it (and the
+                        bookkeeping account) is behind the disclosure below —
+                        an owner adding their bank should only meet bank fields. */}
+                    <p className="min-w-0 truncate text-sm font-medium">
+                      {t(ACCOUNT_PURPOSE_LABEL_KEYS[account.purpose] ?? ACCOUNT_PURPOSE_LABEL_KEYS.general)}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
@@ -285,27 +283,69 @@ export function PaymentStructureTab({
                         setPayment({ ...payment, bankAccounts: updated });
                       }}
                     />
-                    <Select
-                      value={account.ledgerAccountCode || (account.purpose === 'payroll' ? '1130' : '1120')}
-                      onValueChange={(value: '1120' | '1130') => {
-                        const updated = [...payment.bankAccounts];
-                        updated[index] = { ...account, ledgerAccountCode: value };
-                        setPayment({ ...payment, bankAccounts: updated });
-                      }}
-                    >
-                      <SelectTrigger aria-label={t('settings.payment.ledgerAccount')}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1120">
-                          {t('settings.payment.ledgerOperatingBank')}
-                        </SelectItem>
-                        <SelectItem value="1130">
-                          {t('settings.payment.ledgerPayrollBank')}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
+
+                  <MoreDetailsSection
+                    title={t('settings.payment.accountAdvancedTitle') || 'What this account is for, and its bookkeeping account'}
+                  >
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      {t('settings.payment.accountAdvancedHint') ||
+                        'Xefe already picks these. Change them only if your accountant asks you to.'}
+                    </p>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`account-purpose-${account.id}`}>
+                          {t('settings.payment.accountPurposeLabel') || 'What this account is for'}
+                        </Label>
+                        <Select
+                          value={account.purpose}
+                          onValueChange={(value: 'payroll' | 'tax' | 'social_security' | 'general') => {
+                            const updated = [...payment.bankAccounts];
+                            updated[index] = { ...account, purpose: value };
+                            setPayment({ ...payment, bankAccounts: updated });
+                          }}
+                        >
+                          <SelectTrigger id={`account-purpose-${account.id}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="payroll">{t('settings.payment.accountPurpose.payroll')}</SelectItem>
+                            <SelectItem value="tax">{t('settings.payment.accountPurpose.tax')}</SelectItem>
+                            <SelectItem value="social_security">{t('settings.payment.accountPurpose.socialSecurity')}</SelectItem>
+                            <SelectItem value="general">{t('settings.payment.accountPurpose.general')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`account-ledger-${account.id}`}>
+                          {t('settings.payment.ledgerAccount')}
+                        </Label>
+                        <Select
+                          value={account.ledgerAccountCode || (account.purpose === 'payroll' ? '1130' : '1120')}
+                          onValueChange={(value: '1120' | '1130') => {
+                            const updated = [...payment.bankAccounts];
+                            updated[index] = { ...account, ledgerAccountCode: value };
+                            setPayment({ ...payment, bankAccounts: updated });
+                          }}
+                        >
+                          <SelectTrigger
+                            id={`account-ledger-${account.id}`}
+                            aria-label={t('settings.payment.ledgerAccount')}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1120">
+                              {t('settings.payment.ledgerOperatingBank')}
+                            </SelectItem>
+                            <SelectItem value="1130">
+                              {t('settings.payment.ledgerPayrollBank')}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </MoreDetailsSection>
                 </div>
               ))}
             </div>

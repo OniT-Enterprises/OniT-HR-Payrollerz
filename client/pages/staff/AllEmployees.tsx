@@ -84,11 +84,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { validISODate } from "@/lib/employees/import";
+import { buildEmployeesFromPositionalCSV } from "@/lib/employees/import";
 import { getFunctionsLazy } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
-import { roundMoney } from "@/lib/currency";
 // Compliance filter types for URL params
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues" | "issues";
 
@@ -894,7 +893,9 @@ export default function AllEmployees() {
   };
 
   const handleDownloadTemplate = () => {
-    // Create CSV template with headers
+    // Header labels are translated, but the importer reads this file by COLUMN
+    // POSITION — the order here must match EMPLOYEE_CSV_TEMPLATE_COLUMNS in
+    // lib/employees/import.ts, and columns may only ever be appended.
     const headers = [
       t("employees.csvHeaders.employeeId"),
       t("employees.csvHeaders.firstName"),
@@ -916,6 +917,13 @@ export default function AllEmployees() {
       t("employees.csvHeaders.emergencyContactPhone"),
       t("employees.csvHeaders.dateOfBirth"),
       t("employees.csvHeaders.statusTemplate"),
+      // Part-time only. Without them a part-time row cannot be imported,
+      // because payroll refuses to price a part-timer whose contracted hours
+      // and minimum-wage treatment are unknown.
+      t("employees.csvHeaders.contractedWeeklyHours") ||
+        "Contracted weekly hours (part-time only)",
+      t("employees.csvHeaders.minimumWageTreatment") ||
+        "Minimum wage treatment (part-time only: full_floor, pro_rata, reviewed_exception)",
     ];
 
     // Add example row
@@ -940,6 +948,8 @@ export default function AllEmployees() {
       "555-0124",
       "1990-05-15",
       "active",
+      "44",
+      "full_floor",
     ];
 
     const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");
@@ -959,87 +969,16 @@ export default function AllEmployees() {
     });
   };
 
-  /** Build an Employee from a template-ordered CSV row (see handleDownloadTemplate) */
-  // NOTE: this is a SECOND, positional CSV path, separate from the mapped
-  // importer in lib/employees/import.ts used by /people/add. The two drifted
-  // apart once already (that is what the hire-date comment below records), so
-  // keep their rules in step until they are properly merged.
-  const requireRowSalary = (raw: string): number => {
-    const parsed = Number(raw);
-    if (!raw || !Number.isFinite(parsed) || parsed < 0) {
-      throw new Error(`Monthly salary is required and must be a number (got "${raw}")`);
-    }
-    return roundMoney(parsed);
-  };
-
-  const employeeFromCsvRow = (values: string[]): Omit<Employee, "id"> => {
-    const v = (i: number) => values[i]?.trim() ?? "";
-    const address = [v(12), v(13), v(14), v(15)].filter(Boolean).join(", ");
-    const emptyDoc = { number: "", expiryDate: "", required: false };
-    // This path used to store the hire-date column VERBATIM, unlike the
-    // validating importer in lib/employees/import.ts. A dd/mm/yyyy spreadsheet
-    // export therefore put a non-ISO date in Firestore, and calculateSubsidioAnual
-    // throws a RangeError on it — which crashed the whole payroll calculator.
-    // Throwing here lands in the caller's per-row catch, so the row is counted as
-    // an error and skipped instead.
-    if (v(7) && !validISODate(v(7))) {
-      throw new Error(`Hire date must use YYYY-MM-DD (got "${v(7)}")`);
-    }
-    return {
-      personalInfo: {
-        firstName: v(1),
-        lastName: v(2),
-        email: v(3),
-        phone: v(4),
-        phoneApp: "",
-        appEligible: false,
-        address,
-        dateOfBirth: v(18),
-        socialSecurityNumber: "",
-        emergencyContactName: v(16),
-        emergencyContactPhone: v(17),
-      },
-      jobDetails: {
-        employeeId: v(0) || `TEMP${Date.now()}${Math.floor(Math.random() * 1000)}`,
-        department: v(5),
-        position: v(6),
-        hireDate: v(7) || getTodayTL(),
-        employmentType: v(8) || "Full-time",
-        workLocation: v(9) || "Office",
-        manager: "",
-      },
-      compensation: {
-        // parseInt TRUNCATED cents ("850.75" -> 850) and silently produced $0
-        // for a missing or unparseable salary — the same defect the canonical
-        // importer (lib/employees/import.ts) was fixed for. A wrong wage is
-        // worse than a rejected row, so throw into the caller's per-row catch.
-        monthlySalary: requireRowSalary(v(10)),
-        // Art. 32 is 12 working days, matching TL_DEFAULT_LEAVE_POLICIES and
-        // lib/employees/import.ts. This path granted 25.
-        annualLeaveDays: 12,
-        benefitsPackage: v(11) || "standard",
-        payFrequency: "monthly",
-        isResident: true,
-      },
-      documents: {
-        bilheteIdentidade: { ...emptyDoc, required: true },
-        employeeIdCard: { ...emptyDoc, required: true },
-        socialSecurityNumber: { ...emptyDoc, required: true },
-        taxIdentificationNumber: { ...emptyDoc },
-        electoralCard: { ...emptyDoc },
-        idCard: { ...emptyDoc },
-        passport: { ...emptyDoc },
-        workContract: { fileUrl: "", uploadDate: new Date().toISOString() },
-        nationality: "",
-        workingVisaResidency: { number: "", expiryDate: "", fileUrl: "" },
-      },
-      isForeignWorker: false,
-      bankName: "",
-      bankAccountNumber: "",
-      status: (v(19) || "active") as Employee["status"],
-    };
-  };
-
+  /**
+   * Import the positional CSV template.
+   *
+   * Rows are validated and turned into Employees by the SAME function the
+   * column-mapped importer uses (lib/employees/import.ts). This page used to
+   * carry its own copy of those rules and it drifted twice — hire dates stored
+   * verbatim (a RangeError inside calculateSubsidioAnual), then salary cents
+   * truncated and annual leave granted at 25 days instead of Art. 32's 12.
+   * Nothing here may re-derive a field; it only reads the file and writes.
+   */
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!canManageTenant) return;
     const file = event.target.files?.[0];
@@ -1051,25 +990,36 @@ export default function AllEmployees() {
       try {
         const csvText = e.target?.result as string;
         const lines = csvText.split(/\r?\n/);
-        const headers = lines[0].split(",").map((h) => h.trim());
         const dataLines = lines.slice(1).filter((line) => line.trim());
+        const rows = dataLines.map((line) =>
+          line.split(",").map((val) => val.trim().replace(/^"|"$/g, "")),
+        );
+
+        const { employees: parsed, errors } = buildEmployeesFromPositionalCSV(rows, {
+          batchId: Date.now().toString(),
+          today: getTodayTL(),
+        });
 
         // Keys of everyone already in the directory + rows already accepted from this file
         const seenKeys = new Set<string>(employees.flatMap((emp) => duplicateKeysFor(emp)));
 
         let successCount = 0;
         let duplicateCount = 0;
-        let errorCount = 0;
-        const errorReasons: string[] = [];
+        let errorCount = errors.length;
+        // Keep the first few reasons: a count alone ("3 errors") leaves the
+        // admin with no idea that, say, their whole spreadsheet uses
+        // dd/mm/yyyy dates. Row numbers are 1-based including the header.
+        const errorReasons: string[] = errors
+          .slice(0, 3)
+          .map(
+            (rowError) =>
+              `${t("employees.importDialog.rowLabel", {
+                row: String(rowError.rowNumber),
+              })}: ${rowError.messages.join("; ")}`,
+          );
 
-        for (const [index, line] of dataLines.entries()) {
+        for (const { rowNumber, employee: newEmployee } of parsed) {
           try {
-            const values = line.split(",").map((val) => val.trim().replace(/^"|"$/g, ""));
-            if (values.length < Math.min(headers.length, 3) || !values[1] || !values[2]) {
-              errorCount++;
-              continue;
-            }
-            const newEmployee = employeeFromCsvRow(values);
             const keys = duplicateKeysFor(newEmployee);
             if (keys.some((key) => seenKeys.has(key))) {
               duplicateCount++;
@@ -1080,17 +1030,14 @@ export default function AllEmployees() {
             successCount++;
           } catch (error) {
             errorCount++;
-            // Keep the first few reasons: a count alone ("3 errors") leaves the
-            // admin with no idea that, say, their whole spreadsheet uses
-            // dd/mm/yyyy dates. Row numbers are 1-based including the header.
             if (errorReasons.length < 3) {
               errorReasons.push(
-                `${t("employees.importDialog.rowLabel", { row: String(index + 2) })}: ${
+                `${t("employees.importDialog.rowLabel", { row: String(rowNumber) })}: ${
                   error instanceof Error ? error.message : String(error)
                 }`,
               );
             }
-            console.error(`Error importing row ${index + 2}:`, error);
+            console.error(`Error importing row ${rowNumber}:`, error);
           }
         }
 

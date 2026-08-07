@@ -1575,9 +1575,13 @@ const messages = {
     },
   },
   settings: {
+    integrations: {
+      quickbooksTitle: "Esporta ba QuickBooks ka softuere kontabilidade seluk",
+    },
     headerTitle: "Konfigurasaun Empresa",
     headerSubtitle: "Konfigura empresa, folha no politika RH",
     access: {
+      customAccessTitle: "Muda saida mak sira bele loke",
       title: "Asesu ekipa",
       description: "Konvida ema no kontrola parte Xefe ne'ebé sira bele uza.",
       invite: "Konvida ema",
@@ -1744,6 +1748,9 @@ const messages = {
       save: "Rai Estrutura",
     },
     payment: {
+      accountAdvancedTitle: "Konta ne'e ba saida, no ninia konta kontabilidade",
+      accountAdvancedHint: "Xefe hili ona sira-ne'e. Muda deit se ita-nia kontabilista husu.",
+      accountPurposeLabel: "Konta ne'e ba saida",
       ledgerAccount: "Konta kontabilidade",
       ledgerOperatingBank: "Banku — Operasaun (1120)",
       ledgerPayrollBank: "Banku — Pagamentu Saláriu (1130)",
@@ -1786,6 +1793,13 @@ const messages = {
       save: "Rai Estrutura Pagamentu",
     },
     timeOff: {
+      changedDays: {
+        title: "Loron sira ne'ebé ita muda ba loron servisu",
+        hint: "Hasai ida atu fila fali loron ne'e ba kalendáriu feriadu Timor-Leste nian.",
+        workingDay: "Loron servisu",
+        notAHoliday: "La'ós feriadu",
+      },
+      annualLeaveCashOutNote: "Se ema ida sai ho lisensa tinan nian ne'ebé nia seidauk goza, ne'e la lakon — selu ho osan iha nia resibu ikus (Lei Traballu Art. 32).",
       statutoryNote: "Sira-ne'e tuir ona lei Timor-Leste. Muda deit se ita-nia kontabilista husu.",
       companyGroupHeading: "Saida mak ita-nia empreza aumenta",
       customTypes: {
@@ -1852,6 +1866,8 @@ const messages = {
       save: "Rai Politika Lisensa",
     },
     payroll: {
+      currentRatesTitle: "Valór ne'ebé ita uza agora",
+      changeRatesTitle: "Muda valór legál sira",
       title: "Konfigurasaun Folha",
       description: "Impostu, seguransa sosial no horas extra",
       wit: "Impostu Rendimentu (WIT)",
@@ -2085,6 +2101,8 @@ const messages = {
       pageOf: "Pajina {{page}} hosi {{total}}",
     },
     csvHeaders: {
+      contractedWeeklyHours: "Oras Semana Kontratadu",
+      minimumWageTreatment: "Tratamentu Saláriu Mínimu",
       employeeId: "ID Empregadu",
       firstName: "Naran",
       lastName: "Apelidu",
@@ -6245,6 +6263,14 @@ const messages = {
       allMethods: "Metodu Hotu",
     },
     settings: {
+      companyInfoReadOnlyDesc: "Saida mak ita-nia fatura hatudu nu'udar ita-nia negósiu. Muda iha Konfigurasaun Empresa.",
+      logoReadOnly: "Ita-nia logo, hanesan sai iha fatura no PDF.",
+      logoNotSet: "Seidauk iha logo. Hatama ida iha Konfigurasaun Empresa.",
+      notSet: "Seidauk define",
+      editInCompanySettings: "Muda iha Konfigurasaun Empresa",
+      identityOutOfStep: "Ita-nia fatura hatudu kópia tuan husi dadus sira-ne'e",
+      identityOutOfStepHelp: "Dadus sira-ne'e rai tiha ona iha pájina ne'e, entaun Konfigurasaun Empresa la atualiza sira ona. Kontaktu suporte atu hadi'a.",
+      identityInCompanySettings: "iha Konfigurasaun Empresa",
       title: "Definisaun Fatura",
       subtitle: "Konfigura valor padraun no informasaun empreza",
       saved: "Definisaun fatura rai tiha",

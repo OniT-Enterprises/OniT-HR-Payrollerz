@@ -1592,10 +1592,14 @@ const messages = {
     },
   },
   settings: {
+    integrations: {
+      quickbooksTitle: "Exportar para o QuickBooks ou outro software de contabilidade",
+    },
     headerTitle: "Definições da Empresa",
     headerSubtitle:
       "Configure a sua empresa, folha de pagamento e políticas de RH",
     access: {
+      customAccessTitle: "Alterar o que podem abrir",
       title: "Acesso da equipa",
       description:
         "Convide pessoas e controle as áreas do Xefe que podem utilizar.",
@@ -1769,6 +1773,9 @@ const messages = {
       save: "Guardar Estrutura",
     },
     payment: {
+      accountAdvancedTitle: "Para que serve esta conta e a sua conta contabilística",
+      accountAdvancedHint: "O Xefe já escolhe estes valores. Altere apenas se o seu contabilista pedir.",
+      accountPurposeLabel: "Para que serve esta conta",
       ledgerAccount: "Conta contabilística",
       ledgerOperatingBank: "Banco — Operações (1120)",
       ledgerPayrollBank: "Banco — Folha de Pagamento (1130)",
@@ -1813,6 +1820,13 @@ const messages = {
       save: "Guardar Estrutura de Pagamento",
     },
     timeOff: {
+      changedDays: {
+        title: "Dias que transformou em dias de trabalho",
+        hint: "Remova um para repor o dia no calendário de feriados de Timor-Leste.",
+        workingDay: "Dia de trabalho",
+        notAHoliday: "Não é feriado",
+      },
+      annualLeaveCashOutNote: "Se alguém sair com férias que nunca gozou, não se perdem — são pagas em dinheiro no último recibo de vencimento (Lei do Trabalho Art. 32).",
       statutoryNote: "Já cumprem a lei de Timor-Leste. Altere apenas se o seu contabilista pedir.",
       companyGroupHeading: "O que a sua empresa acrescenta",
       customTypes: {
@@ -1882,6 +1896,8 @@ const messages = {
       save: "Guardar Políticas de Licenças",
     },
     payroll: {
+      currentRatesTitle: "As taxas que está a usar agora",
+      changeRatesTitle: "Alterar as taxas legais",
       title: "Configuração da Folha",
       description:
         "Impostos, segurança social e definições de horas extra para Timor-Leste",
@@ -2115,6 +2131,8 @@ const messages = {
       pageOf: "Página {{page}} de {{total}}",
     },
     csvHeaders: {
+      contractedWeeklyHours: "Horas Semanais Contratadas",
+      minimumWageTreatment: "Tratamento do Salário Mínimo",
       employeeId: "ID do Funcionário",
       firstName: "Primeiro Nome",
       lastName: "Apelido",
@@ -6359,6 +6377,14 @@ const messages = {
       allMethods: "Todos os Métodos",
     },
     settings: {
+      companyInfoReadOnlyDesc: "O que as suas faturas mostram como o seu negócio. Altere em Definições da Empresa.",
+      logoReadOnly: "O seu logótipo, tal como sai nas faturas e PDFs.",
+      logoNotSet: "Ainda sem logótipo. Adicione um em Definições da Empresa.",
+      notSet: "Não definido",
+      editInCompanySettings: "Alterar em Definições da Empresa",
+      identityOutOfStep: "As suas faturas mostram uma cópia antiga destes dados",
+      identityOutOfStepHelp: "Estes dados foram guardados nesta página anteriormente, por isso as Definições da Empresa já não os atualizam. Contacte o suporte para os alinhar.",
+      identityInCompanySettings: "em Definições da Empresa",
       title: "Definições de Faturação",
       subtitle: "Configure os padrões das suas faturas e informação da empresa",
       saved: "Definições de faturação guardadas",

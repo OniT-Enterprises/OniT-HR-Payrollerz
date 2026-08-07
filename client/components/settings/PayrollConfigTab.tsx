@@ -1,6 +1,13 @@
 /**
  * Payroll Config Settings Tab
  * Tax (WIT), Social Security (INSS), Overtime rates, 13th Month (Subsidio Anual)
+ *
+ * Layout rule (see docs/DASHBOARD_DESIGN.md): the statutory rate FIELDS are
+ * not an everyday task for a first-time TL owner — they already follow the
+ * law. So the page shows the everyday control (who may approve payroll) plus
+ * the current rates as read-only facts, and hides the editors behind a
+ * "Change the legal rates" disclosure. Nothing is removed: every control is
+ * one tap away and behaves identically.
  */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +32,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
 import { useTenant } from '@/contexts/TenantContext';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 
 import {
   DollarSign,
@@ -35,6 +43,7 @@ import {
   Save,
   Loader2,
   ShieldCheck,
+  Scale,
 } from 'lucide-react';
 import type { SettingsTabProps, PayrollConfig } from './types';
 
@@ -76,6 +85,38 @@ export function PayrollConfigTab({
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig>(initialData);
   const configIsValid = isValidPayrollConfig(payrollConfig);
 
+  // Read-only echo of the values the engine actually uses, so the owner can
+  // reassure themselves without opening the editors. Deliberately omits the
+  // EMPLOYER INSS rate: with the DL 20/2017 Art. 86 discount enabled the
+  // effective rate is year-dependent (5.4% through 2026), so the stored field
+  // is not what gets applied and printing it here would be a wrong fact.
+  const rateFacts: Array<{ label: string; value: string }> = [
+    {
+      label: t('settings.payroll.minimumWageLabel'),
+      value: `$${payrollConfig.minimumWage}`,
+    },
+    {
+      label: t('settings.payroll.residentThreshold'),
+      value: `$${payrollConfig.tax.residentThreshold}`,
+    },
+    {
+      label: t('settings.payroll.residentRate'),
+      value: `${payrollConfig.tax.residentRate}%`,
+    },
+    {
+      label: t('settings.payroll.employeeContribution'),
+      value: `${payrollConfig.socialSecurity.employeeRate}%`,
+    },
+    {
+      label: t('settings.payroll.first2HoursRate'),
+      value: `${payrollConfig.overtimeRates.standard}×`,
+    },
+    {
+      label: t('settings.payroll.sundayHolidayRate'),
+      value: `${payrollConfig.overtimeRates.sundayHoliday}×`,
+    },
+  ];
+
   const save = async () => {
     if (!tenantId) return;
     if (!configIsValid) {
@@ -112,414 +153,7 @@ export function PayrollConfigTab({
         <CardDescription>{t('settings.payroll.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Tax Settings (WIT) */}
-        <div className="space-y-4">
-          <h3 className="font-medium flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            {t('settings.payroll.wit')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.residentThreshold')}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">$</span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={payrollConfig.tax.residentThreshold}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      tax: {
-                        ...payrollConfig.tax,
-                        residentThreshold: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.residentThresholdHint', {
-                  amount: payrollConfig.tax.residentThreshold,
-                })}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.residentRate')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={payrollConfig.tax.residentRate}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      tax: {
-                        ...payrollConfig.tax,
-                        residentRate: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.nonResidentRate')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={payrollConfig.tax.nonResidentRate}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      tax: {
-                        ...payrollConfig.tax,
-                        nonResidentRate: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.flatRateHint')}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Social Security (INSS) */}
-        <div className="space-y-4">
-          <h3 className="font-medium flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {t('settings.payroll.socialSecurity')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.employeeContribution')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={payrollConfig.socialSecurity.employeeRate}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      socialSecurity: {
-                        ...payrollConfig.socialSecurity,
-                        employeeRate: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.employeeContributionHint')}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.employerContribution')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={payrollConfig.socialSecurity.employerRate}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      socialSecurity: {
-                        ...payrollConfig.socialSecurity,
-                        employerRate: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.employerContributionHint')}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-6">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={payrollConfig.socialSecurity.excludeFoodAllowance}
-                onCheckedChange={(checked) =>
-                  setPayrollConfig({
-                    ...payrollConfig,
-                    socialSecurity: {
-                      ...payrollConfig.socialSecurity,
-                      excludeFoodAllowance: checked,
-                    },
-                  })
-                }
-              />
-              <Label>{t('settings.payroll.excludeFoodAllowance')}</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={payrollConfig.socialSecurity.excludePerDiem}
-                onCheckedChange={(checked) =>
-                  setPayrollConfig({
-                    ...payrollConfig,
-                    socialSecurity: {
-                      ...payrollConfig.socialSecurity,
-                      excludePerDiem: checked,
-                    },
-                  })
-                }
-              />
-              <Label>{t('settings.payroll.excludePerDiem')}</Label>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground max-w-prose">
-            {t('settings.payroll.inssExclusionsHint')}
-          </p>
-          {/* DL 20/2017 Art. 86 small-employer discount — reduces the employer
-              INSS share (5.4% through Dec 2026, then 6%). Employee 4% unchanged. */}
-          <div className="flex items-start gap-2 pt-1">
-            <Switch
-              checked={payrollConfig.smallEmployerInssDiscount ?? false}
-              onCheckedChange={(checked) =>
-                setPayrollConfig({
-                  ...payrollConfig,
-                  smallEmployerInssDiscount: checked,
-                })
-              }
-            />
-            <div>
-              <Label>Small-employer INSS discount (DL 20/2017 Art. 86)</Label>
-              <p className="text-xs text-muted-foreground max-w-prose">
-                Enable if you have 10 or fewer workers, at least 60% Timorese
-                nationals, and your contributions are up to date. Reduces the
-                employer contribution to 5.4% (through Dec 2026) to match the
-                INSS payment guide. The employee 4% is unchanged; the rate
-                returns to 6% from 2027.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Minimum wage — the field the below-minimum payroll warning reads */}
-        <div className="space-y-4">
-          <h3 className="font-medium flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            {t('settings.payroll.minimumWageSection')}
-          </h3>
-          <div className="max-w-md space-y-2">
-            <Label>{t('settings.payroll.minimumWageLabel')}</Label>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">$</span>
-              <Input
-                type="number"
-                min={0}
-                value={payrollConfig.minimumWage}
-                onChange={(e) =>
-                  setPayrollConfig({
-                    ...payrollConfig,
-                    minimumWage: parseInt(e.target.value, 10) || 0,
-                  })
-                }
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t('settings.payroll.minimumWageHint')}
-            </p>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Overtime */}
-        <div className="space-y-4">
-          <h3 className="font-medium flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            {t('settings.payroll.overtime')}
-          </h3>
-          <div className="max-w-md space-y-2">
-            <Label>{t('settings.payroll.hourlyRateMethod')}</Label>
-            <Select
-              value={payrollConfig.hourlyRateConvention}
-              onValueChange={(value: PayrollConfig['hourlyRateConvention']) =>
-                setPayrollConfig({
-                  ...payrollConfig,
-                  hourlyRateConvention: value,
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weekly_average">
-                  {t('settings.payroll.hourlyRateWeeklyAverage')}
-                </SelectItem>
-                <SelectItem value="fixed_190_round_up">
-                  {t('settings.payroll.hourlyRateFixed190')}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {t('settings.payroll.hourlyRateHint')}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.maxHoursWeek')}</Label>
-              <Input
-                type="number"
-                min={0}
-                value={payrollConfig.maxWorkHoursPerWeek}
-                onChange={(e) =>
-                  setPayrollConfig({
-                    ...payrollConfig,
-                    maxWorkHoursPerWeek: parseInt(e.target.value, 10) || 0,
-                  })
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.maxHoursWeekHint')}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.first2HoursRate')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  step={0.1}
-                  value={payrollConfig.overtimeRates.standard}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      overtimeRates: {
-                        ...payrollConfig.overtimeRates,
-                        standard: parseFloat(e.target.value) || 1,
-                      },
-                    })
-                  }
-                />
-                <span className="text-muted-foreground">&times;</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.first2HoursHint')}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.sundayHolidayRate')}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={1}
-                  step={0.1}
-                  value={payrollConfig.overtimeRates.sundayHoliday}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      overtimeRates: {
-                        ...payrollConfig.overtimeRates,
-                        sundayHoliday: parseFloat(e.target.value) || 1,
-                      },
-                    })
-                  }
-                />
-                <span className="text-muted-foreground">&times;</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.sundayHolidayHint')}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>{t('settings.payroll.nightPremiumRate')}</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">+</span>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={payrollConfig.overtimeRates.nightShiftPremium ?? 25}
-                  onChange={(e) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      overtimeRates: {
-                        ...payrollConfig.overtimeRates,
-                        nightShiftPremium: parseInt(e.target.value, 10) || 0,
-                      },
-                    })
-                  }
-                />
-                <Percent className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.nightPremiumHint')}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* 13th Month (Subsidio Anual) */}
-        <div className="space-y-4">
-          <h3 className="font-medium flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {t('settings.payroll.thirteenthMonth')}
-          </h3>
-          <div className="flex items-center gap-4">
-            <Switch
-              checked={payrollConfig.subsidioAnual.enabled}
-              onCheckedChange={(checked) =>
-                setPayrollConfig({
-                  ...payrollConfig,
-                  subsidioAnual: {
-                    ...payrollConfig.subsidioAnual,
-                    enabled: checked,
-                  },
-                })
-              }
-            />
-            <Label>{t('settings.payroll.enable13th')}</Label>
-          </div>
-          {payrollConfig.subsidioAnual.enabled && (
-            <div className="space-y-3 mt-4">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={payrollConfig.subsidioAnual.proRataForNewEmployees}
-                  onCheckedChange={(checked) =>
-                    setPayrollConfig({
-                      ...payrollConfig,
-                      subsidioAnual: {
-                        ...payrollConfig.subsidioAnual,
-                        proRataForNewEmployees: checked,
-                      },
-                    })
-                  }
-                />
-                <Label>{t('settings.payroll.prorataHint')}</Label>
-              </div>
-              {/* The deadline is statutory (Art. 44), not a tenant choice. */}
-              <p className="text-xs text-muted-foreground">
-                {t('settings.payroll.subsidioDeadlineNote')}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Approval policy (solo-operator mode) */}
+        {/* Approval policy (solo-operator mode) — the one everyday choice here */}
         <div className="space-y-4">
           <h3 className="font-medium flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
@@ -549,6 +183,447 @@ export function PayrollConfigTab({
             </div>
           </div>
         </div>
+
+        <Separator />
+
+        {/* The rates in force, as facts — editing them is the rare case */}
+        <div className="space-y-3">
+          <h3 className="font-medium flex items-center gap-2">
+            <Scale className="h-5 w-5" />
+            {t('settings.payroll.currentRatesTitle') || 'The rates you are using now'}
+          </h3>
+          <div className="divide-y rounded-lg border">
+            {rateFacts.map((fact) => (
+              <div
+                key={fact.label}
+                className="flex items-center justify-between gap-3 px-3 py-2.5"
+              >
+                <span className="text-sm text-muted-foreground">{fact.label}</span>
+                <span className="text-sm font-medium tabular-nums">{fact.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Everything below is legally fixed for almost every business. Hidden
+            by default; opened automatically if the stored config is invalid so
+            the error message below always has a reachable field. */}
+        <MoreDetailsSection
+          title={t('settings.payroll.changeRatesTitle') || 'Change the legal rates'}
+          defaultOpen={!configIsValid}
+        >
+          <p className="mb-4 text-xs text-muted-foreground">
+            {t('settings.hub.advancedCaution') ||
+              'These already follow Timor-Leste law. Change them only if your accountant asks you to.'}
+          </p>
+
+          <div className="space-y-6">
+            {/* Tax Settings (WIT) */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                {t('settings.payroll.wit')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.residentThreshold')}</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={payrollConfig.tax.residentThreshold}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          tax: {
+                            ...payrollConfig.tax,
+                            residentThreshold: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.residentThresholdHint', {
+                      amount: payrollConfig.tax.residentThreshold,
+                    })}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.residentRate')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={payrollConfig.tax.residentRate}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          tax: {
+                            ...payrollConfig.tax,
+                            residentRate: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.nonResidentRate')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={payrollConfig.tax.nonResidentRate}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          tax: {
+                            ...payrollConfig.tax,
+                            nonResidentRate: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.flatRateHint')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Social Security (INSS) */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {t('settings.payroll.socialSecurity')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.employeeContribution')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={payrollConfig.socialSecurity.employeeRate}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          socialSecurity: {
+                            ...payrollConfig.socialSecurity,
+                            employeeRate: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.employeeContributionHint')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.employerContribution')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={payrollConfig.socialSecurity.employerRate}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          socialSecurity: {
+                            ...payrollConfig.socialSecurity,
+                            employerRate: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.employerContributionHint')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-6">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={payrollConfig.socialSecurity.excludeFoodAllowance}
+                    onCheckedChange={(checked) =>
+                      setPayrollConfig({
+                        ...payrollConfig,
+                        socialSecurity: {
+                          ...payrollConfig.socialSecurity,
+                          excludeFoodAllowance: checked,
+                        },
+                      })
+                    }
+                  />
+                  <Label>{t('settings.payroll.excludeFoodAllowance')}</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={payrollConfig.socialSecurity.excludePerDiem}
+                    onCheckedChange={(checked) =>
+                      setPayrollConfig({
+                        ...payrollConfig,
+                        socialSecurity: {
+                          ...payrollConfig.socialSecurity,
+                          excludePerDiem: checked,
+                        },
+                      })
+                    }
+                  />
+                  <Label>{t('settings.payroll.excludePerDiem')}</Label>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-prose">
+                {t('settings.payroll.inssExclusionsHint')}
+              </p>
+              {/* DL 20/2017 Art. 86 small-employer discount — reduces the employer
+                  INSS share (5.4% through Dec 2026, then 6%). Employee 4% unchanged. */}
+              <div className="flex items-start gap-2 pt-1">
+                <Switch
+                  checked={payrollConfig.smallEmployerInssDiscount ?? false}
+                  onCheckedChange={(checked) =>
+                    setPayrollConfig({
+                      ...payrollConfig,
+                      smallEmployerInssDiscount: checked,
+                    })
+                  }
+                />
+                <div>
+                  <Label>Small-employer INSS discount (DL 20/2017 Art. 86)</Label>
+                  <p className="text-xs text-muted-foreground max-w-prose">
+                    Enable if you have 10 or fewer workers, at least 60% Timorese
+                    nationals, and your contributions are up to date. Reduces the
+                    employer contribution to 5.4% (through Dec 2026) to match the
+                    INSS payment guide. The employee 4% is unchanged; the rate
+                    returns to 6% from 2027.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Minimum wage — the field the below-minimum payroll warning reads */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                {t('settings.payroll.minimumWageSection')}
+              </h3>
+              <div className="max-w-md space-y-2">
+                <Label>{t('settings.payroll.minimumWageLabel')}</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">$</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={payrollConfig.minimumWage}
+                    onChange={(e) =>
+                      setPayrollConfig({
+                        ...payrollConfig,
+                        minimumWage: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.payroll.minimumWageHint')}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Overtime */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                {t('settings.payroll.overtime')}
+              </h3>
+              <div className="max-w-md space-y-2">
+                <Label>{t('settings.payroll.hourlyRateMethod')}</Label>
+                <Select
+                  value={payrollConfig.hourlyRateConvention}
+                  onValueChange={(value: PayrollConfig['hourlyRateConvention']) =>
+                    setPayrollConfig({
+                      ...payrollConfig,
+                      hourlyRateConvention: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly_average">
+                      {t('settings.payroll.hourlyRateWeeklyAverage')}
+                    </SelectItem>
+                    <SelectItem value="fixed_190_round_up">
+                      {t('settings.payroll.hourlyRateFixed190')}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t('settings.payroll.hourlyRateHint')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.maxHoursWeek')}</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={payrollConfig.maxWorkHoursPerWeek}
+                    onChange={(e) =>
+                      setPayrollConfig({
+                        ...payrollConfig,
+                        maxWorkHoursPerWeek: parseInt(e.target.value, 10) || 0,
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.maxHoursWeekHint')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.first2HoursRate')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      step={0.1}
+                      value={payrollConfig.overtimeRates.standard}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          overtimeRates: {
+                            ...payrollConfig.overtimeRates,
+                            standard: parseFloat(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                    <span className="text-muted-foreground">&times;</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.first2HoursHint')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.sundayHolidayRate')}</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      step={0.1}
+                      value={payrollConfig.overtimeRates.sundayHoliday}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          overtimeRates: {
+                            ...payrollConfig.overtimeRates,
+                            sundayHoliday: parseFloat(e.target.value) || 1,
+                          },
+                        })
+                      }
+                    />
+                    <span className="text-muted-foreground">&times;</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.sundayHolidayHint')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('settings.payroll.nightPremiumRate')}</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">+</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={payrollConfig.overtimeRates.nightShiftPremium ?? 25}
+                      onChange={(e) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          overtimeRates: {
+                            ...payrollConfig.overtimeRates,
+                            nightShiftPremium: parseInt(e.target.value, 10) || 0,
+                          },
+                        })
+                      }
+                    />
+                    <Percent className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.nightPremiumHint')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* 13th Month (Subsidio Anual) */}
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {t('settings.payroll.thirteenthMonth')}
+              </h3>
+              <div className="flex items-center gap-4">
+                <Switch
+                  checked={payrollConfig.subsidioAnual.enabled}
+                  onCheckedChange={(checked) =>
+                    setPayrollConfig({
+                      ...payrollConfig,
+                      subsidioAnual: {
+                        ...payrollConfig.subsidioAnual,
+                        enabled: checked,
+                      },
+                    })
+                  }
+                />
+                <Label>{t('settings.payroll.enable13th')}</Label>
+              </div>
+              {payrollConfig.subsidioAnual.enabled && (
+                <div className="space-y-3 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={payrollConfig.subsidioAnual.proRataForNewEmployees}
+                      onCheckedChange={(checked) =>
+                        setPayrollConfig({
+                          ...payrollConfig,
+                          subsidioAnual: {
+                            ...payrollConfig.subsidioAnual,
+                            proRataForNewEmployees: checked,
+                          },
+                        })
+                      }
+                    />
+                    <Label>{t('settings.payroll.prorataHint')}</Label>
+                  </div>
+                  {/* The deadline is statutory (Art. 44), not a tenant choice. */}
+                  <p className="text-xs text-muted-foreground">
+                    {t('settings.payroll.subsidioDeadlineNote')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </MoreDetailsSection>
 
         <div className="space-y-3 pt-4">
           {!configIsValid && (

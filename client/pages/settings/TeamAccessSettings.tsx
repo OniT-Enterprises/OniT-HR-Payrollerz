@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import PageHeader from "@/components/layout/PageHeader";
 import { SEO } from "@/components/SEO";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -346,30 +347,40 @@ export default function TeamAccessSettings() {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.access.standardAccessHint")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {editModules.map(moduleLabel).join(" · ") || t("settings.access.noModules")}
+              </p>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                <Label>{t("settings.access.accessAreas")}</Label>
+            {/* Picking the role already sets the right areas. Fine-tuning them
+                is the rare case, so it stays one tap away. */}
+            <MoreDetailsSection title={t("settings.access.customAccessTitle") || "Change what they can open"}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                  <Label>{t("settings.access.accessAreas")}</Label>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {MODULES.map((module) => (
+                    <div key={module} className="flex items-center gap-2 rounded-md border p-2.5">
+                      <Checkbox
+                        id={`module-${module}`}
+                        checked={editModules.includes(module)}
+                        onCheckedChange={(checked) => setEditModules((current) =>
+                          checked === true
+                            ? Array.from(new Set([...current, module]))
+                            : current.filter((item) => item !== module))}
+                      />
+                      <Label htmlFor={`module-${module}`} className="font-normal">
+                        {moduleLabel(module)}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {MODULES.map((module) => (
-                  <div key={module} className="flex items-center gap-2 rounded-md border p-2.5">
-                    <Checkbox
-                      id={`module-${module}`}
-                      checked={editModules.includes(module)}
-                      onCheckedChange={(checked) => setEditModules((current) =>
-                        checked === true
-                          ? Array.from(new Set([...current, module]))
-                          : current.filter((item) => item !== module))}
-                    />
-                    <Label htmlFor={`module-${module}`} className="font-normal">
-                      {moduleLabel(module)}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
+            </MoreDetailsSection>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>{t("common.cancel")}</Button>

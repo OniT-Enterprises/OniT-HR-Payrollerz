@@ -1,6 +1,11 @@
 /**
  * Backfill employee compliance snapshots used by dashboard aggregate queries.
  *
+ * NOTE: the scoring below is a hand-copy of client/lib/employeeCompliance.ts
+ * because this script runs under the Admin SDK outside the Vite build. If you
+ * change the scoring there, change it here in the same commit — the two have
+ * already drifted once.
+ *
  * Usage:
  *   pnpm backfill:employee-compliance -- --dry-run
  *   pnpm backfill:employee-compliance
@@ -21,8 +26,14 @@ function buildEmployeeComplianceSnapshot(employee) {
   const missingInss = !hasValue(employee?.documents?.socialSecurityNumber?.number);
   const missingContract = !hasValue(employee?.documents?.workContract?.fileUrl);
   const missingDepartment = !hasValue(employee?.jobDetails?.department);
-  const blockingIssueCount = Number(missingInss) + Number(missingContract);
-  const issueCount = blockingIssueCount + Number(missingDepartment);
+  // MUST match client/lib/employeeCompliance.ts. None of these three blocks a
+  // payroll calculation: the INSS number is needed to FILE, not to pay; nothing
+  // reads the contract PDF; department is display only. They used to count as
+  // blocking, which met a newly created employee with "2 problems" and made the
+  // payroll run demand an exclusion or a typed acknowledgement.
+  const blockingIssueCount = 0;
+  const issueCount =
+    Number(missingInss) + Number(missingContract) + Number(missingDepartment);
 
   return {
     missingInss,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { settingsService } from "@/services/settingsService";
 import { holidayService, type HolidayOverride } from "@/services/holidayService";
 import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+import { formatDateTL, parseDateISO } from "@/lib/dateUtils";
 
 import { DatePicker } from "@/components/ui/date-picker";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -102,10 +103,30 @@ export function TimeOffPoliciesTab({
     useState<TimeOffPolicies>(initialTimeOff);
   const policiesAreValid = isValidTimeOffPolicies(timeOffPolicies);
 
-  // Sync local state when parent reloads
+  // Sync local state when parent reloads — but NEVER over unsaved edits.
+  //
+  // `initialTimeOff` is a fresh object on every settings refetch (React Query,
+  // staleTime 5 min), so plainly re-applying it silently threw away whatever
+  // the user was half-way through changing. Same snapshot-comparison guard as
+  // CompanyDetailsTab: compare the VALUES, not the object identity.
+  //
+  // `appliedTimeOffSnapshot` = the server payload local state currently
+  // reflects; local state that no longer matches it means unsaved edits.
+  // `seenTimeOffSnapshot` = the last payload we looked at, applied or not, so
+  // a repeat refetch of the SAME values does not keep retrying the overwrite.
+  const appliedTimeOffSnapshot = useRef<string>(JSON.stringify(initialTimeOff));
+  const seenTimeOffSnapshot = useRef<string>(JSON.stringify(initialTimeOff));
+  const hasUnsavedTimeOffEdits =
+    JSON.stringify(timeOffPolicies) !== appliedTimeOffSnapshot.current;
+
   useEffect(() => {
+    const snapshot = JSON.stringify(initialTimeOff);
+    if (seenTimeOffSnapshot.current === snapshot) return;
+    seenTimeOffSnapshot.current = snapshot;
+    if (hasUnsavedTimeOffEdits) return;
+    appliedTimeOffSnapshot.current = snapshot;
     setTimeOffPolicies(initialTimeOff);
-  }, [initialTimeOff]);
+  }, [initialTimeOff, hasUnsavedTimeOffEdits]);
 
   // ── Custom leave types ────────────────────────────────────────────
   // Ids the server treats as built-in (functions createLeaveRequest whitelist
@@ -278,6 +299,30 @@ export function TimeOffPoliciesTab({
     );
   }, [holidayYear, holidayOverrides, t]);
 
+  // Every override for the year, straight from the stored overrides — NOT from
+  // mergedHolidays. An override with isHoliday === false deletes its row from
+  // mergedHolidays, which used to take the only Remove button with it: mark
+  // Christmas a working day and the row (and any way to undo it) vanished,
+  // while payroll quietly lost a public holiday and its statutory premium.
+  // This list is the undo path, so it must survive that deletion.
+  // ONLY the overrides that turn a public holiday into a working day.
+  //
+  // Those are the ones mergedHolidays deletes (:map.delete when isHoliday is
+  // false), so their row vanishes together with the only control that could
+  // undo it — and payroll quietly loses a statutory holiday. Every other
+  // override still appears in the merged list with its own Override badge and
+  // Remove button, so listing them here too would just duplicate rows on an
+  // already long page.
+  const changedHolidayDays = useMemo(
+    () =>
+      holidayOverrides
+        .filter(
+          (o) => o.date?.startsWith(`${holidayYear}-`) && o.isHoliday === false
+        )
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [holidayOverrides, holidayYear]
+  );
+
   const onSaveHolidayOverride = useCallback(
     async (data: HolidayOverrideFormData) => {
       if (!tenantId) return;
@@ -363,6 +408,9 @@ export function TimeOffPoliciesTab({
     setSaving(true);
     try {
       await settingsService.updateTimeOffPolicies(tenantId, timeOffPolicies);
+      // What is on screen is now what is on the server: nothing is unsaved any
+      // more, so the reload below (and any later refetch) may apply freely.
+      appliedTimeOffSnapshot.current = JSON.stringify(timeOffPolicies);
       toast({
         title: t("settings.notifications.savedTitle"),
         description: t("settings.notifications.timeOffSaved"),
@@ -504,6 +552,15 @@ export function TimeOffPoliciesTab({
             </div>
             <p className="text-xs text-muted-foreground">
               {t("settings.timeOff.annualLeaveHint")}
+            </p>
+            {/* Art. 32: untaken annual leave is not lost when someone leaves —
+                it is cashed out on the final payslip. Payroll owns the payment
+                (calculateUntakenLeavePayout), offboarding owns the day count;
+                see docs/TIME_LEAVE.md. Stated here because it is the most
+                financially consequential fact about annual leave. */}
+            <p className="text-xs text-muted-foreground">
+              {t("settings.timeOff.annualLeaveCashOutNote") ||
+                "If someone leaves with annual leave they never took, it is not lost — it is paid out in cash on their final payslip (Labour Law Art. 32). You confirm how many days when you offboard them."}
             </p>
           </div>
 
@@ -848,15 +905,20 @@ export function TimeOffPoliciesTab({
                     min={0}
                     max={100}
                     value={timeOffPolicies.specialLeave.paidPercentage}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // Keep isPaid in sync — the payroll engines pay a policy
+                      // only when isPaid === true, so a percentage saved
+                      // without it silently pays nothing (see maternity above).
+                      const paidPercentage = parseInt(e.target.value, 10) || 0;
                       setTimeOffPolicies({
                         ...timeOffPolicies,
                         specialLeave: {
                           ...timeOffPolicies.specialLeave,
-                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -911,15 +973,20 @@ export function TimeOffPoliciesTab({
                     min={0}
                     max={100}
                     value={timeOffPolicies.studyLeave.paidPercentage}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      // Keep isPaid in sync — the payroll engines pay a policy
+                      // only when isPaid === true, so a percentage saved
+                      // without it silently pays nothing (see maternity above).
+                      const paidPercentage = parseInt(e.target.value, 10) || 0;
                       setTimeOffPolicies({
                         ...timeOffPolicies,
                         studyLeave: {
                           ...timeOffPolicies.studyLeave,
-                          paidPercentage: parseInt(e.target.value, 10) || 0,
+                          paidPercentage,
+                          isPaid: paidPercentage > 0,
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                   <Percent className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -1290,6 +1357,81 @@ export function TimeOffPoliciesTab({
               })
             )}
           </div>
+
+          {/* Days you changed — the undo list. Built from holidayOverrides so a
+              day turned into a working day is still listed (and removable)
+              even though it is gone from the list above. */}
+          {!holidayOverridesLoading && changedHolidayDays.length > 0 && (
+            <div className="space-y-2">
+              <div>
+                <h4 className="font-medium">
+                  {t("settings.timeOff.changedDays.title") ||
+                    "Days you changed"}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {t("settings.timeOff.changedDays.hint") ||
+                    "Your changes to this year's holidays. Remove one to put the day back to the built-in Timor-Leste holiday calendar."}
+                </p>
+              </div>
+              <div className="border rounded-lg divide-y">
+                {changedHolidayDays.map((o) => (
+                  <div
+                    key={o.date}
+                    className="p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm">
+                          {formatDateTL(parseDateISO(o.date))}
+                        </span>
+                        {o.isHoliday === false ? (
+                          <Badge variant="secondary">
+                            {t("settings.timeOff.changedDays.workingDay") ||
+                              "Working day"}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <div className="text-sm font-medium truncate">
+                        {o.name?.trim() ||
+                          (o.isHoliday === false
+                            ? t("settings.timeOff.changedDays.notAHoliday") ||
+                              "Not a public holiday"
+                            : t("settings.notifications.holidayName"))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          holidayOverrideForm.reset({
+                            date: o.date,
+                            name: o.name ?? "",
+                            nameTetun: o.nameTetun ?? "",
+                            isHoliday: o.isHoliday ?? true,
+                            notes: o.notes ?? "",
+                          })
+                        }
+                      >
+                        {t("settings.notifications.edit")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("settings.notifications.removeOverride")}
+                        onClick={() => removeHolidayOverride(o.date)}
+                        title={t("settings.notifications.removeOverride")}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <form
             className="p-4 border rounded-lg space-y-4"

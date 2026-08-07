@@ -1,3 +1,16 @@
+/**
+ * Drag-and-drop CSV column mapper.
+ *
+ * NOT CURRENTLY MOUNTED ANYWHERE. It was the second bulk-import entry point on
+ * Add Employee, which was removed: that page adds ONE person, and Employees
+ * already has the Import button. Because nothing imports this file,
+ * @hello-pangea/dnd is no longer pulled into any page chunk.
+ *
+ * If it comes back, it belongs on Employees as a fallback for a spreadsheet
+ * whose columns do not match the template — and it must be a `React.lazy`
+ * import (STYLE_GUIDE: do not preload optional spreadsheet code). Feed its
+ * output to `buildEmployeesFromCSV`; never build an Employee here.
+ */
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
