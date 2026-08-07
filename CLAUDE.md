@@ -116,9 +116,52 @@ pnpm emul:rules      # Firestore rules tests (emulator; needs Java 21)
 PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
   JAVA_HOME=/opt/homebrew/opt/openjdk@21 pnpm emul:rules
 ```
-CI (`deploy.yml`) runs typecheck, lint, unit tests, AND the rules suite before
-deploying — rules auto-deploy on push, so never skip `emul:rules` after editing
-`firestore.rules`.
+CI (`deploy.yml`) runs typecheck, lint, unit tests, `i18n:check` AND the rules
+suite before deploying — rules auto-deploy on push, so never skip `emul:rules`
+after editing `firestore.rules`.
+
+**`test:api` is NOT in the local gate.** It needs Java and the Firestore
+emulator, so it lives in its own CI job (`api-tests`) and a green
+typecheck/lint/test/e2e run says nothing about it. Run it yourself after
+touching `server/xefe-api/` or a `package.json` script — that gap is how a
+broken `test:api` reached CI on 2026-08-07 with everything else green:
+
+```bash
+PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH" \
+  JAVA_HOME=/opt/homebrew/opt/openjdk@21 pnpm test:api
+```
+
+**Local Firestore emulator port.** 8081 is regularly held by another project on
+this machine (rezerva's Metro). Override it in `firebase.e2e.json` /
+`firebase.dev.json` **and** export `FIRESTORE_EMULATOR_HOST`, because
+`tests/e2e/helpers/admin.ts` hardcodes the port with `||=`. Revert the JSON
+before committing.
+
+### Verifying from a git worktree
+
+The right move when another session holds the shared tree — but three things are
+gitignored or not installed, and missing any of them makes **all four e2e specs
+fail identically at the first `locator.fill`**, which reads exactly like a code
+failure and is not one:
+
+```bash
+git worktree add --detach "$WT" origin/main
+cd "$WT" && pnpm install
+cp ~/Sites/xefe/.env.local "$WT/.env.local"     # gitignored: VITE_FIREBASE_*
+ln -sfn ~/Sites/xefe/functions/node_modules "$WT/functions/node_modules"
+```
+
+Without `.env.local` Firebase never initialises and the app renders nothing.
+`functions/` is on **npm**, so `pnpm install` there does not fix it — you get
+1112 unit tests instead of 1141.
+
+Symptom guide: app renders but a control is missing → real bug. App renders
+NOTHING and every spec dies on the first fill → environment.
+
+**Never run `pnpm i18n:split-locales`.** It regenerates the locale files from
+the master and deletes every comment in them (11 → 0 in `en.ts`, measured), with
+`i18n:check` still green afterwards so nothing warns you. The normal direction
+is edit a locale, then `pnpm i18n:rebuild-master`.
 
 ## Firestore Data Layout (two generations)
 - **Tenant-scoped**: `tenants/{tid}/settings|members|employees|shifts|timesheets|...`

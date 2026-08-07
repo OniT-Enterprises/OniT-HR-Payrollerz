@@ -34,8 +34,13 @@ const ROWS: StatutoryRow[] = [
   { labelKey: 'deductionCapLabel', valueKey: 'deductionCapValue' },
   { labelKey: 'workingHoursLabel', valueKey: 'workingHoursValue' },
   { labelKey: 'nightWindowLabel', valueKey: 'nightWindowValue' },
-  // Sick-pay bands: the 6/6/50% reading is applied by the engine but the
-  // article citation is still being verified (see mined sign-off notes).
+  // Sick-pay bands: Art. 33(4), settled 2026-08-07 against the official
+  // Lei 4/2012 text — "até 12 dias por ano, dos quais 6 são remunerados por
+  // inteiro e os 6 dias restantes remunerados a 50 por cento". The repo
+  // previously carried two WRONG citations (Art. 42 = wage deductions,
+  // Art. 34 = occupational safety). The CITATION is no longer in doubt; the
+  // badge stays until the accounting reviewer confirms the reading itself
+  // (docs/NICO_OPEN_QUESTIONS.md B13).
   { labelKey: 'sickBandsLabel', valueKey: 'sickBandsValue', pendingConfirmation: true },
   // Severance: completed-5-year blocks vs pro-rata is still with the reviewer.
   { labelKey: 'severanceLabel', valueKey: 'severanceValue', pendingConfirmation: true },
