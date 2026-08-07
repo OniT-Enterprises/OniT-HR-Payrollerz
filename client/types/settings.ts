@@ -183,6 +183,25 @@ export interface TimeOffPolicies {
   customLeaveTypes: LeaveTypeConfig[];
   holidayCarryOver: boolean;
   maxCarryOverDays: number;
+  /**
+   * How this company records attendance.
+   *
+   * `exceptions` (default) — record only what deviates: absences and overtime.
+   * This is what Timor-Leste law actually asks for. Art. 20(f) requires a
+   * personnel register carrying "férias e faltas justificadas e não
+   * justificadas"; Art. 27(6) requires a per-worker register of "o início e o
+   * termo das horas extraordinárias". NEITHER requires recording that somebody
+   * turned up on a normal day.
+   *
+   * `daily` — record every person every day. Needed when pay depends on hours
+   * (waged staff), or when lateness or night work must be evidenced.
+   *
+   * It lives on TimeOffPolicies because that is the Time & Leave policy blob
+   * the settings page already saves in one write — the same place as
+   * probationMonthsBeforeLeave and holidayCarryOver, which are likewise not
+   * "types of time off".
+   */
+  attendanceMode: 'exceptions' | 'daily';
 }
 
 // ============================================
@@ -451,6 +470,9 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
   customLeaveTypes: [],
   holidayCarryOver: true,
   maxCarryOverDays: 6,
+  // Matches the statutory duty, and matches what payroll already does when
+  // nobody presses "Sync from Attendance": everyone is paid in full.
+  attendanceMode: 'exceptions',
 };
 
 // Business sector presets for departments

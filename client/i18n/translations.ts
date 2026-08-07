@@ -1641,6 +1641,17 @@ export const translations = {
         "paidMismatch": "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
         "setPaidInFull": "Set to paid in full",
         "rows": {
+          "attendanceMode": {
+            "title": "How you record attendance",
+            "summaryExceptions": "You record absences and overtime only.",
+            "summaryDaily": "You record every person every day.",
+            "label": "What your team records",
+            "optionExceptions": "Only absences and overtime",
+            "optionDaily": "Every person, every day",
+            "helpExceptions": "Anyone with no record for a day counts as having worked normally. This is enough for staff on a monthly salary, and it is what the law asks for.",
+            "helpDaily": "Record a day for everyone. Choose this if pay depends on hours worked, or if you need to evidence lateness or night work.",
+            "law": "The Labour Law asks you to keep a record of absences — justified and unjustified — in your personnel register (Art. 20(f)), and a record of when overtime started and ended (Art. 27(6)). It does not ask you to record that someone came to work on a normal day."
+          },
           "annual": {
             "title": "Days off every year",
             "summaryCarry": "{{days}} days a year. Up to {{carry}} unused days roll into next year.",
@@ -3173,6 +3184,7 @@ export const translations = {
         }
       },
       "attendance": {
+        "modeNote": "You record absences and overtime only. Anyone with no record for a day counts as having worked normally.",
         "unrecorded": {
           "title": "{{count}} people have no record for {{date}}",
           "explain": "Xefe does not assume they worked. Until you say, payroll counts nothing for them — neither pay nor absence.",
@@ -9490,6 +9502,17 @@ export const translations = {
         "paidMismatch": "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
         "setPaidInFull": "Tau ba selu tomak",
         "rows": {
+          "attendanceMode": {
+            "title": "Oinsá Ita rejista prezensa",
+            "summaryExceptions": "Ita rejista falta no oras extra de'it.",
+            "summaryDaily": "Ita rejista ema hotu loron-loron.",
+            "label": "Saida mak ita-nia ekipa rejista",
+            "optionExceptions": "Falta no oras extra de'it",
+            "optionDaily": "Ema hotu, loron-loron",
+            "helpExceptions": "Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain. Ne'e to'o ona ba traballadór ho saláriu fulan-fulan, no ne'e mak lei husu.",
+            "helpDaily": "Rejista loron ida ba ema hotu. Hili ida-ne'e se pagamentu depende ba oras servisu, ka se presiza prova atrazu ka servisu kalan.",
+            "law": "Lei Trabálhu husu atu rai iha rejistu pessoál falta sira — ho justifikasaun no lahó justifikasaun (Art. 20(f)) — no rejistu kona-ba oras extra hahú no remata bainhira (Art. 27(6)). Lei la husu atu rejista katak ema mai servisu iha loron baibain."
+          },
           "annual": {
             "title": "Loron deskansa kada tinan",
             "summaryCarry": "Loron {{days}} kada tinan. To'o loron {{carry}} ne'ebé seidauk goza bele tama ba tinan oin.",
@@ -11022,6 +11045,7 @@ export const translations = {
         }
       },
       "attendance": {
+        "modeNote": "Ita rejista falta no oras extra de'it. Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain.",
         "unrecorded": {
           "title": "Ema {{count}} laiha rejistu ba {{date}}",
           "explain": "Xefe la assume katak sira servisu. To'o Ita hatete, folha la sura buat ida ba sira — la iha pagamentu, la iha falta.",
@@ -17339,6 +17363,17 @@ export const translations = {
         "paidMismatch": "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
         "setPaidInFull": "Definir como pago por inteiro",
         "rows": {
+          "attendanceMode": {
+            "title": "Como regista a assiduidade",
+            "summaryExceptions": "Regista apenas faltas e horas extra.",
+            "summaryDaily": "Regista todas as pessoas todos os dias.",
+            "label": "O que a sua equipa regista",
+            "optionExceptions": "Apenas faltas e horas extra",
+            "optionDaily": "Todas as pessoas, todos os dias",
+            "helpExceptions": "Quem não tiver registo num dia conta como tendo trabalhado normalmente. É suficiente para pessoal com vencimento mensal, e é o que a lei pede.",
+            "helpDaily": "Registe um dia para toda a gente. Escolha esta opção se o vencimento depender das horas trabalhadas, ou se precisar de comprovar atrasos ou trabalho noturno.",
+            "law": "A Lei do Trabalho pede que mantenha no registo de pessoal as faltas — justificadas e injustificadas (art. 20.º, al. f)) — e um registo do início e do termo das horas extraordinárias (art. 27.º, n.º 6). Não pede que registe que alguém veio trabalhar num dia normal."
+          },
           "annual": {
             "title": "Dias de férias por ano",
             "summaryCarry": "{{days}} dias por ano. Até {{carry}} dias não gozados transitam para o ano seguinte.",
@@ -18871,6 +18906,7 @@ export const translations = {
         }
       },
       "attendance": {
+        "modeNote": "Regista apenas faltas e horas extra. Quem não tiver registo num dia conta como tendo trabalhado normalmente.",
         "unrecorded": {
           "title": "{{count}} pessoas não têm registo em {{date}}",
           "explain": "O Xefe não assume que trabalharam. Até você dizer, a folha não conta nada para elas — nem vencimento nem falta.",

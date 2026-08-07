@@ -29,6 +29,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
@@ -617,6 +624,10 @@ export function TimeOffPoliciesTab({
 
   // ── Derived summary lines (depth 1) ───────────────────────────────
 
+  // Tenants stored before this field existed have no value; the statutory
+  // default is "record only the exceptions".
+  const attendanceMode = timeOffPolicies.attendanceMode ?? "exceptions";
+
   const annual = timeOffPolicies.annualLeave;
   const annualCarry = annual.maxCarryOverDays || 0;
   const annualSummary = annual.carryOverAllowed
@@ -817,6 +828,61 @@ export function TimeOffPoliciesTab({
           {t("settings.timeOff.groupYours")}
         </h2>
         <div className="space-y-3">
+          {/* How you record attendance — first, because it changes how the
+              whole module behaves day to day. */}
+          <PolicyRow
+            id="attendance-mode"
+            icon={Clock}
+            iconClass="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
+            title={t("settings.timeOff.rows.attendanceMode.title")}
+            summary={
+              attendanceMode === "daily"
+                ? t("settings.timeOff.rows.attendanceMode.summaryDaily")
+                : t("settings.timeOff.rows.attendanceMode.summaryExceptions")
+            }
+            badges={notSavedBadge(sliceIsDirty((p) => p.attendanceMode))}
+            open={openRow === "attendance-mode"}
+            onToggle={() => toggleRow("attendance-mode")}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="attendance-mode-select">
+                {t("settings.timeOff.rows.attendanceMode.label")}
+              </Label>
+              <Select
+                value={attendanceMode}
+                onValueChange={(value) =>
+                  setTimeOffPolicies({
+                    ...timeOffPolicies,
+                    attendanceMode: value as "exceptions" | "daily",
+                  })
+                }
+              >
+                <SelectTrigger id="attendance-mode-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="exceptions">
+                    {t("settings.timeOff.rows.attendanceMode.optionExceptions")}
+                  </SelectItem>
+                  <SelectItem value="daily">
+                    {t("settings.timeOff.rows.attendanceMode.optionDaily")}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {attendanceMode === "daily"
+                  ? t("settings.timeOff.rows.attendanceMode.helpDaily")
+                  : t("settings.timeOff.rows.attendanceMode.helpExceptions")}
+              </p>
+            </div>
+
+            <LawNote title={t("settings.timeOff.whatTheLawSays")}>
+              <p className="text-xs text-muted-foreground">
+                {t("settings.timeOff.rows.attendanceMode.law")}
+              </p>
+            </LawNote>
+          </PolicyRow>
+
           {/* Days off every year */}
           <PolicyRow
             id="annual"

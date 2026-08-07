@@ -1839,6 +1839,19 @@ const messages = {
         "A sua empresa tem isto definido em {{percent}}%. A lei exige que estes dias sejam pagos por inteiro.",
       setPaidInFull: "Definir como pago por inteiro",
       rows: {
+        attendanceMode: {
+          title: "Como regista a assiduidade",
+          summaryExceptions: "Regista apenas faltas e horas extra.",
+          summaryDaily: "Regista todas as pessoas todos os dias.",
+          label: "O que a sua equipa regista",
+          optionExceptions: "Apenas faltas e horas extra",
+          optionDaily: "Todas as pessoas, todos os dias",
+          helpExceptions:
+            "Quem não tiver registo num dia conta como tendo trabalhado normalmente. É suficiente para pessoal com vencimento mensal, e é o que a lei pede.",
+          helpDaily:
+            "Registe um dia para toda a gente. Escolha esta opção se o vencimento depender das horas trabalhadas, ou se precisar de comprovar atrasos ou trabalho noturno.",
+          law: "A Lei do Trabalho pede que mantenha no registo de pessoal as faltas — justificadas e injustificadas (art. 20.º, al. f)) — e um registo do início e do termo das horas extraordinárias (art. 27.º, n.º 6). Não pede que registe que alguém veio trabalhar num dia normal.",
+        },
         annual: {
           title: "Dias de férias por ano",
           summaryCarry:
@@ -3552,6 +3565,8 @@ const messages = {
       },
     },
     attendance: {
+      modeNote:
+        "Regista apenas faltas e horas extra. Quem não tiver registo num dia conta como tendo trabalhado normalmente.",
       unrecorded: {
         title: "{{count}} pessoas não têm registo em {{date}}",
         explain:

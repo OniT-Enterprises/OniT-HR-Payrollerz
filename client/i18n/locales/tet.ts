@@ -1811,6 +1811,19 @@ const messages = {
         "Ita-nia empreza tau ida-ne'e iha {{percent}}%. Lei husu katak loron sira-ne'e tenke selu tomak.",
       setPaidInFull: "Tau ba selu tomak",
       rows: {
+        attendanceMode: {
+          title: "Oinsá Ita rejista prezensa",
+          summaryExceptions: "Ita rejista falta no oras extra de'it.",
+          summaryDaily: "Ita rejista ema hotu loron-loron.",
+          label: "Saida mak ita-nia ekipa rejista",
+          optionExceptions: "Falta no oras extra de'it",
+          optionDaily: "Ema hotu, loron-loron",
+          helpExceptions:
+            "Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain. Ne'e to'o ona ba traballadór ho saláriu fulan-fulan, no ne'e mak lei husu.",
+          helpDaily:
+            "Rejista loron ida ba ema hotu. Hili ida-ne'e se pagamentu depende ba oras servisu, ka se presiza prova atrazu ka servisu kalan.",
+          law: "Lei Trabálhu husu atu rai iha rejistu pessoál falta sira — ho justifikasaun no lahó justifikasaun (Art. 20(f)) — no rejistu kona-ba oras extra hahú no remata bainhira (Art. 27(6)). Lei la husu atu rejista katak ema mai servisu iha loron baibain.",
+        },
         annual: {
           title: "Loron deskansa kada tinan",
           summaryCarry:
@@ -3475,6 +3488,8 @@ const messages = {
       },
     },
     attendance: {
+      modeNote:
+        "Ita rejista falta no oras extra de'it. Ema ne'ebé laiha rejistu iha loron ida sura nu'udar servisu baibain.",
       unrecorded: {
         title: "Ema {{count}} laiha rejistu ba {{date}}",
         explain:
