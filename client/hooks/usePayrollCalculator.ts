@@ -20,6 +20,7 @@ import { useAttendanceSummary } from "@/hooks/useAttendance";
 
 import {
   calculateHourlyRate,
+  calculateAbsenceDeduction,
   calculateTLPayroll,
   validateTLPayrollInput,
   type TLPayrollInput,
@@ -356,7 +357,7 @@ export function usePayrollCalculator({
    */
   const [pendingAttendanceSync, setPendingAttendanceSync] = useState<{
     data: EmployeePayrollData[];
-    docked: { name: string; hours: number }[];
+    docked: { name: string; hours: number; amount: number }[];
   } | null>(null);
   const attendanceSyncRequestRef = useRef(0);
 
@@ -1088,7 +1089,7 @@ export function usePayrollCalculator({
 
     // Build the next rows from a synchronous snapshot so the counts below are
     // accurate the moment the toast reads them.
-    const newlyDocked: { name: string; hours: number }[] = [];
+    const newlyDocked: { name: string; hours: number; amount: number }[] = [];
     const nextData = employeePayrollDataRef.current.map((data) => {
       const employeeId = data.employee.id || "";
       const summary = summaryByEmployee.get(employeeId);
@@ -1151,9 +1152,22 @@ export function usePayrollCalculator({
 
       const isEdited = checkIsEdited(updated);
       if (absenceHours > (data.absenceHours ?? 0) + 0.01) {
+        const extraHours = Number(
+          (absenceHours - (data.absenceHours ?? 0)).toFixed(2),
+        );
+        // Hours are what the sync changed; MONEY is what would actually stop
+        // someone. Same rate the engine deducts at, so the figure shown is the
+        // figure charged.
         newlyDocked.push({
           name: `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`,
-          hours: Number((absenceHours - (data.absenceHours ?? 0)).toFixed(2)),
+          hours: extraHours,
+          amount: calculateAbsenceDeduction(
+            calculateHourlyRate(
+              data.employee.compensation.monthlySalary || 0,
+              calculationConfig?.hourlyRate,
+            ),
+            extraHours,
+          ),
         });
       }
       syncedCount += 1;
@@ -1185,7 +1199,7 @@ export function usePayrollCalculator({
             }),
     });
     finishSync();
-  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary, timeOffPolicies]);
+  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary, timeOffPolicies, calculationConfig?.hourlyRate]);
 
   // ─── Compliance issues ──────────────────────────────────────────
 

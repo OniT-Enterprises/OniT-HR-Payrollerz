@@ -7164,6 +7164,8 @@ const messages = {
       description:
         "Attendance is missing for some working days in this period. Payroll treats a working day with no record as an unpaid absence, so syncing will reduce pay for {{count}} people:",
       hours: "{{hours}} h deducted",
+      amount: "−{{amount}}  ({{hours}} h)",
+      total: "Total that would be deducted: {{amount}}",
       hint: "If these people actually worked, record those days in Attendance first, or leave the hours as they are and do not sync.",
       cancel: "Do not sync",
       confirm: "Sync and dock",

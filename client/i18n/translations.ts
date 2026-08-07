@@ -6655,6 +6655,8 @@ export const translations = {
         "title": "This will dock pay",
         "description": "Attendance is missing for some working days in this period. Payroll treats a working day with no record as an unpaid absence, so syncing will reduce pay for {{count}} people:",
         "hours": "{{hours}} h deducted",
+        "amount": "−{{amount}}  ({{hours}} h)",
+        "total": "Total that would be deducted: {{amount}}",
         "hint": "If these people actually worked, record those days in Attendance first, or leave the hours as they are and do not sync.",
         "cancel": "Do not sync",
         "confirm": "Sync and dock"
@@ -14520,6 +14522,8 @@ export const translations = {
         "title": "Ida-ne'e sei deskonta saláriu",
         "description": "Laiha rejistu prezensa ba loron servisu balun iha períodu ne'e. Folha trata loron servisu ne'ebé laiha rejistu nu'udar falta laiha pagamentu, tanba ne'e sinkroniza sei hamenus pagamentu ba ema {{count}}:",
         "hours": "Deskonta oras {{hours}}",
+        "amount": "−{{amount}}  (oras {{hours}})",
+        "total": "Totál ne'ebé sei deskonta: {{amount}}",
         "hint": "Se ema sira-ne'e servisu duni, rejista uluk loron sira-ne'e iha Prezensa, ka husik oras sira nu'udar iha ona no la sinkroniza.",
         "cancel": "La sinkroniza",
         "confirm": "Sinkroniza no deskonta"
@@ -22385,6 +22389,8 @@ export const translations = {
         "title": "Isto vai descontar salário",
         "description": "Faltam registos de assiduidade em alguns dias úteis deste período. A folha trata um dia útil sem registo como falta não paga, por isso sincronizar vai reduzir o vencimento de {{count}} pessoas:",
         "hours": "{{hours}} h descontadas",
+        "amount": "−{{amount}}  ({{hours}} h)",
+        "total": "Total que seria descontado: {{amount}}",
         "hint": "Se estas pessoas trabalharam mesmo, registe primeiro esses dias na Assiduidade, ou deixe as horas como estão e não sincronize.",
         "cancel": "Não sincronizar",
         "confirm": "Sincronizar e descontar"
