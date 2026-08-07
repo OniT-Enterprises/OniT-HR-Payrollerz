@@ -2,8 +2,9 @@
  * Company Structure Settings Tab
  * Business sector, work locations, departments
  */
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -50,6 +51,10 @@ import { SECTOR_DEPARTMENT_PRESETS } from './types';
 
 interface CompanyStructureTabProps extends SettingsTabProps {
   initialData: CompanyStructure;
+  /** Host page owns the Save button (the merged /settings/company page). */
+  hideSaveButton?: boolean;
+  /** Lets the host page trigger this section's save. Resolves false on failure. */
+  registerSave?: (fn: () => Promise<boolean>) => void;
 }
 
 export function CompanyStructureTab({
@@ -59,10 +64,13 @@ export function CompanyStructureTab({
   onReload,
   t,
   initialData,
+  hideSaveButton = false,
+  registerSave,
 }: CompanyStructureTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { hasModule } = useTenant();
   const [structure, setStructure] = useState<CompanyStructure>(initialData);
   const [newDeptName, setNewDeptName] = useState('');
   const [seedingPresets, setSeedingPresets] = useState(false);
@@ -177,32 +185,54 @@ export function CompanyStructureTab({
     }
   };
 
-  const save = async () => {
-    if (!tenantId) return;
+  const save = useCallback(async (): Promise<boolean> => {
+    if (!tenantId) return false;
+    // `structure` is a mount-time snapshot. Now that ONE page-level Save fires
+    // both sections, a details-only edit would otherwise rewrite this whole
+    // map from that snapshot and clobber a work location added elsewhere
+    // (another tab, another admin, or the /setup wizard). Writing nothing when
+    // nothing changed keeps last-writer-wins scoped to actual edits.
+    if (JSON.stringify(structure) === JSON.stringify(initialData)) {
+      return true;
+    }
     setSaving(true);
     try {
       await settingsService.updateCompanyStructure(tenantId, structure);
-      toast({
-        title: t('settings.notifications.savedTitle'),
-        description: t('settings.notifications.structureSaved'),
-      });
+      if (!hideSaveButton) {
+        toast({
+          title: t('settings.notifications.savedTitle'),
+          description: t('settings.notifications.structureSaved'),
+        });
+      }
       onReload();
+      return true;
     } catch {
       toast({
         title: t('settings.notifications.errorTitle'),
         description: t('settings.notifications.saveFailed'),
         variant: 'destructive',
       });
+      return false;
     } finally {
       setSaving(false);
     }
-  };
+  }, [tenantId, setSaving, structure, initialData, hideSaveButton, onReload, toast, t]);
+
+  // The merged company page drives both sections from one Save button.
+  useEffect(() => {
+    registerSave?.(save);
+  }, [registerSave, save]);
 
   return (
-    <Card>
+    <Card id="places" className="scroll-mt-20">
       <CardHeader>
-        <CardTitle>{t('settings.structure.title')}</CardTitle>
-        <CardDescription>{t('settings.structure.description')}</CardDescription>
+        <CardTitle>
+          {t('settings.company.sectionPlaces') || 'Where you work and your teams'}
+        </CardTitle>
+        <CardDescription>
+          {t('settings.company.sectionPlacesDesc') ||
+            'Your work locations and the teams you group staff into.'}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Business Sector */}
@@ -233,6 +263,12 @@ export function CompanyStructureTab({
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">{t('settings.structure.sectorHint')}</p>
+          {/* The select silently writes department docs via loadSectorDepartments;
+              say so rather than surprising the user with new teams. */}
+          <p className="text-xs text-muted-foreground">
+            {t('settings.company.sectorSeedsNote') ||
+              'Choosing a sector adds a starter list of teams.'}
+          </p>
         </div>
 
         <Separator />
@@ -324,6 +360,12 @@ export function CompanyStructureTab({
             <div>
               <h3 className="font-medium">{t('settings.structure.departments')}</h3>
               <p className="text-sm text-muted-foreground">{t('settings.structure.departmentsHint')}</p>
+              {/* Departments write straight to Firestore, unlike everything
+                  else on this page which waits for Save. Say so. */}
+              <p className="text-xs text-muted-foreground">
+                {t('settings.company.teamsSavedNote') ||
+                  'Teams are saved as soon as you add or remove them.'}
+              </p>
             </div>
             <Badge variant="secondary">
               {deptsLoading ? '…' : `${departments.length} department${departments.length === 1 ? '' : 's'}`}
@@ -396,14 +438,18 @@ export function CompanyStructureTab({
                 A quick read of who reports where. Open the full chart to rearrange.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/settings/org-chart')}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open full chart
-            </Button>
+            {/* /settings/org-chart is gated on the staff module — hide the
+                button rather than route into a redirect. */}
+            {hasModule('staff') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/settings/org-chart')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open full chart
+              </Button>
+            )}
           </div>
 
           {orgSummary.length === 0 ? (
@@ -439,16 +485,18 @@ export function CompanyStructureTab({
           )}
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={save} disabled={saving}>
-            {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            {t('settings.structure.save')}
-          </Button>
-        </div>
+        {!hideSaveButton && (
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => { void save(); }} disabled={saving}>
+              {saving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {t('settings.structure.save')}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
