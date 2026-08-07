@@ -5,6 +5,8 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
+import { employeeKeys } from "@/hooks/useEmployees";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +113,7 @@ function addCalendarMonths(date: string, months: number): string {
 export default function AddEmployee() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const editEmployeeId = searchParams.get("edit");
   const hiringCandidateId = searchParams.get("candidateId") || "";
@@ -769,6 +772,16 @@ export default function AddEmployee() {
             "Art. 12(2): a fixed-term contract without a stated motive is deemed permanent.",
         });
       }
+
+      // Drop every cached employee view before leaving. Nothing else did:
+      // this page wrote straight through employeeService and navigated, so the
+      // directory rendered its stale list and the new hire only appeared after
+      // a manual refresh — right under a "added!" toast. employeeKeys.all
+      // covers the list, directory, detail, counts, activeSummary and
+      // issuePreview branches in one call.
+      await queryClient.invalidateQueries({
+        queryKey: employeeKeys.all(tenantId),
+      });
 
       if (isHiringHandoff && savedEmployeeId) {
         const params = new URLSearchParams({ employeeId: savedEmployeeId });

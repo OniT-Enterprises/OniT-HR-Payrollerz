@@ -38,7 +38,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { settingsService } from "@/services/settingsService";
 import { settingsKeys } from "@/hooks/useSettings";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import type {
@@ -69,6 +69,7 @@ export default function SetupWizard() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { session } = useTenant();
   const queryClient = useQueryClient();
   const invalidateSetupData = () =>
     Promise.all([
@@ -151,7 +152,13 @@ export default function SetupWizard() {
         }
 
         setCompanyForm({
-          legalName: settings.companyDetails.legalName || "",
+          // Carry the name the owner already typed at signup instead of
+          // asking for it a second time under a different label. It lives on
+          // the tenant doc (provisionOrg writes `name`); provisioning does NOT
+          // seed companyDetails, so without this the field is blank and the
+          // owner re-types "Kafé Aroma" minutes after creating it.
+          legalName:
+            settings.companyDetails.legalName || session?.config?.name || "",
           tradingName: settings.companyDetails.tradingName || "",
           registeredAddress: settings.companyDetails.registeredAddress || "",
           city: settings.companyDetails.city || "",
@@ -213,7 +220,7 @@ export default function SetupWizard() {
       }
     };
     void loadProgress();
-  }, [tenantId, navigate, loadAttempt]);
+  }, [tenantId, navigate, loadAttempt, session?.config?.name]);
 
   const handleSaveCompanyDetails = async () => {
     if (!companyForm.legalName || !companyForm.tinNumber) {

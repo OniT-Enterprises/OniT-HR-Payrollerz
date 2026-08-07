@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/select";
 import PageHeader from "@/components/layout/PageHeader";
 import { employeeService, type Employee } from "@/services/employeeService";
-import { useSmartEmployees } from "@/hooks/useEmployees";
+import { useSmartEmployees, employeeKeys } from "@/hooks/useEmployees";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
@@ -400,6 +401,7 @@ export default function AllEmployees() {
   const [ekipaCreating, setEkipaCreating] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
@@ -1053,7 +1055,14 @@ export default function AllEmployees() {
           ].join(" — "),
           variant: errorCount > 0 ? "destructive" : "default",
         });
-        if (successCount > 0) loadEmployees();
+        // Invalidate the whole employee branch, not just this list: the
+        // dashboard's headcount and the compliance summary read separate
+        // queries and would otherwise stay stale after a bulk import.
+        if (successCount > 0) {
+          await queryClient.invalidateQueries({
+            queryKey: employeeKeys.all(tenantId),
+          });
+        }
         setShowImportDialog(false);
       } catch {
         toast({
