@@ -85,6 +85,69 @@ describe('accruedAnnualLeaveDays', () => {
     // 2/12 of $220 = $36.67
     expect(calculateSubsidioAnual(220, hire, asOf, opts)).toBeCloseTo(36.67, 2);
   });
+
+  // ── Art. 32 is a FLOOR, not a ceiling ─────────────────────────────
+  // The leave BALANCE credits the tenant's configured days/year, so an
+  // employer granting more than 12 must see the same figure suggested at
+  // termination. Before this, 15 accrued all year but only 12 was suggested —
+  // the worker's balance and their final payslip disagreed by 3 days of pay.
+  describe('honours a configured entitlement above the statutory floor', () => {
+    it('accrues pro-rata over the configured year', () => {
+      // 15 days/year = 1.25/month. Jan + Feb = 2 months -> 2.5 days.
+      expect(
+        accruedAnnualLeaveDays('2016-05-01', new Date('2026-02-28T00:00:00'), {
+          terminationDate: '2026-02-28',
+          entitlementDaysPerYear: 15,
+        }),
+      ).toBe(2.5);
+    });
+
+    it('caps at the configured entitlement, not at 12', () => {
+      expect(
+        accruedAnnualLeaveDays('2016-05-01', new Date('2026-12-31T00:00:00'), {
+          entitlementDaysPerYear: 15,
+        }),
+      ).toBe(15);
+    });
+
+    it('still caps at 12 when the tenant grants the statutory minimum', () => {
+      expect(
+        accruedAnnualLeaveDays('2016-05-01', new Date('2026-12-31T00:00:00'), {
+          entitlementDaysPerYear: 12,
+        }),
+      ).toBe(TL_ANNUAL_LEAVE.daysPerYear);
+    });
+
+    it('rounds to two decimals so no float noise reaches the reviewer', () => {
+      // 15/12 = 1.25; 7 months = 8.75 exactly, not 8.749999999999998.
+      expect(
+        accruedAnnualLeaveDays('2026-01-01', new Date('2026-07-31T00:00:00'), {
+          terminationDate: '2026-07-31',
+          entitlementDaysPerYear: 15,
+        }),
+      ).toBe(8.75);
+    });
+
+    it('falls back to the statutory floor on a broken config', () => {
+      // A zero/NaN entitlement must not silently zero a leaver's final pay.
+      for (const bad of [0, -5, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(
+          accruedAnnualLeaveDays('2016-05-01', new Date('2026-12-31T00:00:00'), {
+            entitlementDaysPerYear: bad,
+          }),
+        ).toBe(TL_ANNUAL_LEAVE.daysPerYear);
+      }
+    });
+
+    it('is unchanged when no entitlement is supplied', () => {
+      // Jan–Jun = 6 months at the default 1 day/month.
+      expect(
+        accruedAnnualLeaveDays('2016-05-01', new Date('2026-06-30T00:00:00'), {
+          terminationDate: '2026-06-30',
+        }),
+      ).toBe(6);
+    });
+  });
 });
 
 describe('calculateUntakenLeavePayout', () => {

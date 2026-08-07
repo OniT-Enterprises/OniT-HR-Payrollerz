@@ -477,10 +477,27 @@ Every `{{count}}` is interpolated through `t(key, params)` — the signature at 
 
    **Whether Art. 32 permits deferring annual leave for a waiting period at all.** `probationHint` (`en.ts:1825-1826`) currently asserts Art. 14 authority. But `client/lib/probation.ts` puts statutory probation at 8/15/30/90 **days** (Art. 14), so the 3-month default (`client/types/settings.ts:336`) exceeds statutory probation for every category except managerial, and `docs/TL_LAW_GAP_MATRIX_JUL2026.md` F19 records only that it "gates leave eligibility". The spec downgrades this to "not settled". **This is a copy regression from a confident claim to a hedged one — confirm before shipping.**
 
-4. **Annual leave above 12 is only half-honoured.** Raising it increases the leave balance (`functions/src/timeleave.ts:333-355`), but the termination cash-out accrual is hard-capped at `TL_ANNUAL_LEAVE.daysPerYear = 12` (`client/lib/payroll/constants-tl.ts:206-210` via `accruedAnnualLeaveDays`, `calculations-tl.ts:748-762`, consumed at `client/pages/hiring/Offboarding.tsx:1591`). An employer who sets 15 sees 15 accrue and 12 suggested in final pay. Adding the Art. 32 cash-out sentence makes that gap visible to a customer for the first time. **This is a money-chain question, not a UI question** — resolve or document before the copy ships.
+4. ~~**Annual leave above 12 is only half-honoured.**~~ **FIXED 2026-08-07.**
+   `accruedAnnualLeaveDays` now takes `entitlementDaysPerYear` and accrues
+   `entitlement / 12` per month capped at the entitlement; Offboarding passes
+   the tenant's configured figure. Omitting it is byte-identical to the old
+   behaviour, and a broken config falls back to the Art. 32 floor rather than
+   accruing nothing. Still a suggestion a reviewer confirms — nothing auto-pays,
+   so the `docs/MONEY_CHAIN.md` §4a scope contract is untouched. Tests in
+   `tests/client/untaken-leave-payout.test.ts`.
+5. ~~**The sick medical-certificate switch.**~~ **RESOLVED 2026-08-07 by
+   item 1 above.** It was never a product decision: Art. 33(4) grants the
+   justified absence *"mediante a apresentação de atestado médico"*, so the
+   certificate is a condition of the statute, not a company preference. The
+   toggle is gone. The row states the requirement and cites Art. 33.4; a tenant
+   who had already stored `false` sees an amber note and a one-tap "Require a
+   certificate" repair — the same stored-value treatment special/study pay gets,
+   so nothing is silently overwritten and nothing is quietly misstated.
 
-5. **The sick medical-certificate switch.** It enforces nothing anywhere in the repo. Wire it (a real rule in `createLeaveRequest`) or drop it. The spec renders the stored value as a sentence in the meantime, which is honest either way.
-
+   Deliberately NOT wired as a hard block in `createLeaveRequest`: the
+   certificate routinely arrives after the absence starts, and refusing to
+   RECORD a real sick day would be worse than recording one pending its
+   certificate. Enforcement belongs at approval, not at creation.
 6. **Should the special/study "Set to paid in full" repair button exist, or should a one-off data audit fix affected tenants?** The button is safe and reversible-by-not-saving, but a tenant who never opens the row keeps under-paying a statutory absence. A query for tenants with `specialLeave.paidPercentage != 100 || studyLeave.paidPercentage != 100` would say how big the problem is.
 
 7. **Whether carried-over days may lawfully lapse.** The Art. 32(5) 12-month use-by clock is explicitly unbuilt (`docs/TIME_LEAVE.md:206`, gap matrix F2), so the carry-over row says nothing about expiry. Do not add a sentence here without a ruling.

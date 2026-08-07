@@ -1596,6 +1596,15 @@ export default function Offboarding() {
                                     {
                                       terminationDate:
                                         selectedCase.lastWorkingDay,
+                                      // Accrue against what this employer
+                                      // actually grants. Art. 32's 12 days is
+                                      // a floor, and the leave BALANCE already
+                                      // credits the configured figure — a
+                                      // 15-day policy that suggested 12 here
+                                      // underpaid the leaver by 3 days.
+                                      entitlementDaysPerYear:
+                                        settings?.timeOffPolicies?.annualLeave
+                                          ?.daysPerYear,
                                     },
                                   );
                                 } catch {

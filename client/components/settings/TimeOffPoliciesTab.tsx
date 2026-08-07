@@ -1597,15 +1597,36 @@ export function TimeOffPoliciesTab({
             <p className="text-sm text-muted-foreground">
               {t("settings.timeOff.rows.sick.pendingExplainer")}
             </p>
-            {/* The switch that used to sit here enforced nothing: no consumer in
-                functions/src, mobile/ekipa or server/xefe-api. Rendering the
-                stored value as a sentence is honest either way — see the open
-                question in docs/TIME_OFF_REDESIGN_SPEC.md (h)5. */}
+            {/* Art. 33(4) grants the justified absence "mediante a apresentação
+                de atestado médico" — the certificate is a condition of the
+                statute, not a company preference, so the switch that used to sit
+                here is gone. A tenant who had already turned it off sees what is
+                STORED plus a one-tap repair, the same treatment special/study
+                pay gets: never silently overwrite, never quietly misstate. */}
             <p className="text-sm text-muted-foreground">
-              {timeOffPolicies.sickLeave.requiresCertificate
-                ? t("settings.timeOff.rows.sick.certificateOn")
-                : t("settings.timeOff.rows.sick.certificateOff")}
+              {t("settings.timeOff.rows.sick.certificateOn")}
             </p>
+            {!timeOffPolicies.sickLeave.requiresCertificate && (
+              <AmberNote>
+                <p>{t("settings.timeOff.rows.sick.certificateOff")}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setTimeOffPolicies({
+                      ...timeOffPolicies,
+                      sickLeave: {
+                        ...timeOffPolicies.sickLeave,
+                        requiresCertificate: true,
+                      },
+                    })
+                  }
+                >
+                  {t("settings.timeOff.rows.sick.setCertificateRequired")}
+                </Button>
+              </AmberNote>
+            )}
             {invalidNote("sick")}
 
             <LawNote title={t("settings.timeOff.whatTheLawSays")}>
