@@ -3196,6 +3196,8 @@ export const translations = {
           "marked": "Recorded a normal working day for {{count}} people."
         },
         "absence": {
+          "reclassify": "Not an absence?",
+          "reclassifyDescription": "This day is recorded as an unjustified absence. Pick what it really was — the day stops counting against the worker, and is paid if the reason is paid.",
           "firstDay": "First day away",
           "lastDay": "Last day away",
           "lastDayHint": "Leave this the same as the first day for a single day.",
@@ -11067,6 +11069,8 @@ export const translations = {
           "marked": "Rejista loron servisu baibain ba ema {{count}}."
         },
         "absence": {
+          "reclassify": "La'ós falta?",
+          "reclassifyDescription": "Loron ne'e rejista nu'udar falta lahó justifikasaun. Hili saida mak akontese duni — loron ne'e la sura tan hasoru traballadór, no selu se motivu ne'e selu.",
           "firstDay": "Loron dahuluk falta",
           "lastDay": "Loron ikus falta",
           "lastDayHint": "Husik hanesan loron dahuluk se falta loron ida de'it.",
@@ -18938,6 +18942,8 @@ export const translations = {
           "marked": "Registado um dia normal de trabalho para {{count}} pessoas."
         },
         "absence": {
+          "reclassify": "Não foi falta?",
+          "reclassifyDescription": "Este dia está registado como falta injustificada. Escolha o que realmente foi — o dia deixa de contar contra o trabalhador e é pago se o motivo for pago.",
           "firstDay": "Primeiro dia de ausência",
           "lastDay": "Último dia de ausência",
           "lastDayHint": "Deixe igual ao primeiro dia para uma ausência de um só dia.",

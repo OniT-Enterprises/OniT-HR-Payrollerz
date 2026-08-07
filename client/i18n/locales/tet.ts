@@ -3502,6 +3502,9 @@ const messages = {
         marked: "Rejista loron servisu baibain ba ema {{count}}.",
       },
       absence: {
+        reclassify: "La'ós falta?",
+        reclassifyDescription:
+          "Loron ne'e rejista nu'udar falta lahó justifikasaun. Hili saida mak akontese duni — loron ne'e la sura tan hasoru traballadór, no selu se motivu ne'e selu.",
         firstDay: "Loron dahuluk falta",
         lastDay: "Loron ikus falta",
         lastDayHint: "Husik hanesan loron dahuluk se falta loron ida de'it.",

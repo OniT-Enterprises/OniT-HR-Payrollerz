@@ -3525,6 +3525,9 @@ const messages = {
         marked: "Recorded a normal working day for {{count}} people.",
       },
       absence: {
+        reclassify: "Not an absence?",
+        reclassifyDescription:
+          "This day is recorded as an unjustified absence. Pick what it really was — the day stops counting against the worker, and is paid if the reason is paid.",
         firstDay: "First day away",
         lastDay: "Last day away",
         lastDayHint: "Leave this the same as the first day for a single day.",

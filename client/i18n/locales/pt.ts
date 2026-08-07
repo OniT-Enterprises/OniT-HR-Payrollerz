@@ -3579,6 +3579,9 @@ const messages = {
         marked: "Registado um dia normal de trabalho para {{count}} pessoas.",
       },
       absence: {
+        reclassify: "Não foi falta?",
+        reclassifyDescription:
+          "Este dia está registado como falta injustificada. Escolha o que realmente foi — o dia deixa de contar contra o trabalhador e é pago se o motivo for pago.",
         firstDay: "Primeiro dia de ausência",
         lastDay: "Último dia de ausência",
         lastDayHint: "Deixe igual ao primeiro dia para uma ausência de um só dia.",
