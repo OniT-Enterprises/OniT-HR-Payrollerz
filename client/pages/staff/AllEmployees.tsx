@@ -26,7 +26,6 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { useSmartEmployees, employeeKeys } from "@/hooks/useEmployees";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
-import EmployeeProfileView from "@/components/EmployeeProfileView";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -387,10 +386,6 @@ export default function AllEmployees() {
   const [maxSalary, setMaxSalary] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [showSalary, setShowSalary] = useState(true); // Toggle for salary visibility
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null,
-  );
-  const [showProfileView, setShowProfileView] = useState(false);
   const [showIncompleteProfiles, setShowIncompleteProfiles] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [returningEmployee, setReturningEmployee] = useState<Employee | null>(null);
@@ -441,18 +436,14 @@ export default function AllEmployees() {
       setShowFilters(true);
     }
 
-    // Handle direct employee link (e.g., ?id=xxx&tab=documents)
+    // Legacy deep link (?id=xxx) — the profile is its own route now, so
+    // forward instead of popping a dialog. `replace` keeps Back going to
+    // wherever the link came from rather than bouncing through this list.
     const employeeId = searchParams.get("id");
-    if (employeeId && employees.length > 0) {
-      const employee = employees.find(e => e.id === employeeId);
-      if (employee) {
-        setSelectedEmployee(employee);
-        setShowProfileView(true);
-        // Clear the URL params after opening
-        setSearchParams({});
-      }
+    if (employeeId) {
+      navigate(`/people/employees/${employeeId}`, { replace: true });
     }
-  }, [searchParams, employees, setSearchParams]);
+  }, [searchParams, employees, setSearchParams, navigate]);
 
   // Filter employees using useMemo for performance
   const filteredEmployees = useMemo(() => {
@@ -746,8 +737,7 @@ export default function AllEmployees() {
   };
 
   const handleViewEmployee = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setShowProfileView(true);
+    navigate(`/people/employees/${employee.id}`);
   };
 
   const handleEditEmployee = (employee: Employee) => {
@@ -1702,13 +1692,6 @@ export default function AllEmployees() {
             />
           </CardContent>
         </Card>
-
-        {/* Employee Profile View Dialog */}
-        <EmployeeProfileView
-          employee={selectedEmployee}
-          open={showProfileView}
-          onOpenChange={setShowProfileView}
-        />
 
         {/* Incomplete Profiles Dialog */}
         <IncompleteProfilesDialog

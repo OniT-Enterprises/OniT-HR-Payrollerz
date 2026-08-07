@@ -33,7 +33,6 @@ import {
 import { useEmployeeDirectory, employeeKeys } from "@/hooks/useEmployees";
 import { useDepartments, departmentKeys } from "@/hooks/useDepartments";
 import DepartmentManager from "@/components/DepartmentManager";
-import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -91,10 +90,6 @@ export default function Departments() {
   const [selectedDepartment, setSelectedDepartment] =
     useState<DepartmentStat | null>(null);
   const [showDepartmentEmployees, setShowDepartmentEmployees] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null,
-  );
-  const [showEmployeeProfile, setShowEmployeeProfile] = useState(false);
   const { toast } = useToast();
   const { t } = useI18n();
 
@@ -200,8 +195,7 @@ export default function Departments() {
   };
 
   const handleViewEmployee = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setShowEmployeeProfile(true);
+    navigate(`/people/employees/${employee.id}`);
   };
 
   if (loading) {
@@ -722,12 +716,6 @@ export default function Departments() {
           </DialogContent>
         </Dialog>
 
-        {/* Employee Profile View Dialog */}
-        <EmployeeProfileView
-          employee={selectedEmployee}
-          open={showEmployeeProfile}
-          onOpenChange={setShowEmployeeProfile}
-        />
       </div>
     </div>
   );

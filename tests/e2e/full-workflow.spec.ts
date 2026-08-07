@@ -316,6 +316,38 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
       .first(),
   ).toBeVisible({ timeout: 20_000 });
 
+  // ── 3b. Employee profile is its own page, not a dialog ──────────────────
+  // Viewing an employee used to open a modal; it is a route now, so it must
+  // survive a direct visit and a reload the way a dialog never could.
+  await page
+    .getByText(`${EMPLOYEE.first} ${EMPLOYEE.last}`)
+    .filter({ visible: true })
+    .first()
+    .click();
+  await expect(page).toHaveURL(/\/people\/employees\/.+/, { timeout: 20_000 });
+  await expect(
+    page.getByRole("heading", {
+      name: `${EMPLOYEE.first} ${EMPLOYEE.last}`,
+      level: 1,
+    }),
+  ).toBeVisible({ timeout: 20_000 });
+  // Mirrors the Add/Edit form's sections, and the statutory ID block.
+  await expect(page.getByText("Who they are")).toBeVisible();
+  await expect(page.getByText(/what they do and what you pay them/i)).toBeVisible();
+  await expect(page.getByText("ID and INSS number")).toBeVisible();
+  // A value the form wrote, rendered read-only with no input around it.
+  await expect(page.getByText("TIN-EMP-12345")).toBeVisible();
+  const profileUrl = page.url();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", {
+      name: `${EMPLOYEE.first} ${EMPLOYEE.last}`,
+      level: 1,
+    }),
+  ).toBeVisible({ timeout: 20_000 });
+  expect(page.url()).toBe(profileUrl);
+  await page.goBack();
+
   // Workforce reporting reads the employee/department just created through
   // the same tenant-scoped queries used in production.
   await page.goto("/reports/employees");
