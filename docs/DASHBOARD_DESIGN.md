@@ -103,6 +103,39 @@ Why: Xefe is the product the customer logs into; the chrome is Xefe's identity.
 Swapping in the client logo makes it look like a bespoke build and erodes the
 Xefe brand. This one is not a preference — keep the top-left Xefe.
 
+## Progressive disclosure is the sanctioned way to keep detail
+
+When a screen carries information that is genuinely useful but not everyday,
+the answer is **not** to delete it and **not** to show it all. Put it behind
+`client/components/MoreDetailsSection.tsx` with a plain-language title, and lead
+with what the user actually needs.
+
+The pattern, as shipped across settings on 2026-08-07:
+
+- Group by the question the user is asking, with a small uppercase heading.
+- Anything statutory or expert-only goes behind one collapsed disclosure
+  carrying the line *"These already follow Timor-Leste law. Change them only if
+  your accountant asks you to."*
+- Where the law fixes a value, show it as a **read-only fact**, not an editable
+  control. An input invites a change that would put the employer out of
+  compliance.
+- Where the law sets a FLOOR (annual leave 12 days, maternity 84), keep it
+  editable — an employer may be more generous. Rendering a floor as fixed is
+  the same class of error as rendering a statutory right as optional.
+
+Do not use `ui/accordion` for this: its height animation is not covered by the
+reduced-motion guard in `global.css`. Do not use tabs — `settings/CompanySettings.tsx`
+records why they were removed.
+
+Two rules learned the hard way:
+
+- **A hidden field is a moved field.** Anything relying on it being visible —
+  e2e tests, docs, muscle memory — breaks. Grep before you collapse.
+- **A number the app cannot recompute must not be shown as fact.** The settings
+  hub carried a "0/5 Complete" bar whose flags were only ever written as a side
+  effect of saving each section and never recomputed, so fully configured
+  tenants read 0/5 forever. It was deleted rather than restyled.
+
 ## How to push back (do this, don't just comply)
 
 If asked to "add some charts / KPIs / analytics to the dashboard" or similar:

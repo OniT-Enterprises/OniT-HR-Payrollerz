@@ -111,7 +111,7 @@ numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
 | id            | Policy slot          | Statute                                                                         | Default days/yr                           | Employer pay default                                                | Notes                                                                                                                            |
 | ------------- | -------------------- | ------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `annual`      | `annualLeave`        | Art. 32                                                                         | 12 working days                           | 100%                                                                | Carry-over configurable; probation-gated. **Any balance left untaken at termination is CASHED OUT** — see note below              |
-| `sick`        | `sickLeave`          | Art. 34                                                                         | 12                                        | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate                                                                                                              |
+| `sick`        | `sickLeave`          | Art. 33(4)                                                                      | 12                                        | Statutory banding (6 @ 100%, 6 @ 50%) applied by the payroll engine | Medical certificate (the statute requires it)                                                                                    |
 | `maternity`   | `maternityLeave`     | Art. 59(1)                                                                      | 84 (12 weeks, ≥10 after birth)            | **Unpaid** — INSS parental subsidy (DL 18/2017)                     | See INSS section below                                                                                                           |
 | `paternity`   | `paternityLeave`     | Art. 60                                                                         | 5 working days                            | **Unpaid** — INSS parental subsidy                                  | See INSS section below                                                                                                           |
 | `miscarriage` | `miscarriageLeave`   | Art. 59(4): “licença com a duração de 4 semanas”                                | 20 working days (≈4 weeks)                | **Unpaid** — same INSS regime as maternity                          | Medical certificate. Clinical-risk PRE-birth leave (Art. 59(3)) has no fixed length — record it as sick leave with a certificate |
@@ -122,6 +122,29 @@ numbers). Every id below must stay in sync across `TL_LEAVE_TYPES`
 
 Legacy render-only ids `bereavement`/`marriage` still display but are not
 requestable (pooled into `special`).
+
+**Sick-leave citation, settled 2026-08-07.** The repo carried two different
+and both-wrong articles for sick leave: `constants-tl.ts` said Art. 42 (that
+is the wage-**deduction** article — Art. 42(3) is the 30%/month cap) and this
+table said Art. 34 (that is "Princípios gerais" of the occupational safety
+section). The official Lei 4/2012 text (mj.gov.tl, `lei_4_2012_clean.txt`)
+puts sick leave in **Art. 33(4)**, the same article as special leave:
+
+> "O trabalhador pode igualmente faltar justificadamente ao trabalho por
+> motivo de doença ou acidente, mediante a apresentação de atestado médico,
+> até 12 dias por ano, dos quais 6 são remunerados por inteiro e os 6 dias
+> restantes remunerados a 50 por cento do valor da remuneração diária."
+
+That is the engine's rule verbatim, and it also makes the **medical
+certificate statutory**, not a company option — so the `requiresCertificate`
+toggle on sick leave is a candidate to become non-optional (it currently
+enforces nothing anywhere in the repo). Paternity is **Art. 60** on the same
+source; `en.ts` previously said Art. 59, which is maternity. Both citations
+were corrected in the UI, the locales and `constants-tl.ts`.
+
+**Not built:** Art. 64 grants workers with children under 10 up to 5 days a
+year off to care for a sick child ("determina apenas a perda de remuneração
+relativa aos dias em causa" — unpaid). Xefe has no leave type for it.
 
 ### Breastfeeding and prenatal exams (Art. 62) — deliberately note-only
 
@@ -198,6 +221,20 @@ offboarding case. Time & Leave owns the *balance*; offboarding owns the *decisio
 payroll owns the *payment*. Xefe never derives the payable balance automatically,
 because it cannot know what was actually taken — `accruedAnnualLeaveDays` only supplies
 the accrual side as a suggestion.
+
+**Open gap — an employer who grants MORE than 12 days is only half-honoured.**
+Raising `annualLeave.daysPerYear` above 12 increases the leave *balance*
+(`functions/src/timeleave.ts`), but the termination accrual is hard-capped at
+`TL_ANNUAL_LEAVE.daysPerYear = 12` (`client/lib/payroll/constants-tl.ts` via
+`accruedAnnualLeaveDays`, `calculations-tl.ts`, consumed by
+`client/pages/hiring/Offboarding.tsx`). So a tenant configured for 15 sees 15
+accrue during employment and only 12 suggested at final pay. Since the reviewer
+records the payable day count by hand, this is a wrong *suggestion*, not a wrong
+payment — but it is a suggestion in the employer's favour, which is the wrong
+direction. Surfaced 2026-08-07 when the Art. 32 cash-out was first stated in the
+Time Off settings UI; a customer can now see the promise, so the gap is visible.
+Not yet resolved: is the 12 cap correct (statutory minimum accrues, extra is
+contractual and lapses), or should the accrual follow the configured policy?
 
 The Art. 32(5) double-pay penalty applies only where the **employer** prevented the
 leave being taken, so it is an explicit reviewer assertion and never inferred from a

@@ -1797,6 +1797,131 @@ const messages = {
         workingDay: "Working day",
         notAHoliday: "Not a public holiday",
       },
+      // ── Row structure (redesign, 2026-08) ──────────────────────────
+      // Every row answers itself in one line before you tap it; the
+      // statutory text lives one tap deeper, under "What the law says".
+      // Legal sentences are NOT duplicated here — the rows render the
+      // existing *Hint keys verbatim.
+      intro:
+        "Xefe already follows the Timor-Leste Labour Law (Law 4/2012). You only need to change something if your company gives your staff more than the law asks.",
+      groupYours: "Your company's decisions",
+      groupLaw: "Fixed by Timor-Leste law",
+      whatTheLawSays: "What the law says",
+      notSavedYet: "Not saved yet",
+      paidInFull: "Paid in full — the law requires it.",
+      paidInFullStudy:
+        "Paid in full — the law requires it (Labour Law Art. 76.3).",
+      paidMismatch:
+        "Your company has this set to {{percent}}%. The law requires these days to be paid in full.",
+      setPaidInFull: "Set to paid in full",
+      rows: {
+        annual: {
+          title: "Days off every year",
+          summaryCarry:
+            "{{days}} days a year. Up to {{carry}} unused days roll into next year.",
+          summaryNoCarry: "{{days}} days a year. Unused days do not roll over.",
+          daysLabel: "Days off each year",
+          carryQuestion: "Let unused days roll into next year",
+          carryMaxLabel: "How many days can roll over",
+          carryIsYours:
+            "The law does not set this number — it is your company's choice.",
+          belowMinimum:
+            "The law requires at least 12 days a year (Labour Law Art. 32).",
+          setMinimum: "Set to 12 days",
+        },
+        holidays: {
+          title: "Public holidays",
+          summaryNone: "{{count}} days in {{year}}. You have not changed any.",
+          summaryChanged: "{{count}} days in {{year}}. You changed {{changed}}.",
+          yearLabel: "Show holidays for",
+          seeAll: "See all {{count}} public holidays for {{year}}",
+          isDayOff: "This is a day off",
+          isDayOffHint:
+            "Turn this off to tell Xefe that a public holiday is a normal working day at your company.",
+          saveDay: "Save this day",
+          savesImmediately: "This day is saved on its own, straight away.",
+          formIncomplete: "Fill in the date and the name before saving.",
+          law: "The built-in list has the fixed legal dates, the Easter ones (Good Friday, Corpus Christi), and the announced Muslim holidays. Add a change for a day the Government declares later (Tolerância), or a day your company closes.",
+        },
+        custom: {
+          title: "Extra leave your company offers",
+          summaryNone: "None yet.",
+          turnedOff: "{{name}} (turned off)",
+          noLaw:
+            "The Labour Law does not cover these. They are entirely your company's.",
+        },
+        probation: {
+          title: "Waiting time before annual leave",
+          summary: "New workers wait {{months}} months.",
+          summaryNone: "New workers can take annual leave straight away.",
+          monthsLabel: "Months a new worker waits before annual leave",
+          pendingExplainer:
+            "We are still checking this one with our accounting reviewers. Ask your accountant before you change it.",
+        },
+        sick: {
+          title: "When someone is sick",
+          summary:
+            "{{days}} days a year. First 6 days at full pay, next 6 at half pay.",
+          // Art. 33(4) verified against the official Lei 4/2012 text
+          // (mj.gov.tl): "até 12 dias por ano, dos quais 6 são remunerados por
+          // inteiro e os 6 dias restantes remunerados a 50 por cento". The repo
+          // previously carried two WRONG citations — constants-tl.ts said
+          // Art. 42 (deductions) and TIME_LEAVE.md said Art. 34 (occupational
+          // safety). Badge stays until the accounting reviewers sign off.
+          pendingExplainer:
+            "We have matched these bands to the Labour Law and are confirming the reading with our accounting reviewers. The pay rule itself is what payroll applies.",
+          certificateOn: "A medical certificate is required for sick leave.",
+          certificateOff:
+            "Your company does not require a medical certificate for sick leave.",
+        },
+        parental: {
+          daysLabel: "Days off",
+          payYourselfTitle: "Pay salary instead of the INSS subsidy",
+        },
+        maternity: {
+          title: "Maternity leave",
+          summary:
+            "{{days}} days (12 weeks). INSS pays the mother — you pay nothing.",
+          summaryPaid:
+            "{{days}} days (12 weeks). Your company pays {{percent}}% — this cancels the INSS subsidy for those days.",
+        },
+        paternity: {
+          title: "Paternity leave",
+          summary: "{{days}} days. INSS pays the father — you pay nothing.",
+          summaryPaid:
+            "{{days}} days. Your company pays {{percent}}% — this cancels the INSS subsidy for those days.",
+        },
+        miscarriage: {
+          title: "Leave after a miscarriage",
+          summary:
+            "{{days}} days (4 weeks). INSS pays the worker — you pay nothing.",
+          summaryPaid:
+            "{{days}} days (4 weeks). Your company pays {{percent}}% — this cancels the INSS subsidy for those days.",
+        },
+        breastfeeding: {
+          title: "Breastfeeding breaks and pregnancy check-ups",
+          summary: "Paid — and nothing to set up here.",
+        },
+        special: {
+          title: "Weddings, funerals and community days",
+          summary: "{{days}} paid days a year, shared between all of them.",
+          daysLabel: "Days a year",
+        },
+        study: {
+          title: "Exam days",
+          summary:
+            "{{days}} paid days a year for exams. The law sets no limit — this number is yours.",
+          daysLabel: "Exam days your company allows each year",
+        },
+        unpaid: {
+          title: "Unpaid time off",
+          summary: "Up to {{days}} days a year.",
+          detail:
+            "Xefe will not approve more than {{days}} unpaid days in a year for one worker.",
+          noStatute:
+            "The Labour Law does not set this number — it is a Xefe limit.",
+        },
+      },
       annualLeaveCashOutNote: "If someone leaves with annual leave they never took, it is not lost — it is paid out in cash on their final payslip (Labour Law Art. 32).",
       statutoryNote: "These already follow Timor-Leste law. Change them only if your accountant asks you to.",
       companyGroupHeading: "What your company adds",
@@ -1856,13 +1981,13 @@ const messages = {
       annualLeaveHint:
         "Legal minimum: 12 working days per year (Labour Law Art. 32). Carry-over limits are your company's policy.",
       maternityHint: "Legal duration: 12 weeks (Labour Law Art. 59).",
-      paternityHint: "Legal minimum: 5 working days (Labour Law Art. 59).",
+      paternityHint: "Legal minimum: 5 working days (Labour Law Art. 60).",
       sickPayBandsTitle: "Sick pay is fixed by law",
       sickPayBandsText:
-        "Payroll pays certified sick leave per the Labour Code: 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
+        "Payroll pays certified sick leave per the Labour Code (Art. 33.4): 12 days per year — the first 6 days at 100% pay, the next 6 at 50%, nothing beyond. These bands cannot be edited.",
       invalidValues:
         "Use valid leave days and percentages. Percentages must be 0–100 and probation 0–12 months.",
-      save: "Save Time Off Policies",
+      save: "Save leave settings",
     },
     payroll: {
       currentRatesTitle: "The rates you are using now",

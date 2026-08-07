@@ -195,6 +195,52 @@ test("full payroll workflow: signup → employee → payroll → approval → pa
   }
   await expect(advancedTaxMode).toHaveAttribute("data-state", "checked");
 
+  // ── 2b. Time Off policies ───────────────────────────────────────────────
+  // The page groups into "your decisions" vs "fixed by law" and every row
+  // answers itself before you tap it. Row toggles are addressed by
+  // aria-controls: the visible titles repeat inside the panels ("See all 18
+  // public holidays…"), so a name match would be ambiguous once open.
+  await page.goto("/time-leave/settings");
+  await expect(page.getByText("Your company's decisions")).toBeVisible();
+  await expect(page.getByText("Fixed by Timor-Leste law")).toBeVisible();
+  // The statutory answers are readable with nothing tapped.
+  await expect(page.getByText(/INSS pays the mother/i)).toBeVisible();
+  await expect(page.getByText(/first 6 days at full pay/i)).toBeVisible();
+
+  const annualRow = page.locator('button[aria-controls="annual-panel"]');
+  const holidayRow = page.locator('button[aria-controls="holidays-panel"]');
+
+  await expect(page.locator("#annual-panel")).toBeHidden();
+  await annualRow.click();
+  await expect(page.locator("#annual-panel")).toBeVisible();
+  // The answer must NOT vanish the moment you open the row to edit it.
+  await expect(page.getByText(/12 days a year/i).first()).toBeVisible();
+
+  // Below the Art. 32 floor the row warns and offers the one-tap repair.
+  await page.locator("#annual-days").fill("8");
+  await expect(page.getByText(/at least 12 days a year/i)).toBeVisible();
+  await page.getByRole("button", { name: /set to 12 days/i }).click();
+  await expect(page.locator("#annual-days")).toHaveValue("12");
+
+  // The holiday override form is a live react-hook-form populated by the
+  // per-day Override buttons. Collapsing its row must NOT discard half-typed
+  // input — this is why the row body is `hidden` and not a Radix
+  // CollapsibleContent, which unmounts its children.
+  await holidayRow.click();
+  await expect(page.locator("#holidays-panel")).toBeVisible();
+  await page.locator("#holiday-name").fill("Company anniversary");
+  await annualRow.click(); // one row open at a time — this closes holidays
+  await expect(page.locator("#holidays-panel")).toBeHidden();
+  await holidayRow.click();
+  await expect(page.locator("#holiday-name")).toHaveValue(
+    "Company anniversary",
+  );
+
+  await page.getByRole("button", { name: /save leave settings/i }).click();
+  await expect(
+    page.getByText(/time-off policies updated/i).first(),
+  ).toBeVisible({ timeout: 15_000 });
+
   // ── 3. Department, then employee ────────────────────────────────────────
   await page.goto("/settings/departments");
   await page.getByRole("button", { name: /edit departments/i }).click();
