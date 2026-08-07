@@ -1,3 +1,22 @@
+/**
+ * ⚠️ DESTRUCTIVE — regenerates client/i18n/locales/{en,tet,pt}.ts wholesale from
+ * the master, and **deletes every comment in them**.
+ *
+ * Measured 2026-08-07: running this took en.ts from 11 comments to 0. Those
+ * comments are load-bearing — they sit next to the legal strings and record WHY
+ * a citation reads the way it does (e.g. that sick leave prints Art. 33.4 after
+ * the repo was found carrying two wrong articles, and that paternity's Art. 60
+ * replaced a wrong Art. 59). Losing them loses the reasoning at exactly the spot
+ * a future editor would change the wording.
+ *
+ * Keys and values DO survive, so `i18n:check` stays green afterwards and will
+ * not warn you.
+ *
+ * The locale files are the source of truth at runtime (I18nProvider loads them).
+ * The normal direction is the opposite one: edit a locale, then run
+ * `pnpm i18n:rebuild-master`. Reach for this script only to bootstrap a locale
+ * file that does not exist yet.
+ */
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

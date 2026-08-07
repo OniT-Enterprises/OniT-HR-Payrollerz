@@ -1,6 +1,9 @@
 # Time Off settings — visual redesign spec
 
-**Status:** designed, NOT implemented. Ready for a dedicated session.
+**Status:** SHIPPED 2026-08-07 — PRs #31 (structure, statutes) and #33
+(statute shown inline rather than behind a second tap). Section (h) items 1,
+2, 4 and 5 are resolved inline below; 3, 6, 7 and 8 remain open.
+Follow-on work: `docs/TIME_LEAVE_BACKLOG.md`.
 **Target:** `client/components/settings/TimeOffPoliciesTab.tsx` (~1,430 lines)
 **Origin:** 7-agent design workflow, 2026-08-07. Backlog task #22.
 
