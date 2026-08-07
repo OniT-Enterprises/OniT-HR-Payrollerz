@@ -65,6 +65,7 @@ import type { InvoiceFormData, InvoiceSettings, PaymentMethod } from '@/types/mo
 import { getTodayTL, addDaysISO } from '@/lib/dateUtils';
 import { subtractMoney } from '@/lib/currency';
 import { calculateInvoiceAmounts } from '@/lib/accounting/calculations';
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   FileText,
   Plus,
@@ -977,10 +978,16 @@ export default function InvoiceForm() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>{t('money.invoices.issueDate') || 'Issue Date'}</Label>
-                  <Input
-                    type="date"
-                    {...register('issueDate')}
-                    className={errors.issueDate ? 'border-red-500' : ''}
+                  <Controller
+                    name="issueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        aria-invalid={!!errors.issueDate}
+                      />
+                    )}
                   />
                   {errors.issueDate && (
                     <p className="text-sm text-red-500">{errors.issueDate.message}</p>
@@ -991,13 +998,20 @@ export default function InvoiceForm() {
                     {t('money.invoices.dueDate') || 'Due Date'}
                     <InfoTooltip content={MoneyTooltips.terms.dueDate} />
                   </Label>
-                  <Input
-                    type="date"
-                    {...register('dueDate', {
-                      // Manual edits switch payment terms to "Custom"
-                      onChange: () => setValue('paymentTermsDays', null),
-                    })}
-                    className={errors.dueDate ? 'border-red-500' : ''}
+                  <Controller
+                    name="dueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || ''}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          // Manual edits switch payment terms to "Custom"
+                          setValue('paymentTermsDays', null);
+                        }}
+                        aria-invalid={!!errors.dueDate}
+                      />
+                    )}
                   />
                   {errors.dueDate && (
                     <p className="text-sm text-red-500">{errors.dueDate.message}</p>

@@ -78,6 +78,7 @@ import type { Job, JobStatus } from "@/services/jobService";
 import { getTodayTL } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 
+import { DatePicker } from "@/components/ui/date-picker";
 type ApplicantStage = "new" | "shortlisted" | "interview" | "ready" | "hired" | "rejected";
 
 const STAGE_LABEL: Record<ApplicantStage, string> = {
@@ -1124,12 +1125,11 @@ export default function HiringWorkspace() {
           <div className="grid gap-4 py-2 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="interview-date">Date</Label>
-              <Input
+              <DatePicker
                 id="interview-date"
-                type="date"
                 min={getTodayTL()}
                 value={scheduleForm.date}
-                onChange={(event) => setScheduleForm((current) => ({ ...current, date: event.target.value }))}
+                onChange={(value) => setScheduleForm((current) => ({ ...current, date: value }))}
               />
             </div>
             <div className="space-y-2">

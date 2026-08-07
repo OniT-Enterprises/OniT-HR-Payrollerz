@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -1242,10 +1243,9 @@ export default function Attendance() {
               </div>
               <div>
                 <Label>{t("timeLeave.attendance.mark.date")}</Label>
-                <Input
-                  type="date"
+                <DatePicker
                   value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  onChange={(value) => handleInputChange("date", value)}
                   required
                 />
               </div>
@@ -1318,11 +1318,9 @@ export default function Attendance() {
               <ChevronLeft className="h-4 w-4 mr-1.5" />
               {t("common.previous")}
             </Button>
-            <Input
-              type="date"
+            <DatePicker
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-9 w-[180px] text-sm"
+              onChange={(value) => setSelectedDate(value)} className="h-9 w-[180px] text-sm"
             />
             <Button
               variant="outline"

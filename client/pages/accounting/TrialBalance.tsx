@@ -15,7 +15,6 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
   Table,
@@ -47,6 +46,7 @@ import { addMoney, compareMoney, subtractMoney } from "@/lib/currency";
 import { downloadCSVRows } from "@/lib/csvExport";
 import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
+import { DatePicker } from "@/components/ui/date-picker";
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
 
@@ -246,20 +246,16 @@ export default function TrialBalance() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
               <Label>{t("accounting.trialBalance.periodStartDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={periodStart}
-                onChange={(e) => setPeriodStart(e.target.value)}
-                className="w-[180px]"
+                onChange={(value) => setPeriodStart(value)} className="w-[180px]"
               />
             </div>
             <div className="space-y-2">
               <Label>{t("accounting.trialBalance.asOfDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={asOfDate}
-                onChange={(e) => setAsOfDate(e.target.value)}
-                className="w-[180px]"
+                onChange={(value) => setAsOfDate(value)} className="w-[180px]"
               />
             </div>
 

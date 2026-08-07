@@ -33,7 +33,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -80,6 +79,7 @@ import { settingsService } from "@/services/settingsService";
 import type { Employee } from "@/services/employeeService";
 import type { LeaveTypeConfig, TimeOffPolicies } from "@/types/settings";
 
+import { DatePicker } from "@/components/ui/date-picker";
 type RequestFilter = "all" | LeaveStatus;
 
 const KNOWN_LEAVE_TYPES = new Set([
@@ -1136,17 +1136,16 @@ export default function LeaveRequests() {
                 <Label htmlFor="leave-start">
                   {t("timeLeave.leaveRequests.dialog.startDate")}
                 </Label>
-                <Input
+                <DatePicker
                   id="leave-start"
-                  type="date"
                   value={form.startDate}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      startDate: event.target.value,
+                      startDate: value,
                       halfDay:
                         current.halfDay &&
-                        event.target.value === current.endDate,
+                        value === current.endDate,
                     }))
                   }
                 />
@@ -1155,18 +1154,17 @@ export default function LeaveRequests() {
                 <Label htmlFor="leave-end">
                   {t("timeLeave.leaveRequests.dialog.endDate")}
                 </Label>
-                <Input
+                <DatePicker
                   id="leave-end"
-                  type="date"
                   min={form.startDate || undefined}
                   value={form.endDate}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     setForm((current) => ({
                       ...current,
-                      endDate: event.target.value,
+                      endDate: value,
                       halfDay:
                         current.halfDay &&
-                        event.target.value === current.startDate,
+                        value === current.startDate,
                     }))
                   }
                 />

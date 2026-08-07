@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import {
   Table,
@@ -203,25 +203,21 @@ export default function DonorExportPack() {
             <Label htmlFor="donor-export-start">
               {t("reports.donorExportPack.filters.startDate")}
             </Label>
-            <Input
+            <DatePicker
               id="donor-export-start"
-              type="date"
               value={startDate}
               aria-invalid={invalidRange}
-              onChange={(event) => setStartDate(event.target.value)}
-            />
+              onChange={(value) => setStartDate(value)}/>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="donor-export-end">
               {t("reports.donorExportPack.filters.endDate")}
             </Label>
-            <Input
+            <DatePicker
               id="donor-export-end"
-              type="date"
               value={endDate}
               aria-invalid={invalidRange}
-              onChange={(event) => setEndDate(event.target.value)}
-            />
+              onChange={(value) => setEndDate(value)}/>
           </div>
         </ReportToolbar>
 

@@ -78,6 +78,7 @@ import {
   parseDateISO,
 } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   calcShiftHours,
   type ShiftRecord,
@@ -857,8 +858,8 @@ export default function ShiftScheduling() {
 
             <div className="space-y-2">
               <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
-              <Input id="shift-date" type="date" value={form.date} onChange={(event) =>
-                setForm((current) => ({ ...current, date: event.target.value }))} />
+              <DatePicker id="shift-date" value={form.date} onChange={(value) =>
+                setForm((current) => ({ ...current, date: value }))} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

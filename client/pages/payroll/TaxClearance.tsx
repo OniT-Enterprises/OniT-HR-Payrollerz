@@ -51,6 +51,7 @@ import {
 import { fileUploadService } from '@/services/fileUploadService';
 import { taxClearanceService } from '@/services/taxClearanceService';
 
+import { DatePicker } from "@/components/ui/date-picker";
 type ResultOutcome = 'issued' | 'rejected';
 
 export default function TaxClearance() {
@@ -231,7 +232,7 @@ export default function TaxClearance() {
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label>{t('taxClearance.documentType') || 'Official document type'}</Label><Select value={purpose} onValueChange={(value) => setPurpose(value as TaxClearancePurpose)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="commercial_3_months">{purposeLabel('commercial_3_months')}</SelectItem><SelectItem value="commercial_1_month">{purposeLabel('commercial_1_month')}</SelectItem><SelectItem value="visa_3_months">{purposeLabel('visa_3_months')}</SelectItem><SelectItem value="visa_1_month">{purposeLabel('visa_1_month')}</SelectItem></SelectContent></Select></div>
             {needsTaxClearanceOneMonthCoordination(purpose) && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">{t('taxClearance.oneMonthWarning') || 'ATTL says one-month certificates require coordination with an ATTL officer and reasonable justification.'}</p>}
-            <div className="space-y-2"><Label htmlFor="clearance-request-date">{t('taxClearance.requestDate') || 'Date submitted in e-Tax'}</Label><Input id="clearance-request-date" type="date" value={requestedDate} onChange={(event) => setRequestedDate(event.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="clearance-request-date">{t('taxClearance.requestDate') || 'Date submitted in e-Tax'}</Label><DatePicker id="clearance-request-date" value={requestedDate} onChange={(value) => setRequestedDate(value)}/></div>
             <div className="space-y-2"><Label htmlFor="clearance-notes">{t('common.notes') || 'Notes'} ({t('common.optional') || 'optional'})</Label><Textarea id="clearance-notes" value={notes} onChange={(event) => setNotes(event.target.value)} /></div>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setRequestOpen(false)} disabled={saving}>{t('common.cancel') || 'Cancel'}</Button><Button onClick={createRequest} disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t('common.save') || 'Save'}</Button></DialogFooter>
@@ -244,7 +245,7 @@ export default function TaxClearance() {
           <div className="space-y-4 py-2">
             <div className="space-y-2"><Label>{t('taxClearance.outcome') || 'Outcome'}</Label><Select value={outcome} onValueChange={(value) => setOutcome(value as ResultOutcome)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="issued">{t('taxClearance.status.issued') || 'Issued'}</SelectItem><SelectItem value="rejected">{t('taxClearance.status.rejected') || 'Rejected / failed'}</SelectItem></SelectContent></Select></div>
             {outcome === 'issued' ? <>
-              <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="clearance-issued">{t('taxClearance.issueDate') || 'Issue date'}</Label><Input id="clearance-issued" type="date" value={issuedDate} onChange={(event) => setIssuedDate(event.target.value)} /></div><div className="space-y-2"><Label htmlFor="clearance-expiry">{t('taxClearance.expiryDate') || 'Expiry date'}</Label><Input id="clearance-expiry" type="date" value={expiryDate} onChange={(event) => setExpiryDate(event.target.value)} /></div></div>
+              <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="clearance-issued">{t('taxClearance.issueDate') || 'Issue date'}</Label><DatePicker id="clearance-issued" value={issuedDate} onChange={(value) => setIssuedDate(value)}/></div><div className="space-y-2"><Label htmlFor="clearance-expiry">{t('taxClearance.expiryDate') || 'Expiry date'}</Label><DatePicker id="clearance-expiry" value={expiryDate} onChange={(value) => setExpiryDate(value)}/></div></div>
               <div className="space-y-2"><Label htmlFor="clearance-number">{t('taxClearance.certificateNumber') || 'Certificate number'} ({t('common.optional') || 'optional'})</Label><Input id="clearance-number" value={certificateNumber} onChange={(event) => setCertificateNumber(event.target.value)} /></div>
               <div className="space-y-2"><Label htmlFor="clearance-pdf">{t('taxClearance.certificatePdf') || 'ATTL certificate PDF'}</Label><Input id="clearance-pdf" type="file" accept="application/pdf" onChange={(event) => setCertificateFile(event.target.files?.[0] || null)} /></div>
             </> : <div className="space-y-2"><Label htmlFor="clearance-rejection">{t('taxClearance.rejectionReason') || 'Failure or rejection reason'}</Label><Textarea id="clearance-rejection" value={rejectionReason} onChange={(event) => setRejectionReason(event.target.value)} /></div>}

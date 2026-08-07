@@ -44,6 +44,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, Plus, Download, CalendarCheck, Eye } from "lucide-react";
@@ -763,12 +764,11 @@ export default function FixedAssets() {
                 <Label htmlFor="fa-date">
                   {t("accounting.fixedAssets.fieldAcquired")}
                 </Label>
-                <Input
+                <DatePicker
                   id="fa-date"
-                  type="date"
                   value={form.acquisitionDate}
-                  onChange={(e) =>
-                    setForm({ ...form, acquisitionDate: e.target.value })
+                  onChange={(value) =>
+                    setForm({ ...form, acquisitionDate: value })
                   }
                 />
               </div>
@@ -1024,12 +1024,10 @@ export default function FixedAssets() {
                 <Label htmlFor="fa-dispose-date">
                   {t("accounting.fixedAssets.fieldDisposeDate")}
                 </Label>
-                <Input
+                <DatePicker
                   id="fa-dispose-date"
-                  type="date"
                   value={disposeDate}
-                  onChange={(e) => setDisposeDate(e.target.value)}
-                />
+                  onChange={(value) => setDisposeDate(value)}/>
               </div>
               <div>
                 <Label htmlFor="fa-proceeds">

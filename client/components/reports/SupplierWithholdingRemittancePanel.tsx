@@ -35,6 +35,7 @@ import {
 import { fileUploadService } from '@/services/fileUploadService';
 import { supplierWithholdingRemittanceService } from '@/services/supplierWithholdingRemittanceService';
 
+import { DatePicker } from "@/components/ui/date-picker";
 export function SupplierWithholdingRemittancePanel({ period }: { period: string }) {
   const tenantId = useTenantId();
   const { user } = useAuth();
@@ -256,7 +257,7 @@ export function SupplierWithholdingRemittancePanel({ period }: { period: string 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="supplier-tax-date">{t('supplierRemittance.paymentDate') || 'Payment date'}</Label>
-                <Input id="supplier-tax-date" type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} />
+                <DatePicker id="supplier-tax-date" value={paymentDate} onChange={(value) => setPaymentDate(value)}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="supplier-tax-amount">{t('common.amount') || 'Amount'}</Label>

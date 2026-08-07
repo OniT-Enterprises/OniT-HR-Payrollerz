@@ -35,6 +35,7 @@ import { getTodayTL } from '@/lib/dateUtils';
 import { compareMoney, parseMoney, roundMoney, subtractMoney } from '@/lib/currency';
 import { useAccounts } from '@/hooks/useAccounting';
 
+import { DatePicker } from "@/components/ui/date-picker";
 // Payment methods relevant for Timor-Leste
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Cash' },
@@ -168,14 +169,12 @@ function PaymentDetailsFields({
           <Calendar className="h-3.5 w-3.5" />
           Payment Date
         </Label>
-        <Input
+        <DatePicker
           id="date"
-          type="date"
           min={minDate}
           max={maxDate}
           value={paymentDate}
-          onChange={(e) => onDateChange(e.target.value)}
-        />
+          onChange={(value) => onDateChange(value)}/>
       </div>
       {showDepositAccount && (
         <div className="space-y-2">

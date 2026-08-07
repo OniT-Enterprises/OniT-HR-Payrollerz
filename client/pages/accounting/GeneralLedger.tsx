@@ -50,6 +50,7 @@ import { addMoney } from "@/lib/currency";
 import { downloadCSVRows } from "@/lib/csvExport";
 import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
+import { DatePicker } from "@/components/ui/date-picker";
 export default function GeneralLedger() {
   const { t } = useI18n();
 
@@ -254,19 +255,15 @@ export default function GeneralLedger() {
             {/* Date Range */}
             <div className="space-y-2">
               <Label>{t("accounting.generalLedger.startDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+                onChange={(value) => setStartDate(value)}/>
             </div>
             <div className="space-y-2">
               <Label>{t("accounting.generalLedger.endDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+                onChange={(value) => setEndDate(value)}/>
             </div>
           </div>
 

@@ -16,7 +16,6 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
   Table,
@@ -50,6 +49,7 @@ import { addMoney } from "@/lib/currency";
 import { downloadCSVRows } from "@/lib/csvExport";
 import { ReportEmptyState } from "@/components/reports/ReportLayout";
 
+import { DatePicker } from "@/components/ui/date-picker";
 export default function BalanceSheet() {
   const { t } = useI18n();
 
@@ -171,11 +171,9 @@ export default function BalanceSheet() {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
               <Label>{t("accounting.trialBalance.asOfDate")}</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={asOfDate}
-                onChange={(e) => setAsOfDate(e.target.value)}
-                className="w-[180px]"
+                onChange={(value) => setAsOfDate(value)} className="w-[180px]"
               />
             </div>
             <Button onClick={handleGenerate} disabled={generating}>

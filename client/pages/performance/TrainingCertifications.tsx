@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -659,31 +660,26 @@ export default function TrainingCertifications() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <Label htmlFor="start-date">Start Date *</Label>
-                          <Input
+                          <DatePicker
                             id="start-date"
-                            type="date"
                             value={formData.startDate}
-                            onChange={(e) => handleInputChange("startDate", e.target.value)}
+                            onChange={(value) => handleInputChange("startDate", value)}
                             required
                           />
                         </div>
                         <div>
                           <Label htmlFor="completion-date">Completion</Label>
-                          <Input
+                          <DatePicker
                             id="completion-date"
-                            type="date"
                             value={formData.completionDate}
-                            onChange={(e) => handleInputChange("completionDate", e.target.value)}
-                          />
+                            onChange={(value) => handleInputChange("completionDate", value)}/>
                         </div>
                         <div>
                           <Label htmlFor="expiry-date">Expiry</Label>
-                          <Input
+                          <DatePicker
                             id="expiry-date"
-                            type="date"
                             value={formData.expiryDate}
-                            onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                          />
+                            onChange={(value) => handleInputChange("expiryDate", value)}/>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">

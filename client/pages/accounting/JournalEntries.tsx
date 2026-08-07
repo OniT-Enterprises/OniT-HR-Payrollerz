@@ -85,6 +85,7 @@ import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { SEARCH_FETCH_LIMIT } from "@/lib/queryCache";
 
+import { DatePicker } from "@/components/ui/date-picker";
 interface EntryLineForm {
   accountId: string;
   accountCode: string;
@@ -755,11 +756,10 @@ export default function JournalEntries() {
                           <Label htmlFor="entry-date">
                             {t("accounting.journalEntries.date")}
                           </Label>
-                          <Input
+                          <DatePicker
                             id="entry-date"
-                            type="date"
                             value={entryDate}
-                            onChange={(e) => setEntryDate(e.target.value)}
+                            onChange={(value) => setEntryDate(value)}
                             required
                           />
                         </div>

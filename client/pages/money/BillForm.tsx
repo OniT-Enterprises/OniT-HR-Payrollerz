@@ -57,6 +57,7 @@ import {
   type TLBillWithholdingCategory,
 } from '@/lib/tax/bill-withholding';
 import { useSettings } from '@/hooks/useSettings';
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   ArrowLeft,
   Save,
@@ -1005,9 +1006,12 @@ export default function BillForm() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('money.bills.billDate') || 'Bill Date'}</Label>
-                  <Input
-                    type="date"
-                    {...register('billDate')}
+                  <Controller
+                    name="billDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker value={field.value || ''} onChange={field.onChange} />
+                    )}
                   />
                 </div>
                 <div className="space-y-2">
@@ -1015,10 +1019,16 @@ export default function BillForm() {
                     {t('money.bills.dueDate') || 'Due Date'}
                     <InfoTooltip content={t('money.bills.dueDateTooltip') || 'The date by which this bill should be paid to avoid late fees or service interruption.'} />
                   </Label>
-                  <Input
-                    type="date"
-                    {...register('dueDate')}
-                    className={errors.dueDate ? 'border-red-500' : ''}
+                  <Controller
+                    name="dueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <DatePicker
+                        value={field.value || ''}
+                        onChange={field.onChange}
+                        aria-invalid={!!errors.dueDate}
+                      />
+                    )}
                   />
                   {errors.dueDate && (
                     <p className="text-sm text-red-500">{errors.dueDate.message}</p>

@@ -109,6 +109,7 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { formatDateTL } from "@/lib/dateUtils";
 
+import { DatePicker } from "@/components/ui/date-picker";
 export default function Offboarding() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -934,27 +935,25 @@ export default function Offboarding() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t("hiring.offboarding.dialog.lastDay")}</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={newOffboarding.lastWorkingDay}
                     required
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setNewOffboarding((prev) => ({
                         ...prev,
-                        lastWorkingDay: e.target.value,
+                        lastWorkingDay: value,
                       }))
                     }
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{t("hiring.offboarding.dialog.noticeDate")}</Label>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={newOffboarding.noticeDate}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setNewOffboarding((prev) => ({
                         ...prev,
-                        noticeDate: e.target.value,
+                        noticeDate: value,
                       }))
                     }
                   />
